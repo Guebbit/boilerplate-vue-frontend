@@ -995,11 +995,34 @@ export interface LoginRequest {
     remember?: LoginRequestRemember;
 }
 
+export interface TwoFactorMethodSummary {
+    /** Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it. */
+    method: string;
+    /** Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a "send me a code" button for the former and nothing for the latter. */
+    delivers: boolean;
+    /** Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods. */
+    target?: string;
+    /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
+    enrolledAt?: string;
+    /** Seconds between two deliveries of this method. Absent for device methods. */
+    resendAfter?: number;
+    /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
+    enrollable?: boolean;
+    /** Why `enrollable` is false — a translated sentence a client can show as-is. */
+    reason?: string;
+}
+
 export interface MfaChallenge {
     /** Always true — the credential check passed, but a second factor is required before a session is issued. */
     mfaRequired: true;
-    /** Short-lived signed token naming this login attempt. Submit it, with a code, to POST /account/login/2fa. Expires after five minutes. */
+    /** A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST /account/login/2fa, or to POST /account/login/2fa/send to have a code delivered first. */
     challenge: string;
+    /** When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip. */
+    expiresAt: string;
+    /** The factors armed on this account, in the order a client should offer them. */
+    methods: TwoFactorMethodSummary[];
+    /** Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one. */
+    defaultMethod?: string;
 }
 
 /**
@@ -1200,15 +1223,73 @@ export interface AccountExportEnvelope {
 export interface LoginTwoFactorRequest {
     /** The challenge token from POST /account/login. */
     challenge: string;
-    /** A 6-digit TOTP code, or an unused backup code. */
+    /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
+    code: string;
+}
+
+export interface TwoFactorSendRequest {
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
+    method: string;
+}
+
+export interface TwoFactorDelivery {
+    /** The method the code went through, echoed back. */
+    method: string;
+    /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
+    sentTo: string;
+    /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
+    resendAfter: number;
+    /** When this code stops being accepted. */
+    expiresAt: string;
+}
+
+export interface TwoFactorDeliveryEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorDelivery;
+}
+
+export interface TwoFactorStatus {
+    /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
+    enabled: boolean;
+    /** The factors armed on this account, plus any enrollment still pending confirmation. */
+    methods: TwoFactorMethodSummary[];
+    /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
+    available: TwoFactorMethodSummary[];
+    /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
+    backupCodesRemaining: number;
+}
+
+export interface TwoFactorStatusEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorStatus;
+}
+
+export interface TwoFactorCodeRequest {
+    /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
     code: string;
 }
 
 export interface TwoFactorSetup {
-    /** The TOTP secret, base32-encoded, shown once for manual entry as a fallback to scanning. */
-    secret: string;
-    /** An otpauth:// URI — the frontend renders it as a QR code; this API generates no image. */
-    otpauthUri: string;
+    /** The method being enrolled, echoed back. */
+    method: string;
+    /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
+    delivers: boolean;
+    /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
+    secret?: string;
+    /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
+    otpauthUri?: string;
+    /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
+    sentTo?: string;
+    /** Seconds before another code may be requested. Absent unless `delivers`. */
+    resendAfter?: number;
+    /** When the delivered code stops being accepted. Absent unless `delivers`. */
+    expiresAt?: string;
 }
 
 export interface TwoFactorSetupEnvelope {
@@ -1219,13 +1300,17 @@ export interface TwoFactorSetupEnvelope {
 }
 
 export interface TwoFactorConfirmRequest {
-    /** A 6-digit code from the authenticator app enrolled via POST /account/2fa/setup. */
+    /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
     code: string;
 }
 
 export interface TwoFactorConfirmed {
-    /** One-time recovery codes for a lost authenticator, shown in the clear exactly once. */
-    backupCodes: string[];
+    /** The method just armed, echoed back. */
+    method: string;
+    /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
+    backupCodes?: string[];
+    /** How many unused backup codes the account now holds. */
+    backupCodesRemaining: number;
 }
 
 export interface TwoFactorConfirmEnvelope {
@@ -1233,11 +1318,6 @@ export interface TwoFactorConfirmEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: TwoFactorConfirmed;
-}
-
-export interface TwoFactorDisableRequest {
-    /** A TOTP code, or an unused backup code. */
-    code: string;
 }
 
 export interface OAuthProviders {
@@ -2028,6 +2108,11 @@ export type NotFoundResponse = ErrorResponse;
  * The request conflicts with the current state of the resource
  */
 export type ConflictResponse = ErrorResponse;
+
+/**
+ * The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
+ */
+export type TooManyRequestsResponse = ErrorResponse;
 
 /**
  * Internal server error
@@ -3168,43 +3253,40 @@ export const loginTwoFactor = (
 };
 
 /**
- * Generates a fresh TOTP secret and returns it plaintext, once, along with the `otpauth://` URI to render as a QR code. Enrollment is not active until `POST /account/2fa/confirm` proves the caller scanned it. Calling this again — including on an account that already has 2FA on — replaces the pending secret and clears any confirmed one, for the "lost my phone, still have my session" recovery path.
- * @summary Start two-factor enrollment
+ * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
+ * @summary Send a login code
  */
-export const setupTwoFactor = (
-    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+export const sendTwoFactorCode = (
+    twoFactorSendRequest: TwoFactorSendRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
 ) => {
-    return orvalMutator<TwoFactorSetupEnvelope>(
-        { url: `/account/2fa/setup`, method: 'POST' },
-        options
-    );
-};
-
-/**
- * Arms the pending secret from `POST /account/2fa/setup` against a code from the caller's authenticator app, and mints backup codes — returned in the clear exactly once.
- * @summary Confirm two-factor enrollment
- */
-export const confirmTwoFactor = (
-    twoFactorConfirmRequest: TwoFactorConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
-) => {
-    return orvalMutator<TwoFactorConfirmEnvelope>(
+    return orvalMutator<TwoFactorDeliveryEnvelope>(
         {
-            url: `/account/2fa/confirm`,
+            url: `/account/login/2fa/send`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: twoFactorConfirmRequest
+            data: twoFactorSendRequest
         },
         options
     );
 };
 
 /**
- * Disables 2FA. Requires a valid TOTP code or an unused backup code in the body, on top of the route's own fresh-auth requirement — disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature.
+ * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
+ * @summary Two-factor status
+ */
+export const getTwoFactorStatus = (
+    options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
+) => {
+    return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
+};
+
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
  * @summary Disable two-factor authentication
  */
 export const disableTwoFactor = (
-    twoFactorDisableRequest: TwoFactorDisableRequest,
+    twoFactorCodeRequest: TwoFactorCodeRequest,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
@@ -3212,7 +3294,61 @@ export const disableTwoFactor = (
             url: `/account/2fa`,
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            data: twoFactorDisableRequest
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
+ * @summary Remove one second factor
+ */
+export const removeTwoFactorMethod = (
+    method: string,
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa/methods/${method}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * @summary Start enrolling one second factor
+ */
+export const setupTwoFactorMethod = (
+    method: string,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+) => {
+    return orvalMutator<TwoFactorSetupEnvelope>(
+        { url: `/account/2fa/methods/${method}/setup`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
+ * @summary Arm one second factor
+ */
+export const confirmTwoFactorMethod = (
+    method: string,
+    twoFactorConfirmRequest: TwoFactorConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
+) => {
+    return orvalMutator<TwoFactorConfirmEnvelope>(
+        {
+            url: `/account/2fa/methods/${method}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorConfirmRequest
         },
         options
     );
@@ -4603,9 +4739,18 @@ export type DeleteExpiredTokensResult = NonNullable<
 >;
 export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
 export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
-export type SetupTwoFactorResult = NonNullable<Awaited<ReturnType<typeof setupTwoFactor>>>;
-export type ConfirmTwoFactorResult = NonNullable<Awaited<ReturnType<typeof confirmTwoFactor>>>;
+export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
+export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
 export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type RemoveTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof removeTwoFactorMethod>>
+>;
+export type SetupTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof setupTwoFactorMethod>>
+>;
+export type ConfirmTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
 export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
 export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;

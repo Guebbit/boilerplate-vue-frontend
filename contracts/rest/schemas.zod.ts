@@ -1727,7 +1727,66 @@ export const LoginResponse = zod.strictObject({
                 challenge: zod
                     .string()
                     .describe(
-                        'Short-lived signed token naming this login attempt. Submit it, with a code, to POST \/account\/login\/2fa. Expires after five minutes.'
+                        'A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST \/account\/login\/2fa, or to POST \/account\/login\/2fa\/send to have a code delivered first.'
+                    ),
+                expiresAt: zod.iso
+                    .datetime({ offset: true })
+                    .describe(
+                        'When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip.'
+                    ),
+                methods: zod
+                    .array(
+                        zod.strictObject({
+                            method: zod
+                                .string()
+                                .describe(
+                                    'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
+                                ),
+                            delivers: zod
+                                .boolean()
+                                .describe(
+                                    'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
+                                ),
+                            target: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
+                                ),
+                            enrolledAt: zod.iso
+                                .datetime({ offset: true })
+                                .optional()
+                                .describe(
+                                    'When this factor was armed. Absent while its enrollment is still pending confirmation.'
+                                ),
+                            resendAfter: zod
+                                .number()
+                                .optional()
+                                .describe(
+                                    'Seconds between two deliveries of this method. Absent for device methods.'
+                                ),
+                            enrollable: zod
+                                .boolean()
+                                .optional()
+                                .describe(
+                                    'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
+                                ),
+                            reason: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Why `enrollable` is false — a translated sentence a client can show as-is.'
+                                )
+                        })
+                    )
+                    .describe(
+                        'The factors armed on this account, in the order a client should offer them.'
+                    ),
+                defaultMethod: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one.'
                     )
             })
         ])
@@ -2215,7 +2274,11 @@ export const ExportAccountDataResponse = zod.strictObject({
  */
 export const LoginTwoFactorBody = zod.strictObject({
     challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
-    code: zod.string().describe('A 6-digit TOTP code, or an unused backup code.')
+    code: zod
+        .string()
+        .describe(
+            "A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's."
+        )
 });
 
 export const LoginTwoFactorResponse = zod.strictObject({
@@ -2230,64 +2293,290 @@ export const LoginTwoFactorResponse = zod.strictObject({
 });
 
 /**
- * Generates a fresh TOTP secret and returns it plaintext, once, along with the `otpauth://` URI to render as a QR code. Enrollment is not active until `POST /account/2fa/confirm` proves the caller scanned it. Calling this again — including on an account that already has 2FA on — replaces the pending secret and clears any confirmed one, for the "lost my phone, still have my session" recovery path.
- * @summary Start two-factor enrollment
+ * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
+ * @summary Send a login code
  */
-export const SetupTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        secret: zod
-            .string()
-            .describe(
-                'The TOTP secret, base32-encoded, shown once for manual entry as a fallback to scanning.'
-            ),
-        otpauthUri: zod
-            .string()
-            .describe(
-                'An otpauth:\/\/ URI — the frontend renders it as a QR code; this API generates no image.'
-            )
-    })
-});
-
-/**
- * Arms the pending secret from `POST /account/2fa/setup` against a code from the caller's authenticator app, and mints backup codes — returned in the clear exactly once.
- * @summary Confirm two-factor enrollment
- */
-export const ConfirmTwoFactorBody = zod.strictObject({
-    code: zod
+export const SendTwoFactorCodeBody = zod.strictObject({
+    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    method: zod
         .string()
         .describe(
-            'A 6-digit code from the authenticator app enrolled via POST \/account\/2fa\/setup.'
+            "Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true."
         )
 });
 
-export const ConfirmTwoFactorResponse = zod.strictObject({
+export const SendTwoFactorCodeResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        backupCodes: zod
-            .array(zod.string())
+        method: zod.string().describe('The method the code went through, echoed back.'),
+        sentTo: zod
+            .string()
             .describe(
-                'One-time recovery codes for a lost authenticator, shown in the clear exactly once.'
+                'Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.'
+            ),
+        resendAfter: zod
+            .number()
+            .describe(
+                'Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.'
+            ),
+        expiresAt: zod.iso
+            .datetime({ offset: true })
+            .describe('When this code stops being accepted.')
+    })
+});
+
+/**
+ * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
+ * @summary Two-factor status
+ */
+export const GetTwoFactorStatusResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        enabled: zod
+            .boolean()
+            .describe(
+                'Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry.'
+            ),
+        methods: zod
+            .array(
+                zod.strictObject({
+                    method: zod
+                        .string()
+                        .describe(
+                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
+                        ),
+                    delivers: zod
+                        .boolean()
+                        .describe(
+                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
+                        ),
+                    target: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
+                        ),
+                    enrolledAt: zod.iso
+                        .datetime({ offset: true })
+                        .optional()
+                        .describe(
+                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
+                        ),
+                    resendAfter: zod
+                        .number()
+                        .optional()
+                        .describe(
+                            'Seconds between two deliveries of this method. Absent for device methods.'
+                        ),
+                    enrollable: zod
+                        .boolean()
+                        .optional()
+                        .describe(
+                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
+                        ),
+                    reason: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
+                        )
+                })
+            )
+            .describe(
+                'The factors armed on this account, plus any enrollment still pending confirmation.'
+            ),
+        available: zod
+            .array(
+                zod.strictObject({
+                    method: zod
+                        .string()
+                        .describe(
+                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
+                        ),
+                    delivers: zod
+                        .boolean()
+                        .describe(
+                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
+                        ),
+                    target: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
+                        ),
+                    enrolledAt: zod.iso
+                        .datetime({ offset: true })
+                        .optional()
+                        .describe(
+                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
+                        ),
+                    resendAfter: zod
+                        .number()
+                        .optional()
+                        .describe(
+                            'Seconds between two deliveries of this method. Absent for device methods.'
+                        ),
+                    enrollable: zod
+                        .boolean()
+                        .optional()
+                        .describe(
+                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
+                        ),
+                    reason: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
+                        )
+                })
+            )
+            .describe(
+                'What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`.'
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe(
+                'How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.'
             )
     })
 });
 
 /**
- * Disables 2FA. Requires a valid TOTP code or an unused backup code in the body, on top of the route's own fresh-auth requirement — disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature.
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
  * @summary Disable two-factor authentication
  */
 export const DisableTwoFactorBody = zod.strictObject({
-    code: zod.string().describe('A TOTP code, or an unused backup code.')
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
 });
 
 export const DisableTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
+ * @summary Remove one second factor
+ */
+export const RemoveTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const RemoveTwoFactorMethodBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
+});
+
+export const RemoveTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * @summary Start enrolling one second factor
+ */
+export const SetupTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const SetupTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string().describe('The method being enrolled, echoed back.'),
+        delivers: zod
+            .boolean()
+            .describe(
+                'Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`\/`otpauthUri`.'
+            ),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                "A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`."
+            ),
+        otpauthUri: zod
+            .string()
+            .optional()
+            .describe(
+                'An otpauth:\/\/ URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`.'
+            ),
+        sentTo: zod
+            .string()
+            .optional()
+            .describe(
+                'Masked destination the enrollment code just went to. Absent unless `delivers`.'
+            ),
+        resendAfter: zod
+            .number()
+            .optional()
+            .describe('Seconds before another code may be requested. Absent unless `delivers`.'),
+        expiresAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe('When the delivered code stops being accepted. Absent unless `delivers`.')
+    })
+});
+
+/**
+ * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
+ * @summary Arm one second factor
+ */
+export const ConfirmTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const ConfirmTwoFactorMethodBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.'
+        )
+});
+
+export const ConfirmTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string().describe('The method just armed, echoed back.'),
+        backupCodes: zod
+            .array(zod.string())
+            .optional()
+            .describe(
+                'One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.'
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe('How many unused backup codes the account now holds.')
+    })
 });
 
 /**

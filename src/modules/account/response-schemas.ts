@@ -71,22 +71,38 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     },
     { method: 'POST', pattern: /^\/account\/reauth$/, schema: schemas.ReauthResponse },
     { method: 'POST', pattern: /^\/account\/export$/, schema: schemas.ExportAccountDataResponse },
+    /*
+     * Listed BEFORE `/login/2fa` — `find()` returns the first match, and that pattern is not
+     * anchored past `2fa`, so it would otherwise absorb `/login/2fa/send`. Same rule the
+     * `/oauth/providers` ordering below already follows.
+     */
+    {
+        method: 'POST',
+        pattern: /^\/account\/login\/2fa\/send$/,
+        schema: schemas.SendTwoFactorCodeResponse
+    },
     {
         method: 'POST',
         pattern: /^\/account\/login\/2fa$/,
         schema: schemas.LoginTwoFactorResponse
     },
-    {
-        method: 'POST',
-        pattern: /^\/account\/2fa\/setup$/,
-        schema: schemas.SetupTwoFactorResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/account\/2fa\/confirm$/,
-        schema: schemas.ConfirmTwoFactorResponse
-    },
+    { method: 'GET', pattern: /^\/account\/2fa$/, schema: schemas.GetTwoFactorStatusResponse },
     { method: 'DELETE', pattern: /^\/account\/2fa$/, schema: schemas.DisableTwoFactorResponse },
+    {
+        method: 'POST',
+        pattern: /^\/account\/2fa\/methods\/[^/]+\/setup$/,
+        schema: schemas.SetupTwoFactorMethodResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/account\/2fa\/methods\/[^/]+\/confirm$/,
+        schema: schemas.ConfirmTwoFactorMethodResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/account\/2fa\/methods\/[^/]+$/,
+        schema: schemas.RemoveTwoFactorMethodResponse
+    },
     /*
      * Listed BEFORE the `:provider` pattern below — `find()` returns the first match, and
      * `/^\/account\/oauth\/[^/]+$/` would otherwise absorb `providers` as if it were a provider
