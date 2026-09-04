@@ -51,7 +51,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': { token: 'jwt-token' },
+        'POST /account/login': { data: { token: 'jwt-token' } },
         'GET /account': { data: USER },
         'POST /account/reset': { data: undefined },
         'POST /account/reset-confirm': { data: undefined },

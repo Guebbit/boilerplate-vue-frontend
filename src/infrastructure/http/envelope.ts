@@ -34,7 +34,8 @@ const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
  * @returns The token, or `undefined` when the response carries none.
  */
 export const getTokenFromResponse = (response?: unknown): string | undefined => {
-    // Top level first: login answers with a bare `{ token }`, refresh wraps it in an envelope.
+    // Top-level `{ token }` is checked first for tolerance only: the contract's
+    // `LoginResponseEnvelope` always wraps it under `data`, same as refresh.
     if (isObjectRecord(response)) {
         const maybeToken = response.token;
         if (typeof maybeToken === 'string') return maybeToken;
