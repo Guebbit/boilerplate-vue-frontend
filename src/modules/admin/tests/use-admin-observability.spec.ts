@@ -18,6 +18,7 @@ import {
     getObservabilityAuditLogs,
     deleteExpiredTokens
 } from '@api';
+import type { AuditEventItem } from '@api';
 import { useAdminObservability } from '@/modules/admin/composables/use-admin-observability';
 
 const HEALTH = { status: 'ok', uptimeSeconds: 120 };
@@ -33,12 +34,20 @@ const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
     totalPages
 });
 
-const AUDIT_ITEM = {
-    id: 'a1',
-    actor: 'ada@example.com',
+/**
+ * One audit row exactly as `AuditEventItem` declares it.
+ *
+ * Typed rather than a bare literal: the schema is `additionalProperties: false` with six required
+ * fields, so an invented key or a missing one is a compile error here instead of a green test
+ * standing on a shape the endpoint never returns.
+ */
+const AUDIT_ITEM: AuditEventItem = {
+    actor_user_id: 'ada@example.com',
+    actor_role: 'admin',
     action: 'user.login',
     outcome: 'success',
-    createdAt: '2026-01-01T00:00:00.000Z'
+    timestamp: '2026-01-01T00:00:00.000Z',
+    level: 'info'
 };
 
 vi.mock('@api', () => ({

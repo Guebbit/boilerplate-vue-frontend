@@ -48,7 +48,9 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': { token: 'jwt-token' },
+        // Wrapped under `data`, as `LoginResponseEnvelope` declares — the tolerant top-level
+        // read in `getTokenFromResponse` exists for robustness, not as a shape to test against.
+        'POST /account/login': { data: { token: 'jwt-token' } },
         'GET /account': { data: USER },
         'DELETE /account': { data: undefined },
         'DELETE /account/delete-confirm': { data: undefined },

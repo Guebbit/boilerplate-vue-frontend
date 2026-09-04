@@ -215,9 +215,17 @@ describe('onResponseReject — fallback normalisation', () => {
         });
     });
 
-    it('passes an envelope through even when its errors list is empty', () =>
-        // Detection is `hasOwnProperty('errors')`, not truthiness — an API reject that happens to
-        // carry no items is still the API's own envelope and must not be re-synthesised.
+    it("keeps a server envelope's own message instead of the status fallback", () =>
+        /*
+         * The pass-through half of the `hasOwnProperty('errors')` rule, paired with the synthesis
+         * half at 'carries no error items for a status that is neither 401 nor 403'. A 422 is the
+         * status that separates them: neither branch rewrites its message, so the envelope's own
+         * text surviving is the proof it was not rebuilt from `statusText`.
+         *
+         * The envelope carries a real `ErrorItem` because `ErrorResponse.errors` is `minItems: 1`
+         * and the API guarantees it — `normalizeErrors` in the backend substitutes a fallback item
+         * rather than ever sending an empty list.
+         */
         import('@/infrastructure/http').then(({ onResponseReject }) =>
             expect(
                 onResponseReject(
@@ -225,9 +233,12 @@ describe('onResponseReject — fallback normalisation', () => {
                         success: false,
                         status: 422,
                         message: 'Validation failed',
-                        errors: []
+                        errors: [{ code: 'VALIDATION_ERROR', message: 'name required' }]
                     }) as never
                 )
-            ).rejects.toMatchObject({ message: 'Validation failed', errors: [] })
+            ).rejects.toMatchObject({
+                message: 'Validation failed',
+                errors: [{ code: 'VALIDATION_ERROR', message: 'name required' }]
+            })
         ));
 });

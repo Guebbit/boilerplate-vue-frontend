@@ -51,8 +51,14 @@ Two consequences, both non-negotiable:
 All three take one argument — a module (`orders`), a path, or `--diff` for whatever the working
 tree touched.
 
-The prompts are deliberately repo-agnostic: the same three files live in
-`boilerplate-node-backend`, and a change worth making to one is worth copying to the other.
+The three prompt files are the only part of this kept byte-identical with the sibling repo
+(`boilerplate-node-backend`) — they are repo-agnostic by design, so a change worth making to one is
+worth copying to the other. Nothing enforces it: they are not in `SHARED_FILES`, whose rule is that
+a shared file must be owned by one side, and these are co-authored. Copy by hand, and check with
+`diff` when in doubt.
+
+This page is the opposite: deliberately per-repo. It names this repo's own tools, its own `docs/`
+count and its own findings, so the two copies are _expected_ to differ and must not be reconciled.
 
 ### Naming the scope
 

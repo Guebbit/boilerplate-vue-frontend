@@ -106,7 +106,7 @@ The `test-e2e-live` CI job sets all of this itself, including the two `VITE_UMAM
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
-Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `demo-data.json` makes a live run fail on _data_ rather than on behaviour, and that is a confusing hour if you are not expecting it.
+Run `npm run check:spec-identity` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
 
 ## `BACKEND_PATH`
 
@@ -134,7 +134,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here. The demo dataset is published by the backend's `npm run seed:export` and copied to this repo by `npm run sync:frontend`, so both sides read one file and `npm run check:spec-identity` fails the build if the copies fork. Whether the _database a deployment actually builds_ still matches that file is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
+Not here, and not in a copy either. The demo dataset is published by the backend's `npm run seed:export` and stays there: it is not in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the _database a deployment actually builds_ matches the published dataset is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 

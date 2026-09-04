@@ -30,6 +30,10 @@ const LANGUAGE_TAG_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
  * references, so the API keeps it immutable — and the dialog swaps this schema for
  * {@link localesLanguageEditSchema} rather than making the field conditionally optional, which
  * would leave a required field silently unchecked on the form that does write it.
+ *
+ * `direction` and `active` are DEFAULTED, not required: `CreateLocaleRequest` requires only
+ * `[tag, name, nativeName]` and infers the other two. `.default()` rather than `.optional()` so a
+ * missing value resolves to the contract's own fallback instead of reaching the API as `undefined`.
  */
 export const localesLanguageSchema = z.object({
     tag: z
@@ -38,12 +42,20 @@ export const localesLanguageSchema = z.object({
         .regex(LANGUAGE_TAG_PATTERN, { error: () => translate('locale-form.tag-invalid') }),
     name: z.string().min(1, { error: () => translate('locale-form.name-required') }),
     nativeName: z.string().min(1, { error: () => translate('locale-form.native-name-required') }),
-    direction: z.enum(['ltr', 'rtl']),
-    active: z.boolean()
+    direction: z.enum(['ltr', 'rtl']).default('ltr'),
+    active: z.boolean().default(true)
 });
 
 /**
  * The same form on edit, where the tag is shown but not writable.
+ *
+ * `tag` accepts anything: `UpdateLocaleRequest` has no `tag` property at all, and the field is
+ * disabled, so nothing typed here can reach the API.
+ *
+ * `name` and `nativeName` stay required. `UpdateLocaleRequest` lists no required fields — but that
+ * describes OMISSION, and this form omits nothing: every field is sent on every save. A field that
+ * is sent still has to satisfy `minLength: 1`, so relaxing them here would only move the rejection
+ * from the form to a 422.
  */
 export const localesLanguageEditSchema = localesLanguageSchema.extend({
     tag: z.string()
