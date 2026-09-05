@@ -94,8 +94,11 @@ backend's carries `EmailJobPayload`, `PdfJobPayload` and `WORKER_CHANNELS`. Ever
 does carry, it carries identically, because the shared half of the spec is one document copied
 across.
 
-`asyncapi.yaml` and this script are in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
-`check:spec-identity` fails on the commit that forks either. **The generated outputs are not**, and
+`asyncapi.yaml` is in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
+`check:spec-identity` fails on the commit that forks it. **This script is not, and neither are the
+generated outputs.** The script is held identical by hand — nothing fails if the two copies drift,
+so compare them with `diff` when you change one. The outputs are off the list for a different
+reason, and
 deliberately: they legitimately differ now, and even where they overlap a cross-repo comparison
 would only re-ask a question the two entries above already answer, at the price of carrying another
 file between the repos on every contract change.
@@ -103,6 +106,22 @@ file between the repos on every contract change.
 What that comparison _would_ have added — "did this repo regenerate after the last spec edit" —
 `check:asyncapi-types` answers here, with no sibling checkout to find. The backend runs the same
 gate over its own copy.
+
+### One alias per payload shape
+
+Several messages share one payload — `observability.metrics.snapshot`, `.updated` and `heartbeat`
+all carry `ObservabilityMetricsPayload`. Aliasing each separately produced three names for one
+shape, and no hand-written caller used any of them: real code imports the shared payload type
+directly, the same way the backend's `mailer.ts` names its own `EmailJob` rather than a generated
+`EmailJobMessage`.
+
+So the generator emits **one alias per shape**, in declaration order — which is the name a caller
+who does want the message-level spelling actually finds. The others were never a second fact, just
+a second spelling of the first.
+
+Deduping is safe at that point because the SSE map is resolved through the same
+`resolveMessagePayloadType` the alias loop uses: `SseEventPayloadMap` never names a message-level
+alias, so it cannot be left pointing at one the loop dropped.
 
 ## Realtime client workflow
 

@@ -6,9 +6,10 @@ entry, and none of it ships in the bundle. `.husky/` holds the git hooks.
 Every script's user-facing name and when to run it is on
 [Package Scripts](../tools/package-scripts.md). This page says what each _file_ is.
 
-Several of these are **mirrors of the backend's**, byte-identical or near enough that a plain
-`diff` is the right way to compare them. Where that is true it is called out, because changing one
-copy and not the other is how the two repos drift.
+Several of these have a **counterpart in the backend**, and each one says in its header which kind
+it is: byte-identical (`contracts/generate-asyncapi-types.ts`, `testing/report-results.ts`), or the
+same shape with stated differences (everything under `pairing/` and `mutation/`). Nothing enforces
+either — `diff` is the tool, and changing one copy without the other is how the two repos drift.
 
 ## How these are organised
 
@@ -54,12 +55,12 @@ whose Artisan command classes are the StudlyCase spelling of these names. Abbrev
 
 ## Cross-repo pairing — `scripts/pairing/` and `scripts/contracts/`
 
-| File                                           | What it is                                                                                                                                                                                                                                 | Read next                                        |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `scripts/pairing/paired-backend-path.ts`       | Where the paired backend is expected to be — a sibling checkout by default, overridable by environment. The mirror of the backend's `paired-frontend-path.ts`, pointed the other way.                                                      | [Package Scripts](../tools/package-scripts.md)   |
-| `scripts/pairing/spec-identity.ts`             | The cross-repo check itself: which files must be identical in both repos, which side owns each, and the comparison. Mirrors the backend's copy; only the "which repo am I" constant differs.                                               | [Contracts](./contracts.md)                      |
-| `scripts/pairing/check-spec-identity.ts`       | Its CLI — `npm run check:spec-identity`. Degrades to a warning when the sibling is not on disk, because a half-cloned pair should still be able to commit, and is fatal under `CI` where a missing sibling means a misconfigured workflow. | [Contracts](./contracts.md)                      |
-| `scripts/contracts/generate-asyncapi-types.ts` | Generates `src/types/asyncapi.generated.ts` from `asyncapi.yaml`. **Byte-identical with the backend's copy** — change it in one repo and copy it to the other, or the outputs drift. What differs is the input, not the script.            | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| File                                           | What it is                                                                                                                                                                                                                                                 | Read next                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `scripts/pairing/paired-backend-path.ts`       | Where the paired backend is expected to be — a sibling checkout by default, overridable by environment. The mirror of the backend's `paired-frontend-path.ts`, pointed the other way.                                                                      | [Package Scripts](../tools/package-scripts.md)   |
+| `scripts/pairing/spec-identity.ts`             | The cross-repo check itself: which files must be identical in both repos, which side owns each, and the comparison. Same list and same comparison as the backend's copy; `THIS_REPO` differs, and this side adds the `fingerprint` the twin backends need. | [Contracts](./contracts.md)                      |
+| `scripts/pairing/check-spec-identity.ts`       | Its CLI — `npm run check:spec-identity`. Degrades to a warning when the sibling is not on disk, because a half-cloned pair should still be able to commit, and is fatal under `CI` where a missing sibling means a misconfigured workflow.                 | [Contracts](./contracts.md)                      |
+| `scripts/contracts/generate-asyncapi-types.ts` | Generates `src/types/asyncapi.generated.ts` from `asyncapi.yaml`. **Byte-identical with the backend's copy** — change it in one repo and copy it to the other, or the outputs drift. What differs is the input, not the script.                            | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 
 ## Running the real backend — `scripts/demo/`
 
@@ -78,7 +79,8 @@ whose Artisan command classes are the StudlyCase spelling of these names. Abbrev
 
 ## Mutation testing — `scripts/mutation/`
 
-All three mirror the backend's.
+All three have a backend counterpart of the same shape. None is byte-identical: the backend runs a
+second, deeper scope that this repo has no equivalent for.
 
 | File                                 | What it is                                                                                                                                                          | Read next                                        |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |

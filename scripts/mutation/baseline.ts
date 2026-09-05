@@ -37,7 +37,8 @@
  * the same thing. `--update` in the same commit as the `mutate` change is the sanctioned way to
  * re-record; at any other time an unexplained baseline rewrite should be questioned in review.
  *
- * The backend mirrors this file.
+ * The backend has its own copy, same shape plus a second scope (`MUTATION_PROFILES`) for the deep
+ * pass this repo does not run. Nothing compares the two — `diff` them by hand when you change this one.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

@@ -5,7 +5,7 @@
  * reads the specs among them, so a one-line edit in one checkout silently forks what both sides
  * believe they share — and neither CI notices, because a forked spec is still a valid spec.
  *
- * The backend mirrors this file; only `THIS_REPO` differs there, so a file added on one side is a
+ * The backend carries the same list and the same comparison, so a file added on one side is a
  * one-line copy on the other. The one part it does not need is `fingerprint` below: this repo is
  * the side that pairs with EITHER backend (`.env`'s `BACKEND_PATH` says which), and the two twins
  * do not serialise YAML identically.
