@@ -12,6 +12,7 @@
  */
 
 import { instance } from './client.ts';
+import { getFirstApiError } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
 import { onResponseRejectWithRefresh } from './refresh.ts';
 import { useReauthPromptStore } from './reauth-prompt.ts';
@@ -32,25 +33,6 @@ const requestFreshSession = singleFlight((): Promise<void> =>
 );
 
 /**
- * Reads the error CODE off a rejection body without trusting the type past the wire: an axios
- * error's `data` is asserted by its generic parameter, not verified, so an empty `errors` array
- * (legal at the type level, since `ResponseReject.errors` carries no length guarantee) must not
- * throw here.
- *
- * @param data - `error.response?.data`, still unknown at this boundary.
- * @returns The first structured error's `code`, or `undefined` when the shape does not match.
- */
-const firstErrorCode = (data: unknown): string | undefined => {
-    if (typeof data !== 'object' || data === null) return undefined;
-    const items = (data as { errors?: unknown }).errors;
-    if (!Array.isArray(items) || items.length === 0) return undefined;
-    const [item] = items as unknown[];
-    if (typeof item !== 'object' || item === null) return undefined;
-    const { code } = item as { code?: unknown };
-    return typeof code === 'string' ? code : undefined;
-};
-
-/**
  * Response error interceptor for the step-up flow.
  *
  * @param error - Axios error that triggered the interceptor.
@@ -62,7 +44,7 @@ export const onResponseRejectWithStepUp = (
     error: AxiosError<ResponseReject, AxiosResponseErrorBody>
 ) => {
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
-    const code = firstErrorCode(error.response?.data);
+    const { code } = getFirstApiError(error.response?.data) ?? {};
 
     if (
         error.response?.status === 401 &&

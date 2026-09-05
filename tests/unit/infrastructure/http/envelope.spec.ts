@@ -1,13 +1,14 @@
 /**
  * @module
- * Unit tests for the `{ data }` envelope readers.
- *
- * These were covered only incidentally before — through a store spec whose login fixture happened
- * to be unwrapped — so the tolerance branch was exercised by a shape the contract never returns,
- * and nothing said why that branch exists. Each case here names the response shape it stands for.
+ * Unit tests for the envelope readers — the `{ data }` wrapper and the `{ errors }` list. Each
+ * case names the response shape it stands for, rather than an invented one that happens to pass.
  */
 import { describe, expect, it } from 'vitest';
-import { getPayloadFromResponse, getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
+import {
+    getFirstApiError,
+    getPayloadFromResponse,
+    getTokenFromResponse
+} from '@/infrastructure/http/envelope.ts';
 
 describe('getTokenFromResponse', () => {
     it('reads the token out of the wrapped envelope the contract declares', () => {
@@ -15,22 +16,8 @@ describe('getTokenFromResponse', () => {
         expect(getTokenFromResponse({ data: { token: 'jwt' } })).toBe('jwt');
     });
 
-    it('tolerates a bare top-level token', () => {
-        // Deliberate leniency, not a contract shape: no endpoint answers this. It exists so a
-        // proxy or a hand-rolled stub that flattens the envelope still logs someone in.
-        expect(getTokenFromResponse({ token: 'jwt' })).toBe('jwt');
-    });
-
-    it('prefers the top-level token when a response somehow carries both', () => {
-        // The order in the implementation, pinned: whoever flattened the envelope is the one
-        // closer to the caller, so their value wins rather than the nested one.
-        expect(getTokenFromResponse({ token: 'flat', data: { token: 'nested' } })).toBe('flat');
-    });
-
-    it('ignores a non-string top-level token and falls through to the envelope', () => {
-        // `token: null` from a serializer that emits nulls for absent fields must not shadow the
-        // real one — the check is `typeof === 'string'`, not truthiness.
-        expect(getTokenFromResponse({ token: null, data: { token: 'jwt' } })).toBe('jwt');
+    it('ignores an unwrapped body: no endpoint answers one, and a token outside the envelope is not this contract', () => {
+        expect(getTokenFromResponse({ token: 'jwt' })).toBeUndefined();
     });
 
     it('returns undefined for an envelope carrying no token', () => {
@@ -64,5 +51,42 @@ describe('getPayloadFromResponse', () => {
         // Explicit type argument: inferred from `undefined` alone, `T` lands on `void` and the
         // call reads as a void expression rather than as the payload read it is.
         expect(getPayloadFromResponse<{ id: string }>(undefined)).toBeUndefined();
+    });
+});
+
+describe('getFirstApiError', () => {
+    it('reads the first structured error off a reject envelope', () => {
+        // What `onResponseReject` builds, and what `step-up.ts` reads `REAUTH_REQUIRED` from.
+        expect(getFirstApiError({ success: false, errors: [{ code: 'REAUTH_REQUIRED' }] })).toEqual(
+            { code: 'REAUTH_REQUIRED' }
+        );
+    });
+
+    it('carries `details` through untouched', () => {
+        // The 429 branch of the 2FA store reads `details.retryAfter` off exactly this.
+        expect(
+            getFirstApiError({
+                errors: [{ code: 'TWO_FACTOR_RESEND_TOO_SOON', details: { retryAfter: 30 } }]
+            })?.details
+        ).toEqual({ retryAfter: 30 });
+    });
+
+    it('returns undefined for an empty `errors` array', () => {
+        // Legal at the type level — the contract puts no length guarantee on it — so the readers
+        // downstream must never index into it blind.
+        expect(getFirstApiError({ errors: [] })).toBeUndefined();
+    });
+
+    it('returns undefined when `errors` is absent, not an array, or holds a non-object', () => {
+        expect(getFirstApiError({ message: 'nope' })).toBeUndefined();
+        expect(getFirstApiError({ errors: 'nope' })).toBeUndefined();
+        expect(getFirstApiError({ errors: ['nope'] })).toBeUndefined();
+    });
+
+    it('returns undefined for a rejection that is not an object at all', () => {
+        // A thrown string, or a transport failure with nothing in it.
+        expect(getFirstApiError(undefined)).toBeUndefined();
+        expect(getFirstApiError('boom')).toBeUndefined();
+        expect(getFirstApiError(null)).toBeUndefined();
     });
 });

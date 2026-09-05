@@ -1,12 +1,23 @@
 /**
  * @module
- * Type-guard based readers for the `{ data }` envelope the API wraps most payloads in: narrow to a
- * plain object first, then check for the `data` key, so a wrapped and an unwrapped response are
- * both handled by the same call site.
+ * Type-guard based readers for the two envelopes the API answers in: the `{ data }` wrapper around
+ * a payload, and the `{ errors: [...] }` list a rejection carries. Both narrow to a plain object
+ * first and check the key, so nothing here trusts a declared type past the wire.
  *
  * Here rather than in a store because the envelope is a property of the transport: a login
  * response and a product list arrive in the same wrapper, and neither is the session's business.
  */
+
+/**
+ * One structured error as the reject envelope carries it. Both fields stay `unknown`: the shape
+ * is asserted by the generated types, never verified, so the reader narrows and the caller checks.
+ */
+export interface ApiErrorItem {
+    /** Machine-readable reason, e.g. `REAUTH_REQUIRED`. */
+    code?: unknown;
+    /** Per-code extra payload, e.g. `retryAfter` on a rate-limit refusal. */
+    details?: unknown;
+}
 
 /**
  * Narrows any value to a plain keyed object.
@@ -28,21 +39,13 @@ const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
     isObjectRecord(response) && 'data' in response;
 
 /**
- * Reads the access token out of a login or refresh response, wrapped or not.
+ * Reads the access token out of a login or refresh response.
  *
  * @param response - Raw API response.
  * @returns The token, or `undefined` when the response carries none.
  */
-export const getTokenFromResponse = (response?: unknown): string | undefined => {
-    // Top-level `{ token }` is checked first for tolerance only: the contract's
-    // `LoginResponseEnvelope` always wraps it under `data`, same as refresh.
-    if (isObjectRecord(response)) {
-        const maybeToken = response.token;
-        if (typeof maybeToken === 'string') return maybeToken;
-    }
-    if (isWrappedResponse<{ token?: string }>(response)) return response.data?.token;
-    return undefined;
-};
+export const getTokenFromResponse = (response?: unknown): string | undefined =>
+    isWrappedResponse<{ token?: string }>(response) ? response.data?.token : undefined;
 
 /**
  * Extracts the payload from both wrapped (`{ data }`) and direct responses.
@@ -53,3 +56,19 @@ export const getTokenFromResponse = (response?: unknown): string | undefined => 
  */
 export const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
     isWrappedResponse<T>(response) ? response.data : response;
+
+/**
+ * Reads `errors[0]` off a rejection — the envelope `onResponseReject` builds, or an axios error's
+ * own `response.data`. An empty `errors` array is legal at the type level, so nothing here may
+ * assume there is a first entry.
+ *
+ * @param value - The rejected value, or the raw error body; still unknown at this boundary.
+ * @returns The first structured error, or `undefined` when the shape does not match.
+ */
+export const getFirstApiError = (value: unknown): ApiErrorItem | undefined => {
+    if (!isObjectRecord(value)) return undefined;
+    const items = value.errors;
+    if (!Array.isArray(items)) return undefined;
+    const [item] = items as unknown[];
+    return isObjectRecord(item) ? item : undefined;
+};
