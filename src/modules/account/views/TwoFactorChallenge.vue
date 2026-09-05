@@ -12,19 +12,20 @@ export default {
  * visitor who lands here with none (a reload, a bookmarked URL) is bounced back to `Login`.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
-import { useExpiryCountdown } from '@/modules/account/composables/use-expiry-countdown.ts';
-import { useSafeI18n } from '@/modules/account/composables/use-safe-i18n.ts';
-import { methodLabel } from '@/modules/account/domain/two-factor.ts';
+import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
+import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
-const { t, te } = useSafeI18n();
+const { t } = useI18n();
+const { methodLabel } = useMethodLabel();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
@@ -32,28 +33,18 @@ const { challenge, delivery, secondsUntilResend, loading } = storeToRefs(twoFact
 const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
- * No live challenge to answer — a reload, a bookmarked URL, or the challenge was already spent.
- * Back to the start; there is nothing here to recover.
- */
-onMounted(() => {
-    if (!challenge.value) void router.replace(routerLinkI18n({ name: 'Login' }));
-});
-
-/**
  * Counts down the CHALLENGE itself, not a delivered code's own (shorter) expiry — the challenge
  * is what stops accepting a submission at all.
  */
-const challengeExpiresAt = computed(() => challenge.value?.expiresAt);
-const { secondsLeft: secondsUntilChallengeExpires } = useExpiryCountdown(challengeExpiresAt);
+const { secondsLeft: secondsUntilChallengeExpires } = useExpiryCountdown(
+    computed(() => challenge.value?.expiresAt)
+);
 
 /**
- * Which armed method is currently offered. Starts at the challenge's `defaultMethod` — the
+ * Which armed method is currently offered. Set on mount to the challenge's `defaultMethod` — the
  * cheapest one for the visitor — falling back to the first armed method.
  */
 const selectedMethod = ref<string>();
-onMounted(() => {
-    selectedMethod.value = challenge.value?.defaultMethod ?? challenge.value?.methods[0]?.method;
-});
 
 /**
  * The method currently selected, resolved against the challenge's own list.
@@ -68,7 +59,22 @@ const activeMethod = computed(() =>
  */
 const usingBackupCode = ref(false);
 
+/**
+ * The code being typed, submitted against the live challenge.
+ */
 const code = ref('');
+
+/**
+ * Picks the method to offer first, or leaves — no live challenge to answer means a reload, a
+ * bookmarked URL, or a challenge already spent, and there is nothing here to recover.
+ */
+onMounted(() => {
+    if (!challenge.value) {
+        void router.replace(routerLinkI18n({ name: 'Login' }));
+        return;
+    }
+    selectedMethod.value = challenge.value.defaultMethod ?? challenge.value.methods[0]?.method;
+});
 
 /**
  * Sends a fresh code through the selected delivered method.
@@ -97,11 +103,8 @@ const handleSubmit = () =>
         .then(() => undefined)
         .catch((error) => notifyErrorMessages(addMessage, error));
 
-onUnmounted(() => {
-    // A spent or abandoned challenge must not survive to the next visit to this route.
-    if (!challenge.value) return;
-    twoFactor.clearChallenge();
-});
+// A spent or abandoned challenge must not survive to the next visit to this route.
+onUnmounted(twoFactor.clearChallenge);
 </script>
 
 <template>
@@ -119,7 +122,7 @@ onUnmounted(() => {
                 :items="
                     challenge.methods.map((entry) => ({
                         value: entry.method,
-                        title: methodLabel(t, te, entry.method)
+                        title: methodLabel(entry.method)
                     }))
                 "
                 :label="t('two-factor-challenge-page.label-method')"

@@ -94,6 +94,8 @@
         "method-email": "Email",
         "method-totp": "App di autenticazione",
         "sent-to": "Codice inviato a {target}.",
+        "code-expires-in": "Questo codice scade tra {seconds}s.",
+        "code-expired": "Questo codice è scaduto. Inviane uno nuovo.",
         "code-sent": "Codice inviato.",
         "panel-title": "Autenticazione a due fattori",
         "panel-status-on": "Attiva",

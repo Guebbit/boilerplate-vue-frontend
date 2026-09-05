@@ -2,10 +2,11 @@
  * @module
  * Pinia store (Composition API form) for every 2FA surface: the account's armed/available
  * methods, the enrollment machine (setup → confirm → backup codes), and the login-time challenge
- * (send → submit). A `resendAfter` countdown ticks here rather than in each component, since both
- * the login challenge and the enrollment panel need the same server-driven number.
+ * (send → submit). The `resendAfter` cooldown is held here rather than in each component, since
+ * both the login challenge and the enrollment panel need the same server-driven number; the
+ * ticking itself is `useCountdown`'s, the same primitive the views use for their own expiries.
  */
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
@@ -17,8 +18,13 @@ import {
     sendTwoFactorCode as apiSendTwoFactorCode,
     loginTwoFactor as apiLoginTwoFactor
 } from '@api';
-import { getPayloadFromResponse, getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
+import {
+    getFirstApiError,
+    getPayloadFromResponse,
+    getTokenFromResponse
+} from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useCountdown } from '../composables/use-countdown.ts';
 import { useProfileStore } from './profile.ts';
 import type {
     TwoFactorStatus,
@@ -44,20 +50,14 @@ interface LoginChallenge {
 }
 
 /**
- * Reads `errors[0].details.retryAfter` off a `TWO_FACTOR_RESEND_TOO_SOON` rejection, without
- * trusting the shape past the wire — the same duck-typing `checkout-errors.ts` uses. Module-level
- * rather than inside the store: it captures no store state, only the error it is handed.
+ * Reads `details.retryAfter` off a `TWO_FACTOR_RESEND_TOO_SOON` rejection. Module-level rather
+ * than inside the store: it captures no store state, only the error it is handed.
  *
  * @param error - Whatever a `.catch` caught, still unknown at this boundary.
  * @returns The seconds to wait, or `undefined` when this is not that rejection.
  */
 const resendRetryAfter = (error: unknown): number | undefined => {
-    if (typeof error !== 'object' || error === null) return undefined;
-    const items = (error as { errors?: unknown }).errors;
-    if (!Array.isArray(items) || items.length === 0) return undefined;
-    const [item] = items as unknown[];
-    if (typeof item !== 'object' || item === null) return undefined;
-    const { code, details } = item as { code?: unknown; details?: unknown };
+    const { code, details } = getFirstApiError(error) ?? {};
     if (code !== 'TWO_FACTOR_RESEND_TOO_SOON') return undefined;
     const retryAfter = (details as { retryAfter?: unknown } | undefined)?.retryAfter;
     return typeof retryAfter === 'number' ? retryAfter : undefined;
@@ -106,56 +106,15 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
 
     /**
      * Wall-clock time {@link delivery}'s `resendAfter` counts down to, in epoch ms. `undefined`
-     * once the cooldown has elapsed or nothing has been sent yet.
+     * when nothing has been sent yet, or once the cooldown has been cancelled.
      */
     const resendAvailableAt = ref<number>();
-
-    /**
-     * Ticks once a second while a cooldown is running, so {@link secondsUntilResend} recomputes.
-     */
-    const now = ref(Date.now());
-
-    /**
-     * Handle for the ticking interval above; `undefined` while nothing is counting down.
-     */
-    let tickHandle: ReturnType<typeof setInterval> | undefined;
-
-    /**
-     * Starts the one-second tick, idempotently — refreshing `now` immediately, not just once the
-     * first interval fires a second later. Without that, `now` stays frozen at whenever the STORE
-     * was created, which is generally well before whatever just called this, and every read of
-     * {@link secondsUntilResend} in between reads a countdown inflated by that drift.
-     */
-    const startTicking = () => {
-        now.value = Date.now();
-        if (tickHandle) return;
-        tickHandle = setInterval(() => {
-            now.value = Date.now();
-        }, 1000);
-    };
-
-    /**
-     * Stops the tick and drops the target — called once the cooldown reaches zero.
-     */
-    const stopTicking = () => {
-        if (tickHandle) clearInterval(tickHandle);
-        tickHandle = undefined;
-        resendAvailableAt.value = undefined;
-    };
 
     /**
      * Seconds left before a resend is allowed again. Counts down from the SERVER's `resendAfter`
      * — never a client-invented cooldown, so it can never disagree with the rate limiter.
      */
-    const secondsUntilResend = computed(() => {
-        if (!resendAvailableAt.value) return 0;
-        const remaining = Math.ceil((resendAvailableAt.value - now.value) / 1000);
-        if (remaining <= 0) {
-            stopTicking();
-            return 0;
-        }
-        return remaining;
-    });
+    const { secondsLeft: secondsUntilResend } = useCountdown(resendAvailableAt);
 
     /**
      * Records a fresh delivery and (re)starts its cooldown.
@@ -166,7 +125,6 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const trackDelivery = (nextDelivery: TwoFactorDelivery) => {
         delivery.value = nextDelivery;
         resendAvailableAt.value = Date.now() + nextDelivery.resendAfter * 1000;
-        startTicking();
     };
 
     /**
@@ -182,10 +140,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const applyResendCooldown = <T>(promise: Promise<T>): Promise<T> =>
         promise.catch((error: unknown) => {
             const retryAfter = resendRetryAfter(error);
-            if (retryAfter !== undefined) {
-                resendAvailableAt.value = Date.now() + retryAfter * 1000;
-                startTicking();
-            }
+            if (retryAfter !== undefined) resendAvailableAt.value = Date.now() + retryAfter * 1000;
             throw error;
         });
 
@@ -249,7 +204,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
             apiConfirmTwoFactorMethod(method, { code }).then((data) => {
                 confirmed.value = getPayloadFromResponse<TwoFactorConfirmed>(data);
                 setup.value = undefined;
-                stopTicking();
+                resendAvailableAt.value = undefined;
                 return fetchStatus().then(() => confirmed.value);
             })
         );
@@ -280,7 +235,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const clearSetup = () => {
         setup.value = undefined;
         confirmed.value = undefined;
-        stopTicking();
+        resendAvailableAt.value = undefined;
     };
 
     /**
@@ -309,7 +264,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const clearChallenge = () => {
         challenge.value = undefined;
         delivery.value = undefined;
-        stopTicking();
+        resendAvailableAt.value = undefined;
     };
 
     /**
@@ -322,15 +277,14 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const sendLoginCode = (method: string) => {
         if (!challenge.value) return Promise.reject(new Error('NO_ACTIVE_CHALLENGE'));
+        const { challenge: challengeToken } = challenge.value;
         return applyResendCooldown(
             fetchAny(() =>
-                apiSendTwoFactorCode({ challenge: challenge.value!.challenge, method }).then(
-                    (data) => {
-                        const payload = getPayloadFromResponse<TwoFactorDelivery>(data);
-                        if (payload) trackDelivery(payload);
-                        return payload;
-                    }
-                )
+                apiSendTwoFactorCode({ challenge: challengeToken, method }).then((data) => {
+                    const payload = getPayloadFromResponse<TwoFactorDelivery>(data);
+                    if (payload) trackDelivery(payload);
+                    return payload;
+                })
             )
         );
     };

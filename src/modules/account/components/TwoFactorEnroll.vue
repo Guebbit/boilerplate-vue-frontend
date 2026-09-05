@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import QRCode from 'qrcode';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import { useExpiryCountdown } from '@/modules/account/composables/use-expiry-countdown.ts';
+import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 
@@ -75,9 +75,16 @@ watch(
     { immediate: true }
 );
 
-const setupExpiresAt = computed(() => setup.value?.expiresAt);
-const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(setupExpiresAt);
+/**
+ * How long the delivered code stays valid — the server's own `expiresAt`, counted down.
+ */
+const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(
+    computed(() => setup.value?.expiresAt)
+);
 
+/**
+ * The code being typed, proved by {@link handleConfirm}.
+ */
 const code = ref('');
 
 /**
@@ -145,10 +152,10 @@ const handleConfirm = () => {
                 <p v-if="delivery" role="status" class="mb-2 text-sm opacity-70">
                     {{
                         secondsUntilSetupExpires > 0
-                            ? t('two-factor-challenge-page.expires-in', {
+                            ? t('two-factor.code-expires-in', {
                                   seconds: secondsUntilSetupExpires
                               })
-                            : t('two-factor-challenge-page.expired')
+                            : t('two-factor.code-expired')
                     }}
                 </p>
                 <v-btn

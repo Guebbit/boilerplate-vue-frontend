@@ -16,15 +16,16 @@ export default {
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useI18n } from 'vue-i18n';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import { useSafeI18n } from '@/modules/account/composables/use-safe-i18n.ts';
-import { methodLabel } from '@/modules/account/domain/two-factor.ts';
+import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import TwoFactorEnroll from '@/modules/account/components/TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from '@/modules/account/components/TwoFactorBackupCodes.vue';
 
-const { t, te } = useSafeI18n();
+const { t } = useI18n();
+const { methodLabel } = useMethodLabel();
 const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
 const { status, confirmed } = storeToRefs(twoFactor);
@@ -39,19 +40,21 @@ const enrolling = ref<string>();
 /**
  * Opens enrollment for one method, confirming first when it REPLACES an already-armed one — the
  * "lost my phone, still have my session" recovery path, and the one `setupMethod` call this panel
- * makes without a code, so it has to say plainly that it disarms the current one.
+ * makes without a code, so it has to say plainly that it disarms the current one. Whether it
+ * replaces is read off `status` rather than passed in: the two lists below already agree with it,
+ * and a flag at the call site is one more thing that can disagree.
  *
  * @param method - Wire name of the method to enroll or re-enroll.
- * @param alreadyArmed - Whether `method` is already in `status.methods`.
  */
-const openEnroll = (method: string, alreadyArmed: boolean) => {
+const openEnroll = (method: string) => {
+    const alreadyArmed = status.value?.methods.some((row) => row.method === method) ?? false;
     if (!alreadyArmed) {
         enrolling.value = method;
         return;
     }
     void useDialogStore()
         .confirm({
-            message: t('two-factor.confirm-reenroll', { method: methodLabel(t, te, method) }),
+            message: t('two-factor.confirm-reenroll', { method: methodLabel(method) }),
             color: 'error'
         })
         .then((accepted) => {
@@ -64,7 +67,16 @@ const openEnroll = (method: string, alreadyArmed: boolean) => {
  * method, and dropping every method at once. `kind` says which action `submitCode` performs.
  */
 const codePrompt = ref<{ kind: 'remove'; method: string } | { kind: 'disable' }>();
+
+/**
+ * The code being typed into that prompt. Cleared each time the prompt opens.
+ */
 const codeInput = ref('');
+
+/**
+ * Whether the prompt's mutation is in flight — its own flag rather than the store's `loading`,
+ * which every 2FA call shares.
+ */
 const codeSubmitting = ref(false);
 
 /**
@@ -94,7 +106,7 @@ const handleRemove = (method: string) =>
         message:
             (status.value?.methods.length ?? 0) <= 1
                 ? t('two-factor.confirm-remove-last')
-                : t('two-factor.confirm-remove', { method: methodLabel(t, te, method) }),
+                : t('two-factor.confirm-remove', { method: methodLabel(method) }),
         next: { kind: 'remove', method }
     });
 
@@ -123,7 +135,7 @@ const submitCode = () => {
             addMessage(
                 request.kind === 'remove'
                     ? t('two-factor.success-removed', {
-                          method: methodLabel(t, te, request.method)
+                          method: methodLabel(request.method)
                       })
                     : t('two-factor.success-disabled')
             );
@@ -136,12 +148,14 @@ const submitCode = () => {
 };
 
 /**
- * Rows this build can offer enrollment for right now — filtered to methods `TwoFactorEnroll.vue`
- * actually knows how to render (`delivers` boolean covers every method that exists or will:
- * device or delivered, nothing else), so a future method type this build has no UI for yet is
- * simply absent rather than rendering a broken "Add" button.
+ * Rows to offer an "Add" button for — the server's own `enrollable` flag decides, never a check
+ * on the method name, so a method this deployment adds later needs no code change here.
  */
 const availableToEnroll = computed(() => status.value?.available.filter((row) => row.enrollable));
+
+/**
+ * The rest: rows the server refused to offer, rendered as its own `reason` and nothing else.
+ */
 const unavailable = computed(() => status.value?.available.filter((row) => !row.enrollable));
 </script>
 
@@ -168,7 +182,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
             <v-list density="compact">
                 <v-list-item v-for="row in status.methods" :key="row.method">
                     <v-list-item-title>
-                        {{ methodLabel(t, te, row.method) }}
+                        {{ methodLabel(row.method) }}
                         <span v-if="row.target" class="opacity-70">— {{ row.target }}</span>
                     </v-list-item-title>
                     <template #append>
@@ -176,7 +190,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                             variant="text"
                             size="small"
                             :data-test="`two-factor-replace-${row.method}`"
-                            @click="openEnroll(row.method, true)"
+                            @click="openEnroll(row.method)"
                         >
                             {{ t('two-factor.button-add') }}
                         </v-btn>
@@ -186,7 +200,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                             size="small"
                             :aria-label="
                                 t('two-factor.button-remove-named', {
-                                    method: methodLabel(t, te, row.method)
+                                    method: methodLabel(row.method)
                                 })
                             "
                             :data-test="`two-factor-remove-${row.method}`"
@@ -205,13 +219,13 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
             </h3>
             <v-list density="compact">
                 <v-list-item v-for="row in availableToEnroll" :key="row.method">
-                    <v-list-item-title>{{ methodLabel(t, te, row.method) }}</v-list-item-title>
+                    <v-list-item-title>{{ methodLabel(row.method) }}</v-list-item-title>
                     <template #append>
                         <v-btn
                             variant="tonal"
                             size="small"
                             :data-test="`two-factor-add-${row.method}`"
-                            @click="openEnroll(row.method, false)"
+                            @click="openEnroll(row.method)"
                         >
                             {{ t('two-factor.button-add') }}
                         </v-btn>

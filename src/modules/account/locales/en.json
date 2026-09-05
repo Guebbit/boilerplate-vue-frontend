@@ -94,6 +94,8 @@
         "method-email": "Email",
         "method-totp": "Authenticator app",
         "sent-to": "Code sent to {target}.",
+        "code-expires-in": "This code expires in {seconds}s.",
+        "code-expired": "This code has expired. Send a new one.",
         "code-sent": "Code sent.",
         "panel-title": "Two-factor authentication",
         "panel-status-on": "On",
