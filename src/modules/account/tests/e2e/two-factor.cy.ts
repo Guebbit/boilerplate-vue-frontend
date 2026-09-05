@@ -34,12 +34,15 @@ describe('Two-factor authentication', () => {
 
         // ── Send, read, and submit the mailed code ──────────────────────────────────
         cy.get('[data-test=two-factor-challenge-send]').click();
+        // The template is asserted here and only here: it is what pins the login-challenge mail
+        // to the right backend template, not something every code read needs to restate.
         cy.demoEmailTo(E2E_ACCOUNTS.user.email).then((email) => {
             expect(email.template).to.equal('account.two-factor-code');
-            const codeLine = email.lines?.find((line) => line.startsWith('code: '));
-            expect(codeLine, 'a `code:` line in the mailed 2FA variables').to.not.equal(undefined);
-            cy.get('[data-test=two-factor-challenge-code]').type(codeLine!.slice('code: '.length));
         });
+        cy.typeMailedTwoFactorCode(
+            E2E_ACCOUNTS.user.email,
+            '[data-test=two-factor-challenge-code]'
+        );
         cy.get('[data-test=two-factor-challenge-submit]').click();
 
         // ── A real session, not just a page change ──────────────────────────────────
@@ -80,10 +83,7 @@ describe('Two-factor authentication', () => {
         cy.visit('/en/profile');
         cy.get('[data-test=two-factor-add-email]').click();
         cy.get('[data-test=two-factor-enroll]').should('be.visible');
-        cy.demoEmailTo(E2E_ACCOUNTS.user.email).then((sent) => {
-            const codeLine = sent.lines?.find((line) => line.startsWith('code: '));
-            cy.get('[data-test=two-factor-enroll-code]').type(codeLine!.slice('code: '.length));
-        });
+        cy.typeMailedTwoFactorCode(E2E_ACCOUNTS.user.email, '[data-test=two-factor-enroll-code]');
         cy.get('[data-test=two-factor-enroll-confirm]').click();
         cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
 

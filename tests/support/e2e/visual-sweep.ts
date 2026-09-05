@@ -43,10 +43,16 @@ export interface VisualSweepCase {
 type VisualSweepEntry =
     readonly [name: string, route: string, readySelector: string] | VisualSweepCase;
 
+/**
+ * Normalizes either spelling to the object form. `'name' in entry` rather than `Array.isArray`:
+ * the tuple is a readonly tuple, which `Array.isArray` refuses to narrow, and the property check
+ * discriminates the union with no cast.
+ *
+ * @param entry - One `screens` element, in either spelling.
+ * @returns The object form.
+ */
 const toCase = (entry: VisualSweepEntry): VisualSweepCase =>
-    Array.isArray(entry)
-        ? { name: entry[0], route: entry[1], readySelector: entry[2] }
-        : (entry as VisualSweepCase);
+    'name' in entry ? entry : { name: entry[0], route: entry[1], readySelector: entry[2] };
 
 /**
  * @param label - what this group of screens is, for the describe title

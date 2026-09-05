@@ -29,12 +29,10 @@ sweepVisual(
                 cy.skipUnlessDemo();
                 cy.get('[data-test=two-factor-add-email]').click();
                 cy.get('[data-test=two-factor-enroll]').should('be.visible');
-                cy.demoEmailTo(E2E_ACCOUNTS.user.email).then((sent) => {
-                    const codeLine = sent.lines?.find((line) => line.startsWith('code: '));
-                    cy.get('[data-test=two-factor-enroll-code]').type(
-                        codeLine!.slice('code: '.length)
-                    );
-                });
+                cy.typeMailedTwoFactorCode(
+                    E2E_ACCOUNTS.user.email,
+                    '[data-test=two-factor-enroll-code]'
+                );
                 cy.get('[data-test=two-factor-enroll-confirm]').click();
                 cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
             }

@@ -134,6 +134,19 @@ declare global {
             goToCart(): Chainable<void>;
 
             /**
+             * Types the 2FA code the demo backend just mailed into the field a selector names.
+             *
+             * The code is read back out of the demo outbox rather than assumed — every 2FA
+             * surface that collects a mailed code goes through here, so none of them re-derives
+             * how the `code:` line is spelled. Demo-profile only; open the caller's own `it()`
+             * with `cy.skipUnlessDemo()`.
+             *
+             * @param address - the account the code was mailed to
+             * @param selector - the code field to type into, e.g. `[data-test=...]`
+             */
+            typeMailedTwoFactorCode(address: string, selector: string): Chainable<void>;
+
+            /**
              * Arms email as a second factor on the SIGNED-IN account, through the real profile UI
              * — visits `/en/profile`, adds the method, reads the mailed code from the demo outbox,
              * confirms, and clears the one-time backup-codes screen. Demo-profile only, since the
@@ -345,16 +358,24 @@ Cypress.Commands.add('logout', () => {
     cy.get('[role=menu] [data-test=logout]').should('be.visible').click();
 });
 
+/** The prefix the demo outbox spells a mailed 2FA code with, in its `lines` array. */
+const TWO_FACTOR_CODE_PREFIX = 'code: ';
+
+Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: string) => {
+    cy.demoEmailTo(address).then((sent) => {
+        const codeLine = sent.lines?.find((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX));
+        // Asserted rather than asserted-away: without the line there is no code to type, and a
+        // silent `undefined` here would fail later as an unrelated "wrong code".
+        expect(codeLine, 'a `code:` line in the mailed 2FA variables').to.be.a('string');
+        cy.get(selector).type(String(codeLine).slice(TWO_FACTOR_CODE_PREFIX.length));
+    });
+});
+
 Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
     cy.visit('/en/profile');
     cy.get('[data-test=two-factor-add-email]').click();
     cy.get('[data-test=two-factor-enroll]').should('be.visible');
-    // `setup` just mailed the code; read it back rather than assume a fixed value.
-    cy.demoEmailTo(email).then((sent) => {
-        const codeLine = sent.lines?.find((line) => line.startsWith('code: '));
-        expect(codeLine, 'a `code:` line in the mailed 2FA variables').to.not.equal(undefined);
-        cy.get('[data-test=two-factor-enroll-code]').type(codeLine!.slice('code: '.length));
-    });
+    cy.typeMailedTwoFactorCode(email, '[data-test=two-factor-enroll-code]');
     cy.get('[data-test=two-factor-enroll-confirm]').click();
     // First factor: the backup codes screen blocks until it is acknowledged.
     cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
