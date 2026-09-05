@@ -123,31 +123,21 @@ export const useProfileStore = defineStore('accountProfile', () => {
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
+        // Listed field by field rather than spread: a `Partial<User>` can carry `role`,
+        // `verified` or `deletedAt`, and none of those is a user's to send. The two branches
+        // differ only in how the picture travels.
+        const fields = {
+            email: userData.email,
+            username: userData.username,
+            locale: userData.locale,
+            phone: userData.phone,
+            website: userData.website
+        };
         return updateTarget(
             () =>
                 (imageUpload
-                    ? apiUpdateAccountWithMultipart(
-                          {
-                              email: userData.email,
-                              username: userData.username,
-                              locale: userData.locale,
-                              imageUpload,
-                              phone: userData.phone,
-                              website: userData.website
-                          },
-                          options
-                      )
-                    : apiUpdateAccount(
-                          {
-                              email: userData.email,
-                              username: userData.username,
-                              locale: userData.locale,
-                              imageUrl: userData.imageUrl,
-                              phone: userData.phone,
-                              website: userData.website
-                          },
-                          options
-                      )
+                    ? apiUpdateAccountWithMultipart({ ...fields, imageUpload }, options)
+                    : apiUpdateAccount({ ...fields, imageUrl: userData.imageUrl }, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
                     // The projection must not lag the record — same rule as fetchProfile.

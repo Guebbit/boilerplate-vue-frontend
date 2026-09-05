@@ -17,6 +17,9 @@ const { t } = useI18n();
 const reauthDialog = useReauthPromptStore();
 const { mobile } = useDisplay();
 
+/**
+ * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
+ */
 const titleId = useId();
 const messageId = useId();
 
@@ -31,6 +34,9 @@ const password = ref('');
  */
 const errorMessage = ref<string>();
 
+/**
+ * Whether the attempt is in flight — the submit button's spinner.
+ */
 const submitting = ref(false);
 
 /**
@@ -115,11 +121,7 @@ const submit = () => {
             </v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn
-                    variant="text"
-                    data-test="reauth-dialog-cancel"
-                    @click="reauthDialog.rejectStepUp(new Error('REAUTH_CANCELLED'))"
-                >
+                <v-btn variant="text" data-test="reauth-dialog-cancel" @click="isOpen = false">
                     {{ t('generic.cancel') }}
                 </v-btn>
                 <v-btn

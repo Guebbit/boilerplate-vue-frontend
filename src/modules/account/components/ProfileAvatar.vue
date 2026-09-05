@@ -27,8 +27,9 @@ import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
-const { updateProfile } = useProfileStore();
-const { profile } = storeToRefs(useProfileStore());
+const profileStore = useProfileStore();
+const { updateProfile } = profileStore;
+const { profile } = storeToRefs(profileStore);
 
 /**
  * The picked file — cleared back to `undefined` once the upload settles, whichever way, so the
@@ -52,7 +53,14 @@ const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosReques
     })
 );
 
+/**
+ * Whether an upload is in flight.
+ */
 const uploading = ref(false);
+
+/**
+ * Whether the remove call is in flight — the button's own spinner.
+ */
 const removing = ref(false);
 
 /**
