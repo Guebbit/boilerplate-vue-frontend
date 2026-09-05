@@ -18,10 +18,27 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useUsersStore } from '@/modules/users/store';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
-    orvalMutator: vi.fn(() =>
-        Promise.resolve({ data: { id: 'u1', username: 'ada', email: 'ada@example.com' } })
+    // A delete answers with no `data` at all — every OTHER write here answers with the record —
+    // so the method picks which envelope shape this default resolves.
+    orvalMutator: vi.fn((config: { url: string; method: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                config.method?.toUpperCase() === 'DELETE'
+                    ? orvalEnvelope()
+                    : orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+            )
+        )
     )
 }));
 
@@ -49,9 +66,18 @@ const lastFormData = () => {
  * envelope without one no longer represents a real response.
  */
 const respondWithItems = (items: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({
-        data: { items, meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 } }
-    });
+    vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                orvalEnvelope({
+                    items,
+                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+                })
+            )
+        )
+    );
 
 /**
  * The query parameters of the most recent request.
@@ -277,7 +303,12 @@ describe('useUsersStore', () => {
         });
 
         it('fetchUser requests one user and unwraps a single-record envelope', () => {
-            vi.mocked(orvalMutator).mockResolvedValue({ data: USER });
+            vi.mocked(orvalMutator).mockImplementation(
+                (config: { url?: string; method?: string }) =>
+                    Promise.resolve(
+                        parseOrvalFixture(config.method, config.url, orvalEnvelope(USER))
+                    )
+            );
 
             return useUsersStore()
                 .fetchUser('u1')

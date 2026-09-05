@@ -11,6 +11,13 @@ import {
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * Responses per endpoint, consulted by the mocked transport below and reset in `beforeEach`.
@@ -21,7 +28,9 @@ vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
         const response = responses[key];
-        return response instanceof Error ? Promise.reject(response) : Promise.resolve(response);
+        return response instanceof Error
+            ? Promise.reject(response)
+            : Promise.resolve(parseOrvalFixture(config.method, config.url, response));
     })
 }));
 
@@ -29,7 +38,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': { data: { providers: ['google', 'github'] } }
+        'GET /account/oauth/providers': orvalEnvelope({ providers: ['google', 'github'] })
     };
 });
 
@@ -69,7 +78,12 @@ describe('useOAuthProvidersStore', () => {
             }));
 
     it('a payload with no list reads as no providers', () => {
-        responses['GET /account/oauth/providers'] = { data: undefined };
+        // `providers` is required by the real contract, so this exact payload is impossible
+        // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
+        // for that state, same as `addresses.spec.ts`'s book-less case.
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
+        );
         return useOAuthProvidersStore()
             .fetchProviders()
             .then((providers) => {
@@ -86,7 +100,9 @@ describe('useOAuthProvidersStore', () => {
             .then((providers) => {
                 expect(providers).toEqual([]);
                 // Not cached as "no providers, forever" — a transient failure gets another try.
-                responses['GET /account/oauth/providers'] = { data: { providers: ['github'] } };
+                responses['GET /account/oauth/providers'] = orvalEnvelope({
+                    providers: ['github']
+                });
                 return store.fetchProviders();
             })
             .then((providers) => {

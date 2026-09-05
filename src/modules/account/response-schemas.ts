@@ -90,6 +90,11 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'DELETE', pattern: /^\/account\/2fa$/, schema: schemas.DisableTwoFactorResponse },
     {
         method: 'POST',
+        pattern: /^\/account\/2fa\/backup-codes$/,
+        schema: schemas.RegenerateBackupCodesResponse
+    },
+    {
+        method: 'POST',
         pattern: /^\/account\/2fa\/methods\/[^/]+\/setup$/,
         schema: schemas.SetupTwoFactorMethodResponse
     },

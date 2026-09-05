@@ -16,6 +16,13 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * A representative user record, used across the login/session assertions below.
@@ -37,7 +44,7 @@ vi.mock('@/infrastructure/http', () => ({
         // Unknown endpoint resolves to `undefined` rather than throwing: several actions ignore
         // their response body entirely, and forcing every one of them into the table above would
         // make the table a list of the endpoints called rather than of the answers that matter.
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -51,12 +58,12 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': { data: { token: 'jwt-token' } },
-        'GET /account': { data: USER },
-        'POST /account/reset': { data: undefined },
-        'POST /account/reset-confirm': { data: undefined },
-        'POST /account/logout': { data: undefined },
-        'POST /account/logout-all': { data: undefined }
+        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
+        'GET /account': orvalEnvelope(USER),
+        'POST /account/reset': orvalEnvelope(),
+        'POST /account/reset-confirm': orvalEnvelope(),
+        'POST /account/logout': orvalEnvelope(),
+        'POST /account/logout-all': orvalEnvelope()
     };
 });
 
@@ -106,7 +113,7 @@ describe('login', () => {
             }));
 
     it('marks an admin as one, so the admin routes resolve', () => {
-        responses['GET /account'] = { data: { ...USER, admin: true } };
+        responses['GET /account'] = orvalEnvelope({ ...USER, admin: true });
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -116,7 +123,13 @@ describe('login', () => {
     });
 
     it('leaves the session anonymous when the response carries no token', () => {
-        responses['POST /account/login'] = { data: {} };
+        // A `data` with neither shape the union declares is impossible against the real contract
+        // (`orvalMutator` itself would reject it) — this pins `getTokenFromResponse`'s OWN defence
+        // for that state, so it bypasses `parseOrvalFixture` on purpose rather than resolving
+        // through the keyed `responses` table.
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
+        );
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')

@@ -16,6 +16,13 @@ import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * A representative user record, used across the fetch/update/role assertions below.
@@ -34,7 +41,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -48,17 +55,19 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // Wrapped under `data`, as `LoginResponseEnvelope` declares — the tolerant top-level
-        // read in `getTokenFromResponse` exists for robustness, not as a shape to test against.
-        'POST /account/login': { data: { token: 'jwt-token' } },
-        'GET /account': { data: USER },
-        'DELETE /account': { data: undefined },
-        'DELETE /account/delete-confirm': { data: undefined },
-        'PUT /account': { data: { ...USER, username: 'ada2' } },
+        // Wrapped under `data`, as `LoginResponseEnvelope` declares — the only shape
+        // `getTokenFromResponse` reads.
+        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
+        'GET /account': orvalEnvelope(USER),
+        'DELETE /account': orvalEnvelope(),
+        'DELETE /account/delete-confirm': orvalEnvelope(),
+        'PUT /account': orvalEnvelope({ ...USER, username: 'ada2' }),
+        // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
+        'PUT /users/u1': orvalEnvelope({ ...USER, admin: true }),
         // The envelope the real endpoint answers: a fresh access token for this session.
-        'POST /account/password': { data: { token: 'rotated-jwt' } },
-        'POST /account/verify-request': { data: undefined },
-        'POST /account/verify-confirm': { data: undefined }
+        'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
+        'POST /account/verify-request': orvalEnvelope(),
+        'POST /account/verify-confirm': orvalEnvelope()
     };
 });
 
@@ -82,7 +91,12 @@ describe('fetchProfile', () => {
             }));
 
     it('leaves the viewer alone when the response carries no payload', () => {
-        responses['GET /account'] = { data: undefined };
+        // `data` is required by the real contract, so this exact payload is impossible against
+        // it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence for
+        // that state, same as `addresses.spec.ts`'s book-less case.
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: undefined })
+        );
 
         return useProfileStore()
             .fetchProfile(true)
@@ -201,7 +215,7 @@ describe('own role', () => {
                 expect(useSessionStore().isAdmin).toBe(false);
                 // What the server holds AFTER the write. The projection must follow this, not the
                 // value the form happened to send.
-                responses['GET /account'] = { data: { ...USER, admin: true } };
+                responses['GET /account'] = orvalEnvelope({ ...USER, admin: true });
                 return profile.updateOwnRole(true);
             })
             .then(() => {

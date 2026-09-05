@@ -11,13 +11,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -28,11 +35,14 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /wishlist': { data: { items: [{ productId: 'p1' }, { productId: 'p2' }] } },
-        'POST /wishlist': { data: { items: [{ productId: 'p1' }, { productId: 'p2' }] } },
-        'DELETE /wishlist/p1': { data: { items: [{ productId: 'p2' }] } },
-        'POST /wishlist/p1/move-to-cart': { data: { items: [{ productId: 'p2' }] } },
-        'GET /cart': { data: { items: [], summary: { itemsCount: 0, totalQuantity: 0, total: 0 } } }
+        'GET /wishlist': orvalEnvelope({ items: [{ productId: 'p1' }, { productId: 'p2' }] }),
+        'POST /wishlist': orvalEnvelope({ items: [{ productId: 'p1' }, { productId: 'p2' }] }),
+        'DELETE /wishlist/p1': orvalEnvelope({ items: [{ productId: 'p2' }] }),
+        'POST /wishlist/p1/move-to-cart': orvalEnvelope({ items: [{ productId: 'p2' }] }),
+        'GET /cart': orvalEnvelope({
+            items: [],
+            summary: { itemsCount: 0, totalQuantity: 0, total: 0 }
+        })
     };
 });
 

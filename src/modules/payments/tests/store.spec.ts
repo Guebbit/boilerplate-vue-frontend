@@ -11,6 +11,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 const PAYMENT = {
     id: 'payment-1',
@@ -51,7 +58,7 @@ vi.mock('@/infrastructure/http', () => ({
         if (answer === undefined) return rejectWith(404, `Not found: ${key}`);
         if (answer instanceof Error) return rejectWith(500, answer.message);
         if (isDeclined(answer)) return rejectWith(answer.status, answer.message, answer.code);
-        return Promise.resolve(answer);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, answer));
     })
 }));
 
@@ -62,9 +69,9 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments/intent': { data: PAYMENT },
-        'POST /payments/payment-1/confirm': { data: { ...PAYMENT, status: 'succeeded' } },
-        'GET /payments/order/order-1': { data: { ...PAYMENT, status: 'succeeded' } }
+        'POST /payments/intent': orvalEnvelope(PAYMENT),
+        'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
+        'GET /payments/order/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
     };
 });
 

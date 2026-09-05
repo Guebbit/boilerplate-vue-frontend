@@ -11,6 +11,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * A stock movement row, as the ledger renders it.
@@ -36,7 +43,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -50,10 +57,18 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /inventory/movements': { data: { items: [MOVEMENT], meta: { totalItems: 1 } } },
-        'GET /inventory/levels': { data: { items: [LEVEL], meta: { totalItems: 1 } } },
-        'POST /inventory/receipts': { data: LEVEL },
-        'POST /inventory/adjustments': { data: LEVEL }
+        // `totalPages` is required by the real contract alongside `totalItems` — absent from
+        // this fixture before wiring in `parseOrvalFixture` ever proved it against the schema.
+        'GET /inventory/movements': orvalEnvelope({
+            items: [MOVEMENT],
+            meta: { totalItems: 1, totalPages: 1 }
+        }),
+        'GET /inventory/levels': orvalEnvelope({
+            items: [LEVEL],
+            meta: { totalItems: 1, totalPages: 1 }
+        }),
+        'POST /inventory/receipts': orvalEnvelope(LEVEL),
+        'POST /inventory/adjustments': orvalEnvelope(LEVEL)
     };
 });
 
@@ -76,12 +91,10 @@ describe('fetchMovements', () => {
     });
 
     it('keeps the audit honest: totalItems from meta, not the row count', () => {
-        responses['GET /inventory/movements'] = {
-            data: {
-                items: [MOVEMENT],
-                meta: { page: 1, pageSize: 10, totalItems: 41, totalPages: 5 }
-            }
-        };
+        responses['GET /inventory/movements'] = orvalEnvelope({
+            items: [MOVEMENT],
+            meta: { page: 1, pageSize: 10, totalItems: 41, totalPages: 5 }
+        });
         const store = useInventoryStore();
         return store.fetchMovements({ page: 1, pageSize: 10 }).then(() => {
             expect(store.movementsTotal).toBe(41);
@@ -144,7 +157,7 @@ describe('receive', () => {
 
 describe('sweep', () => {
     it('answers how many holds were released and reloads both views', () => {
-        responses['POST /inventory/reservations/sweep'] = { data: { expired: 3 } };
+        responses['POST /inventory/reservations/sweep'] = orvalEnvelope({ expired: 3 });
         const store = useInventoryStore();
         return store.sweep().then((expired) => {
             expect(expired).toBe(3);

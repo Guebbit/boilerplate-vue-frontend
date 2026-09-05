@@ -13,9 +13,20 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
-    orvalMutator: vi.fn(() => Promise.resolve({ data: {} }))
+    orvalMutator: vi.fn((config: { url: string; method: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(config.method, config.url, orvalEnvelope({ addresses: [] }))
+        )
+    )
 }));
 
 /**
@@ -31,7 +42,13 @@ const lastRequest = () => {
  * Makes the transport answer every address endpoint with this book.
  */
 const respondWithBook = (addresses: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({ data: { addresses } });
+    vi
+        .mocked(orvalMutator)
+        .mockImplementation((config: { url?: string; method?: string }) =>
+            Promise.resolve(
+                parseOrvalFixture(config.method, config.url, orvalEnvelope({ addresses }))
+            )
+        );
 
 describe('useAddressesStore', () => {
     const HOME = {
@@ -122,8 +139,12 @@ describe('useAddressesStore', () => {
 
     it('reads a book-less payload as an empty book rather than as undefined', () => {
         // The `?? []` in `readAddressesResponse`. Every consumer does `addresses.map(...)`, so
-        // an undefined here is a render crash rather than an empty state.
-        vi.mocked(orvalMutator).mockResolvedValue({ data: {} });
+        // an undefined here is a render crash rather than an empty state. `addresses` is required
+        // by the real contract, so this specific payload is impossible against it — it bypasses
+        // `parseOrvalFixture` on purpose to pin the store's OWN defence for that state.
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
+        );
         const store = useAddressesStore();
 
         return store.fetchAddresses().then((result) => {

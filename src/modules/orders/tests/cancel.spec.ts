@@ -11,6 +11,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * Fixture order returned by the mocked cancel endpoint.
@@ -40,7 +47,7 @@ vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string; data?: unknown }) => {
         sent.push(config);
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -49,7 +56,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     sent = [];
     responses = {
-        'POST /orders/o1/cancel': { data: ORDER }
+        'POST /orders/o1/cancel': orvalEnvelope(ORDER)
     };
 });
 

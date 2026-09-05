@@ -14,10 +14,23 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
-    orvalMutator: vi.fn(() =>
-        Promise.resolve({ data: { id: 'u1', username: 'ada', email: 'ada@example.com' } })
+    orvalMutator: vi.fn((config: { url: string; method: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+            )
+        )
     )
 }));
 

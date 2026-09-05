@@ -9,6 +9,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * Fixture ticket returned by the mocked `orvalMutator` responses below.
@@ -18,7 +25,10 @@ const TICKET = {
     email: 'curious@example.com',
     subject: 'A question',
     message: 'About the cats',
-    status: 'new'
+    status: 'new',
+    // Required by the real contract — absent from the fixture before wiring in `parseOrvalFixture`
+    // ever proved it against the schema, exactly the class of gap this file's own bug fixes.
+    createdAt: '2026-01-01T00:00:00.000Z'
 };
 
 /**
@@ -29,7 +39,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -43,10 +53,13 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /feedback/contact': { data: TICKET },
-        'GET /feedback': { data: { items: [TICKET] } },
-        'PUT /feedback/f1': { data: { ...TICKET, status: 'resolved' } },
-        'DELETE /feedback/f1': { data: undefined }
+        'POST /feedback/contact': orvalEnvelope(TICKET),
+        'GET /feedback': orvalEnvelope({
+            items: [TICKET],
+            meta: { totalItems: 1, totalPages: 1 }
+        }),
+        'PUT /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
+        'DELETE /feedback/f1': orvalEnvelope()
     };
 });
 

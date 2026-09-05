@@ -8,6 +8,13 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * Responses per endpoint, consulted by the mocked transport below and reset in `beforeEach`.
@@ -17,7 +24,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -31,8 +38,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/sessions': { data: { sessions: [{ id: 's1', current: true }] } },
-        'DELETE /account/sessions/s1': { data: undefined }
+        'GET /account/sessions': orvalEnvelope({ sessions: [{ id: 's1', current: true }] }),
+        'DELETE /account/sessions/s1': orvalEnvelope()
     };
 });
 
@@ -53,7 +60,12 @@ describe('useAccountSessionsStore', () => {
     });
 
     it('a sessions payload without the list reads as no sessions', () => {
-        responses['GET /account/sessions'] = { data: undefined };
+        // `sessions` is required by the real contract, so this exact payload is impossible
+        // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
+        // for that state, same as `addresses.spec.ts`'s book-less case.
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
+        );
         const store = useAccountSessionsStore();
         return store.fetchSessions().then(() => {
             expect(store.sessions).toEqual([]);

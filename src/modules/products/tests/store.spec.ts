@@ -18,10 +18,29 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useProductsStore } from '@/modules/products/store';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { Product } from '@types';
 
+wireModulesIntoCore();
+
 vi.mock('@/infrastructure/http', () => ({
-    orvalMutator: vi.fn(() => Promise.resolve({ data: { id: 'p1', title: 'T', price: 1 } }))
+    // A delete answers with no `data` at all — every OTHER write here answers with the record —
+    // so the method picks which envelope shape this default resolves.
+    orvalMutator: vi.fn((config: { url?: string; method?: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                config.method?.toUpperCase() === 'DELETE'
+                    ? orvalEnvelope()
+                    : orvalEnvelope({ id: 'p1', title: 'T', price: 1 })
+            )
+        )
+    )
 }));
 
 /**
@@ -62,9 +81,18 @@ const PRODUCT: Product = {
  * envelope without one no longer represents a real response.
  */
 const respondWithItems = (items: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({
-        data: { items, meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 } }
-    });
+    vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                orvalEnvelope({
+                    items,
+                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+                })
+            )
+        )
+    );
 
 /**
  * The query parameters of the most recent request.
@@ -209,7 +237,12 @@ describe('useProductsStore', () => {
             const transportResponse = new Promise((resolve) => {
                 release = resolve;
             });
-            vi.mocked(orvalMutator).mockImplementationOnce(() => transportResponse);
+            vi.mocked(orvalMutator).mockImplementationOnce(
+                (config: { url?: string; method?: string }) =>
+                    transportResponse.then((data) =>
+                        parseOrvalFixture(config.method, config.url, data)
+                    )
+            );
 
             const pending = store.updateProduct('p1', {
                 title: 'Renamed',
@@ -228,7 +261,7 @@ describe('useProductsStore', () => {
                 })
                 .then(() => {
                     expect(store.products.p1).not.toHaveProperty('imageUpload');
-                    release({ data: { ...PRODUCT, title: 'Renamed' } });
+                    release(orvalEnvelope({ ...PRODUCT, title: 'Renamed' }));
                     return pending;
                 })
                 .then(() => {
@@ -375,7 +408,12 @@ describe('useProductsStore', () => {
 
         describe('fetchProduct', () => {
             it('requests one product and unwraps a single-record envelope', () => {
-                vi.mocked(orvalMutator).mockResolvedValue({ data: PRODUCT });
+                vi.mocked(orvalMutator).mockImplementation(
+                    (config: { url?: string; method?: string }) =>
+                        Promise.resolve(
+                            parseOrvalFixture(config.method, config.url, orvalEnvelope(PRODUCT))
+                        )
+                );
 
                 return useProductsStore()
                     .fetchProduct('p1')
@@ -442,7 +480,12 @@ describe('useProductsStore', () => {
             };
 
             it('parks the facets on the store and resolves with them', () => {
-                vi.mocked(orvalMutator).mockResolvedValue({ data: FACETS });
+                vi.mocked(orvalMutator).mockImplementation(
+                    (config: { url?: string; method?: string }) =>
+                        Promise.resolve(
+                            parseOrvalFixture(config.method, config.url, orvalEnvelope(FACETS))
+                        )
+                );
                 const store = useProductsStore();
 
                 return store.fetchFacets().then((result) => {

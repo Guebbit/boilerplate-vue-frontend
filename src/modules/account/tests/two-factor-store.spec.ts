@@ -11,6 +11,13 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * A rejection marker: an entry shaped this way makes the mocked transport reject instead of
@@ -29,17 +36,22 @@ vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
         const entry = responses[key];
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        return isRejectWith(entry) ? Promise.reject(entry.__reject) : Promise.resolve(entry);
+        return isRejectWith(entry)
+            ? // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
+              Promise.reject(entry.__reject)
+            : Promise.resolve(parseOrvalFixture(config.method, config.url, entry));
     })
 }));
 
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 
-const STATUS_OFF = {
-    data: { enabled: false, methods: [], available: [], backupCodesRemaining: 0 }
-};
+const STATUS_OFF = orvalEnvelope({
+    enabled: false,
+    methods: [],
+    available: [],
+    backupCodesRemaining: 0
+});
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -58,14 +70,12 @@ describe('fetchStatus', () => {
 
 describe('the enrollment machine', () => {
     it('a device method (no delivery) populates setup with the secret and otpauth URI', () => {
-        responses['POST /account/2fa/methods/totp/setup'] = {
-            data: {
-                method: 'totp',
-                delivers: false,
-                secret: 'JBSWY3DPEHPK3PXP',
-                otpauthUri: 'otpauth://totp/x'
-            }
-        };
+        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+            method: 'totp',
+            delivers: false,
+            secret: 'JBSWY3DPEHPK3PXP',
+            otpauthUri: 'otpauth://totp/x'
+        });
         const store = useTwoFactorStore();
         return store.setupMethod('totp').then(() => {
             expect(store.setup).toMatchObject({ delivers: false, secret: 'JBSWY3DPEHPK3PXP' });
@@ -74,15 +84,13 @@ describe('the enrollment machine', () => {
     });
 
     it('a delivered method populates setup AND starts the resend countdown', () => {
-        responses['POST /account/2fa/methods/email/setup'] = {
-            data: {
-                method: 'email',
-                delivers: true,
-                sentTo: 'a***a@example.com',
-                resendAfter: 30,
-                expiresAt: '2026-01-01T00:10:00.000Z'
-            }
-        };
+        responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
+            method: 'email',
+            delivers: true,
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
         const store = useTwoFactorStore();
         return store.setupMethod('email').then(() => {
             expect(store.setup).toMatchObject({ delivers: true, sentTo: 'a***a@example.com' });
@@ -92,17 +100,17 @@ describe('the enrollment machine', () => {
     });
 
     it('confirming the FIRST factor returns backup codes and refreshes status', () => {
-        responses['POST /account/2fa/methods/email/confirm'] = {
-            data: { method: 'email', backupCodes: ['aaa-111', 'bbb-222'], backupCodesRemaining: 2 }
-        };
-        responses['GET /account/2fa'] = {
-            data: {
-                enabled: true,
-                methods: [{ method: 'email', delivers: true, target: 'a***a@example.com' }],
-                available: [],
-                backupCodesRemaining: 2
-            }
-        };
+        responses['POST /account/2fa/methods/email/confirm'] = orvalEnvelope({
+            method: 'email',
+            backupCodes: ['aaa-111', 'bbb-222'],
+            backupCodesRemaining: 2
+        });
+        responses['GET /account/2fa'] = orvalEnvelope({
+            enabled: true,
+            methods: [{ method: 'email', delivers: true, target: 'a***a@example.com' }],
+            available: [],
+            backupCodesRemaining: 2
+        });
         const store = useTwoFactorStore();
         return store.confirmMethod('email', '123456').then(() => {
             expect(store.confirmed?.backupCodes).toEqual(['aaa-111', 'bbb-222']);
@@ -112,9 +120,10 @@ describe('the enrollment machine', () => {
     });
 
     it('confirming a SECOND factor returns no backup codes — never presented as "no codes exist"', () => {
-        responses['POST /account/2fa/methods/totp/confirm'] = {
-            data: { method: 'totp', backupCodesRemaining: 7 }
-        };
+        responses['POST /account/2fa/methods/totp/confirm'] = orvalEnvelope({
+            method: 'totp',
+            backupCodesRemaining: 7
+        });
         const store = useTwoFactorStore();
         return store.confirmMethod('totp', '123456').then((confirmed) => {
             expect(confirmed?.backupCodes).toBeUndefined();
@@ -123,9 +132,10 @@ describe('the enrollment machine', () => {
     });
 
     it('clearSetup drops the pending enrollment and any confirmed result', () => {
-        responses['POST /account/2fa/methods/totp/confirm'] = {
-            data: { method: 'totp', backupCodesRemaining: 7 }
-        };
+        responses['POST /account/2fa/methods/totp/confirm'] = orvalEnvelope({
+            method: 'totp',
+            backupCodesRemaining: 7
+        });
         const store = useTwoFactorStore();
         return store.confirmMethod('totp', '123456').then(() => {
             store.clearSetup();
@@ -177,8 +187,8 @@ describe('the enrollment machine', () => {
     });
 
     it('removeMethod and disableAll each refetch status afterward', () => {
-        responses['DELETE /account/2fa/methods/email'] = { data: undefined };
-        responses['DELETE /account/2fa'] = { data: undefined };
+        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['DELETE /account/2fa'] = orvalEnvelope();
         const store = useTwoFactorStore();
         return store
             .removeMethod('email', '123456')
@@ -199,15 +209,13 @@ describe('the resend countdown', () => {
     afterEach(() => vi.useRealTimers());
 
     it('ticks down to zero and stops counting', () => {
-        responses['POST /account/2fa/methods/email/setup'] = {
-            data: {
-                method: 'email',
-                delivers: true,
-                sentTo: 'a***a@example.com',
-                resendAfter: 2,
-                expiresAt: '2026-01-01T00:10:00.000Z'
-            }
-        };
+        responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
+            method: 'email',
+            delivers: true,
+            sentTo: 'a***a@example.com',
+            resendAfter: 2,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
         const store = useTwoFactorStore();
         return store.setupMethod('email').then(() => {
             expect(store.secondsUntilResend).toBe(2);
@@ -229,14 +237,12 @@ describe('the login-time challenge', () => {
     it('sendLoginCode delivers a code against the live challenge and tracks its resend cooldown', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
-        responses['POST /account/login/2fa/send'] = {
-            data: {
-                method: 'email',
-                sentTo: 'a***a@example.com',
-                resendAfter: 15,
-                expiresAt: '2026-01-01T00:05:00.000Z'
-            }
-        };
+        responses['POST /account/login/2fa/send'] = orvalEnvelope({
+            method: 'email',
+            sentTo: 'a***a@example.com',
+            resendAfter: 15,
+            expiresAt: '2026-01-01T00:05:00.000Z'
+        });
         return store.sendLoginCode('email').then(() => {
             const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
                 url: string;
@@ -274,8 +280,13 @@ describe('the login-time challenge', () => {
     it('submitLoginCode adopts the session — token, viewer, isAuth — and clears the challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
-        responses['POST /account/login/2fa'] = { data: { token: 'stepped-up-jwt' } };
-        responses['GET /account'] = { data: { id: 'u1', email: 'ada@example.com', admin: false } };
+        responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
+        responses['GET /account'] = orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            admin: false
+        });
 
         return store.submitLoginCode('123456').then(() => {
             const session = useSessionStore();
@@ -288,8 +299,13 @@ describe('the login-time challenge', () => {
     it('a backup code takes the same path — the server tells the two apart, not this store', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
-        responses['POST /account/login/2fa'] = { data: { token: 'stepped-up-jwt' } };
-        responses['GET /account'] = { data: { id: 'u1', email: 'ada@example.com', admin: false } };
+        responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
+        responses['GET /account'] = orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            admin: false
+        });
 
         return store.submitLoginCode('backup-code-xyz').then(() => {
             const last = vi

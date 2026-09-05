@@ -11,6 +11,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useOrderRefund } from '@/modules/payments';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 const payment = (refund: boolean) => ({
     id: 'p1',
@@ -38,7 +45,7 @@ vi.mock('@/infrastructure/http', () => ({
                 message: `no stub for ${key}`,
                 errors: [{ code: 'NOT_FOUND', message: `no stub for ${key}` }]
             });
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -46,8 +53,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /payments/order/o1': { data: payment(true) },
-        'POST /payments/order/o1/refund': { data: payment(false) }
+        'GET /payments/order/o1': orvalEnvelope(payment(true)),
+        'POST /payments/order/o1/refund': orvalEnvelope(payment(false))
     };
 });
 

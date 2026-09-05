@@ -11,6 +11,13 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
 
@@ -19,7 +26,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -42,8 +49,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account': { data: USER },
-        'PUT /account': { data: { ...USER, imageUrl: undefined } }
+        'GET /account': orvalEnvelope(USER),
+        'PUT /account': orvalEnvelope({ ...USER, imageUrl: undefined })
     };
 });
 

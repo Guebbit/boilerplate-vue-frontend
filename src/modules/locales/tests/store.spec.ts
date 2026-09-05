@@ -11,6 +11,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * A `GET /locales` row: the merged manifest shape the board renders.
@@ -60,7 +67,7 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(responses[key]);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));
 
@@ -81,29 +88,32 @@ beforeEach(() => {
     // table-driven one back for whatever runs after it.
     vi.resetAllMocks();
     responses = {
-        'GET /locales': {
-            data: { locales: [CAPABILITY], default: 'en', fallback: 'en' }
-        },
-        'POST /locales': { data: LANGUAGE },
-        'PUT /locales/es': { data: LANGUAGE },
-        'GET /locales/tenants': {
-            data: {
-                tenants: [
-                    { id: 'demo-be', label: 'API', kind: 'backend' },
-                    { id: 'demo-fe', label: 'Frontend', kind: 'frontend' }
-                ]
-            }
-        },
-        'DELETE /locales/es': { data: { message: 'Deleted' } },
-        'POST /locales/es/entries': { data: ENTRY },
-        'PUT /locales/es/entries/locale-entry-1': { data: { ...ENTRY, value: 'Cercar' } },
-        'DELETE /locales/es/entries/locale-entry-1': { data: { message: 'Deleted' } },
-        'PATCH /locales/es/entries': {
-            data: { created: 2, updated: 1, removed: 0, revision: 4 }
-        },
-        'PUT /locales/es/entries': {
-            data: { created: 2, updated: 1, removed: 5, revision: 4 }
-        }
+        'GET /locales': orvalEnvelope({ locales: [CAPABILITY], default: 'en', fallback: 'en' }),
+        'POST /locales': orvalEnvelope(LANGUAGE),
+        'PUT /locales/es': orvalEnvelope(LANGUAGE),
+        'GET /locales/tenants': orvalEnvelope({
+            tenants: [
+                { id: 'demo-be', label: 'API', kind: 'backend' },
+                { id: 'demo-fe', label: 'Frontend', kind: 'frontend' }
+            ]
+        }),
+        // Bodyless per the real contract — no `data` at all — unlike the write endpoints above.
+        'DELETE /locales/es': orvalEnvelope(),
+        'POST /locales/es/entries': orvalEnvelope(ENTRY),
+        'PUT /locales/es/entries/locale-entry-1': orvalEnvelope({ ...ENTRY, value: 'Cercar' }),
+        'DELETE /locales/es/entries/locale-entry-1': orvalEnvelope(),
+        'PATCH /locales/es/entries': orvalEnvelope({
+            created: 2,
+            updated: 1,
+            removed: 0,
+            revision: 4
+        }),
+        'PUT /locales/es/entries': orvalEnvelope({
+            created: 2,
+            updated: 1,
+            removed: 5,
+            revision: 4
+        })
     };
 });
 
@@ -202,22 +212,24 @@ describe('entry writes', () => {
 
 describe('fetchAllEntries', () => {
     it('pages to completion rather than trusting one response to be everything', () => {
-        const pageOne = {
-            data: {
-                items: [ENTRY],
-                meta: { page: 1, pageSize: 100, totalItems: 2, totalPages: 2 }
-            }
-        };
-        const pageTwo = {
-            data: {
-                items: [{ ...ENTRY, id: 'locale-entry-2', key: 'generic.cancel' }],
-                meta: { page: 2, pageSize: 100, totalItems: 2, totalPages: 2 }
-            }
-        };
+        const pageOne = orvalEnvelope({
+            items: [ENTRY],
+            meta: { page: 1, pageSize: 100, totalItems: 2, totalPages: 2 }
+        });
+        const pageTwo = orvalEnvelope({
+            items: [{ ...ENTRY, id: 'locale-entry-2', key: 'generic.cancel' }],
+            meta: { page: 2, pageSize: 100, totalItems: 2, totalPages: 2 }
+        });
         let served = 0;
         responses['GET /locales/es/entries'] = undefined;
-        vi.mocked(orvalMutator).mockImplementation(() =>
-            Promise.resolve((served++ === 0 ? pageOne : pageTwo) as never)
+        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+            Promise.resolve(
+                parseOrvalFixture(
+                    config.method,
+                    config.url,
+                    served++ === 0 ? pageOne : pageTwo
+                ) as never
+            )
         );
         const store = useLocalesStore();
         return store.fetchAllEntries('es').then((entries) => {
@@ -229,7 +241,10 @@ describe('fetchAllEntries', () => {
 describe('entry search and removal', () => {
     it('searches the language the filters name, through the toolkit search cache', () => {
         const store = useLocalesStore();
-        responses['GET /locales/es/entries'] = { data: { items: [ENTRY] } };
+        responses['GET /locales/es/entries'] = orvalEnvelope({
+            items: [ENTRY],
+            meta: { totalItems: 1, totalPages: 1 }
+        });
         store.filters = { tag: 'es', text: 'bus', tenant: 'demo-fe' };
         return store
             .watchSearchEntries()
@@ -241,7 +256,10 @@ describe('entry search and removal', () => {
 
     it("searches with an empty tag when the filters name none — the `?? ''` arm", () => {
         const store = useLocalesStore();
-        responses['GET /locales//entries'] = { data: { items: [] } };
+        responses['GET /locales//entries'] = orvalEnvelope({
+            items: [],
+            meta: { totalItems: 0, totalPages: 0 }
+        });
         store.filters = { text: 'bus' };
         return store
             .watchSearchEntries()
@@ -261,9 +279,10 @@ describe('entry search and removal', () => {
 
 describe('fetchApiDictionary', () => {
     it('flattens the deployed tree into dotted keys, the shape the board cells read', () => {
-        responses['GET /locales/es'] = {
-            data: { locale: 'es', messages: { generic: { search: 'Buscar', list: ['a', 'b'] } } }
-        };
+        responses['GET /locales/es'] = orvalEnvelope({
+            locale: 'es',
+            messages: { generic: { search: 'Buscar', list: ['a', 'b'] } }
+        });
         return useLocalesStore()
             .fetchApiDictionary('es')
             .then((dictionary) => {
@@ -288,12 +307,10 @@ describe('fetchApiDictionary', () => {
 
 describe('entriesPageTotal', () => {
     it("is the server's page count for THIS search, not the local cache divided by page size", () => {
-        responses['GET /locales/fr/entries'] = {
-            data: {
-                items: [{ ...ENTRY, id: 'fr-1', locale: 'fr' }],
-                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
-            }
-        };
+        responses['GET /locales/fr/entries'] = orvalEnvelope({
+            items: [{ ...ENTRY, id: 'fr-1', locale: 'fr' }],
+            meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+        });
         const store = useLocalesStore();
         store.filters = { tag: 'fr' };
         return store

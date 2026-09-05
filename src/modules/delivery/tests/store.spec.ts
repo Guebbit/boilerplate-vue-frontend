@@ -10,6 +10,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import {
+    orvalEnvelope,
+    parseOrvalFixture
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+wireModulesIntoCore();
 
 /**
  * Fixture methods: one with a free-above threshold, one flat-rate.
@@ -37,7 +44,7 @@ vi.mock('@/infrastructure/http', () => ({
         const answer = responses[key];
         if (answer === undefined) return rejectWith(404, `Not found: ${key}`);
         if (answer instanceof Error) return rejectWith(500, answer.message);
-        return Promise.resolve(answer);
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, answer));
     })
 }));
 
@@ -45,11 +52,14 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /delivery/methods': { data: { methods: METHODS } },
-        'GET /delivery/order/order-1': {
-            data: { id: 's1', orderId: 'order-1', trackingCode: 'TRK-1', status: 'shipped' }
-        },
-        'POST /delivery/advance': { data: { advanced: 2 } }
+        'GET /delivery/methods': orvalEnvelope({ methods: METHODS }),
+        'GET /delivery/order/order-1': orvalEnvelope({
+            id: 's1',
+            orderId: 'order-1',
+            trackingCode: 'TRK-1',
+            status: 'shipped'
+        }),
+        'POST /delivery/advance': orvalEnvelope({ advanced: 2 })
     };
 });
 

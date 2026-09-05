@@ -108,6 +108,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/account/login/2fa', 'LoginTwoFactorResponse'],
     ['GET', '/account/2fa', 'GetTwoFactorStatusResponse'],
     ['DELETE', '/account/2fa', 'DisableTwoFactorResponse'],
+    ['POST', '/account/2fa/backup-codes', 'RegenerateBackupCodesResponse'],
     ['POST', `/account/2fa/methods/${ID}/setup`, 'SetupTwoFactorMethodResponse'],
     ['POST', `/account/2fa/methods/${ID}/confirm`, 'ConfirmTwoFactorMethodResponse'],
     ['DELETE', `/account/2fa/methods/${ID}`, 'RemoveTwoFactorMethodResponse'],
