@@ -106,14 +106,11 @@ describe('useObservabilityStore', () => {
      * crash inside the error handler.
      */
     describe('with Faro disabled', () => {
-        it('identifyUser still reaches Umami', () => {
+        it('identifyUser reaches Umami with the id only — never the email', () => {
             const tracker = installUmamiTracker();
             useObservabilityStore().identifyUser('u1', 'ada@example.com');
 
-            expect(tracker.identify).toHaveBeenCalledWith({
-                id: 'u1',
-                email: 'ada@example.com'
-            });
+            expect(tracker.identify).toHaveBeenCalledWith({ id: 'u1' });
         });
 
         it('identifyUser tolerates a tracker without identify (pre-2.11 Umami)', () => {

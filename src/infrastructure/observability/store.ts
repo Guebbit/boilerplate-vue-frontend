@@ -112,11 +112,13 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Identifies the current user for error/session context in Faro, and in
-     * Umami when its (v2.11+) `identify` is available.
+     * Identifies the current user for error/session context in Faro, and — id only — in Umami
+     * when its (v2.11+) `identify` is available.
      *
      * @param userId - Stable user identifier.
-     * @param email - Optional email, attached for easier triage.
+     * @param email - Optional email, attached to Faro for easier triage. Never forwarded to
+     *  Umami: it markets itself as privacy-respecting, cookieless analytics, and handing it an
+     *  email would contradict that on this deployment's behalf.
      */
     const identifyUser = (userId: string, email?: string): void => {
         if (faroReady.value && faro) {
@@ -124,7 +126,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         }
 
         // Umami has a lightweight identify (v2.11+); best-effort.
-        globalThis.umami?.identify?.({ id: userId, email });
+        globalThis.umami?.identify?.({ id: userId });
     };
 
     /**

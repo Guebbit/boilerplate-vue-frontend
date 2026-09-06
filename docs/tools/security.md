@@ -89,7 +89,7 @@ Every refusal notifies the visitor — silently bouncing someone reads as a brok
 - **Bearer transport**: access token is not auto-attached by the browser; every protected request must explicitly include it.
 - **HttpOnly refresh cookie**: the refresh token is inaccessible to JavaScript, reducing XSS exposure.
 - **`sameSite=lax`** (set by backend): reduces cross-site cookie sending in common CSRF scenarios.
-- **No PII in analytics**: `useObservabilityStore()` rules forbid sending email, name, or personal data in Umami events.
+- **No PII in Umami**: `identifyUser()` passes the email to Faro (this deployment's own error/session tool, for triage) but strips it before calling Umami's `identify()` — Umami markets itself as privacy-respecting, cookieless analytics, and gets the user id only.
 
 ## External references
 

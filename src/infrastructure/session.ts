@@ -59,6 +59,17 @@ const setCookie = (value: string) => {
 };
 
 /**
+ * `; Secure` over HTTPS, or nothing over plain HTTP.
+ *
+ * Neither `isAuth` nor `rememberMe` carries a credential, but there is no reason to leave them
+ * the one cookie pair this app sends over an unencrypted connection when it does not have to.
+ * Checked against `location.protocol` rather than a build-mode flag: a `Secure` cookie is
+ * silently DROPPED by the browser on plain HTTP, which would break the local dev server if this
+ * were on by default instead of tracking the scheme actually in use.
+ */
+const secureAttribute = () => (location.protocol === 'https:' ? '; Secure' : '');
+
+/**
  * Store instance: see the module doc above for the `isAuth`/`isAdmin` derivation rule.
  */
 export const useSessionStore = defineStore('session', () => {
@@ -104,18 +115,19 @@ export const useSessionStore = defineStore('session', () => {
      */
     const setAccessToken = (token?: string, remember?: boolean) => {
         accessToken.value = token;
+        const secure = secureAttribute();
         if (remember !== undefined)
             setCookie(
                 remember
-                    ? `rememberMe=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax`
-                    : 'rememberMe=; path=/; max-age=0; SameSite=Lax'
+                    ? `rememberMe=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
+                    : `rememberMe=; path=/; max-age=0; SameSite=Lax${secure}`
             );
         if (!token) return;
         const remembered = remember ?? Boolean(getCookie('rememberMe'));
         setCookie(
             remembered
-                ? `isAuth=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax`
-                : 'isAuth=true; path=/; SameSite=Lax'
+                ? `isAuth=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
+                : `isAuth=true; path=/; SameSite=Lax${secure}`
         );
     };
 
@@ -202,8 +214,9 @@ export const useSessionStore = defineStore('session', () => {
         accessToken.value = undefined;
         viewer.value = undefined;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
-        setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
-        setCookie('rememberMe=; path=/; max-age=0; SameSite=Lax');
+        const secure = secureAttribute();
+        setCookie(`isAuth=; path=/; max-age=0; SameSite=Lax${secure}`);
+        setCookie(`rememberMe=; path=/; max-age=0; SameSite=Lax${secure}`);
     };
 
     /**

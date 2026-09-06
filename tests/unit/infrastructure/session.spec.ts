@@ -8,7 +8,7 @@
  * The store is real — `isAuth` derives from token AND viewer, and stubbing it would test the stub.
  * Only `@api` is mocked, at the network boundary.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 const updateAccountMock = vi.fn();
@@ -139,6 +139,50 @@ describe('setAccessToken — the isAuth/rememberMe cookie pair', () => {
         store.setAccessToken('token-again', false);
 
         expect(cookieJar().rememberMe).toBeUndefined();
+    });
+
+    /*
+     * jsdom's own cookie jar enforces the Secure flag against the document's actual (http)
+     * origin, so a raw `document.cookie` read cannot tell us whether the app asked for it — it
+     * would just look absent either way. Spying on the underlying setter, forwarded to the real
+     * one so the jar itself is unaffected, is what lets these two see the literal string.
+     */
+    describe('the Secure attribute follows the page scheme', () => {
+        const nativeSetter = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')!.set!;
+        let setterSpy: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            setterSpy = vi.spyOn(Document.prototype, 'cookie', 'set').mockImplementation(function (
+                this: Document,
+                value: string
+            ) {
+                nativeSetter.call(this, value);
+            });
+        });
+
+        afterEach(() => {
+            setterSpy.mockRestore();
+            vi.unstubAllGlobals();
+        });
+
+        const cookiesWritten = (): string[] =>
+            setterSpy.mock.calls.map(([value]: [string]) => value);
+
+        it('is appended over https', () => {
+            vi.stubGlobal('location', { protocol: 'https:' });
+
+            useSessionStore().setAccessToken('token', true);
+
+            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(true);
+        });
+
+        it('is absent over plain http', () => {
+            vi.stubGlobal('location', { protocol: 'http:' });
+
+            useSessionStore().setAccessToken('token', true);
+
+            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(false);
+        });
     });
 });
 
