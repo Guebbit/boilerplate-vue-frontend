@@ -20,13 +20,10 @@ tests_output/
 # mutation testing (stryker sandbox + html report)
 .stryker-tmp
 
-# Mutation reports are generated, EXCEPT the incremental cache, which is committed on purpose:
-# Stryker reuses it to re-test only what changed, and CI can only read it if it is in the repo.
-# `reports/*` and not `reports/`: git does not descend into an excluded DIRECTORY, so the negation
-# below is silently dead if this loses its `*` — the file stops being committed and runs quietly
-# go back to full length with nothing reporting an error.
+# Mutation reports are generated, the incremental cache included. It is a CACHE and nothing
+# automated reads it: `mutation.yml` passes `--force` to rebuild from scratch, and the PR run that
+# would consume it does not exist. A local run still keeps and reuses its own copy on disk.
 reports/*
-!reports/stryker-incremental.json
 
 # vitepress
 docs/.vitepress/dist
