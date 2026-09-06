@@ -123,7 +123,7 @@ export const useUsersStore = defineStore('users', () => {
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             optimisticPatch: ({ imageUpload: _uploaded, ...userData } = {}) => userData
         },
-        { getLoading, setLoading }
+        { loadingKey: 'users', getLoading, setLoading }
     );
 
     /**

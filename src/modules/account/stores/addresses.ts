@@ -28,7 +28,11 @@ import type {
  */
 export const useAddressesStore = defineStore('accountAddresses', () => {
     const { getLoading, setLoading } = useCoreStore();
-    const { loading, fetchAny } = useStructureRestApi<Address, string>({ getLoading, setLoading });
+    const { loading, fetchAny } = useStructureRestApi<Address, string>({
+        loadingKey: 'accountAddresses',
+        getLoading,
+        setLoading
+    });
 
     /**
      * The visitor's address book. Whole-list state, for the same reason `sessions` is in its own

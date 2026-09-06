@@ -29,7 +29,7 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const profileStore = useProfileStore();
 const { updateProfile } = profileStore;
-const { profile } = storeToRefs(profileStore);
+const { profile, uploadingAvatar, removingAvatar } = storeToRefs(profileStore);
 
 /**
  * The picked file — cleared back to `undefined` once the upload settles, whichever way, so the
@@ -54,21 +54,11 @@ const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosReques
 );
 
 /**
- * Whether an upload is in flight.
- */
-const uploading = ref(false);
-
-/**
- * Whether the remove call is in flight — the button's own spinner.
- */
-const removing = ref(false);
-
-/**
- * Whether either action is in flight — both the picker and the remove button are disabled while
- * this is true, so a pick mid-remove (or a second pick mid-upload) cannot fire a second
+ * Whether either avatar action is in flight — both the picker and the remove button are disabled
+ * while this is true, so a pick mid-remove (or a second pick mid-upload) cannot fire a second
  * concurrent `PUT /account` racing the first one's response and refetch.
  */
-const busy = computed(() => uploading.value || removing.value);
+const busy = computed(() => uploadingAvatar.value || removingAvatar.value);
 
 /**
  * Uploads the freshly picked file, validating it first — client-side, for the message rather than
@@ -87,13 +77,11 @@ watch(pickedFile, (file) => {
         return;
     }
 
-    uploading.value = true;
     track((options) => updateProfile({ imageUpload: file }, options), { enabled: true })
         .then(() => addMessage(t('profile-page.avatar-success-update')))
         .catch((error) => notifyErrorMessages(addMessage, error))
         .finally(() => {
             pickedFile.value = undefined;
-            uploading.value = false;
         });
 });
 
@@ -108,13 +96,9 @@ const handleRemove = () =>
         .confirm({ message: t('profile-page.avatar-confirm-remove'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
-            removing.value = true;
             return updateProfile({ imageUrl: '' })
                 .then(() => addMessage(t('profile-page.avatar-success-remove')))
-                .catch((error) => notifyErrorMessages(addMessage, error))
-                .finally(() => {
-                    removing.value = false;
-                });
+                .catch((error) => notifyErrorMessages(addMessage, error));
         });
 </script>
 
@@ -138,7 +122,7 @@ const handleRemove = () =>
             size="small"
             class="mt-2"
             :disabled="busy"
-            :loading="removing"
+            :loading="removingAvatar"
             data-test="profile-avatar-remove"
             @click="handleRemove"
         >

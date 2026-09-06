@@ -6,7 +6,7 @@
  * both the login challenge and the enrollment panel need the same server-driven number; the
  * ticking itself is `useCountdown`'s, the same primitive the views use for their own expiries.
  */
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
@@ -74,8 +74,12 @@ const resendRetryAfter = (error: unknown): number | undefined => {
  * the server rather than patch state locally.
  */
 export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
-    const { getLoading, setLoading } = useCoreStore();
-    const { loading, fetchAny } = useStructureRestApi({ getLoading, setLoading });
+    const { getLoading, setLoading, isLoading } = useCoreStore();
+    const { loadingKey, loading, fetchAny } = useStructureRestApi({
+        loadingKey: 'accountTwoFactor',
+        getLoading,
+        setLoading
+    });
 
     /**
      * What this account has armed and could still add. `undefined` until {@link fetchStatus}
@@ -173,24 +177,26 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const setupMethod = (method: string) =>
         applyResendCooldown(
-            fetchAny(() =>
-                apiSetupTwoFactorMethod(method).then((data) => {
-                    const payload = getPayloadFromResponse<TwoFactorSetup>(data);
-                    setup.value = payload;
-                    if (
-                        payload?.delivers &&
-                        payload.sentTo &&
-                        payload.resendAfter &&
-                        payload.expiresAt
-                    )
-                        trackDelivery({
-                            method: payload.method,
-                            sentTo: payload.sentTo,
-                            resendAfter: payload.resendAfter,
-                            expiresAt: payload.expiresAt
-                        });
-                    return payload;
-                })
+            fetchAny(
+                () =>
+                    apiSetupTwoFactorMethod(method).then((data) => {
+                        const payload = getPayloadFromResponse<TwoFactorSetup>(data);
+                        setup.value = payload;
+                        if (
+                            payload?.delivers &&
+                            payload.sentTo &&
+                            payload.resendAfter &&
+                            payload.expiresAt
+                        )
+                            trackDelivery({
+                                method: payload.method,
+                                sentTo: payload.sentTo,
+                                resendAfter: payload.resendAfter,
+                                expiresAt: payload.expiresAt
+                            });
+                        return payload;
+                    }),
+                { loadingKey: ':setup' }
             )
         );
 
@@ -203,13 +209,15 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      *  refetched, so `status` never lags what the server just armed.
      */
     const confirmMethod = (method: string, code: string) =>
-        fetchAny(() =>
-            apiConfirmTwoFactorMethod(method, { code }).then((data) => {
-                confirmed.value = getPayloadFromResponse<TwoFactorConfirmed>(data);
-                setup.value = undefined;
-                resendAvailableAt.value = undefined;
-                return fetchStatus().then(() => confirmed.value);
-            })
+        fetchAny(
+            () =>
+                apiConfirmTwoFactorMethod(method, { code }).then((data) => {
+                    confirmed.value = getPayloadFromResponse<TwoFactorConfirmed>(data);
+                    setup.value = undefined;
+                    resendAvailableAt.value = undefined;
+                    return fetchStatus().then(() => confirmed.value);
+                }),
+            { loadingKey: ':confirm' }
         );
 
     /**
@@ -221,7 +229,9 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * @returns A promise resolving once `status` reflects the removal.
      */
     const removeMethod = (method: string, code: string) =>
-        fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()));
+        fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()), {
+            loadingKey: ':remove'
+        });
 
     /**
      * Drops EVERY armed method and every unused backup code in one call.
@@ -230,7 +240,9 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * @returns A promise resolving once `status` reflects 2FA being off.
      */
     const disableAll = (code: string) =>
-        fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()));
+        fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()), {
+            loadingKey: ':disable'
+        });
 
     /**
      * Mints a fresh set of ten backup codes and discards whatever was left of the old set. Proven
@@ -242,12 +254,34 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      *  caller reads them off {@link confirmed}, same as a first-factor {@link confirmMethod}.
      */
     const regenerateBackupCodes = (code: string) =>
-        fetchAny(() =>
-            apiRegenerateBackupCodes({ code }).then((data) => {
-                confirmed.value = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
-                return fetchStatus().then(() => confirmed.value);
-            })
+        fetchAny(
+            () =>
+                apiRegenerateBackupCodes({ code }).then((data) => {
+                    confirmed.value = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
+                    return fetchStatus().then(() => confirmed.value);
+                }),
+            { loadingKey: ':regenerate' }
         );
+
+    /**
+     * Whether a code is being sent — {@link setupMethod}, whether that is the enrollment panel's
+     * first send or its resend button. Per-action rather than the store-wide `loading`, which
+     * every 2FA call shares: bound to a button, that made confirming look like resending.
+     */
+    const sendingCode = computed(() => getLoading(`${loadingKey}:setup`));
+
+    /**
+     * Whether {@link confirmMethod} is proving a code right now.
+     */
+    const confirmingCode = computed(() => getLoading(`${loadingKey}:confirm`));
+
+    /**
+     * Whether one of the three code-proved mutations is in flight. One flag for the three because
+     * the panel prompts for the code with one button, whichever of them the answer dispatches to.
+     */
+    const mutatingWithCode = computed(() =>
+        isLoading([`${loadingKey}:remove`, `${loadingKey}:disable`, `${loadingKey}:regenerate`])
+    );
 
     /**
      * Clears the pending-enrollment state — the "never mind" path out of `TwoFactorEnroll.vue`.
@@ -340,6 +374,9 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         delivery,
         secondsUntilResend,
         loading,
+        sendingCode,
+        confirmingCode,
+        mutatingWithCode,
 
         fetchStatus,
         setupMethod,

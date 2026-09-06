@@ -53,6 +53,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      * Shared loading flag plus the request runner every read/write below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<StockMovement, string>({
+        loadingKey: 'inventory',
         getLoading,
         setLoading
     });

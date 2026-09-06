@@ -18,7 +18,11 @@ import type { Session } from '@types';
  */
 export const useAccountSessionsStore = defineStore('accountSessions', () => {
     const { getLoading, setLoading } = useCoreStore();
-    const { loading, fetchAny } = useStructureRestApi<Session, string>({ getLoading, setLoading });
+    const { loading, fetchAny } = useStructureRestApi<Session, string>({
+        loadingKey: 'accountSessions',
+        getLoading,
+        setLoading
+    });
 
     /**
      * The visitor's live sessions — one entry per refresh token, the current one flagged.

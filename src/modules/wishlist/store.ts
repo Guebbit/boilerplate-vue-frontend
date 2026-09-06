@@ -22,6 +22,7 @@ import { useCartStore } from '@/modules/cart';
 export const useWishlistStore = defineStore('wishlist', () => {
     const { getLoading, setLoading } = useCoreStore();
     const { loading, fetchAny } = useStructureRestApi<WishlistItem, string>({
+        loadingKey: 'wishlist',
         getLoading,
         setLoading
     });

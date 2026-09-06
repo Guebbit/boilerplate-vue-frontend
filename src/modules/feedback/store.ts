@@ -31,6 +31,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
      * The toolkit's generic loading/fetch wrapper — this store's actions are hand-written, so this is all it takes from it.
      */
     const { loading, fetchAny } = useStructureRestApi<FeedbackRequest, string>({
+        loadingKey: 'feedback',
         getLoading,
         setLoading
     });

@@ -53,6 +53,23 @@ const STATUS_OFF = orvalEnvelope({
     backupCodesRemaining: 0
 });
 
+/**
+ * Holds the next transport call open, so a loading flag can be read mid-flight.
+ *
+ * @returns The release function; calling it lets the gated call resolve.
+ */
+const gateNextCall = () => {
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const send = vi.mocked(orvalMutator).getMockImplementation()!;
+    vi.mocked(orvalMutator).mockImplementationOnce((config, options) =>
+        gate.then(() => send(config, options))
+    );
+    return () => release?.();
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -351,5 +368,73 @@ describe('the login-time challenge', () => {
         store.clearChallenge();
         expect(store.challenge).toBeUndefined();
         expect(store.delivery).toBeUndefined();
+    });
+});
+
+describe('per-action loading flags', () => {
+    it('a send raises sendingCode alone', () => {
+        responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
+            method: 'email',
+            delivers: true,
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
+        const store = useTwoFactorStore();
+        const release = gateNextCall();
+        const pending = store.setupMethod('email');
+
+        expect(store.sendingCode).toBe(true);
+        expect(store.confirmingCode).toBe(false);
+        expect(store.mutatingWithCode).toBe(false);
+        release();
+        return pending.then(() => {
+            expect(store.sendingCode).toBe(false);
+        });
+    });
+
+    it('a confirm raises confirmingCode alone', () => {
+        responses['POST /account/2fa/methods/email/confirm'] = orvalEnvelope({
+            method: 'email',
+            backupCodes: ['aaa-111'],
+            backupCodesRemaining: 1
+        });
+        const store = useTwoFactorStore();
+        const release = gateNextCall();
+        const pending = store.confirmMethod('email', '123456');
+
+        expect(store.confirmingCode).toBe(true);
+        expect(store.sendingCode).toBe(false);
+        release();
+        return pending.then(() => {
+            expect(store.confirmingCode).toBe(false);
+        });
+    });
+
+    it('all three code-proved mutations answer the one prompt flag', () => {
+        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
+            backupCodes: ['ccc-333'],
+            backupCodesRemaining: 10
+        });
+        const store = useTwoFactorStore();
+
+        const releaseRemove = gateNextCall();
+        const removing = store.removeMethod('email', '123456');
+        expect(store.mutatingWithCode).toBe(true);
+        releaseRemove();
+
+        return removing
+            .then(() => {
+                expect(store.mutatingWithCode).toBe(false);
+                const releaseRegenerate = gateNextCall();
+                const regenerating = store.regenerateBackupCodes('123456');
+                expect(store.mutatingWithCode).toBe(true);
+                releaseRegenerate();
+                return regenerating;
+            })
+            .then(() => {
+                expect(store.mutatingWithCode).toBe(false);
+            });
     });
 });

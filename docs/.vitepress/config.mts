@@ -36,6 +36,7 @@ export default withMermaid(
                             { text: 'Strategic DDD', link: '/theory/strategic-ddd' },
                             { text: 'Glossary', link: '/theory/glossary' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
+                            { text: 'Loading State', link: '/theory/loading-state' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
                             { text: 'Web Attack Catalog', link: '/theory/web-attack-catalog' },
                             { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },

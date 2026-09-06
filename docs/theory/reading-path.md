@@ -128,6 +128,7 @@ generated code inherits all of the above without knowing it exists.
 | You want to…                                  | Go to                                               |
 | --------------------------------------------- | --------------------------------------------------- |
 | Follow a request from click to render         | [Request Flow](./request-flow.md)                   |
+| Know what may show a spinner                  | [Loading State](./loading-state.md)                 |
 | Understand what may import what               | [Layers](./layers.md)                               |
 | Add or delete a domain                        | [Adding & Removing a Module](./module-lifecycle.md) |
 | Work without a backend                        | [The demo profile](../tools/demo-profile.md)        |

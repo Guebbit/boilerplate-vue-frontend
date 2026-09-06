@@ -137,7 +137,7 @@ export const useLocalesStore = defineStore('locales', () => {
                     return response.data.items;
                 })
         },
-        { getLoading, setLoading }
+        { loadingKey: 'locales', getLoading, setLoading }
     );
 
     /**

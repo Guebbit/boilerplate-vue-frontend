@@ -2,9 +2,9 @@
  * @module
  * Unit tests for `stores/profile.ts`'s `updateProfile` avatar branches: the multipart upload an
  * `imageUpload` switches to, progress forwarded through to the transport, and the plain-JSON
- * `imageUrl: ''` remove path. `profile.spec.ts` covers every other field of the same action; this
- * file is only about the picture, which is why it is split out — same split the plan's testing
- * table draws.
+ * `imageUrl: ''` remove path, and the per-path loading keys the two buttons spin on.
+ * `profile.spec.ts` covers every other field of the same action; this file is only about the
+ * picture, which is why it is split out — same split the plan's testing table draws.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -44,6 +44,23 @@ const calls = () =>
                 data: unknown;
             }
     );
+
+/**
+ * Holds the next transport call open, so a loading flag can be read mid-flight.
+ *
+ * @returns The release function; calling it lets the gated call resolve.
+ */
+const gateNextCall = () => {
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const send = vi.mocked(orvalMutator).getMockImplementation()!;
+    vi.mocked(orvalMutator).mockImplementationOnce((config, options) =>
+        gate.then(() => send(config, options))
+    );
+    return () => release?.();
+};
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -115,5 +132,67 @@ describe('removing the picture', () => {
                 expect(put.headers?.['Content-Type']).not.toBe('multipart/form-data');
                 expect(put.data).toMatchObject({ imageUrl: '' });
             });
+    });
+});
+
+describe('each avatar path owns its loading key', () => {
+    it('flags the upload alone while the multipart call is in flight', () => {
+        const store = useProfileStore();
+        const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
+
+        return store.fetchProfile(true).then(() => {
+            const release = gateNextCall();
+            const pending = store.updateProfile({ imageUpload: file });
+            // The composable cancels in-flight queries before it raises the flag, so the write
+            // is a tick away from being counted, not synchronous with the call.
+            return vi
+                .waitFor(() => expect(store.uploadingAvatar).toBe(true))
+                .then(() => {
+                    expect(store.removingAvatar).toBe(false);
+                    release();
+                    return pending;
+                })
+                .then(() => {
+                    expect(store.uploadingAvatar).toBe(false);
+                });
+        });
+    });
+
+    it('flags the removal alone while the remove call is in flight', () => {
+        const store = useProfileStore();
+
+        return store.fetchProfile(true).then(() => {
+            const release = gateNextCall();
+            const pending = store.updateProfile({ imageUrl: '' });
+            return vi
+                .waitFor(() => expect(store.removingAvatar).toBe(true))
+                .then(() => {
+                    expect(store.uploadingAvatar).toBe(false);
+                    release();
+                    return pending;
+                })
+                .then(() => {
+                    expect(store.removingAvatar).toBe(false);
+                });
+        });
+    });
+
+    it('leaves both flags alone for an ordinary field save', () => {
+        const store = useProfileStore();
+
+        return store.fetchProfile(true).then(() => {
+            const release = gateNextCall();
+            const pending = store.updateProfile({ username: 'ada2' });
+            // The store's own key rises, proving the call is counted — under the plain key,
+            // with neither avatar flag following it.
+            return vi
+                .waitFor(() => expect(store.loading).toBe(true))
+                .then(() => {
+                    expect(store.uploadingAvatar).toBe(false);
+                    expect(store.removingAvatar).toBe(false);
+                    release();
+                    return pending;
+                });
+        });
     });
 });

@@ -29,6 +29,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * Toolkit REST wrapper: `loading` is this store's flag, `fetchAny` wraps every call below.
      */
     const { loading, fetchAny } = useStructureRestApi<Shipment, string>({
+        loadingKey: 'delivery',
         getLoading,
         setLoading
     });

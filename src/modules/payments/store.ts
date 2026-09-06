@@ -21,6 +21,7 @@ import { absentIs } from '@/infrastructure/utils/errors';
 export const usePaymentsStore = defineStore('payments', () => {
     const { getLoading, setLoading } = useCoreStore();
     const { loading, fetchAny } = useStructureRestApi<Payment, string>({
+        loadingKey: 'payments',
         getLoading,
         setLoading
     });

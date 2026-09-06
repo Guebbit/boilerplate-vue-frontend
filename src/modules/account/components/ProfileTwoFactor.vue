@@ -28,7 +28,7 @@ const { t } = useI18n();
 const { methodLabel } = useMethodLabel();
 const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
-const { status, confirmed } = storeToRefs(twoFactor);
+const { status, confirmed, mutatingWithCode } = storeToRefs(twoFactor);
 
 onMounted(twoFactor.fetchStatus);
 
@@ -76,12 +76,6 @@ const codePrompt = ref<CodePromptRequest>();
  * The code being typed into that prompt. Cleared each time the prompt opens.
  */
 const codeInput = ref('');
-
-/**
- * Whether the prompt's mutation is in flight — its own flag rather than the store's `loading`,
- * which every 2FA call shares.
- */
-const codeSubmitting = ref(false);
 
 /**
  * Confirms the destructive intent, then opens the code prompt for it.
@@ -158,16 +152,12 @@ const runCodePromptMutation = (
 const submitCode = () => {
     if (!codePrompt.value || !codeInput.value) return;
     const request = codePrompt.value;
-    codeSubmitting.value = true;
     return runCodePromptMutation(request, codeInput.value)
         .then((toastMessage) => {
             if (toastMessage) addMessage(toastMessage);
             codePrompt.value = undefined;
         })
-        .catch((error) => notifyErrorMessages(addMessage, error))
-        .finally(() => {
-            codeSubmitting.value = false;
-        });
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 /**
@@ -339,7 +329,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                         color="primary"
                         variant="flat"
                         :disabled="!codeInput"
-                        :loading="codeSubmitting"
+                        :loading="mutatingWithCode"
                         data-test="two-factor-code-prompt-submit"
                         @click="submitCode"
                     >

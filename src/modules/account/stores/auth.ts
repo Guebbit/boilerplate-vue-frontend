@@ -53,7 +53,7 @@ export type LoginOutcome =
 export const useAuthStore = defineStore('accountAuth', () => {
     const session = useSessionStore();
     const { getLoading, setLoading } = useCoreStore();
-    const { fetchAny } = useStructureRestApi({ getLoading, setLoading });
+    const { fetchAny } = useStructureRestApi({ loadingKey: 'accountAuth', getLoading, setLoading });
 
     /**
      * Authenticates the user. A plain account stores the access token, flags the `isAuth` cookie

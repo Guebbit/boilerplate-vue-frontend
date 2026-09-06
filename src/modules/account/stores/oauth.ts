@@ -52,7 +52,11 @@ export const oauthStartUrl = (provider: string): string =>
  */
 export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () => {
     const { getLoading, setLoading } = useCoreStore();
-    const { loading, fetchAny } = useStructureRestApi({ getLoading, setLoading });
+    const { loading, fetchAny } = useStructureRestApi({
+        loadingKey: 'accountOAuthProviders',
+        getLoading,
+        setLoading
+    });
 
     /** The enabled provider names, e.g. `['google', 'github']` — empty until loaded. */
     const providers = ref<string[]>([]);

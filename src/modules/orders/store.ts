@@ -111,6 +111,7 @@ export const useOrdersStore = defineStore('orders', () => {
             remove: (orderId) => deleteOrderById(orderId)
         },
         {
+            loadingKey: 'orders',
             getLoading,
             setLoading,
             /**

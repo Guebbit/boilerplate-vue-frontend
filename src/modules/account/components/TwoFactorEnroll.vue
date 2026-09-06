@@ -37,7 +37,7 @@ const emit = defineEmits<{ close: [] }>();
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
-const { setup, delivery, secondsUntilResend } = storeToRefs(twoFactor);
+const { setup, delivery, secondsUntilResend, sendingCode, confirmingCode } = storeToRefs(twoFactor);
 
 /**
  * Closes the dialog, dropping any pending enrollment first — a delivered method's `setupMethod`
@@ -88,26 +88,11 @@ const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(
 const code = ref('');
 
 /**
- * Own loading flags for resend and confirm — the store's `loading` is one flag shared by every
- * 2FA call, and binding both buttons to it made confirming look like it was also resending
- * (and vice versa).
- */
-const resending = ref(false);
-const confirming = ref(false);
-
-/**
  * Re-sends a delivered method's code — calling `setup` again, exactly as the initial send did;
  * the contract makes no distinction between "send" and "resend" for enrollment.
  */
-const handleResend = () => {
-    resending.value = true;
-    return twoFactor
-        .setupMethod(method)
-        .catch((error) => notifyErrorMessages(addMessage, error))
-        .finally(() => {
-            resending.value = false;
-        });
-};
+const handleResend = () =>
+    twoFactor.setupMethod(method).catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
  * Proves the code and arms the method.
@@ -116,16 +101,11 @@ const handleResend = () => {
  *  screen, when this was the first factor). A wrong code is reported as a toast — there is no
  *  form field to attach it to.
  */
-const handleConfirm = () => {
-    confirming.value = true;
-    return twoFactor
+const handleConfirm = () =>
+    twoFactor
         .confirmMethod(method, code.value)
         .then(() => emit('close'))
-        .catch((error) => notifyErrorMessages(addMessage, error))
-        .finally(() => {
-            confirming.value = false;
-        });
-};
+        .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
 
 <template>
@@ -163,7 +143,7 @@ const handleConfirm = () => {
                     size="small"
                     class="mb-4"
                     :disabled="secondsUntilResend > 0"
-                    :loading="resending"
+                    :loading="sendingCode"
                     @click="handleResend"
                 >
                     {{
@@ -193,7 +173,7 @@ const handleConfirm = () => {
                 color="primary"
                 variant="flat"
                 :disabled="!code"
-                :loading="confirming"
+                :loading="confirmingCode"
                 data-test="two-factor-enroll-confirm"
                 @click="handleConfirm"
             >

@@ -132,6 +132,7 @@ export const useProductsStore = defineStore('products', () => {
             optimisticPatch: ({ imageUpload: _uploaded, ...productData }) => productData
         },
         {
+            loadingKey: 'products',
             getLoading,
             setLoading,
             /**

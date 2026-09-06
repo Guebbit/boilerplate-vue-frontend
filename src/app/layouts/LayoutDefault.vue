@@ -5,7 +5,7 @@
  * footer, confirmation dialog host, toast stack and loading indicators. Preloads nothing
  * domain-specific — see the note near the end of this block.
  */
-import { onMounted, useSlots, watch } from 'vue';
+import { computed, onMounted, useSlots, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -97,9 +97,45 @@ const legalLinks = STATIC_PAGES.map((page) => ({
 }));
 
 /**
- * core loading
+ * Loading keys the full-page overlay answers to: app bootstrap, the one thing allowed to block
+ * the whole screen.
  */
-const { loadings, isLoading } = storeToRefs(useCoreStore());
+const MAIN_LOADING_KEYS = ['core'];
+
+/**
+ * Loading keys the discreet corner indicator answers to — one prefix per domain store, matching
+ * every action key under it. A key in neither list is deliberately invisible: listing them is
+ * what separates "the app is doing something the visitor asked for" from "a request exists".
+ */
+const SIDE_LOADING_KEYS = [
+    'account',
+    'cart',
+    'delivery',
+    'feedback',
+    'inventory',
+    'locales',
+    'orders',
+    'payments',
+    'products',
+    'users',
+    'wishlist'
+];
+
+/**
+ * Reads the shared loading dictionary. A function rather than a ref, so it stays out of
+ * `storeToRefs` and is called inside the computeds below.
+ */
+const { isLoading } = useCoreStore();
+
+/**
+ * Whether the app is still booting — the overlay's flag.
+ */
+const isMainLoading = computed(() => isLoading(MAIN_LOADING_KEYS));
+
+/**
+ * Whether a domain store is working — the corner indicator's flag.
+ */
+const isSideLoading = computed(() => isLoading(SIDE_LOADING_KEYS));
 
 /**
  * Reactive toast queue, rendered below as one `v-alert` per visible message.
@@ -236,11 +272,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         </div>
 
         <!-- Full-page loader (core bootstrapping) -->
-        <v-overlay
-            :model-value="!!loadings.core"
-            persistent
-            class="flex items-center justify-center"
-        >
+        <v-overlay :model-value="isMainLoading" persistent class="flex items-center justify-center">
             <!--
                 The label is required, not decorative: this renders role="progressbar", and a
                 progressbar with no accessible name is announced as an unlabelled control. It is
@@ -259,7 +291,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         <!-- Discreet corner loader (background activity) -->
         <v-fade-transition>
             <div
-                v-show="isLoading && !loadings.core"
+                v-show="isSideLoading && !isMainLoading"
                 class="fixed bottom-4 left-4 z-[9998]"
                 role="status"
                 data-test="activity-indicator"

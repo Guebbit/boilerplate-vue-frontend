@@ -41,7 +41,11 @@ export const useCartStore = defineStore('cart', () => {
      * Generic REST helper: wraps every mutating call in `fetchAny` so `loading` toggles
      * automatically around each request.
      */
-    const { loading, fetchAny } = useStructureRestApi<CartItem, string>({ getLoading, setLoading });
+    const { loading, fetchAny } = useStructureRestApi<CartItem, string>({
+        loadingKey: 'cart',
+        getLoading,
+        setLoading
+    });
 
     /**
      * Full cart response (items + summary)

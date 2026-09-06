@@ -5,6 +5,7 @@
  * account deletion each reuse the shared `selectedIdentifier`/`fetchTarget`/`updateTarget`
  * primitives rather than duplicating request/cache logic per action.
  */
+import { computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -34,10 +35,24 @@ import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
  * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
  * See `docs/theory/modules.md` for why this domain is split this many ways.
  */
+/**
+ * Which loading key `updateProfile` runs under: one per avatar path, none for an ordinary field
+ * save, which has no button of its own to spin.
+ *
+ * @param imageUpload - The picked file, when the call carries one.
+ * @param imageUrl - The record's picture field, `''` when the call is a removal.
+ * @returns The postfix appended to the store's loading key, or `''` for a plain save.
+ */
+const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string) => {
+    if (imageUpload) return ':avatar-upload';
+    return imageUrl === '' ? ':avatar-remove' : '';
+};
+
 export const useProfileStore = defineStore('accountProfile', () => {
     const session = useSessionStore();
     const { getLoading, setLoading } = useCoreStore();
     const {
+        loadingKey,
         selectedIdentifier,
         resetAll,
         selectedRecord: profile,
@@ -45,7 +60,11 @@ export const useProfileStore = defineStore('accountProfile', () => {
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<User, string>({ getLoading, setLoading });
+    } = useStructureRestApi<User, string>({
+        loadingKey: 'accountProfile',
+        getLoading,
+        setLoading
+    });
 
     /**
      * Push what the shell and the guards are allowed to know into the session store.
@@ -146,7 +165,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             userData,
-            selectedIdentifier.value
+            selectedIdentifier.value,
+            // One action, two avatar buttons: each path gets its own loading key so the picker
+            // and the remove button spin one at a time. `imageUrl: ''` is the removal.
+            { loadingKey: avatarLoadingPostfix(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
              * Refetch rather than trust the local patch: `updateTarget` merges what was SENT,
@@ -269,8 +291,20 @@ export const useProfileStore = defineStore('accountProfile', () => {
             })
         );
 
+    /**
+     * Whether a picked avatar is being uploaded.
+     */
+    const uploadingAvatar = computed(() => getLoading(`${loadingKey}:avatar-upload`));
+
+    /**
+     * Whether the stored avatar is being removed.
+     */
+    const removingAvatar = computed(() => getLoading(`${loadingKey}:avatar-remove`));
+
     return {
         profile,
+        uploadingAvatar,
+        removingAvatar,
         loading,
         resetAll,
         fetchProfile,
