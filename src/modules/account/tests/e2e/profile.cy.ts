@@ -2,7 +2,8 @@
  * @module
  * End-to-end self-service account surface: password change, sessions, the address book and email
  * verification — run against the real API in its demo profile so the invariants under test (one
- * default address, a `current` session flag, unverify-on-email-change) are the backend's own.
+ * default address, a `current` session flag, an email change parked as `pendingEmail`) are the
+ * backend's own.
  *
  * What these specs pin is the page honouring those invariants, not the rules themselves — those
  * are the backend's to test.
@@ -245,7 +246,7 @@ describe('Profile self-service', () => {
             cy.get('[data-test=verify-banner]').should('not.exist');
         });
 
-        it('an email change unverifies the account and the banner appears', () => {
+        it('an email change leaves the account verified, and shows no banner', () => {
             // Wait for hydration the way a person does: type only once the record shows.
             cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
             cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
@@ -254,36 +255,19 @@ describe('Profile self-service', () => {
                 .type('fresh-address@example.com');
             cy.get('#profile-page form button[type=submit]').first().click();
 
-            cy.get('[data-test=verify-banner]').should('exist');
-        });
-
-        it('the emailed token verifies the address and the banner goes', function () {
-            // The outbox is the demo profile's; against the live backend the email is real
-            // and unreadable from a browser.
-            cy.skipUnlessDemo();
-
-            // Unverify first, through the same email change a real user would make.
-            cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
-            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-            cy.get('#profile-page [type=email]')
-                .should('not.be.disabled')
-                .type('fresh-address@example.com');
-            cy.get('#profile-page form button[type=submit]').first().click();
-            cy.get('[data-test=verify-banner]').should('exist');
-
-            // Ask for the link, then read it from the outbox — the token that arrived is the
-            // only one the API will accept, exactly like the link in a real inbox.
-            cy.get('[data-test=verify-resend]').click();
-            // The toast confirms the round trip landed, so the outbox read below cannot race it.
-            cy.contains('Verification email sent').should('exist');
-            cy.demoEmailTo('fresh-address@example.com').then(({ token }) => {
-                cy.visit(`/en/verify-email/confirm?token=${token}`);
-            });
-            cy.get('[data-test=verify-submit]').click();
-
-            cy.get('#home-page').should('exist');
-            cy.visit('/en/profile');
+            /*
+             * The API parks the new address in `pendingEmail` and leaves `email`/`verified` alone
+             * until a token proves it, so asking for a change never unverifies the account. No
+             * banner, because nothing about the CURRENT address changed.
+             */
             cy.get('[data-test=verify-banner]').should('not.exist');
         });
+
+        /*
+         * The token-spends-and-the-banner-goes arc is NOT here: it needs an account that never
+         * proved its address, and an email change no longer produces one. `registration.cy.ts`
+         * owns it end to end — "an unverified account shows the banner until the emailed token
+         * is spent" — from the signup that actually creates that state.
+         */
     });
 });
