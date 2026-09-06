@@ -45,7 +45,11 @@ import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '..');
+/*
+ * Two levels: this file is `scripts/e2e/run-shards.ts`, so one `..` reaches `scripts/`, where
+ * every glob below matches nothing and the run reports success having scheduled no specs.
+ */
+const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 try {
     process.loadEnvFile();
@@ -80,6 +84,22 @@ const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
     .map((entry) => entry.split(path.sep).join('/'))
     .toSorted()
     .map((file) => ({ file, key: path.basename(file, '.cy.ts') }));
+
+/*
+ * An empty match is a broken runner, never an empty suite — this repo always has specs. Without
+ * this the shards spawn no Cypress, every one of them "passes", and the gate goes green having
+ * tested nothing. That is the silent direction `cypress-spec-globs.ts` warns about, so it fails
+ * loudly here rather than being inferred from a suspiciously fast run.
+ */
+if (specs.length === 0) {
+    console.error(
+        `\n[e2e-shard] Found NO specs under ${REPO_ROOT}.\n\n` +
+            `  Globs: ${FUNCTIONAL_SPEC_GLOBS.join(', ')}\n\n` +
+            `  The suite is never legitimately empty, so this is a resolution fault, not a\n` +
+            `  result: usually REPO_ROOT pointing somewhere that holds no tests/ directory.\n`
+    );
+    process.exit(2);
+}
 
 const weighted = weighSpecs(specs, SECONDS);
 const shards = balanceShards(weighted, shardCount);

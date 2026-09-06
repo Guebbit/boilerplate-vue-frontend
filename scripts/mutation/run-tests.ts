@@ -39,7 +39,11 @@ import { spawn } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '..');
+/*
+ * Two levels: this file is `scripts/mutation/run-tests.ts`, so one `..` reaches `scripts/` and
+ * Stryker would be spawned against a directory holding neither the config nor the sources.
+ */
+const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 /** Stryker's own scratch space: one copy of the project per run, removed only on a clean exit. */
 const SANDBOX_ROOT = path.join(REPO_ROOT, '.stryker-tmp');
