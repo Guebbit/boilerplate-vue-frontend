@@ -1249,6 +1249,84 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
 });
 
 /**
+ * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
+ * @summary Read the active human-challenge provider's public parameters, and every rung's status
+ */
+export const GetAntibotConfigResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        provider: zod
+            .string()
+            .describe(
+                "The active implementation's name (`none` by default). `none` means no challenge is required — send no token.\n"
+            ),
+        parameters: zod
+            .record(zod.string(), zod.string())
+            .describe(
+                "What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.\n"
+            ),
+        rungs: zod
+            .strictObject({
+                identityBudgets: zod
+                    .boolean()
+                    .describe(
+                        'Rung 1 — always `true`. The identity\/address\/address-block budgets have no off switch.\n'
+                    ),
+                emailPolicy: zod
+                    .enum(['off', 'disposable', 'mx'])
+                    .describe(
+                        "Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.\n"
+                    )
+            })
+            .describe(
+                'Every rung\'s status, not just rung 3\'s provider — one answer to \"what is active on this deployment\" instead of asking each rung to publish its own.\n'
+            )
+    })
+});
+
+/**
+ * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
+ * @summary Fetch work from a self-hosted human-challenge provider
+ */
+export const GetAntibotChallengeResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            parameters: zod
+                .strictObject({
+                    algorithm: zod
+                        .string()
+                        .describe('Key-derivation function, e.g. `PBKDF2\/SHA-256`.'),
+                    nonce: zod.string(),
+                    salt: zod.string(),
+                    cost: zod.number().describe('Iteration count — how much work solving takes.'),
+                    keyLength: zod.number(),
+                    keyPrefix: zod.string(),
+                    keySignature: zod.string().optional(),
+                    memoryCost: zod.number().optional(),
+                    parallelism: zod.number().optional(),
+                    expiresAt: zod
+                        .number()
+                        .optional()
+                        .describe(
+                            'Unix seconds after which the challenge is refused, solved or not.'
+                        )
+                })
+                .describe('What the solver needs to derive the key the challenge asks for.'),
+            signature: zod
+                .string()
+                .describe('HMAC over the parameters, proving this server issued them.')
+        })
+        .describe(
+            "ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.\n"
+        )
+});
+
+/**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
@@ -1265,6 +1343,7 @@ export const GetAccountResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -1296,7 +1375,7 @@ export const GetAccountResponse = zod.strictObject({
 });
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
 export const updateAccountBodyUsernameMin = 3;
@@ -1337,6 +1416,7 @@ export const UpdateAccountResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -1673,6 +1753,20 @@ export const ConfirmEmailVerificationResponse = zod.strictObject({
 });
 
 /**
+ * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
+ * @summary Confirm a pending email change
+ */
+export const ConfirmEmailChangeBody = zod.strictObject({
+    token: zod.string().describe('One-time email verification token (NOT a JWT).')
+});
+
+export const ConfirmEmailChangeResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
  * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
  * @summary Confirm account deletion
  */
@@ -1803,6 +1897,15 @@ export const LoginResponse = zod.strictObject({
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
  * @summary Signup
  */
+export const SignupHeader = zod.strictObject({
+    'x-antibot-challenge-token': zod
+        .string()
+        .optional()
+        .describe(
+            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+        )
+});
+
 export const signupBodyUsernameMin = 3;
 
 export const signupBodyPasswordMin = 8;
@@ -1851,6 +1954,7 @@ export const SignupResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -1885,6 +1989,15 @@ export const SignupResponse = zod.strictObject({
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
  * @summary Request password reset
  */
+export const RequestPasswordResetHeader = zod.strictObject({
+    'x-antibot-challenge-token': zod
+        .string()
+        .optional()
+        .describe(
+            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+        )
+});
+
 export const RequestPasswordResetBody = zod.strictObject({
     email: zod.email()
 });
@@ -2003,6 +2116,7 @@ export const ExportAccountDataResponse = zod.strictObject({
             admin: zod.boolean().optional(),
             active: zod.boolean().optional(),
             verified: zod.boolean().optional(),
+            pendingEmail: zod.email().optional(),
             imageUrl: zod
                 .string()
                 .optional()
@@ -2722,6 +2836,7 @@ export const ListUsersResponse = zod.strictObject({
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
                 verified: zod.boolean().optional(),
+                pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -2827,6 +2942,7 @@ export const CreateUserResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -2912,6 +3028,7 @@ export const UpdateUserResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -2989,6 +3106,7 @@ export const GetUserByIdResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3077,6 +3195,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
+        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3224,6 +3343,7 @@ export const SearchUsersResponse = zod.strictObject({
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
                 verified: zod.boolean().optional(),
+                pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -3278,6 +3398,15 @@ export const SearchUsersResponse = zod.strictObject({
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
+export const CreateFeedbackRequestHeader = zod.strictObject({
+    'x-antibot-challenge-token': zod
+        .string()
+        .optional()
+        .describe(
+            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+        )
+});
+
 export const createFeedbackRequestBodyWebsiteMax = 200;
 
 export const CreateFeedbackRequestBody = zod.strictObject({

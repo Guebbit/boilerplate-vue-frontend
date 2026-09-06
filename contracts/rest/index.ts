@@ -141,6 +141,7 @@ export interface User {
     admin?: boolean;
     active?: boolean;
     verified?: boolean;
+    readonly pendingEmail?: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
     locale?: Locale;
@@ -840,6 +841,83 @@ export interface AuditLogsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: AuditLogsPage;
+}
+
+/**
+ * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
+ */
+export type AntibotRungsEmailPolicy =
+    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
+
+export const AntibotRungsEmailPolicy = {
+    off: 'off',
+    disposable: 'disposable',
+    mx: 'mx'
+} as const;
+
+/**
+ * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
+ */
+export interface AntibotRungs {
+    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
+    identityBudgets: boolean;
+    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
+    emailPolicy: AntibotRungsEmailPolicy;
+}
+
+/**
+ * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
+ */
+export type AntibotConfigParameters = { [key: string]: string };
+
+export interface AntibotConfig {
+    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
+    provider: string;
+    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
+    parameters: AntibotConfigParameters;
+    rungs: AntibotRungs;
+}
+
+export interface AntibotConfigEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AntibotConfig;
+}
+
+/**
+ * What the solver needs to derive the key the challenge asks for.
+ */
+export interface AntibotChallengeParameters {
+    /** Key-derivation function, e.g. `PBKDF2/SHA-256`. */
+    algorithm: string;
+    nonce: string;
+    salt: string;
+    /** Iteration count — how much work solving takes. */
+    cost: number;
+    keyLength: number;
+    keyPrefix: string;
+    keySignature?: string;
+    memoryCost?: number;
+    parallelism?: number;
+    /** Unix seconds after which the challenge is refused, solved or not. */
+    expiresAt?: number;
+}
+
+/**
+ * ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.
+ */
+export interface AntibotChallenge {
+    parameters: AntibotChallengeParameters;
+    /** HMAC over the parameters, proving this server issued them. */
+    signature: string;
+}
+
+export interface AntibotChallengeEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AntibotChallenge;
 }
 
 export interface UpdateAccountRequest {
@@ -2140,6 +2218,11 @@ export type PageSizeParamParameter = PageSize;
 
 export type TextParamParameter = Text;
 
+/**
+ * The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
+ */
+export type AntibotChallengeTokenHeaderParameter = string;
+
 export type IdParamParameter = Id;
 
 export type UserIdParamParameter = Id;
@@ -2838,6 +2921,29 @@ export const getObservabilityAuditLogs = (
 };
 
 /**
+ * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
+ * @summary Read the active human-challenge provider's public parameters, and every rung's status
+ */
+export const getAntibotConfig = (
+    options?: SecondParameter<typeof orvalMutator<AntibotConfigEnvelope>>
+) => {
+    return orvalMutator<AntibotConfigEnvelope>({ url: `/antibot/config`, method: 'GET' }, options);
+};
+
+/**
+ * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
+ * @summary Fetch work from a self-hosted human-challenge provider
+ */
+export const getAntibotChallenge = (
+    options?: SecondParameter<typeof orvalMutator<AntibotChallengeEnvelope>>
+) => {
+    return orvalMutator<AntibotChallengeEnvelope>(
+        { url: `/antibot/challenge`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
@@ -2846,7 +2952,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
 export const updateAccount = (
@@ -2865,7 +2971,7 @@ export const updateAccount = (
 };
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
@@ -3072,6 +3178,25 @@ export const confirmEmailVerification = (
     return orvalMutator<SuccessResponse>(
         {
             url: `/account/verify-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: verifyEmailConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
+ * @summary Confirm a pending email change
+ */
+export const confirmEmailChange = (
+    verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/email-change-confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -4729,6 +4854,10 @@ export type GetObservabilityMetricsOverviewResult = NonNullable<
 export type GetObservabilityAuditLogsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityAuditLogs>>
 >;
+export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
+export type GetAntibotChallengeResult = NonNullable<
+    Awaited<ReturnType<typeof getAntibotChallenge>>
+>;
 export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
 export type UpdateAccountWithMultipartResult = NonNullable<
@@ -4752,6 +4881,7 @@ export type RequestEmailVerificationResult = NonNullable<
 export type ConfirmEmailVerificationResult = NonNullable<
     Awaited<ReturnType<typeof confirmEmailVerification>>
 >;
+export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
 export type ConfirmAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof confirmAccountDelete>>
 >;
