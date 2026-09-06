@@ -57,6 +57,15 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
         pattern: /^\/account\/verify-confirm$/,
         schema: schemas.ConfirmEmailVerificationResponse
     },
+    /*
+     * A DIFFERENT token type from `verify-confirm` above: this one proves the address a
+     * `PUT /account` change asked for, never the one the account already has.
+     */
+    {
+        method: 'POST',
+        pattern: /^\/account\/email-change-confirm$/,
+        schema: schemas.ConfirmEmailChangeResponse
+    },
     { method: 'GET', pattern: /^\/account\/addresses$/, schema: schemas.GetAddressesResponse },
     { method: 'POST', pattern: /^\/account\/addresses$/, schema: schemas.AddAddressResponse },
     {

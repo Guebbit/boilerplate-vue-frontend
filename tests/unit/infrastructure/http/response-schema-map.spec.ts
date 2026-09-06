@@ -63,6 +63,8 @@ const ID = '65dc8a99604c307b702b5ccc';
  */
 const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/', 'GetHealthResponse'],
+    ['GET', '/antibot/config', 'GetAntibotConfigResponse'],
+    ['GET', '/antibot/challenge', 'GetAntibotChallengeResponse'],
     ['GET', '/locales', 'GetLocalesResponse'],
     ['GET', '/locales/tenants', 'GetLocaleTenantsResponse'],
     ['GET', '/locales/en', 'GetLocaleDictionaryResponse'],
@@ -96,6 +98,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', `/account/sessions/${ID}`, 'RevokeSessionResponse'],
     ['POST', '/account/verify-request', 'RequestEmailVerificationResponse'],
     ['POST', '/account/verify-confirm', 'ConfirmEmailVerificationResponse'],
+    ['POST', '/account/email-change-confirm', 'ConfirmEmailChangeResponse'],
     ['GET', '/account/addresses', 'GetAddressesResponse'],
     ['POST', '/account/addresses', 'AddAddressResponse'],
     ['PUT', `/account/addresses/${ID}`, 'UpdateAddressResponse'],

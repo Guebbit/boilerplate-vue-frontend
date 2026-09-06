@@ -61,6 +61,17 @@ export interface ResponseSchemaRoute {
 const coreRouteSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
     /*
+     * Anti-automation, parked here because no frontend domain claims it yet: the challenge widget
+     * is rendered by whichever form is being guarded, not by a module of its own. Both are public
+     * and both are read before a session exists, so validating them cannot wait for a module.
+     */
+    { method: 'GET', pattern: /^\/antibot\/config$/, schema: schemas.GetAntibotConfigResponse },
+    {
+        method: 'GET',
+        pattern: /^\/antibot\/challenge$/,
+        schema: schemas.GetAntibotChallengeResponse
+    },
+    /*
      * The session's own three. `infrastructure/session.ts` calls them to restore or end a session before any
      * domain is involved, so their validation cannot depend on a module being enabled — the account
      * module owns every OTHER `/account/*` route.
