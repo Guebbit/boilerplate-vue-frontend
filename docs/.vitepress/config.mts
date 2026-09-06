@@ -37,6 +37,8 @@ export default withMermaid(
                             { text: 'Glossary', link: '/theory/glossary' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
+                            { text: 'Web Attack Catalog', link: '/theory/web-attack-catalog' },
+                            { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },
                             { text: 'Roadmap', link: '/theory/roadmap' }
                         ]
                     }

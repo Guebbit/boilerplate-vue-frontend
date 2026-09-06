@@ -127,15 +127,17 @@ point.
 
 ## Where each topic lives
 
-| Need                                         | Go to                                               |
-| -------------------------------------------- | --------------------------------------------------- |
-| **Open the code for the first time**         | **[Reading Path](./reading-path.md)**               |
-| Understand the big blocks and boundaries     | [Architecture](./architecture.md)                   |
-| Read the folder-by-folder explanation        | [Layers](./layers.md)                               |
-| Understand how domains stay separable        | [Modules](./modules.md)                             |
-| Actually add or remove a domain              | [Adding & Removing a Module](./module-lifecycle.md) |
-| Understand the domain-modelling stance       | [Strategic DDD](./strategic-ddd.md)                 |
-| Follow one request end-to-end                | [Request Flow](./request-flow.md)                   |
-| See all routes and access levels at a glance | [Sitemap & Access Control](./sitemap.md)            |
-| Understand dependency choices                | [Tools](../tools/)                                  |
-| Change contract, types, or mocks             | [API](../api/)                                      |
+| Need                                                | Go to                                               |
+| --------------------------------------------------- | --------------------------------------------------- |
+| **Open the code for the first time**                | **[Reading Path](./reading-path.md)**               |
+| Understand the big blocks and boundaries            | [Architecture](./architecture.md)                   |
+| Read the folder-by-folder explanation               | [Layers](./layers.md)                               |
+| Understand how domains stay separable               | [Modules](./modules.md)                             |
+| Actually add or remove a domain                     | [Adding & Removing a Module](./module-lifecycle.md) |
+| Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                 |
+| Follow one request end-to-end                       | [Request Flow](./request-flow.md)                   |
+| See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)            |
+| Know every attack a site can receive                | [Web Attack Catalog](./web-attack-catalog.md)       |
+| Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)     |
+| Understand dependency choices                       | [Tools](../tools/)                                  |
+| Change contract, types, or mocks                    | [API](../api/)                                      |
