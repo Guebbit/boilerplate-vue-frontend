@@ -67,12 +67,12 @@ export const useAuthStore = defineStore('accountAuth', () => {
      *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the refresh cookie
      *  the API sets lives only as long as an access token. Dropped by the backend on the 2FA path
      *  regardless of this value — see `TwoFactorChallenge.vue`.
-     * @returns A promise resolving with the {@link LoginOutcome}, or `undefined` on the rare path
-     *  where `fetchAny` swallows the call (an overlapping in-flight request); a call site treats
-     *  that the same as `'session'`, matching what this action always did before it returned
-     *  anything meaningful.
+     * @returns A promise resolving with the {@link LoginOutcome}.
+     * @throws {Error} If `fetchAny` ever resolves without a value. It can't for this call — that
+     *  only happens on its `lastUpdateKey` cache path, and this call passes none — but if it ever
+     *  did, failing loudly beats a caller silently treating a missing outcome as `'session'`.
      */
-    const login = (email: string, password: string, remember = false) =>
+    const login = (email: string, password: string, remember = false): Promise<LoginOutcome> =>
         fetchAny<LoginOutcome>(() =>
             apiLogin({
                 email,
@@ -96,7 +96,10 @@ export const useAuthStore = defineStore('accountAuth', () => {
                     .fetchProfile(true)
                     .then(() => ({ kind: 'session' }) as const);
             })
-        );
+        ).then((outcome) => {
+            if (!outcome) throw new Error('login(): fetchAny resolved without a value');
+            return outcome;
+        });
 
     /**
      * Re-proves the caller's password to answer a `REAUTH_REQUIRED` 401, without ending the

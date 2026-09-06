@@ -111,7 +111,7 @@ const submitForm = () =>
         useAuthStore()
             .login(form.value.email, form.value.password, form.value.remember)
             .then((outcome) => {
-                if (outcome?.kind === 'mfa') {
+                if (outcome.kind === 'mfa') {
                     useTwoFactorStore().beginLoginChallenge(outcome, form.value.remember ?? false);
                     return router.push(
                         routerLinkI18n({ name: 'TwoFactorChallenge', query: route.query })
