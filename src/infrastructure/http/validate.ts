@@ -42,6 +42,7 @@ export const shouldValidateResponses = (): boolean => {
  *
  * @param config - The request config that produced `data` (used to resolve the schema).
  * @param data - The already-unwrapped response body.
+ * @throws {Error} When a mapped schema rejects the body — the message lists every failed field.
  */
 export const validateResponseAgainstContract = (
     config: AxiosRequestConfig,

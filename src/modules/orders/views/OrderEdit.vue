@@ -99,7 +99,7 @@ const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 /**
  * Cancels the order, with or without returning the money.
  *
- * @param refund - Whether the money goes back with the cancellation.
+ * @param withRefund - Whether the money goes back with the cancellation.
  * @returns A promise resolving once the order and its payment are re-read.
  */
 const runCancel = (withRefund: boolean) => {

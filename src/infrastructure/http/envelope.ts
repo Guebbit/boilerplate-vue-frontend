@@ -50,7 +50,7 @@ export const getTokenFromResponse = (response?: unknown): string | undefined =>
 /**
  * Extracts the payload from both wrapped (`{ data }`) and direct responses.
  *
- * @typeParam T - Expected payload type.
+ * @template T - Expected payload type.
  * @param response - Raw API response.
  * @returns The unwrapped payload, or `undefined` when absent.
  */

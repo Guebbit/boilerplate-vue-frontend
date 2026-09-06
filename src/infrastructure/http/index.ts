@@ -33,7 +33,7 @@ instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
  * `Content-Type`, so a top-level merge would drop the caller's headers on exactly the requests
  * most likely to need one — including the multipart boundary.
  *
- * @typeParam T - Response payload type expected by the caller.
+ * @template T - Response payload type expected by the caller.
  * @param config - Request config, built by the generated client.
  * @param options - Per-call axios overrides supplied by the caller.
  * @returns A promise resolving with the unwrapped response body (`response.data`).

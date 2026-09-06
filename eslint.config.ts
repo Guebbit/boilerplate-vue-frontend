@@ -7,6 +7,7 @@ import pluginVue from 'eslint-plugin-vue';
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility';
 import pluginVitest from '@vitest/eslint-plugin';
 import pluginCypress from 'eslint-plugin-cypress';
+import pluginJsdoc from 'eslint-plugin-jsdoc';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
@@ -771,6 +772,61 @@ export default defineConfigWithVueTs(
                         'try/catch in production code is for the rare spot where a throwing API has no safe wrapper and the failure has a local answer. Prefer returning a verdict or letting the rejection reach the caller\u2019s handler; if this spot truly needs one, disable this rule on the line with a description of what is being contained.'
                 }
             ]
+        }
+    },
+
+    /**
+     * Exported API carries its own documentation, and the documentation is checked.
+     *
+     * CLAUDE.md makes both halves a MUST and neither was guarded. What a rule can decide:
+     *
+     * Presence:   an exported function, interface, type or enum has a JSDoc block.
+     * Accuracy:   a `@param` names a real parameter, tags are real tags, descriptions say something.
+     *
+     * `require-param` and `require-returns` stay OFF: CLAUDE.md asks for those tags "as needed",
+     * and a rule cannot read that word — it would demand a row per parameter restating a typed
+     * signature. `disableMissingParamChecks` is that same "as needed" written as an option, and
+     * `checkDestructured: false` keeps an options bag documented on its interface rather than at
+     * every call site.
+     *
+     * https://github.com/gajus/eslint-plugin-jsdoc
+     */
+    {
+        files: ['src/**/*.{ts,mts,tsx,vue}'],
+        // Specs document themselves by their titles; their exports are fixtures, not API.
+        ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
+
+        plugins: { jsdoc: pluginJsdoc },
+
+        // TypeScript mode: types live in the signature, so the tags are not asked to repeat them.
+        settings: { jsdoc: { mode: 'typescript' } },
+
+        rules: {
+            'jsdoc/require-jsdoc': [
+                'error',
+                {
+                    publicOnly: true,
+                    require: {
+                        FunctionDeclaration: true,
+                        ArrowFunctionExpression: true,
+                        FunctionExpression: true,
+                        ClassDeclaration: true
+                    },
+                    contexts: [
+                        'TSInterfaceDeclaration',
+                        'TSTypeAliasDeclaration',
+                        'TSEnumDeclaration'
+                    ]
+                }
+            ],
+            'jsdoc/check-param-names': [
+                'error',
+                { checkDestructured: false, disableMissingParamChecks: true }
+            ],
+            'jsdoc/check-tag-names': 'error',
+            'jsdoc/require-param-description': 'error',
+            'jsdoc/require-returns-description': 'error',
+            'jsdoc/require-throws': 'error'
         }
     },
 

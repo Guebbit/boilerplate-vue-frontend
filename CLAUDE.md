@@ -1,8 +1,6 @@
 ## TypeScript
 
-- MUST use `strict: true` in all TypeScript code.
 - MUST NOT use `any` — use `unknown` plus type narrowing.
-- MUST use ESM imports only (`import`/`export`); no CommonJS (`require`, `module.exports`).
 
 ## Function design
 
@@ -28,8 +26,11 @@
 
 ## Comments
 
-- Exported functions: JSDoc REQUIRED (`@param`, `@returns`, `@throws` as needed).
-- Exported interfaces/types: JSDoc REQUIRED — purpose plus what each field means.
+- Exported functions, interfaces, types and enums: JSDoc REQUIRED — `jsdoc/require-jsdoc`. An
+  interface states its purpose and what each field means; a function adds `@param`/`@returns`/
+  `@throws` **as needed**. "As needed" is yours to judge, but a tag you do write is checked:
+  `jsdoc/check-param-names` refuses a name that is not in the signature, `check-tag-names` refuses
+  a tag that is not a tag, and the `*-description` rules refuse an empty one.
 - Every `.ts` file: a JSDoc `@module` header at the top explaining the **logic or pattern** the
   file follows — what it is and how it works, not what it is for in the product. Keep it short: a
   few lines, enough to orient someone opening the file cold. If it grows into prose, it belongs in
