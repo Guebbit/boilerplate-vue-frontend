@@ -12,7 +12,7 @@
 | **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`          |
 | **Store**               | `users`                                                             |
 | **Menu entries**        | `UsersList`                                                         |
-| **API calls**           | 9                                                                   |
+| **API calls**           | 10                                                                  |
 | **Depends on**          | _nothing_                                                           |
 | **Depended on by**      | [`account`](./account.md)                                           |
 | **Languages**           | `en` · `it`                                                         |
@@ -58,15 +58,21 @@ account deletion — live under [`account`](./account.md). The two never share a
 `users/create` is declared before `users/:id` for the same reason the products routes are: vue-router
 would rank it correctly either way, and a reader should not have to know that.
 
+`UserTarget` (`views/User.vue`) also carries the one deliberate exception to "prove the factor to
+remove it": an admin-assisted 2FA recovery button, `adminDisableTwoFactor`, for an owner who has
+lost both their authenticator and their backup codes. No code is asked for — the audited server-side
+log is what makes skipping that proof safe to expose at all. It is the reason `account`'s own 2FA
+panel never needs a "my last resort is calling support" story.
+
 ## State
 
 Store `users`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                            | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `users` · `selectedUserId` · `filters` · `pageCurrent` · `pageSize`                                                                                                | The refs the setup function returns — the only writable surface. |
-| **Getters** | `usersList` · `currentUser` · `loading` · `pageTotal` · `pageItemList`                                                                                             | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `addUser` · `fetchUsers` · `fetchPaginationUsers` · `watchSearchUsers` · `fetchUser` · `watchUser` · `createUser` · `updateUser` · `deleteUser` · `hardDeleteUser` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                      | What it is                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `users` · `selectedUserId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                          | The refs the setup function returns — the only writable surface. |
+| **Getters** | `usersList` · `currentUser` · `loading` · `pageTotal` · `pageItemList`                                                                                                                       | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `addUser` · `fetchUsers` · `fetchPaginationUsers` · `watchSearchUsers` · `fetchUser` · `watchUser` · `createUser` · `updateUser` · `deleteUser` · `hardDeleteUser` · `adminDisableTwoFactor` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -83,17 +89,18 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                      | Response envelope            |
-| ------------------------- | ---------------------------- |
-| `DELETE /users`           | `DeleteUserResponse`         |
-| `GET /users`              | `ListUsersResponse`          |
-| `POST /users`             | `CreateUserResponse`         |
-| `PUT /users`              | `UpdateUserResponse`         |
-| `DELETE /users/{id}`      | `DeleteUserByIdResponse`     |
-| `GET /users/{id}`         | `GetUserByIdResponse`        |
-| `PUT /users/{id}`         | `UpdateUserByIdResponse`     |
-| `DELETE /users/{id}/hard` | `HardDeleteUserByIdResponse` |
-| `POST /users/search`      | `SearchUsersResponse`        |
+| Call                      | Response envelope                   |
+| ------------------------- | ----------------------------------- |
+| `DELETE /users`           | `DeleteUserResponse`                |
+| `GET /users`              | `ListUsersResponse`                 |
+| `POST /users`             | `CreateUserResponse`                |
+| `PUT /users`              | `UpdateUserResponse`                |
+| `DELETE /users/{id}`      | `DeleteUserByIdResponse`            |
+| `GET /users/{id}`         | `GetUserByIdResponse`               |
+| `PUT /users/{id}`         | `UpdateUserByIdResponse`            |
+| `DELETE /users/{id}/2fa`  | `AdminDisableUserTwoFactorResponse` |
+| `DELETE /users/{id}/hard` | `HardDeleteUserByIdResponse`        |
+| `POST /users/search`      | `SearchUsersResponse`               |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
@@ -120,6 +127,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `tests/e2e/users.visual.cy.ts`           | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
 | `tests/routes.spec.ts`                   | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`             | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/schemas.spec.ts`                  | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                    | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `views/User.vue`                         | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/UserCreate.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
@@ -130,7 +138,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 | Suite            | Files | Where                                        |
 | ---------------- | ----- | -------------------------------------------- |
-| Vitest           | 3     | `src/modules/users/tests/`                   |
+| Vitest           | 4     | `src/modules/users/tests/`                   |
 | Cypress          | 2     | `src/modules/users/tests/e2e/`               |
 | Visual baselines | 1     | `src/modules/users/tests/e2e/__snapshots__/` |
 

@@ -12,7 +12,7 @@
 | **Screens**             | 2 — `Contact` · `FeedbackInbox`                                     |
 | **Store**               | `feedback`                                                          |
 | **Menu entries**        | `Contact` · `FeedbackInbox`                                         |
-| **API calls**           | 3                                                                   |
+| **API calls**           | 5                                                                   |
 | **Depends on**          | _nothing_                                                           |
 | **Depended on by**      | _nothing_                                                           |
 | **Languages**           | `en` · `it`                                                         |
@@ -46,15 +46,23 @@ The backend module has answered these endpoints all along. This is the frontend 
 which is worth noticing, because it is the shape a new domain arrives in: the server exists first,
 and a client module is one folder and one registry line away from using it.
 
+**Delete exists, search doesn't.** The inbox loads the whole list on mount and an operator scrolls to
+find a ticket; `updateStatus` and `deleteRequest` both reload it afterward, since the row worth
+rendering next is the API's, not a local guess. `POST /feedback/search` is in the contract and
+validated by `response-schemas.ts`, but nothing in `src/` calls it — the delete confirmation's own
+copy still talks about "the rows an operator found by search," which is the tell that this was meant
+to exist before the inbox grew large enough to need it.
+
 ## State
 
-Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
+Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref
+is not part of the surface.
 
-| Kind        | Members                                            | What it is                                                       |
-| ----------- | -------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `requests`                                         | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                          | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `submitContact` · `fetchRequests` · `updateStatus` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                              | What it is                                                       |
+| ----------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `requests`                                                           | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                            | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `submitContact` · `fetchRequests` · `updateStatus` · `deleteRequest` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -72,10 +80,14 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | Call                     | Response envelope                     |
 | ------------------------ | ------------------------------------- |
 | `GET /feedback`          | `ListFeedbackRequestsResponse`        |
+| `POST /feedback/search`  | `SearchFeedbackRequestsResponse`      |
 | `PUT /feedback/{id}`     | `UpdateFeedbackRequestStatusResponse` |
+| `DELETE /feedback/{id}`  | `DeleteFeedbackRequestResponse`       |
 | `POST /feedback/contact` | `CreateFeedbackRequestResponse`       |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract
+validation on and deleting the folder turns it off. `POST /feedback/search` is registered but unused
+by any store action — see the note under **The story**.
 
 #### Navigation entries
 
@@ -83,6 +95,10 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | --------------- | --------------------------- | ------- | ----- | ---- | ----- |
 | `Contact`       | `navigation.label-contact`  | `main`  | 95    | yes  | —     |
 | `FeedbackInbox` | `navigation.label-feedback` | `admin` | 45    | yes  | —     |
+
+#### Analytics events
+
+None.
 
 ## Files
 
@@ -121,10 +137,6 @@ npm run test:e2e -- --spec 'src/modules/feedback/tests/e2e/*.cy.ts'
 # after the backend changes an endpoint this module calls
 npm run regenerate
 ```
-
-## Deeper in
-
-Nothing in this domain needs a page of its own — the story above is the whole of it.
 
 ## Related pages
 
