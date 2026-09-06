@@ -34,6 +34,22 @@ const mutationConfig = mergeConfig(
     baseConfig,
     defineConfig({
         test: {
+            /*
+             * ONE worker, and the parallelism belongs to Stryker.
+             *
+             * Vitest sizes its pool for a standalone run — a fork per core. Under Stryker that
+             * number is MULTIPLIED, not reused: Stryker runs `concurrency` test runners at once
+             * and each is a full vitest with a pool of its own, so on a 32-core box three runners
+             * become ~90 forks. The machine then thrashes, and the run is killed for memory long
+             * before it converges.
+             *
+             * There is nothing for a pool to do here anyway: `coverageAnalysis: "perTest"` narrows
+             * each mutant to the handful of tests that reach it, and a pool cannot parallelise
+             * below a file. The paired backend pins the same thing in `jest.config.mutation.js` —
+             * see its docs/tools/mutation-testing.md#the-worker-pool-multiplication.
+             */
+            maxWorkers: 1,
+            fileParallelism: false,
             // On top of vitest's own defaults, which the base config also takes verbatim: the
             // build output, the HTML report and Stryker's scratch space are not test sources.
             exclude: [

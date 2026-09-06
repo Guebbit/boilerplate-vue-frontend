@@ -23,7 +23,18 @@
         "!src/modules/*/index.ts",
         "!src/modules/*/tests/**"
     ],
-    "ignorePatterns": ["coverage/**", "reports/**", "dist/**", "docs/**"],
+    "ignorePatterns": [
+        "coverage/**",
+        "reports/**",
+        "dist/**",
+        "dist-e2e/**",
+        "docs/**",
+        ".stryker-tmp*/**",
+        ".claude/**",
+        ".2repo/**",
+        "2repo/**",
+        ".codeboarding/**"
+    ],
     "thresholds": {
         "high": 80,
         "low": 60,
