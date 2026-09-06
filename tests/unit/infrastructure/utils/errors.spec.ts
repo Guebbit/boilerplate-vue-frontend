@@ -1,6 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import {
+    absentIs,
+    isTransportFailure,
     notifyErrorMessages,
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
@@ -175,5 +177,74 @@ describe('VUETIFY_INVALID_FIELD_SELECTOR', () => {
 
     it('matches nothing when no field is in error', () => {
         expect(firstMatch('<div><input id="valid" /></div>')).toBeNull();
+    });
+});
+
+/**
+ * The classifier that decides what reaches analytics. Both repos write into ONE Umami website, so
+ * anything the server answered is already recorded there — reporting it again from the browser
+ * stores one refusal as two rows nothing can tell apart. "No answer at all" is the only case this
+ * side owns.
+ */
+describe('isTransportFailure', () => {
+    it.each([
+        ['a dropped connection with no envelope', undefined],
+        ['null', null],
+        ['a bare string', 'Network Error'],
+        ['a number', 0],
+        ['an envelope with no status', { message: 'boom' }],
+        ['an envelope whose status is a string', { status: '500' }],
+        ['an envelope whose status is null', { status: null }]
+    ])('reports %s as a transport failure', (_case, error) => {
+        expect(isTransportFailure(error)).toBe(true);
+    });
+
+    it.each([400, 401, 404, 422, 500, 503])(
+        'reports an answered %i as NOT a transport failure',
+        (status) => {
+            expect(isTransportFailure({ status })).toBe(false);
+        }
+    );
+
+    /**
+     * `status: 0` is what some clients use for "no response", but this app's envelope only carries
+     * a status when the API replied — so a numeric zero still counts as answered here. Pinned
+     * because the alternative reading is tempting and would silently change what gets reported.
+     */
+    it('treats a numeric zero status as answered', () => {
+        expect(isTransportFailure({ status: 0 })).toBe(false);
+    });
+});
+
+/**
+ * The "nothing there" test. `GET /payments/by-order/:id` answering 404 means "no intent yet";
+ * every other status is a failure the caller must not render as absence.
+ */
+describe('absentIs', () => {
+    it('accepts the status the caller named', () => {
+        expect(absentIs({ status: 404 }, 404)).toBe(true);
+    });
+
+    it('accepts any of several named statuses', () => {
+        expect(absentIs({ status: 401 }, 404, 401)).toBe(true);
+    });
+
+    it('rejects a status the caller did not name', () => {
+        expect(absentIs({ status: 500 }, 404)).toBe(false);
+    });
+
+    /**
+     * The load-bearing half: a dropped connection must never read as "nothing there", or an
+     * outage renders as an empty cart instead of an error.
+     */
+    it.each([undefined, null, 'Network Error', { message: 'boom' }])(
+        'rejects the transport failure %o however the statuses are named',
+        (error) => {
+            expect(absentIs(error, 404, 401)).toBe(false);
+        }
+    );
+
+    it('rejects everything when no status is named at all', () => {
+        expect(absentIs({ status: 404 })).toBe(false);
     });
 });
