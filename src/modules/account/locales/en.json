@@ -130,7 +130,9 @@
         "success-enrolled": "{method} armed.",
         "success-removed": "{method} removed.",
         "success-disabled": "Two-factor authentication turned off.",
-        "button-turn-off": "Turn off two-factor authentication"
+        "button-turn-off": "Turn off two-factor authentication",
+        "button-regenerate-codes": "Regenerate backup codes",
+        "confirm-regenerate-codes": "Regenerating discards your current backup codes and replaces them with a new set. Continue?"
     },
     "two-factor-challenge-page": {
         "page-title": "Verification code",

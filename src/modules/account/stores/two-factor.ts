@@ -15,6 +15,7 @@ import {
     confirmTwoFactorMethod as apiConfirmTwoFactorMethod,
     removeTwoFactorMethod as apiRemoveTwoFactorMethod,
     disableTwoFactor as apiDisableTwoFactor,
+    regenerateBackupCodes as apiRegenerateBackupCodes,
     sendTwoFactorCode as apiSendTwoFactorCode,
     loginTwoFactor as apiLoginTwoFactor
 } from '@api';
@@ -30,6 +31,7 @@ import type {
     TwoFactorStatus,
     TwoFactorSetup,
     TwoFactorConfirmed,
+    TwoFactorBackupCodesRegenerated,
     TwoFactorDelivery,
     TwoFactorMethodSummary
 } from '@api';
@@ -87,10 +89,11 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const setup = ref<TwoFactorSetup>();
 
     /**
-     * The result of the most recent {@link confirmMethod} call — carries `backupCodes` only when
-     * that confirm armed the account's FIRST factor.
+     * The result of the most recent {@link confirmMethod} or {@link regenerateBackupCodes} call —
+     * both mint a set of codes to show exactly once, so the one-time screen reads off whichever
+     * ran last. `confirmMethod` carries `backupCodes` only when it armed the FIRST factor.
      */
-    const confirmed = ref<TwoFactorConfirmed>();
+    const confirmed = ref<TwoFactorConfirmed | TwoFactorBackupCodesRegenerated>();
 
     /**
      * The live login-time challenge, from `useAuthStore().login()`'s `mfa` branch. `undefined`
@@ -230,6 +233,23 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()));
 
     /**
+     * Mints a fresh set of ten backup codes and discards whatever was left of the old set. Proven
+     * the same way as {@link removeMethod} / {@link disableAll} — a code from any armed method, or
+     * an unused backup code.
+     *
+     * @param code - A code from any armed method, or an unused backup code.
+     * @returns A promise resolving with the fresh codes once `status` reflects the new count. The
+     *  caller reads them off {@link confirmed}, same as a first-factor {@link confirmMethod}.
+     */
+    const regenerateBackupCodes = (code: string) =>
+        fetchAny(() =>
+            apiRegenerateBackupCodes({ code }).then((data) => {
+                confirmed.value = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
+                return fetchStatus().then(() => confirmed.value);
+            })
+        );
+
+    /**
      * Clears the pending-enrollment state — the "never mind" path out of `TwoFactorEnroll.vue`.
      */
     const clearSetup = () => {
@@ -326,6 +346,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         confirmMethod,
         removeMethod,
         disableAll,
+        regenerateBackupCodes,
         clearSetup,
 
         beginLoginChallenge,

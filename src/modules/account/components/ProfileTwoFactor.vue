@@ -63,10 +63,14 @@ const openEnroll = (method: string) => {
 };
 
 /**
- * One shared code prompt for both mutations that need to prove an existing factor: removing one
- * method, and dropping every method at once. `kind` says which action `submitCode` performs.
+ * One shared code prompt for every mutation that needs to prove an existing factor: removing one
+ * method, dropping every method at once, or minting a fresh set of backup codes. `kind` says which
+ * action {@link submitCode} performs.
  */
-const codePrompt = ref<{ kind: 'remove'; method: string } | { kind: 'disable' }>();
+type CodePromptRequest =
+    { kind: 'remove'; method: string } | { kind: 'disable' } | { kind: 'regenerate' };
+
+const codePrompt = ref<CodePromptRequest>();
 
 /**
  * The code being typed into that prompt. Cleared each time the prompt opens.
@@ -84,10 +88,7 @@ const codeSubmitting = ref(false);
  *
  * @param request - What is being confirmed and, on accept, what {@link codePrompt} becomes.
  */
-const openCodePrompt = (request: {
-    message: string;
-    next: { kind: 'remove'; method: string } | { kind: 'disable' };
-}) =>
+const openCodePrompt = (request: { message: string; next: CodePromptRequest }) =>
     useDialogStore()
         .confirm({ message: request.message, color: 'error' })
         .then((accepted) => {
@@ -117,28 +118,50 @@ const handleDisableAll = () =>
     openCodePrompt({ message: t('two-factor.confirm-disable-all'), next: { kind: 'disable' } });
 
 /**
+ * @returns Nothing; opens {@link codePrompt} after confirmation — regenerating discards the
+ *  current set, so this warns before minting a new one.
+ */
+const handleRegenerate = () =>
+    openCodePrompt({
+        message: t('two-factor.confirm-regenerate-codes'),
+        next: { kind: 'regenerate' }
+    });
+
+/**
+ * Runs the mutation a code-prompt request names, and says what to toast on success —
+ * `undefined` for a regenerate, since the backup-codes screen it opens IS the success feedback.
+ *
+ * @param request - The pending {@link codePrompt} value.
+ * @param code - The code just typed into the prompt.
+ * @returns A promise resolving with the toast message, or `undefined`.
+ */
+const runCodePromptMutation = (
+    request: CodePromptRequest,
+    code: string
+): Promise<string | undefined> => {
+    if (request.kind === 'remove')
+        return twoFactor
+            .removeMethod(request.method, code)
+            .then(() => t('two-factor.success-removed', { method: methodLabel(request.method) }));
+    if (request.kind === 'disable')
+        return twoFactor.disableAll(code).then(() => t('two-factor.success-disabled'));
+    return twoFactor.regenerateBackupCodes(code).then(() => undefined);
+};
+
+/**
  * Submits the code prompt's pending mutation.
  *
- * @returns Nothing; the outcome is reported as a toast and the prompt closes on success. A wrong
- *  code stays open for another try — the confirmation already happened, no reason to lose it.
+ * @returns Nothing; the outcome is reported as a toast (when there is one) and the prompt closes
+ *  on success. A wrong code stays open for another try — the confirmation already happened, no
+ *  reason to lose it.
  */
 const submitCode = () => {
     if (!codePrompt.value || !codeInput.value) return;
     const request = codePrompt.value;
     codeSubmitting.value = true;
-    return (
-        request.kind === 'remove'
-            ? twoFactor.removeMethod(request.method, codeInput.value)
-            : twoFactor.disableAll(codeInput.value)
-    )
-        .then(() => {
-            addMessage(
-                request.kind === 'remove'
-                    ? t('two-factor.success-removed', {
-                          method: methodLabel(request.method)
-                      })
-                    : t('two-factor.success-disabled')
-            );
+    return runCodePromptMutation(request, codeInput.value)
+        .then((toastMessage) => {
+            if (toastMessage) addMessage(toastMessage);
             codePrompt.value = undefined;
         })
         .catch((error) => notifyErrorMessages(addMessage, error))
@@ -244,17 +267,28 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
             {{ row.reason }}
         </p>
 
-        <p
-            v-if="status && status.enabled"
-            class="mb-4 text-sm"
-            :class="status.backupCodesRemaining === 0 ? 'text-error' : 'opacity-70'"
-        >
-            {{
-                status.backupCodesRemaining === 0
-                    ? t('two-factor.backup-codes-remaining-zero')
-                    : t('two-factor.backup-codes-remaining', { count: status.backupCodesRemaining })
-            }}
-        </p>
+        <div v-if="status && status.enabled" class="mb-4 flex items-center justify-between gap-2">
+            <p
+                class="text-sm"
+                :class="status.backupCodesRemaining === 0 ? 'text-error' : 'opacity-70'"
+            >
+                {{
+                    status.backupCodesRemaining === 0
+                        ? t('two-factor.backup-codes-remaining-zero')
+                        : t('two-factor.backup-codes-remaining', {
+                              count: status.backupCodesRemaining
+                          })
+                }}
+            </p>
+            <v-btn
+                variant="text"
+                size="small"
+                data-test="two-factor-regenerate-codes"
+                @click="handleRegenerate"
+            >
+                {{ t('two-factor.button-regenerate-codes') }}
+            </v-btn>
+        </div>
 
         <v-btn
             v-if="status?.enabled"

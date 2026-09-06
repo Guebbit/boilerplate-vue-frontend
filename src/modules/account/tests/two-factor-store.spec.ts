@@ -186,6 +186,24 @@ describe('the enrollment machine', () => {
             });
     });
 
+    it('regenerateBackupCodes replaces confirmed with the fresh set and refetches status', () => {
+        responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
+            backupCodes: ['ccc-333', 'ddd-444'],
+            backupCodesRemaining: 10
+        });
+        responses['GET /account/2fa'] = orvalEnvelope({
+            enabled: true,
+            methods: [{ method: 'email', delivers: true, target: 'a***a@example.com' }],
+            available: [],
+            backupCodesRemaining: 10
+        });
+        const store = useTwoFactorStore();
+        return store.regenerateBackupCodes('123456').then(() => {
+            expect(store.confirmed?.backupCodes).toEqual(['ccc-333', 'ddd-444']);
+            expect(store.status?.backupCodesRemaining).toBe(10);
+        });
+    });
+
     it('removeMethod and disableAll each refetch status afterward', () => {
         responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
         responses['DELETE /account/2fa'] = orvalEnvelope();

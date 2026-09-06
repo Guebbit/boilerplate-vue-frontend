@@ -130,7 +130,9 @@
         "success-enrolled": "{method} attivato.",
         "success-removed": "{method} rimosso.",
         "success-disabled": "Autenticazione a due fattori disattivata.",
-        "button-turn-off": "Disattiva autenticazione a due fattori"
+        "button-turn-off": "Disattiva autenticazione a due fattori",
+        "button-regenerate-codes": "Rigenera codici di backup",
+        "confirm-regenerate-codes": "Rigenerare i codici di backup scarta quelli attuali e li sostituisce con un nuovo set. Continuare?"
     },
     "two-factor-challenge-page": {
         "page-title": "Codice di verifica",

@@ -73,6 +73,44 @@ describe('Two-factor authentication', () => {
         cy.url().should('include', '/login/2fa');
     });
 
+    it('regenerating backup codes discards the old set and shows a fresh one once', function () {
+        cy.skipUnlessDemo();
+
+        // ── Enroll by hand: this case needs one of the backup codes to prove the mutation,
+        //    and the shared command dismisses that screen without exposing them. ──────────────
+        cy.loginAs('user');
+        cy.visit('/en/profile');
+        cy.get('[data-test=two-factor-add-email]').click();
+        cy.get('[data-test=two-factor-enroll]').should('be.visible');
+        cy.typeMailedTwoFactorCode(E2E_ACCOUNTS.user.email, '[data-test=two-factor-enroll-code]');
+        cy.get('[data-test=two-factor-enroll-confirm]').click();
+        cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
+
+        cy.get('[data-test=backup-codes-list] li')
+            .first()
+            .invoke('text')
+            .then((firstCode) => {
+                cy.get('[data-test=backup-codes-confirm-saved]').click();
+                cy.get('[data-test=backup-codes-continue]').click();
+
+                // ── Regenerate, proving it with the code just saved ─────────────────────────
+                cy.get('[data-test=two-factor-regenerate-codes]').click();
+                cy.get('[data-test=app-dialog-confirm]').click();
+                cy.get('[data-test=two-factor-code-prompt-input]').type(firstCode.trim());
+                cy.get('[data-test=two-factor-code-prompt-submit]').click();
+
+                // ── A fresh set replaces it, shown exactly once ──────────────────────────────
+                cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
+                cy.get('[data-test=backup-codes-list] li')
+                    .first()
+                    .invoke('text')
+                    .should('not.equal', firstCode);
+                cy.get('[data-test=backup-codes-confirm-saved]').click();
+                cy.get('[data-test=backup-codes-continue]').click();
+                cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
+            });
+    });
+
     it('removing the last factor turns 2FA off — the next login goes straight through', function () {
         cy.skipUnlessDemo();
 
