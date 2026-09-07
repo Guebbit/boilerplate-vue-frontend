@@ -26,7 +26,7 @@ flowchart LR
 **`import.meta.env.VITE_*` is replaced with a string literal at build time.** It is not read when
 the app runs. Setting an environment variable on a running container changes nothing; the value
 was decided when the bundle was produced. A production image is therefore specific to the
-environment it was built for — see the build args in `.docker/Dockerfile.production`.
+environment it was built for — see the build args in `docker/Dockerfile.production`.
 
 The second half of the same rule: **the browser resolves these URLs, not the container.** So
 `VITE_API_URL` must always be a host address (`http://localhost:3000`), never a compose service

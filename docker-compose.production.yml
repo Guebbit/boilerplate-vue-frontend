@@ -10,7 +10,7 @@
 # Vite replaces every `import.meta.env.VITE_*` with a literal while bundling, so the values below
 # are BUILD arguments, not runtime environment. Changing one requires a rebuild — `up -d` alone
 # will happily restart a container with the old values compiled in. See the long note at the top of
-# `.docker/Dockerfile.production`.
+# `docker/Dockerfile.production`.
 #
 # Set them in a `.env` file beside this one (compose interpolates it automatically) or export them
 # in the shell. `VITE_API_URL` is required and has no sensible default: a frontend pointed at the
@@ -20,7 +20,7 @@ services:
     frontend:
         build:
             context: .
-            dockerfile: .docker/Dockerfile.production
+            dockerfile: docker/Dockerfile.production
             args:
                 # Required. The `:?` form fails the build with this message rather than quietly
                 # baking an empty string into the bundle and shipping an app that calls itself.

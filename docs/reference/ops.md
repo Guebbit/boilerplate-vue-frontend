@@ -10,13 +10,13 @@ gates it, the files it serves, and the docs site describing it.
 A frontend's production image is not a Node process — it is a static bundle behind nginx, which is
 why there are two web-server configs here and none in the paired backend.
 
-| File                            | What it is                                                                                                                                                                       | Read next                                          |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `.docker/Dockerfile`            | The development image: the Vite dev server with the source bind-mounted.                                                                                                         | [Docker & Podman](../tools/docker-and-podman.md)   |
-| `.docker/Dockerfile.production` | A multi-stage build — install, `vite build`, then copy the bundle into an nginx image. The toolchain does not ship.                                                              | [Docker & Podman](../tools/docker-and-podman.md)   |
-| `.docker/nginx.conf`            | Serves the built app, and the part that matters: an SPA needs every unmatched path to fall back to `index.html`, or a deep link answers 404 from a router that never got to run. | [State & Routing](../tools/state-and-routing.md)   |
-| `.docker/Dockerfile.docs`       | Builds the VitePress site and serves it with nginx, so the docs deploy like any other service.                                                                                   | [Testing (overview)](../tools/testing-and-docs.md) |
-| `.docker/nginx.docs.conf`       | The nginx config behind that image.                                                                                                                                              | —                                                  |
+| File                           | What it is                                                                                                                                                                       | Read next                                          |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `docker/Dockerfile`            | The development image: the Vite dev server with the source bind-mounted.                                                                                                         | [Docker & Podman](../tools/docker-and-podman.md)   |
+| `docker/Dockerfile.production` | A multi-stage build — install, `vite build`, then copy the bundle into an nginx image. The toolchain does not ship.                                                              | [Docker & Podman](../tools/docker-and-podman.md)   |
+| `docker/nginx.conf`            | Serves the built app, and the part that matters: an SPA needs every unmatched path to fall back to `index.html`, or a deep link answers 404 from a router that never got to run. | [State & Routing](../tools/state-and-routing.md)   |
+| `docker/Dockerfile.docs`       | Builds the VitePress site and serves it with nginx, so the docs deploy like any other service.                                                                                   | [Testing (overview)](../tools/testing-and-docs.md) |
+| `docker/nginx.docs.conf`       | The nginx config behind that image.                                                                                                                                              | —                                                  |
 
 ## Compose
 

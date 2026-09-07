@@ -8,7 +8,7 @@ docs/.vitepress/cache
 src/types/asyncapi.generated.ts
 
 # nginx configuration — prettier has no parser for it and errors out rather than skipping
-.docker/*.conf
+docker/*.conf
 *.insomnia*
 Insomnia_*.json
 # Stryker output. `reports/stryker-incremental.json` is committed on purpose (CI can only reuse

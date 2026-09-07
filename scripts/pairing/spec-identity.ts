@@ -66,7 +66,7 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * exactly the failure mode this file exists to prevent.
  *
  * Also deliberately absent, for the same reason: `public/favicon/*`, `.prettierrc`,
- * `.dockerignore`, `.husky/*`, `.docker/nginx.docs.conf` and `docs/.vitepress/theme/*`. Identical
+ * `.dockerignore`, `.husky/*`, `docker/nginx.docs.conf` and `docs/.vitepress/theme/*`. Identical
  * by convention, and a gate that fails on an icon trains people to ignore it.
  *
  * Nothing this repo can REGENERATE from a file already here belongs here either. Such a copy

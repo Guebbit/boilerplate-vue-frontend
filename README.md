@@ -94,7 +94,7 @@ Four ideas carry the whole repository:
 | Understand a dependency          | [Tools Explained](./docs/tools/tools-explained.md)                                                                      |
 | Test something                   | [Testing overview](./docs/tools/testing-and-docs.md)                                                                    |
 | Know what is planned but unbuilt | [Roadmap](./docs/theory/roadmap.md)                                                                                     |
-| Deploy it                        | `.docker/Dockerfile.production` · `docker-compose.production.yml`                                                       |
+| Deploy it                        | `docker/Dockerfile.production` · `docker-compose.production.yml`                                                        |
 
 ---
 

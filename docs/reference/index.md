@@ -22,7 +22,7 @@ fast.
 flowchart TD
     Root["Repository root<br/><i>configs, specs, manifests</i>"] --> Src["src/"]
     Root --> Contracts["Contracts<br/><i>openapi · asyncapi · contracts/</i>"]
-    Root --> Ops["Ops<br/><i>.docker · .github · public</i>"]
+    Root --> Ops["Ops<br/><i>docker · .github · public</i>"]
     Root --> Dev["Dev tooling<br/><i>scripts · .husky</i>"]
     Root --> Tests["tests/"]
 
@@ -50,7 +50,7 @@ flowchart TD
 | [Contracts](./contracts.md)               | `openapi.yaml`, `asyncapi.yaml`, the generated `contracts/`, Orval and Spectral config                           |
 | [Scripts & Hooks](./scripts.md)           | `scripts/`, `.husky/`                                                                                            |
 | [Tests](./tests.md)                       | `tests/` and the co-located module suites                                                                        |
-| [Ops & Assets](./ops.md)                  | `.docker/`, `.github/`, compose files, `public/`, the docs site                                                  |
+| [Ops & Assets](./ops.md)                  | `docker/`, `.github/`, compose files, `public/`, the docs site                                                   |
 
 ---
 

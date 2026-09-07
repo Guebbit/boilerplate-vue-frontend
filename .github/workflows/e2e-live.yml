@@ -172,7 +172,7 @@ jobs:
                   UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
                   UMAMI_WEBSITE_NAME: Frontend
                   UMAMI_WEBSITE_DOMAIN: localhost
-              run: sh .docker/observability/umami-init.sh
+              run: sh docker/observability/umami-init.sh
 
             # Backgrounded, with its PID kept so the teardown step can stop it. Its stdout goes
             # to a file rather than the step log: the log is uploaded as an artifact below, and a
