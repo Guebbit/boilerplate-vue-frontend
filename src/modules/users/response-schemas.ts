@@ -1,7 +1,8 @@
 /**
  * @module
- * Declarative table mapping method+path patterns to the Zod response schema
- * that validates them — consumed by the response-schema-map infrastructure.
+ * Declares the response-envelope schema for every users endpoint, keyed by method + URL
+ * pattern, so `infrastructure/http` can validate a response against its contract by matching the
+ * request that produced it.
  */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';

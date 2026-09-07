@@ -3,16 +3,15 @@
 /**
  * One axe sweep over a set of routes, at one authentication level.
  *
- * ── Why this exists, and what it replaced ────────────────────────────────────────────────────
- * The accessibility coverage used to be a single central spec holding every route in the app,
- * and that file argued its own case well: the coverage was a list you could read, a failure named
- * the route rather than the feature test it was hiding inside, and adding a route was adding a
- * line.
+ * ── Why a sweep per module, and not one central spec ─────────────────────────────────────────
+ * A single central spec listing every route in the app has real appeal: the coverage is a list
+ * you can read, a failure names the route rather than the feature test it is hiding inside, and
+ * adding a route is adding a line.
  *
- * What that shape could not survive is a DELETED MODULE. `rm -rf src/modules/users` left the
- * central list still naming `/en/users` and `/en/users/create`, so the a11y suite failed on routes
- * that no longer existed — an orphan, and exactly the failure co-locating the other e2e specs was
- * meant to end. The routes belong to modules, so their accessibility coverage does too.
+ * What that shape cannot survive is a DELETED MODULE. `rm -rf src/modules/users` would leave the
+ * central list still naming `/en/users` and `/en/users/create`, failing the a11y suite on routes
+ * that do not exist — an orphan, and exactly the failure co-locating the other e2e specs exists
+ * to prevent. The routes belong to modules, so their accessibility coverage does too.
  *
  * The original argument is not discarded, it is MOVED: "the coverage is a list you can read"
  * became `tests/cross-cutting/a11y-coverage.spec.ts`, which parses every module's `routes.ts`
@@ -129,8 +128,8 @@ export const sweepA11y = (
                  * waiting on it waits forever.
                  */
                 /*
-                 * ...and both of those pass trivially BEFORE the first fetch fires, which is the
-                 * moment this used to audit. The network count cannot be fooled that way.
+                 * ...and both of those pass trivially BEFORE the first fetch fires, so on their
+                 * own they would audit an empty page. The network count cannot be fooled that way.
                  */
                 cy.settleNetwork();
                 cy.get('.v-btn--loading').should('not.exist');

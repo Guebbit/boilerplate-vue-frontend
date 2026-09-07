@@ -1,14 +1,18 @@
 /**
  * @module
- * Maps each inventory endpoint's method + path pattern to the Zod schema its response envelope
- * must satisfy — one row per call this module makes, read by the response-schema-map middleware.
+ * Declares the response-envelope schema for every inventory endpoint, keyed by method + URL
+ * pattern, so `infrastructure/http` can validate a response against its contract by matching the
+ * request that produced it.
  */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
- * Response-envelope schemas for every inventory endpoint this module calls. Registered through
- * the module manifest; the rules every row obeys are on {@link ResponseSchemaRoute}.
+ * Response-envelope schemas for every inventory endpoint this module calls.
+ *
+ * Registered through the module manifest, so enabling the domain turns its contract validation on
+ * and deleting the folder turns it off. Both rules every row obeys are stated once on
+ * {@link ResponseSchemaRoute}.
  */
 export const inventoryResponseSchemas: ResponseSchemaRoute[] = [
     {

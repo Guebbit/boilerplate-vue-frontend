@@ -1,22 +1,18 @@
 /**
  * @module
- * A flat array of `{ method, pattern, schema }` rows, one per admin-only locale endpoint, read by
- * the response-envelope validator via regex match on method plus URL.
+ * Declares the response-envelope schema for every locales endpoint, keyed by method + URL
+ * pattern, so `infrastructure/http` can validate a response against its contract by matching the
+ * request that produced it.
  */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
- * Response-envelope schemas for the locale ADMIN surface — the nine operations only this module
- * calls. Registered through the module manifest; the rules every row obeys are on
+ * Response-envelope schemas for every locales endpoint this module calls.
+ *
+ * Registered through the module manifest, so enabling the domain turns its contract validation on
+ * and deleting the folder turns it off. Both rules every row obeys are stated once on
  * {@link ResponseSchemaRoute}.
- *
- * The two public reads (`GET /locales`, `GET /locales/{tag}/messages`) are NOT here: the boot
- * path in `infrastructure/i18n/locale-overrides.ts` calls them whether or not this module is
- * enabled, so their rows stay in `coreRouteSchemas` with the code that needs them.
- *
- * Same regex discipline as the core rows: every single-segment pattern is `$`-anchored so
- * `/locales/es` never swallows `/locales/es/entries`.
  */
 export const localesResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'POST', pattern: /^\/locales$/, schema: schemas.CreateLocaleResponse },

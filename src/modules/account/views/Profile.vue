@@ -12,8 +12,8 @@ export default {
  * chains the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring
  * the header's language switcher.
  *
- * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST,
- * rather than between the password form and the sessions list where it used to sit.
+ * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST, so
+ * nobody reaches it on the way to the password form or the sessions list.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -15,13 +15,12 @@ import { feedbackResponseSchemas } from './response-schemas';
  * Depends on nothing: a ticket references no other domain's records, and both views talk only
  * to this module's own endpoints. The BE module has answered them all along — this is the
  * frontend finally claiming its half.
+ *
+ * A contact form and an inbox. Every application grows one, none of them differ, and this one
+ * references no other domain’s records.
  */
 export default {
     name: 'feedback',
-    /*
-     * A contact form and an inbox. Every application grows one, none of them differ, and this one
-     * references no other domain’s records.
-     */
     routes,
     navigation: [
         {

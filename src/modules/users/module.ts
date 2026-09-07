@@ -15,13 +15,12 @@ import { usersResponseSchemas } from './response-schemas';
  * Depends on nothing. It is the account module that reads this one — for the field rules every
  * signup and password form shares — and not the reverse: a user record exists whether or not
  * anyone is signed in.
+ *
+ * An admin CRUD over a user record with an email and an admin flag — the same problem in every
+ * application that has ever had one.
  */
 export default {
     name: 'users',
-    /*
-     * An admin CRUD over a user record with an email and an admin flag — the same problem in every
-     * application that has ever had one.
-     */
     routes,
     navigation: [
         {

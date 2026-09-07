@@ -18,13 +18,12 @@ import { inventoryResponseSchemas } from './response-schemas';
  * the title lookup) through the products barrel, the same one-way arrow the BE's inventory module
  * has. Deleting this module removes the board and the ledger behind it; every shelf count stays
  * correct, every WHY goes unrecorded.
+ *
+ * A ledger that explains stock without owning it — specific to running a shop, not the reason
+ * anyone shops here.
  */
 export default {
     name: 'inventory',
-    /*
-     * A ledger that explains stock without owning it — specific to running a shop, not the reason
-     * anyone shops here.
-     */
     routes,
     navigation: [
         {

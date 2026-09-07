@@ -27,13 +27,12 @@ import { accountResponseSchemas } from './response-schemas';
  * There is no `index.ts` next to this file, and that is the answer rather than an omission: account
  * is a consumer, not a provider, and no other domain has ever needed anything from it. A barrel
  * exists when a module exports something; an empty one would only be a promise nobody asked for.
+ *
+ * Login, signup, password reset. There is no version of this that is a competitive advantage,
+ * and the client half is thinner still — it renders forms over rules the server owns.
  */
 export default {
     name: 'account',
-    /*
-     * Login, signup, password reset. There is no version of this that is a competitive advantage,
-     * and the client half is thinner still — it renders forms over rules the server owns.
-     */
     routes,
     navigation: [
         {

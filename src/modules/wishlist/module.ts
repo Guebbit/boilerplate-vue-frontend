@@ -17,12 +17,11 @@ import { wishlistResponseSchemas } from './response-schemas';
  * initiated — the cart is never asked to write. The reverse arrow does not exist — the cart never
  * reads the wishlist — which is what keeps `products → wishlist → cart → orders` a line rather than
  * a loop.
+ *
+ * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
  */
 export default {
     name: 'wishlist',
-    /*
-     * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
-     */
     routes,
     navigation: [
         {

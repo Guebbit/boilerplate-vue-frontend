@@ -14,12 +14,11 @@
  * Nothing else in this suite covers this. `store-location.spec.ts` rules on store FILENAMES — it
  * does not sweep the whole folder, and a stray file passes it.
  *
- * ── Where this came from ─────────────────────────────────────────────────────────────────────
- * This catalogue used to live in `scripts/module-docs/shapes.ts`, where it rendered the **Files**
- * table on every module page and, as a side effect, enforced this rule. The generator is gone and
- * the module pages are written by hand; the rule was the half worth keeping, so it moved here
- * where rules live. The one-line description is kept even though nothing renders it any more —
- * see above for why.
+ * ── Why the catalogue lives in a spec ────────────────────────────────────────────────────────
+ * These are rules, not documentation, so they live with the rules and fail a test run when they
+ * break. The module pages describe the same shapes in prose, for a reader; this file is what
+ * makes them true. Each entry keeps its one-line description because that is what makes an
+ * unrecognised file's failure readable — see above.
  *
  * See: docs/theory/modules.md
  */

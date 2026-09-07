@@ -130,9 +130,9 @@ const filterText = ref('');
  *
  * The two are separate refs because the board is expensive to redraw — `filteredKeys` walks every
  * key across every language, and the page renders a field per cell — so filtering on the raw
- * keystroke made the field itself stutter. That used to be solved by not filtering until Search
- * was pressed, which is a strange thing to ask of a filter that never leaves the browser: there is
- * no request to spare, only frames.
+ * keystroke makes the field itself stutter. Waiting for a Search press would also fix it, and is a
+ * strange thing to ask of a filter that never leaves the browser: there is no request to spare,
+ * only frames.
  *
  * Debouncing spends those frames instead of the interaction. The Search button still works and
  * still applies immediately — see {@link handleSearch} — for someone who types and reaches for it

@@ -20,13 +20,12 @@ import { localesResponseSchemas } from './response-schemas';
  * Depends on nothing. It talks only to `/locales/*`, and the two infrastructure reads it shares
  * with the boot path (`GET /locales`, `GET /locales/{tag}/messages`) stay registered by the
  * bottom tier precisely so this folder can be `rm -rf`ed without touching them.
+ *
+ * Translation management is a solved problem — every CMS grows one of these screens and none
+ * of them differ. The modelling effort lives server-side, where the rows are.
  */
 export default {
     name: 'locales',
-    /*
-     * Translation management is a solved problem — every CMS grows one of these screens and none
-     * of them differ. The modelling effort lives server-side, where the rows are.
-     */
     routes,
     /*
      * One menu entry, not two: the dictionary board is reached from the languages board's own

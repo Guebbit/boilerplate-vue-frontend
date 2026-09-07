@@ -26,14 +26,13 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
  *
  * The one arrow going out is `delivery`, and it is `published-language`: the checkout mounts
  * `ShippingSelector` and never learns what a shipping rate is.
+ *
+ * Checkout is the one screen where price, stock, address and shipping have to agree at once,
+ * and the only place this client holds a multi-step flow of its own. Every other module points
+ * at it.
  */
 export default {
     name: 'cart',
-    /*
-     * Checkout is the one screen where price, stock, address and shipping have to agree at once,
-     * and the only place this client holds a multi-step flow of its own. Every other module points
-     * at it.
-     */
     routes,
     navigation: [
         {

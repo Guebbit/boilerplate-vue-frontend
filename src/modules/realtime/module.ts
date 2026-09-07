@@ -14,13 +14,12 @@ import routes from './routes';
  * Depends on nothing. The SSE transport it runs on is not part of this module — `createSseClient`
  * is a typed wrapper over `EventSource` that knows no domain, so it lives in `infrastructure` and this module
  * is only the screen, the store behind it and the feed component.
+ *
+ * A playground for the metrics stream. It exists to demonstrate the SSE transport, which is
+ * itself infrastructure — there is no domain here to model.
  */
 export default {
     name: 'realtime',
-    /*
-     * A playground for the metrics stream. It exists to demonstrate the SSE transport, which is
-     * itself infrastructure — there is no domain here to model.
-     */
     routes,
     navigation: [
         {

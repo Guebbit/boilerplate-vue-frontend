@@ -27,10 +27,11 @@ declare module '@/infrastructure/utils/logger.ts' {
  * A module rather than part of the app shell, because that is what makes it DELETABLE — `rm -rf`
  * this folder and one line of `src/modules.ts`, and the demo leaves with it. Nothing depends on
  * it, and it depends on no domain.
+ *
+ * A showroom is not the business. There is nothing to model here.
  */
 export default {
     name: 'demo',
-    // A showroom is not the business. There is nothing to model here.
     routes,
     navigation: [
         {

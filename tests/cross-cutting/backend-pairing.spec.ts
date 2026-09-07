@@ -21,10 +21,10 @@
  * Stated rather than derived, deliberately: a name matcher would call `admin` unpaired, which is
  * the wrong answer rather than a missing one.
  *
- * ── Where this came from ─────────────────────────────────────────────────────────────────────
- * This table used to live in `scripts/module-docs/pairing.ts`, rendering the "two repositories"
- * section of the modules overview and enforcing these rules as a side effect. The generator is
- * gone; the rules had nothing to do with documentation, so they moved here.
+ * ── Why the table lives in a spec ────────────────────────────────────────────────────────────
+ * These are rules, not documentation, so they live with the rules and fail a test run when they
+ * break. The modules overview describes the same pairing in prose, for a reader; this file is
+ * what makes it true.
  *
  * See: docs/modules/index.md
  */

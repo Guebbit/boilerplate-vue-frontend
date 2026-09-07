@@ -13,16 +13,15 @@ import { adminResponseSchemas } from './response-schemas';
 /**
  * The admin observability console: service health, KPIs and the audit log.
  *
+ * An ops console over endpoints the server already exposes, interchangeable with any
+ * off-the-shelf dashboard.
+ *
  * Depends on nothing. It reads the observability endpoints directly rather than any other
  * domain's store, so dropping it costs nothing anywhere else — which is the point, since it is
  * the first thing a downstream project without an ops dashboard deletes.
  */
 export default {
     name: 'admin',
-    /*
-     * An ops console over endpoints the server already exposes. Interchangeable with any
-     * off-the-shelf dashboard, and the first thing a downstream project without ops deletes.
-     */
     routes,
     navigation: [
         {
