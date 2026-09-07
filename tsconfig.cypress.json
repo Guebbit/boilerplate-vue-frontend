@@ -10,14 +10,20 @@
         // `scripts/**` is: a file imported by a project but not included in it is TS6307.
         "tests/support/stub.ts",
         "src/modules/*/tests/e2e/**/*.ts",
-        "cypress.config.ts"
+        "cypress.config.ts",
+        // `cypress.config.ts` imports these two for its `specPattern`/backend-pairing setup; a
+        // file a project imports but does not include is TS6307. Same reasoning as
+        // `tsconfig.vitest.json`'s own `scripts/**/*.ts` entry.
+        "scripts/**/*.ts"
     ],
     "exclude": [],
     "compilerOptions": {
         "composite": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.cypress.tsbuildinfo",
 
-        "lib": [],
+        // Inherited from `tsconfig.app.json` (ESNext + DOM) — Cypress' own TS guide asks for the
+        // DOM lib alongside its ambient types, and this project needs the same modern built-ins
+        // (`String.replaceAll`, `Array.at`/`toSorted`) as the rest of the app.
         "types": ["cypress", "node", "jsdom"]
     }
 }

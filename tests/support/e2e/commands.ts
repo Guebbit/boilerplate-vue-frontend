@@ -214,25 +214,34 @@ Cypress.on('window:before:load', (contentWindow) => {
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
 // read through the stateful `cy.env()` API instead.
-Cypress.Commands.add('resetState', () =>
-    cy
-        .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
-        .then(({ liveProfile, liveResetCommand, apiUrl }) => {
-            if (liveProfile !== true)
-                // The demo backend resets itself in-process; a plain request is all it takes,
-                // and a non-2xx already fails the test.
-                return cy.request({
-                    method: 'POST',
-                    url: `${String(apiUrl)}/__demo/reset`,
-                    timeout: DEMO_RESET_TIMEOUT_MS
-                });
-            // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell out
-            // to: the specs run against the live database as they find it. Logged rather than
-            // silent, because a spec that assumed a seed dataset fails later and elsewhere.
-            if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
-                return cy.log('resetState: LIVE_RESET_COMMAND is unset — not resetting');
-            return resetLiveDatabase(liveResetCommand);
-        })
+//
+// The three branches below yield different `Chainable<T>` types (`Response`, `null`, `Exec`), and
+// `.then()`'s overloads only collapse a callback's return into `Chainable<S>` for a SINGLE `S` —
+// a union of different `Chainable<...>` wrappers comes back as `Chainable<Chainable<...> | ...>`
+// instead. Answered through the repo's one sanctioned seam, same as `visitAndAwaitApp` below.
+Cypress.Commands.add(
+    'resetState',
+    asStub<Cypress.CommandFn<'resetState'>>(() =>
+        cy
+            .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
+            .then(({ liveProfile, liveResetCommand, apiUrl }) => {
+                if (liveProfile !== true)
+                    // The demo backend resets itself in-process; a plain request is all it takes,
+                    // and a non-2xx already fails the test.
+                    return cy.request({
+                        method: 'POST',
+                        url: `${String(apiUrl)}/__demo/reset`,
+                        timeout: DEMO_RESET_TIMEOUT_MS
+                    });
+                // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell
+                // out to: the specs run against the live database as they find it. Logged rather
+                // than silent, because a spec that assumed a seed dataset fails later and
+                // elsewhere.
+                if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
+                    return cy.log('resetState: LIVE_RESET_COMMAND is unset — not resetting');
+                return resetLiveDatabase(liveResetCommand);
+            })
+    )
 );
 
 /**
@@ -296,7 +305,10 @@ const visitAndAwaitApp = (
     originalFunction(url, options);
 
     cy.window({ timeout: APP_READY_TIMEOUT_MS }).should((contentWindow) => {
-        const marked = contentWindow as Cypress.AUTWindow & { _supersededByVisit?: boolean };
+        const marked = contentWindow as Cypress.AUTWindow & {
+            _supersededByVisit?: boolean;
+            _appReady?: boolean;
+        };
         expect(
             marked._supersededByVisit,
             'the visited page is the current one, not the previous'
@@ -338,18 +350,27 @@ Cypress.Commands.overwrite(
  */
 
 // A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
-Cypress.Commands.add('skipUnlessLive', function skipUnlessLive(this: Mocha.Context) {
-    return cy.env(['liveProfile']).then(({ liveProfile }) => {
-        if (liveProfile !== true) this.skip();
-    });
-});
+// A `.then()` callback that returns nothing types as "subject unchanged" — `Chainable<{
+// liveProfile: ... }>`, not `Chainable<void>` — so this goes through the same seam as
+// `resetState` above.
+Cypress.Commands.add(
+    'skipUnlessLive',
+    asStub<Cypress.CommandFn<'skipUnlessLive'>>(function skipUnlessLive(this: Mocha.Context) {
+        return cy.env(['liveProfile']).then(({ liveProfile }) => {
+            if (liveProfile !== true) this.skip();
+        });
+    })
+);
 
-// Same shape as `skipUnlessLive`, inverted; same reason for the regular `function`.
-Cypress.Commands.add('skipUnlessDemo', function skipUnlessDemo(this: Mocha.Context) {
-    return cy.env(['liveProfile']).then(({ liveProfile }) => {
-        if (liveProfile === true) this.skip();
-    });
-});
+// Same shape as `skipUnlessLive`, inverted; same reason for the regular `function` and the seam.
+Cypress.Commands.add(
+    'skipUnlessDemo',
+    asStub<Cypress.CommandFn<'skipUnlessDemo'>>(function skipUnlessDemo(this: Mocha.Context) {
+        return cy.env(['liveProfile']).then(({ liveProfile }) => {
+            if (liveProfile === true) this.skip();
+        });
+    })
+);
 
 // A plain request: the outbox lives in the demo backend's process, not in the page.
 Cypress.Commands.add('demoEmailTo', (address: string) =>

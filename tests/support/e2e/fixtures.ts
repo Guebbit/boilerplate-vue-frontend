@@ -17,6 +17,7 @@
  */
 
 import { E2E_ACCOUNTS, type E2ERole } from './accounts';
+import { asStub } from '../stub';
 
 /**
  * The `Product` fields the roles below branch on.
@@ -24,6 +25,16 @@ import { E2E_ACCOUNTS, type E2ERole } from './accounts';
  * Structural rather than imported from `@api`: `tsconfig.cypress.json` is a composite project
  * that does not claim `contracts/`, and the roles only ever read these six.
  */
+/**
+ * The slice of Cypress' undocumented, internal `state()` API this file reads: the currently
+ * running Mocha test, for a per-test-unique id. Not part of the public `Cypress` type, so the
+ * access goes through `asStub` rather than a bare `as` — the repo's one sanctioned seam for a
+ * value that cannot structurally satisfy the framework type it stands in for.
+ */
+interface CypressWithRunnableState {
+    state: (key: 'runnable') => { id: string };
+}
+
 interface ProductLike {
     id: string;
     title: string;
@@ -217,7 +228,7 @@ const adminApi = <T>(path: string, method: string, body?: Record<string, unknown
 Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) =>
     adminApi<ProductLike>('/products', 'POST', {
         // Unique per test, so a title assertion cannot pass on a row some other case created.
-        title: `e2e ${Cypress.state('runnable').id as string}`,
+        title: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
         price: 10,
         ...overrides
     })
