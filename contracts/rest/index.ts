@@ -1949,7 +1949,7 @@ export interface PaymentActions {
 }
 
 /**
- * The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal.
+ * The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions
  */
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
@@ -1973,7 +1973,7 @@ export interface Payment {
     amount: number;
     /** ISO-4217 currency code (e.g. EUR) */
     currency: string;
-    /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. */
+    /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
     /** Which provider implementation handled it (`fake` in the demo). */
     provider: string;
@@ -4706,7 +4706,7 @@ export const getPaymentByOrder = (
 };
 
 /**
- * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time.
+ * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
@@ -4720,7 +4720,7 @@ export const refundPaymentByOrder = (
 };
 
 /**
- * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method.
+ * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Confirm a payment
  */
 export const confirmPayment = (
@@ -4740,7 +4740,7 @@ export const confirmPayment = (
 };
 
 /**
- * The browser saying "I have finished at the provider". Re-reads the provider's own record and applies whatever it says, which is what makes the happy path feel synchronous while the webhook stays the source of truth. Idempotent and safe to call repeatedly: a payment already settled answers itself unchanged. Answers 409 `PAYMENT_DECLINED` when the provider's answer is a refusal, exactly as the confirm does.
+ * The browser saying "I have finished at the provider". Re-reads the provider's own record and applies whatever it says, which is what makes the happy path feel synchronous while the webhook stays the source of truth. Idempotent and safe to call repeatedly: a payment already settled answers itself unchanged. Answers 409 `PAYMENT_DECLINED` when the provider's answer is a refusal, exactly as the confirm does. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Re-read a payment from the provider and settle it
  */
 export const syncPayment = (
