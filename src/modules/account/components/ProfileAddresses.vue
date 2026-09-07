@@ -32,8 +32,20 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * list, not of the entry that changed.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The address book's four actions.
+ */
 const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
+
+/**
+ * The visitor's saved addresses, and whether the list is in flight.
+ */
 const { addresses, loading } = storeToRefs(useAddressesStore());
 
 /**

@@ -53,6 +53,26 @@ rendering next is the API's, not a local guess. `searchRequests` calls `POST /fe
 directly: a POST body is never browser-HTTP-cached, so unlike the plain list read it needs no
 cache-busting query param to survive a reload right after a write.
 
+```mermaid
+flowchart LR
+    subgraph public["contact — public"]
+        V["A visitor"] -->|"POST /feedback"| T["A ticket, status: new"]
+    end
+    subgraph admin["feedback — admin"]
+        T --> L["Inbox: the whole list on mount,<br/>or POST /feedback/search for a filtered page"]
+        L --> S{"Operator acts"}
+        S -->|"updateStatus"| P["new → read → resolved"]
+        S -->|"deleteRequest"| D["gone"]
+        P --> RL["Reload through whichever read<br/>the operator was last looking at"]
+        D --> RL
+        RL --> L
+    end
+```
+
+The reload is the part worth keeping straight: it goes back through the list read **or** the search,
+whichever was last used, so acting on a row inside a filtered view never snaps the operator back to
+the whole list.
+
 ## State
 
 Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref
@@ -110,11 +130,11 @@ None.
 | `routes.ts`                           | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
 | `store.ts`                            | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
 | `tests/e2e/__snapshots__/contact.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.cy.ts`            | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.visual.cy.ts`     | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                 | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/e2e/a11y.cy.ts`                | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
+| `tests/e2e/feedback.cy.ts`            | Cypress suite — the `feedback` screens, in a browser.                                                                                                       | [read](../tools/component-testing.md) |
+| `tests/e2e/feedback.visual.cy.ts`     | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
+| `tests/routes.spec.ts`                | Vitest suite — the route records and the `meta.access` each one declares.                                                                                   | [read](../tools/unit-testing.md)      |
+| `tests/store.spec.ts`                 | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
 | `views/Contact.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/FeedbackInbox.vue`             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 

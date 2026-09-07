@@ -12,11 +12,11 @@ import { steppedQuantity } from '@/modules/cart/domain';
  * Stepping a cart line's quantity without racing the API.
  *
  * ── The bug this exists to remove ────────────────────────────────────────────────────────────
- * The steppers used to call the store's `updateCartItem` on every click, and the store replaces
- * the whole local cart with each response. Three quick clicks on `+` therefore put three requests
- * in flight — for 2, 3 and 4 — and the cart ends up showing whichever one the server happened to
- * answer LAST. Nothing about the ordering was ever guaranteed, so the wrong number appeared only
- * under a slow connection, which is the one place it matters and the one place nobody looks.
+ * Calling the store's `updateCartItem` on every click races itself: the store replaces the whole
+ * local cart with each response, so three quick clicks on `+` put three requests in flight — for
+ * 2, 3 and 4 — and the cart shows whichever the server answers LAST. Nothing orders those
+ * responses, so the wrong number appears only under a slow connection, which is the one place it
+ * matters and the one place nobody looks.
  *
  * Debouncing fixes it by removing the concurrency rather than trying to order it: the clicks
  * accumulate locally and exactly one request goes out, carrying the number the visitor stopped on.

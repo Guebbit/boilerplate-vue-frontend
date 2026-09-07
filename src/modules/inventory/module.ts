@@ -5,6 +5,7 @@
  * this module's own files and wired into the kernel's registry.
  */
 import { Warehouse } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { inventoryResponseSchemas } from './response-schemas';
@@ -17,13 +18,12 @@ import { inventoryResponseSchemas } from './response-schemas';
  * the title lookup) through the products barrel, the same one-way arrow the BE's inventory module
  * has. Deleting this module removes the board and the ledger behind it; every shelf count stays
  * correct, every WHY goes unrecorded.
+ *
+ * A ledger that explains stock without owning it — specific to running a shop, not the reason
+ * anyone shops here.
  */
 export default {
     name: 'inventory',
-    /*
-     * A ledger that explains stock without owning it — specific to running a shop, not the reason
-     * anyone shops here.
-     */
     routes,
     navigation: [
         {
@@ -37,7 +37,7 @@ export default {
     ],
     responseSchemas: inventoryResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

@@ -31,6 +31,9 @@ const { orderId } = defineProps<{
     orderId: string;
 }>();
 
+/**
+ * Emitted when the panel changes the parcel, so the owning page can reload the order.
+ */
 const emit = defineEmits<
     /**
      * The courier advanced and the order's status moved — the parent should re-read it.

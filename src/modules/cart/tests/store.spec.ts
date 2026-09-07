@@ -6,9 +6,9 @@
  * the payload the API returned. Two rules are worth guarding:
  *
  *   - `clearCart()` is bodyless and hits `DELETE /cart/all`, a separate URL from
- *     `removeCartItem(productId)`'s `DELETE /cart/:productId` — the two used to be one
- *     overloaded endpoint, and collapsing them back into an optional-body call would restore the
- *     failure a stripped body used to cause: silently clearing everything instead of one line.
+ *     `removeCartItem(productId)`'s `DELETE /cart/:productId`. Two URLs rather than one
+ *     overloaded endpoint with an optional body, because a proxy that strips the body from such
+ *     a call silently clears everything instead of one line.
  *   - the summary getters must survive an unfetched cart, since the header renders the item
  *     count before anything has been loaded.
  *   - checkout reports BOTH outcomes. The backend emits `checkout_completed` and `checkout_failed`

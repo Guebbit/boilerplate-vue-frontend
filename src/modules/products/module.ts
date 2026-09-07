@@ -4,6 +4,7 @@
  * loaders into the app's module registry.
  */
 import { Package } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { productsResponseSchemas } from './response-schemas';
@@ -16,13 +17,12 @@ import { productsResponseSchemas } from './response-schemas';
  * both `customer-supplier`, asking the sibling's store to write. The cart and the wishlist read the
  * catalogue back only through the server, not through code, which is why the arrows point one way
  * only.
+ *
+ * What a shop sells is the shop, and the catalogue is the screen a visitor spends their time
+ * on. The client half owns the browsing experience; the server owns the prices.
  */
 export default {
     name: 'products',
-    /*
-     * What a shop sells is the shop, and the catalogue is the screen a visitor spends their time
-     * on. The client half owns the browsing experience; the server owns the prices.
-     */
     routes,
     navigation: [
         {
@@ -36,7 +36,7 @@ export default {
     ],
     responseSchemas: productsResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

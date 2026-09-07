@@ -29,9 +29,39 @@ No module depends on this one and it depends on none. Deleting the folder and it
 
 ## The story
 
-One screen, one feed component, one composable — and **no store**, which is the unusual part. A
-stream's current value is the component's own state; persisting it in a store would mean deciding how
-long a metrics snapshot stays true, and there is no good answer to that.
+One screen, one composable and one store — `RealtimePlayground.vue`,
+`use-realtime-observability.ts` and `store.ts`. There is no `components/` directory: the screen
+renders the feed itself.
+
+The split between the composable and the store is the thing worth understanding. The **composable
+owns the connection** — a module-level `activeClient` singleton, so re-mounting the screen never
+opens a second stream — and it owns the routing: each typed event is dispatched to one store
+action. The **store owns the state** and nothing else: status, the two latest payload shapes kept
+apart, the last heartbeat, the last error, and a feed capped at the last 100 entries so a
+long-lived stream cannot grow without bound. Pure refs plus setters, with no fetching of its own.
+
+```mermaid
+sequenceDiagram
+    participant V as RealtimePlayground.vue
+    participant C as useRealtimeObservability
+    participant S as createSseClient
+    participant R as realtime-observability store
+
+    V->>C: connect()
+    C->>S: open GET /observability/events
+    S-->>C: snapshot
+    C->>R: setSnapshot() · setStatus('open')
+    loop while connected
+        S-->>C: update / heartbeat
+        C->>R: setUpdate() · setHeartbeat() · addEntry()
+        Note over R: feed capped at the last 100 entries
+    end
+    S-->>C: error
+    C->>R: setError() · setStatus()
+    Note over S: EventSource reconnects on its own
+    V->>C: disconnect() on unmount
+    C->>S: close
+```
 
 **The transport is not part of this module.** `createSseClient` is a typed wrapper over `EventSource`
 that knows no domain, so it lives in `infrastructure`. What is here is the screen, the typed
@@ -86,11 +116,11 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `routes.ts`                                       | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
 | `store.ts`                                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
 | `tests/e2e/__snapshots__/realtime-playground.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                            | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/e2e/realtime.visual.cy.ts`                 | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                            | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                             | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/use-realtime-observability.spec.ts`        | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/e2e/a11y.cy.ts`                            | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
+| `tests/e2e/realtime.visual.cy.ts`                 | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
+| `tests/routes.spec.ts`                            | Vitest suite — the route records and the `meta.access` each one declares.                                                                                   | [read](../tools/unit-testing.md)      |
+| `tests/store.spec.ts`                             | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
+| `tests/use-realtime-observability.spec.ts`        | Vitest suite — the `useRealtimeObservability` composable, in isolation.                                                                                     | [read](../tools/unit-testing.md)      |
 | `use-realtime-observability.ts`                   | `realtime` only. The composable a screen uses to subscribe to that stream and unsubscribe on unmount.                                                       | [read](../tools/realtime.md)          |
 | `views/RealtimePlayground.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 

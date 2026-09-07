@@ -23,7 +23,14 @@ import { usePaymentsStore } from '../store';
  * @returns Whether a refund is open, and the call that performs one.
  */
 export const useOrderRefund = (orderId: Ref<string | undefined>) => {
+    /**
+     * The payments store, held whole: its actions and its `storeToRefs` slice are both read.
+     */
     const paymentsStore = usePaymentsStore();
+
+    /**
+     * The order's payment, whose status decides what this composable will allow.
+     */
     const { payment } = storeToRefs(paymentsStore);
 
     watch(

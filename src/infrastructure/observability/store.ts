@@ -24,6 +24,13 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 
 // The Umami tracker script attaches a `umami` object to `window` once loaded. Only `identify` is
 // declared: pageviews need no call, and this app sends no custom events.
+
+/**
+ * The subset of Umami's global tracker this app calls.
+ *
+ * Declared rather than imported: the script is loaded from a `<script>` tag at runtime, so
+ * there is no package to take a type from.
+ */
 interface UmamiTracker {
     identify?: (data: Record<string, unknown>) => void;
 }
@@ -41,13 +48,28 @@ declare global {
 export const useObservabilityStore = defineStore('observability', () => {
     // ── State ────────────────────────────────────────────────────────────────
 
+    /**
+     * Whether Faro finished initialising.
+     */
     const faroReady = ref(false);
+
+    /**
+     * Whether the Umami tracker script is loaded.
+     */
     const umamiReady = ref(false);
 
     // Faro instance handle (not reactive — used imperatively).
+
+    /**
+     * The Faro instance, once initialised. Module-scoped because Faro is a singleton per page.
+     */
     let faro: Faro | undefined;
 
     // In-flight initialization, so concurrent initFaro() calls share one setup.
+
+    /**
+     * In-flight initialisation, so concurrent callers share one boot rather than racing two.
+     */
     let faroInitPromise: Promise<boolean> | undefined;
 
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────

@@ -15,4 +15,4 @@ export default [
         meta: { access: 'admin', title: 'admin-page.page-title' },
         component: () => import('@/modules/admin/views/Admin.vue')
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

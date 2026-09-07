@@ -29,4 +29,4 @@ export default [
         component: () => import('@/modules/orders/views/OrderEdit.vue'),
         props: true
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

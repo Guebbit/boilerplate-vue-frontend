@@ -41,8 +41,18 @@ import { toPathname } from './url.ts';
  * Both are checked by `tests/unit/infrastructure/http/response-schema-map.spec.ts`.
  */
 export interface ResponseSchemaRoute {
+    /**
+     * HTTP method the row matches, uppercase.
+     */
     method: string;
+    /**
+     * Matched against the request's pathname. A regex rather than a string because a row
+     * stands for an endpoint shape, `/users/{id}` included, not one URL.
+     */
     pattern: RegExp;
+    /**
+     * The envelope this endpoint must answer in. Parsed, never merely asserted.
+     */
     schema: zod.ZodType;
 }
 
@@ -82,9 +92,9 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
     /*
      * The locale reads the BOOT PATH makes: the manifest and the per-language overrides
      * `i18n/locale-overrides.ts` fetches before any domain is involved, plus the API's own
-     * dictionary — the offline-fallback read nothing calls yet. The admin surface that once sat
-     * beside them here has moved into the `locales` module, exactly as this shelf promised it
-     * would the day a module claimed it.
+     * dictionary — the offline-fallback read nothing calls yet. The admin surface over the same
+     * endpoints belongs to the `locales` module and its rows live there: this shelf holds only
+     * what no module claims.
      *
      * The `{locale}` segment is a language tag rather than an ObjectId, which changes nothing:
      * every pattern matches a SEGMENT, not a name. What does matter is the `$` on the

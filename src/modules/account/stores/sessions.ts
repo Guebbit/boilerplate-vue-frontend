@@ -17,7 +17,15 @@ import type { Session } from '@types';
  * once is `stores/auth.ts`'s `logoutEverywhere`, which this store has no reason to call.
  */
 export const useAccountSessionsStore = defineStore('accountSessions', () => {
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
+     * every action below goes through.
+     */
     const { loading, fetchAny } = useStructureRestApi<Session, string>({
         loadingKey: 'accountSessions',
         getLoading,

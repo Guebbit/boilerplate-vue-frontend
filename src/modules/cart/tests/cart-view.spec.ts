@@ -40,7 +40,7 @@ const A_CART: CartResponse = {
 };
 
 /**
- * A `ResponseReject`-shaped rejection, matching what `classifyCheckoutError` reads.
+ * A reject-envelope-shaped rejection, matching what `classifyCheckoutError` reads.
  *
  * @param status - HTTP status the API answered with.
  * @param code - The stable error code in `errors[0].code`.

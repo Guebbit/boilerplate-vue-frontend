@@ -49,6 +49,21 @@ is not a coincidence in the layering; it is the layering doing its job.
 bundles, key by key. An unedited key keeps its bundled text, and a language the client does not ship
 at all falls back per key for whatever nobody has translated yet.
 
+```mermaid
+flowchart TD
+    B["Bundled JSON<br/>src/locales + each module's locales/"] --> M{"Deep merge,<br/>key by key"}
+    A["GET /locales<br/>manifest: which languages, and what may be asked of each"] --> O
+    O["GET /locales/{tag}/messages<br/>the rows a translator edited"] --> M
+    M --> R["Rendered dictionary"]
+
+    U["An unedited key"] -.->|"no server row"| K["keeps its bundled text"]
+    N["A language the client does not bundle"] -.->|"per key"| F["falls back for whatever is untranslated"]
+```
+
+Every step resolves rather than rejects. The app is fully usable when the manifest and the override
+read both answer nothing — that is the offline floor the bundled files exist to be, and it is why a
+locale switch can never be blocked by an API that is slow, old or absent.
+
 The trap worth carrying over from the server: a language existing in the database does **not** mean
 the API can answer in it. `GET /locales` reports scopes per language rather than a bare list of tags,
 so _may I request this language_ and _may I download a dictionary for it_ stay two questions.
@@ -112,13 +127,13 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `routes.ts`                                      | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
 | `schemas.ts`                                     | Form schemas for this domain, built on the generated request schemas rather than hand-written beside them.                                                  | [read](../api/openapi-workflow.md)    |
 | `store.ts`                                       | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/dictionaries.spec.ts`                     | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/dictionaries.spec.ts`                     | Vitest suite — `dictionaries`, in isolation.                                                                                                                | [read](../tools/unit-testing.md)      |
 | `tests/e2e/__snapshots__/locale-entries.png`     | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
 | `tests/e2e/__snapshots__/locales-dictionary.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
 | `tests/e2e/__snapshots__/locales-list.png`       | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                           | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/e2e/locales.visual.cy.ts`                 | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/store.spec.ts`                            | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/e2e/a11y.cy.ts`                           | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
+| `tests/e2e/locales.visual.cy.ts`                 | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
+| `tests/store.spec.ts`                            | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
 | `views/LocaleEntries.vue`                        | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/LocalesDictionary.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/LocalesList.vue`                          | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |

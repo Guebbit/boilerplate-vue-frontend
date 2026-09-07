@@ -12,8 +12,8 @@ export default {
  * chains the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring
  * the header's language switcher.
  *
- * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST,
- * rather than between the password form and the sessions list where it used to sit.
+ * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST, so
+ * nobody reaches it on the way to the password form or the sessions list.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -38,15 +38,34 @@ import {
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
 
+/**
+ * Translation function, and the currently active locale code.
+ */
 const { t, locale } = useI18n();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
  * Profile logic
  */
 const { updateProfile, fetchProfile } = useProfileStore();
+
+/**
+ * The signed-in visitor's profile record.
+ */
 const { profile } = storeToRefs(useProfileStore());
 
 /*
@@ -80,8 +99,15 @@ interface ProfileForm {
     website?: string;
 }
 
+/**
+ * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
+ * on submit.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form,
     formErrors,

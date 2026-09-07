@@ -6,6 +6,9 @@
     "include": [
         "tests/e2e/**/*.ts",
         "tests/support/e2e/**/*.ts",
+        // The repo's one sanctioned cast seam, shared with the Vitest project the same way
+        // `scripts/**` is: a file imported by a project but not included in it is TS6307.
+        "tests/support/stub.ts",
         "src/modules/*/tests/e2e/**/*.ts",
         "cypress.config.ts"
     ],

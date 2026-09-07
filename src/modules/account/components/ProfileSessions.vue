@@ -32,10 +32,30 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * page navigates home afterwards rather than leaving a signed-out shell on screen.
  */
 const { t } = useI18n();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Session-list actions: load them, and end one.
+ */
 const { fetchSessions, revokeSession } = useAccountSessionsStore();
+
+/**
+ * The visitor's other live sessions.
+ */
 const { sessions } = storeToRefs(useAccountSessionsStore());
+
+/**
+ * Ends every session this visitor holds, on every device.
+ */
 const { logoutEverywhere } = useAuthStore();
 
 /**

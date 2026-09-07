@@ -20,6 +20,10 @@ import { getHealth } from '@api';
  * cached pages), so the honest message is "degraded", not "broken".
  */
 const { t } = useI18n();
+
+/**
+ * Whether the API has stopped answering the health probe.
+ */
 const { down } = useLivenessProbe(() => getHealth());
 </script>
 

@@ -1,4 +1,5 @@
 /**
+ * @module
  * `useOrderRefund` — the operator's refund control, and the one thing `payments` publishes beside
  * the panel.
  *

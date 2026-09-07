@@ -48,8 +48,9 @@ describe('persistLocalePreference', () => {
     });
 
     /*
-     * The rule that used to live at the call site. A guest has no record to write to, so the call
-     * is not made at all — an anonymous `PUT /account` would answer 401 and teach nobody anything.
+     * The rule belongs to the store, not to the button: a guest has no record to write to, so the
+     * call is not made at all — an anonymous `PUT /account` would answer 401 and teach nobody
+     * anything.
      */
     it('does not call the API for a guest', () => {
         return useSessionStore()

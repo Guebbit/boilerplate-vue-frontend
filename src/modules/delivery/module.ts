@@ -4,6 +4,7 @@
  * response schemas and locale loaders. No routes — see the doc on the default export for why.
  */
 
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import { deliveryResponseSchemas } from './response-schemas';
 
@@ -14,17 +15,16 @@ import { deliveryResponseSchemas } from './response-schemas';
  * both mounted by their owners through this module's barrel (cart → delivery, orders →
  * delivery). Deleting this module removes the selector and the panels, and checkouts simply stop
  * carrying shipping.
+ *
+ * Shipping is specific to how this shop operates but is not what anyone buys. Two components
+ * and a store — supporting, and deliberately page-less.
  */
 export default {
     name: 'delivery',
-    /*
-     * Shipping is specific to how this shop operates but is not what anyone buys. Two components
-     * and a store — supporting, and deliberately page-less.
-     */
     routes: [],
     responseSchemas: deliveryResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

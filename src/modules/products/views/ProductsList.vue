@@ -28,6 +28,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Localized dictionary helper.
@@ -164,28 +165,36 @@ onMounted(fetchFacets);
  * Deletes a product after an explicit confirmation.
  *
  * @param productId - Identifier of the product to delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  delete has finished; the outcome is reported as a toast.
  */
-const handleDelete = (productId: string) => {
-    if (!confirm(t('products-list-page.confirm-delete'))) return;
-    deleteProduct(productId)
-        .then(() => addMessage(t('products-list-page.success-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleDelete = (productId: string) =>
+    useDialogStore()
+        .confirm({ message: t('products-list-page.confirm-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return deleteProduct(productId)
+                .then(() => addMessage(t('products-list-page.success-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 
 /**
  * Permanently deletes a product after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
  * @param productId - Identifier of the product to hard-delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  hard-delete has finished; the outcome is reported as a toast.
  */
-const handleHardDelete = (productId: string) => {
-    if (!confirm(t('products-list-page.confirm-hard-delete'))) return;
-    hardDeleteProduct(productId)
-        .then(() => addMessage(t('products-list-page.success-hard-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleHardDelete = (productId: string) =>
+    useDialogStore()
+        .confirm({ message: t('products-list-page.confirm-hard-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return hardDeleteProduct(productId)
+                .then(() => addMessage(t('products-list-page.success-hard-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 </script>
 
 <template>

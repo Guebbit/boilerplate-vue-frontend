@@ -12,7 +12,10 @@ describe('demo routes', () => {
     it('serves the Playground publicly', () => {
         const route = routes.find((record) => record.name === 'Playground');
         expect(route).toBeDefined();
-        expect(route?.meta?.access).toBeUndefined();
+        // `not.toHaveProperty` rather than reading `.access`: the route table `satisfies`
+        // `RouteRecordRaw[]`, so its `meta` keeps the literal type it declares and a key it
+        // does not have is not readable. Absence is the assertion either way.
+        expect(route?.meta).not.toHaveProperty('access');
     });
 
     it('runs the demo guard on the Playground route only', () => {

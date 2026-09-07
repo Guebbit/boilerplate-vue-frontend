@@ -27,17 +27,26 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
- * Generic translation and notification accessors.
+ * Translation function.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
- * Users store actions and reactive list/pagination state.
+ * Users store actions.
  */
 const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
+
+/**
+ * Users store reactive state — filters, the current page window and the pagination counters.
+ */
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
 
@@ -128,28 +137,36 @@ const handleReset = () => {
  * Deletes a user after an explicit confirmation.
  *
  * @param userId - Identifier of the user to delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  delete has finished; the outcome is reported as a toast.
  */
-const handleDelete = (userId: string) => {
-    if (!confirm(t('users-list-page.confirm-delete'))) return;
-    deleteUser(userId)
-        .then(() => addMessage(t('users-list-page.success-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleDelete = (userId: string) =>
+    useDialogStore()
+        .confirm({ message: t('users-list-page.confirm-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return deleteUser(userId)
+                .then(() => addMessage(t('users-list-page.success-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 
 /**
  * Permanently deletes a user after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
  * @param userId - Identifier of the user to hard-delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  hard-delete has finished; the outcome is reported as a toast.
  */
-const handleHardDelete = (userId: string) => {
-    if (!confirm(t('users-list-page.confirm-hard-delete'))) return;
-    hardDeleteUser(userId)
-        .then(() => addMessage(t('users-list-page.success-hard-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleHardDelete = (userId: string) =>
+    useDialogStore()
+        .confirm({ message: t('users-list-page.confirm-hard-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return hardDeleteUser(userId)
+                .then(() => addMessage(t('users-list-page.success-hard-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 </script>
 
 <template>

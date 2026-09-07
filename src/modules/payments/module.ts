@@ -3,6 +3,7 @@
  * Declares the payments module manifest: no routes, just the response schemas and locale
  * loaders the app registry needs to wire the panel in.
  */
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import { paymentsResponseSchemas } from './response-schemas';
 
@@ -13,17 +14,16 @@ import { paymentsResponseSchemas } from './response-schemas';
  * `PaymentPanel` component (through its barrel) and the orders module mounts it — that arrow is
  * orders → payments, declared there. Deleting this module removes the panel and the pay flow in
  * one `rm -rf` plus one registry line, and orders go back to being paid nowhere.
+ *
+ * Taking money is not this shop’s differentiator, and the provider is the API's business.
+ * What stays here is a panel that belongs to an order.
  */
 export default {
     name: 'payments',
-    /*
-     * Taking money is not this shop’s differentiator, and the provider is the API's business.
-     * What stays here is a panel that belongs to an order.
-     */
     routes: [],
     responseSchemas: paymentsResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

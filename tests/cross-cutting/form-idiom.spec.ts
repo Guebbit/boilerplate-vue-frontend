@@ -1,7 +1,7 @@
 /**
- * Every form in this app is wired the same way, even though there is no longer one composable
- * that forces it — `useAppForm` was removed as a thin wrapper around three answers a call site
- * can just as well supply itself. This file is what replaces it as the thing that forces them.
+ * Every form in this app is wired the same way, and this file is what forces it. There is no
+ * composable in the middle: the three answers a correct form supplies are answers a call site
+ * can give directly, so they are given directly and checked here.
  *
  * `useStructureFormValidation` is the toolkit's mechanism and it is deliberately ignorant of
  * vue-i18n, of Vuetify and of where a message goes — its own docblock says so. The consequence is

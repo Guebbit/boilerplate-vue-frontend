@@ -18,8 +18,11 @@ import { onResponseRejectWithRefresh } from './refresh.ts';
 import { useReauthPromptStore } from './reauth-prompt.ts';
 import { singleFlight } from './single-flight.ts';
 import type { AxiosError } from 'axios';
-import type { AxiosRequestConfigWithRetry, AxiosResponseErrorBody } from './types.ts';
-import type { ResponseReject } from '@/types';
+import type {
+    AxiosRequestConfigWithRetry,
+    AxiosResponseErrorBody,
+    AxiosResponseErrorData
+} from './types.ts';
 
 /**
  * Opens (or joins) the step-up prompt, single-flight (see `single-flight.ts`) — one dialog, N
@@ -41,7 +44,7 @@ const requestFreshSession = singleFlight((): Promise<void> =>
  *  closes the prompt without re-proving their password.
  */
 export const onResponseRejectWithStepUp = (
-    error: AxiosError<ResponseReject, AxiosResponseErrorBody>
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
     const { code } = getFirstApiError(error.response?.data) ?? {};

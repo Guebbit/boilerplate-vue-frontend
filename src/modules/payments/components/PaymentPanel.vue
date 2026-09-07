@@ -39,6 +39,9 @@ const { orderId, orderPayable } = defineProps<{
     orderPayable?: boolean;
 }>();
 
+/**
+ * Emitted when the payment settles, so the owning page can reload the order.
+ */
 const emit = defineEmits<
     /**
      * The money landed and the order's status moved — the parent should re-read it.
@@ -46,9 +49,24 @@ const emit = defineEmits<
     (event: 'paid') => void
 >();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The payments store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const paymentsStore = usePaymentsStore();
+
+/**
+ * The order's payment, and whether a call is in flight.
+ */
 const { payment, loading } = storeToRefs(paymentsStore);
 
 /**

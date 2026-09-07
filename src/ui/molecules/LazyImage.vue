@@ -30,6 +30,10 @@ import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/ima
 
 // `eager` takes no default: Vue casts an absent boolean prop to `false` already, and restating it
 // is the one thing `no-useless-default-assignment` is there to catch.
+
+/**
+ * The image to render and how to render it — see the prop docs on the type below.
+ */
 const {
     src,
     thumbnailSrc,
@@ -85,6 +89,9 @@ const {
     rounded?: string;
 }>();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
 
 /**

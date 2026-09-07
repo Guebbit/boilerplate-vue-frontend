@@ -30,14 +30,40 @@ interface AccountDeleteConfirmForm {
     token?: string;
 }
 
+/**
+ * Translation function, and the currently active locale code.
+ */
 const { t, locale } = useI18n();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Finishes the deletion the emailed link started.
+ */
 const { confirmAccountDelete } = useProfileStore();
 
+/**
+ * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
+ * on submit.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form,
     formErrors,

@@ -19,4 +19,4 @@ export default [
         beforeEnter: [exampleGuard],
         component: () => import('@/modules/demo/views/Playground.vue')
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

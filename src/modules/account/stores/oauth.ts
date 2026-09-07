@@ -51,7 +51,15 @@ export const oauthStartUrl = (provider: string): string =>
  * none at all when the list is empty (no provider configured on this deployment).
  */
 export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () => {
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
+     * every action below goes through.
+     */
     const { loading, fetchAny } = useStructureRestApi({
         loadingKey: 'accountOAuthProviders',
         getLoading,
@@ -59,9 +67,17 @@ export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () =>
     });
 
     /** The enabled provider names, e.g. `['google', 'github']` — empty until loaded. */
+
+    /**
+     * OAuth provider ids this build offers.
+     */
     const providers = ref<string[]>([]);
 
     /** Whether {@link fetchProviders} has already resolved successfully once. */
+
+    /**
+     * Whether the provider list has been fetched, so it is fetched once.
+     */
     const loaded = ref(false);
 
     /**

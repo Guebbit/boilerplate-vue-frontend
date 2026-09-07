@@ -4,6 +4,7 @@
  * locale loaders into the app's module registry.
  */
 import { Users } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { usersResponseSchemas } from './response-schemas';
@@ -14,13 +15,12 @@ import { usersResponseSchemas } from './response-schemas';
  * Depends on nothing. It is the account module that reads this one — for the field rules every
  * signup and password form shares — and not the reverse: a user record exists whether or not
  * anyone is signed in.
+ *
+ * An admin CRUD over a user record with an email and an admin flag — the same problem in every
+ * application that has ever had one.
  */
 export default {
     name: 'users',
-    /*
-     * An admin CRUD over a user record with an email and an admin flag — the same problem in every
-     * application that has ever had one.
-     */
     routes,
     navigation: [
         {
@@ -34,7 +34,7 @@ export default {
     ],
     responseSchemas: usersResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

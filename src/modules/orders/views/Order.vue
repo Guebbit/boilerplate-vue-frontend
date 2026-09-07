@@ -45,6 +45,10 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * Generic translation and notification accessors.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -58,8 +62,20 @@ const { id } = defineProps<{
  * Store API and reactive order references.
  */
 const { watchOrder, fetchOrder, downloadInvoice: fetchInvoice, cancelOrder } = useOrdersStore();
+
+/**
+ * The order being displayed, and whether it is in flight.
+ */
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
+
+/**
+ * Refills the visitor's cart from this order — the reorder button.
+ */
 const { reorder } = useCartStore();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
 
 /**

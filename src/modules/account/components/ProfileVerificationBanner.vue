@@ -21,8 +21,20 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
  * profile is known to be unverified.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Re-sends the address-verification email.
+ */
 const { requestEmailVerification } = useProfileStore();
+
+/**
+ * The signed-in visitor's profile record.
+ */
 const { profile } = storeToRefs(useProfileStore());
 
 /**

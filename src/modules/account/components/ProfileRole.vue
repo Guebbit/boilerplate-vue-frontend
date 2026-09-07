@@ -26,9 +26,25 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * the widget it governs, rather than with whichever page happens to embed it.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Changes the visitor's own role — administrators only, and irreversible from here.
+ */
 const { updateOwnRole } = useProfileStore();
+
+/**
+ * The signed-in visitor's profile record.
+ */
 const { profile } = storeToRefs(useProfileStore());
+
+/**
+ * Whether the signed-in visitor is an administrator.
+ */
 const { isAdmin } = storeToRefs(useSessionStore());
 
 /**

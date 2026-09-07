@@ -22,7 +22,15 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * Account deletion request with confirmation dialog.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Starts the account-deletion flow, which finishes at an emailed confirmation link.
+ */
 const { requestAccountDelete } = useProfileStore();
 
 /**

@@ -4,6 +4,7 @@
  * schemas and locale loaders for the app registry — see `AppModule`.
  */
 import { Heart } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { wishlistResponseSchemas } from './response-schemas';
@@ -16,12 +17,11 @@ import { wishlistResponseSchemas } from './response-schemas';
  * initiated — the cart is never asked to write. The reverse arrow does not exist — the cart never
  * reads the wishlist — which is what keeps `products → wishlist → cart → orders` a line rather than
  * a loop.
+ *
+ * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
  */
 export default {
     name: 'wishlist',
-    /*
-     * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
-     */
     routes,
     navigation: [
         {
@@ -35,7 +35,7 @@ export default {
     ],
     responseSchemas: wishlistResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

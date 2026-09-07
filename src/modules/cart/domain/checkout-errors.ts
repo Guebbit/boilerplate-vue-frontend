@@ -7,6 +7,10 @@
  */
 
 /** One line the checkout could not honour, as `CART_INSUFFICIENT_STOCK`'s `details.lines` carries it. */
+
+/**
+ * One line of a checkout shortfall: what was wanted, and what the stock can actually cover.
+ */
 export interface CheckoutShortfallLine {
     productId: string;
     title: string;

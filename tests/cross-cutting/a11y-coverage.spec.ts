@@ -8,9 +8,9 @@
  * sweep cannot be merged.
  *
  * ── Why route by route, and not file by file ─────────────────────────────────────────────────
- * The first version of this guard asked only whether a routed module HAD an `a11y.cy.ts`. That
- * let `products/:id` and `products/:id/edit` go unaudited for months behind a sweep that visited
- * the list and the create form: a file existed, so the guard was satisfied. What it asks now is
+ * Asking only whether a routed module HAS an `a11y.cy.ts` is not enough: `products/:id` and
+ * `products/:id/edit` sit behind a sweep that visits the list and the create form, so a
+ * file-level check is satisfied while two screens go unaudited. What this asks instead is
  * whether every `path` in a module's `routes.ts` is matched by some path its sweep visits, with
  * route params (`:id`, `:tag`, an optional `:message?`) matched against whatever the sweep put
  * there. The shell's own routes in `src/app/router/index.ts` get the same treatment against

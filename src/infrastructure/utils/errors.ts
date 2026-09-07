@@ -55,6 +55,21 @@ export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
     !isTransportFailure(error) && statuses.includes((error as { status: number }).status);
 
 /**
+ * Lets an "absent" answer through and rethrows everything else.
+ *
+ * The rule three stores share: an absence is a value, any other failure is still a failure.
+ * Named once so a store cannot quietly lose the `throw` — which is the half that matters, and
+ * the half a copied `catch` block drops.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @param statuses - The statuses that mean "nothing there", e.g. `404`.
+ * @throws The original error, unchanged, when it is not one of them.
+ */
+export const rethrowUnlessAbsent = (error: unknown, ...statuses: number[]): void => {
+    if (!absentIs(error, ...statuses)) throw error;
+};
+
+/**
  * Shows a best-effort message to the user and always reports the real
  * error to the observability logger (Faro), stack included when available.
  *

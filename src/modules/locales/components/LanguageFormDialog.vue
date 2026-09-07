@@ -27,6 +27,9 @@ const props = defineProps<{
     language?: LocaleCapability;
 }>();
 
+/**
+ * Emitted on save and on cancel; the parent owns the dialog's open state.
+ */
 const emit = defineEmits<{
     /**
      * The saved fields; `tag` is only meaningful on create.
@@ -47,7 +50,14 @@ const emit = defineEmits<{
  */
 const isOpen = defineModel<boolean>({ required: true });
 
+/**
+ * Translation function, and the currently active locale code.
+ */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**

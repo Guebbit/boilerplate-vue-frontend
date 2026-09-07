@@ -7,6 +7,7 @@
 import { computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { ShoppingCart } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { cartResponseSchemas } from './response-schemas';
@@ -25,14 +26,13 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
  *
  * The one arrow going out is `delivery`, and it is `published-language`: the checkout mounts
  * `ShippingSelector` and never learns what a shipping rate is.
+ *
+ * Checkout is the one screen where price, stock, address and shipping have to agree at once,
+ * and the only place this client holds a multi-step flow of its own. Every other module points
+ * at it.
  */
 export default {
     name: 'cart',
-    /*
-     * Checkout is the one screen where price, stock, address and shipping have to agree at once,
-     * and the only place this client holds a multi-step flow of its own. Every other module points
-     * at it.
-     */
     routes,
     navigation: [
         {
@@ -82,7 +82,7 @@ export default {
     ],
     responseSchemas: cartResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

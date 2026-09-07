@@ -16,8 +16,9 @@
  * literals non-static. The failure is not one surviving mutant: the instrumented build fails to
  * transform, so `npm run test:mutation` dies in the DRY RUN — before a single mutant is tested —
  * with `ERR_LOAD_URL` or `RollupError: Expected ',', got '<eof>'` naming a file that plainly exists.
- * That message points at the sandbox, not at the line, which is why this ran undiagnosed long
- * enough for the baseline to go stale.
+ * That message points at the sandbox rather than at the line, so the failure is easy to misread
+ * as a broken mutation setup and leave alone — which is what makes a cheap static check worth
+ * more here than a careful reading of the error.
  *
  * ── What this asserts ────────────────────────────────────────────────────────────────────────────
  * Every such specifier inside `stryker.config.json`'s `mutate` scope carries a `Stryker disable`

@@ -45,6 +45,10 @@ import {
  * Generic utility hooks.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -58,6 +62,10 @@ const { id } = defineProps<{
  * Orders store APIs and references.
  */
 const { watchOrder, fetchOrder, updateOrder, cancelOrder } = useOrdersStore();
+
+/**
+ * The order being displayed, and whether it is in flight.
+ */
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
@@ -94,6 +102,11 @@ const statusOptions = computed(() => {
  * and why all three grey out on their own terms rather than on a rule spelled out here.
  */
 const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
+
+/**
+ * Whether both halves of "cancel and refund" are available, which is what the combined
+ * button needs.
+ */
 const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 
 /**

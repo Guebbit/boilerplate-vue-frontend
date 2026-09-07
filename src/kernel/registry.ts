@@ -46,8 +46,8 @@ export const NAVIGATION_SECTIONS = [
  * One entry a module contributes to the main navigation.
  *
  * Deliberately carries NO visibility flag. Whether a visitor may see an entry is a property of the
- * route it points at (`meta.access`), and restating it here is exactly what once let the menu and
- * the router disagree. An entry's permissions come along with its route.
+ * route it points at (`meta.access`); a second copy here is a second answer, free to disagree with
+ * the router's. An entry's permissions come along with its route.
  */
 export interface AppNavigationEntry {
     /**
@@ -130,8 +130,7 @@ export interface AppNavigationEntry {
  * comment with extra syntax: what a module depends on is its `import` statements, how it relates to
  * a sibling is prose in the docblock above the manifest, and which subdomain it sits in is context a
  * reader gets from that same prose rather than a classification nothing checks. See
- * `docs/theory/strategic-ddd.md` §2 and §4 for what used to live here as typed fields and why it
- * moved.
+ * `docs/theory/strategic-ddd.md` §2 and §4 for why those belong in prose rather than in fields.
  */
 export interface AppModule {
     /**
@@ -167,12 +166,29 @@ export interface AppModule {
 }
 
 /**
+ * Unwraps a locale JSON's default export, for the `locales` loaders above.
+ *
+ * Only the unwrap is shared. The `import()` specifier stays a literal at every call site
+ * because Vite resolves it statically — a computed path would resolve to nothing and take
+ * the dictionary with it.
+ *
+ * @param module - The resolved JSON module namespace.
+ * @returns Its default export, the dictionary itself.
+ */
+export const dictionary = ({
+    default: value
+}: {
+    default: TranslationDictionaries;
+}): TranslationDictionaries => value;
+
+/**
  * Collect every enabled module's route records.
  *
  * An unknown or cyclic module coupling, and a stray reach into a sibling's internals, fail on
  * `npm run lint` without help from this function: `no-restricted-imports` in `eslint.config.ts`
- * enforces which sibling a module may reach at all — the enforceable half of what used to be a
- * `dependsOn` field on this manifest. See `docs/theory/strategic-ddd.md` §2.
+ * enforces which sibling a module may reach at all. That is the enforceable half of a module's
+ * couplings, and it is enforced there rather than declared here — see
+ * `docs/theory/strategic-ddd.md` §2.
  *
  * @param appModules - the enabled module list
  */

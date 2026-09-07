@@ -14,6 +14,9 @@ export default {
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+/**
+ * The one-time backup codes to display. Shown once, at enrolment, and never again.
+ */
 const { codes } = defineProps<{
     /**
      * The codes to show, in the clear, once.
@@ -26,6 +29,9 @@ const { codes } = defineProps<{
  */
 const emit = defineEmits<{ done: [] }>();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
 
 /**

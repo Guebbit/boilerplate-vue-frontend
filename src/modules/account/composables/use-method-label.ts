@@ -16,6 +16,9 @@ import { useI18n } from 'vue-i18n';
  * @returns `{ methodLabel }`, resolved against the active locale.
  */
 export const useMethodLabel = () => {
+    /**
+     * The i18n runtime: the translator plus the active locale.
+     */
     const i18n = useI18n();
 
     /**

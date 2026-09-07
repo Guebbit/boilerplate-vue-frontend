@@ -27,8 +27,20 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
  * id links to the product page, which is where the full record lives.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The wishlist's three actions: load it, drop a line, and move a line into the cart.
+ */
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
+
+/**
+ * The wishlist's lines.
+ */
 const { items } = storeToRefs(useWishlistStore());
 
 /**

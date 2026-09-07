@@ -19,6 +19,9 @@
  */
 import { useI18n } from 'vue-i18n';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
 </script>
 

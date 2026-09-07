@@ -1,7 +1,8 @@
 /**
  * @module
- * Table of response-envelope schemas, one row per endpoint this module calls, read by the HTTP
- * layer's response-schema map to validate answers against the contract.
+ * Declares the response-envelope schema for every products endpoint, keyed by method + URL
+ * pattern, so `infrastructure/http` can validate a response against its contract by matching the
+ * request that produced it.
  */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';

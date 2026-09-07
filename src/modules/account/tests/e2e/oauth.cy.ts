@@ -1,9 +1,9 @@
 /**
  * @module
- * End-to-end coverage for the OAuth login buttons against the backend's `fake` provider
- * (`SOCIAL_LOGIN_ADD.md`) — the actual click-through Google/GitHub cannot get in CI. `fake` skips
- * the consent screen but still round-trips the real `state` cookie, so the button click exercises
- * the genuine redirect chain: BE start route → BE callback → cookies set → FE `/oauth/callback`.
+ * End-to-end coverage for the OAuth login buttons against the backend's `fake` provider — the
+ * actual click-through Google/GitHub cannot get in CI. `fake` skips the consent screen but still
+ * round-trips the real `state` cookie, so the button click exercises the genuine redirect chain:
+ * BE start route → BE callback → cookies set → FE `/oauth/callback`.
  * Demo-only, since `fake` is gated behind `isDemoMode()` on the backend.
  */
 describe('Social login (OAuth)', () => {

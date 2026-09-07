@@ -61,7 +61,15 @@ import type { LocaleCapability } from '@types';
  * property rather than a real seam.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The locales store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const localesStore = useLocalesStore();
 
 /**
@@ -74,6 +82,9 @@ const PAGE_SIZE = 25;
  */
 const tenant = ref(localesStore.ownTenant);
 
+/**
+ * The dictionary board's aggregated rows and the state behind them.
+ */
 const {
     loading,
     tenantKind,
@@ -93,6 +104,9 @@ const {
     resetPendingKeys
 } = useDictionaryAggregation(tenant);
 
+/**
+ * Per-cell editing: what is being edited, and the writes that commit it.
+ */
 const {
     drafts,
     savedCells,
@@ -116,9 +130,9 @@ const filterText = ref('');
  *
  * The two are separate refs because the board is expensive to redraw — `filteredKeys` walks every
  * key across every language, and the page renders a field per cell — so filtering on the raw
- * keystroke made the field itself stutter. That used to be solved by not filtering until Search
- * was pressed, which is a strange thing to ask of a filter that never leaves the browser: there is
- * no request to spare, only frames.
+ * keystroke makes the field itself stutter. Waiting for a Search press would also fix it, and is a
+ * strange thing to ask of a filter that never leaves the browser: there is no request to spare,
+ * only frames.
  *
  * Debouncing spends those frames instead of the interaction. The Search button still works and
  * still applies immediately — see {@link handleSearch} — for someone who types and reaches for it
