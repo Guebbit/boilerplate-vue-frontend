@@ -54,6 +54,23 @@ vi.mock('@/infrastructure/http', () => ({
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 
+/**
+ * Holds the next transport call open, so a loading flag can be read mid-flight.
+ *
+ * @returns The release function; calling it lets the gated call resolve.
+ */
+const gateNextCall = () => {
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const send = vi.mocked(orvalMutator).getMockImplementation()!;
+    vi.mocked(orvalMutator).mockImplementationOnce((config, options) =>
+        gate.then(() => send(config, options))
+    );
+    return () => release?.();
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -63,7 +80,8 @@ beforeEach(() => {
         'POST /account/reset': orvalEnvelope(),
         'POST /account/reset-confirm': orvalEnvelope(),
         'POST /account/logout': orvalEnvelope(),
-        'POST /account/logout-all': orvalEnvelope()
+        'POST /account/logout-all': orvalEnvelope(),
+        'POST /account/reauth': orvalEnvelope({ token: 'jwt-token-2' })
     };
 });
 
@@ -205,5 +223,36 @@ describe('logoutEverywhere', () => {
                 expect(requestedUrls().at(-1)).toBe('/account/logout-all');
                 expect(useSessionStore().isAuth).toBe(false);
             });
+    });
+});
+
+describe('reauth', () => {
+    it('adopts the rotated token', () => {
+        const store = useAuthStore();
+        return store.reauth('hunter2').then(() => {
+            expect(useSessionStore().accessToken).toBe('jwt-token-2');
+        });
+    });
+
+    it('raises its own flag, not the one a login behind it would raise', () => {
+        const store = useAuthStore();
+        const release = gateNextCall();
+        const pending = store.reauth('hunter2');
+
+        expect(store.reauthing).toBe(true);
+        release();
+        return pending.then(() => {
+            expect(store.reauthing).toBe(false);
+        });
+    });
+
+    it('leaves the flag alone while an unrelated action runs', () => {
+        const store = useAuthStore();
+        const release = gateNextCall();
+        const pending = store.login('ada@example.com', 'hunter2');
+
+        expect(store.reauthing).toBe(false);
+        release();
+        return pending;
     });
 });

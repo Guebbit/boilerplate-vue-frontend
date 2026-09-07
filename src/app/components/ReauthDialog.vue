@@ -7,6 +7,7 @@
  * password stays open for another try rather than closing.
  */
 import { computed, nextTick, ref, useId, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import type { VTextField } from 'vuetify/components';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 
 const { t } = useI18n();
 const reauthDialog = useReauthPromptStore();
+const { reauthing } = storeToRefs(useAuthStore());
 const { mobile } = useDisplay();
 
 /**
@@ -33,11 +35,6 @@ const password = ref('');
  * The last attempt's message, shown inline; `undefined` once the field is edited again.
  */
 const errorMessage = ref<string>();
-
-/**
- * Whether the attempt is in flight — the submit button's spinner.
- */
-const submitting = ref(false);
 
 /**
  * The password input, focused by hand rather than the `autofocus` attribute — a11y lint forbids
@@ -76,7 +73,6 @@ const isOpen = computed({
  */
 const submit = () => {
     if (!password.value) return;
-    submitting.value = true;
     return useAuthStore()
         .reauth(password.value)
         .then(() => {
@@ -85,9 +81,6 @@ const submit = () => {
         .catch(() => {
             errorMessage.value = t('reauth-dialog.error-wrong-password');
             password.value = '';
-        })
-        .finally(() => {
-            submitting.value = false;
         });
 };
 </script>
@@ -128,7 +121,7 @@ const submit = () => {
                     color="primary"
                     variant="flat"
                     :disabled="!password"
-                    :loading="submitting"
+                    :loading="reauthing"
                     data-test="reauth-dialog-submit"
                     @click="submit"
                 >

@@ -53,6 +53,20 @@ regeneration, and the diff will look like the backend broke something.
 | `contracts/rest/schemas.zod.ts` | **Generated.** A Zod schema per contract shape — what `response-schema-map.ts` points every call site at, so a response that does not match the contract is caught here rather than three components later.                                                   | [Infrastructure](./src-infrastructure.md)                                                  |
 | `orval.config.ts`               | Tells Orval what to generate and how to route it. Its non-obvious job: seven operations accept the same payload as either JSON or multipart — anything with an optional image — and this is where that duality is resolved so a caller does not have to pick. | [Regenerating](../api/openapi-workflow.md)                                                 |
 
+## Operations this app does not call
+
+The contract is the backend's, so it carries operations no screen here has a use for. These are
+generated into `contracts/rest/index.ts` and deliberately unused:
+
+| Operation                                               | Why it sits unused                                                                    |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `removeCartItemByBody`                                  | A body-addressed alternative to `DELETE /cart/{id}` — see [Cart](../modules/cart.md). |
+| `updateProductWithMultipart`, `updateUserWithMultipart` | Superseded by the `updateXById*` forms, which take the same payload.                  |
+| `getObservabilityEvents`                                | Distinct from the `*Overview` / `*AuditLogs` operations the admin screens do call.    |
+
+All four look like operations the backend should stop generating rather than ones this app should
+start calling — worth raising cross-repo rather than adopting here.
+
 ## Keeping the pair in step
 
 `scripts/pairing/spec-identity.ts` holds the files that must be byte-identical in both checkouts, and

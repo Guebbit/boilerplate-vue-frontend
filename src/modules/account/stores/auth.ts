@@ -4,6 +4,7 @@
  * login/signup/reset calls, and each action chains a `.then` into the session/profile stores it
  * coordinates rather than awaiting them stepwise.
  */
+import { computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
@@ -53,7 +54,11 @@ export type LoginOutcome =
 export const useAuthStore = defineStore('accountAuth', () => {
     const session = useSessionStore();
     const { getLoading, setLoading } = useCoreStore();
-    const { fetchAny } = useStructureRestApi({ loadingKey: 'accountAuth', getLoading, setLoading });
+    const { loadingKey, fetchAny } = useStructureRestApi({
+        loadingKey: 'accountAuth',
+        getLoading,
+        setLoading
+    });
 
     /**
      * Authenticates the user. A plain account stores the access token, flags the `isAuth` cookie
@@ -111,11 +116,19 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @returns A promise resolving once the fresh token is stored.
      */
     const reauth = (password: string) =>
-        fetchAny(() =>
-            apiReauth({ password }).then((data) => {
-                session.setAccessToken(getTokenFromResponse(data));
-            })
+        fetchAny(
+            () =>
+                apiReauth({ password }).then((data) => {
+                    session.setAccessToken(getTokenFromResponse(data));
+                }),
+            { loadingKey: ':reauth' }
         );
+
+    /**
+     * Whether a re-proof is in flight — the step-up dialog's own spinner, so it does not answer
+     * to a login or a signup running behind it.
+     */
+    const reauthing = computed(() => getLoading(`${loadingKey}:reauth`));
 
     /**
      * Registers a new user account, as multipart when a profile image is attached
@@ -236,6 +249,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
     };
 
     return {
+        reauthing,
+
         login,
         reauth,
         signup,
