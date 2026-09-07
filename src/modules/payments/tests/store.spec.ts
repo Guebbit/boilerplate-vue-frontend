@@ -1,4 +1,5 @@
 /**
+ * @module
  * The payments store — transport-mocked like the wishlist's spec: `orvalMutator` is a router
  * keyed on `METHOD /url`, the generated client and this store are real. What is worth pinning is
  * the PSP sequence (intent, then confirm with the provider's method reference, then the sync that

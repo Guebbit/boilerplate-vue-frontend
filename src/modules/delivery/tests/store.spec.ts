@@ -1,4 +1,5 @@
 /**
+ * @module
  * The delivery store — transport-mocked like the wishlist's spec. Worth pinning: the methods
  * list mirrors the API, `effectivePrice` applies the free-above rule for DISPLAY exactly as the
  * BE prices it for real, and a 404 on the shipment read is "nothing shipped yet" while any other
