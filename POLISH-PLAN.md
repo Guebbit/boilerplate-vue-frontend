@@ -17,6 +17,7 @@ done.
 | `npm run type-check-only`             | **clean**                                            |
 | `npm run build`                       | **clean**                                            |
 | Unit suite                            | **1630/1630**                                        |
+| `npm run test:e2e`                    | **32 specs, 4/4 shards**, 293s                       |
 | Control-flow nesting > 3 levels       | **none**, repo-wide                                  |
 | `any` anywhere                        | **none** — the last one is gone, see the closed §6.9 |
 | `@ts-ignore` / `@ts-expect-error`     | **none**, repo-wide                                  |
