@@ -20,7 +20,7 @@
  */
 import { orvalMutator } from '../../src/infrastructure/http/index.js';
 /**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
  * @minimum 1
  * @maximum 10000
  */
@@ -331,6 +331,38 @@ export const LocaleDirection = {
 export type LocaleTenant = string;
 
 /**
+ * What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
+ */
+export type LocaleTenantKind = (typeof LocaleTenantKind)[keyof typeof LocaleTenantKind];
+
+export const LocaleTenantKind = {
+    frontend: 'frontend',
+    backend: 'backend'
+} as const;
+
+/**
+ * One tenant as the registry describes it.
+ */
+export interface LocaleTenantDescriptor {
+    id: LocaleTenant;
+    /** A human name, for an admin screen. */
+    label: string;
+    kind: LocaleTenantKind;
+}
+
+export interface LocaleTenants {
+    /** @minItems 1 */
+    tenants: LocaleTenantDescriptor[];
+}
+
+export interface LocaleTenantsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleTenants;
+}
+
+/**
  * Which tier a language came from — deployed files, the database, or both.
  */
 export type LocaleSource = (typeof LocaleSource)[keyof typeof LocaleSource];
@@ -340,6 +372,37 @@ export const LocaleSource = {
     dynamic: 'dynamic',
     both: 'both'
 } as const;
+
+/**
+ * A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
+ */
+export interface Language {
+    id: Id;
+    tag: Locale;
+    /**
+     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
+     * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
+     * @pattern ^[a-z]{2}$
+     */
+    baseLanguage: string;
+    /** English name, for an admin list. */
+    name: string;
+    /** The language's own name, for a client's language picker. */
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+    /** @minimum 0 */
+    revision: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface LanguageEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Language;
+}
 
 /**
  * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.
@@ -379,79 +442,6 @@ export interface LocaleCapabilitiesEnvelope {
     data: LocaleCapabilities;
 }
 
-export interface CreateLocaleRequest {
-    tag: Locale;
-    /** @minLength 1 */
-    name: string;
-    /** @minLength 1 */
-    nativeName: string;
-    direction?: LocaleDirection;
-    active?: boolean;
-}
-
-/**
- * A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
- */
-export interface Language {
-    id: Id;
-    tag: Locale;
-    /**
-     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
-     * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
-     * @pattern ^[a-z]{2}$
-     */
-    baseLanguage: string;
-    /** English name, for an admin list. */
-    name: string;
-    /** The language's own name, for a client's language picker. */
-    nativeName: string;
-    direction: LocaleDirection;
-    active: boolean;
-    /** @minimum 0 */
-    revision: number;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface LanguageEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Language;
-}
-
-/**
- * What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
- */
-export type LocaleTenantKind = (typeof LocaleTenantKind)[keyof typeof LocaleTenantKind];
-
-export const LocaleTenantKind = {
-    frontend: 'frontend',
-    backend: 'backend'
-} as const;
-
-/**
- * One tenant as the registry describes it.
- */
-export interface LocaleTenantDescriptor {
-    id: LocaleTenant;
-    /** A human name, for an admin screen. */
-    label: string;
-    kind: LocaleTenantKind;
-}
-
-export interface LocaleTenants {
-    /** @minItems 1 */
-    tenants: LocaleTenantDescriptor[];
-}
-
-export interface LocaleTenantsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleTenants;
-}
-
 /**
  * Nested key/value dictionary, the same shape the API loads.
  */
@@ -471,18 +461,6 @@ export interface LocaleDictionaryEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: LocaleDictionary;
-}
-
-/**
- * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
- */
-export interface UpdateLocaleRequest {
-    /** @minLength 1 */
-    name?: string;
-    /** @minLength 1 */
-    nativeName?: string;
-    direction?: LocaleDirection;
-    active?: boolean;
 }
 
 /**
@@ -523,6 +501,13 @@ export interface LocaleEntry {
     updatedAt?: string;
 }
 
+export interface LocaleEntryEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleEntry;
+}
+
 export interface LocaleEntriesResponse {
     items: LocaleEntry[];
     meta: PaginationMeta;
@@ -546,12 +531,54 @@ export interface LocaleEntryInput {
     value: string;
 }
 
+export interface CreateLocaleRequest {
+    tag: Locale;
+    /** @minLength 1 */
+    name: string;
+    /** @minLength 1 */
+    nativeName: string;
+    direction?: LocaleDirection;
+    active?: boolean;
+}
+
+/**
+ * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
+ */
+export interface UpdateLocaleRequest {
+    /** @minLength 1 */
+    name?: string;
+    /** @minLength 1 */
+    nativeName?: string;
+    direction?: LocaleDirection;
+    active?: boolean;
+}
+
+export interface CreateLocaleEntryRequest {
+    tenant: LocaleTenant;
+    /** @minLength 1 */
+    key: string;
+    value: string;
+}
+
+export interface UpdateLocaleEntryRequest {
+    value: string;
+}
+
 /**
  * The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
  * The tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
     tenant: LocaleTenant;
+    entries: LocaleEntryInput[];
+}
+
+/**
+ * Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.
+ */
+export interface MergeLocaleEntriesRequest {
+    tenant: LocaleTenant;
+    /** @minItems 1 */
     entries: LocaleEntryInput[];
 }
 
@@ -576,36 +603,21 @@ export interface LocaleImportResultEnvelope {
     data: LocaleImportResult;
 }
 
-export interface CreateLocaleEntryRequest {
-    tenant: LocaleTenant;
-    /** @minLength 1 */
-    key: string;
-    value: string;
-}
-
-export interface LocaleEntryEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleEntry;
-}
-
 /**
- * Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.
+ * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
+ * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
-export interface MergeLocaleEntriesRequest {
-    tenant: LocaleTenant;
-    /** @minItems 1 */
-    entries: LocaleEntryInput[];
-}
+export type ObservabilityHealthStatus =
+    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
 
-export interface UpdateLocaleEntryRequest {
-    value: string;
-}
+export const ObservabilityHealthStatus = {
+    ok: 'ok',
+    degraded: 'degraded'
+} as const;
 
 /**
  * One backing service's state, in the four words this payload uses for all of them.
- * `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
+ * `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because a dependency that has not finished coming up yet and one that is broken look identical on the wire during any startup grace period a deployment gives itself, and mean opposite things.
  */
 export type DependencyStatus = (typeof DependencyStatus)[keyof typeof DependencyStatus];
 
@@ -676,18 +688,6 @@ export interface ObservabilityHealthSystem {
     cpuCount: number;
     loadAvg: number[];
 }
-
-/**
- * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
- * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
- */
-export type ObservabilityHealthStatus =
-    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
-
-export const ObservabilityHealthStatus = {
-    ok: 'ok',
-    degraded: 'degraded'
-} as const;
 
 export interface ObservabilityHealth {
     /**
@@ -804,14 +804,14 @@ export const AuditEventItemOutcome = {
     failure: 'failure'
 } as const;
 
-export type AuditEventItemMetadata = { [key: string]: unknown };
-
 export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
 
 export const AuditEventItemLevel = {
     info: 'info',
     warn: 'warn'
 } as const;
+
+export type AuditEventItemMetadata = { [key: string]: unknown };
 
 export interface AuditEventItem {
     actor_user_id: string;
@@ -842,37 +842,8 @@ export interface AuditLogsResponseEnvelope {
     data: AuditLogsPage;
 }
 
-export interface UpdateAccountRequest {
-    email?: Email;
-    /** @minLength 3 */
-    username?: string;
-    locale?: Locale;
-    imageUrl?: ImageUrl;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-}
-
-export interface UpdateAccountRequestMultipart {
-    email?: Email;
-    /** @minLength 3 */
-    username?: string;
-    locale?: Locale;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-}
-
-export interface ChangePasswordRequest {
-    currentPassword: Password;
-    password: PasswordNew;
-    passwordConfirm: Password;
-}
-
 export interface AuthTokens {
-    /** Access JWT */
+    /** Access token */
     token: string;
     /** Refresh token if returned by backend */
     refreshToken?: string;
@@ -887,113 +858,32 @@ export interface AuthTokensEnvelope {
     data: AuthTokens;
 }
 
-export interface ReauthRequest {
-    password: Password;
+export interface OAuthProviders {
+    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
+    providers: string[];
 }
 
-export interface Session {
-    id: Id;
-    /** Absent on a token issued without an expiry tier. */
-    expiration?: string;
-    /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
-    lastUsedAt?: string;
-    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
-    current: boolean;
-}
-
-export interface SessionsResponse {
-    sessions: Session[];
-}
-
-export interface SessionsEnvelope {
+export interface OAuthProvidersEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: SessionsResponse;
+    data: OAuthProviders;
 }
 
-export interface Address {
-    id: Id;
-    /** The caller's own name for the entry — "home", "office". */
-    label?: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: string;
-    phone?: string;
-    default: boolean;
+export interface RefreshTokenResponse {
+    /** New access token */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
 }
 
-export interface AddressesResponse {
-    addresses: Address[];
-}
-
-export interface AddressesEnvelope {
+export interface RefreshTokenEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: AddressesResponse;
-}
-
-export interface AddressInput {
-    label?: string;
-    /** @minLength 1 */
-    fullName: string;
-    /** @minLength 1 */
-    street: string;
-    /** @minLength 1 */
-    city: string;
-    /** @minLength 1 */
-    zip: string;
-    /** @minLength 1 */
-    country: string;
-    phone?: string;
-    default?: boolean;
-}
-
-export interface UpdateAddressRequest {
-    label?: string;
-    /** @minLength 1 */
-    fullName?: string;
-    /** @minLength 1 */
-    street?: string;
-    /** @minLength 1 */
-    city?: string;
-    /** @minLength 1 */
-    zip?: string;
-    /** @minLength 1 */
-    country?: string;
-    phone?: string;
-    default?: boolean;
-}
-
-export interface VerifyEmailConfirmRequest {
-    /** One-time email verification token (NOT a JWT). */
-    token: string;
-}
-
-export interface AccountDeleteConfirmRequest {
-    /** One-time account deletion token (NOT a JWT). */
-    token: string;
-}
-
-/**
- * How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
- */
-export type LoginRequestRemember = (typeof LoginRequestRemember)[keyof typeof LoginRequestRemember];
-
-export const LoginRequestRemember = {
-    short: 'short',
-    medium: 'medium',
-    long: 'long'
-} as const;
-
-export interface LoginRequest {
-    email: Email;
-    password: Password;
-    /** How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token. */
-    remember?: LoginRequestRemember;
+    data: RefreshTokenResponse;
 }
 
 export interface TwoFactorMethodSummary {
@@ -1038,6 +928,138 @@ export interface LoginResponseEnvelope {
     data: LoginOutcome;
 }
 
+export interface LoginTwoFactorRequest {
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
+    code: string;
+}
+
+export interface TwoFactorStatus {
+    /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
+    enabled: boolean;
+    /** The factors armed on this account, plus any enrollment still pending confirmation. */
+    methods: TwoFactorMethodSummary[];
+    /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
+    available: TwoFactorMethodSummary[];
+    /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
+    backupCodesRemaining: number;
+}
+
+export interface TwoFactorStatusEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorStatus;
+}
+
+export interface TwoFactorSetup {
+    /** The method being enrolled, echoed back. */
+    method: string;
+    /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
+    delivers: boolean;
+    /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
+    secret?: string;
+    /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
+    otpauthUri?: string;
+    /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
+    sentTo?: string;
+    /** Seconds before another code may be requested. Absent unless `delivers`. */
+    resendAfter?: number;
+    /** When the delivered code stops being accepted. Absent unless `delivers`. */
+    expiresAt?: string;
+}
+
+export interface TwoFactorSetupEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorSetup;
+}
+
+export interface TwoFactorConfirmRequest {
+    /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
+    code: string;
+}
+
+export interface TwoFactorConfirmed {
+    /** The method just armed, echoed back. */
+    method: string;
+    /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
+    backupCodes?: string[];
+    /** How many unused backup codes the account now holds. */
+    backupCodesRemaining: number;
+}
+
+export interface TwoFactorConfirmEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorConfirmed;
+}
+
+export interface TwoFactorCodeRequest {
+    /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
+    code: string;
+}
+
+export interface TwoFactorSendRequest {
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
+    method: string;
+}
+
+export interface TwoFactorDelivery {
+    /** The method the code went through, echoed back. */
+    method: string;
+    /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
+    sentTo: string;
+    /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
+    resendAfter: number;
+    /** When this code stops being accepted. */
+    expiresAt: string;
+}
+
+export interface TwoFactorDeliveryEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorDelivery;
+}
+
+export interface TwoFactorBackupCodesRegenerated {
+    /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
+    backupCodes: string[];
+    /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
+    backupCodesRemaining: number;
+}
+
+export interface TwoFactorBackupCodesRegeneratedEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorBackupCodesRegenerated;
+}
+
+/**
+ * How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
+ */
+export type LoginRequestRemember = (typeof LoginRequestRemember)[keyof typeof LoginRequestRemember];
+
+export const LoginRequestRemember = {
+    short: 'short',
+    medium: 'medium',
+    long: 'long'
+} as const;
+
+export interface LoginRequest {
+    email: Email;
+    password: Password;
+    /** How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token. */
+    remember?: LoginRequestRemember;
+}
+
 export interface SignupRequest {
     email: Email;
     /** @minLength 3 */
@@ -1055,10 +1077,10 @@ export interface SignupRequestMultipart {
     username: string;
     password: PasswordNew;
     passwordConfirm: Password;
-    termsAccepted: true;
-    analyticsConsent?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    termsAccepted: true;
+    analyticsConsent?: boolean;
 }
 
 export interface PasswordResetRequest {
@@ -1066,26 +1088,87 @@ export interface PasswordResetRequest {
 }
 
 export interface PasswordResetConfirmRequest {
-    /** One-time password reset token (NOT a JWT). */
+    /** Single-use, short-lived password reset token, delivered by email. */
     token: string;
     password: PasswordNew;
     passwordConfirm: Password;
 }
 
-export interface RefreshTokenResponse {
-    /** New access JWT */
+export interface AccountDeleteConfirmRequest {
+    /** Single-use, short-lived account deletion token, delivered by email. */
     token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
 }
 
-export interface RefreshTokenEnvelope {
+export interface UpdateAccountRequest {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    imageUrl?: ImageUrl;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+}
+
+export interface UpdateAccountRequestMultipart {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: Password;
+    password: PasswordNew;
+    passwordConfirm: Password;
+}
+
+export interface ReauthRequest {
+    password: Password;
+}
+
+export interface VerifyEmailConfirmRequest {
+    /** Single-use, short-lived email verification token, delivered by email. */
+    token: string;
+}
+
+export interface Session {
+    id: Id;
+    /** Absent on a token issued without an expiry tier. */
+    expiration?: string;
+    /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
+    lastUsedAt?: string;
+    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
+    current: boolean;
+}
+
+export interface SessionsResponse {
+    sessions: Session[];
+}
+
+export interface SessionsEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: RefreshTokenResponse;
+    data: SessionsResponse;
+}
+
+export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
+
+export const ExportSessionType = {
+    refresh: 'refresh'
+} as const;
+
+export interface ExportSession {
+    id: Id;
+    type: ExportSessionType;
+    expiration?: string;
+    lastUsedAt?: string;
 }
 
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
@@ -1125,19 +1208,6 @@ export interface ExportShipment {
     deliveredAt?: string;
     createdAt?: string;
     updatedAt?: string;
-}
-
-export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
-
-export const ExportSessionType = {
-    refresh: 'refresh'
-} as const;
-
-export interface ExportSession {
-    id: Id;
-    type: ExportSessionType;
-    expiration?: string;
-    lastUsedAt?: string;
 }
 
 export type ExportAuditEntryActorRole =
@@ -1199,6 +1269,19 @@ export type AccountExportResponseWishlistItem = {
     productId: Id;
 };
 
+export interface Address {
+    id: Id;
+    /** The caller's own name for the entry — "home", "office". */
+    label?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
+    default: boolean;
+}
+
 export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
@@ -1210,7 +1293,7 @@ export interface AccountExportResponse {
     wishlist: AccountExportResponseWishlistItem[];
     sessions: ExportSession[];
     auditLog: ExportAuditEntry[];
-    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
+    /** Present only when `EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
 }
 
@@ -1221,130 +1304,47 @@ export interface AccountExportEnvelope {
     data: AccountExportResponse;
 }
 
-export interface LoginTwoFactorRequest {
-    /** The challenge token from POST /account/login. */
-    challenge: string;
-    /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
-    code: string;
+export interface AddressInput {
+    label?: string;
+    /** @minLength 1 */
+    fullName: string;
+    /** @minLength 1 */
+    street: string;
+    /** @minLength 1 */
+    city: string;
+    /** @minLength 1 */
+    zip: string;
+    /** @minLength 1 */
+    country: string;
+    phone?: string;
+    default?: boolean;
 }
 
-export interface TwoFactorSendRequest {
-    /** The challenge token from POST /account/login. */
-    challenge: string;
-    /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
-    method: string;
+export interface UpdateAddressRequest {
+    label?: string;
+    /** @minLength 1 */
+    fullName?: string;
+    /** @minLength 1 */
+    street?: string;
+    /** @minLength 1 */
+    city?: string;
+    /** @minLength 1 */
+    zip?: string;
+    /** @minLength 1 */
+    country?: string;
+    phone?: string;
+    default?: boolean;
 }
 
-export interface TwoFactorDelivery {
-    /** The method the code went through, echoed back. */
-    method: string;
-    /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
-    sentTo: string;
-    /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
-    resendAfter: number;
-    /** When this code stops being accepted. */
-    expiresAt: string;
+export interface AddressesResponse {
+    addresses: Address[];
 }
 
-export interface TwoFactorDeliveryEnvelope {
+export interface AddressesEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: TwoFactorDelivery;
-}
-
-export interface TwoFactorStatus {
-    /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
-    enabled: boolean;
-    /** The factors armed on this account, plus any enrollment still pending confirmation. */
-    methods: TwoFactorMethodSummary[];
-    /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
-    available: TwoFactorMethodSummary[];
-    /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
-    backupCodesRemaining: number;
-}
-
-export interface TwoFactorStatusEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorStatus;
-}
-
-export interface TwoFactorCodeRequest {
-    /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
-    code: string;
-}
-
-export interface TwoFactorSetup {
-    /** The method being enrolled, echoed back. */
-    method: string;
-    /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
-    delivers: boolean;
-    /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
-    secret?: string;
-    /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
-    otpauthUri?: string;
-    /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
-    sentTo?: string;
-    /** Seconds before another code may be requested. Absent unless `delivers`. */
-    resendAfter?: number;
-    /** When the delivered code stops being accepted. Absent unless `delivers`. */
-    expiresAt?: string;
-}
-
-export interface TwoFactorSetupEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorSetup;
-}
-
-export interface TwoFactorConfirmRequest {
-    /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
-    code: string;
-}
-
-export interface TwoFactorConfirmed {
-    /** The method just armed, echoed back. */
-    method: string;
-    /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
-    backupCodes?: string[];
-    /** How many unused backup codes the account now holds. */
-    backupCodesRemaining: number;
-}
-
-export interface TwoFactorConfirmEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorConfirmed;
-}
-
-export interface TwoFactorBackupCodesRegenerated {
-    /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
-    backupCodes: string[];
-    /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
-    backupCodesRemaining: number;
-}
-
-export interface TwoFactorBackupCodesRegeneratedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorBackupCodesRegenerated;
-}
-
-export interface OAuthProviders {
-    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
-    providers: string[];
-}
-
-export interface OAuthProvidersEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OAuthProviders;
+    data: AddressesResponse;
 }
 
 export interface UsersResponse {
@@ -1357,6 +1357,41 @@ export interface UsersResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: UsersResponse;
+}
+
+export interface SearchUsersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    email?: Email;
+    username?: string;
+    active?: boolean;
+    admin?: boolean;
+    verified?: boolean;
+}
+
+export interface CreateUserRequest {
+    email: Email;
+    username: string;
+    password?: PasswordNew;
+    sendSetupEmail?: boolean;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
+}
+
+export interface CreateUserRequestMultipart {
+    email: Email;
+    username: string;
+    password?: PasswordNew;
+    sendSetupEmail?: boolean;
+    admin?: boolean;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -1386,34 +1421,6 @@ export interface UpdateUserRequestMultipart {
     website?: string;
 }
 
-export interface CreateUserRequest {
-    email: Email;
-    username: string;
-    password?: PasswordNew;
-    sendSetupEmail?: boolean;
-    admin?: boolean;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    locale?: Locale;
-}
-
-export interface CreateUserRequestMultipart {
-    email: Email;
-    username: string;
-    password?: PasswordNew;
-    sendSetupEmail?: boolean;
-    admin?: boolean;
-    active?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: Locale;
-}
-
-export interface DeleteUserRequest {
-    id: Id;
-    hardDelete?: boolean;
-}
-
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: PasswordNew;
@@ -1439,28 +1446,9 @@ export interface UpdateUserByIdRequestMultipart {
     website?: string;
 }
 
-export interface SearchUsersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    id?: Id;
-    email?: Email;
-    username?: string;
-    active?: boolean;
-    admin?: boolean;
-    verified?: boolean;
-}
-
-export interface CreateFeedbackRequest {
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    /**
-     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
-     * @maxLength 200
-     */
-    website?: string;
+export interface DeleteUserRequest {
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export type FeedbackRequestStatus =
@@ -1505,6 +1493,24 @@ export interface FeedbackRequestsResponseEnvelope {
     data: FeedbackRequestsResponse;
 }
 
+export interface CreateFeedbackRequest {
+    /** @maxLength 255 */
+    name?: string;
+    email: Email;
+    /** @maxLength 255 */
+    subject: string;
+    /**
+     * @minLength 10
+     * @maxLength 65535
+     */
+    message: string;
+    /**
+     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
+     * @maxLength 200
+     */
+    website?: string;
+}
+
 export interface SearchFeedbackRequestsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -1516,6 +1522,13 @@ export interface SearchFeedbackRequestsRequest {
 export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
     adminNotes?: string;
+}
+
+export interface ProductEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Product;
 }
 
 export interface ProductsResponse {
@@ -1530,38 +1543,37 @@ export interface ProductsResponseEnvelope {
     data: ProductsResponse;
 }
 
-export interface UpdateProductRequest {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    active?: boolean;
-    requiresShipping?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
+export interface FacetCount {
+    name: string;
+    /** @minimum 1 */
+    count: number;
 }
 
-export interface UpdateProductRequestMultipart {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    active?: boolean;
-    requiresShipping?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
+export interface CatalogueFacetsResponse {
+    categories: FacetCount[];
+    tags: FacetCount[];
 }
 
-export interface ProductEnvelope {
+export interface CatalogueFacetsEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: Product;
+    data: CatalogueFacetsResponse;
+}
+
+export interface SearchProductsRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    /** @minimum 0 */
+    minPrice?: number;
+    /** @minimum 0 */
+    maxPrice?: number;
+    category?: string;
+    tag?: string;
+    title?: string;
+    active?: boolean;
 }
 
 export interface CreateProductRequest {
@@ -1593,27 +1605,31 @@ export interface CreateProductRequestMultipart {
     tags?: string[];
 }
 
-export interface DeleteProductRequest {
+export interface UpdateProductRequest {
     id: Id;
-    hardDelete?: boolean;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
 }
 
-export interface FacetCount {
-    name: string;
-    /** @minimum 1 */
-    count: number;
-}
-
-export interface CatalogueFacetsResponse {
-    categories: FacetCount[];
-    tags: FacetCount[];
-}
-
-export interface CatalogueFacetsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CatalogueFacetsResponse;
+export interface UpdateProductRequestMultipart {
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductByIdRequest {
@@ -1641,19 +1657,9 @@ export interface UpdateProductByIdRequestMultipart {
     tags?: string[];
 }
 
-export interface SearchProductsRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    id?: Id;
-    /** @minimum 0 */
-    minPrice?: number;
-    /** @minimum 0 */
-    maxPrice?: number;
-    category?: string;
-    tag?: string;
-    title?: string;
-    active?: boolean;
+export interface DeleteProductRequest {
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface CartSummaryResponse {
@@ -1688,37 +1694,11 @@ export interface CartResponseEnvelope {
     data: CartResponse;
 }
 
-export interface UpsertCartItemRequest {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-}
-
-export interface RemoveCartItemRequest {
-    productId: Id;
-}
-
-export interface UpdateCartItemByIdRequest {
-    productId?: Id;
-    /** @minimum 1 */
-    quantity: number;
-}
-
 export interface CartSummaryResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CartSummaryResponse;
-}
-
-export interface CheckoutRequest {
-    email?: Email;
-    /** Optional order notes */
-    notes?: string;
-    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
-    addressId?: Id;
-    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
-    shippingMethodId?: string;
 }
 
 export interface CheckoutResponse {
@@ -1731,6 +1711,32 @@ export interface CheckoutResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CheckoutResponse;
+}
+
+export interface UpsertCartItemRequest {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+export interface UpdateCartItemByIdRequest {
+    productId?: Id;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+export interface RemoveCartItemRequest {
+    productId: Id;
+}
+
+export interface CheckoutRequest {
+    email?: Email;
+    /** Optional order notes */
+    notes?: string;
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
+    addressId?: Id;
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    shippingMethodId?: string;
 }
 
 export interface WishlistItem {
@@ -1752,6 +1758,13 @@ export interface AddWishlistItemRequest {
     productId: Id;
 }
 
+export interface OrderEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
+}
+
 export interface OrdersResponse {
     items: Order[];
     meta: PaginationMeta;
@@ -1762,6 +1775,35 @@ export interface OrdersResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: OrdersResponse;
+}
+
+/**
+ * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
+ */
+export interface CancelOrderRequest {
+    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
+    refund?: boolean;
+}
+
+export interface SearchOrdersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    id?: Id;
+    userId?: Id;
+    productId?: Id;
+    email?: Email;
+    status?: OrderStatus;
+    notes?: string;
+}
+
+/**
+ * Create a new order.
+ */
+export interface CreateOrderRequest {
+    userId: Id;
+    email: Email;
+    /** @minItems 1 */
+    items: CartItem[];
 }
 
 /**
@@ -1789,39 +1831,6 @@ export interface UpdateOrderRequest {
     items?: CartItem[];
 }
 
-export interface OrderEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
-}
-
-/**
- * Create a new order.
- */
-export interface CreateOrderRequest {
-    userId: Id;
-    email: Email;
-    /** @minItems 1 */
-    items: CartItem[];
-}
-
-export interface DeleteOrderRequest {
-    id: Id;
-    hardDelete?: boolean;
-}
-
-export interface SearchOrdersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    id?: Id;
-    userId?: Id;
-    productId?: Id;
-    email?: Email;
-    status?: OrderStatus;
-    notes?: string;
-}
-
 /**
  * Updated order status
  */
@@ -1846,26 +1855,9 @@ export interface UpdateOrderByIdRequest {
     items?: CartItem[];
 }
 
-/**
- * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
- */
-export interface CancelOrderRequest {
-    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
-    refund?: boolean;
-}
-
-export interface CreatePaymentIntentRequest {
-    orderId: Id;
-}
-
-/**
- * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
- */
-export interface PaymentActions {
-    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
-    pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
-    refund: boolean;
+export interface DeleteOrderRequest {
+    id: Id;
+    hardDelete?: boolean;
 }
 
 /**
@@ -1879,6 +1871,16 @@ export const PaymentStatus = {
     declined: 'declined',
     refunded: 'refunded'
 } as const;
+
+/**
+ * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
+ */
+export interface PaymentActions {
+    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
+    pay: boolean;
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
+    refund: boolean;
+}
 
 export interface Payment {
     id: Id;
@@ -1907,6 +1909,10 @@ export interface PaymentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Payment;
+}
+
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
 }
 
 export interface ConfirmPaymentRequest {
@@ -1989,30 +1995,6 @@ export interface CourierAdvanceResponseEnvelope {
     data: CourierAdvanceResponse;
 }
 
-export interface InventoryLevel {
-    productId: Id;
-    /** Carried so the board reads as a list of products rather than of ids. */
-    title: string;
-    /** @minimum 0 */
-    onHand: number;
-    /** @minimum 0 */
-    reserved: number;
-    /** @minimum 0 */
-    available: number;
-}
-
-export interface InventoryLevelsResponse {
-    items: InventoryLevel[];
-    meta: PaginationMeta;
-}
-
-export interface InventoryLevelsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: InventoryLevelsResponse;
-}
-
 /**
  * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
  * * `commit` — the order was paid for and the units left. Both down.
@@ -2058,6 +2040,37 @@ export interface StockMovementsResponseEnvelope {
     data: StockMovementsResponse;
 }
 
+export interface InventoryLevel {
+    productId: Id;
+    /** Carried so the board reads as a list of products rather than of ids. */
+    title: string;
+    /** @minimum 0 */
+    onHand: number;
+    /** @minimum 0 */
+    reserved: number;
+    /** @minimum 0 */
+    available: number;
+}
+
+export interface InventoryLevelEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevel;
+}
+
+export interface InventoryLevelsResponse {
+    items: InventoryLevel[];
+    meta: PaginationMeta;
+}
+
+export interface InventoryLevelsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevelsResponse;
+}
+
 export interface ReceiptRequest {
     productId: Id;
     /**
@@ -2067,13 +2080,6 @@ export interface ReceiptRequest {
     quantity: number;
     /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
     note?: string;
-}
-
-export interface InventoryLevelEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: InventoryLevel;
 }
 
 export interface AdjustmentRequest {
@@ -2151,9 +2157,9 @@ export type ProductIdParamParameter = Id;
  */
 export type HardDeleteParamParameter = boolean;
 
-export type MessagesTenantQueryParamParameter = LocaleTenant;
-
 export type EntryTenantQueryParamParameter = LocaleTenant;
+
+export type MessagesTenantQueryParamParameter = LocaleTenant;
 
 export type GetLocaleMessagesParams = {
     /**
@@ -2177,7 +2183,7 @@ export type GetLocaleMessagesParams = {
 
 export type ListLocaleEntriesParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2230,7 +2236,7 @@ export type GetObservabilityAuditLogsParams = {
      */
     since?: string;
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2262,7 +2268,7 @@ export type CompleteOAuthLoginParams = {
 
 export type ListUsersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2305,7 +2311,7 @@ export type DeleteUserByIdParams = {
 
 export type ListFeedbackRequestsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2327,7 +2333,7 @@ export type ListFeedbackRequestsParams = {
 
 export type ListProductsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2377,7 +2383,7 @@ export type DeleteProductByIdParams = {
 
 export type ListOrdersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2421,7 +2427,7 @@ export type DeleteOrderByIdParams = {
 
 export type ListInventoryLevelsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2440,7 +2446,7 @@ export type ListInventoryLevelsParams = {
 
 export type ListStockMovementsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
@@ -2477,7 +2483,7 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
  *
  * `tenants` is the field doing the real work: which tenants have words in that
  * language. The backend tenant means the API can answer requests in it — its
- * dictionary is deployed and i18next holds it. A frontend tenant means a client
+ * dictionary is deployed and the translator holds it. A frontend tenant means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
  * have either, or both, and the two are not the same capability: a language added
  * through the admin routes below carries only the frontend tenant until a file is
@@ -3100,7 +3106,7 @@ export const confirmAccountDelete = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, returns an opaque bearer access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const login = (
@@ -3114,6 +3120,195 @@ export const login = (
             headers: { 'Content-Type': 'application/json' },
             data: loginRequest
         },
+        options
+    );
+};
+
+/**
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * @summary Complete a two-factor login
+ */
+export const loginTwoFactor = (
+    loginTwoFactorRequest: LoginTwoFactorRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/2fa`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginTwoFactorRequest
+        },
+        options
+    );
+};
+
+/**
+ * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
+ * @summary Send a login code
+ */
+export const sendTwoFactorCode = (
+    twoFactorSendRequest: TwoFactorSendRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+) => {
+    return orvalMutator<TwoFactorDeliveryEnvelope>(
+        {
+            url: `/account/login/2fa/send`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorSendRequest
+        },
+        options
+    );
+};
+
+/**
+ * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
+ * @summary Two-factor status
+ */
+export const getTwoFactorStatus = (
+    options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
+) => {
+    return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
+};
+
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
+ * @summary Disable two-factor authentication
+ */
+export const disableTwoFactor = (
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * @summary Start enrolling one second factor
+ */
+export const setupTwoFactorMethod = (
+    method: string,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+) => {
+    return orvalMutator<TwoFactorSetupEnvelope>(
+        { url: `/account/2fa/methods/${method}/setup`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
+ * @summary Arm one second factor
+ */
+export const confirmTwoFactorMethod = (
+    method: string,
+    twoFactorConfirmRequest: TwoFactorConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
+) => {
+    return orvalMutator<TwoFactorConfirmEnvelope>(
+        {
+            url: `/account/2fa/methods/${method}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
+ * @summary Remove one second factor
+ */
+export const removeTwoFactorMethod = (
+    method: string,
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa/methods/${method}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
+ * @summary Regenerate backup codes
+ */
+export const regenerateBackupCodes = (
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>
+) => {
+    return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
+        {
+            url: `/account/2fa/backup-codes`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ * @summary Export the caller's own data
+ */
+export const exportAccountData = (
+    options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>
+) => {
+    return orvalMutator<AccountExportEnvelope>({ url: `/account/export`, method: 'POST' }, options);
+};
+
+/**
+ * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
+ * @summary List enabled OAuth providers
+ */
+export const listOAuthProviders = (
+    options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>
+) => {
+    return orvalMutator<OAuthProvidersEnvelope>(
+        { url: `/account/oauth/providers`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
+ * @summary Start an OAuth login
+ */
+export const startOAuthLogin = (
+    provider: string,
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>({ url: `/account/oauth/${provider}`, method: 'GET' }, options);
+};
+
+/**
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
+ * @summary Complete an OAuth login
+ */
+export const completeOAuthLogin = (
+    provider: string,
+    params?: CompleteOAuthLoginParams,
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>(
+        { url: `/account/oauth/${provider}/callback`, method: 'GET', params },
         options
     );
 };
@@ -3150,12 +3345,12 @@ export const signupWithMultipart = (
     formData.append(`username`, signupRequestMultipart.username);
     formData.append(`password`, signupRequestMultipart.password);
     formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
+    if (signupRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
+    }
     formData.append(`termsAccepted`, signupRequestMultipart.termsAccepted.toString());
     if (signupRequestMultipart.analyticsConsent !== undefined) {
         formData.append(`analyticsConsent`, signupRequestMultipart.analyticsConsent.toString());
-    }
-    if (signupRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
     }
 
     return orvalMutator<UserEnvelope>(
@@ -3234,195 +3429,6 @@ export const deleteExpiredTokens = (
 ) => {
     return orvalMutator<SuccessResponse>(
         { url: `/account/tokens/expired`, method: 'DELETE' },
-        options
-    );
-};
-
-/**
- * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
- * @summary Export the caller's own data
- */
-export const exportAccountData = (
-    options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>
-) => {
-    return orvalMutator<AccountExportEnvelope>({ url: `/account/export`, method: 'POST' }, options);
-};
-
-/**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
- * @summary Complete a two-factor login
- */
-export const loginTwoFactor = (
-    loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
-) => {
-    return orvalMutator<AuthTokensEnvelope>(
-        {
-            url: `/account/login/2fa`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: loginTwoFactorRequest
-        },
-        options
-    );
-};
-
-/**
- * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
- * @summary Send a login code
- */
-export const sendTwoFactorCode = (
-    twoFactorSendRequest: TwoFactorSendRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
-) => {
-    return orvalMutator<TwoFactorDeliveryEnvelope>(
-        {
-            url: `/account/login/2fa/send`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorSendRequest
-        },
-        options
-    );
-};
-
-/**
- * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
- * @summary Two-factor status
- */
-export const getTwoFactorStatus = (
-    options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
-) => {
-    return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
-};
-
-/**
- * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
- * @summary Disable two-factor authentication
- */
-export const disableTwoFactor = (
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
-) => {
-    return orvalMutator<SuccessResponse>(
-        {
-            url: `/account/2fa`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
- * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
- * @summary Remove one second factor
- */
-export const removeTwoFactorMethod = (
-    method: string,
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
-) => {
-    return orvalMutator<SuccessResponse>(
-        {
-            url: `/account/2fa/methods/${method}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
- * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
- * @summary Start enrolling one second factor
- */
-export const setupTwoFactorMethod = (
-    method: string,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
-) => {
-    return orvalMutator<TwoFactorSetupEnvelope>(
-        { url: `/account/2fa/methods/${method}/setup`, method: 'POST' },
-        options
-    );
-};
-
-/**
- * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
- * @summary Arm one second factor
- */
-export const confirmTwoFactorMethod = (
-    method: string,
-    twoFactorConfirmRequest: TwoFactorConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
-) => {
-    return orvalMutator<TwoFactorConfirmEnvelope>(
-        {
-            url: `/account/2fa/methods/${method}/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorConfirmRequest
-        },
-        options
-    );
-};
-
-/**
- * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
- * @summary Regenerate backup codes
- */
-export const regenerateBackupCodes = (
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>
-) => {
-    return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
-        {
-            url: `/account/2fa/backup-codes`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
- * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
- * @summary List enabled OAuth providers
- */
-export const listOAuthProviders = (
-    options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>
-) => {
-    return orvalMutator<OAuthProvidersEnvelope>(
-        { url: `/account/oauth/providers`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
- * @summary Start an OAuth login
- */
-export const startOAuthLogin = (
-    provider: string,
-    options?: SecondParameter<typeof orvalMutator<unknown>>
-) => {
-    return orvalMutator<unknown>({ url: `/account/oauth/${provider}`, method: 'GET' }, options);
-};
-
-/**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
- * @summary Complete an OAuth login
- */
-export const completeOAuthLogin = (
-    provider: string,
-    params?: CompleteOAuthLoginParams,
-    options?: SecondParameter<typeof orvalMutator<unknown>>
-) => {
-    return orvalMutator<unknown>(
-        { url: `/account/oauth/${provider}/callback`, method: 'GET', params },
         options
     );
 };
@@ -4263,7 +4269,7 @@ export const reorder = (
 };
 
 /**
- * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
+ * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404. Order is the order they were saved in, oldest first, with the id breaking ties between two saved in the same instant.
  * @summary Get wishlist
  */
 export const getWishlist = (
@@ -4756,6 +4762,26 @@ export type ConfirmAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof confirmAccountDelete>>
 >;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
+export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
+export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type SetupTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof setupTwoFactorMethod>>
+>;
+export type ConfirmTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
+export type RemoveTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof removeTwoFactorMethod>>
+>;
+export type RegenerateBackupCodesResult = NonNullable<
+    Awaited<ReturnType<typeof regenerateBackupCodes>>
+>;
+export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
+export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
+export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
+export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
 export type SignupWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof signupWithMultipart>>
@@ -4771,26 +4797,6 @@ export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
 export type DeleteExpiredTokensResult = NonNullable<
     Awaited<ReturnType<typeof deleteExpiredTokens>>
 >;
-export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
-export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
-export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
-export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
-export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
-export type RemoveTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof removeTwoFactorMethod>>
->;
-export type SetupTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof setupTwoFactorMethod>>
->;
-export type ConfirmTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof confirmTwoFactorMethod>>
->;
-export type RegenerateBackupCodesResult = NonNullable<
-    Awaited<ReturnType<typeof regenerateBackupCodes>>
->;
-export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
-export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
-export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
 export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
 export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
 export type CreateUserWithMultipartResult = NonNullable<
