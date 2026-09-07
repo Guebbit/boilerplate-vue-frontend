@@ -185,6 +185,34 @@ jobs:
             - name: Check generated AsyncAPI types are fresh
               run: npm run check:asyncapi-types
 
+    docs-references:
+        # Every path the docs CLAIM exists, checked against the files that do. `docs:build` fails
+        # on a dead LINK between pages; nothing else fails on a dead FACT, and a page naming a
+        # source file that no longer exists reads as current to anyone who has not opened the tree.
+        # Mirrors the backend's job of the same name, each repo reading its own tree.
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            # No sibling checkout here, so the cross-repo half is skipped rather than failed —
+            # see the script's `peerTargets`.
+            - name: Check every path the docs cite still exists
+              run: npm run check:docs-references
+
     audit:
         # Scoped to the production dependency tree only: devDependencies (build
         # tooling, codegen, test runners, etc.) are never shipped to users, so a

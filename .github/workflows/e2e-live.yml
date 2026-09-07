@@ -144,8 +144,12 @@ jobs:
               run: npm ci
 
             # The specs are written against the seed dataset, so the database has to hold it
-            # before anything starts — and `cy.resetState()` re-runs this same script between
-            # specs, which is why the backend's `db:seed:reset:host` script is the one used.
+            # before anything starts — and `cy.resetState()` re-runs the seed between specs, which
+            # is what `LIVE_RESET_COMMAND` above runs.
+            #
+            # `host` is a PREFIX runner, not a suffix: it exports the localhost database and cache
+            # variables and then invokes `npm run` with whatever follows the `--`. There is no
+            # `db:bootstrap:host` script to call.
             - name: Migrate and seed
               working-directory: ${{ env.BACKEND_PATH }}
               env:
@@ -153,7 +157,7 @@ jobs:
                   NODE_MONGODB_HOST: localhost
                   NODE_REDIS_URL: ''
                   NODE_REDIS_HOST: localhost
-              run: npm run db:bootstrap:host
+              run: npm run host -- db:bootstrap
 
             # Umami seeds a fixed admin account on first boot but offers no env var for its
             # credentials, and no way to pre-create a website. The backend's own init script does

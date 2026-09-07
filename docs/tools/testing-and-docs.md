@@ -115,7 +115,7 @@ flowchart TB
 
 ### The three questions, and why none absorbs another
 
-- **"Give me _the_ demo data."** → `demo-data.json`, changed through the `src/modules/<name>/demo.ts` of the backend module that owns the records and republished with `npm run seed:export`. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated. A shape the demo data cannot currently produce is a record to ADD, not a generator to introduce.
+- **"Give me _the_ demo data."** → `boilerplate-node-backend/db/demo/demo-data.json`, changed through the `src/modules/<name>/demo.ts` of the backend module that owns the records and republished with `npm run seed:export`. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated. A shape the demo data cannot currently produce is a record to ADD, not a generator to introduce.
 - **"Give me _a_ product, I do not care which."** → the backend's `factories/*`. The opposite need: fresh, isolated, overridable per test, and never the demo data — 25 test files there would interfere with each other if they shared rows.
 - **"Give me one the API must _reject_."** → `boilerplate-node-backend/tests/support/contract-data.ts`. Derived from the zod schemas so each payload violates exactly one declared constraint. Nothing else can produce something deliberately illegal, which is the difference between a contract test and a fixture.
 

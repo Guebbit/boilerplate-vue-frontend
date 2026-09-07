@@ -216,7 +216,7 @@ The same shape repeats for every entity. The entity names are examples.
 - Stores should not contain template logic or DOM refs.
 - Composables should not scatter side effects across unrelated stores.
 - `contracts/rest/index.ts` is generated — never edit it by hand.
-- `http.ts` should not know about specific business entities.
+- `src/infrastructure/http/types.ts` should not know about specific business entities.
 
 ## Why this is useful
 
