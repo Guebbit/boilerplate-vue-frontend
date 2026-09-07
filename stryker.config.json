@@ -30,10 +30,7 @@
         "dist-e2e/**",
         "docs/**",
         ".stryker-tmp*/**",
-        ".claude/**",
-        ".2repo/**",
-        "2repo/**",
-        ".codeboarding/**"
+        ".claude/**"
     ],
     "thresholds": {
         "high": 80,
