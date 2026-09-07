@@ -1,7 +1,7 @@
-# Polish plan — what is left
+# Polish plan — the record
 
-Audit date **2026-09-07**. Phases 1–4 and 6–9 landed the same day, across ten commits. What
-remains is **one uncommitted change** waiting on a review, and nothing else.
+Audit date **2026-09-07**. Every phase landed the same day, across twelve commits. Nothing is
+outstanding; what follows is the record, including the findings that did not survive checking.
 
 ---
 
@@ -14,7 +14,7 @@ remains is **one uncommitted change** waiting on a review, and nothing else.
 | `npm run type-check-only`                   | **clean**                              |
 | `npm run build`                             | **clean**                              |
 | `npm run docs:build`                        | **clean**                              |
-| Unit suite                                  | **1630/1630**                          |
+| Unit suite                                  | **1633/1633**                          |
 | `npm run test:e2e`                          | **32 specs, 4/4 shards**               |
 | Control-flow nesting > 3 levels             | **none**, repo-wide                    |
 | `any` anywhere                              | **none**                               |
@@ -28,51 +28,41 @@ remains is **one uncommitted change** waiting on a review, and nothing else.
 
 ---
 
-## The one thing left: §2.4, and whether it is worth it
+## §2.4 — closed, and not the way it was proposed
 
-**Status: written, verified, DELIBERATELY UNCOMMITTED.** It is a DRY change that could fairly be
-called overabstraction, so it is a judgement call rather than a defect fix.
+The audit proposed folding four list views' duplicated `pageItems`, `PAGE_SIZE_OPTIONS`,
+`handleSearch` and `handleReset` into one `useListPageControls` composable. That composable was
+written, wired and verified — and then thrown away, because checking its central premise showed
+there was nothing to abstract.
 
-`src/ui/composables/use-list-page-controls.ts` (new, untracked) exports:
+**The four `pageItems` computeds were dead code.** Each carried an
+`eslint-disable @typescript-eslint/no-unnecessary-condition` asserting that "the toolkit's page
+window is a SPARSE array; holes are undefined at runtime whatever the element type claims". It is
+not. `pageItemList` resolves through `searchGet` → `getRecords`, which ends in `.filter(Boolean)`,
+so a record the cache names but the dictionary does not hold makes the window SHORTER — it never
+leaves a hole. The rule was correct at all four sites and the suppressions existed to protect a
+filter that removed nothing.
 
-- `PAGE_SIZE_OPTIONS` — the `[{10},{25},{50}]` literal, previously in three pages.
-- `usePageItems(pageItemList)` — the sparse-window filter, previously in four.
-- `useListPageControls({ filters, pageCurrent, pageItemList, search })` — the above plus
-  `handleSearch` and `handleReset`.
+Verified against the real package on both entry points, including `useStructureCrudApi` — what
+every list store here is built on. The probes are kept as
+`tests/cross-cutting/page-window-density.spec.ts`.
 
-Wired into `OrdersList.vue`, `ProductsList.vue`, `UsersList.vue` (all three exports) and
-`LocaleEntries.vue` (`usePageItems` only). Net **−75 lines**.
+**The trap worth remembering.** The first attempt at this section did not check. It carried the
+"sparse" claim over from the comments it was consolidating and then gave the new composable a
+parameter typed `Ref<(T | undefined)[]>` — which made the filter look necessary to the type
+checker and let the suppressions be deleted for the wrong reason. A consolidation that inherits an
+unverified claim launders it: four suspicious comments become one confident abstraction, and the
+error gets harder to see rather than easier.
 
-### The case for
+Shipped as `ff8bb53`: the four filters deleted, the tables bound to `pageItemList` directly,
+−40 lines and no new abstraction. **No change to `@guebbit/vue-toolkit`** — it was already correct,
+and this repo was working around behaviour it does not have.
 
-`usePageItems` earns its place on its own, and for a better reason than line count. Each inline
-copy carried an `eslint-disable @typescript-eslint/no-unnecessary-condition` plus a 130-character
-justification, because the toolkit's return type claims the element cannot be falsy while the
-array is really sparse. Typing the parameter as what it actually is — `Ref<(T | undefined)[]>` —
-makes the filter necessary in the type system's eyes, so **all four suppressions are gone**, not
-merely centralised. That is a fix, not a fold.
-
-### The case against
-
-`handleSearch` is two lines. `handleReset` is three. Neither is hard to read, hard to get right,
-or likely to drift, and putting them behind a composable means a reader of `UsersList.vue` has to
-open a second file to learn that Search resets the page number. The audit called these "5×
-duplication"; checked, `handleSearch` is 4× and `handleReset` is 3× — `AdminAuditTab`,
-`FeedbackInbox` and `LocalesDictionary` each have their own genuinely different version, and
-`LocaleEntries` deliberately has no reset at all because its `filters.tag` comes from the route.
-So the shared handlers serve three files, not six, and the composable already needs a paragraph
-explaining who must not use it.
-
-### The middle option, if you want one
-
-Keep `PAGE_SIZE_OPTIONS` and `usePageItems`; drop `useListPageControls` and leave `handleSearch`
-and `handleReset` inline in the three pages. That takes the suppression fix and the shared
-constant — the parts that are unambiguously right — and leaves five lines of obvious code where a
-reader already looks for it.
-
-**Recommendation: the middle option.** The sparse-window filter is a real abstraction with a real
-reason; the two handlers are a shape, and a shape repeated three times is cheaper to read than to
-share.
+**Deliberately left inline:** `PAGE_SIZE_OPTIONS` (3x) and `handleSearch`/`handleReset` (4x and 3x,
+two and three lines each). The audit called the handlers "5x"; checked, `AdminAuditTab`,
+`FeedbackInbox` and `LocalesDictionary` each have a genuinely different version, and
+`LocaleEntries` has no reset at all because its `filters.tag` comes from the route. Three call
+sites of a two-line shape, with no defect underneath, reads cheaper than it shares.
 
 ---
 
@@ -89,6 +79,7 @@ share.
 | `7e4da18` | §5                       | `@module` scoped to `src/` — option (b)                      |
 | `0422fb7` | §6.2 §6.3 §6.4           | docs made true, 83 file rows rewritten, 4 diagrams added     |
 | `fbc45c2` | §2.8 §6.8 §6.10          | barrel collapsed, deps moved, three exports narrowed         |
+| `ff8bb53` | §2.4                     | four dead filters deleted; the toolkit already did the work  |
 
 §2.2 (a `useModuleRestApi` wrapper over the 16 stores' `useCoreStore` wiring) was **rejected** and
 is not coming back. §6.1 resolved itself: a contract-sync `regenerate` swept up the two unformatted
@@ -123,7 +114,8 @@ Recorded because the same mistakes are easy to repeat.
 - **§4.1 undercounted by 4×.** The real figure was **192** across 60 files, not 46: the original
   sweep counted bare declarations and missed the commoner case of several sharing one docblock,
   which the rule forbids just as squarely.
-- **§2.4 overcounted.** "5×" for both handlers; actually 4× and 3× — see above.
+- **§2.4 overcounted, and mis-diagnosed.** "5×" for both handlers; actually 4× and 3×. And
+  the `pageItems` duplication it led with was four copies of dead code — see the section above.
 
 ---
 
