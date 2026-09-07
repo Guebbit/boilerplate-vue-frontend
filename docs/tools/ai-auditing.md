@@ -8,7 +8,7 @@ notice that the docs promise a rule the contract never encodes.
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
 approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
 
-`tests/audit/` holds three prompts that live in exactly that gap. They are plain markdown, run by
+`tests/audit/` holds four prompts that live in exactly that gap. They are plain markdown, run by
 hand against an LLM, and they write reports — never code.
 
 ## The one rule
@@ -40,22 +40,26 @@ Two consequences, both non-negotiable:
 - **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
   Prose confidence is not evidence.
 
-## The three prompts
+## The four prompts
 
-| File                         | Asks                                                                          | Writes to                    |
-| ---------------------------- | ----------------------------------------------------------------------------- | ---------------------------- |
-| `tests/audit/spec-drift.md`  | Which tests assert what the **code** does rather than what the **spec** says? | `reports/audit/spec-drift/`  |
-| `tests/audit/spec-gaps.md`   | Which business rules and security boundaries have **zero** coverage?          | `reports/audit/spec-gaps/`   |
-| `tests/audit/suite-bloat.md` | Which tests cost CI time and discriminate nothing?                            | `reports/audit/suite-bloat/` |
+| File                                  | Asks                                                                                                                                                          | Writes to                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `tests/audit/spec-drift.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
+| `tests/audit/spec-gaps.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
+| `tests/audit/suite-bloat.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
+| `tests/audit/accessibility-manual.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
 
-All three take one argument — a module (`orders`), a path, or `--diff` for whatever the working
-tree touched.
-
-The three prompt files are the only part of this kept byte-identical with the sibling repo
-(`boilerplate-node-backend`) — they are repo-agnostic by design, so a change worth making to one is
+The first three take one argument — a module (`orders`), a path, or `--diff` for whatever the
+working tree touched — and are the only part of this kept byte-identical with the sibling repo
+(`boilerplate-node-backend`): they are repo-agnostic by design, so a change worth making to one is
 worth copying to the other. Nothing enforces it: they are not in `SHARED_FILES`, whose rule is that
 a shared file must be owned by one side, and these are co-authored. Copy by hand, and check with
 `diff` when in doubt.
+
+`accessibility-manual.md` takes the same argument shape but defaults an empty scope to the **whole
+repo**, not the touched modules — an accessibility gap in an untouched component is still a gap.
+It is deliberately **not** part of the byte-identical set: it audits UI/UX judgement calls that
+have no backend equivalent, so copying it there would be dead weight.
 
 This page is the opposite: deliberately per-repo. It names this repo's own tools, its own `docs/`
 count and its own findings, so the two copies are _expected_ to differ and must not be reconciled.
@@ -128,7 +132,8 @@ mkdir -p .claude/commands
 ln -s ../../tests/audit .claude/commands/audit
 ```
 
-That gives `/audit:spec-drift orders`, `/audit:spec-gaps inventory`, `/audit:suite-bloat --diff`.
+That gives `/audit:spec-drift orders`, `/audit:spec-gaps inventory`, `/audit:suite-bloat --diff`,
+`/audit:accessibility-manual`.
 The symlink is local, gitignored and regenerable — the files under `tests/audit/` remain the only
 copy.
 
@@ -154,6 +159,8 @@ Ollama model handles it.
 
 ## Reading the output
 
+### `spec-drift`'s verdicts
+
 A findings table uses four verdicts, and only one of them is a bug:
 
 | Verdict           | Means                                                                              |
@@ -167,6 +174,22 @@ A findings table uses four verdicts, and only one of them is a bug:
 expectation recomputed with the very schema the view uses, or a clamp asserted against the module's
 own `MIN_*` constant, is a test that cannot fail and therefore proves nothing. Stryker finds some of
 these; the audit finds the rest.
+
+### `accessibility-manual`'s verdicts
+
+A different four, since this one isn't comparing a spec to a test — it's judging whether a
+residual, unautomatable WCAG concern actually holds:
+
+| Verdict                       | Means                                                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **ISSUE**                     | A real defect in the residual tier, with the WCAG criterion cited.                                               |
+| **OK**                        | Checked, meets the criterion — with what was checked stated.                                                     |
+| **NOT-APPLICABLE**            | The criterion doesn't apply to this app/scope (e.g. no timed content exists at all), reason cited.               |
+| **NEEDS-MANUAL-VERIFICATION** | Code reading genuinely cannot resolve it — most often whether a real screen reader announces something sensibly. |
+
+`NEEDS-MANUAL-VERIFICATION` is this audit's own honest ceiling, the same way `SPEC-SILENT` is
+`spec-drift`'s: a row that names exactly what a human with a screen reader should go check, rather
+than a guess dressed up as a verdict.
 
 The counter-case matters as much: a value generated **from** the contract — an orval enum, a
 generated Zod schema — is an independent anchor, not a tautology. Check where a value is born before

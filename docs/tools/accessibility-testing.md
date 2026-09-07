@@ -148,16 +148,17 @@ Splitting per module meant auditing routes the central list had never contained.
 
 An axe sweep reads the DOM and asks whether the markup is well-formed. It cannot press a key, and the shell's accessibility is mostly **behaviour**: the skip link being the first Tab stop, focus following a page change, a drawer returning focus to the control that opened it, a dialog keeping focus inside it. `tests/e2e/specs/keyboard.cy.ts` performs those, with real keystrokes:
 
-| Case                                                                                       | What it protects, and where it lives          |
-| ------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| First Tab reaches the skip link; Enter lands on `#main-content`                            | `LayoutDefault.vue` — WCAG 2.4.1              |
-| A page change moves focus to the main region and retitles the tab                          | the router's `afterEach` — WCAG 2.4.2, 2.4.3  |
-| The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch             |
-| A bar entry is named by its visible text, with no `aria-label` to drift from it            | `AppNavBarLink.vue` — WCAG 2.5.3              |
-| A pinned entry (the cart) shows its label as a tooltip on focus                            | `AppNavPinnedButton.vue` — WCAG 1.4.13, 2.5.3 |
-| ArrowDown opens the administration menu; Escape closes it and leaves focus on the button   | `AppNavMenu.vue` over Vuetify's `v-menu`      |
-| The confirmation dialog keeps focus inside; Escape declines                                | `DialogHost.vue`                              |
-| A facet chip toggles `aria-pressed` with Enter and with Space                              | `ProductsList.vue`                            |
+| Case                                                                                       | What it protects, and where it lives              |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| First Tab reaches the skip link; Enter lands on `#main-content`                            | `LayoutDefault.vue` — WCAG 2.4.1                  |
+| A page change moves focus to the main region and retitles the tab                          | the router's `afterEach` — WCAG 2.4.2, 2.4.3      |
+| The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch                 |
+| A bar entry is named by its visible text, with no `aria-label` to drift from it            | `AppNavBarLink.vue` — WCAG 2.5.3                  |
+| A pinned entry (the cart) shows its label as a tooltip on focus                            | `AppNavPinnedButton.vue` — WCAG 1.4.13, 2.5.3     |
+| ArrowDown opens the administration menu; Escape closes it and leaves focus on the button   | `AppNavMenu.vue` over Vuetify's `v-menu`          |
+| ArrowDown opens the language switcher; Escape closes it and leaves focus on the button     | `AppLanguageSwitcher.vue` over Vuetify's `v-menu` |
+| The confirmation dialog keeps focus inside; Escape declines                                | `DialogHost.vue`                                  |
+| A facet chip toggles `aria-pressed` with Enter and with Space                              | `ProductsList.vue`                                |
 
 `cypress-real-events` is what makes this possible: Cypress' own `.type('{tab}')` dispatches an event and moves nothing, because focus traversal is the browser's behaviour rather than a handler's. `cy.realPress()` sends the keystroke through the DevTools Protocol, so the browser performs it. The trade is Chromium only, which is every headless run here.
 
@@ -220,3 +221,5 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 - [The demo profile](./demo-profile.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map
+- [AI Auditing](./ai-auditing.md) — `tests/audit/accessibility-manual.md`, the judgement layer for
+  the ~60–70% this suite's own honesty above says axe/eslint cannot reach

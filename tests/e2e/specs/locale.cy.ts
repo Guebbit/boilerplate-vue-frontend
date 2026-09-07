@@ -46,7 +46,7 @@ describe('Italian locale', () => {
         cy.get('[type=password]').should('not.be.disabled').type('somepassword');
         cy.get('form').submit();
 
-        cy.get('.v-messages__message').should('contain.text', "Deve essere un'email valida");
+        cy.get('.v-messages__message').should('contain.text', "Controlla l'indirizzo email");
     });
 
     /**
@@ -65,14 +65,14 @@ describe('Italian locale', () => {
         cy.get('[type=email]').should('not.be.disabled').type('not-an-email');
         cy.get('[type=password]').should('not.be.disabled').type('somepassword');
         cy.get('form').submit();
-        cy.get('.v-messages__message').should('contain.text', 'Must be a valid email');
+        cy.get('.v-messages__message').should('contain.text', 'Check your email address');
 
         cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
 
         cy.url().should('include', '/it/login');
-        cy.get('.v-messages__message').should('contain.text', "Deve essere un'email valida");
-        cy.get('.v-messages__message').should('not.contain.text', 'Must be a valid email');
+        cy.get('.v-messages__message').should('contain.text', "Controlla l'indirizzo email");
+        cy.get('.v-messages__message').should('not.contain.text', 'Check your email address');
     });
 });
 

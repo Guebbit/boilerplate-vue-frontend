@@ -96,14 +96,16 @@ describe('Login view, language switched mid-form', () => {
                 english = emailInvalidMessage();
                 // Against the dictionary's literal string, not just `usersSchema`'s own output —
                 // `users/locales/en.json`'s `users-form.email-invalid` drifting would fail this.
-                expect(english).toBe('Must be a valid email');
+                expect(english).toBe('Check your email address for typos or a missing domain');
                 expect(errorTexts(wrapper)).toContain(english);
                 return loadLocale('it');
             })
             .then(() => nextTick())
             .then(() => {
                 const italian = emailInvalidMessage();
-                expect(italian).toBe("Deve essere un'email valida");
+                expect(italian).toBe(
+                    "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio"
+                );
                 // Both halves matter: the Italian message is on screen AND the English one is
                 // gone. Asserting only the first would pass on a field that renders both.
                 expect(italian).not.toBe(english);

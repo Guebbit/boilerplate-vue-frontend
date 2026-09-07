@@ -8,7 +8,7 @@
         "label-message": "Messaggio",
         "button-submit": "Invia messaggio",
         "success": "Messaggio inviato, grazie!",
-        "email-invalid": "Serve un'email valida",
+        "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "subject-required": "Serve un oggetto",
         "message-min": "Raccontaci qualcosa in più — almeno 10 caratteri"
     },
