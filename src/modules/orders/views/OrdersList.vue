@@ -95,15 +95,6 @@ const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
 ]);
 
 /**
- * Rows of the current page.
- *
- * @returns The page's orders, with the placeholder holes of the sparse
- *  pagination list filtered out.
- */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
-const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
-
-/**
  * Search function bound to the store's reactive `filters`/pagination, reporting
  * a failed request as a toast.
  */
@@ -245,7 +236,7 @@ const handleHardDelete = (orderId: string) =>
             v-else
             v-model="selectedOrderId"
             :headers="tableHeaders"
-            :items="pageItems"
+            :items="pageItemList"
             :caption="t('orders-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"
