@@ -61,7 +61,15 @@ import type { LocaleCapability } from '@types';
  * property rather than a real seam.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The locales store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const localesStore = useLocalesStore();
 
 /**
@@ -74,6 +82,9 @@ const PAGE_SIZE = 25;
  */
 const tenant = ref(localesStore.ownTenant);
 
+/**
+ * The dictionary board's aggregated rows and the state behind them.
+ */
 const {
     loading,
     tenantKind,
@@ -93,6 +104,9 @@ const {
     resetPendingKeys
 } = useDictionaryAggregation(tenant);
 
+/**
+ * Per-cell editing: what is being edited, and the writes that commit it.
+ */
 const {
     drafts,
     savedCells,

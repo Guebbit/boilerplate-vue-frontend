@@ -40,9 +40,25 @@ import type { LoginRequest } from '@api';
  * UI logics
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
+
+/**
+ * Sends the visitor wherever they were headed before the login wall.
+ */
 const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
@@ -69,8 +85,15 @@ const loginSchema = usersSchema.pick({ email: true }).extend({
  */
 const showPassword = ref(false);
 
+/**
+ * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
+ * on submit.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form,
     formErrors,

@@ -20,7 +20,15 @@ import { useCartStore } from '@/modules/cart';
  * header's badge must not lag behind a write this store initiated.
  */
 export const useWishlistStore = defineStore('wishlist', () => {
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
+     * every action below goes through.
+     */
     const { loading, fetchAny } = useStructureRestApi<WishlistItem, string>({
         loadingKey: 'wishlist',
         getLoading,

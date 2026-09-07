@@ -48,9 +48,26 @@ import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.t
  * without a reload — the same merge path boot uses, nothing bespoke.
  */
 const { t } = useI18n();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The locales store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const localesStore = useLocalesStore();
+
+/**
+ * The locales store's reactive slice: what this build offers, the tenants, and the search's
+ * filters and page window.
+ */
 const { capabilities, tenants, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
     storeToRefs(localesStore);
 
@@ -124,6 +141,10 @@ const tenantChoice = computed({
  * because the first search must not fire before the tag is in place.
  */
 filters.value.tag = tag.value;
+
+/**
+ * Search function bound to the store's reactive filters and pagination.
+ */
 const { search } = localesStore.watchSearchEntries({
     onError: (error) => notifyErrorMessages(addMessage, error)
 });

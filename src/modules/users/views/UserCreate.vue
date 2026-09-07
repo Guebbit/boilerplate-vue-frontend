@@ -37,7 +37,15 @@ import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
  * Generics
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
 
 /**

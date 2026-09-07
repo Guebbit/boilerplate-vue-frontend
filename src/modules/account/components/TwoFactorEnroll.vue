@@ -21,6 +21,9 @@ import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 
+/**
+ * Which second factor is being armed.
+ */
 const { method } = defineProps<{
     /**
      * Wire name of the method being enrolled.
@@ -34,9 +37,25 @@ const { method } = defineProps<{
  */
 const emit = defineEmits<{ close: [] }>();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const twoFactor = useTwoFactorStore();
+
+/**
+ * Enrolment state: the pending setup, its delivery target, the resend countdown, and a flag
+ * per in-flight call so each button disables on its own.
+ */
 const { setup, delivery, secondsUntilResend, sendingCode, confirmingCode } = storeToRefs(twoFactor);
 
 /**

@@ -7,6 +7,9 @@
 import { computed } from 'vue';
 import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 
+/**
+ * Label and value of one detail row; see the prop docs on the type below.
+ */
 const props = defineProps<{
     /**
      * Field label.

@@ -25,10 +25,29 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The profile store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const profileStore = useProfileStore();
+
+/**
+ * Writes the profile record, used here for the avatar field.
+ */
 const { updateProfile } = profileStore;
+
+/**
+ * The profile record, plus a flag per avatar action so each button disables on its own.
+ */
 const { profile, uploadingAvatar, removingAvatar } = storeToRefs(profileStore);
 
 /**

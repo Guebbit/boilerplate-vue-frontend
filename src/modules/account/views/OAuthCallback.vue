@@ -18,8 +18,19 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
 
 /**

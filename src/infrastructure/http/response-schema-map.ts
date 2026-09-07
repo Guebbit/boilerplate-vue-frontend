@@ -41,8 +41,18 @@ import { toPathname } from './url.ts';
  * Both are checked by `tests/unit/infrastructure/http/response-schema-map.spec.ts`.
  */
 export interface ResponseSchemaRoute {
+    /**
+     * HTTP method the row matches, uppercase.
+     */
     method: string;
+    /**
+     * Matched against the request's pathname. A regex rather than a string because a row
+     * stands for an endpoint shape, `/users/{id}` included, not one URL.
+     */
     pattern: RegExp;
+    /**
+     * The envelope this endpoint must answer in. Parsed, never merely asserted.
+     */
     schema: zod.ZodType;
 }
 

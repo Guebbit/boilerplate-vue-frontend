@@ -28,15 +28,6 @@ import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 
 /**
- * The visitor's own editable record, and every operation on it: fetch/update, the role-view
- * widget, the live password change, email verification and account deletion.
- *
- * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAuthStore`), and
- * the device-session list / address book, each owned by the component that renders it
- * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
- * See `docs/theory/modules.md` for why this domain is split this many ways.
- */
-/**
  * Which loading key `updateProfile` runs under: one per avatar path, none for an ordinary field
  * save, which has no button of its own to spin.
  *
@@ -49,9 +40,34 @@ const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string) => {
     return imageUrl === '' ? ':avatar-remove' : '';
 };
 
+/**
+ * The visitor's own editable record, and every operation on it: fetch/update, the role-view
+ * widget, the live password change, email verification and account deletion.
+ *
+ * Separate from `session`, which holds the minimal `{ id, email, admin }` projection the shell
+ * and the guards need. This store holds the whole `User` — the split `docs/theory/layers.md`
+ * describes.
+ *
+ * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAuthStore`), and
+ * the device-session list / address book, each owned by the component that renders it
+ * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
+ * See `docs/theory/modules.md` for why this domain is split this many ways.
+ */
 export const useProfileStore = defineStore('accountProfile', () => {
+    /**
+     * The session store, whose token and viewer this store writes.
+     */
     const session = useSessionStore();
+
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice, with `selectedRecord` renamed to `profile`: there is only ever
+     * one record here, and it is the visitor's own.
+     */
     const {
         loadingKey,
         selectedIdentifier,

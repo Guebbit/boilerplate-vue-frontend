@@ -23,12 +23,30 @@ import {
 } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
+/**
+ * Translation function, and the currently active locale code.
+ */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Sends the reset email. Answers the same way whether or not the address exists.
+ */
 const { requestPasswordReset } = useAuthStore();
 
+/**
+ * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
+ * on submit.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form,
     formErrors,

@@ -49,6 +49,10 @@ import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
  * Generic i18n/notifications helpers.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -62,6 +66,10 @@ const { id } = defineProps<{
  * User store APIs and references.
  */
 const { watchUser, updateUser } = useUsersStore();
+
+/**
+ * The user being edited, and whether a call is in flight.
+ */
 const { currentUser, loading } = storeToRefs(useUsersStore());
 
 /**

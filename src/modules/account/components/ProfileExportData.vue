@@ -23,7 +23,15 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
  * Generic translation and notification accessors, plus the store action doing the fetch.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Requests the visitor's own data export.
+ */
 const { exportAccountData } = useProfileStore();
 
 /**

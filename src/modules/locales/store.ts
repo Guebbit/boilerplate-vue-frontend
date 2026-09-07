@@ -106,8 +106,15 @@ const fetchBundledDictionary = (tag: string): Promise<Record<string, string>> =>
  * a store that reached into `i18n` would couple every import of this module to boot order.
  */
 export const useLocalesStore = defineStore('locales', () => {
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
 
+    /**
+     * The toolkit's CRUD slice for locale entries, with the local-only `pageTotal` renamed out
+     * of the way — see the comment inside.
+     */
     const {
         filters,
         loading,

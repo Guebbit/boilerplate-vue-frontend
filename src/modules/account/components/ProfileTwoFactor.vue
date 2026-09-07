@@ -24,10 +24,30 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import TwoFactorEnroll from '@/modules/account/components/TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from '@/modules/account/components/TwoFactorBackupCodes.vue';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Translates a second-factor method name into its label.
+ */
 const { methodLabel } = useMethodLabel();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const twoFactor = useTwoFactorStore();
+
+/**
+ * Two-factor state: what is armed, which methods are confirmed, and whether a
+ * code-guarded mutation is in flight.
+ */
 const { status, confirmed, mutatingWithCode } = storeToRefs(twoFactor);
 
 onMounted(twoFactor.fetchStatus);
@@ -70,6 +90,10 @@ const openEnroll = (method: string) => {
 type CodePromptRequest =
     { kind: 'remove'; method: string } | { kind: 'disable' } | { kind: 'regenerate' };
 
+/**
+ * The pending code prompt, if one is open — a method removal and a re-enrolment both ask
+ * for a code before they proceed.
+ */
 const codePrompt = ref<CodePromptRequest>();
 
 /**

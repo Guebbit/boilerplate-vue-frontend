@@ -35,12 +35,20 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * Generic translation and notification accessors.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
  * Orders store actions and reactive list/pagination state.
  */
 const { watchSearchOrders, deleteOrder, hardDeleteOrder } = useOrdersStore();
+
+/**
+ * Orders store reactive state — filters, the current page window and the pagination counters.
+ */
 const {
     filters,
     ordersList,

@@ -52,8 +52,20 @@ export type LoginOutcome =
  * this many ways.
  */
 export const useAuthStore = defineStore('accountAuth', () => {
+    /**
+     * The session store, whose token and viewer this store writes.
+     */
     const session = useSessionStore();
+
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
+     * every action below goes through.
+     */
     const { loadingKey, fetchAny } = useStructureRestApi({
         loadingKey: 'accountAuth',
         getLoading,

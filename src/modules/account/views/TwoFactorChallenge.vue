@@ -24,12 +24,40 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Translates a second-factor method name into its label.
+ */
 const { methodLabel } = useMethodLabel();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const twoFactor = useTwoFactorStore();
+
+/**
+ * The pending challenge, its delivery target, the resend countdown, and whether a call is in
+ * flight.
+ */
 const { challenge, delivery, secondsUntilResend, loading } = storeToRefs(twoFactor);
+
+/**
+ * Sends the visitor wherever they were headed before the login wall.
+ */
 const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**

@@ -41,8 +41,21 @@ import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.t
  * products and users lists wear — and the admin is the one who toggles it.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The locales store, held whole: its actions and its `storeToRefs` slice are both read.
+ */
 const localesStore = useLocalesStore();
+
+/**
+ * The locales store's reactive slice: the languages this build offers, the tenants, the two
+ * fallback settings, and whether a call is in flight.
+ */
 const { capabilities, tenants, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
 
 /**

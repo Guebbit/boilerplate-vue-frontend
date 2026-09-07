@@ -17,8 +17,19 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
  *  is established.
  */
 export const usePostLoginRedirect = () => {
+    /**
+     * Router instance, for the navigations this file performs.
+     */
     const router = useRouter();
+
+    /**
+     * Current route, read for its params, query and name.
+     */
     const route = useRoute();
+
+    /**
+     * The currently active locale code.
+     */
     const { locale } = useI18n();
 
     /**

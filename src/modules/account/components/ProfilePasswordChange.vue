@@ -28,7 +28,15 @@ import {
  * once.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Changes the visitor's password.
+ */
 const { changePassword } = useProfileStore();
 
 /**
@@ -46,6 +54,9 @@ const passwordFormId = useId();
  */
 const passwordFormElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form: passwordForm,
     formErrors: passwordErrors,

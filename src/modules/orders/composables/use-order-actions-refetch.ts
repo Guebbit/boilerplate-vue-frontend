@@ -25,6 +25,10 @@ export const useOrderActionsRefetch = (
     targetId: () => string | undefined,
     fetchOrder: (id: string, settings: { forced: boolean }) => Promise<Order | undefined>
 ): void => {
+    /**
+     * Whether this composable has already forced its one refetch. Reset by nothing: one per
+     * mount is the whole contract.
+     */
     let refreshedForActions = false;
     watch(
         currentOrder,

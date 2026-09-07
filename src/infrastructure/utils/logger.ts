@@ -85,7 +85,14 @@ const resolveScopes = (): Set<string> => {
     );
 };
 
+/**
+ * The active log level, resolved once at module load.
+ */
 const level = resolveLevel();
+
+/**
+ * The enabled log scopes, resolved once at module load.
+ */
 const scopes = resolveScopes();
 
 /**

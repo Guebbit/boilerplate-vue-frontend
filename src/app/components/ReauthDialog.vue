@@ -14,15 +14,34 @@ import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * The prompt queue this dialog renders and answers.
+ */
 const reauthDialog = useReauthPromptStore();
+
+/**
+ * Whether a re-authentication call is in flight.
+ */
 const { reauthing } = storeToRefs(useAuthStore());
+
+/**
+ * Vuetify's breakpoint flag: the dialog goes fullscreen below `sm`.
+ */
 const { mobile } = useDisplay();
 
 /**
  * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
  */
 const titleId = useId();
+
+/**
+ * Id of the body copy, referenced by the dialog's `aria-describedby`.
+ */
 const messageId = useId();
 
 /**

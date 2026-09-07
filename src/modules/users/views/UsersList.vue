@@ -30,15 +30,23 @@ import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.t
 import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
- * Generic translation and notification accessors.
+ * Translation function.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
- * Users store actions and reactive list/pagination state.
+ * Users store actions.
  */
 const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
+
+/**
+ * Users store reactive state — filters, the current page window and the pagination counters.
+ */
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
 

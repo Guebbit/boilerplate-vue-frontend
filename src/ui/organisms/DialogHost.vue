@@ -23,7 +23,15 @@ import { useDialogStore } from '@/ui/dialog.ts';
  * the scrim — answers `false`. There is no third state: a dismissed question is a declined one.
  */
 const { t } = useI18n();
+
+/**
+ * The dialog queue this host renders and answers.
+ */
 const dialogStore = useDialogStore();
+
+/**
+ * The pending questions, oldest first; the host renders the head of the queue.
+ */
 const { queue } = storeToRefs(dialogStore);
 
 /**
@@ -36,6 +44,10 @@ const { mobile } = useDisplay();
  * Ids the dialog is named and described by — the title when one is given, the question always.
  */
 const titleId = useId();
+
+/**
+ * Id of the body copy, referenced by the dialog's `aria-describedby`.
+ */
 const messageId = useId();
 
 /**

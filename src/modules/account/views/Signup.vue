@@ -42,8 +42,20 @@ import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
  * UI logics
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Router instance, for the navigations this file performs.
+ */
 const router = useRouter();
+
+/**
+ * Current route, read for its params, query and name.
+ */
 const route = useRoute();
 
 /**
@@ -90,8 +102,15 @@ const signupSchema = usersSchema
         path: ['passwordConfirm']
     });
 
+/**
+ * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
+ * on submit.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, error surface and submit handler, from the toolkit's form validation.
+ */
 const {
     form,
     formErrors,
@@ -136,6 +155,9 @@ const trackUpload = <T,>(
     send: (options?: AxiosRequestConfig) => Promise<T>
 ) => track(send, { enabled: !!file });
 
+/**
+ * Creates the account.
+ */
 const { signup } = useAuthStore();
 
 /**

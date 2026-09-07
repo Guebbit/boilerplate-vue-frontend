@@ -18,19 +18,25 @@ import {
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 
 /**
- * The visitor's session: a token, and the least the app must know about whoever holds it.
+ * The least the app shell and the guards need to know about the signed-in visitor.
  *
  * Deliberately a minimal projection — `{ id, email, admin }` — rather than the domain `User`,
  * which lives in `src/modules/account`. See `docs/theory/layers.md` for the split and for which
  * `/account` calls belong here.
  */
-
-/**
- * The least the app shell and the guards need to know about the signed-in visitor.
- */
 export interface SessionViewer {
+    /**
+     * The visitor's own id, as the API knows them.
+     */
     id: string;
+    /**
+     * Their address — what the account menu shows to say who is signed in.
+     */
     email: string;
+    /**
+     * Whether they hold administrator rights. Read by the route guards, so it is the one
+     * field here that decides access rather than describing a person.
+     */
     admin: boolean;
     /**
      * The visitor's own picture, for the avatar the account menu wears — the shell renders it on
@@ -112,6 +118,11 @@ export const useSessionStore = defineStore('session', () => {
      * guard admit someone whose role is still unknown.
      */
     const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
+
+    /**
+     * Whether the visitor is a signed-in administrator. Derived from token AND viewer for the
+     * reason given above.
+     */
     const isAdmin = computed(() => Boolean(accessToken.value && viewer.value?.admin));
 
     /**

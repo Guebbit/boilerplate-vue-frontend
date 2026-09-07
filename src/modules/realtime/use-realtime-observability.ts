@@ -26,6 +26,9 @@ let activeClient: ReturnType<typeof createSseClient> | undefined;
  *  plus `connect`/`disconnect` controls.
  */
 export const useRealtimeObservability = () => {
+    /**
+     * The realtime store, which owns the connection and the capped feed this composable reads.
+     */
     const store = useRealtimeObservabilityStore();
 
     /**

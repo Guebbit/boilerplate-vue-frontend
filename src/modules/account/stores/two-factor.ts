@@ -74,7 +74,16 @@ const resendRetryAfter = (error: unknown): number | undefined => {
  * the server rather than patch state locally.
  */
 export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
+    /**
+     * Shared per-key loading flags, threaded into `fetchAny` below; `isLoading` backs the
+     * computeds.
+     */
     const { getLoading, setLoading, isLoading } = useCoreStore();
+
+    /**
+     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
+     * every action below goes through.
+     */
     const { loadingKey, loading, fetchAny } = useStructureRestApi({
         loadingKey: 'accountTwoFactor',
         getLoading,

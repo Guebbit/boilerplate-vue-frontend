@@ -46,6 +46,10 @@ const { id } = defineProps<{
  * User store API and state references.
  */
 const { watchUser } = useUsersStore();
+
+/**
+ * The user being displayed.
+ */
 const { currentUser } = storeToRefs(useUsersStore());
 
 /**
@@ -90,7 +94,15 @@ const userStatus = computed(() =>
  */
 watchUser(() => id);
 
+/**
+ * Toast dispatcher, used to report every outcome to the visitor.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Turns a user's second factor off, as an administrator — the recovery path when they have
+ * lost every method.
+ */
 const { adminDisableTwoFactor } = useUsersStore();
 
 /**
