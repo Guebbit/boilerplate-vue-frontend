@@ -39,4 +39,4 @@ export default [
         component: () => import('@/modules/products/views/ProductEdit.vue'),
         props: true
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

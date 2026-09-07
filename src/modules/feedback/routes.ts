@@ -22,4 +22,4 @@ export default [
         meta: { access: 'admin', title: 'feedback-inbox-page.page-title' },
         component: () => import('@/modules/feedback/views/FeedbackInbox.vue')
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import { E2E_ACCOUNTS } from './accounts';
+import { asStub } from '../stub';
 
 /*
  * A demo reset drops the in-memory database and reseeds it inside the backend process
@@ -263,8 +264,24 @@ Cypress.Commands.add('resetState', () =>
  * that reads the page ONCE — a screenshot, `cy.document()`, `location.href` — which is why the
  * visual and accessibility specs are the ones that depend on this being right.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cypress.Commands.overwrite's own signature is any-typed; these forward verbatim
-Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: any) => {
+/**
+ * The replacement `visit`, written against the overload Cypress actually calls it with.
+ *
+ * `Cypress.Commands.overwrite` types its callback's arguments as
+ * `Parameters<Chainable['visit']>`, and TypeScript resolves that to the LAST `visit`
+ * overload — the single `{ url, ...options }` object. What arrives here is the FIRST,
+ * `visit(url, options)`. So the parameters are declared as the two they really are, and the
+ * one assertion below hands the function over as the shape `overwrite` insists on.
+ *
+ * @param originalFunction - Cypress' own `visit`, called once with both arguments untouched.
+ * @param url - Where to go, as every caller in this repo passes it.
+ * @param options - Visit options, forwarded verbatim.
+ */
+const visitAndAwaitApp = (
+    originalFunction: (url: string, options?: Partial<Cypress.VisitOptions>) => void,
+    url: string,
+    options?: Partial<Cypress.VisitOptions>
+) => {
     // Enqueued before the visit below, so it always runs against the page being navigated away
     // from. `log: false` because one of these per visit would double the length of the command log.
     cy.window({ log: false }).then((outgoingWindow) => {
@@ -286,7 +303,14 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
         ).to.not.equal(true);
         expect(marked._appReady, 'the app has finished bootstrapping').to.equal(true);
     });
-});
+};
+
+// The overload mismatch documented on `visitAndAwaitApp`, answered at the boundary through the
+// repo's one sanctioned seam, so the function body above stays fully type-checked.
+Cypress.Commands.overwrite(
+    'visit',
+    asStub<Cypress.CommandFnWithOriginalFn<'visit'>>(visitAndAwaitApp)
+);
 
 /*
  * ── WHY EVERY `.type()` AND `.clear()` IN THE SPECS IS PRECEDED BY `.should('not.be.disabled')` ──

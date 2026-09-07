@@ -15,4 +15,4 @@ export default [
         meta: { access: 'auth', title: 'cart-page.page-title' },
         component: () => import('@/modules/cart/views/Cart.vue')
     }
-] as RouteRecordRaw[];
+] satisfies RouteRecordRaw[];

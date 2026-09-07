@@ -23,8 +23,12 @@ import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
 export type RouteAccess = 'guest' | 'auth' | 'admin';
 
 /**
- * Declared on the route record, so `meta.access` is checked at compile time and a typo
- * (`acces: 'admin'`) is an error rather than a silently public page.
+ * Declares `meta.access` so its VALUE is checked: `access: 'admni'` is a compile error.
+ *
+ * A misspelled KEY is not. vue-router's `RouteMeta extends Record<PropertyKey, unknown>`,
+ * so `acces: 'admin'` type-checks and reads as a silently public page. What catches that is
+ * each module's `tests/routes.spec.ts`, which pins every route's `meta.access` against a
+ * hard-coded table.
  */
 declare module 'vue-router' {
     // The name belongs to the library being augmented, not to this codebase: declaration

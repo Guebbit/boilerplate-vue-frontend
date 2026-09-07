@@ -5,7 +5,7 @@
  */
 
 import type { AxiosRequestConfig } from 'axios';
-import type { ResponseReject } from '@/types';
+import type { ErrorResponse } from '@/types';
 
 /**
  * Request payload type: deliberately unconstrained, since the generated clients
@@ -14,9 +14,22 @@ import type { ResponseReject } from '@/types';
 export type AxiosRequestData = unknown;
 
 /**
- * Shape every rejected request is normalized to (the backend reject envelope).
+ * Shape every rejected request is normalized to: the contract's own reject envelope, plus the
+ * two correlation ids `onResponseReject` lifts off the response headers.
+ *
+ * The ids are not in `openapi.yaml` because they never travel in the body — they are
+ * `x-request-id` and `x-trace-id`, and this tier is where a header becomes a field.
  */
-export type AxiosResponseErrorData = ResponseReject;
+export type AxiosResponseErrorData = ErrorResponse & {
+    /**
+     * Backend request correlation id, from the `x-request-id` header. Absent when unsent.
+     */
+    requestId?: string;
+    /**
+     * Distributed-trace id, from the `x-trace-id` header. Absent when unsent.
+     */
+    traceId?: string;
+};
 
 /**
  * Raw error response body, before normalization.

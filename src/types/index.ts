@@ -1,10 +1,9 @@
 /**
  * @module
- * Barrel aggregating this app's type modules — `api`, `http`, generated AsyncAPI types, and
+ * Barrel aggregating this app's type modules — `api`, generated AsyncAPI types, and
  * `realtime` — behind one import path, `@/types`.
  */
 export * from './api';
-export * from './http';
 
 // Re-export generated AsyncAPI types so consumers use a single import path. The file is named
 // after the spec it comes from — `npm run gen:asyncapi` writes it from `asyncapi.yaml` — and the

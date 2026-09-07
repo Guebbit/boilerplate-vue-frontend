@@ -13,7 +13,7 @@ import { onResponseReject } from './interceptors.ts';
 import { singleFlight } from './single-flight.ts';
 import { toPathname } from './url.ts';
 import type { AxiosError } from 'axios';
-import type { ResponseSuccess } from '@/types';
+import type { RefreshTokenEnvelope } from '@/types';
 import type {
     AxiosRequestConfigWithRetry,
     AxiosResponseErrorBody,
@@ -59,7 +59,7 @@ const shouldSkipRefresh = (url?: string) => {
  */
 const refreshAccessToken = singleFlight((): Promise<string | undefined> =>
     instance
-        .get<ResponseSuccess<{ token: string }>>('/account/refresh', {
+        .get<RefreshTokenEnvelope>('/account/refresh', {
             _dontRetry: true
         } as AxiosRequestConfigWithRetry)
         .then(({ data }) => getTokenFromResponse(data))
