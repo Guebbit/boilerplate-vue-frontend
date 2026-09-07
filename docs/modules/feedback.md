@@ -46,23 +46,23 @@ The backend module has answered these endpoints all along. This is the frontend 
 which is worth noticing, because it is the shape a new domain arrives in: the server exists first,
 and a client module is one folder and one registry line away from using it.
 
-**Delete exists, search doesn't.** The inbox loads the whole list on mount and an operator scrolls to
-find a ticket; `updateStatus` and `deleteRequest` both reload it afterward, since the row worth
-rendering next is the API's, not a local guess. `POST /feedback/search` is in the contract and
-validated by `response-schemas.ts`, but nothing in `src/` calls it — the delete confirmation's own
-copy still talks about "the rows an operator found by search," which is the tell that this was meant
-to exist before the inbox grew large enough to need it.
+**The inbox loads the whole list on mount, or a filtered page through the search form above it.**
+`updateStatus` and `deleteRequest` both reload afterward through whichever of the two the operator
+was last looking at — never snapping a filtered view back to the whole list — since the row worth
+rendering next is the API's, not a local guess. `searchRequests` calls `POST /feedback/search`
+directly: a POST body is never browser-HTTP-cached, so unlike the plain list read it needs no
+cache-busting query param to survive a reload right after a write.
 
 ## State
 
 Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref
 is not part of the surface.
 
-| Kind        | Members                                                              | What it is                                                       |
-| ----------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `requests`                                                           | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                            | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `submitContact` · `fetchRequests` · `updateStatus` · `deleteRequest` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                 | What it is                                                       |
+| ----------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `requests` · `activeFilters`                                                            | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                               | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `submitContact` · `fetchRequests` · `searchRequests` · `updateStatus` · `deleteRequest` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -86,8 +86,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /feedback/contact` | `CreateFeedbackRequestResponse`       |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract
-validation on and deleting the folder turns it off. `POST /feedback/search` is registered but unused
-by any store action — see the note under **The story**.
+validation on and deleting the folder turns it off.
 
 #### Navigation entries
 

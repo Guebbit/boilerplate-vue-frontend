@@ -2,8 +2,9 @@
  * @module
  * The feedback store, transport-mocked like the wishlist's spec: `orvalMutator` is a router keyed
  * on `METHOD /url`, so the generated client and the store under test stay real. What is worth
- * pinning is whole-list replacement (the inbox renders what the API answered, never a local guess)
- * and the status update reloading the inbox it changed.
+ * pinning is whole-list replacement (the inbox renders what the API answered, never a local guess),
+ * `POST /feedback/search` actually being called, and a write reloading through whichever of the
+ * two the operator was last looking at rather than always snapping back to the whole list.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -58,6 +59,10 @@ beforeEach(() => {
             items: [TICKET],
             meta: { totalItems: 1, totalPages: 1 }
         }),
+        'POST /feedback/search': orvalEnvelope({
+            items: [TICKET],
+            meta: { totalItems: 1, totalPages: 1 }
+        }),
         'PUT /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
         'DELETE /feedback/f1': orvalEnvelope()
     };
@@ -98,6 +103,16 @@ describe('fetchRequests', () => {
     });
 });
 
+describe('searchRequests', () => {
+    it('replaces the inbox through POST /feedback/search', () => {
+        const store = useFeedbackStore();
+        return store.searchRequests({ status: 'new' }).then(() => {
+            expect(requestedUrls()).toEqual(['/feedback/search']);
+            expect(store.requests.map(({ id }) => id)).toEqual(['f1']);
+        });
+    });
+});
+
 describe('updateStatus', () => {
     it('writes the status, then reloads the inbox it changed', () => {
         const store = useFeedbackStore();
@@ -107,6 +122,20 @@ describe('updateStatus', () => {
             .then(() => {
                 // The reload is the point: the row worth rendering is the API's.
                 expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
+            });
+    });
+
+    it('reloads through the active search rather than snapping back to the whole list', () => {
+        const store = useFeedbackStore();
+        return store
+            .searchRequests({ status: 'new' })
+            .then(() => store.updateStatus('f1', 'resolved'))
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/feedback/search',
+                    '/feedback/f1',
+                    '/feedback/search'
+                ]);
             });
     });
 });
@@ -120,6 +149,20 @@ describe('deleteRequest', () => {
             .then(() => {
                 // Same reload rule as updateStatus, for the same reason.
                 expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
+            });
+    });
+
+    it('reloads through the active search rather than snapping back to the whole list', () => {
+        const store = useFeedbackStore();
+        return store
+            .searchRequests({ status: 'new' })
+            .then(() => store.deleteRequest('f1'))
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/feedback/search',
+                    '/feedback/f1',
+                    '/feedback/search'
+                ]);
             });
     });
 });

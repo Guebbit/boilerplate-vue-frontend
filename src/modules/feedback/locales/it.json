@@ -15,6 +15,11 @@
     "feedback-inbox-page": {
         "page-title": "Casella feedback",
         "empty": "Nessun messaggio",
+        "empty-search": "Nessun ticket corrisponde alla ricerca",
+        "filter-text": "Cerca nel testo",
+        "filter-email": "Email",
+        "filter-status": "Stato",
+        "filter-status-any": "Qualsiasi stato",
         "anonymous": "Anonimo",
         "success-status": "Stato aggiornato.",
         "status-new": "Nuovo",

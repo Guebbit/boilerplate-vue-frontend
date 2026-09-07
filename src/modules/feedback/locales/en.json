@@ -15,6 +15,11 @@
     "feedback-inbox-page": {
         "page-title": "Feedback inbox",
         "empty": "No messages yet",
+        "empty-search": "No tickets match this search",
+        "filter-text": "Search text",
+        "filter-email": "Email",
+        "filter-status": "Status",
+        "filter-status-any": "Any status",
         "anonymous": "Anonymous",
         "success-status": "Status updated.",
         "status-new": "New",
