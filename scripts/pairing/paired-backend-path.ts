@@ -73,3 +73,22 @@ export const resolveBackendDemoCommand = (): readonly string[] | undefined => {
     const command = process.env.BACKEND_DEMO_COMMAND?.trim();
     return command ? command.replaceAll('{backend}', resolveBackendPath()).split(/\s+/) : undefined;
 };
+
+/**
+ * How many demo backends the pairing can run at once, or `undefined` when there is no ceiling.
+ *
+ * A backend that provisions its demo databases AHEAD of time has a finite number of them, and
+ * asking for one more fails deep inside that backend's connection layer with nothing naming the
+ * real cause. The ceiling is the paired repo's fact, not this one's, so it arrives the way
+ * `BACKEND_DEMO_COMMAND` does — through `.env`, declared in `.env-example`. Nothing here knows
+ * WHICH backend is on the other end, and that is the point: sniffing the runner out of the demo
+ * command would put one pairing's provisioning rules in the other's source.
+ *
+ * Unset means unbounded, which is right for a backend whose isolation is per-process rather than
+ * provisioned. A value that is not a positive integer is treated as unset rather than as zero —
+ * a typo should not silently forbid every shard.
+ */
+export const resolveBackendDemoShardLimit = (): number | undefined => {
+    const limit = Number(process.env.BACKEND_DEMO_SHARD_LIMIT?.trim());
+    return Number.isInteger(limit) && limit > 0 ? limit : undefined;
+};

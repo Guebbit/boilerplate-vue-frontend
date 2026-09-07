@@ -40,7 +40,10 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
-import { resolveBackendDemoCommand } from '../pairing/paired-backend-path';
+import {
+    resolveBackendDemoCommand,
+    resolveBackendDemoShardLimit
+} from '../pairing/paired-backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/scratch-directory';
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
@@ -142,12 +145,11 @@ const DEMO_PORT_BASE = 3101;
  * ends: an orphaned backend would hold its port and fail the NEXT run with EADDRINUSE, which reads
  * as a mystery.
  *
- * Isolation is free for the Node twin — a fresh in-memory Mongo per process — and provisioned
- * ahead of time for the PHP one: `DB_DATABASE=e2e_demo_shard_{n}` below lands each shard's
- * `migrate:fresh --seed` in one of four databases the PAIRED PHP REPO creates for exactly this
- * (`boilerplate-php-laravel-backend/.docker/mysql/02-e2e-demo-shards.sql`), never the developer's
- * own `boilerplate` database. That file provisions exactly 4 — see the guard below for what
- * happens if `count` (from `E2E_SHARDS`) ever asks for more against the PHP pairing.
+ * Isolation is the backend's business, and the two paired ones reach it differently: one gets it
+ * free, per process, and one provisions a fixed set of databases ahead of time — `DB_DATABASE=
+ * e2e_demo_shard_{n}` below picks the shard's own. A provisioned set has a ceiling, which arrives
+ * as `BACKEND_DEMO_SHARD_LIMIT` and is enforced by the guard below; see
+ * `resolveBackendDemoShardLimit`.
  */
 const bootDemoBackends = async (count: number): Promise<() => void> => {
     // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
@@ -159,17 +161,17 @@ const bootDemoBackends = async (count: number): Promise<() => void> => {
             `[e2e-shard] BACKEND_DEMO_COMMAND is unset — booting nothing; expecting backends already on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
         );
 
-    // The PHP pairing's databases are provisioned ahead of time, by name, in the PHP repo's own
-    // `.docker/mysql/02-e2e-demo-shards.sql` — unlike the Node twin's in-memory Mongo, which needs
-    // no such provisioning and so has no ceiling to violate. A 5th shard against the PHP pairing
-    // would compute `DB_DATABASE=e2e_demo_shard_5`, a database that file never created or granted,
-    // and fail deep inside Laravel's DB connection with no hint of the real cause. Caught here
-    // instead, naming the file that would need a matching 5th `CREATE DATABASE` block.
-    if (demoCommand?.[0] === 'composer' && count > 4)
+    // A shard past the paired backend's provisioned ceiling would compute a `DB_DATABASE` that
+    // backend never created, and fail deep inside its connection layer with no hint of the real
+    // cause. Caught here instead, naming the knob rather than one pairing's SQL: which backend is
+    // on the other end, and how it provisions, is that repo's business — this one only enforces
+    // the number it was given.
+    const shardLimit = resolveBackendDemoShardLimit();
+    if (demoCommand && shardLimit !== undefined && count > shardLimit)
         throw new Error(
-            `[e2e-shard] E2E_SHARDS=${count} exceeds the PHP pairing's provisioned shard count (4). ` +
-                'Add a 5th CREATE DATABASE/GRANT block to ' +
-                '`boilerplate-php-laravel-backend/.docker/mysql/02-e2e-demo-shards.sql` first.'
+            `[e2e-shard] E2E_SHARDS=${count} exceeds BACKEND_DEMO_SHARD_LIMIT=${shardLimit}, the ` +
+                'number of demo databases the paired backend provisions. Provision more there and ' +
+                'raise the limit, or lower E2E_SHARDS.'
         );
 
     // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see

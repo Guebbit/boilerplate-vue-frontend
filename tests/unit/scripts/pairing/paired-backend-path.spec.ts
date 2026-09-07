@@ -19,6 +19,7 @@ import path from 'node:path';
 import {
     DEFAULT_BACKEND_PATH,
     resolveBackendDemoCommand,
+    resolveBackendDemoShardLimit,
     resolveBackendPath,
     resolveLiveResetCommand
 } from '../../../../scripts/pairing/paired-backend-path';
@@ -26,6 +27,7 @@ import {
 const previous = process.env.BACKEND_PATH;
 const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
 const previousResetCommand = process.env.LIVE_RESET_COMMAND;
+const previousShardLimit = process.env.BACKEND_DEMO_SHARD_LIMIT;
 
 /** What the sibling-directory convention resolves to from this checkout. */
 const sibling = path.resolve(process.cwd(), DEFAULT_BACKEND_PATH);
@@ -39,6 +41,9 @@ afterEach(() => {
 
     if (previousResetCommand === undefined) delete process.env.LIVE_RESET_COMMAND;
     else process.env.LIVE_RESET_COMMAND = previousResetCommand;
+
+    if (previousShardLimit === undefined) delete process.env.BACKEND_DEMO_SHARD_LIMIT;
+    else process.env.BACKEND_DEMO_SHARD_LIMIT = previousShardLimit;
 });
 
 describe('resolveBackendPath', () => {
@@ -155,5 +160,45 @@ describe('resolveBackendDemoCommand', () => {
         process.env.BACKEND_DEMO_COMMAND = '  npm   --prefix {backend}   run  demo  ';
 
         expect(resolveBackendDemoCommand()?.every(Boolean)).toBe(true);
+    });
+});
+
+describe('resolveBackendDemoShardLimit', () => {
+    it('answers undefined when BACKEND_DEMO_SHARD_LIMIT is unset, so the pairing is unbounded', () => {
+        delete process.env.BACKEND_DEMO_SHARD_LIMIT;
+
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
+    });
+
+    it('treats the empty value `.env-example` ships as unset rather than as zero', () => {
+        process.env.BACKEND_DEMO_SHARD_LIMIT = '   ';
+
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
+    });
+
+    it('reads the provisioned count of a backend that has one — the PHP pairing', () => {
+        process.env.BACKEND_DEMO_SHARD_LIMIT = '4';
+
+        expect(resolveBackendDemoShardLimit()).toBe(4);
+    });
+
+    it('treats a non-numeric value as unset, so a typo cannot forbid every shard', () => {
+        process.env.BACKEND_DEMO_SHARD_LIMIT = 'four';
+
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
+    });
+
+    it('treats zero and negatives as unset, for the same reason', () => {
+        process.env.BACKEND_DEMO_SHARD_LIMIT = '0';
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
+
+        process.env.BACKEND_DEMO_SHARD_LIMIT = '-2';
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
+    });
+
+    it('treats a fractional value as unset — half a database is not provisioned', () => {
+        process.env.BACKEND_DEMO_SHARD_LIMIT = '2.5';
+
+        expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });
 });
