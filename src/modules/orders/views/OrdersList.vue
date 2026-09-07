@@ -29,6 +29,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Generic translation and notification accessors.
@@ -148,28 +149,36 @@ const handleReset = () => {
  * Deletes an order after an explicit confirmation.
  *
  * @param orderId - Identifier of the order to delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  delete has finished; the outcome is reported as a toast.
  */
-const handleDelete = (orderId: string) => {
-    if (!confirm(t('orders-list-page.confirm-delete'))) return;
-    deleteOrder(orderId)
-        .then(() => addMessage(t('orders-list-page.success-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleDelete = (orderId: string) =>
+    useDialogStore()
+        .confirm({ message: t('orders-list-page.confirm-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return deleteOrder(orderId)
+                .then(() => addMessage(t('orders-list-page.success-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 
 /**
  * Permanently deletes an order after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
  * @param orderId - Identifier of the order to hard-delete.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the
+ *  hard-delete has finished; the outcome is reported as a toast.
  */
-const handleHardDelete = (orderId: string) => {
-    if (!confirm(t('orders-list-page.confirm-hard-delete'))) return;
-    hardDeleteOrder(orderId)
-        .then(() => addMessage(t('orders-list-page.success-hard-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleHardDelete = (orderId: string) =>
+    useDialogStore()
+        .confirm({ message: t('orders-list-page.confirm-hard-delete'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return hardDeleteOrder(orderId)
+                .then(() => addMessage(t('orders-list-page.success-hard-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 </script>
 
 <template>
