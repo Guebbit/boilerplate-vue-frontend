@@ -5,6 +5,7 @@
  * this module's own files and wired into the kernel's registry.
  */
 import { Warehouse } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { inventoryResponseSchemas } from './response-schemas';
@@ -37,7 +38,7 @@ export default {
     ],
     responseSchemas: inventoryResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

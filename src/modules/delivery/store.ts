@@ -10,7 +10,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listShippingMethods, getShipmentByOrder, advanceCourier } from '@api';
 import type { ShippingMethod, Shipment } from '@types';
-import { absentIs } from '@/infrastructure/utils/errors';
+import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
  * Shipping — the methods a checkout can choose and the parcel an order ends up with.
@@ -84,7 +84,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
                 .catch((error: unknown) => {
                     // 404 only: anything else is a real failure, and swallowing it would say
                     // "nothing shipped yet" about an order that has a parcel in transit.
-                    if (!absentIs(error, 404)) throw error;
+                    rethrowUnlessAbsent(error, 404);
                     shipment.value = undefined;
                     return undefined;
                 })

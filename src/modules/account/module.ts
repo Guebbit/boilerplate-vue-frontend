@@ -5,6 +5,7 @@
  * what "having this module enabled" means.
  */
 import { IdCard } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { accountResponseSchemas } from './response-schemas';
@@ -46,7 +47,7 @@ export default {
     ],
     responseSchemas: accountResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

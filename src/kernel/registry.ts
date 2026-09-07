@@ -167,6 +167,22 @@ export interface AppModule {
 }
 
 /**
+ * Unwraps a locale JSON's default export, for the `locales` loaders above.
+ *
+ * Only the unwrap is shared. The `import()` specifier stays a literal at every call site
+ * because Vite resolves it statically — a computed path would resolve to nothing and take
+ * the dictionary with it.
+ *
+ * @param module - The resolved JSON module namespace.
+ * @returns Its default export, the dictionary itself.
+ */
+export const dictionary = ({
+    default: value
+}: {
+    default: TranslationDictionaries;
+}): TranslationDictionaries => value;
+
+/**
  * Collect every enabled module's route records.
  *
  * An unknown or cyclic module coupling, and a stray reach into a sibling's internals, fail on

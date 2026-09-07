@@ -4,6 +4,7 @@
  * response schemas and locale loaders. No routes — see the doc on the default export for why.
  */
 
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import { deliveryResponseSchemas } from './response-schemas';
 
@@ -24,7 +25,7 @@ export default {
     routes: [],
     responseSchemas: deliveryResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

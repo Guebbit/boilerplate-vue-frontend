@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import {
+    rethrowUnlessAbsent,
     absentIs,
     isTransportFailure,
     notifyErrorMessages,
@@ -246,5 +247,30 @@ describe('absentIs', () => {
 
     it('rejects everything when no status is named at all', () => {
         expect(absentIs({ status: 404 })).toBe(false);
+    });
+});
+
+/**
+ * The step the three stores actually call. Its value is the `throw`: a store that swallowed a
+ * 500 would render "nothing shipped yet" over an outage, so the rethrow is asserted as
+ * carefully as the absence.
+ */
+describe('rethrowUnlessAbsent', () => {
+    it('returns quietly for a status that means absence', () => {
+        expect(() => rethrowUnlessAbsent({ status: 404 }, 404)).not.toThrow();
+    });
+
+    it('returns quietly for any of several named statuses', () => {
+        expect(() => rethrowUnlessAbsent({ status: 401 }, 404, 401)).not.toThrow();
+    });
+
+    it('rethrows the original value, unchanged, for any other status', () => {
+        const error = { status: 500, message: 'boom' };
+        expect(() => rethrowUnlessAbsent(error, 404)).toThrow(error);
+    });
+
+    it('rethrows a transport failure rather than reading it as absence', () => {
+        const error = { message: 'Network Error' };
+        expect(() => rethrowUnlessAbsent(error, 404)).toThrow(error);
     });
 });

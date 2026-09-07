@@ -19,7 +19,7 @@ import {
     getProductById
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
-import { absentIs } from '@/infrastructure/utils/errors';
+import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -105,7 +105,7 @@ export const useCartStore = defineStore('cart', () => {
             .catch((error: unknown) => {
                 // 401 only — a guest has no cart. Anything else is a real failure, and swallowing
                 // it would empty the header badge for someone whose cart is full.
-                if (!absentIs(error, 401)) throw error;
+                rethrowUnlessAbsent(error, 401);
                 summarySeed.value = undefined;
                 return undefined;
             });

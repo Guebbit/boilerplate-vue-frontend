@@ -4,6 +4,7 @@
  * locale loaders into the app's module registry.
  */
 import { Users } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { usersResponseSchemas } from './response-schemas';
@@ -34,7 +35,7 @@ export default {
     ],
     responseSchemas: usersResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

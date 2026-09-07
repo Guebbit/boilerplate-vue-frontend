@@ -70,6 +70,28 @@ const setCookie = (value: string) => {
 const secureAttribute = () => (location.protocol === 'https:' ? '; Secure' : '');
 
 /**
+ * Writes one of this app's two JS-readable cookies, attributes included.
+ *
+ * `path=/` and `SameSite=Lax` are decided here rather than at each call site, which is where a
+ * security attribute belongs: one place to read, one place to change.
+ *
+ * @param name - Cookie name.
+ * @param value - Cookie value.
+ * @param maxAgeSeconds - Lifetime. Omitted, the cookie lasts for the browser session.
+ */
+const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
+    const maxAge = maxAgeSeconds === undefined ? '' : `; max-age=${maxAgeSeconds}`;
+    setCookie(`${name}=${value}; path=/${maxAge}; SameSite=Lax${secureAttribute()}`);
+};
+
+/**
+ * Expires one of those cookies: the same write, empty and already stale.
+ *
+ * @param name - Cookie name.
+ */
+const clearCookie = (name: string) => writeCookie(name, '', 0);
+
+/**
  * Store instance: see the module doc above for the `isAuth`/`isAdmin` derivation rule.
  */
 export const useSessionStore = defineStore('session', () => {
@@ -115,20 +137,13 @@ export const useSessionStore = defineStore('session', () => {
      */
     const setAccessToken = (token?: string, remember?: boolean) => {
         accessToken.value = token;
-        const secure = secureAttribute();
-        if (remember !== undefined)
-            setCookie(
-                remember
-                    ? `rememberMe=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
-                    : `rememberMe=; path=/; max-age=0; SameSite=Lax${secure}`
-            );
+        if (remember === true) writeCookie('rememberMe', 'true', REMEMBER_ME_MAX_AGE_SECONDS);
+        else if (remember === false) clearCookie('rememberMe');
         if (!token) return;
         const remembered = remember ?? Boolean(getCookie('rememberMe'));
-        setCookie(
-            remembered
-                ? `isAuth=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax${secure}`
-                : `isAuth=true; path=/; SameSite=Lax${secure}`
-        );
+        // No max-age for an unremembered visitor: the hint dies with the browser session, the
+        // same way their refresh cookie does.
+        writeCookie('isAuth', 'true', remembered ? REMEMBER_ME_MAX_AGE_SECONDS : undefined);
     };
 
     /**
@@ -214,9 +229,8 @@ export const useSessionStore = defineStore('session', () => {
         accessToken.value = undefined;
         viewer.value = undefined;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
-        const secure = secureAttribute();
-        setCookie(`isAuth=; path=/; max-age=0; SameSite=Lax${secure}`);
-        setCookie(`rememberMe=; path=/; max-age=0; SameSite=Lax${secure}`);
+        clearCookie('isAuth');
+        clearCookie('rememberMe');
     };
 
     /**

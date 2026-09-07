@@ -15,7 +15,7 @@ import {
     refundPaymentByOrder
 } from '@api';
 import type { Payment } from '@types';
-import { absentIs } from '@/infrastructure/utils/errors';
+import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
  * The payment behind an order — one record, mirrored from whatever the API last said.
@@ -56,7 +56,7 @@ export const usePaymentsStore = defineStore('payments', () => {
                 .catch((error: unknown) => {
                     // 404 only: anything else is a real failure, and swallowing it would render
                     // the pay form for an order that already has a payment.
-                    if (!absentIs(error, 404)) throw error;
+                    rethrowUnlessAbsent(error, 404);
                     payment.value = undefined;
                     return undefined;
                 })

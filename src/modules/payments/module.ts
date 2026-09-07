@@ -3,6 +3,7 @@
  * Declares the payments module manifest: no routes, just the response schemas and locale
  * loaders the app registry needs to wire the panel in.
  */
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import { paymentsResponseSchemas } from './response-schemas';
 
@@ -23,7 +24,7 @@ export default {
     routes: [],
     responseSchemas: paymentsResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;

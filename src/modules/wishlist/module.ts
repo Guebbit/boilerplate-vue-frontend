@@ -4,6 +4,7 @@
  * schemas and locale loaders for the app registry — see `AppModule`.
  */
 import { Heart } from 'lucide-vue-next';
+import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { wishlistResponseSchemas } from './response-schemas';
@@ -35,7 +36,7 @@ export default {
     ],
     responseSchemas: wishlistResponseSchemas,
     locales: {
-        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
-        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+        en: () => import('./locales/en.json').then(dictionary),
+        it: () => import('./locales/it.json').then(dictionary)
     }
 } satisfies AppModule;
