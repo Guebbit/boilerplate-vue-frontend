@@ -209,15 +209,6 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
 ]);
 
 /**
- * Rows of the current page.
- *
- * @returns The page's entries, with the placeholder holes of the sparse pagination list filtered
- *  out.
- */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
-const pageItems = computed(() => pageItemList.value.filter((item): item is LocaleEntry => !!item));
-
-/**
  * Saves one row's value on blur — if it actually changed.
  *
  * @param entry - The row as the store knows it.
@@ -398,7 +389,7 @@ const handleExport = () =>
         <DataTable
             v-else
             :headers="tableHeaders"
-            :items="pageItems"
+            :items="pageItemList"
             :caption="t('locale-entries-page.table-caption', { tag })"
             :loading="loading"
             :loading-text="t('generic.loading')"

@@ -28,7 +28,7 @@
     },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",
-        "email-invalid": "Deve essere un'email valida",
+        "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "status-pending": "In attesa",
         "status-paid": "Pagato",
         "status-processing": "In elaborazione",

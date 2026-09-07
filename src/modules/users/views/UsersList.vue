@@ -98,15 +98,6 @@ const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
 ]);
 
 /**
- * Rows of the current page.
- *
- * @returns The page's users, with the placeholder holes of the sparse pagination
- *  list filtered out.
- */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
-const pageItems = computed(() => pageItemList.value.filter((item): item is User => !!item));
-
-/**
  * Search function bound to the store's reactive `filters`/pagination, reporting
  * a failed request as a toast.
  */
@@ -229,7 +220,7 @@ const handleHardDelete = (userId: string) =>
         <DataTable
             v-model="selectedUserId"
             :headers="tableHeaders"
-            :items="pageItems"
+            :items="pageItemList"
             :caption="t('users-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"

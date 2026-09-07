@@ -141,13 +141,15 @@ The one directory here no runner touches. These are markdown prompts driven by h
 covering the question no deterministic tool can reach: does the code do what the **docs** promise?
 They write reports to `reports/audit/` — gitignored, disposable — and never touch source.
 
-| File                         | What it is                                                                                          | Read next                              |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `tests/audit/spec-drift.md`  | The two-pass audit: freeze spec-derived expectations, then hunt tests that assert the code instead. | [AI Auditing](../tools/ai-auditing.md) |
-| `tests/audit/spec-gaps.md`   | Business rules and security boundaries with zero coverage.                                          | [AI Auditing](../tools/ai-auditing.md) |
-| `tests/audit/suite-bloat.md` | Near-duplicate tests that cost CI time and discriminate nothing.                                    | [AI Auditing](../tools/ai-auditing.md) |
+| File                                  | What it is                                                                                          | Read next                              |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `tests/audit/spec-drift.md`           | The two-pass audit: freeze spec-derived expectations, then hunt tests that assert the code instead. | [AI Auditing](../tools/ai-auditing.md) |
+| `tests/audit/spec-gaps.md`            | Business rules and security boundaries with zero coverage.                                          | [AI Auditing](../tools/ai-auditing.md) |
+| `tests/audit/suite-bloat.md`          | Near-duplicate tests that cost CI time and discriminate nothing.                                    | [AI Auditing](../tools/ai-auditing.md) |
+| `tests/audit/accessibility-manual.md` | Accessibility defects in the residual tier axe/eslint/keyboard.cy.ts structurally cannot reach.     | [AI Auditing](../tools/ai-auditing.md) |
 
-The same three files live in `boilerplate-node-backend` and are kept identical by hand.
+The first three files live in `boilerplate-node-backend` too and are kept identical by hand.
+`accessibility-manual.md` is frontend-only — there's no backend equivalent to keep it in sync with.
 
 ## Co-located module tests
 

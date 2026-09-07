@@ -34,7 +34,7 @@
         "image-alt": "Immagine del profilo di {name}"
     },
     "users-form": {
-        "email-invalid": "Deve essere un'email valida",
+        "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "label-passwordConfirm": "Conferma Password",
         "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
         "terms-required": "Devi accettare i Termini di Servizio e l'Informativa sulla Privacy!",
