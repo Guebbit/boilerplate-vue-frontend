@@ -27,7 +27,7 @@ scripts/
 ```
 
 The folder's word is not repeated in the filename: `scripts/mutation/run-tests.ts`, not
-`run-mutation-tests.ts`. Deliberately NOT aligned with the `npm run` namespaces — those group by
+`run-tests.ts`. Deliberately NOT aligned with the `npm run` namespaces — those group by
 _when you run a thing_, these group by _what it is about_.
 
 The backend carries the same folders, minus `e2e/` and plus a `docs/`, so a mirrored file sits at
@@ -57,7 +57,7 @@ whose Artisan command classes are the StudlyCase spelling of these names. Abbrev
 
 | File                                           | What it is                                                                                                                                                                                                                                                 | Read next                                        |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `scripts/pairing/paired-backend-path.ts`       | Where the paired backend is expected to be — a sibling checkout by default, overridable by environment. The mirror of the backend's `paired-frontend-path.ts`, pointed the other way.                                                                      | [Package Scripts](../tools/package-scripts.md)   |
+| `scripts/pairing/paired-backend-path.ts`       | Where the paired backend is expected to be — a sibling checkout by default, overridable by environment. The mirror of `boilerplate-node-backend/scripts/pairing/paired-frontend-path.ts`, pointed the other way.                                           | [Package Scripts](../tools/package-scripts.md)   |
 | `scripts/pairing/spec-identity.ts`             | The cross-repo check itself: which files must be identical in both repos, which side owns each, and the comparison. Same list and same comparison as the backend's copy; `THIS_REPO` differs, and this side adds the `fingerprint` the twin backends need. | [Contracts](./contracts.md)                      |
 | `scripts/pairing/check-spec-identity.ts`       | Its CLI — `npm run check:spec-identity`. Degrades to a warning when the sibling is not on disk, because a half-cloned pair should still be able to commit, and is fatal under `CI` where a missing sibling means a misconfigured workflow.                 | [Contracts](./contracts.md)                      |
 | `scripts/contracts/generate-asyncapi-types.ts` | Generates `src/types/asyncapi.generated.ts` from `asyncapi.yaml`. **Byte-identical with the backend's copy** — change it in one repo and copy it to the other, or the outputs drift. What differs is the input, not the script.                            | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |

@@ -372,7 +372,7 @@ A regression **cannot be laundered**: running with `--update` on a regressed fil
 
 **Do not re-record a lower floor.** The only honest reasons for a floor to fall are that the code was deleted or the scope changed, and then the commit should say which. Re-recording anything else is how the ratchet becomes decoration — and the ratchet is the only instrument here that catches a single file getting worse, because `break` pools everything into an average.
 
-A worked example of it doing its job: four files regressed while the mutation run was broken and nobody was measuring (`cart/store.ts`, `products/store.ts`, `account/store.ts`, `app/router/index.ts`). The ratchet kept the old floors, recorded the newly-seen files, and exited 1 rather than absorbing the drop. Tests were then written against the specific survivors, and all four now sit **above** their original floors.
+A worked example of it doing its job: four files regressed while the mutation run was broken and nobody was measuring (`cart/store.ts`, `products/store.ts`, `account/stores/profile.ts`, `app/router/index.ts`). The ratchet kept the old floors, recorded the newly-seen files, and exited 1 rather than absorbing the drop. Tests were then written against the specific survivors, and all four now sit **above** their original floors.
 
 A one-point tolerance absorbs the timeout/survivor race (whether a hanging mutant is recorded as a timeout or a survivor depends on machine load), not genuine weakening.
 

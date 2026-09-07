@@ -168,7 +168,7 @@ generated code inherits all of the above without knowing it exists.
 ## The backend is the other half
 
 This repo is paired with
-[`boilerplate-node-api-mongodb-mongoose`](https://github.com/Guebbit/boilerplate-node-backend),
+[`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend),
 which has a **Reading Path page of the same shape**. The two share `openapi.yaml`, the response
 envelope, the module-registry idea and the analytics event names — so an hour spent here is most of
 an hour saved there.

@@ -6,8 +6,8 @@ The SSE client, its reconnection behaviour and the generated event types are her
 
 The boilerplate exposes one realtime transport — Server-Sent Events — driven by contracts in `asyncapi.yaml` and demonstrated in the `RealtimePlayground` view (`/:locale/playground/realtime`).
 
-`asyncapi.yaml` here is the SHARED half of the backend's async contract: its `asyncapi.public.yaml`,
-copied over verbatim. The backend's own document also declares RabbitMQ worker queues, and those
+`asyncapi.yaml` here is the SHARED half of the backend's async contract:
+`boilerplate-node-backend/asyncapi.public.yaml`, copied over verbatim. The backend's own document also declares RabbitMQ worker queues, and those
 never reach this repo — a browser cannot open a broker connection, so their payload types would be a
 contract this app carries and cannot honour. See [AsyncAPI Workflow](../api/asyncapi-workflow.md).
 

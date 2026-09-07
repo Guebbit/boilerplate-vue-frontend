@@ -56,7 +56,7 @@ unbuilt feature — an SSE stream distinct from the audit log's paginated histor
 [the roadmap](../theory/roadmap.md). `GET /observability/metrics` is different in kind: its own
 contract description says to use `.../metrics/overview` for a JSON summary, and it answers in
 Prometheus text format — it is Prometheus's own scrape target
-(`docker/observability/prometheus.config.yaml` in `boilerplate-node-backend`), not an endpoint any
+(`boilerplate-node-backend/docker/observability/prometheus.config.yaml`), not an endpoint any
 browser client should ever call. Both stay registered in `response-schemas.ts` regardless: the row
 costs nothing sitting unused, and dropping it would just be re-adding it the day the events feed
 gets built.

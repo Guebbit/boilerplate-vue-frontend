@@ -30,12 +30,12 @@ flowchart TD
 
 **The skeleton comes first, and every variant descends from it.** Producing variants from this
 repository instead would mean maintaining the same twelve domains four times over. The extraction
-plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the workspace root.
+plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the workspace root. <!-- doc-paths:ignore -->
 
 - **Skeleton** — the kernel, the infrastructure layer, the tooling and two demo modules. Blocked
   on the current polishing pass finishing.
-- **css-ui variant** — from the skeleton. When doing it, recover the old `_root.scss` and
-  `_cards.scss` (for `simple-card`) from earlier commits rather than rewriting them.
+- **css-ui variant** — from the skeleton. When doing it, recover the old `_root.scss` and <!-- doc-paths:ignore -->
+  `_cards.scss` (for `simple-card`) from earlier commits rather than rewriting them. <!-- doc-paths:ignore -->
 - **Vuetify variant** — from the skeleton. Note this repository already _is_ the Vuetify one; the
   variant is what remains once the domains are gone.
 - **Quasar variant**, **Nuxt variant** — from the skeleton.

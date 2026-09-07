@@ -65,14 +65,14 @@ npm run test:e2e:live
 
 The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a person browsing. This suite is not a person: 85 specs drive real page loads, real logins and real uploads from one address, and `uploads.cy.ts` alone clears 100 requests a minute on its own. Past the budget the API answers **429**, the app bounces to `/login`, and the failure reads as "login is broken" rather than "we ran out of allowance". That is a genuinely expensive hour of debugging, because every assertion downstream fails for a reason unrelated to what it was testing.
 
-Boot the backend with the same allowance its own test suites use (`tests/support/setup.ts` sets `1000`):
+Boot the backend with the same allowance its own test suites use (`boilerplate-node-backend/tests/support/setup.ts` sets `1000`):
 
 ```sh
 # terminal 1 — backend, for a live E2E run
 NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDRESS_MAX=1000 npm run host -- dev
 ```
 
-All three are needed and they are separate buckets: the global one covers browsing, and the credential budget is itself a pair — one per account named, one per address calling — so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/infrastructure/http/middlewares/security.ts` in the backend).
+All three are needed and they are separate buckets: the global one covers browsing, and the credential budget is itself a pair — one per account named, one per address calling — so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
 
 ### Why `test:e2e:live` runs on Chromium, not Cypress' default Electron
 
@@ -134,7 +134,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here, and not in a copy either. The demo dataset is published by the backend's `npm run seed:export` and stays there: it is not in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the _database a deployment actually builds_ matches the published dataset is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
+Not here, and not in a copy either. The demo dataset is published by the backend's `npm run seed:export` and stays there: it is not in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the _database a deployment actually builds_ matches the published dataset is a property of the backend's seeders, and the backend asserts it in its own commit gate: `npm run check:seed-export` re-seeds a throwaway database with the real seeders, reads it back through the real serializers, and fails if the result differs from the committed artefact.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 

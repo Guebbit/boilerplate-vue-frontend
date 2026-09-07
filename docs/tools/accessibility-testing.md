@@ -136,7 +136,7 @@ It now parses every `path:` in each module's `routes.ts` and every `/en/...` or 
 
 A commented **`EXEMPT`** list names the routes no sweep can or should visit — `logout` (a `beforeRouteEnter` that returns Home), the bare `/` and `/:locale` containers, the two catch-all redirects. Each entry carries its reason, because adding to that list is a decision to leave a route unaudited.
 
-Detail and edit pages are addressed by **seeded ids** from the backend's `db/demo/demo-data.json`, the rows every other e2e spec already relies on. The three account confirm pages (`password-reset/confirm`, `account-delete/confirm`, `verify-email/confirm`) take a one-time token the demo outbox issues and the flow specs spend, so they are audited with `?token=a-token-nobody-issued`: the form renders exactly as it does for a real link, and that is also the state an expired link lands a visitor in.
+Detail and edit pages are addressed by **seeded ids** from `boilerplate-node-backend/db/demo/demo-data.json`, the rows every other e2e spec already relies on. The three account confirm pages (`password-reset/confirm`, `account-delete/confirm`, `verify-email/confirm`) take a one-time token the demo outbox issues and the flow specs spend, so they are audited with `?token=a-token-nobody-issued`: the form renders exactly as it does for a real link, and that is also the state an expired link lands a visitor in.
 
 **The cost is real**: ten extra Cypress spec startups, about +50s on the e2e gate. That is what co-location costs here, and it buys coverage that cannot rot into an orphan.
 

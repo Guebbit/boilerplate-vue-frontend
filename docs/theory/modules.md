@@ -67,11 +67,11 @@ Making the tier explicit moved five things and deleted the exemption:
 
 | Was                                     | Is now            | Why                                              |
 | --------------------------------------- | ----------------- | ------------------------------------------------ |
-| `platform/router/`                      | `app/router/`     | splices every enabled module's routes            |
-| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries       |
-| `platform/middlewares/`                 | `app/guards/`     | route guards for this app's route tree           |
-| `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     |
-| `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app |
+| `platform/router/`                      | `app/router/`     | splices every enabled module's routes            | <!-- doc-paths:ignore --> |
+| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries       | <!-- doc-paths:ignore --> |
+| `platform/middlewares/`                 | `app/guards/`     | route guards for this app's route tree           | <!-- doc-paths:ignore --> |
+| `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     | <!-- doc-paths:ignore --> |
+| `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app | <!-- doc-paths:ignore --> |
 
 **This mirrors the backend**, which made the same split at the same time — the four tiers there are
 `app → modules → kernel → infrastructure`, with `ui` being the one tier a backend has no use for.
@@ -98,13 +98,13 @@ of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modu
 | ------------- | -------------------------------------------------------------------------- |
 | `registry.ts` | it _is_ the module system — `AppModule`, the nav entries, the route splice |
 
-That is literally the whole tier: **one file**. Three others used to sit beside it —
-`FormCounterInput.vue`, `AppLanguageSwitcher.vue` and `counter.ts` — and each failed the test, since
-all three survive perfectly well in an app with no modules and none is imported by the registry.
-They moved out with the rename: `FormCounterInput.vue` to `ui/molecules/` since it imports nothing
-at all, `AppLanguageSwitcher.vue` to `app/components/` since it reads this app's locale list and
-drives its locale-prefixed routes, and `counter.ts` to the `demo` module, because it is Pinia demo
-scaffolding for the Playground rather than shared state.
+That is literally the whole tier: **one file**. Three near misses show where the line falls, because
+each survives perfectly well in an app with no modules and none is imported by the registry:
+`src/ui/molecules/FormCounterInput.vue` imports nothing at all,
+`src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and drives its
+locale-prefixed routes, and `src/modules/demo/store.ts` is Pinia demo scaffolding for the
+Playground rather than shared state. None of the three belongs to the module system; each belongs
+to the tier its dependencies name.
 
 One file is the honest size of a module system in a frontend, and it is deliberate: the tier earns
 its place by being unambiguous, not by being large. Everything domain-free that is _not_ the module
@@ -246,17 +246,17 @@ remembering:
 
 3. **The contract, which is not ours alone.** See above.
 
-4. **A store that was two stores, then a store that was four.** `infrastructure/profile.ts` held the
-   access token _and_ the `User` record, so `infrastructure` owned a domain entity and the app shell
-   reached into a domain to render a name. Split into `infrastructure/session.ts` — token, plus
+4. **One store split into four, along two different seams.** A single `infrastructure` store holding
+   the access token _and_ the `User` record puts a domain entity in a delivery tier and makes the app
+   shell reach into a domain to render a name. The first seam is `infrastructure/session.ts` — token, plus
    a `{ id, email, admin }` projection and the three `/account` calls a session needs to restore or end
-   itself — and the account module's own store. That store later split again, by the same logic one
+   itself — and the account module's own store. The second seam runs by the same logic one
    level down: `modules/account/stores/auth.ts` establishes or ends a session (login, signup, password
    reset, logout), `stores/profile.ts` owns the editable record itself (fetch/update, role view, email
    verification, account deletion), and `stores/sessions.ts` / `stores/addresses.ts` each hold state
-   scoped to the one component that renders it. The shell still knows only _someone is signed in, here
-   is their name, they are staff_ — the further split moved responsibilities within the account domain,
-   not across the session/account boundary.
+   scoped to the one component that renders it. The shell knows only _someone is signed in, here
+   is their name, they are staff_ — the second seam divides responsibilities within the account domain,
+   without moving anything across the session/account boundary.
 
 ### The honest scorecard
 

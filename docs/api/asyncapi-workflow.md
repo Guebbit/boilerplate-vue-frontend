@@ -18,16 +18,16 @@ That is the whole of it, and deliberately so — see below.
 `asyncapi.yaml` here is not the backend's `asyncapi.yaml`. The backend publishes its async contract
 twice from one set of sources:
 
-| Backend file           | Holds                                                  | Copied here                         |
-| ---------------------- | ------------------------------------------------------ | ----------------------------------- |
-| `asyncapi.yaml`        | every channel — SSE **and** the RabbitMQ worker queues | no                                  |
-| `asyncapi.public.yaml` | the SSE channels only                                  | yes, as this repo's `asyncapi.yaml` |
+| Backend file                                    | Holds                                                  | Copied here                         |
+| ----------------------------------------------- | ------------------------------------------------------ | ----------------------------------- |
+| `boilerplate-node-backend/asyncapi.yaml`        | every channel — SSE **and** the RabbitMQ worker queues | no                                  |
+| `boilerplate-node-backend/asyncapi.public.yaml` | the SSE channels only                                  | yes, as this repo's `asyncapi.yaml` |
 
 A browser can neither publish to nor consume from a broker, so `worker.email.send` and
 `worker.pdf.generate` are not this repo's business. Carrying their payload types would mean holding
 the shape of a message this app cannot send, presented as a contract it is expected to honour.
 
-`check:spec-identity` compares the backend's `asyncapi.public.yaml` against this file byte for byte
+`check:spec-identity` compares `boilerplate-node-backend/asyncapi.public.yaml` against this file byte for byte
 — a cross-path pair, like the demo dataset. It is an OUTPUT of the backend's fragments: never edit
 it here, or the next `npm run sync:frontend` over there reverts you and the diff reads as if the
 backend broke something.
@@ -112,7 +112,8 @@ gate over its own copy.
 Several messages share one payload — `observability.metrics.snapshot`, `.updated` and `heartbeat`
 all carry `ObservabilityMetricsPayload`. Aliasing each separately produced three names for one
 shape, and no hand-written caller used any of them: real code imports the shared payload type
-directly, the same way the backend's `mailer.ts` names its own `EmailJob` rather than a generated
+directly, the same way `boilerplate-node-backend/src/infrastructure/adapters/mailer.ts` names its
+own `EmailJob` rather than a generated
 `EmailJobMessage`.
 
 So the generator emits **one alias per shape**, in declaration order — which is the name a caller

@@ -11,7 +11,7 @@ prices, totals, eligibility and permissions are decided server-side, and a clien
 re-implements them has two implementations of one rule.
 
 ::: tip This page mirrors the backend's
-`boilerplate-node-api-mongodb-mongoose/docs/theory/strategic-ddd.md` states the same four ideas for
+`boilerplate-node-backend/docs/theory/strategic-ddd.md` states the same four ideas for
 the API. Read them together — the interesting parts are where the two **disagree**, and each of
 those disagreements is a fact about where the domain actually lives.
 :::

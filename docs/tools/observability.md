@@ -5,7 +5,7 @@ The FE observability layer covers two complementary concerns, both wired into a 
 | Tool                                                                     | Role                                                      | Endpoint                                                        |
 | ------------------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------- |
 | **Grafana Faro** (`@grafana/faro-web-sdk` + `@grafana/faro-web-tracing`) | Error/crash monitoring, frontend tracing, Core Web Vitals | Grafana Alloy Faro receiver on `http://localhost:12347/collect` |
-| **Umami** (`script.js` tracker)                                          | Product analytics — pageviews + custom events             | `http://localhost:3080`                                         |
+| **Umami** (`script.js` tracker)                                          | Product analytics — pageviews + custom events             | `http://localhost:3080`                                         | <!-- doc-paths:ignore --> |
 
 Both are no-ops when their env vars are absent, so local dev works without the stack running. You verify the data in **Grafana** (`http://localhost:3001`, default `admin/admin`) and the **Umami dashboard** (`http://localhost:3080`).
 

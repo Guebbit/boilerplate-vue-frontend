@@ -143,7 +143,8 @@ from inside a rule.
 **On a frontend, be honest about the size of the prize.** The API decides prices, totals and
 eligibility, so this layer is thin here by design and always will be — see
 [Why it is thin here](#why-it-is-thin-here-—-and-why-that-is-correct). The backend repo's
-`orders/domain/totals.ts` is property-tested over 3,900 generated baskets with no database; nothing
+`boilerplate-node-backend/src/modules/orders/domain/totals.ts` is property-tested over 3,900
+generated baskets with no database; nothing
 on this side will ever be that dramatic. What it buys here is smaller and still real: a rule the
 template cannot silently delete, testable without mounting a component.
 
@@ -319,7 +320,7 @@ For an API-backed storefront or admin — which is what this boilerplate produce
 left branch. Going right means maintaining a client model _and_ keeping it reconciled with the
 server's.
 
-`TACTICAL_DDD_PLAN.md` (workspace root, beside this repo) prices the right branch in full for the
+`TACTICAL_DDD_PLAN.md` (workspace root, beside this repo) prices the right branch in full for the <!-- doc-paths:ignore -->
 backend, and says why this repo stays out of its scope.
 
 ## Related pages

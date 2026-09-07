@@ -39,10 +39,9 @@ paired backend's demo profile.
 One file per architectural rule, asserted over all fourteen modules at once. A new module is
 covered the day it is added.
 
-Two files used to live here: `context-map.spec.ts` and `subdomain-discipline.spec.ts`, reconciling
-a typed `dependsOn`/`subdomain` field against real imports and real folders. Both are gone along
-with the fields — the coupling half moved to a generated ESLint rule (`MODULE_EDGES` in
-`eslint.config.ts`), checked structurally on every `npm run lint`. See
+Module coupling is not among them: which module may import which is a generated ESLint rule
+(`MODULE_EDGES` in `eslint.config.ts`), enforced at the import on every `npm run lint` rather than
+reconciled against a manifest field here. See
 [Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
 
 | File                                                    | What it guarantees                                                                                                                        | Read next                                                  |
@@ -70,26 +69,25 @@ with the fields — the coupling half moved to a generated ESLint rule (`MODULE_
 
 ### `tests/unit/infrastructure/`
 
-| File                                                                | What it guarantees                                                                                                                         | Read next                                        |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `tests/unit/infrastructure/http/client.spec.ts`                     | The axios instance's base URL, credentials and timeouts.                                                                                   | [Infrastructure](./src-infrastructure.md)        |
-| `tests/unit/infrastructure/http/http.spec.ts`                       | The transport's public surface — what a caller gets back, and in what shape.                                                               | [Endpoints](../api/endpoints.md)                 |
-| `tests/unit/infrastructure/http/http-request.spec.ts`               | Request assembly, including the JSON-or-multipart duality the generated clients hand over.                                                 | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| `tests/unit/infrastructure/http/http-refresh.spec.ts`               | The refresh-and-retry flow, and that the endpoints excluded from it stay excluded — a 401 on login is an answer, not a stale token.        | [Security](../tools/security.md)                 |
-| `tests/unit/infrastructure/http/http-validate-responses.spec.ts`    | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary.                        | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| `tests/unit/infrastructure/http/url.spec.ts`                        | Query strings, absolute URLs and the leading slash — the normalisation both the schema table and the refresh exclusion list match against. | [Contracts](./contracts.md)                      |
-| `tests/unit/infrastructure/http/response-schema-map.spec.ts`        | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated.                               | [Contracts](./contracts.md)                      |
-| `tests/unit/infrastructure/i18n/i18n.spec.ts`                       | Dictionary resolution, including the array messages `tm()` and `rt()` render.                                                              | [App, Kernel & Types](./src-app.md)              |
-| `tests/unit/infrastructure/i18n/locale-overrides.spec.ts`           | Admin-edited copy overlays the bundled defaults, and removing an override restores the default.                                            | [Admin Dashboard](../tools/admin-dashboard.md)   |
-| `tests/unit/infrastructure/session.spec.ts`                         | The session store: what is held, what is cleared, and when.                                                                                | [Security](../tools/security.md)                 |
-| `tests/unit/infrastructure/observability.spec.ts`                   | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash.                                       | [Observability](../tools/observability.md)       |
-| `tests/unit/infrastructure/create-sse-client.spec.ts`               | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount.                                                                     | [Realtime](../tools/realtime.md)                 |
-| `tests/unit/infrastructure/composables/use-upload-progress.spec.ts` | Upload progress state, including the failure path.                                                                                         | [UI Kit](./src-ui.md)                            |
-| `tests/unit/infrastructure/utils/errors.spec.ts`                    | A human-readable message out of any thrown value, so a `catch` never renders `[object Object]`.                                            | [Endpoints](../api/endpoints.md)                 |
-| `tests/unit/infrastructure/utils/formatters.spec.ts`                | Date, money and fallback rendering.                                                                                                        | [UI Kit](./src-ui.md)                            |
-| `tests/unit/infrastructure/utils/formatters.property.spec.ts`       | The same, as **properties** over generated inputs rather than examples.                                                                    | [Property Testing](../tools/property-testing.md) |
-| `tests/unit/infrastructure/utils/logger.spec.ts`                    | The one module allowed to touch `console` behaves as the rest of the app assumes.                                                          | [Observability](../tools/observability.md)       |
-| `tests/unit/infrastructure/utils/uploads.spec.ts`                   | The client-side limits, so a rejection happens before the request.                                                                         | [Security](../tools/security.md)                 |
+| File                                                             | What it guarantees                                                                                                                         | Read next                                        |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `tests/unit/infrastructure/http/client.spec.ts`                  | The axios instance's base URL, credentials and timeouts.                                                                                   | [Infrastructure](./src-infrastructure.md)        |
+| `tests/unit/infrastructure/http/http.spec.ts`                    | The transport's public surface — what a caller gets back, and in what shape.                                                               | [Endpoints](../api/endpoints.md)                 |
+| `tests/unit/infrastructure/http/http-request.spec.ts`            | Request assembly, including the JSON-or-multipart duality the generated clients hand over.                                                 | [OpenAPI Workflow](../api/openapi-workflow.md)   |
+| `tests/unit/infrastructure/http/http-refresh.spec.ts`            | The refresh-and-retry flow, and that the endpoints excluded from it stay excluded — a 401 on login is an answer, not a stale token.        | [Security](../tools/security.md)                 |
+| `tests/unit/infrastructure/http/http-validate-responses.spec.ts` | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary.                        | [OpenAPI Workflow](../api/openapi-workflow.md)   |
+| `tests/unit/infrastructure/http/url.spec.ts`                     | Query strings, absolute URLs and the leading slash — the normalisation both the schema table and the refresh exclusion list match against. | [Contracts](./contracts.md)                      |
+| `tests/unit/infrastructure/http/response-schema-map.spec.ts`     | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated.                               | [Contracts](./contracts.md)                      |
+| `tests/unit/infrastructure/i18n/i18n.spec.ts`                    | Dictionary resolution, including the array messages `tm()` and `rt()` render.                                                              | [App, Kernel & Types](./src-app.md)              |
+| `tests/unit/infrastructure/i18n/locale-overrides.spec.ts`        | Admin-edited copy overlays the bundled defaults, and removing an override restores the default.                                            | [Admin Dashboard](../tools/admin-dashboard.md)   |
+| `tests/unit/infrastructure/session.spec.ts`                      | The session store: what is held, what is cleared, and when.                                                                                | [Security](../tools/security.md)                 |
+| `tests/unit/infrastructure/observability.spec.ts`                | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash.                                       | [Observability](../tools/observability.md)       |
+| `tests/unit/infrastructure/create-sse-client.spec.ts`            | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount.                                                                     | [Realtime](../tools/realtime.md)                 |
+| `tests/unit/infrastructure/utils/errors.spec.ts`                 | A human-readable message out of any thrown value, so a `catch` never renders `[object Object]`.                                            | [Endpoints](../api/endpoints.md)                 |
+| `tests/unit/infrastructure/utils/formatters.spec.ts`             | Date, money and fallback rendering.                                                                                                        | [UI Kit](./src-ui.md)                            |
+| `tests/unit/infrastructure/utils/formatters.property.spec.ts`    | The same, as **properties** over generated inputs rather than examples.                                                                    | [Property Testing](../tools/property-testing.md) |
+| `tests/unit/infrastructure/utils/logger.spec.ts`                 | The one module allowed to touch `console` behaves as the rest of the app assumes.                                                          | [Observability](../tools/observability.md)       |
+| `tests/unit/infrastructure/utils/uploads.spec.ts`                | The client-side limits, so a rejection happens before the request.                                                                         | [Security](../tools/security.md)                 |
 
 ### `tests/unit/ui/` and `tests/unit/scripts/`
 
@@ -107,7 +105,6 @@ with the fields — the coupling half moved to a generated ESLint rule (`MODULE_
 
 | File                               | What it guarantees                                                           | Read next                                                  |
 | ---------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `tests/e2e/specs/home.cy.ts`       | The landing page renders and its entry points work.                          | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/e2e/specs/storefront.cy.ts` | Browsing the catalogue: listing, search, detail.                             | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/e2e/specs/commerce.cy.ts`   | Cart and checkout against real API responses.                                | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/e2e/specs/journey.cy.ts`    | The full visitor journey end to end, the one spec that crosses every domain. | [Live E2E](../tools/live-e2e.md)                           |

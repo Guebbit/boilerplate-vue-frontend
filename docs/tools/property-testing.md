@@ -36,13 +36,14 @@ This repo learned the value the expensive way, before adopting the technique. `s
 
 Pure, total, and rich in invariants:
 
-| Target                     | Invariants worth stating                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `infrastructure/totals.ts` | order-independent, non-negative, zero for empty, additive over concatenation, never `NaN`                                             |
-| `models/serialize.ts`      | `_id` → `id` always, `__v` always gone, omitted keys always gone, never mutates its input, idempotent                                 |
-| `repositories/search.ts`   | `escapeRegex` never produces an uncompilable pattern, always matches its own input literally, strips every metacharacter of its power |
+| Target                                   | Invariants worth stating                                                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/infrastructure/utils/formatters.ts` | never returns a blank cell, falls back for exactly the inputs carrying no value, idempotent, never throws on an unknown currency or date |
+| `src/infrastructure/utils/uploads.ts`    | accepts a type if and only if it is on the shared list, case-sensitive to match the backend, size limit inclusive on both sides          |
 
 A function whose only "invariant" is its exact return value for one input is not a property target — write an example.
+
+This is a short list, and that is the honest shape of it on a client. The functions worth generating against are the pure, total ones — and most of what a frontend does is neither: a component renders, a store talks to the network, a composable owns a lifecycle. Prices, totals and eligibility, which _are_ pure and rich in invariants, are decided in the paired backend (see [Domain layer](../theory/domain-layer.md)), and its own property suite is where they are generated against.
 
 ## Two rules, both about determinism
 
@@ -54,11 +55,11 @@ A function whose only "invariant" is its exact return value for one input is not
 
 Both kinds live side by side, and each owns what the other cannot say. The headers of the property files name the division explicitly, so nobody re-adds the overlap.
 
-| The example file owns                                                                                  | The property file owns                                  |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| A named case per metacharacter — better diagnostics than a generated blob                              | Totality over arbitrary input                           |
-| A **timing** assertion that a catastrophic pattern is defused — a property cannot measure elapsed time | Generated _combinations_, not one value at a time       |
-| Specific historical inputs, and negatives like "`1.5` must not match `1x5`"                            | Algebraic laws: idempotence, non-mutation, monotonicity |
+| The example file owns                                                                   | The property file owns                                    |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| The exact boundary — a file of precisely `MAX_UPLOAD_BYTES`, and one byte over          | Totality over arbitrary input                             |
+| The shipped copy of a rendered string, which a property can only say is non-blank       | Generated _combinations_, not one value at a time         |
+| Named near-misses like the non-canonical `image/jpg`, where the diagnostic is the point | Algebraic laws: idempotence, non-mutation, biconditionals |
 
 A fact asserted twice is a fact maintained twice — and it costs more than it looks in this repo, because a static mutant replays the entire suite (see [Mutation Testing](./mutation-testing.md)).
 
@@ -78,14 +79,15 @@ That second one is worth internalising: a property that fails on your own assert
 
 ## File map
 
-| Path                                                    | Contents                                                          |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| `src/modules/orders/tests/unit/totals.property.test.ts` | Arithmetic invariants, totality against hostile line items        |
-| `tests/cross-cutting/serialize.property.test.ts`        | Serializer guarantees over arbitrary document shapes              |
-| `tests/cross-cutting/search.property.test.ts`           | `escapeRegex` as a denial-of-service control; pagination totality |
-| `tests/cross-cutting/search-regex.test.ts`              | The example-based half — timing, named metacharacters, negatives  |
+| Path                                                          | Contents                                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `tests/unit/infrastructure/utils/formatters.property.spec.ts` | Every property in this repo — the formatters and the two upload predicates   |
+| `tests/unit/infrastructure/utils/formatters.spec.ts`          | The example-based half: exact rendered strings, the shipped copy             |
+| `tests/unit/infrastructure/utils/uploads.spec.ts`             | The example-based half: the exact size boundary, the non-canonical mime type |
 
-The same technique and the same two rules apply in the paired frontend, over `utils/formatters.ts` and `utils/uploads.ts`.
+One property file, covering two modules. It is listed as a table anyway because the split with the example files beside it is the part worth navigating, not the count.
+
+The same technique and the same two rules apply in the paired backend, over its order totals, its serializer and its search escaping — a larger surface, because that is where the pure domain functions live.
 
 ## Related pages
 

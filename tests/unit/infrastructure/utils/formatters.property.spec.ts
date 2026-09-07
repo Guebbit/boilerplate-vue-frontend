@@ -1,5 +1,6 @@
 /**
- * Property-based tests — `src/infrastructure/formatters.ts` and `src/infrastructure/uploads.ts`.
+ * Property-based tests — `src/infrastructure/utils/formatters.ts` and
+ * `src/infrastructure/utils/uploads.ts`.
  *
  * The example-based suites next door assert what these functions do for the inputs someone
  * thought of. These assert what must hold for EVERY input, which is a different question and
