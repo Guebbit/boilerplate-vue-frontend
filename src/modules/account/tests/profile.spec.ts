@@ -67,7 +67,21 @@ beforeEach(() => {
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/verify-request': orvalEnvelope(),
-        'POST /account/verify-confirm': orvalEnvelope()
+        'POST /account/verify-confirm': orvalEnvelope(),
+        // Every collection is an array the fixture is free to leave empty; only `exportedAt` and
+        // `profile` are required scalars on `AccountExportResponse`.
+        'POST /account/export': orvalEnvelope({
+            exportedAt: '2026-09-07T00:00:00.000Z',
+            profile: USER,
+            addresses: [],
+            orders: [],
+            payments: [],
+            shipments: [],
+            cart: [],
+            wishlist: [],
+            sessions: [],
+            auditLog: []
+        })
     };
 });
 
@@ -258,6 +272,17 @@ describe('the account deletion flow', () => {
                 expect(profile.profile).toBeUndefined();
             });
     });
+});
+
+describe('exportAccountData', () => {
+    it('returns the export payload from POST /account/export', () =>
+        useProfileStore()
+            .exportAccountData()
+            .then((data) => {
+                expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(data?.profile).toEqual(USER);
+                expect(data?.exportedAt).toBe('2026-09-07T00:00:00.000Z');
+            }));
 });
 
 describe('the self-service actions', () => {

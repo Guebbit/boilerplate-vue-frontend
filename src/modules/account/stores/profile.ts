@@ -11,7 +11,7 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User } from '@types';
+import type { User, AccountExportResponse } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -21,7 +21,8 @@ import {
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
-    updateUserById as apiUpdateUserById
+    updateUserById as apiUpdateUserById,
+    exportAccountData as apiExportAccountData
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
@@ -275,6 +276,24 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const requestAccountDelete = () => fetchAny(() => apiRequestAccountDelete());
 
     /**
+     * Exports every record the API holds for the visitor's own account (profile, addresses,
+     * orders, payments, shipments, cart, wishlist, sessions, audit log — GDPR Art. 15/20).
+     *
+     * `POST /account/export` demands a FRESH session rather than a request body. This action does
+     * not handle that itself: an expired session falls through the step-up interceptor
+     * (`infrastructure/http/step-up.ts`), which prompts for the password and retries transparently.
+     *
+     * @returns A promise resolving with the export payload, or `undefined` when the response
+     *  carries none.
+     */
+    const exportAccountData = () =>
+        fetchAny(() =>
+            apiExportAccountData().then((data) =>
+                getPayloadFromResponse<AccountExportResponse>(data)
+            )
+        );
+
+    /**
      * Completes account deletion using the one-time token.
      *
      * @param token - Confirmation token received by email.
@@ -314,6 +333,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         requestEmailVerification,
         confirmEmailVerification,
         requestAccountDelete,
-        confirmAccountDelete
+        confirmAccountDelete,
+        exportAccountData
     };
 });

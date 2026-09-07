@@ -32,6 +32,7 @@ import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue'
 import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAccount.vue';
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
+import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
 import {
     notifyErrorMessages,
     VUETIFY_INVALID_FIELD_SELECTOR
@@ -255,6 +256,7 @@ const submitForm = () => {
         <div class="mx-auto my-10 grid w-full max-w-xl gap-6">
             <ProfileSessions />
             <ProfileAddresses />
+            <ProfileExportData />
             <ProfileDeleteAccount />
         </div>
     </LayoutDefault>

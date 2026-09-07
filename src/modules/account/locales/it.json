@@ -31,6 +31,7 @@
         "reset-form": "Cancella modifiche",
         "success-update": "Profilo aggiornato con successo",
         "button-change-password": "Cambia password",
+        "button-export-data": "Scarica i miei dati",
         "button-delete-account": "Elimina account",
         "confirm-delete-account": "Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.",
         "success-delete-request": "Ti abbiamo inviato un'email di conferma. Controlla la tua casella per completare l'eliminazione.",

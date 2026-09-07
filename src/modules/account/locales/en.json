@@ -31,6 +31,7 @@
         "reset-form": "Reset changes",
         "success-update": "Profile updated successfully",
         "button-change-password": "Change password",
+        "button-export-data": "Download my data",
         "button-delete-account": "Delete account",
         "confirm-delete-account": "Are you sure you want to delete your account? This action cannot be undone.",
         "success-delete-request": "We sent a confirmation email. Please check your inbox to complete the deletion.",
