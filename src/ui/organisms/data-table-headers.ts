@@ -14,7 +14,7 @@
  * carries `totalItems`, `totalQuantity` and `totalPrice` and no `total` — and a `key: 'total'`
  * shipped exactly that way, with a visual baseline recording the em dashes as expected output.
  */
-export interface CoreDataTableFieldHeader<T> {
+interface CoreDataTableFieldHeader<T> {
     title: string;
     key: Extract<keyof T, string>;
     /**
@@ -30,7 +30,7 @@ export interface CoreDataTableFieldHeader<T> {
  * `synthetic` is required rather than inferred, so the only way to name a key the row does not
  * have is to say you meant it. A typo cannot satisfy this shape by accident.
  */
-export interface CoreDataTableSyntheticHeader {
+interface CoreDataTableSyntheticHeader {
     title: string;
     key: string;
     synthetic: true;

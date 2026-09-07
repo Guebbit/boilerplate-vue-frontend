@@ -39,7 +39,7 @@ export interface DialogRequest {
 /**
  * One pending question: what was asked, plus how to answer it.
  */
-export interface DialogEntry extends DialogRequest {
+interface DialogEntry extends DialogRequest {
     /**
      * Monotonically increasing id, oldest-first ordering key.
      */

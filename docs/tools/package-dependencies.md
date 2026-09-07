@@ -33,7 +33,12 @@ Groups are organised by concern, with same-namespace tools together where that h
 ## Quick take
 
 - Runtime dependencies are intentionally lean: Vue ecosystem + axios + Zod + observability.
-- Most heavy tooling (codegen, testing, docs) is in `devDependencies`.
+- Heavy tooling — codegen, testing, docs, and the Vite plugins `vite.config.ts` loads at build
+  time — is in `devDependencies`. Nothing installs this repo as a library, so the split is about
+  stating the runtime surface honestly rather than about what ships.
+- `@tanstack/query-core` is a runtime dependency with **zero direct imports**, and that is
+  correct: it is a required peer of `@guebbit/vue-toolkit@4`. Do not remove it because a search
+  finds no `import` — the toolkit's composables need it at runtime.
 - Grafana Faro and Umami are no-ops when their env vars are absent — safe to ship without configuring them.
 
 ## Related pages
