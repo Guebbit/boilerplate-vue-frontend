@@ -41,7 +41,7 @@ export const GetHealthResponse = zod.strictObject({
  *
  * `tenants` is the field doing the real work: which tenants have words in that
  * language. The backend tenant means the API can answer requests in it — its
- * dictionary is deployed and i18next holds it. A frontend tenant means a client
+ * dictionary is deployed and the translator holds it. A frontend tenant means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
  * have either, or both, and the two are not the same capability: a language added
  * through the admin routes below carries only the frontend tenant until a file is
@@ -587,7 +587,7 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                 .max(listLocaleEntriesResponseDataMetaPageMax)
                 .default(listLocaleEntriesResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -953,21 +953,21 @@ export const GetObservabilityHealthResponse = zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because a dependency that has not finished coming up yet and one that is broken look identical on the wire during any startup grace period a deployment gives itself, and mean opposite things.'
                         )
                 }),
                 cache: zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because a dependency that has not finished coming up yet and one that is broken look identical on the wire during any startup grace period a deployment gives itself, and mean opposite things.'
                         )
                 }),
                 queue: zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because a dependency that has not finished coming up yet and one that is broken look identical on the wire during any startup grace period a deployment gives itself, and mean opposite things.'
                         )
                 })
             })
@@ -1234,7 +1234,7 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
                 .max(getObservabilityAuditLogsResponseDataMetaPageMax)
                 .default(getObservabilityAuditLogsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -1246,84 +1246,6 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
             totalPages: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
         })
     })
-});
-
-/**
- * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
- * @summary Read the active human-challenge provider's public parameters, and every rung's status
- */
-export const GetAntibotConfigResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        provider: zod
-            .string()
-            .describe(
-                "The active implementation's name (`none` by default). `none` means no challenge is required — send no token.\n"
-            ),
-        parameters: zod
-            .record(zod.string(), zod.string())
-            .describe(
-                "What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.\n"
-            ),
-        rungs: zod
-            .strictObject({
-                identityBudgets: zod
-                    .boolean()
-                    .describe(
-                        'Rung 1 — always `true`. The identity\/address\/address-block budgets have no off switch.\n'
-                    ),
-                emailPolicy: zod
-                    .enum(['off', 'disposable', 'mx'])
-                    .describe(
-                        "Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.\n"
-                    )
-            })
-            .describe(
-                'Every rung\'s status, not just rung 3\'s provider — one answer to \"what is active on this deployment\" instead of asking each rung to publish its own.\n'
-            )
-    })
-});
-
-/**
- * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
- * @summary Fetch work from a self-hosted human-challenge provider
- */
-export const GetAntibotChallengeResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            parameters: zod
-                .strictObject({
-                    algorithm: zod
-                        .string()
-                        .describe('Key-derivation function, e.g. `PBKDF2\/SHA-256`.'),
-                    nonce: zod.string(),
-                    salt: zod.string(),
-                    cost: zod.number().describe('Iteration count — how much work solving takes.'),
-                    keyLength: zod.number(),
-                    keyPrefix: zod.string(),
-                    keySignature: zod.string().optional(),
-                    memoryCost: zod.number().optional(),
-                    parallelism: zod.number().optional(),
-                    expiresAt: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Unix seconds after which the challenge is refused, solved or not.'
-                        )
-                })
-                .describe('What the solver needs to derive the key the challenge asks for.'),
-            signature: zod
-                .string()
-                .describe('HMAC over the parameters, proving this server issued them.')
-        })
-        .describe(
-            "ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.\n"
-        )
 });
 
 /**
@@ -1343,7 +1265,6 @@ export const GetAccountResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -1375,7 +1296,7 @@ export const GetAccountResponse = zod.strictObject({
 });
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
  * @summary Update own profile
  */
 export const updateAccountBodyUsernameMin = 3;
@@ -1416,7 +1337,6 @@ export const UpdateAccountResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -1497,7 +1417,7 @@ export const ChangePasswordResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
+        token: zod.string().describe('Access token'),
         refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
         expiresIn: zod.number().optional().describe('Access token expiry in seconds')
     })
@@ -1523,7 +1443,7 @@ export const ReauthResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
+        token: zod.string().describe('Access token'),
         refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
         expiresIn: zod.number().optional().describe('Access token expiry in seconds')
     })
@@ -1743,24 +1663,12 @@ export const RequestEmailVerificationResponse = zod.strictObject({
  * @summary Confirm email verification
  */
 export const ConfirmEmailVerificationBody = zod.strictObject({
-    token: zod.string().describe('One-time email verification token (NOT a JWT).')
+    token: zod
+        .string()
+        .describe('Single-use, short-lived email verification token, delivered by email.')
 });
 
 export const ConfirmEmailVerificationResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-
-/**
- * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
- * @summary Confirm a pending email change
- */
-export const ConfirmEmailChangeBody = zod.strictObject({
-    token: zod.string().describe('One-time email verification token (NOT a JWT).')
-});
-
-export const ConfirmEmailChangeResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
@@ -1771,7 +1679,9 @@ export const ConfirmEmailChangeResponse = zod.strictObject({
  * @summary Confirm account deletion
  */
 export const ConfirmAccountDeleteBody = zod.strictObject({
-    token: zod.string().describe('One-time account deletion token (NOT a JWT).')
+    token: zod
+        .string()
+        .describe('Single-use, short-lived account deletion token, delivered by email.')
 });
 
 export const ConfirmAccountDeleteResponse = zod.strictObject({
@@ -1781,7 +1691,7 @@ export const ConfirmAccountDeleteResponse = zod.strictObject({
 });
 
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, returns an opaque bearer access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const loginBodyPasswordMin = 8;
@@ -1809,7 +1719,7 @@ export const LoginResponse = zod.strictObject({
     data: zod
         .union([
             zod.strictObject({
-                token: zod.string().describe('Access JWT'),
+                token: zod.string().describe('Access token'),
                 refreshToken: zod
                     .string()
                     .optional()
@@ -1894,187 +1804,344 @@ export const LoginResponse = zod.strictObject({
 });
 
 /**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success.
- * @summary Signup
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * @summary Complete a two-factor login
  */
-export const SignupHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
+export const LoginTwoFactorBody = zod.strictObject({
+    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    code: zod
         .string()
-        .optional()
         .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+            "A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's."
         )
 });
 
-export const signupBodyUsernameMin = 3;
-
-export const signupBodyPasswordMin = 8;
-
-export const signupBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
-export const signupBodyPasswordConfirmMin = 8;
-
-export const SignupBody = zod.strictObject({
-    email: zod.email(),
-    username: zod.string().min(signupBodyUsernameMin),
-    password: zod
-        .string()
-        .min(signupBodyPasswordMin)
-        .regex(signupBodyPasswordRegExp)
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    passwordConfirm: zod
-        .string()
-        .min(signupBodyPasswordConfirmMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        ),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    termsAccepted: zod.literal(true),
-    analyticsConsent: zod.boolean().optional()
-});
-
-export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-
-export const SignupResponse = zod.strictObject({
+export const LoginTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(signupResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        token: zod.string().describe('Access token'),
+        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
+        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
     })
 });
 
 /**
- * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
- * @summary Request password reset
+ * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
+ * @summary Send a login code
  */
-export const RequestPasswordResetHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
+export const SendTwoFactorCodeBody = zod.strictObject({
+    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    method: zod
         .string()
-        .optional()
         .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+            "Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true."
         )
 });
 
-export const RequestPasswordResetBody = zod.strictObject({
-    email: zod.email()
-});
-
-export const RequestPasswordResetResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-
-/**
- * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
- * @summary Confirm password reset
- */
-export const confirmPasswordResetBodyPasswordMin = 8;
-
-export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
-export const confirmPasswordResetBodyPasswordConfirmMin = 8;
-
-export const ConfirmPasswordResetBody = zod.strictObject({
-    token: zod.string().describe('One-time password reset token (NOT a JWT).'),
-    password: zod
-        .string()
-        .min(confirmPasswordResetBodyPasswordMin)
-        .regex(confirmPasswordResetBodyPasswordRegExp)
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    passwordConfirm: zod
-        .string()
-        .min(confirmPasswordResetBodyPasswordConfirmMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        )
-});
-
-export const ConfirmPasswordResetResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-
-/**
- * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
- * @summary Refresh access token
- */
-export const RefreshTokenResponse = zod.strictObject({
+export const SendTwoFactorCodeResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string().describe('New access JWT'),
-        refreshToken: zod.string().optional().describe('New refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('New access token expiry in seconds')
+        method: zod.string().describe('The method the code went through, echoed back.'),
+        sentTo: zod
+            .string()
+            .describe(
+                'Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.'
+            ),
+        resendAfter: zod
+            .number()
+            .describe(
+                'Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.'
+            ),
+        expiresAt: zod.iso
+            .datetime({ offset: true })
+            .describe('When this code stops being accepted.')
     })
 });
 
 /**
- * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
- * @summary Logout from all devices
+ * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
+ * @summary Two-factor status
  */
-export const LogoutAllResponse = zod.strictObject({
+export const GetTwoFactorStatusResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        enabled: zod
+            .boolean()
+            .describe(
+                'Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry.'
+            ),
+        methods: zod
+            .array(
+                zod.strictObject({
+                    method: zod
+                        .string()
+                        .describe(
+                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
+                        ),
+                    delivers: zod
+                        .boolean()
+                        .describe(
+                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
+                        ),
+                    target: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
+                        ),
+                    enrolledAt: zod.iso
+                        .datetime({ offset: true })
+                        .optional()
+                        .describe(
+                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
+                        ),
+                    resendAfter: zod
+                        .number()
+                        .optional()
+                        .describe(
+                            'Seconds between two deliveries of this method. Absent for device methods.'
+                        ),
+                    enrollable: zod
+                        .boolean()
+                        .optional()
+                        .describe(
+                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
+                        ),
+                    reason: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
+                        )
+                })
+            )
+            .describe(
+                'The factors armed on this account, plus any enrollment still pending confirmation.'
+            ),
+        available: zod
+            .array(
+                zod.strictObject({
+                    method: zod
+                        .string()
+                        .describe(
+                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
+                        ),
+                    delivers: zod
+                        .boolean()
+                        .describe(
+                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
+                        ),
+                    target: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
+                        ),
+                    enrolledAt: zod.iso
+                        .datetime({ offset: true })
+                        .optional()
+                        .describe(
+                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
+                        ),
+                    resendAfter: zod
+                        .number()
+                        .optional()
+                        .describe(
+                            'Seconds between two deliveries of this method. Absent for device methods.'
+                        ),
+                    enrollable: zod
+                        .boolean()
+                        .optional()
+                        .describe(
+                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
+                        ),
+                    reason: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
+                        )
+                })
+            )
+            .describe(
+                'What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`.'
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe(
+                'How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.'
+            )
+    })
+});
+
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
+ * @summary Disable two-factor authentication
+ */
+export const DisableTwoFactorBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
+});
+
+export const DisableTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
 });
 
 /**
- * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
- * @summary Remove expired tokens
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * @summary Start enrolling one second factor
  */
-export const DeleteExpiredTokensResponse = zod.strictObject({
+export const SetupTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const SetupTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string().describe('The method being enrolled, echoed back.'),
+        delivers: zod
+            .boolean()
+            .describe(
+                'Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`\/`otpauthUri`.'
+            ),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                "A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`."
+            ),
+        otpauthUri: zod
+            .string()
+            .optional()
+            .describe(
+                'An otpauth:\/\/ URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`.'
+            ),
+        sentTo: zod
+            .string()
+            .optional()
+            .describe(
+                'Masked destination the enrollment code just went to. Absent unless `delivers`.'
+            ),
+        resendAfter: zod
+            .number()
+            .optional()
+            .describe('Seconds before another code may be requested. Absent unless `delivers`.'),
+        expiresAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe('When the delivered code stops being accepted. Absent unless `delivers`.')
+    })
+});
+
+/**
+ * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
+ * @summary Arm one second factor
+ */
+export const ConfirmTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const ConfirmTwoFactorMethodBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.'
+        )
+});
+
+export const ConfirmTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string().describe('The method just armed, echoed back.'),
+        backupCodes: zod
+            .array(zod.string())
+            .optional()
+            .describe(
+                'One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.'
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe('How many unused backup codes the account now holds.')
+    })
+});
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
+ * @summary Remove one second factor
+ */
+export const RemoveTwoFactorMethodParams = zod.strictObject({
+    method: zod
+        .string()
+        .describe(
+            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
+        )
+});
+
+export const RemoveTwoFactorMethodBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
+});
+
+export const RemoveTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
+ * @summary Regenerate backup codes
+ */
+export const RegenerateBackupCodesBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
+});
+
+export const RegenerateBackupCodesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        backupCodes: zod
+            .array(zod.string())
+            .describe(
+                "The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies."
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe(
+                'How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.'
+            )
+    })
 });
 
 /**
@@ -2116,7 +2183,6 @@ export const ExportAccountDataResponse = zod.strictObject({
             admin: zod.boolean().optional(),
             active: zod.boolean().optional(),
             verified: zod.boolean().optional(),
-            pendingEmail: zod.email().optional(),
             imageUrl: zod
                 .string()
                 .optional()
@@ -2390,348 +2456,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                 })
             )
             .optional()
-            .describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.')
-    })
-});
-
-/**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
- * @summary Complete a two-factor login
- */
-export const LoginTwoFactorBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
-    code: zod
-        .string()
-        .describe(
-            "A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's."
-        )
-});
-
-export const LoginTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
-});
-
-/**
- * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
- * @summary Send a login code
- */
-export const SendTwoFactorCodeBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
-    method: zod
-        .string()
-        .describe(
-            "Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true."
-        )
-});
-
-export const SendTwoFactorCodeResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method the code went through, echoed back.'),
-        sentTo: zod
-            .string()
-            .describe(
-                'Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.'
-            ),
-        resendAfter: zod
-            .number()
-            .describe(
-                'Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.'
-            ),
-        expiresAt: zod.iso
-            .datetime({ offset: true })
-            .describe('When this code stops being accepted.')
-    })
-});
-
-/**
- * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
- * @summary Two-factor status
- */
-export const GetTwoFactorStatusResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        enabled: zod
-            .boolean()
-            .describe(
-                'Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry.'
-            ),
-        methods: zod
-            .array(
-                zod.strictObject({
-                    method: zod
-                        .string()
-                        .describe(
-                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
-                        ),
-                    delivers: zod
-                        .boolean()
-                        .describe(
-                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
-                        ),
-                    target: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
-                        ),
-                    enrolledAt: zod.iso
-                        .datetime({ offset: true })
-                        .optional()
-                        .describe(
-                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
-                        ),
-                    resendAfter: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Seconds between two deliveries of this method. Absent for device methods.'
-                        ),
-                    enrollable: zod
-                        .boolean()
-                        .optional()
-                        .describe(
-                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
-                        ),
-                    reason: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
-                        )
-                })
-            )
-            .describe(
-                'The factors armed on this account, plus any enrollment still pending confirmation.'
-            ),
-        available: zod
-            .array(
-                zod.strictObject({
-                    method: zod
-                        .string()
-                        .describe(
-                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
-                        ),
-                    delivers: zod
-                        .boolean()
-                        .describe(
-                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
-                        ),
-                    target: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
-                        ),
-                    enrolledAt: zod.iso
-                        .datetime({ offset: true })
-                        .optional()
-                        .describe(
-                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
-                        ),
-                    resendAfter: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Seconds between two deliveries of this method. Absent for device methods.'
-                        ),
-                    enrollable: zod
-                        .boolean()
-                        .optional()
-                        .describe(
-                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
-                        ),
-                    reason: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
-                        )
-                })
-            )
-            .describe(
-                'What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`.'
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe(
-                'How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.'
-            )
-    })
-});
-
-/**
- * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
- * @summary Disable two-factor authentication
- */
-export const DisableTwoFactorBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
-
-export const DisableTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-
-/**
- * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
- * @summary Remove one second factor
- */
-export const RemoveTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
-
-export const RemoveTwoFactorMethodBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
-
-export const RemoveTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-
-/**
- * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
- * @summary Start enrolling one second factor
- */
-export const SetupTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
-
-export const SetupTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method being enrolled, echoed back.'),
-        delivers: zod
-            .boolean()
-            .describe(
-                'Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`\/`otpauthUri`.'
-            ),
-        secret: zod
-            .string()
-            .optional()
-            .describe(
-                "A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`."
-            ),
-        otpauthUri: zod
-            .string()
-            .optional()
-            .describe(
-                'An otpauth:\/\/ URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`.'
-            ),
-        sentTo: zod
-            .string()
-            .optional()
-            .describe(
-                'Masked destination the enrollment code just went to. Absent unless `delivers`.'
-            ),
-        resendAfter: zod
-            .number()
-            .optional()
-            .describe('Seconds before another code may be requested. Absent unless `delivers`.'),
-        expiresAt: zod.iso
-            .datetime({ offset: true })
-            .optional()
-            .describe('When the delivered code stops being accepted. Absent unless `delivers`.')
-    })
-});
-
-/**
- * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
- * @summary Arm one second factor
- */
-export const ConfirmTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
-
-export const ConfirmTwoFactorMethodBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.'
-        )
-});
-
-export const ConfirmTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method just armed, echoed back.'),
-        backupCodes: zod
-            .array(zod.string())
-            .optional()
-            .describe(
-                'One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.'
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe('How many unused backup codes the account now holds.')
-    })
-});
-
-/**
- * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
- * @summary Regenerate backup codes
- */
-export const RegenerateBackupCodesBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
-
-export const RegenerateBackupCodesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        backupCodes: zod
-            .array(zod.string())
-            .describe(
-                "The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies."
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe(
-                'How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.'
-            )
+            .describe('Present only when `EXPORT_INCLUDE_FEEDBACK=true`.')
     })
 });
 
@@ -2780,6 +2505,173 @@ export const CompleteOAuthLoginQueryParams = zod.strictObject({
 });
 
 export const CompleteOAuthLoginResponse = zod.void();
+
+/**
+ * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+ * @summary Signup
+ */
+export const signupBodyUsernameMin = 3;
+
+export const signupBodyPasswordMin = 8;
+
+export const signupBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
+export const signupBodyPasswordConfirmMin = 8;
+
+export const SignupBody = zod.strictObject({
+    email: zod.email(),
+    username: zod.string().min(signupBodyUsernameMin),
+    password: zod
+        .string()
+        .min(signupBodyPasswordMin)
+        .regex(signupBodyPasswordRegExp)
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    passwordConfirm: zod
+        .string()
+        .min(signupBodyPasswordConfirmMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        ),
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
+    termsAccepted: zod.literal(true),
+    analyticsConsent: zod.boolean().optional()
+});
+
+export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const SignupResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        email: zod.email(),
+        username: zod.string(),
+        admin: zod.boolean().optional(),
+        active: zod.boolean().optional(),
+        verified: zod.boolean().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        locale: zod
+            .string()
+            .regex(signupResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+            ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ * @summary Request password reset
+ */
+export const RequestPasswordResetBody = zod.strictObject({
+    email: zod.email()
+});
+
+export const RequestPasswordResetResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ * @summary Confirm password reset
+ */
+export const confirmPasswordResetBodyPasswordMin = 8;
+
+export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
+export const confirmPasswordResetBodyPasswordConfirmMin = 8;
+
+export const ConfirmPasswordResetBody = zod.strictObject({
+    token: zod
+        .string()
+        .describe('Single-use, short-lived password reset token, delivered by email.'),
+    password: zod
+        .string()
+        .min(confirmPasswordResetBodyPasswordMin)
+        .regex(confirmPasswordResetBodyPasswordRegExp)
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    passwordConfirm: zod
+        .string()
+        .min(confirmPasswordResetBodyPasswordConfirmMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        )
+});
+
+export const ConfirmPasswordResetResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
+ * @summary Refresh access token
+ */
+export const RefreshTokenResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        token: zod.string().describe('New access token'),
+        refreshToken: zod.string().optional().describe('New refresh token if returned by backend'),
+        expiresIn: zod.number().optional().describe('New access token expiry in seconds')
+    })
+});
+
+/**
+ * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+ * @summary Logout from all devices
+ */
+export const LogoutAllResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+ * @summary Remove expired tokens
+ */
+export const DeleteExpiredTokensResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
 
 /**
  * Returns a paginated list of user accounts.
@@ -2836,7 +2728,6 @@ export const ListUsersResponse = zod.strictObject({
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
                 verified: zod.boolean().optional(),
-                pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -2873,7 +2764,7 @@ export const ListUsersResponse = zod.strictObject({
                 .max(listUsersResponseDataMetaPageMax)
                 .default(listUsersResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -2942,7 +2833,6 @@ export const CreateUserResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3028,7 +2918,6 @@ export const UpdateUserResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3106,7 +2995,6 @@ export const GetUserByIdResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3195,7 +3083,6 @@ export const UpdateUserByIdResponse = zod.strictObject({
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
         verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
             .optional()
@@ -3300,7 +3187,7 @@ export const SearchUsersBody = zod.strictObject({
         .max(searchUsersBodyPageMax)
         .default(searchUsersBodyPageDefault)
         .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
         ),
     pageSize: zod
         .number()
@@ -3343,7 +3230,6 @@ export const SearchUsersResponse = zod.strictObject({
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
                 verified: zod.boolean().optional(),
-                pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -3380,7 +3266,7 @@ export const SearchUsersResponse = zod.strictObject({
                 .max(searchUsersResponseDataMetaPageMax)
                 .default(searchUsersResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -3398,22 +3284,23 @@ export const SearchUsersResponse = zod.strictObject({
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
-export const CreateFeedbackRequestHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
-        .string()
-        .optional()
-        .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
-        )
-});
+export const createFeedbackRequestBodyNameMax = 255;
+
+export const createFeedbackRequestBodySubjectMax = 255;
+
+export const createFeedbackRequestBodyMessageMin = 10;
+export const createFeedbackRequestBodyMessageMax = 65535;
 
 export const createFeedbackRequestBodyWebsiteMax = 200;
 
 export const CreateFeedbackRequestBody = zod.strictObject({
-    name: zod.string().optional(),
+    name: zod.string().max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email(),
-    subject: zod.string(),
-    message: zod.string(),
+    subject: zod.string().max(createFeedbackRequestBodySubjectMax),
+    message: zod
+        .string()
+        .min(createFeedbackRequestBodyMessageMin)
+        .max(createFeedbackRequestBodyMessageMax),
     website: zod
         .string()
         .max(createFeedbackRequestBodyWebsiteMax)
@@ -3504,7 +3391,7 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
                 .max(listFeedbackRequestsResponseDataMetaPageMax)
                 .default(listFeedbackRequestsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -3535,7 +3422,7 @@ export const SearchFeedbackRequestsBody = zod.strictObject({
         .max(searchFeedbackRequestsBodyPageMax)
         .default(searchFeedbackRequestsBodyPageDefault)
         .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
         ),
     pageSize: zod
         .number()
@@ -3584,7 +3471,7 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
                 .max(searchFeedbackRequestsResponseDataMetaPageMax)
                 .default(searchFeedbackRequestsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -3756,7 +3643,7 @@ export const ListProductsResponse = zod.strictObject({
                 .max(listProductsResponseDataMetaPageMax)
                 .default(listProductsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -4197,7 +4084,7 @@ export const SearchProductsBody = zod.strictObject({
         .max(searchProductsBodyPageMax)
         .default(searchProductsBodyPageDefault)
         .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
         ),
     pageSize: zod
         .number()
@@ -4292,7 +4179,7 @@ export const SearchProductsResponse = zod.strictObject({
                 .max(searchProductsResponseDataMetaPageMax)
                 .default(searchProductsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -4829,7 +4716,7 @@ export const ReorderResponse = zod.strictObject({
 });
 
 /**
- * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
+ * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404. Order is the order they were saved in, oldest first, with the id breaking ties between two saved in the same instant.
  * @summary Get wishlist
  */
 export const GetWishlistResponse = zod.strictObject({
@@ -5127,7 +5014,7 @@ export const ListOrdersResponse = zod.strictObject({
                 .max(listOrdersResponseDataMetaPageMax)
                 .default(listOrdersResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -5549,7 +5436,7 @@ export const SearchOrdersBody = zod.strictObject({
         .max(searchOrdersBodyPageMax)
         .default(searchOrdersBodyPageDefault)
         .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
         ),
     pageSize: zod
         .number()
@@ -5756,7 +5643,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 .max(searchOrdersResponseDataMetaPageMax)
                 .default(searchOrdersResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -6758,7 +6645,7 @@ export const ListInventoryLevelsResponse = zod.strictObject({
                 .max(listInventoryLevelsResponseDataMetaPageMax)
                 .default(listInventoryLevelsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
@@ -6846,7 +6733,7 @@ export const ListStockMovementsResponse = zod.strictObject({
                 .max(listStockMovementsResponseDataMetaPageMax)
                 .default(listStockMovementsResponseDataMetaPageDefault)
                 .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.'
                 ),
             pageSize: zod
                 .number()
