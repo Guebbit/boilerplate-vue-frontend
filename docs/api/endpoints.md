@@ -5,6 +5,36 @@ The **Auth** column shows the minimum access level the backend requires.
 
 > The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.
 
+## The envelope every row below travels in
+
+Every endpoint on this page answers in the same wrapper, and every rejection reaches a call site in
+the same one. That normalisation is the http tier's job, not each store's:
+
+```mermaid
+flowchart TD
+    C["A store calls the generated client"] --> I["axios instance<br/>infrastructure/http"]
+    I --> API[["The API"]]
+
+    API -->|"2xx"| OK["{ success, status, message, data }"]
+    OK --> V{"VITE_VALIDATE_RESPONSES?"}
+    V -->|"on"| Z["Zod-parsed against this route's row<br/>in the module's response-schemas.ts"]
+    V -->|"off"| U
+    Z --> U["orvalMutator unwraps to the payload"]
+    U --> S["The store's .then receives the payload"]
+
+    API -->|"4xx / 5xx"| E["{ success: false, status, message, errors[] }"]
+    API -.->|"no answer at all"| X["transport failure"]
+    E --> N["onResponseReject normalises,<br/>adding x-request-id / x-trace-id"]
+    X --> N
+    N --> R["The store's .catch receives that envelope —<br/>never an Error, which is the point"]
+```
+
+Two consequences worth carrying into every row below. A rejection is always the envelope, so
+`absentIs` and `rethrowUnlessAbsent` can read `status` off it to tell "nothing there" (a 404 on a
+payment read) from a real failure. And `errors[]` is where a machine-readable `code` lives —
+`REAUTH_REQUIRED`, `PAYMENT_DECLINED` — which is what the step-up interceptor and the checkout
+error classifier match on, rather than on a status alone.
+
 ## System (public)
 
 | Method | Endpoint | Auth | Description |
