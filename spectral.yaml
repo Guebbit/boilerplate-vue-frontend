@@ -82,10 +82,13 @@ rules:
                 match: '^[A-Z][a-zA-Z0-9]*Response$'
 
     # --- Parameter naming ---
+    # Header parameters are excluded: their `name` is the literal wire header
+    # (e.g. `x-antibot-challenge-token`), conventionally kebab-case, not an
+    # identifier this rule's camelCase check was ever meant to police.
     parameter-name-camel-case:
-        description: 'Parameter names must be camelCase.'
+        description: 'Parameter names must be camelCase (query/path only — header names are the wire header itself).'
         severity: error
-        given: '$.components.parameters[*].name'
+        given: '$.components.parameters[?(@.in != "header")].name'
         then:
             function: pattern
             functionOptions:
