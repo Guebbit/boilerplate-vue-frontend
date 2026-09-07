@@ -51,6 +51,16 @@ generated types, which only describe what the API actually returns.
 The audit table is a read of somebody else's collection, and this client never writes to it. Every
 row it shows was written server-side by a module that had no idea a dashboard existed.
 
+**Two of the five registered endpoints are never called.** `GET /observability/events` is a real,
+unbuilt feature — an SSE stream distinct from the audit log's paginated history, tracked in
+[the roadmap](../theory/roadmap.md). `GET /observability/metrics` is different in kind: its own
+contract description says to use `.../metrics/overview` for a JSON summary, and it answers in
+Prometheus text format — it is Prometheus's own scrape target
+(`.docker/observability/prometheus.config.yaml` in `boilerplate-node-backend`), not an endpoint any
+browser client should ever call. Both stay registered in `response-schemas.ts` regardless: the row
+costs nothing sitting unused, and dropping it would just be re-adding it the day the events feed
+gets built.
+
 ## State
 
 This module owns no store. Whatever state its screens read belongs to a module it depends on, or to the app-wide stores in `src/infrastructure/`.

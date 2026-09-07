@@ -75,3 +75,8 @@ Genuinely undecided, listed so the idea is not lost.
 - A Bootstrap variant from the skeleton.
 - Lighthouse metrics as a test layer. It would sit next to the accessibility and visual suites,
   and the open question is whether a score threshold is stable enough in CI to gate on.
+- A live admin events view, backed by `GET /observability/events` (an SSE stream, contract-only
+  today). Distinct from `getObservabilityAuditLogs` — that one is paginated history, this one is a
+  feed of what is happening right now. Genuinely unbuilt, not a duplicate of anything the admin
+  panel already calls: worth a view once there's an admin surface wanting a live tail rather than a
+  refresh button.
