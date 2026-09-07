@@ -121,6 +121,10 @@ describe('keyboard', () => {
         cy.loginAs('user');
         cy.visit('/en');
         cy.get('h1').should('exist');
+        // What is asserted is that the tooltip OPENS, not how it animates in. With the transition
+        // live, this races it — and loses whenever the four e2e shards leave the browser short of
+        // CPU. After the visit, since a page load discards the injected style.
+        cy.freezeAnimations();
 
         // By a real keystroke, not `.focus()`: the tooltip opens on `:focus-visible`, which a
         // script focus does not set. Tab away and Shift+Tab back lands on the same control
@@ -147,6 +151,10 @@ describe('keyboard', () => {
         cy.loginAs('admin');
         cy.visit('/en');
         cy.get('h1').should('exist');
+        // `aria-expanded` flips when the menu opens, and the menu opens through a transition —
+        // so this asserts on the end state and must not race the animation. See the tooltip
+        // case above.
+        cy.freezeAnimations();
 
         cy.get('[data-test=admin-menu]').focus();
         cy.focused().should('have.attr', 'aria-haspopup', 'menu');
@@ -154,6 +162,12 @@ describe('keyboard', () => {
         cy.get('[data-test=admin-menu]').should('have.attr', 'aria-expanded', 'true');
         cy.get('[role=menu] [role=menuitem]').should('exist');
 
+        // Escape is dispatched at the document, so it only reaches the menu once Vuetify has
+        // moved focus into the overlay — which it does asynchronously after opening. Waiting on
+        // that here is the difference between a state assertion and a race the shards lose.
+        cy.focused().should(($element) => {
+            expect($element.closest('[role=menu]').length, 'focus moved into the menu').to.equal(1);
+        });
         cy.realPress('Escape');
         cy.get('[data-test=admin-menu]').should('have.attr', 'aria-expanded', 'false');
         // Focus is still on the control that opened it, so Tab continues from where it was.

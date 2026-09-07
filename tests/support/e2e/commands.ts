@@ -57,6 +57,15 @@ declare global {
             settleNetwork(): Chainable<void>;
 
             /**
+             * Removes every transition and animation from the page.
+             *
+             * For a spec that asserts on a state an animation reveals — an overlay opening, a
+             * tooltip appearing — rather than on the animation itself. Those assertions race the
+             * transition, and lose it whenever the machine is loaded enough to render late.
+             */
+            freezeAnimations(): Chainable<void>;
+
+            /**
              * Freezes everything that would make a screenshot differ between runs: the clock,
              * animations, the caret, and the dev-server overlay. Call before `compareSnapshot`.
              *
@@ -629,19 +638,35 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
  *
  * The first is config; this command does the other three.
  */
+Cypress.Commands.add('freezeAnimations', () => {
+    cy.document().then((document_) => {
+        const style = document_.createElement('style');
+        style.dataset.testid = 'animation-freeze';
+        style.textContent = `
+            *, *::before, *::after {
+                transition: none !important;
+                animation: none !important;
+            }
+        `;
+        document_.head.append(style);
+    });
+});
+
 Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') => {
     // A frozen clock, so any rendered date is the same on every run and on every machine.
     cy.clock(new Date(isoTime).getTime(), ['Date']);
 
     // Kill animation and transition timing. Without this a screenshot can land mid-transition,
     // and the same page differs from itself between runs.
+    cy.freezeAnimations();
+
     cy.document().then((document_) => {
         const style = document_.createElement('style');
         style.dataset.testid = 'visual-freeze';
         style.textContent = `
+            /* The caret blinks on its own clock, so it is a screenshot concern rather than a
+               timing one — freezeAnimations above does not touch it. */
             *, *::before, *::after {
-                transition: none !important;
-                animation: none !important;
                 caret-color: transparent !important;
             }
             /*
