@@ -1,14 +1,23 @@
 {
     "payments-panel": {
         "title": "Payment",
-        "label-card": "Card number",
-        "hint-decline": "Demo cards: any number pays, 4000 0000 0000 0002 is declined.",
+        "label-method": "Payment method",
+        "hint-method": "A live provider mounts its own widget here — this demo picks one of its test references instead.",
+        "method-pm_card_visa": "Card that pays",
+        "method-pm_card_declined": "Card the issuer declines",
+        "method-pm_card_authentication_required": "Card the bank challenges (3-D Secure)",
+        "method-pm_card_processing": "Method that settles later",
         "button-pay": "Pay now",
+        "button-finish": "I have finished at my bank",
         "success": "Payment received — the order is paid.",
         "status-requires_confirmation": "Awaiting confirmation",
+        "status-requires_action": "Awaiting your bank",
+        "status-processing": "Processing",
         "status-succeeded": "Paid",
         "status-declined": "Declined",
         "status-refunded": "Refunded",
+        "explain-requires_action": "Your bank wants to confirm this payment. Finish it in the window your bank opened, then tell us here.",
+        "explain-processing": "The provider is still settling this payment. It can take a while; we will email you when it lands.",
         "label-card-ending": "card ending {last4}",
         "none": "No payment yet."
     }

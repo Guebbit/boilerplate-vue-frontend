@@ -7,16 +7,24 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { createPaymentIntent, confirmPayment, getPaymentByOrder, refundPaymentByOrder } from '@api';
+import {
+    createPaymentIntent,
+    confirmPayment,
+    syncPayment,
+    getPaymentByOrder,
+    refundPaymentByOrder
+} from '@api';
 import type { Payment } from '@types';
 import { absentIs } from '@/infrastructure/utils/errors';
 
 /**
  * The payment behind an order — one record, mirrored from whatever the API last said.
  *
- * The two-step PSP shape is kept visible on purpose: `payForOrder` creates (or refreshes) the
- * intent and then confirms it with the card, exactly the sequence a real provider integration
- * makes, so swapping the fake for a live one changes the transport and none of this store.
+ * The PSP sequence is kept visible on purpose, because it is the sequence every real provider
+ * imposes: create the intent, hand the provider's own widget a method reference, confirm — and
+ * then, if the bank wants a challenge, finish it in the browser and ask the API to re-read the
+ * provider. `payForOrder` never sees a card number; a provider widget tokenises the card in an
+ * iframe it owns, and this store only ever handles the opaque handle that comes back.
  */
 export const usePaymentsStore = defineStore('payments', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -55,22 +63,47 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Pays an order: intent first, then the confirm with the card. The record the API answers
-     * (succeeded — a decline rejects) replaces the local one; the caller reloads the ORDER,
-     * whose status just moved.
+     * Pays an order: intent first, then the confirm with the provider's method reference.
+     *
+     * The answer is NOT always final — `requires_action` means the bank wants a challenge and
+     * `processing` that the provider is still settling, and both come back as successes. Only a
+     * decline rejects. The record the API answers replaces the local one, and the caller reloads
+     * the ORDER only once the payment actually says `succeeded`.
      *
      * @param orderId - The order to pay.
-     * @param cardNumber - What the customer typed.
-     * @returns A promise resolving with the confirmed payment.
+     * @param paymentMethodRef - The provider's opaque handle for the method, from its own widget.
+     *   Never a card number: with a live provider the card is tokenised inside the provider's
+     *   iframe and this application never sees it.
+     * @returns A promise resolving with the payment as it now stands.
      */
-    const payForOrder = (orderId: string, cardNumber: string) =>
+    const payForOrder = (orderId: string, paymentMethodRef: string) =>
         fetchAny(() =>
             createPaymentIntent({ orderId })
-                .then((intentResponse) => confirmPayment(intentResponse.data.id, { cardNumber }))
+                .then((intentResponse) =>
+                    confirmPayment(intentResponse.data.id, { paymentMethodRef })
+                )
                 .then((response) => {
                     payment.value = response.data;
                     return payment.value;
                 })
+        );
+
+    /**
+     * Tells the API the browser has finished at the provider, so it re-reads the provider's own
+     * record and settles. The step after a `requires_action` challenge, and the way out of
+     * `processing` without waiting for the provider's webhook to arrive.
+     *
+     * Idempotent at the API, so a caller may retry it freely.
+     *
+     * @param paymentId - The payment to re-read.
+     * @returns A promise resolving with the payment as the provider now reports it.
+     */
+    const finishAtProvider = (paymentId: string) =>
+        fetchAny(() =>
+            syncPayment(paymentId).then((response) => {
+                payment.value = response.data;
+                return payment.value;
+            })
         );
 
     /**
@@ -96,6 +129,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         payment,
         fetchPaymentForOrder,
         payForOrder,
+        finishAtProvider,
         refundForOrder
     };
 });

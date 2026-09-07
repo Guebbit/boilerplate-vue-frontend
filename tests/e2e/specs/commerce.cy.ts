@@ -57,22 +57,23 @@ describe('Commerce', () => {
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=order-shipping]').should('contain.text', 'express');
 
-        // ── Pay: the magic decline first, then a card that works ────────────────────
+        // ── Pay: the decline first, then the bank challenge, then a method that works ─
         cy.get('[data-test=payment-panel]').should('exist');
-        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
-        cy.get('[data-test=payment-card-input] input')
-            .should('not.be.disabled')
-            .type('4000 0000 0000 0002');
-        cy.get('[data-test=payment-submit]').click();
+        cy.payWith('Card the issuer declines');
         // Refused and retryable: the form is still there, the order still pending.
         cy.get('[data-test=payment-submit]').should('exist');
         cy.get('[data-test=order-cancel]').should('exist');
 
-        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
-        cy.get('[data-test=payment-card-input] input')
-            .should('not.be.disabled')
-            .type('4242 4242 4242 4242');
-        cy.get('[data-test=payment-submit]').click();
+        /*
+         * The 3-D Secure path, which is the one a real European card takes. The confirm answers
+         * `requires_action` — a success, not a refusal — the form gives way to the challenge
+         * step, and only the sync that follows moves the order to `paid`. A spec that skipped
+         * this would leave the whole asynchronous half of the flow untested.
+         */
+        cy.payWith('Card the bank challenges (3-D Secure)');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Awaiting your bank');
+        cy.get('[data-test=payment-submit]').should('not.exist');
+        cy.get('[data-test=payment-finish]').click();
         cy.contains('Payment received').should('exist');
         cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
 
@@ -105,11 +106,7 @@ describe('Commerce', () => {
         // At least one, not exactly one — see the same note in the test above.
         cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
-        cy.get('[data-test=payment-card-input] input')
-            .should('not.be.disabled')
-            .type('4242 4242 4242 4242');
-        cy.get('[data-test=payment-submit]').click();
+        cy.payWith('Card that pays');
         cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
 
         // The paid order's own edit page, reached by its id so the admin ships exactly it.

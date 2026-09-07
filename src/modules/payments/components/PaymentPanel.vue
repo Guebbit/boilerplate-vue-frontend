@@ -7,8 +7,8 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Order-page panel component: renders a pay form or the payment's status, delegating the
- * intent/confirm sequence to the payments store.
+ * Order-page panel component: renders the payment form or the payment's fate, delegating the
+ * intent/confirm/sync sequence to the payments store.
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -19,12 +19,14 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { usePaymentsStore } from '../store.ts';
 
 /**
- * The order page's payment corner: a card form while the order is payable, the payment's fate
- * afterwards. The two-step intent/confirm shape lives in the store; this component only knows
- * that submitting a card either pays the order or explains itself.
+ * The order page's payment corner: a method picker while the order is payable, the payment's fate
+ * afterwards, and — between the two — the state a real bank challenge puts a customer in.
  *
- * The card field is prefilled with the conventional success number — this is a demo, and the
- * decline is deliberately one documented number away (the hint below the field says which).
+ * **There is no card field, and that is the point.** A live provider tokenises the card inside an
+ * iframe it owns and hands the browser an opaque reference; a card number reaching this
+ * application, let alone its API, is the difference between the light PCI bracket and the heavy
+ * one. The picker below stands exactly where that widget mounts, and produces the same kind of
+ * value it would.
  */
 const { orderId, orderPayable } = defineProps<{
     /**
@@ -39,7 +41,7 @@ const { orderId, orderPayable } = defineProps<{
 
 const emit = defineEmits<
     /**
-     * The charge landed and the order's status moved — the parent should re-read it.
+     * The money landed and the order's status moved — the parent should re-read it.
      */
     (event: 'paid') => void
 >();
@@ -50,15 +52,28 @@ const paymentsStore = usePaymentsStore();
 const { payment, loading } = storeToRefs(paymentsStore);
 
 /**
- * The card number field, prefilled with the demo's conventional success number.
+ * The method references the demo's fake provider recognises — this panel's stand-in for a real
+ * provider's widget, which would hand back one opaque reference of its own instead of a choice.
+ * Labelled by what each one demonstrates, so the interesting paths are reachable by clicking
+ * rather than by knowing a magic number.
  */
-const cardNumber = ref('4242 4242 4242 4242');
+const methods = [
+    'pm_card_visa',
+    'pm_card_declined',
+    'pm_card_authentication_required',
+    'pm_card_processing'
+] as const;
+
+/**
+ * The chosen method reference, defaulting to the one that simply pays.
+ */
+const paymentMethodRef = ref<string>(methods[0]);
 
 /**
  * The form shows only while paying is possible, and both halves of that are the server's answer.
  *
  * Once a payment record exists its own `actions.pay` decides, because the API already folded the
- * order's status into it — which is what flips the panel the instant a charge lands, before the
+ * order's status into it — which is what flips the panel the instant money lands, before the
  * parent's re-read of the order comes back. Before any intent exists there is no payment to ask,
  * so the order's `actions.pay` stands in.
  */
@@ -67,17 +82,47 @@ const payable = computed(() =>
 );
 
 /**
- * Pays the order with the entered card, notifies the result, and tells the parent to re-read
- * the order on success.
+ * Whether the payment is somewhere between submitted and settled — the bank is asking for a
+ * challenge, or the provider has not finished. Neither is a failure, and neither is done: the
+ * panel offers the next step rather than the form again.
+ */
+const inFlight = computed(
+    () => payment.value?.status === 'requires_action' || payment.value?.status === 'processing'
+);
+
+/**
+ * Announces a settled payment and tells the parent to re-read the order — the one thing both the
+ * confirm and the sync do when the money finally lands.
+ */
+const announceIfSettled = () => {
+    if (payment.value?.status !== 'succeeded') return;
+    addMessage(t('payments-panel.success'));
+    emit('paid');
+};
+
+/**
+ * Pays the order with the chosen method, notifies the result, and tells the parent to re-read the
+ * order once it actually settles. A decline rejects; an in-flight answer does not, and leaves the
+ * panel showing the next step.
  */
 const submitPayment = () =>
     paymentsStore
-        .payForOrder(orderId, cardNumber.value)
-        .then(() => {
-            addMessage(t('payments-panel.success'));
-            emit('paid');
-        })
+        .payForOrder(orderId, paymentMethodRef.value)
+        .then(announceIfSettled)
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+
+/**
+ * Reports back that the browser has finished at the provider — a challenge answered, or simply a
+ * re-check of something still processing. With a live provider the challenge itself runs in the
+ * provider's own frame first; here there is nothing to answer, so the button IS the challenge.
+ */
+const finishAtProvider = () => {
+    if (!payment.value) return Promise.resolve();
+    return paymentsStore
+        .finishAtProvider(payment.value.id)
+        .then(announceIfSettled)
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+};
 
 onMounted(() => {
     void paymentsStore.fetchPaymentForOrder(orderId);
@@ -89,18 +134,19 @@ onMounted(() => {
         <h3 class="mb-2 text-base font-semibold">{{ t('payments-panel.title') }}</h3>
 
         <!--
-            The decline hint is the field's own `hint`, so it is wired as the field's description
+            The picker's hint is the field's own `hint`, so it is wired as the field's description
             rather than sitting beside it as a paragraph a reader never connects to the input.
         -->
         <form v-if="payable" novalidate @submit.prevent="submitPayment">
-            <v-text-field
-                v-model="cardNumber"
-                :label="t('payments-panel.label-card')"
-                :hint="t('payments-panel.hint-decline')"
+            <v-select
+                v-model="paymentMethodRef"
+                :items="
+                    methods.map((value) => ({ value, title: t(`payments-panel.method-${value}`) }))
+                "
+                :label="t('payments-panel.label-method')"
+                :hint="t('payments-panel.hint-method')"
                 persistent-hint
-                autocomplete="cc-number"
-                inputmode="numeric"
-                data-test="payment-card-input"
+                data-test="payment-method-select"
                 :disabled="loading"
                 class="mb-3"
             />
@@ -108,6 +154,28 @@ onMounted(() => {
                 {{ t('payments-panel.button-pay') }}
             </v-btn>
         </form>
+
+        <template v-else-if="inFlight && payment">
+            <div class="mb-3 flex items-center gap-3" data-test="payment-status">
+                <v-chip color="info" size="small">
+                    {{ t(`payments-panel.status-${payment.status}`) }}
+                </v-chip>
+                <span class="text-sm">
+                    {{ formatCurrency(payment.amount, payment.currency) }}
+                </span>
+            </div>
+            <p class="mb-3 text-sm opacity-75">
+                {{ t(`payments-panel.explain-${payment.status}`) }}
+            </p>
+            <v-btn
+                color="primary"
+                data-test="payment-finish"
+                :disabled="loading"
+                @click="finishAtProvider"
+            >
+                {{ t('payments-panel.button-finish') }}
+            </v-btn>
+        </template>
 
         <template v-else-if="payment">
             <div class="flex items-center gap-3" data-test="payment-status">

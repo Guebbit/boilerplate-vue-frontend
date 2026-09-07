@@ -1,8 +1,9 @@
 /**
  * The payments store — transport-mocked like the wishlist's spec: `orvalMutator` is a router
- * keyed on `METHOD /url`, the generated client and this store are real. What is worth pinning
- * is the PSP sequence (intent, then confirm with the card) and that absence is an answer — a
- * 404 on the read leaves `undefined`, never a crash — while any OTHER failure still rejects.
+ * keyed on `METHOD /url`, the generated client and this store are real. What is worth pinning is
+ * the PSP sequence (intent, then confirm with the provider's method reference, then the sync that
+ * resolves a challenge) and that absence is an answer — a 404 on the read leaves `undefined`,
+ * never a crash — while any OTHER failure still rejects.
  *
  * The stub rejects with the envelope `onResponseReject` builds. The store tells "no payment yet"
  * from a real failure by reading `status` off it, so nothing else would tell the two apart.
@@ -71,6 +72,7 @@ beforeEach(() => {
     responses = {
         'POST /payments/intent': orvalEnvelope(PAYMENT),
         'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
+        'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'GET /payments/order/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
     };
 });
@@ -107,11 +109,25 @@ describe('fetchPaymentForOrder', () => {
 });
 
 describe('payForOrder', () => {
-    it('walks the PSP sequence: intent first, then the confirm with the card', () => {
+    it('walks the PSP sequence: intent first, then the confirm with the method reference', () => {
         const store = usePaymentsStore();
-        return store.payForOrder('order-1', '4242 4242 4242 4242').then(() => {
+        return store.payForOrder('order-1', 'pm_card_visa').then(() => {
             expect(requestedUrls()).toEqual(['/payments/intent', '/payments/payment-1/confirm']);
             expect(store.payment?.status).toBe('succeeded');
+        });
+    });
+
+    it('sends the method reference and nothing resembling a card', () => {
+        // The whole reason the field changed shape: with a live provider the card is tokenised in
+        // the provider's own iframe, and a request body carrying digits would mean it was not.
+        const store = usePaymentsStore();
+        return store.payForOrder('order-1', 'pm_card_visa').then(() => {
+            const confirm = vi
+                .mocked(orvalMutator)
+                .mock.calls.map((call) => call[0] as { url: string; data?: unknown })
+                .find(({ url }) => url.endsWith('/confirm'));
+
+            expect(confirm?.data).toEqual({ paymentMethodRef: 'pm_card_visa' });
         });
     });
 
@@ -124,7 +140,46 @@ describe('payForOrder', () => {
             message: 'The card was declined'
         };
         const store = usePaymentsStore();
-        return expect(store.payForOrder('order-1', '4000000000000002')).rejects.toMatchObject({
+        return expect(store.payForOrder('order-1', 'pm_card_declined')).rejects.toMatchObject({
+            status: 409,
+            errors: [{ code: 'PAYMENT_DECLINED' }]
+        });
+    });
+
+    /**
+     * A bank challenge is NOT a failure: the confirm resolves, the record says `requires_action`,
+     * and the caller's next move is the sync rather than the error toast. A store that rejected
+     * here would strand every 3-D Secure payment.
+     */
+    it('resolves on a challenge, leaving the payment in flight', () => {
+        responses['POST /payments/payment-1/confirm'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'requires_action'
+        });
+        const store = usePaymentsStore();
+        return store.payForOrder('order-1', 'pm_card_authentication_required').then(() => {
+            expect(store.payment?.status).toBe('requires_action');
+        });
+    });
+});
+
+describe('finishAtProvider', () => {
+    it('re-reads the payment and settles it', () => {
+        const store = usePaymentsStore();
+        return store.finishAtProvider('payment-1').then(() => {
+            expect(requestedUrls()).toEqual(['/payments/payment-1/sync']);
+            expect(store.payment?.status).toBe('succeeded');
+        });
+    });
+
+    it('lets a refusal through rather than leaving the panel claiming success', () => {
+        responses['POST /payments/payment-1/sync'] = {
+            status: 409,
+            code: 'PAYMENT_DECLINED',
+            message: 'The card was declined'
+        };
+        const store = usePaymentsStore();
+        return expect(store.finishAtProvider('payment-1')).rejects.toMatchObject({
             status: 409,
             errors: [{ code: 'PAYMENT_DECLINED' }]
         });

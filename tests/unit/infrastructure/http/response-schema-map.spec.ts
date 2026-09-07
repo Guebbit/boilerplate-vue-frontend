@@ -159,6 +159,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', `/payments/order/${ID}`, 'GetPaymentByOrderResponse'],
     ['POST', `/payments/order/${ID}/refund`, 'RefundPaymentByOrderResponse'],
     ['POST', `/payments/${ID}/confirm`, 'ConfirmPaymentResponse'],
+    ['POST', `/payments/${ID}/sync`, 'SyncPaymentResponse'],
     ['GET', '/delivery/methods', 'ListShippingMethodsResponse'],
     ['GET', `/delivery/order/${ID}`, 'GetShipmentByOrderResponse'],
     ['POST', '/delivery/advance', 'AdvanceCourierResponse'],
@@ -189,6 +190,19 @@ const ROUTES: [method: string, path: string, name: string][] = [
  * shrank, and says nothing about *which* operation is missing — an operation absent from the map
  * is one the generated client happily calls with its response left unvalidated.
  */
+/**
+ * Operations this client is not the caller of, and so has no response to validate.
+ *
+ * A list rather than a filter on some property of the spec, because "nobody in a browser calls
+ * this" is not something OpenAPI states — it is a fact about who the endpoint is for, and every
+ * entry here is a decision worth reading. Kept short on purpose: the default is that a declared
+ * operation IS called and DOES need its envelope checked.
+ */
+const NOT_CALLED_BY_THIS_CLIENT: Record<string, string> = {
+    'POST /payments/webhook':
+        "the payment provider's own callback to the API — a machine-to-machine route, authenticated by a signature rather than a session, that no browser ever calls"
+};
+
 const SPEC_OPERATIONS: string[] = (() => {
     // `process.cwd()` is the project root under vitest; `import.meta.url` is not a file URL once
     // the suite has been through the jsdom transform.
@@ -201,7 +215,10 @@ const SPEC_OPERATIONS: string[] = (() => {
         Object.keys(item)
             .filter((method) => methods.has(method))
             // `{id}`, `{productId}`, `{locale}` — the map matches a segment, not a name.
-            .map((method) => `${method.toUpperCase()} ${path.replaceAll(/{[^}]+}/g, ID)}`)
+            .map((method) => `${method.toUpperCase()} ${path}`)
+            .filter((operation) => !(operation in NOT_CALLED_BY_THIS_CLIENT))
+            // `{id}`, `{productId}`, `{locale}` — the map matches a segment, not a name.
+            .map((operation) => operation.replaceAll(/{[^}]+}/g, ID))
     );
 })();
 

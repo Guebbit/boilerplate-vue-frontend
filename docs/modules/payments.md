@@ -12,7 +12,7 @@
 | **Screens**             | _none_ — this module routes to nothing                                         |
 | **Store**               | `payments`                                                                     |
 | **Menu entries**        | _none_                                                                         |
-| **API calls**           | 4                                                                              |
+| **API calls**           | 5                                                                              |
 | **Depends on**          | _nothing_                                                                      |
 | **Depended on by**      | [`orders`](./orders.md)                                                        |
 | **Languages**           | `en` · `it`                                                                    |
@@ -57,19 +57,37 @@ The store is here rather than in the panel because a component that owns its own
 mounted twice on one page without duplicating the request. The panel is a view; the store is the
 domain's state, exactly as everywhere else.
 
-The provider is a fake on the server side, and this client never learns that. It sends a card number
-and reads an outcome — `succeeded` or `declined`. A decline is an answer with its own message, not
-an error toast.
+### There is no card field, and that is the design
+
+A live provider tokenises the card inside an iframe **it** owns, and hands the browser an opaque
+reference (`pm_…`). A card number reaching this application — let alone its API — is the difference
+between the light PCI bracket and the heavy one, so the panel never collects one. The demo's method
+picker stands exactly where a provider's widget mounts, and produces the same kind of value.
+
+### The answer is not always immediate
+
+The confirm can come back three ways, and only one of them is finished:
+
+| Answer            | What it means                                   | The panel's next move                             |
+| ----------------- | ----------------------------------------------- | ------------------------------------------------- |
+| `succeeded`       | The money landed and the order is `paid`.       | Notify, tell the order page to re-read itself.    |
+| `requires_action` | The bank wants a 3-D Secure challenge answered. | Show the challenge step, then `finishAtProvider`. |
+| `processing`      | The provider is settling asynchronously.        | Say so, offer a re-check.                         |
+
+A decline is a rejection with its own message, not an error toast. The two in-flight answers are
+**successes** on the wire: a 4xx would tell the browser to stop, and the browser is the only thing
+that can finish. The server's webhook settles all of these eventually whatever the browser does —
+`finishAtProvider` only makes the happy path feel immediate.
 
 ## State
 
 Store `payments`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                   | What it is                                                       |
-| ----------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `payment`                                                 | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                 | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchPaymentForOrder` · `payForOrder` · `refundForOrder` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                        | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **State**   | `payment`                                                                      | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                      | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchPaymentForOrder` · `payForOrder` · `finishAtProvider` · `refundForOrder` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -82,6 +100,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 | Call                               | Response envelope              |
 | ---------------------------------- | ------------------------------ |
 | `POST /payments/{id}/confirm`      | `ConfirmPaymentResponse`       |
+| `POST /payments/{id}/sync`         | `SyncPaymentResponse`          |
 | `POST /payments/intent`            | `CreatePaymentIntentResponse`  |
 | `GET /payments/order/{id}`         | `GetPaymentByOrderResponse`    |
 | `POST /payments/order/{id}/refund` | `RefundPaymentByOrderResponse` |

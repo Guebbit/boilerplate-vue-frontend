@@ -134,6 +134,17 @@ declare global {
             goToCart(): Chainable<void>;
 
             /**
+             * Submits the order page's payment panel with one of the demo provider's methods.
+             *
+             * The panel has no card field — a live provider tokenises the card in its own iframe
+             * and this app never sees the number — so a spec picks a method by the label the
+             * picker shows for it.
+             *
+             * @param label - the option's visible label, e.g. `Card that pays`
+             */
+            payWith(label: string): Chainable<void>;
+
+            /**
              * Types the 2FA code the demo backend just mailed into the field a selector names.
              *
              * The code is read back out of the demo outbox rather than assumed — every 2FA
@@ -351,6 +362,16 @@ Cypress.Commands.add('navigateViaMenu', (menu: 'account' | 'admin', path: string
  */
 Cypress.Commands.add('goToCart', () => {
     cy.get('[data-test=pinned-Cart]').click();
+});
+
+/**
+ * Vuetify renders a select's options into an overlay outside the field, so the option is clicked
+ * by role rather than inside the activator.
+ */
+Cypress.Commands.add('payWith', (label: string) => {
+    cy.get('[data-test=payment-method-select]').should('exist').click();
+    cy.get('[role=listbox] [role=option]').contains(label).click();
+    cy.get('[data-test=payment-submit]').should('not.be.disabled').click();
 });
 
 Cypress.Commands.add('logout', () => {

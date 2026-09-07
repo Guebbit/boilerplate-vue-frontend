@@ -1,14 +1,23 @@
 {
     "payments-panel": {
         "title": "Pagamento",
-        "label-card": "Numero carta",
-        "hint-decline": "Carte demo: qualsiasi numero paga, 4000 0000 0000 0002 viene rifiutata.",
+        "label-method": "Metodo di pagamento",
+        "hint-method": "Un provider reale monta qui il proprio widget — questa demo sceglie invece uno dei suoi riferimenti di prova.",
+        "method-pm_card_visa": "Carta che paga",
+        "method-pm_card_declined": "Carta rifiutata dall'emittente",
+        "method-pm_card_authentication_required": "Carta con verifica della banca (3-D Secure)",
+        "method-pm_card_processing": "Metodo che si completa più tardi",
         "button-pay": "Paga ora",
+        "button-finish": "Ho completato la verifica in banca",
         "success": "Pagamento ricevuto — l'ordine è pagato.",
         "status-requires_confirmation": "In attesa di conferma",
+        "status-requires_action": "In attesa della tua banca",
+        "status-processing": "In elaborazione",
         "status-succeeded": "Pagato",
         "status-declined": "Rifiutato",
         "status-refunded": "Rimborsato",
+        "explain-requires_action": "La tua banca vuole confermare questo pagamento. Completa la verifica nella finestra aperta dalla banca, poi comunicacelo qui.",
+        "explain-processing": "Il provider sta ancora completando questo pagamento. Può richiedere tempo; ti scriveremo appena sarà concluso.",
         "label-card-ending": "carta che termina con {last4}",
         "none": "Nessun pagamento."
     }
