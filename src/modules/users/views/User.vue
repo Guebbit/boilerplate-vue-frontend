@@ -72,12 +72,11 @@ const heroDescription = computed(() => formatText(currentUser.value?.email));
 /**
  * Label of the role chip.
  *
- * @returns The localized administrator/standard-user wording, or the
- *  empty-value glyph while the user is unknown.
+ * @returns The role's own name, or the empty-value glyph while the user is
+ *  unknown. Not a translated administrator/standard pair: roles are data a
+ *  deployment may add to, and only the rules say what each one may do.
  */
-const userRole = computed(() =>
-    formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
-);
+const userRole = computed(() => formatText(currentUser.value?.role));
 
 /**
  * Label of the status chip.
@@ -147,7 +146,7 @@ const handleDisableTwoFactor = () => {
                     :value="formatText(currentUser?.email)"
                 />
                 <CardMaterialStat
-                    :title="t('user-target-page.label-admin')"
+                    :title="t('user-target-page.label-role')"
                     :value="userRole"
                     accent="secondary"
                 />
@@ -177,7 +176,7 @@ const handleDisableTwoFactor = () => {
                         :value="currentUser.email"
                         icon="✉"
                     />
-                    <ItemDetailField :label="t('user-target-page.label-admin')" icon="🛡">
+                    <ItemDetailField :label="t('user-target-page.label-role')" icon="🛡">
                         <v-chip variant="tonal" color="secondary" class="font-semibold">
                             {{ userRole }}
                         </v-chip>

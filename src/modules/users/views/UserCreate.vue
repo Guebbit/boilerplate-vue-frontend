@@ -60,7 +60,7 @@ interface UserCreateForm {
     email?: string;
     username?: string;
     password?: string;
-    admin?: boolean;
+    role?: string;
     active?: boolean;
     imageUpload?: File;
 }
@@ -70,7 +70,7 @@ interface UserCreateForm {
  */
 const createSchema = usersSchema.pick({ email: true, username: true }).extend({
     password: usersPasswordSchema,
-    admin: z.boolean().optional(),
+    role: z.string().optional(),
     active: z.boolean().optional(),
     imageUpload: imageUploadSchema
 });
@@ -132,7 +132,7 @@ const submitForm = () =>
                     email: form.value.email!,
                     username: form.value.username!,
                     password: form.value.password!,
-                    admin: form.value.admin,
+                    role: form.value.role,
                     active: form.value.active,
                     imageUpload: form.value.imageUpload
                 },
@@ -186,7 +186,9 @@ const submitForm = () =>
                 class="mt-2"
             />
             <div class="flex flex-wrap gap-x-8">
-                <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
+                <!-- Free text, not a select: roles are data, and the server refuses a name
+                     nothing declares — a hard-coded list here would be a second copy of it. -->
+                <v-text-field v-model="form.role" :label="t('user-create-page.label-role')" />
                 <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
             </div>
         </FormCard>

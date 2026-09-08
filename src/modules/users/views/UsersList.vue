@@ -90,7 +90,7 @@ const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
     { title: t('users-list-page.column-id'), key: 'id' },
     { title: t('users-list-page.column-username'), key: 'username' },
     { title: t('users-list-page.column-email'), key: 'email' },
-    { title: t('users-list-page.column-admin'), key: 'admin' },
+    { title: t('users-list-page.column-role'), key: 'role' },
     { title: t('users-list-page.column-active'), key: 'active' },
     { title: t('users-list-page.column-created-at'), key: 'createdAt' },
     // Reads no field on the row: the cell is the `item.actions` slot below.
@@ -236,9 +236,9 @@ const handleHardDelete = (userId: string) =>
                 />
             </template>
 
-            <template v-slot:[`item.admin`]="{ item }">
-                <v-chip v-if="item.admin" size="small" variant="tonal" color="tertiary">
-                    {{ t('generic.administrator') }}
+            <template v-slot:[`item.role`]="{ item }">
+                <v-chip v-if="item.role" size="small" variant="tonal" color="tertiary">
+                    {{ item.role }}
                 </v-chip>
                 <span v-else class="opacity-60">—</span>
             </template>

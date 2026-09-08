@@ -144,12 +144,12 @@ describe('useUsersStore', () => {
                     email: 'ada@example.com',
                     username: 'ada',
                     password: 'password123',
-                    admin: undefined,
+                    role: undefined,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
                     const formData = lastFormData();
-                    expect(formData.has('admin')).toBe(false);
+                    expect(formData.has('role')).toBe(false);
                     expect([...formData.values()]).not.toContain('undefined');
                 }));
     });

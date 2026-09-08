@@ -50,7 +50,7 @@ export const usersSchema = z.object({
     imageUrl: z.string().nullish(),
     phone: z.string().optional(),
     website: z.string().optional(),
-    admin: z.boolean().nullish(),
+    role: z.string().nullish(),
     active: z.boolean().nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish()
