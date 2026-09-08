@@ -84,6 +84,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/observability/metrics/overview', 'GetObservabilityMetricsOverviewResponse'],
     ['GET', '/observability/audit', 'GetObservabilityAuditLogsResponse'],
     ['GET', '/account', 'GetAccountResponse'],
+    ['GET', '/account/abilities', 'GetMyAbilitiesResponse'],
     ['DELETE', '/account', 'RequestAccountDeleteResponse'],
     ['DELETE', '/account/delete-confirm', 'ConfirmAccountDeleteResponse'],
     ['POST', '/account/login', 'LoginResponse'],

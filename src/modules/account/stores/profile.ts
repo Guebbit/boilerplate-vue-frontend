@@ -22,7 +22,8 @@ import {
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
     updateUserById as apiUpdateUserById,
-    exportAccountData as apiExportAccountData
+    exportAccountData as apiExportAccountData,
+    getMyAbilities as apiGetMyAbilities
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
@@ -100,6 +101,21 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 imageUrl: user.imageUrl
             }
         );
+
+        /*
+         * And the rules that go with them. Fetched rather than derived from `role`, because the
+         * whole point of publishing them is that the client stops deriving: a role name says who
+         * somebody is, and only the server's own rules say what that lets them do.
+         *
+         * Fire-and-forget, and failing quietly on purpose: an ability that never arrives is the
+         * empty one, which greys everything out. A shell that refused to render because it could
+         * not learn what to hide would be worse than one that hides too much.
+         */
+        void apiGetMyAbilities()
+            .then((answer) => {
+                session.setAbility(answer.data.rules);
+            })
+            .catch(() => undefined);
     };
 
     /**

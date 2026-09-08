@@ -67,6 +67,17 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /account': orvalEnvelope(USER),
+        // The rules the server would publish for this viewer. The store unpacks them with CASL's
+        // own reader, so a fixture that is not packed is a fixture no client could use.
+        'GET /account/abilities': orvalEnvelope({
+            tenantId: null,
+            scope: 'tenant',
+            rules: [
+                ['read', 'Product', { active: true, deletedAt: null }],
+                ['read', 'Order', { userId: 'u1', deletedAt: null }]
+            ],
+            version: 36
+        }),
         'PUT /account': orvalEnvelope({ ...USER, imageUrl: undefined })
     };
 });

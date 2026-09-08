@@ -776,6 +776,33 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /account/abilities:
+    get:
+      tags:
+        - Account
+      summary: The caller's own authorization rules
+      description: |
+        The rules the SERVER enforces, packed for a client to evaluate.
+
+        Published so a client can grey out what it would be refused, from the same rules
+        rather than from a copy of them — a hand-maintained duplicate of "what may I do"
+        drifts, and the drift is silent until somebody is shown a button that answers 403.
+
+        **The client's copy has no authority.** It decides what to RENDER, never what is
+        allowed; every request is re-evaluated server-side. Published here because the
+        alternative is every client inventing the same guess.
+
+        Answered for an anonymous caller too: a stranger holds the `guest` role, which is
+        a value in the model rather than an absence, and a shop front that greys nothing
+        out for a visitor is a shop front that lies twice.
+      operationId: getMyAbilities
+      responses:
+        '200':
+          description: The caller's packed rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbilitiesEnvelope'
   /account/password:
     post:
       tags:
@@ -3828,6 +3855,66 @@ components:
           items:
             $ref: '#/components/schemas/ErrorItem'
           description: Structured machine-friendly errors
+    Abilities:
+      type: object
+      additionalProperties: false
+      description: |
+        What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+        takes. A tuple per rule rather than an object, which is what makes shipping a few
+        dozen of them cheap.
+
+        The client's copy has NO AUTHORITY: it decides what to render, never what is
+        allowed, and every request is re-evaluated server-side. Published so a client greys
+        out what it would be refused from the same rules the server enforces, rather than
+        from a hand-maintained duplicate that drifts — the drift is silent until somebody
+        is shown a button that answers 403.
+      required:
+        - tenantId
+        - scope
+        - rules
+        - version
+      properties:
+        tenantId:
+          type: string
+          nullable: true
+          description: The shop these rules are about. `null` in platform scope, and only there.
+        scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which of the two worlds this caller is acting in. Never both.
+        rules:
+          type: array
+          description: |
+            CASL packed rules — `[action, subject, conditions?, fields?, inverted?,
+            reason?]`, with trailing absent members omitted.
+          items:
+            type: array
+            items: {}
+        version:
+          type: integer
+          description: |
+            The permission model's own version, bumped when the KEYS change rather than
+            when a role does. A client caches these; this is what tells it the cache is
+            about a different model, not merely a different person.
+    AbilitiesEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/Abilities'
     UserEnvelope:
       type: object
       additionalProperties: false

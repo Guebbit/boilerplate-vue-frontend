@@ -76,12 +76,12 @@ export type ImageUrl = string;
 export type ThumbnailUrl = string;
 
 export interface PaginationMeta {
-  page: Page;
-  pageSize: PageSize;
-  /** @minimum 0 */
-  totalItems: number;
-  /** @minimum 0 */
-  totalPages: number;
+    page: Page;
+    pageSize: PageSize;
+    /** @minimum 0 */
+    totalItems: number;
+    /** @minimum 0 */
+    totalPages: number;
 }
 
 export type EnvelopeSuccess = true;
@@ -91,9 +91,9 @@ export type EnvelopeStatus = number;
 export type EnvelopeMessage = string;
 
 export interface MessageResponse {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
 }
 
 /**
@@ -102,218 +102,264 @@ export interface MessageResponse {
 export type ErrorItemDetails = { [key: string]: unknown };
 
 export interface ErrorItem {
-  /** Stable machine-readable error code */
-  code: string;
-  /** Human-readable error detail */
-  message: string;
-  /** Optional structured metadata for programmatic handling */
-  details?: ErrorItemDetails;
+    /** Stable machine-readable error code */
+    code: string;
+    /** Human-readable error detail */
+    message: string;
+    /** Optional structured metadata for programmatic handling */
+    details?: ErrorItemDetails;
 }
 
 export interface ErrorResponse {
-  success: false;
-  status: number;
-  /** Human-readable summary for this failure */
-  message: string;
-  /**
+    success: false;
+    status: number;
+    /** Human-readable summary for this failure */
+    message: string;
+    /**
      * Structured machine-friendly errors
      * @minItems 1
      */
-  errors: ErrorItem[];
+    errors: ErrorItem[];
 }
 
 export interface ValidationErrorResponse {
-  success: false;
-  status: number;
-  /** Human-readable summary for this failure */
-  message: string;
-  /**
+    success: false;
+    status: number;
+    /** Human-readable summary for this failure */
+    message: string;
+    /**
      * Structured machine-friendly errors
      * @minItems 1
      */
-  errors: ErrorItem[];
+    errors: ErrorItem[];
+}
+
+/**
+ * Which of the two worlds this caller is acting in. Never both.
+ */
+export type AbilitiesScope = (typeof AbilitiesScope)[keyof typeof AbilitiesScope];
+
+export const AbilitiesScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+/**
+ * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+ * takes. A tuple per rule rather than an object, which is what makes shipping a few
+ * dozen of them cheap.
+ *
+ * The client's copy has NO AUTHORITY: it decides what to render, never what is
+ * allowed, and every request is re-evaluated server-side. Published so a client greys
+ * out what it would be refused from the same rules the server enforces, rather than
+ * from a hand-maintained duplicate that drifts — the drift is silent until somebody
+ * is shown a button that answers 403.
+ */
+export interface Abilities {
+    /**
+     * The shop these rules are about. `null` in platform scope, and only there.
+     * @nullable
+     */
+    tenantId: string | null;
+    /** Which of the two worlds this caller is acting in. Never both. */
+    scope: AbilitiesScope;
+    /**
+     * CASL packed rules — `[action, subject, conditions?, fields?, inverted?,
+     * reason?]`, with trailing absent members omitted.
+     */
+    rules: unknown[][];
+    /**
+     * The permission model's own version, bumped when the KEYS change rather than
+     * when a role does. A client caches these; this is what tells it the cache is
+     * about a different model, not merely a different person.
+     */
+    version: number;
+}
+
+export interface AbilitiesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Abilities;
 }
 
 export interface User {
-  id: Id;
-  email: Email;
-  username: string;
-  role?: string;
-  active?: boolean;
-  verified?: boolean;
-  readonly pendingEmail?: string;
-  imageUrl?: ImageUrl;
-  thumbnailUrl?: ThumbnailUrl;
-  locale?: Locale;
-  phone?: string;
-  website?: string;
-  analyticsConsent?: boolean;
-  termsAccepted?: boolean;
-  twoFactorEnabledAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string;
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    verified?: boolean;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    termsAccepted?: boolean;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface UserEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: User;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: User;
 }
 
 export interface Product {
-  id: Id;
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  /**
+    id: Id;
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /**
      * Units physically present, whether or not they are spoken for.
      * @minimum 0
      */
-  readonly onHand?: number;
-  /**
+    readonly onHand?: number;
+    /**
      * Units held by an open order — present, but not for sale.
      * @minimum 0
      */
-  readonly reserved?: number;
-  /**
+    readonly reserved?: number;
+    /**
      * What a customer may actually buy. Derived from the two counters above.
      * @minimum 0
      */
-  readonly available?: number;
-  description?: string;
-  active?: boolean;
-  requiresShipping?: boolean;
-  imageUrl?: ImageUrl;
-  thumbnailUrl?: ThumbnailUrl;
-  categories?: string[];
-  tags?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string;
+    readonly available?: number;
+    description?: string;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface CartItem {
-  productId: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface OrderAddress {
-  fullName: string;
-  street: string;
-  city: string;
-  zip: string;
-  country: string;
-  phone?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
 }
 
 export interface OrderItem {
-  product: Product;
-  /** @minimum 1 */
-  quantity: number;
+    product: Product;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 /**
  * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
  */
-export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
-
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 export const OrderStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 /**
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree.
  */
 export interface OrderActions {
-  /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
-  transitions: OrderStatus[];
-  /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
-  cancel: boolean;
-  /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
-  pay: boolean;
+    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
+    transitions: OrderStatus[];
+    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
+    cancel: boolean;
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    pay: boolean;
 }
 
 export interface Order {
-  id: Id;
-  userId?: Id;
-  email: Email;
-  items: OrderItem[];
-  /**
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
      * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
      * @minimum 0
      */
-  totalItems: number;
-  /**
+    totalItems: number;
+    /**
      * Sum of `quantity` across every line item.
      * @minimum 0
      */
-  totalQuantity: number;
-  /**
+    totalQuantity: number;
+    /**
      * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
      * @minimum 0
      */
-  totalPrice: number;
-  /** Optional order notes */
-  notes?: string;
-  /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
-  shippingMethod?: string;
-  /**
+    totalPrice: number;
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
      * What that method cost at checkout time — a later rate change cannot re-price history.
      * @minimum 0
      */
-  shippingCost?: number;
-  shippingAddress?: OrderAddress;
-  status: OrderStatus;
-  actions?: OrderActions;
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string;
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    status: OrderStatus;
+    actions?: OrderActions;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface HardDeleteRequest {
-  hardDelete?: boolean;
+    hardDelete?: boolean;
 }
 
 /**
  * Liveness indicator. Always `ok` when the process is answering.
  */
-export type HealthPingStatus = typeof HealthPingStatus[keyof typeof HealthPingStatus];
-
+export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
 
 export const HealthPingStatus = {
-  ok: 'ok',
+    ok: 'ok'
 } as const;
 
 export interface HealthPing {
-  /** Liveness indicator. Always `ok` when the process is answering. */
-  status: HealthPingStatus;
+    /** Liveness indicator. Always `ok` when the process is answering. */
+    status: HealthPingStatus;
 }
 
 export interface HealthPingEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: HealthPing;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: HealthPing;
 }
 
 /**
  * Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.
  */
-export type LocaleDirection = typeof LocaleDirection[keyof typeof LocaleDirection];
-
+export type LocaleDirection = (typeof LocaleDirection)[keyof typeof LocaleDirection];
 
 export const LocaleDirection = {
-  ltr: 'ltr',
-  rtl: 'rtl',
+    ltr: 'ltr',
+    rtl: 'rtl'
 } as const;
 
 /**
@@ -337,125 +383,123 @@ export type LocaleTenant = string;
 /**
  * Which tier a language came from — deployed files, the database, or both.
  */
-export type LocaleSource = typeof LocaleSource[keyof typeof LocaleSource];
-
+export type LocaleSource = (typeof LocaleSource)[keyof typeof LocaleSource];
 
 export const LocaleSource = {
-  static: 'static',
-  dynamic: 'dynamic',
-  both: 'both',
+    static: 'static',
+    dynamic: 'dynamic',
+    both: 'both'
 } as const;
 
 /**
  * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.
  */
 export interface LocaleCapability {
-  tag: Locale;
-  name: string;
-  nativeName: string;
-  direction: LocaleDirection;
-  active: boolean;
-  /**
+    tag: Locale;
+    name: string;
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+    /**
      * Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions.
      * @minItems 1
      */
-  tenants: LocaleTenant[];
-  source: LocaleSource;
-  /** @minimum 0 */
-  entryCount: number;
-  /** @minimum 0 */
-  revision: number;
+    tenants: LocaleTenant[];
+    source: LocaleSource;
+    /** @minimum 0 */
+    entryCount: number;
+    /** @minimum 0 */
+    revision: number;
 }
 
 /**
  * Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.
  */
 export interface LocaleCapabilities {
-  /** Every language, ordered by tag so the response is stable. */
-  locales: LocaleCapability[];
-  default: Locale;
-  fallback: Locale;
+    /** Every language, ordered by tag so the response is stable. */
+    locales: LocaleCapability[];
+    default: Locale;
+    fallback: Locale;
 }
 
 export interface LocaleCapabilitiesEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleCapabilities;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleCapabilities;
 }
 
 export interface CreateLocaleRequest {
-  tag: Locale;
-  /** @minLength 1 */
-  name: string;
-  /** @minLength 1 */
-  nativeName: string;
-  direction?: LocaleDirection;
-  active?: boolean;
+    tag: Locale;
+    /** @minLength 1 */
+    name: string;
+    /** @minLength 1 */
+    nativeName: string;
+    direction?: LocaleDirection;
+    active?: boolean;
 }
 
 /**
  * A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
  */
 export interface Language {
-  id: Id;
-  tag: Locale;
-  /**
+    id: Id;
+    tag: Locale;
+    /**
      * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
      * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
      * @pattern ^[a-z]{2}$
      */
-  baseLanguage: string;
-  /** English name, for an admin list. */
-  name: string;
-  /** The language's own name, for a client's language picker. */
-  nativeName: string;
-  direction: LocaleDirection;
-  active: boolean;
-  /** @minimum 0 */
-  revision: number;
-  createdAt?: string;
-  updatedAt?: string;
+    baseLanguage: string;
+    /** English name, for an admin list. */
+    name: string;
+    /** The language's own name, for a client's language picker. */
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+    /** @minimum 0 */
+    revision: number;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface LanguageEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: Language;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Language;
 }
 
 /**
  * What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
  */
-export type LocaleTenantKind = typeof LocaleTenantKind[keyof typeof LocaleTenantKind];
-
+export type LocaleTenantKind = (typeof LocaleTenantKind)[keyof typeof LocaleTenantKind];
 
 export const LocaleTenantKind = {
-  frontend: 'frontend',
-  backend: 'backend',
+    frontend: 'frontend',
+    backend: 'backend'
 } as const;
 
 /**
  * One tenant as the registry describes it.
  */
 export interface LocaleTenantDescriptor {
-  id: LocaleTenant;
-  /** A human name, for an admin screen. */
-  label: string;
-  kind: LocaleTenantKind;
+    id: LocaleTenant;
+    /** A human name, for an admin screen. */
+    label: string;
+    kind: LocaleTenantKind;
 }
 
 export interface LocaleTenants {
-  /** @minItems 1 */
-  tenants: LocaleTenantDescriptor[];
+    /** @minItems 1 */
+    tenants: LocaleTenantDescriptor[];
 }
 
 export interface LocaleTenantsEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleTenants;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleTenants;
 }
 
 /**
@@ -467,28 +511,28 @@ export type LocaleDictionaryMessages = { [key: string]: unknown };
  * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
  */
 export interface LocaleDictionary {
-  locale: Locale;
-  /** Nested key/value dictionary, the same shape the API loads. */
-  messages: LocaleDictionaryMessages;
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
 }
 
 export interface LocaleDictionaryEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleDictionary;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleDictionary;
 }
 
 /**
  * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
  */
 export interface UpdateLocaleRequest {
-  /** @minLength 1 */
-  name?: string;
-  /** @minLength 1 */
-  nativeName?: string;
-  direction?: LocaleDirection;
-  active?: boolean;
+    /** @minLength 1 */
+    name?: string;
+    /** @minLength 1 */
+    nativeName?: string;
+    direction?: LocaleDirection;
+    active?: boolean;
 }
 
 /**
@@ -500,18 +544,18 @@ export type LocaleMessagesMessages = { [key: string]: unknown };
  * The CLIENT's dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces.
  */
 export interface LocaleMessages {
-  locale: Locale;
-  /** @minimum 0 */
-  revision: number;
-  /** Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404. */
-  messages: LocaleMessagesMessages;
+    locale: Locale;
+    /** @minimum 0 */
+    revision: number;
+    /** Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404. */
+    messages: LocaleMessagesMessages;
 }
 
 export interface LocaleMessagesEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleMessages;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleMessages;
 }
 
 /**
@@ -519,26 +563,26 @@ export interface LocaleMessagesEnvelope {
  * `tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
  */
 export interface LocaleEntry {
-  id: Id;
-  locale: Locale;
-  tenant: LocaleTenant;
-  /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
-  key: string;
-  value: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    locale: Locale;
+    tenant: LocaleTenant;
+    /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
+    key: string;
+    value: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface LocaleEntriesResponse {
-  items: LocaleEntry[];
-  meta: PaginationMeta;
+    items: LocaleEntry[];
+    meta: PaginationMeta;
 }
 
 export interface LocaleEntriesResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleEntriesResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleEntriesResponse;
 }
 
 /**
@@ -547,9 +591,9 @@ export interface LocaleEntriesResponseEnvelope {
  * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
  */
 export interface LocaleEntryInput {
-  /** @minLength 1 */
-  key: string;
-  value: string;
+    /** @minLength 1 */
+    key: string;
+    value: string;
 }
 
 /**
@@ -557,98 +601,97 @@ export interface LocaleEntryInput {
  * The tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
-  tenant: LocaleTenant;
-  entries: LocaleEntryInput[];
+    tenant: LocaleTenant;
+    entries: LocaleEntryInput[];
 }
 
 /**
  * What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.
  */
 export interface LocaleImportResult {
-  /** @minimum 0 */
-  created: number;
-  /** @minimum 0 */
-  updated: number;
-  /** @minimum 0 */
-  removed: number;
-  /** @minimum 0 */
-  revision: number;
+    /** @minimum 0 */
+    created: number;
+    /** @minimum 0 */
+    updated: number;
+    /** @minimum 0 */
+    removed: number;
+    /** @minimum 0 */
+    revision: number;
 }
 
 export interface LocaleImportResultEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleImportResult;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleImportResult;
 }
 
 export interface CreateLocaleEntryRequest {
-  tenant: LocaleTenant;
-  /** @minLength 1 */
-  key: string;
-  value: string;
+    tenant: LocaleTenant;
+    /** @minLength 1 */
+    key: string;
+    value: string;
 }
 
 export interface LocaleEntryEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LocaleEntry;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleEntry;
 }
 
 /**
  * Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.
  */
 export interface MergeLocaleEntriesRequest {
-  tenant: LocaleTenant;
-  /** @minItems 1 */
-  entries: LocaleEntryInput[];
+    tenant: LocaleTenant;
+    /** @minItems 1 */
+    entries: LocaleEntryInput[];
 }
 
 export interface UpdateLocaleEntryRequest {
-  value: string;
+    value: string;
 }
 
 /**
  * One backing service's state, in the four words this payload uses for all of them.
  * `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
  */
-export type DependencyStatus = typeof DependencyStatus[keyof typeof DependencyStatus];
-
+export type DependencyStatus = (typeof DependencyStatus)[keyof typeof DependencyStatus];
 
 export const DependencyStatus = {
-  ready: 'ready',
-  connecting: 'connecting',
-  unavailable: 'unavailable',
-  disabled: 'disabled',
+    ready: 'ready',
+    connecting: 'connecting',
+    unavailable: 'unavailable',
+    disabled: 'disabled'
 } as const;
 
 export interface ObservabilityDependency {
-  status: DependencyStatus;
+    status: DependencyStatus;
 }
 
 /**
  * Every backing service this process needs, read from the connection state each adapter already maintains. No I/O: a health endpoint that opens sockets is polled every few seconds by every replica forever, and becomes an amplifier pointed at the infrastructure it reports on.
  */
 export interface ObservabilityHealthDependencies {
-  database: ObservabilityDependency;
-  cache: ObservabilityDependency;
-  queue: ObservabilityDependency;
+    database: ObservabilityDependency;
+    cache: ObservabilityDependency;
+    queue: ObservabilityDependency;
 }
 
-export type ObservabilityHealthTelemetryAnalyticsProvider = typeof ObservabilityHealthTelemetryAnalyticsProvider[keyof typeof ObservabilityHealthTelemetryAnalyticsProvider];
-
+export type ObservabilityHealthTelemetryAnalyticsProvider =
+    (typeof ObservabilityHealthTelemetryAnalyticsProvider)[keyof typeof ObservabilityHealthTelemetryAnalyticsProvider];
 
 export const ObservabilityHealthTelemetryAnalyticsProvider = {
-  umami: 'umami',
-  posthog: 'posthog',
-  none: 'none',
+    umami: 'umami',
+    posthog: 'posthog',
+    none: 'none'
 } as const;
 
 export type ObservabilityHealthTelemetryAnalytics = {
-  provider: ObservabilityHealthTelemetryAnalyticsProvider;
-  /** Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration. */
-  configured: boolean;
+    provider: ObservabilityHealthTelemetryAnalyticsProvider;
+    /** Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration. */
+    configured: boolean;
 };
 
 /**
@@ -656,11 +699,11 @@ export type ObservabilityHealthTelemetryAnalytics = {
  * Deliberately not part of `status`: these are destinations this service writes to, and losing one costs visibility rather than capability. An unreachable Loki does not make a checkout fail, so it must not colour the dot a dashboard shows for "can this instance serve traffic".
  */
 export interface ObservabilityHealthTelemetry {
-  loki: boolean;
-  otel: boolean;
-  umami: boolean;
-  faro: boolean;
-  analytics: ObservabilityHealthTelemetryAnalytics;
+    loki: boolean;
+    otel: boolean;
+    umami: boolean;
+    faro: boolean;
+    analytics: ObservabilityHealthTelemetryAnalytics;
 }
 
 /**
@@ -668,448 +711,446 @@ export interface ObservabilityHealthTelemetry {
  * Bytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so each implementation owns a check that they stay identical.
  */
 export interface ProcessMemory {
-  /** @minimum 0 */
-  rss: number;
-  /** @minimum 0 */
-  heapUsed: number;
-  /** @minimum 0 */
-  heapTotal: number;
-  /** @minimum 0 */
-  external: number;
+    /** @minimum 0 */
+    rss: number;
+    /** @minimum 0 */
+    heapUsed: number;
+    /** @minimum 0 */
+    heapTotal: number;
+    /** @minimum 0 */
+    external: number;
 }
 
 export interface ObservabilityHealthSystem {
-  platform: string;
-  cpuCount: number;
-  loadAvg: number[];
+    platform: string;
+    cpuCount: number;
+    loadAvg: number[];
 }
 
 /**
  * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
  * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
-export type ObservabilityHealthStatus = typeof ObservabilityHealthStatus[keyof typeof ObservabilityHealthStatus];
-
+export type ObservabilityHealthStatus =
+    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
 
 export const ObservabilityHealthStatus = {
-  ok: 'ok',
-  degraded: 'degraded',
+    ok: 'ok',
+    degraded: 'degraded'
 } as const;
 
 export interface ObservabilityHealth {
-  /**
+    /**
      * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
      * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
      */
-  status: ObservabilityHealthStatus;
-  environment: string;
-  service: string;
-  /** The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open. */
-  runtimeVersion: string;
-  /** @minimum 0 */
-  uptimeSeconds: number;
-  dependencies: ObservabilityHealthDependencies;
-  telemetry?: ObservabilityHealthTelemetry;
-  memory?: ProcessMemory;
-  system?: ObservabilityHealthSystem;
-  timestamp: string;
+    status: ObservabilityHealthStatus;
+    environment: string;
+    service: string;
+    /** The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open. */
+    runtimeVersion: string;
+    /** @minimum 0 */
+    uptimeSeconds: number;
+    dependencies: ObservabilityHealthDependencies;
+    telemetry?: ObservabilityHealthTelemetry;
+    memory?: ProcessMemory;
+    system?: ObservabilityHealthSystem;
+    timestamp: string;
 }
 
 export interface ObservabilityHealthResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: ObservabilityHealth;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ObservabilityHealth;
 }
 
 export interface ObservabilityMetricsLatency {
-  /** Median latency in ms */
-  p50: number;
-  /** 95th-percentile latency in ms */
-  p95: number;
+    /** Median latency in ms */
+    p50: number;
+    /** 95th-percentile latency in ms */
+    p95: number;
 }
 
 export type ObservabilityMetricsSummaryHttp = {
-  /** @minimum 0 */
-  totalRequests: number;
-  /** @minimum 0 */
-  totalErrors: number;
-  /**
+    /** @minimum 0 */
+    totalRequests: number;
+    /** @minimum 0 */
+    totalErrors: number;
+    /**
      * Fraction of requests that returned 4xx/5xx
      * @minimum 0
      * @maximum 1
      */
-  errorRate: number;
-  /** @minimum 0 */
-  inFlight: number;
-  latencyMs: ObservabilityMetricsLatency;
+    errorRate: number;
+    /** @minimum 0 */
+    inFlight: number;
+    latencyMs: ObservabilityMetricsLatency;
 };
 
 export type ObservabilityMetricsSummaryAuth = {
-  /** @minimum 0 */
-  loginSuccess?: number;
-  /** @minimum 0 */
-  loginFailure?: number;
-  /** @minimum 0 */
-  signupSuccess?: number;
+    /** @minimum 0 */
+    loginSuccess?: number;
+    /** @minimum 0 */
+    loginFailure?: number;
+    /** @minimum 0 */
+    signupSuccess?: number;
 };
 
 export type ObservabilityMetricsSummaryBusiness = {
-  /** @minimum 0 */
-  checkoutSuccess?: number;
-  /** @minimum 0 */
-  ordersCreated?: number;
-  /** @minimum 0 */
-  lowStockProducts?: number;
-  /** @minimum 0 */
-  reservedUnits?: number;
+    /** @minimum 0 */
+    checkoutSuccess?: number;
+    /** @minimum 0 */
+    ordersCreated?: number;
+    /** @minimum 0 */
+    lowStockProducts?: number;
+    /** @minimum 0 */
+    reservedUnits?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
-  /** @minimum 0 */
-  queriesTotal?: number;
-  /** @minimum 0 */
-  errorsTotal?: number;
+    /** @minimum 0 */
+    queriesTotal?: number;
+    /** @minimum 0 */
+    errorsTotal?: number;
 };
 
 export type ObservabilityMetricsSummaryProcess = {
-  /** @minimum 0 */
-  uptimeSeconds?: number;
-  memory?: ProcessMemory;
+    /** @minimum 0 */
+    uptimeSeconds?: number;
+    memory?: ProcessMemory;
 };
 
 export interface ObservabilityMetricsSummary {
-  http: ObservabilityMetricsSummaryHttp;
-  auth: ObservabilityMetricsSummaryAuth;
-  business: ObservabilityMetricsSummaryBusiness;
-  database: ObservabilityMetricsSummaryDatabase;
-  process: ObservabilityMetricsSummaryProcess;
-  timestamp: string;
+    http: ObservabilityMetricsSummaryHttp;
+    auth: ObservabilityMetricsSummaryAuth;
+    business: ObservabilityMetricsSummaryBusiness;
+    database: ObservabilityMetricsSummaryDatabase;
+    process: ObservabilityMetricsSummaryProcess;
+    timestamp: string;
 }
 
 export interface ObservabilityMetricsSummaryResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: ObservabilityMetricsSummary;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ObservabilityMetricsSummary;
 }
 
-export type AuditEventItemActorRole = typeof AuditEventItemActorRole[keyof typeof AuditEventItemActorRole];
-
+export type AuditEventItemActorRole =
+    (typeof AuditEventItemActorRole)[keyof typeof AuditEventItemActorRole];
 
 export const AuditEventItemActorRole = {
-  admin: 'admin',
-  user: 'user',
-  anonymous: 'anonymous',
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous'
 } as const;
 
-export type AuditEventItemOutcome = typeof AuditEventItemOutcome[keyof typeof AuditEventItemOutcome];
-
+export type AuditEventItemOutcome =
+    (typeof AuditEventItemOutcome)[keyof typeof AuditEventItemOutcome];
 
 export const AuditEventItemOutcome = {
-  success: 'success',
-  failure: 'failure',
+    success: 'success',
+    failure: 'failure'
 } as const;
 
 export type AuditEventItemMetadata = { [key: string]: unknown };
 
-export type AuditEventItemLevel = typeof AuditEventItemLevel[keyof typeof AuditEventItemLevel];
-
+export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
 
 export const AuditEventItemLevel = {
-  info: 'info',
-  warn: 'warn',
+    info: 'info',
+    warn: 'warn'
 } as const;
 
 export interface AuditEventItem {
-  actor_user_id: string;
-  actor_role: AuditEventItemActorRole;
-  /** Dot-notation action name (e.g. order.created) */
-  action: string;
-  outcome: AuditEventItemOutcome;
-  ip?: string;
-  user_agent?: string;
-  request_id?: string;
-  trace_id?: string;
-  target_type?: string;
-  target_id?: string;
-  metadata?: AuditEventItemMetadata;
-  timestamp: string;
-  level: AuditEventItemLevel;
+    actor_user_id: string;
+    actor_role: AuditEventItemActorRole;
+    /** Dot-notation action name (e.g. order.created) */
+    action: string;
+    outcome: AuditEventItemOutcome;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: AuditEventItemMetadata;
+    timestamp: string;
+    level: AuditEventItemLevel;
 }
 
 export interface AuditLogsPage {
-  items: AuditEventItem[];
-  meta: PaginationMeta;
+    items: AuditEventItem[];
+    meta: PaginationMeta;
 }
 
 export interface AuditLogsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AuditLogsPage;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuditLogsPage;
 }
 
 /**
  * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
  */
-export type AntibotRungsEmailPolicy = typeof AntibotRungsEmailPolicy[keyof typeof AntibotRungsEmailPolicy];
-
+export type AntibotRungsEmailPolicy =
+    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
 
 export const AntibotRungsEmailPolicy = {
-  off: 'off',
-  disposable: 'disposable',
-  mx: 'mx',
+    off: 'off',
+    disposable: 'disposable',
+    mx: 'mx'
 } as const;
 
 /**
  * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
  */
 export interface AntibotRungs {
-  /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
-  identityBudgets: boolean;
-  /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
-  emailPolicy: AntibotRungsEmailPolicy;
+    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
+    identityBudgets: boolean;
+    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
+    emailPolicy: AntibotRungsEmailPolicy;
 }
 
 /**
  * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
  */
-export type AntibotConfigParameters = {[key: string]: string};
+export type AntibotConfigParameters = { [key: string]: string };
 
 export interface AntibotConfig {
-  /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
-  provider: string;
-  /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
-  parameters: AntibotConfigParameters;
-  rungs: AntibotRungs;
+    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
+    provider: string;
+    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
+    parameters: AntibotConfigParameters;
+    rungs: AntibotRungs;
 }
 
 export interface AntibotConfigEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AntibotConfig;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AntibotConfig;
 }
 
 /**
  * What the solver needs to derive the key the challenge asks for.
  */
 export interface AntibotChallengeParameters {
-  /** Key-derivation function, e.g. `PBKDF2/SHA-256`. */
-  algorithm: string;
-  nonce: string;
-  salt: string;
-  /** Iteration count — how much work solving takes. */
-  cost: number;
-  keyLength: number;
-  keyPrefix: string;
-  keySignature?: string;
-  memoryCost?: number;
-  parallelism?: number;
-  /** Unix seconds after which the challenge is refused, solved or not. */
-  expiresAt?: number;
+    /** Key-derivation function, e.g. `PBKDF2/SHA-256`. */
+    algorithm: string;
+    nonce: string;
+    salt: string;
+    /** Iteration count — how much work solving takes. */
+    cost: number;
+    keyLength: number;
+    keyPrefix: string;
+    keySignature?: string;
+    memoryCost?: number;
+    parallelism?: number;
+    /** Unix seconds after which the challenge is refused, solved or not. */
+    expiresAt?: number;
 }
 
 /**
  * ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.
  */
 export interface AntibotChallenge {
-  parameters: AntibotChallengeParameters;
-  /** HMAC over the parameters, proving this server issued them. */
-  signature: string;
+    parameters: AntibotChallengeParameters;
+    /** HMAC over the parameters, proving this server issued them. */
+    signature: string;
 }
 
 export interface AntibotChallengeEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AntibotChallenge;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AntibotChallenge;
 }
 
 export interface UpdateAccountRequest {
-  email?: Email;
-  /** @minLength 3 */
-  username?: string;
-  locale?: Locale;
-  imageUrl?: ImageUrl;
-  phone?: string;
-  website?: string;
-  analyticsConsent?: boolean;
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    imageUrl?: ImageUrl;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
 }
 
 export interface UpdateAccountRequestMultipart {
-  email?: Email;
-  /** @minLength 3 */
-  username?: string;
-  locale?: Locale;
-  /** Optional user profile image */
-  imageUpload?: Blob;
-  phone?: string;
-  website?: string;
-  analyticsConsent?: boolean;
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
 }
 
 export interface ChangePasswordRequest {
-  currentPassword: Password;
-  password: PasswordNew;
-  passwordConfirm: Password;
+    currentPassword: Password;
+    password: PasswordNew;
+    passwordConfirm: Password;
 }
 
 export interface AuthTokens {
-  /** Access JWT */
-  token: string;
-  /** Refresh token if returned by backend */
-  refreshToken?: string;
-  /** Access token expiry in seconds */
-  expiresIn?: number;
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
 }
 
 export interface AuthTokensEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AuthTokens;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuthTokens;
 }
 
 export interface ReauthRequest {
-  password: Password;
+    password: Password;
 }
 
 export interface Session {
-  id: Id;
-  /** Absent on a token issued without an expiry tier. */
-  expiration?: string;
-  /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
-  lastUsedAt?: string;
-  /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
-  current: boolean;
+    id: Id;
+    /** Absent on a token issued without an expiry tier. */
+    expiration?: string;
+    /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
+    lastUsedAt?: string;
+    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
+    current: boolean;
 }
 
 export interface SessionsResponse {
-  sessions: Session[];
+    sessions: Session[];
 }
 
 export interface SessionsEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: SessionsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: SessionsResponse;
 }
 
 export interface Address {
-  id: Id;
-  /** The caller's own name for the entry — "home", "office". */
-  label?: string;
-  fullName: string;
-  street: string;
-  city: string;
-  zip: string;
-  country: string;
-  phone?: string;
-  default: boolean;
+    id: Id;
+    /** The caller's own name for the entry — "home", "office". */
+    label?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
+    default: boolean;
 }
 
 export interface AddressesResponse {
-  addresses: Address[];
+    addresses: Address[];
 }
 
 export interface AddressesEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AddressesResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AddressesResponse;
 }
 
 export interface AddressInput {
-  label?: string;
-  /** @minLength 1 */
-  fullName: string;
-  /** @minLength 1 */
-  street: string;
-  /** @minLength 1 */
-  city: string;
-  /** @minLength 1 */
-  zip: string;
-  /** @minLength 1 */
-  country: string;
-  phone?: string;
-  default?: boolean;
+    label?: string;
+    /** @minLength 1 */
+    fullName: string;
+    /** @minLength 1 */
+    street: string;
+    /** @minLength 1 */
+    city: string;
+    /** @minLength 1 */
+    zip: string;
+    /** @minLength 1 */
+    country: string;
+    phone?: string;
+    default?: boolean;
 }
 
 export interface UpdateAddressRequest {
-  label?: string;
-  /** @minLength 1 */
-  fullName?: string;
-  /** @minLength 1 */
-  street?: string;
-  /** @minLength 1 */
-  city?: string;
-  /** @minLength 1 */
-  zip?: string;
-  /** @minLength 1 */
-  country?: string;
-  phone?: string;
-  default?: boolean;
+    label?: string;
+    /** @minLength 1 */
+    fullName?: string;
+    /** @minLength 1 */
+    street?: string;
+    /** @minLength 1 */
+    city?: string;
+    /** @minLength 1 */
+    zip?: string;
+    /** @minLength 1 */
+    country?: string;
+    phone?: string;
+    default?: boolean;
 }
 
 export interface VerifyEmailConfirmRequest {
-  /** One-time email verification token (NOT a JWT). */
-  token: string;
+    /** One-time email verification token (NOT a JWT). */
+    token: string;
 }
 
 export interface AccountDeleteConfirmRequest {
-  /** One-time account deletion token (NOT a JWT). */
-  token: string;
+    /** One-time account deletion token (NOT a JWT). */
+    token: string;
 }
 
 /**
  * How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
  */
-export type LoginRequestRemember = typeof LoginRequestRemember[keyof typeof LoginRequestRemember];
-
+export type LoginRequestRemember = (typeof LoginRequestRemember)[keyof typeof LoginRequestRemember];
 
 export const LoginRequestRemember = {
-  short: 'short',
-  medium: 'medium',
-  long: 'long',
+    short: 'short',
+    medium: 'medium',
+    long: 'long'
 } as const;
 
 export interface LoginRequest {
-  email: Email;
-  password: Password;
-  /** How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token. */
-  remember?: LoginRequestRemember;
+    email: Email;
+    password: Password;
+    /** How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token. */
+    remember?: LoginRequestRemember;
 }
 
 export interface TwoFactorMethodSummary {
-  /** Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it. */
-  method: string;
-  /** Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a "send me a code" button for the former and nothing for the latter. */
-  delivers: boolean;
-  /** Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods. */
-  target?: string;
-  /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
-  enrolledAt?: string;
-  /** Seconds between two deliveries of this method. Absent for device methods. */
-  resendAfter?: number;
-  /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
-  enrollable?: boolean;
-  /** Why `enrollable` is false — a translated sentence a client can show as-is. */
-  reason?: string;
+    /** Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it. */
+    method: string;
+    /** Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a "send me a code" button for the former and nothing for the latter. */
+    delivers: boolean;
+    /** Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods. */
+    target?: string;
+    /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
+    enrolledAt?: string;
+    /** Seconds between two deliveries of this method. Absent for device methods. */
+    resendAfter?: number;
+    /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
+    enrollable?: boolean;
+    /** Why `enrollable` is false — a translated sentence a client can show as-is. */
+    reason?: string;
 }
 
 export interface MfaChallenge {
-  /** Always true — the credential check passed, but a second factor is required before a session is issued. */
-  mfaRequired: true;
-  /** A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST /account/login/2fa, or to POST /account/login/2fa/send to have a code delivered first. */
-  challenge: string;
-  /** When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip. */
-  expiresAt: string;
-  /** The factors armed on this account, in the order a client should offer them. */
-  methods: TwoFactorMethodSummary[];
-  /** Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one. */
-  defaultMethod?: string;
+    /** Always true — the credential check passed, but a second factor is required before a session is issued. */
+    mfaRequired: true;
+    /** A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST /account/login/2fa, or to POST /account/login/2fa/send to have a code delivered first. */
+    challenge: string;
+    /** When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip. */
+    expiresAt: string;
+    /** The factors armed on this account, in the order a client should offer them. */
+    methods: TwoFactorMethodSummary[];
+    /** Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one. */
+    defaultMethod?: string;
 }
 
 /**
@@ -1118,914 +1159,910 @@ export interface MfaChallenge {
 export type LoginOutcome = AuthTokens | MfaChallenge;
 
 export interface LoginResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: LoginOutcome;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LoginOutcome;
 }
 
 export interface SignupRequest {
-  email: Email;
-  /** @minLength 3 */
-  username: string;
-  password: PasswordNew;
-  passwordConfirm: Password;
-  imageUrl?: ImageUrl;
-  termsAccepted: true;
-  analyticsConsent?: boolean;
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: PasswordNew;
+    passwordConfirm: Password;
+    imageUrl?: ImageUrl;
+    termsAccepted: true;
+    analyticsConsent?: boolean;
 }
 
 export interface SignupRequestMultipart {
-  email: Email;
-  /** @minLength 3 */
-  username: string;
-  password: PasswordNew;
-  passwordConfirm: Password;
-  termsAccepted: true;
-  analyticsConsent?: boolean;
-  /** Optional user profile image */
-  imageUpload?: Blob;
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: PasswordNew;
+    passwordConfirm: Password;
+    termsAccepted: true;
+    analyticsConsent?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
 }
 
 export interface PasswordResetRequest {
-  email: Email;
+    email: Email;
 }
 
 export interface PasswordResetConfirmRequest {
-  /** One-time password reset token (NOT a JWT). */
-  token: string;
-  password: PasswordNew;
-  passwordConfirm: Password;
+    /** One-time password reset token (NOT a JWT). */
+    token: string;
+    password: PasswordNew;
+    passwordConfirm: Password;
 }
 
 export interface RefreshTokenResponse {
-  /** New access JWT */
-  token: string;
-  /** New refresh token if returned by backend */
-  refreshToken?: string;
-  /** New access token expiry in seconds */
-  expiresIn?: number;
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
 }
 
 export interface RefreshTokenEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: RefreshTokenResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: RefreshTokenResponse;
 }
 
-export type ExportPaymentStatus = typeof ExportPaymentStatus[keyof typeof ExportPaymentStatus];
-
+export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
 export const ExportPaymentStatus = {
-  requires_confirmation: 'requires_confirmation',
-  requires_action: 'requires_action',
-  processing: 'processing',
-  succeeded: 'succeeded',
-  declined: 'declined',
-  refunded: 'refunded',
+    requires_confirmation: 'requires_confirmation',
+    requires_action: 'requires_action',
+    processing: 'processing',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
 } as const;
 
 export interface ExportPayment {
-  id: Id;
-  orderId: Id;
-  /** @minimum 0 */
-  amount: number;
-  currency: string;
-  status: ExportPaymentStatus;
-  provider: string;
-  cardLast4?: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    orderId: Id;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    status: ExportPaymentStatus;
+    provider: string;
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
-export type ExportShipmentStatus = typeof ExportShipmentStatus[keyof typeof ExportShipmentStatus];
-
+export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
 
 export const ExportShipmentStatus = {
-  shipped: 'shipped',
-  delivered: 'delivered',
+    shipped: 'shipped',
+    delivered: 'delivered'
 } as const;
 
 export interface ExportShipment {
-  id: Id;
-  orderId: Id;
-  trackingCode: string;
-  status: ExportShipmentStatus;
-  deliveredAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    orderId: Id;
+    trackingCode: string;
+    status: ExportShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
-export type ExportSessionType = typeof ExportSessionType[keyof typeof ExportSessionType];
-
+export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
 
 export const ExportSessionType = {
-  refresh: 'refresh',
+    refresh: 'refresh'
 } as const;
 
 export interface ExportSession {
-  id: Id;
-  type: ExportSessionType;
-  expiration?: string;
-  lastUsedAt?: string;
+    id: Id;
+    type: ExportSessionType;
+    expiration?: string;
+    lastUsedAt?: string;
 }
 
-export type ExportAuditEntryActorRole = typeof ExportAuditEntryActorRole[keyof typeof ExportAuditEntryActorRole];
-
+export type ExportAuditEntryActorRole =
+    (typeof ExportAuditEntryActorRole)[keyof typeof ExportAuditEntryActorRole];
 
 export const ExportAuditEntryActorRole = {
-  admin: 'admin',
-  user: 'user',
-  anonymous: 'anonymous',
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous'
 } as const;
 
-export type ExportAuditEntryOutcome = typeof ExportAuditEntryOutcome[keyof typeof ExportAuditEntryOutcome];
-
+export type ExportAuditEntryOutcome =
+    (typeof ExportAuditEntryOutcome)[keyof typeof ExportAuditEntryOutcome];
 
 export const ExportAuditEntryOutcome = {
-  success: 'success',
-  failure: 'failure',
+    success: 'success',
+    failure: 'failure'
 } as const;
 
 export type ExportAuditEntryMetadata = { [key: string]: unknown };
 
-export type ExportAuditEntryLevel = typeof ExportAuditEntryLevel[keyof typeof ExportAuditEntryLevel];
-
+export type ExportAuditEntryLevel =
+    (typeof ExportAuditEntryLevel)[keyof typeof ExportAuditEntryLevel];
 
 export const ExportAuditEntryLevel = {
-  info: 'info',
-  warn: 'warn',
+    info: 'info',
+    warn: 'warn'
 } as const;
 
 export interface ExportAuditEntry {
-  actor_user_id: string;
-  actor_role: ExportAuditEntryActorRole;
-  /** Dotted action name, e.g. `order.created`. */
-  action: string;
-  outcome: ExportAuditEntryOutcome;
-  ip?: string;
-  user_agent?: string;
-  request_id?: string;
-  trace_id?: string;
-  target_type?: string;
-  target_id?: string;
-  metadata?: ExportAuditEntryMetadata;
-  timestamp: string;
-  level: ExportAuditEntryLevel;
+    actor_user_id: string;
+    actor_role: ExportAuditEntryActorRole;
+    /** Dotted action name, e.g. `order.created`. */
+    action: string;
+    outcome: ExportAuditEntryOutcome;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: ExportAuditEntryMetadata;
+    timestamp: string;
+    level: ExportAuditEntryLevel;
 }
 
 export interface ExportFeedbackTicket {
-  id: Id;
-  name?: string;
-  email: Email;
-  subject: string;
-  message: string;
-  status: string;
-  respondedAt?: string;
-  createdAt?: string;
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: string;
+    respondedAt?: string;
+    createdAt?: string;
 }
 
 export type AccountExportResponseWishlistItem = {
-  productId: Id;
+    productId: Id;
 };
 
 export interface AccountExportResponse {
-  exportedAt: string;
-  profile: User;
-  addresses: Address[];
-  orders: Order[];
-  payments: ExportPayment[];
-  shipments: ExportShipment[];
-  cart: CartItem[];
-  wishlist: AccountExportResponseWishlistItem[];
-  sessions: ExportSession[];
-  auditLog: ExportAuditEntry[];
-  /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
-  feedback?: ExportFeedbackTicket[];
+    exportedAt: string;
+    profile: User;
+    addresses: Address[];
+    orders: Order[];
+    payments: ExportPayment[];
+    shipments: ExportShipment[];
+    cart: CartItem[];
+    wishlist: AccountExportResponseWishlistItem[];
+    sessions: ExportSession[];
+    auditLog: ExportAuditEntry[];
+    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
+    feedback?: ExportFeedbackTicket[];
 }
 
 export interface AccountExportEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: AccountExportResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountExportResponse;
 }
 
 export interface LoginTwoFactorRequest {
-  /** The challenge token from POST /account/login. */
-  challenge: string;
-  /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
-  code: string;
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
+    code: string;
 }
 
 export interface TwoFactorSendRequest {
-  /** The challenge token from POST /account/login. */
-  challenge: string;
-  /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
-  method: string;
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
+    method: string;
 }
 
 export interface TwoFactorDelivery {
-  /** The method the code went through, echoed back. */
-  method: string;
-  /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
-  sentTo: string;
-  /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
-  resendAfter: number;
-  /** When this code stops being accepted. */
-  expiresAt: string;
+    /** The method the code went through, echoed back. */
+    method: string;
+    /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
+    sentTo: string;
+    /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
+    resendAfter: number;
+    /** When this code stops being accepted. */
+    expiresAt: string;
 }
 
 export interface TwoFactorDeliveryEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: TwoFactorDelivery;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorDelivery;
 }
 
 export interface TwoFactorStatus {
-  /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
-  enabled: boolean;
-  /** The factors armed on this account, plus any enrollment still pending confirmation. */
-  methods: TwoFactorMethodSummary[];
-  /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
-  available: TwoFactorMethodSummary[];
-  /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
-  backupCodesRemaining: number;
+    /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
+    enabled: boolean;
+    /** The factors armed on this account, plus any enrollment still pending confirmation. */
+    methods: TwoFactorMethodSummary[];
+    /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
+    available: TwoFactorMethodSummary[];
+    /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
+    backupCodesRemaining: number;
 }
 
 export interface TwoFactorStatusEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: TwoFactorStatus;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorStatus;
 }
 
 export interface TwoFactorCodeRequest {
-  /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
-  code: string;
+    /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
+    code: string;
 }
 
 export interface TwoFactorSetup {
-  /** The method being enrolled, echoed back. */
-  method: string;
-  /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
-  delivers: boolean;
-  /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
-  secret?: string;
-  /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
-  otpauthUri?: string;
-  /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
-  sentTo?: string;
-  /** Seconds before another code may be requested. Absent unless `delivers`. */
-  resendAfter?: number;
-  /** When the delivered code stops being accepted. Absent unless `delivers`. */
-  expiresAt?: string;
+    /** The method being enrolled, echoed back. */
+    method: string;
+    /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
+    delivers: boolean;
+    /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
+    secret?: string;
+    /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
+    otpauthUri?: string;
+    /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
+    sentTo?: string;
+    /** Seconds before another code may be requested. Absent unless `delivers`. */
+    resendAfter?: number;
+    /** When the delivered code stops being accepted. Absent unless `delivers`. */
+    expiresAt?: string;
 }
 
 export interface TwoFactorSetupEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: TwoFactorSetup;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorSetup;
 }
 
 export interface TwoFactorConfirmRequest {
-  /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
-  code: string;
+    /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
+    code: string;
 }
 
 export interface TwoFactorConfirmed {
-  /** The method just armed, echoed back. */
-  method: string;
-  /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
-  backupCodes?: string[];
-  /** How many unused backup codes the account now holds. */
-  backupCodesRemaining: number;
+    /** The method just armed, echoed back. */
+    method: string;
+    /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
+    backupCodes?: string[];
+    /** How many unused backup codes the account now holds. */
+    backupCodesRemaining: number;
 }
 
 export interface TwoFactorConfirmEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: TwoFactorConfirmed;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorConfirmed;
 }
 
 export interface TwoFactorBackupCodesRegenerated {
-  /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
-  backupCodes: string[];
-  /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
-  backupCodesRemaining: number;
+    /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
+    backupCodes: string[];
+    /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
+    backupCodesRemaining: number;
 }
 
 export interface TwoFactorBackupCodesRegeneratedEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: TwoFactorBackupCodesRegenerated;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorBackupCodesRegenerated;
 }
 
 export interface OAuthProviders {
-  /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
-  providers: string[];
+    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
+    providers: string[];
 }
 
 export interface OAuthProvidersEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: OAuthProviders;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OAuthProviders;
 }
 
 export interface UsersResponse {
-  items: User[];
-  meta: PaginationMeta;
+    items: User[];
+    meta: PaginationMeta;
 }
 
 export interface UsersResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: UsersResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: UsersResponse;
 }
 
 export interface UpdateUserRequest {
-  id: Id;
-  email?: Email;
-  username?: string;
-  password?: PasswordNew;
-  role?: string;
-  active?: boolean;
-  imageUrl?: ImageUrl;
-  locale?: Locale;
-  phone?: string;
-  website?: string;
+    id: Id;
+    email?: Email;
+    username?: string;
+    password?: PasswordNew;
+    role?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface UpdateUserRequestMultipart {
-  id: Id;
-  email?: Email;
-  username?: string;
-  password?: PasswordNew;
-  role?: string;
-  active?: boolean;
-  /** Optional user profile image */
-  imageUpload?: Blob;
-  locale?: Locale;
-  phone?: string;
-  website?: string;
+    id: Id;
+    email?: Email;
+    username?: string;
+    password?: PasswordNew;
+    role?: string;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface CreateUserRequest {
-  email: Email;
-  username: string;
-  password?: PasswordNew;
-  sendSetupEmail?: boolean;
-  role?: string;
-  active?: boolean;
-  imageUrl?: ImageUrl;
-  locale?: Locale;
+    email: Email;
+    username: string;
+    password?: PasswordNew;
+    sendSetupEmail?: boolean;
+    role?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface CreateUserRequestMultipart {
-  email: Email;
-  username: string;
-  password?: PasswordNew;
-  sendSetupEmail?: boolean;
-  role?: string;
-  active?: boolean;
-  /** Optional user profile image */
-  imageUpload?: Blob;
-  locale?: Locale;
+    email: Email;
+    username: string;
+    password?: PasswordNew;
+    sendSetupEmail?: boolean;
+    role?: string;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface DeleteUserRequest {
-  id: Id;
-  hardDelete?: boolean;
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface UpdateUserByIdRequest {
-  email?: Email;
-  password?: PasswordNew;
-  username?: string;
-  role?: string;
-  active?: boolean;
-  imageUrl?: ImageUrl;
-  locale?: Locale;
-  phone?: string;
-  website?: string;
+    email?: Email;
+    password?: PasswordNew;
+    username?: string;
+    role?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface UpdateUserByIdRequestMultipart {
-  email?: Email;
-  password?: PasswordNew;
-  username?: string;
-  role?: string;
-  active?: boolean;
-  /** Optional user profile image */
-  imageUpload?: Blob;
-  locale?: Locale;
-  phone?: string;
-  website?: string;
+    email?: Email;
+    password?: PasswordNew;
+    username?: string;
+    role?: string;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface SearchUsersRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  id?: Id;
-  email?: Email;
-  username?: string;
-  active?: boolean;
-  role?: string;
-  verified?: boolean;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    email?: Email;
+    username?: string;
+    active?: boolean;
+    role?: string;
+    verified?: boolean;
 }
 
 export interface CreateFeedbackRequest {
-  name?: string;
-  email: Email;
-  subject: string;
-  message: string;
-  /**
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
      * @maxLength 200
      */
-  website?: string;
+    website?: string;
 }
 
-export type FeedbackRequestStatus = typeof FeedbackRequestStatus[keyof typeof FeedbackRequestStatus];
-
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
 
 export const FeedbackRequestStatus = {
-  new: 'new',
-  in_progress: 'in_progress',
-  resolved: 'resolved',
-  spam: 'spam',
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
 } as const;
 
 export interface FeedbackRequest {
-  id: Id;
-  name?: string;
-  email: Email;
-  subject: string;
-  message: string;
-  status: FeedbackRequestStatus;
-  adminNotes?: string;
-  respondedAt?: string;
-  createdAt: string;
-  updatedAt?: string;
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: FeedbackRequestStatus;
+    adminNotes?: string;
+    respondedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export interface FeedbackRequestEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: FeedbackRequest;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FeedbackRequest;
 }
 
 export interface FeedbackRequestsResponse {
-  items: FeedbackRequest[];
-  meta: PaginationMeta;
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
 }
 
 export interface FeedbackRequestsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: FeedbackRequestsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FeedbackRequestsResponse;
 }
 
 export interface SearchFeedbackRequestsRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  status?: FeedbackRequestStatus;
-  email?: Email;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    status?: FeedbackRequestStatus;
+    email?: Email;
 }
 
 export interface UpdateFeedbackRequestStatusRequest {
-  status?: FeedbackRequestStatus;
-  adminNotes?: string;
+    status?: FeedbackRequestStatus;
+    adminNotes?: string;
 }
 
 export interface ProductsResponse {
-  items: Product[];
-  meta: PaginationMeta;
+    items: Product[];
+    meta: PaginationMeta;
 }
 
 export interface ProductsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: ProductsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ProductsResponse;
 }
 
 export interface UpdateProductRequest {
-  id: Id;
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  requiresShipping?: boolean;
-  imageUrl?: ImageUrl;
-  categories?: string[];
-  tags?: string[];
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductRequestMultipart {
-  id: Id;
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  requiresShipping?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface ProductEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: Product;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Product;
 }
 
 export interface CreateProductRequest {
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  /** @minimum 0 */
-  onHand?: number;
-  description?: string;
-  active?: boolean;
-  requiresShipping?: boolean;
-  imageUrl?: ImageUrl;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface CreateProductRequestMultipart {
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  /** @minimum 0 */
-  onHand?: number;
-  description?: string;
-  active?: boolean;
-  requiresShipping?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    requiresShipping?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface DeleteProductRequest {
-  id: Id;
-  hardDelete?: boolean;
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface FacetCount {
-  name: string;
-  /** @minimum 1 */
-  count: number;
+    name: string;
+    /** @minimum 1 */
+    count: number;
 }
 
 export interface CatalogueFacetsResponse {
-  categories: FacetCount[];
-  tags: FacetCount[];
+    categories: FacetCount[];
+    tags: FacetCount[];
 }
 
 export interface CatalogueFacetsEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: CatalogueFacetsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CatalogueFacetsResponse;
 }
 
 export interface UpdateProductByIdRequest {
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  requiresShipping?: boolean;
-  imageUrl?: ImageUrl;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductByIdRequestMultipart {
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  requiresShipping?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    requiresShipping?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface SearchProductsRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  id?: Id;
-  /** @minimum 0 */
-  minPrice?: number;
-  /** @minimum 0 */
-  maxPrice?: number;
-  category?: string;
-  tag?: string;
-  title?: string;
-  active?: boolean;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    /** @minimum 0 */
+    minPrice?: number;
+    /** @minimum 0 */
+    maxPrice?: number;
+    category?: string;
+    tag?: string;
+    title?: string;
+    active?: boolean;
 }
 
 export interface CartSummaryResponse {
-  /**
+    /**
      * Number of distinct cart lines/items
      * @minimum 0
      */
-  itemsCount: number;
-  /**
+    itemsCount: number;
+    /**
      * Sum of quantities across all items
      * @minimum 0
      */
-  totalQuantity: number;
-  /**
+    totalQuantity: number;
+    /**
      * Sum of item prices * quantity (before tax/shipping/discounts)
      * @minimum 0
      */
-  total: number;
-  /** ISO-4217 currency code (e.g. USD) */
-  currency?: string;
+    total: number;
+    /** ISO-4217 currency code (e.g. USD) */
+    currency?: string;
 }
 
 export interface CartResponse {
-  items: CartItem[];
-  summary: CartSummaryResponse;
+    items: CartItem[];
+    summary: CartSummaryResponse;
 }
 
 export interface CartResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: CartResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CartResponse;
 }
 
 export interface UpsertCartItemRequest {
-  productId: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface RemoveCartItemRequest {
-  productId: Id;
+    productId: Id;
 }
 
 export interface UpdateCartItemByIdRequest {
-  productId?: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId?: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface CartSummaryResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: CartSummaryResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CartSummaryResponse;
 }
 
 export interface CheckoutRequest {
-  email?: Email;
-  /** Optional order notes */
-  notes?: string;
-  /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
-  addressId?: Id;
-  /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
-  shippingMethodId?: string;
+    email?: Email;
+    /** Optional order notes */
+    notes?: string;
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
+    addressId?: Id;
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    shippingMethodId?: string;
 }
 
 export interface CheckoutResponse {
-  order: Order;
-  message?: string;
+    order: Order;
+    message?: string;
 }
 
 export interface CheckoutResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: CheckoutResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CheckoutResponse;
 }
 
 export interface WishlistItem {
-  productId: Id;
+    productId: Id;
 }
 
 export interface WishlistResponse {
-  items: WishlistItem[];
+    items: WishlistItem[];
 }
 
 export interface WishlistResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: WishlistResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WishlistResponse;
 }
 
 export interface AddWishlistItemRequest {
-  productId: Id;
+    productId: Id;
 }
 
 export interface OrdersResponse {
-  items: Order[];
-  meta: PaginationMeta;
+    items: Order[];
+    meta: PaginationMeta;
 }
 
 export interface OrdersResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: OrdersResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OrdersResponse;
 }
 
 /**
  * Updated order status
  */
-export type UpdateOrderRequestStatus = typeof UpdateOrderRequestStatus[keyof typeof UpdateOrderRequestStatus];
-
+export type UpdateOrderRequestStatus =
+    (typeof UpdateOrderRequestStatus)[keyof typeof UpdateOrderRequestStatus];
 
 export const UpdateOrderRequestStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 export interface UpdateOrderRequest {
-  id: Id;
-  /** Updated order status */
-  status?: UpdateOrderRequestStatus;
-  userId?: Id;
-  email?: Email;
-  /** @minItems 1 */
-  items?: CartItem[];
+    id: Id;
+    /** Updated order status */
+    status?: UpdateOrderRequestStatus;
+    userId?: Id;
+    email?: Email;
+    /** @minItems 1 */
+    items?: CartItem[];
 }
 
 export interface OrderEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: Order;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
 }
 
 /**
  * Create a new order.
  */
 export interface CreateOrderRequest {
-  userId: Id;
-  email: Email;
-  /** @minItems 1 */
-  items: CartItem[];
+    userId: Id;
+    email: Email;
+    /** @minItems 1 */
+    items: CartItem[];
 }
 
 export interface DeleteOrderRequest {
-  id: Id;
-  hardDelete?: boolean;
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface SearchOrdersRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  id?: Id;
-  userId?: Id;
-  productId?: Id;
-  email?: Email;
-  status?: OrderStatus;
-  notes?: string;
+    page?: Page;
+    pageSize?: PageSize;
+    id?: Id;
+    userId?: Id;
+    productId?: Id;
+    email?: Email;
+    status?: OrderStatus;
+    notes?: string;
 }
 
 /**
  * Updated order status
  */
-export type UpdateOrderByIdRequestStatus = typeof UpdateOrderByIdRequestStatus[keyof typeof UpdateOrderByIdRequestStatus];
-
+export type UpdateOrderByIdRequestStatus =
+    (typeof UpdateOrderByIdRequestStatus)[keyof typeof UpdateOrderByIdRequestStatus];
 
 export const UpdateOrderByIdRequestStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 export interface UpdateOrderByIdRequest {
-  /** Updated order status */
-  status?: UpdateOrderByIdRequestStatus;
-  userId?: Id;
-  email?: Email;
-  /** @minItems 1 */
-  items?: CartItem[];
+    /** Updated order status */
+    status?: UpdateOrderByIdRequestStatus;
+    userId?: Id;
+    email?: Email;
+    /** @minItems 1 */
+    items?: CartItem[];
 }
 
 /**
  * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
  */
 export interface CancelOrderRequest {
-  /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
-  refund?: boolean;
+    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
+    refund?: boolean;
 }
 
 export interface CreatePaymentIntentRequest {
-  orderId: Id;
+    orderId: Id;
 }
 
 /**
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
  */
 export interface PaymentActions {
-  /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
-  pay: boolean;
-  /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
-  refund: boolean;
+    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
+    pay: boolean;
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
+    refund: boolean;
 }
 
 /**
  * The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions
  */
-export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
-
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
-  requires_confirmation: 'requires_confirmation',
-  requires_action: 'requires_action',
-  processing: 'processing',
-  succeeded: 'succeeded',
-  declined: 'declined',
-  refunded: 'refunded',
+    requires_confirmation: 'requires_confirmation',
+    requires_action: 'requires_action',
+    processing: 'processing',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
 } as const;
 
 export interface Payment {
-  id: Id;
-  orderId: Id;
-  userId?: Id;
-  /**
+    id: Id;
+    orderId: Id;
+    userId?: Id;
+    /**
      * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.
      * @minimum 0
      */
-  amount: number;
-  /** ISO-4217 currency code (e.g. EUR) */
-  currency: string;
-  /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions */
-  status: PaymentStatus;
-  /** Which provider implementation handled it (`fake` in the demo). */
-  provider: string;
-  /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
-  clientSecret?: string;
-  /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
-  cardLast4?: string;
-  actions?: PaymentActions;
-  createdAt?: string;
-  updatedAt?: string;
+    amount: number;
+    /** ISO-4217 currency code (e.g. EUR) */
+    currency: string;
+    /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions */
+    status: PaymentStatus;
+    /** Which provider implementation handled it (`fake` in the demo). */
+    provider: string;
+    /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
+    clientSecret?: string;
+    /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
+    cardLast4?: string;
+    actions?: PaymentActions;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface PaymentEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: Payment;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Payment;
 }
 
 export interface ConfirmPaymentRequest {
-  /**
+    /**
      * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. The fake provider recognises `pm_card_visa` (succeeds), `pm_card_declined`, `pm_card_authentication_required` and `pm_card_processing`; anything else succeeds.
      * @minLength 3
      * @maxLength 255
      * @pattern ^[\w-]+$
      */
-  paymentMethodRef: string;
+    paymentMethodRef: string;
 }
 
 /**
  * The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores.
  */
-export type PaymentWebhookEventStatus = typeof PaymentWebhookEventStatus[keyof typeof PaymentWebhookEventStatus];
-
+export type PaymentWebhookEventStatus =
+    (typeof PaymentWebhookEventStatus)[keyof typeof PaymentWebhookEventStatus];
 
 export const PaymentWebhookEventStatus = {
-  requires_action: 'requires_action',
-  processing: 'processing',
-  succeeded: 'succeeded',
-  declined: 'declined',
+    requires_action: 'requires_action',
+    processing: 'processing',
+    succeeded: 'succeeded',
+    declined: 'declined'
 } as const;
 
 /**
@@ -2033,109 +2070,108 @@ export const PaymentWebhookEventStatus = {
  * FLAT on purpose. The provider's report could have been nested under a `state` object, mirroring how most vendors wrap theirs, but the adapter is where a vendor's shape is absorbed and nothing downstream reads these fields as a unit — so the nesting would have bought a second level for no reader.
  */
 export interface PaymentWebhookEvent {
-  /** The provider's event id. Deduplicated, so a retry settles nothing twice. */
-  id: string;
-  /** Which intent the event is about. Absent for an event this API ignores. */
-  providerRef?: string;
-  /** The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores. */
-  status?: PaymentWebhookEventStatus;
-  /** The only card digits a payment system may remember, as the provider reports them. */
-  cardLast4?: string;
+    /** The provider's event id. Deduplicated, so a retry settles nothing twice. */
+    id: string;
+    /** Which intent the event is about. Absent for an event this API ignores. */
+    providerRef?: string;
+    /** The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores. */
+    status?: PaymentWebhookEventStatus;
+    /** The only card digits a payment system may remember, as the provider reports them. */
+    cardLast4?: string;
 }
 
 export interface ShippingMethod {
-  /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
-  id: string;
-  /**
+    /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
+    id: string;
+    /**
      * Flat rate, in the shop's currency.
      * @minimum 0
      */
-  price: number;
-  /**
+    price: number;
+    /**
      * Items total at which this method becomes free. Absent — it never does.
      * @minimum 0
      */
-  freeAbove?: number;
+    freeAbove?: number;
 }
 
 export interface ShippingMethodsResponse {
-  methods: ShippingMethod[];
+    methods: ShippingMethod[];
 }
 
 export interface ShippingMethodsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: ShippingMethodsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ShippingMethodsResponse;
 }
 
 /**
  * The tail of the order's lifecycle, as the courier sees it.
  */
-export type ShipmentStatus = typeof ShipmentStatus[keyof typeof ShipmentStatus];
-
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
 
 export const ShipmentStatus = {
-  shipped: 'shipped',
-  delivered: 'delivered',
+    shipped: 'shipped',
+    delivered: 'delivered'
 } as const;
 
 export interface Shipment {
-  id: Id;
-  orderId: Id;
-  /** The courier's handle on the parcel. */
-  trackingCode: string;
-  /** The tail of the order's lifecycle, as the courier sees it. */
-  status: ShipmentStatus;
-  deliveredAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    orderId: Id;
+    /** The courier's handle on the parcel. */
+    trackingCode: string;
+    /** The tail of the order's lifecycle, as the courier sees it. */
+    status: ShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ShipmentEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: Shipment;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Shipment;
 }
 
 export interface CourierAdvanceResponse {
-  /**
+    /**
      * How many parcels arrived on this tick.
      * @minimum 0
      */
-  advanced: number;
+    advanced: number;
 }
 
 export interface CourierAdvanceResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: CourierAdvanceResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CourierAdvanceResponse;
 }
 
 export interface InventoryLevel {
-  productId: Id;
-  /** Carried so the board reads as a list of products rather than of ids. */
-  title: string;
-  /** @minimum 0 */
-  onHand: number;
-  /** @minimum 0 */
-  reserved: number;
-  /** @minimum 0 */
-  available: number;
+    productId: Id;
+    /** Carried so the board reads as a list of products rather than of ids. */
+    title: string;
+    /** @minimum 0 */
+    onHand: number;
+    /** @minimum 0 */
+    reserved: number;
+    /** @minimum 0 */
+    available: number;
 }
 
 export interface InventoryLevelsResponse {
-  items: InventoryLevel[];
-  meta: PaginationMeta;
+    items: InventoryLevel[];
+    meta: PaginationMeta;
 }
 
 export interface InventoryLevelsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: InventoryLevelsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevelsResponse;
 }
 
 /**
@@ -2146,83 +2182,82 @@ export interface InventoryLevelsResponseEnvelope {
  * * `receive` — a supplier delivery. `onHand` up.
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  */
-export type StockMovementReason = typeof StockMovementReason[keyof typeof StockMovementReason];
-
+export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
 export const StockMovementReason = {
-  reserve: 'reserve',
-  commit: 'commit',
-  release: 'release',
-  expire: 'expire',
-  receive: 'receive',
-  adjust: 'adjust',
+    reserve: 'reserve',
+    commit: 'commit',
+    release: 'release',
+    expire: 'expire',
+    receive: 'receive',
+    adjust: 'adjust'
 } as const;
 
 export interface StockMovement {
-  id: Id;
-  productId: Id;
-  reason: StockMovementReason;
-  onHandDelta: number;
-  reservedDelta: number;
-  /** The order the movement belongs to, when one does. */
-  reference?: string;
-  /** Why an adjustment was made — the operator's own words. */
-  note?: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    productId: Id;
+    reason: StockMovementReason;
+    onHandDelta: number;
+    reservedDelta: number;
+    /** The order the movement belongs to, when one does. */
+    reference?: string;
+    /** Why an adjustment was made — the operator's own words. */
+    note?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface StockMovementsResponse {
-  items: StockMovement[];
-  meta: PaginationMeta;
+    items: StockMovement[];
+    meta: PaginationMeta;
 }
 
 export interface StockMovementsResponseEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: StockMovementsResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: StockMovementsResponse;
 }
 
 export interface ReceiptRequest {
-  productId: Id;
-  /**
+    productId: Id;
+    /**
      * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
      */
-  quantity: number;
-  /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
-  note?: string;
+    quantity: number;
+    /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
+    note?: string;
 }
 
 export interface InventoryLevelEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: InventoryLevel;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevel;
 }
 
 export interface AdjustmentRequest {
-  productId: Id;
-  /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
-  delta: number;
-  /** Why. An unexplained correction is the thing an audit is looking for. */
-  note?: string;
+    productId: Id;
+    /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
+    delta: number;
+    /** Why. An unexplained correction is the thing an audit is looking for. */
+    note?: string;
 }
 
 export interface ReservationSweepResponse {
-  /**
+    /**
      * How many holds this run released.
      * @minimum 0
      */
-  expired: number;
+    expired: number;
 }
 
 export interface ReservationSweepEnvelope {
-  success: EnvelopeSuccess;
-  status: EnvelopeStatus;
-  message: EnvelopeMessage;
-  data: ReservationSweepResponse;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReservationSweepResponse;
 }
 
 /**
@@ -2292,326 +2327,320 @@ export type MessagesTenantQueryParamParameter = LocaleTenant;
 export type EntryTenantQueryParamParameter = LocaleTenant;
 
 export type GetLocaleMessagesParams = {
-/**
- * The id of one tenant — one keyspace, authored by one team. Which ids exist is
- * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
- * refused with a 422.
- *
- * On a LANGUAGE it reports capability: the backend tenant means the API can answer
- * requests in it, because a dictionary file is deployed; a frontend tenant means a
- * client dictionary is downloadable for it.
- *
- * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
- * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
- * layered over the API's own deployed files at resolution time.
- * @minLength 1
- * @maxLength 64
- * @pattern ^[a-z0-9][a-z0-9-]*$
- */
-tenant?: MessagesTenantQueryParamParameter;
+    /**
+     * The id of one tenant — one keyspace, authored by one team. Which ids exist is
+     * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
+     * refused with a 422.
+     *
+     * On a LANGUAGE it reports capability: the backend tenant means the API can answer
+     * requests in it, because a dictionary file is deployed; a frontend tenant means a
+     * client dictionary is downloadable for it.
+     *
+     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
+     * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
+     * layered over the API's own deployed files at resolution time.
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[a-z0-9][a-z0-9-]*$
+     */
+    tenant?: MessagesTenantQueryParamParameter;
 };
 
 export type ListLocaleEntriesParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-/**
- * The id of one tenant — one keyspace, authored by one team. Which ids exist is
- * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
- * refused with a 422.
- *
- * On a LANGUAGE it reports capability: the backend tenant means the API can answer
- * requests in it, because a dictionary file is deployed; a frontend tenant means a
- * client dictionary is downloadable for it.
- *
- * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
- * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
- * layered over the API's own deployed files at resolution time.
- * @minLength 1
- * @maxLength 64
- * @pattern ^[a-z0-9][a-z0-9-]*$
- */
-tenant?: EntryTenantQueryParamParameter;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    /**
+     * The id of one tenant — one keyspace, authored by one team. Which ids exist is
+     * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
+     * refused with a 422.
+     *
+     * On a LANGUAGE it reports capability: the backend tenant means the API can answer
+     * requests in it, because a dictionary file is deployed; a frontend tenant means a
+     * client dictionary is downloadable for it.
+     *
+     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
+     * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
+     * layered over the API's own deployed files at resolution time.
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[a-z0-9][a-z0-9-]*$
+     */
+    tenant?: EntryTenantQueryParamParameter;
 };
 
 export type GetObservabilityAuditLogsParams = {
-/**
- * Filter by actor user ID
- */
-actor?: string;
-/**
- * Filter by action name (e.g. order.created)
- */
-action?: string;
-/**
- * Filter by outcome
- */
-outcome?: GetObservabilityAuditLogsOutcome;
-/**
- * Return events strictly after this ISO-8601 timestamp — an exclusive bound
- */
-since?: string;
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
+    /**
+     * Filter by actor user ID
+     */
+    actor?: string;
+    /**
+     * Filter by action name (e.g. order.created)
+     */
+    action?: string;
+    /**
+     * Filter by outcome
+     */
+    outcome?: GetObservabilityAuditLogsOutcome;
+    /**
+     * Return events strictly after this ISO-8601 timestamp — an exclusive bound
+     */
+    since?: string;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
 };
 
-export type GetObservabilityAuditLogsOutcome = typeof GetObservabilityAuditLogsOutcome[keyof typeof GetObservabilityAuditLogsOutcome];
-
+export type GetObservabilityAuditLogsOutcome =
+    (typeof GetObservabilityAuditLogsOutcome)[keyof typeof GetObservabilityAuditLogsOutcome];
 
 export const GetObservabilityAuditLogsOutcome = {
-  success: 'success',
-  failure: 'failure',
+    success: 'success',
+    failure: 'failure'
 } as const;
 
 export type CompleteOAuthLoginParams = {
-code?: string;
-state?: string;
-/**
- * Set by the provider instead of `code` when the user declines consent.
- */
-error?: string;
+    code?: string;
+    state?: string;
+    /**
+     * Set by the provider instead of `code` when the user declines consent.
+     */
+    error?: string;
 };
 
 export type ListUsersParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-/**
- * Resource identifier
- */
-id?: IdParamParameter;
-email?: Email;
-username?: string;
-active?: boolean;
-role?: string;
-verified?: boolean;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    /**
+     * Resource identifier
+     */
+    id?: IdParamParameter;
+    email?: Email;
+    username?: string;
+    active?: boolean;
+    role?: string;
+    verified?: boolean;
 };
 
 export type DeleteUserParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteUserByIdParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListFeedbackRequestsParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-email?: Email;
-status?: FeedbackRequestStatus;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    email?: Email;
+    status?: FeedbackRequestStatus;
 };
 
 export type ListProductsParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-/**
- * Resource identifier
- */
-id?: IdParamParameter;
-category?: string;
-tag?: string;
-/**
- * @minimum 0
- */
-minPrice?: number;
-/**
- * @minimum 0
- */
-maxPrice?: number;
-title?: string;
-active?: boolean;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    /**
+     * Resource identifier
+     */
+    id?: IdParamParameter;
+    category?: string;
+    tag?: string;
+    /**
+     * @minimum 0
+     */
+    minPrice?: number;
+    /**
+     * @minimum 0
+     */
+    maxPrice?: number;
+    title?: string;
+    active?: boolean;
 };
 
 export type DeleteProductParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteProductByIdParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListOrdersParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Resource identifier
- */
-id?: IdParamParameter;
-/**
- * Resource identifier
- */
-userId?: UserIdParamParameter;
-/**
- * Resource identifier
- */
-productId?: ProductIdParamParameter;
-email?: Email;
-status?: OrderStatus;
-notes?: string;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Resource identifier
+     */
+    id?: IdParamParameter;
+    /**
+     * Resource identifier
+     */
+    userId?: UserIdParamParameter;
+    /**
+     * Resource identifier
+     */
+    productId?: ProductIdParamParameter;
+    email?: Email;
+    status?: OrderStatus;
+    notes?: string;
 };
 
 export type DeleteOrderParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteOrderByIdParams = {
-/**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
- */
-hardDelete?: HardDeleteParamParameter;
+    /**
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListInventoryLevelsParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Only products at or under the deployment's low-availability threshold.
- */
-lowOnly?: boolean;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Only products at or under the deployment's low-availability threshold.
+     */
+    lowOnly?: boolean;
 };
 
 export type ListStockMovementsParams = {
-/**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
- * @minimum 1
- * @maximum 10000
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Narrow to one product's movements
- */
-productId?: Id;
-/**
- * Narrow to one kind of transition
- */
-reason?: StockMovementReason;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Narrow to one product's movements
+     */
+    productId?: Id;
+    /**
+     * Narrow to one kind of transition
+     */
+    reason?: StockMovementReason;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-  /**
+/**
  * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
  * @summary API health check
  */
-export const getHealth = (
-
- options?: SecondParameter<typeof orvalMutator<HealthPingEnvelope>>,) => {
-      return orvalMutator<HealthPingEnvelope>(
-      {url: `/`, method: 'GET'
-    },
-      options);
-    }
+export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPingEnvelope>>) => {
+    return orvalMutator<HealthPingEnvelope>({ url: `/`, method: 'GET' }, options);
+};
 
 /**
  * Every language this deployment offers, from both tiers, each stating what it can
@@ -2634,13 +2663,10 @@ export const getHealth = (
  * @summary Supported languages
  */
 export const getLocales = (
-
- options?: SecondParameter<typeof orvalMutator<LocaleCapabilitiesEnvelope>>,) => {
-      return orvalMutator<LocaleCapabilitiesEnvelope>(
-      {url: `/locales`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleCapabilitiesEnvelope>>
+) => {
+    return orvalMutator<LocaleCapabilitiesEnvelope>({ url: `/locales`, method: 'GET' }, options);
+};
 
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
@@ -2652,14 +2678,18 @@ export const getLocales = (
  */
 export const createLocale = (
     createLocaleRequest: CreateLocaleRequest,
- options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>,) => {
-      return orvalMutator<LanguageEnvelope>(
-      {url: `/locales`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createLocaleRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createLocaleRequest
+        },
+        options
+    );
+};
 
 /**
  * Every tenant this deployment holds words for — the keyspaces an entry can belong
@@ -2675,13 +2705,10 @@ export const createLocale = (
  * @summary Translation tenants
  */
 export const getLocaleTenants = (
-
- options?: SecondParameter<typeof orvalMutator<LocaleTenantsEnvelope>>,) => {
-      return orvalMutator<LocaleTenantsEnvelope>(
-      {url: `/locales/tenants`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleTenantsEnvelope>>
+) => {
+    return orvalMutator<LocaleTenantsEnvelope>({ url: `/locales/tenants`, method: 'GET' }, options);
+};
 
 /**
  * This API's own dictionary for one language — tier 1, the deployed files.
@@ -2696,12 +2723,13 @@ export const getLocaleTenants = (
  */
 export const getLocaleDictionary = (
     locale: Locale,
- options?: SecondParameter<typeof orvalMutator<LocaleDictionaryEnvelope>>,) => {
-      return orvalMutator<LocaleDictionaryEnvelope>(
-      {url: `/locales/${locale}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleDictionaryEnvelope>>
+) => {
+    return orvalMutator<LocaleDictionaryEnvelope>(
+        { url: `/locales/${locale}`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Updates a language's display names, writing direction or visibility. The tag itself
@@ -2712,14 +2740,18 @@ export const getLocaleDictionary = (
 export const updateLocale = (
     locale: string,
     updateLocaleRequest: UpdateLocaleRequest,
- options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>,) => {
-      return orvalMutator<LanguageEnvelope>(
-      {url: `/locales/${locale}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateLocaleRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales/${locale}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateLocaleRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes the language AND every entry translated into it.
@@ -2731,12 +2763,10 @@ export const updateLocale = (
  */
 export const deleteLocale = (
     locale: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/locales/${locale}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/locales/${locale}`, method: 'DELETE' }, options);
+};
 
 /**
  * The dynamic dictionary for one language, built from its stored entries into the
@@ -2765,13 +2795,13 @@ export const deleteLocale = (
 export const getLocaleMessages = (
     locale: string,
     params?: GetLocaleMessagesParams,
- options?: SecondParameter<typeof orvalMutator<LocaleMessagesEnvelope>>,) => {
-      return orvalMutator<LocaleMessagesEnvelope>(
-      {url: `/locales/${locale}/messages`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleMessagesEnvelope>>
+) => {
+    return orvalMutator<LocaleMessagesEnvelope>(
+        { url: `/locales/${locale}/messages`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * The rows behind one language's dictionary, paginated and searchable — what a
@@ -2784,13 +2814,13 @@ export const getLocaleMessages = (
 export const listLocaleEntries = (
     locale: string,
     params?: ListLocaleEntriesParams,
- options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>,) => {
-      return orvalMutator<LocaleEntriesResponseEnvelope>(
-      {url: `/locales/${locale}/entries`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
+) => {
+    return orvalMutator<LocaleEntriesResponseEnvelope>(
+        { url: `/locales/${locale}/entries`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * 409 if the key already exists in this language, and equally if it COLLIDES with one
@@ -2801,14 +2831,18 @@ export const listLocaleEntries = (
 export const createLocaleEntry = (
     locale: string,
     createLocaleEntryRequest: CreateLocaleEntryRequest,
- options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>,) => {
-      return orvalMutator<LocaleEntryEnvelope>(
-      {url: `/locales/${locale}/entries`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createLocaleEntryRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createLocaleEntryRequest
+        },
+        options
+    );
+};
 
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
@@ -2826,14 +2860,18 @@ export const createLocaleEntry = (
 export const replaceLocaleEntries = (
     locale: string,
     replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
- options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>,) => {
-      return orvalMutator<LocaleImportResultEnvelope>(
-      {url: `/locales/${locale}/entries`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: replaceLocaleEntriesRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+) => {
+    return orvalMutator<LocaleImportResultEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceLocaleEntriesRequest
+        },
+        options
+    );
+};
 
 /**
  * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
@@ -2846,14 +2884,18 @@ export const replaceLocaleEntries = (
 export const mergeLocaleEntries = (
     locale: string,
     mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
- options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>,) => {
-      return orvalMutator<LocaleImportResultEnvelope>(
-      {url: `/locales/${locale}/entries`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: mergeLocaleEntriesRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+) => {
+    return orvalMutator<LocaleImportResultEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: mergeLocaleEntriesRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates the value of one entry. The key is not editable — a key is the identity a
@@ -2865,14 +2907,18 @@ export const updateLocaleEntry = (
     locale: string,
     entryId: string,
     updateLocaleEntryRequest: UpdateLocaleEntryRequest,
- options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>,) => {
-      return orvalMutator<LocaleEntryEnvelope>(
-      {url: `/locales/${locale}/entries/${entryId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateLocaleEntryRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        {
+            url: `/locales/${locale}/entries/${entryId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateLocaleEntryRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes a single key from one language. The other languages keep theirs.
@@ -2881,26 +2927,22 @@ export const updateLocaleEntry = (
 export const deleteLocaleEntry = (
     locale: string,
     entryId: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/locales/${locale}/entries/${entryId}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/locales/${locale}/entries/${entryId}`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
  */
-export const getObservabilityEvents = (
-
- options?: SecondParameter<typeof orvalMutator<string>>,) => {
-      return orvalMutator<string>(
-      {url: `/observability/events`, method: 'GET'
-    },
-      options);
-    }
+export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/observability/events`, method: 'GET' }, options);
+};
 
 /**
  * Readiness snapshot: whether this instance can serve what it promises, and which
@@ -2915,13 +2957,13 @@ export const getObservabilityEvents = (
  * @summary Health snapshot
  */
 export const getObservabilityHealth = (
-
- options?: SecondParameter<typeof orvalMutator<ObservabilityHealthResponseEnvelope>>,) => {
-      return orvalMutator<ObservabilityHealthResponseEnvelope>(
-      {url: `/observability/health`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ObservabilityHealthResponseEnvelope>>
+) => {
+    return orvalMutator<ObservabilityHealthResponseEnvelope>(
+        { url: `/observability/health`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Raw Prometheus text (exposition format 0.0.4).
@@ -2929,14 +2971,9 @@ export const getObservabilityHealth = (
  * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
  * @summary Prometheus metrics
  */
-export const getObservabilityMetrics = (
-
- options?: SecondParameter<typeof orvalMutator<string>>,) => {
-      return orvalMutator<string>(
-      {url: `/observability/metrics`, method: 'GET'
-    },
-      options);
-    }
+export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/observability/metrics`, method: 'GET' }, options);
+};
 
 /**
  * Key operational metrics derived from Prometheus counters/histograms,
@@ -2945,13 +2982,13 @@ export const getObservabilityMetrics = (
  * @summary Metrics overview (JSON)
  */
 export const getObservabilityMetricsOverview = (
-
- options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>>,) => {
-      return orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>(
-      {url: `/observability/metrics/overview`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>>
+) => {
+    return orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>(
+        { url: `/observability/metrics/overview`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Returns the most recent audit events, newest first, from the persisted audit trail.
@@ -2963,52 +3000,44 @@ export const getObservabilityMetricsOverview = (
  */
 export const getObservabilityAuditLogs = (
     params?: GetObservabilityAuditLogsParams,
- options?: SecondParameter<typeof orvalMutator<AuditLogsResponseEnvelope>>,) => {
-      return orvalMutator<AuditLogsResponseEnvelope>(
-      {url: `/observability/audit`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AuditLogsResponseEnvelope>>
+) => {
+    return orvalMutator<AuditLogsResponseEnvelope>(
+        { url: `/observability/audit`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
  * @summary Read the active human-challenge provider's public parameters, and every rung's status
  */
 export const getAntibotConfig = (
-
- options?: SecondParameter<typeof orvalMutator<AntibotConfigEnvelope>>,) => {
-      return orvalMutator<AntibotConfigEnvelope>(
-      {url: `/antibot/config`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AntibotConfigEnvelope>>
+) => {
+    return orvalMutator<AntibotConfigEnvelope>({ url: `/antibot/config`, method: 'GET' }, options);
+};
 
 /**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
 export const getAntibotChallenge = (
-
- options?: SecondParameter<typeof orvalMutator<AntibotChallengeEnvelope>>,) => {
-      return orvalMutator<AntibotChallengeEnvelope>(
-      {url: `/antibot/challenge`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AntibotChallengeEnvelope>>
+) => {
+    return orvalMutator<AntibotChallengeEnvelope>(
+        { url: `/antibot/challenge`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
-export const getAccount = (
-
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/account`, method: 'GET'
-    },
-      options);
-    }
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnvelope>>) => {
+    return orvalMutator<UserEnvelope>({ url: `/account`, method: 'GET' }, options);
+};
 
 /**
  * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
@@ -3016,14 +3045,18 @@ export const getAccount = (
  */
 export const updateAccount = (
     updateAccountRequest: UpdateAccountRequest,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/account`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateAccountRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateAccountRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
@@ -3031,49 +3064,76 @@ export const updateAccount = (
  */
 export const updateAccountWithMultipart = (
     updateAccountRequestMultipart: UpdateAccountRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {const formData = new FormData();
-if(updateAccountRequestMultipart.email !== undefined) {
- formData.append(`email`, updateAccountRequestMultipart.email);
- }
-if(updateAccountRequestMultipart.username !== undefined) {
- formData.append(`username`, updateAccountRequestMultipart.username);
- }
-if(updateAccountRequestMultipart.locale !== undefined) {
- formData.append(`locale`, updateAccountRequestMultipart.locale);
- }
-if(updateAccountRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
- }
-if(updateAccountRequestMultipart.phone !== undefined) {
- formData.append(`phone`, updateAccountRequestMultipart.phone);
- }
-if(updateAccountRequestMultipart.website !== undefined) {
- formData.append(`website`, updateAccountRequestMultipart.website);
- }
-if(updateAccountRequestMultipart.analyticsConsent !== undefined) {
- formData.append(`analyticsConsent`, updateAccountRequestMultipart.analyticsConsent.toString())
- }
-
-      return orvalMutator<UserEnvelope>(
-      {url: `/account`, method: 'PUT',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (updateAccountRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateAccountRequestMultipart.email);
     }
+    if (updateAccountRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateAccountRequestMultipart.username);
+    }
+    if (updateAccountRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateAccountRequestMultipart.locale);
+    }
+    if (updateAccountRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
+    }
+    if (updateAccountRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateAccountRequestMultipart.phone);
+    }
+    if (updateAccountRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateAccountRequestMultipart.website);
+    }
+    if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
+        formData.append(
+            `analyticsConsent`,
+            updateAccountRequestMultipart.analyticsConsent.toString()
+        );
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
  * @summary Request account deletion
  */
 export const requestAccountDelete = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+};
 
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account`, method: 'DELETE'
-    },
-      options);
-    }
+/**
+ * The rules the SERVER enforces, packed for a client to evaluate.
+ *
+ * Published so a client can grey out what it would be refused, from the same rules
+ * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
+ * drifts, and the drift is silent until somebody is shown a button that answers 403.
+ *
+ * **The client's copy has no authority.** It decides what to RENDER, never what is
+ * allowed; every request is re-evaluated server-side. Published here because the
+ * alternative is every client inventing the same guess.
+ *
+ * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
+ * a value in the model rather than an absence, and a shop front that greys nothing
+ * out for a visitor is a shop front that lies twice.
+ * @summary The caller's own authorization rules
+ */
+export const getMyAbilities = (
+    options?: SecondParameter<typeof orvalMutator<AbilitiesEnvelope>>
+) => {
+    return orvalMutator<AbilitiesEnvelope>({ url: `/account/abilities`, method: 'GET' }, options);
+};
 
 /**
  * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
@@ -3081,14 +3141,18 @@ export const requestAccountDelete = (
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
- options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>,) => {
-      return orvalMutator<AuthTokensEnvelope>(
-      {url: `/account/password`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: changePasswordRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/password`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: changePasswordRequest
+        },
+        options
+    );
+};
 
 /**
  * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
@@ -3096,40 +3160,34 @@ export const changePassword = (
  */
 export const reauth = (
     reauthRequest: ReauthRequest,
- options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>,) => {
-      return orvalMutator<AuthTokensEnvelope>(
-      {url: `/account/reauth`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: reauthRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/reauth`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: reauthRequest
+        },
+        options
+    );
+};
 
 /**
  * Logs out the CURRENT session only — revokes the refresh token carried by the `jwt` cookie and clears the authentication cookies. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
-export const logout = (
-
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/logout`, method: 'POST'
-    },
-      options);
-    }
+export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/logout`, method: 'POST' }, options);
+};
 
 /**
  * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
  * @summary List active sessions
  */
-export const getSessions = (
-
- options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>,) => {
-      return orvalMutator<SessionsEnvelope>(
-      {url: `/account/sessions`, method: 'GET'
-    },
-      options);
-    }
+export const getSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
+    return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
+};
 
 /**
  * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
@@ -3137,25 +3195,21 @@ export const getSessions = (
  */
 export const revokeSession = (
     sessionId: Id,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/sessions/${sessionId}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/sessions/${sessionId}`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
  * @summary List saved addresses
  */
-export const getAddresses = (
-
- options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>,) => {
-      return orvalMutator<AddressesEnvelope>(
-      {url: `/account/addresses`, method: 'GET'
-    },
-      options);
-    }
+export const getAddresses = (options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>) => {
+    return orvalMutator<AddressesEnvelope>({ url: `/account/addresses`, method: 'GET' }, options);
+};
 
 /**
  * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
@@ -3163,14 +3217,18 @@ export const getAddresses = (
  */
 export const addAddress = (
     addressInput: AddressInput,
- options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>,) => {
-      return orvalMutator<AddressesEnvelope>(
-      {url: `/account/addresses`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: addressInput
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        {
+            url: `/account/addresses`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: addressInput
+        },
+        options
+    );
+};
 
 /**
  * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
@@ -3179,14 +3237,18 @@ export const addAddress = (
 export const updateAddress = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
- options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>,) => {
-      return orvalMutator<AddressesEnvelope>(
-      {url: `/account/addresses/${addressId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateAddressRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        {
+            url: `/account/addresses/${addressId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateAddressRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
@@ -3194,25 +3256,26 @@ export const updateAddress = (
  */
 export const removeAddress = (
     addressId: Id,
- options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>,) => {
-      return orvalMutator<AddressesEnvelope>(
-      {url: `/account/addresses/${addressId}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        { url: `/account/addresses/${addressId}`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
  * @summary Request email verification
  */
 export const requestEmailVerification = (
-
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/verify-request`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/verify-request`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
@@ -3220,14 +3283,18 @@ export const requestEmailVerification = (
  */
 export const confirmEmailVerification = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/verify-confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: verifyEmailConfirmRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/verify-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: verifyEmailConfirmRequest
+        },
+        options
+    );
+};
 
 /**
  * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
@@ -3235,14 +3302,18 @@ export const confirmEmailVerification = (
  */
 export const confirmEmailChange = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/email-change-confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: verifyEmailConfirmRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/email-change-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: verifyEmailConfirmRequest
+        },
+        options
+    );
+};
 
 /**
  * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
@@ -3250,14 +3321,18 @@ export const confirmEmailChange = (
  */
 export const confirmAccountDelete = (
     accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/delete-confirm`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: accountDeleteConfirmRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/delete-confirm`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: accountDeleteConfirmRequest
+        },
+        options
+    );
+};
 
 /**
  * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
@@ -3265,14 +3340,18 @@ export const confirmAccountDelete = (
  */
 export const login = (
     loginRequest: LoginRequest,
- options?: SecondParameter<typeof orvalMutator<LoginResponseEnvelope>>,) => {
-      return orvalMutator<LoginResponseEnvelope>(
-      {url: `/account/login`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: loginRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<LoginResponseEnvelope>>
+) => {
+    return orvalMutator<LoginResponseEnvelope>(
+        {
+            url: `/account/login`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginRequest
+        },
+        options
+    );
+};
 
 /**
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
@@ -3280,14 +3359,18 @@ export const login = (
  */
 export const signup = (
     signupRequest: SignupRequest,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/account/signup`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: signupRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account/signup`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: signupRequest
+        },
+        options
+    );
+};
 
 /**
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
@@ -3295,26 +3378,31 @@ export const signup = (
  */
 export const signupWithMultipart = (
     signupRequestMultipart: SignupRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {const formData = new FormData();
-formData.append(`email`, signupRequestMultipart.email);
-formData.append(`username`, signupRequestMultipart.username);
-formData.append(`password`, signupRequestMultipart.password);
-formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
-formData.append(`termsAccepted`, signupRequestMultipart.termsAccepted.toString())
-if(signupRequestMultipart.analyticsConsent !== undefined) {
- formData.append(`analyticsConsent`, signupRequestMultipart.analyticsConsent.toString())
- }
-if(signupRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
- }
-
-      return orvalMutator<UserEnvelope>(
-      {url: `/account/signup`, method: 'POST',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`email`, signupRequestMultipart.email);
+    formData.append(`username`, signupRequestMultipart.username);
+    formData.append(`password`, signupRequestMultipart.password);
+    formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
+    formData.append(`termsAccepted`, signupRequestMultipart.termsAccepted.toString());
+    if (signupRequestMultipart.analyticsConsent !== undefined) {
+        formData.append(`analyticsConsent`, signupRequestMultipart.analyticsConsent.toString());
     }
+    if (signupRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account/signup`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
@@ -3322,14 +3410,18 @@ if(signupRequestMultipart.imageUpload !== undefined) {
  */
 export const requestPasswordReset = (
     passwordResetRequest: PasswordResetRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/reset`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: passwordResetRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/reset`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: passwordResetRequest
+        },
+        options
+    );
+};
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
@@ -3337,66 +3429,59 @@ export const requestPasswordReset = (
  */
 export const confirmPasswordReset = (
     passwordResetConfirmRequest: PasswordResetConfirmRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/reset-confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: passwordResetConfirmRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/reset-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: passwordResetConfirmRequest
+        },
+        options
+    );
+};
 
 /**
  * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
  * @summary Refresh access token
  */
 export const refreshToken = (
-
- options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>,) => {
-      return orvalMutator<RefreshTokenEnvelope>(
-      {url: `/account/refresh`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
+) => {
+    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' }, options);
+};
 
 /**
  * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
  * @summary Logout from all devices
  */
-export const logoutAll = (
-
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/logout-all`, method: 'POST'
-    },
-      options);
-    }
+export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' }, options);
+};
 
 /**
  * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
  * @summary Remove expired tokens
  */
 export const deleteExpiredTokens = (
-
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/tokens/expired`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/tokens/expired`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  * @summary Export the caller's own data
  */
 export const exportAccountData = (
-
- options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>,) => {
-      return orvalMutator<AccountExportEnvelope>(
-      {url: `/account/export`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>
+) => {
+    return orvalMutator<AccountExportEnvelope>({ url: `/account/export`, method: 'POST' }, options);
+};
 
 /**
  * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
@@ -3404,14 +3489,18 @@ export const exportAccountData = (
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
- options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>,) => {
-      return orvalMutator<AuthTokensEnvelope>(
-      {url: `/account/login/2fa`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: loginTwoFactorRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/2fa`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginTwoFactorRequest
+        },
+        options
+    );
+};
 
 /**
  * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
@@ -3419,27 +3508,28 @@ export const loginTwoFactor = (
  */
 export const sendTwoFactorCode = (
     twoFactorSendRequest: TwoFactorSendRequest,
- options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>,) => {
-      return orvalMutator<TwoFactorDeliveryEnvelope>(
-      {url: `/account/login/2fa/send`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: twoFactorSendRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+) => {
+    return orvalMutator<TwoFactorDeliveryEnvelope>(
+        {
+            url: `/account/login/2fa/send`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorSendRequest
+        },
+        options
+    );
+};
 
 /**
  * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
  * @summary Two-factor status
  */
 export const getTwoFactorStatus = (
-
- options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>,) => {
-      return orvalMutator<TwoFactorStatusEnvelope>(
-      {url: `/account/2fa`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
+) => {
+    return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
+};
 
 /**
  * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
@@ -3447,14 +3537,18 @@ export const getTwoFactorStatus = (
  */
 export const disableTwoFactor = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/2fa`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: twoFactorCodeRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
 
 /**
  * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
@@ -3463,14 +3557,18 @@ export const disableTwoFactor = (
 export const removeTwoFactorMethod = (
     method: string,
     twoFactorCodeRequest: TwoFactorCodeRequest,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/account/2fa/methods/${method}`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: twoFactorCodeRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa/methods/${method}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
 
 /**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
@@ -3478,12 +3576,13 @@ export const removeTwoFactorMethod = (
  */
 export const setupTwoFactorMethod = (
     method: string,
- options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>,) => {
-      return orvalMutator<TwoFactorSetupEnvelope>(
-      {url: `/account/2fa/methods/${method}/setup`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+) => {
+    return orvalMutator<TwoFactorSetupEnvelope>(
+        { url: `/account/2fa/methods/${method}/setup`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
@@ -3492,14 +3591,18 @@ export const setupTwoFactorMethod = (
 export const confirmTwoFactorMethod = (
     method: string,
     twoFactorConfirmRequest: TwoFactorConfirmRequest,
- options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>,) => {
-      return orvalMutator<TwoFactorConfirmEnvelope>(
-      {url: `/account/2fa/methods/${method}/confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: twoFactorConfirmRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
+) => {
+    return orvalMutator<TwoFactorConfirmEnvelope>(
+        {
+            url: `/account/2fa/methods/${method}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorConfirmRequest
+        },
+        options
+    );
+};
 
 /**
  * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
@@ -3507,27 +3610,31 @@ export const confirmTwoFactorMethod = (
  */
 export const regenerateBackupCodes = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
- options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>,) => {
-      return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
-      {url: `/account/2fa/backup-codes`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: twoFactorCodeRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>
+) => {
+    return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
+        {
+            url: `/account/2fa/backup-codes`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
 
 /**
  * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
  * @summary List enabled OAuth providers
  */
 export const listOAuthProviders = (
-
- options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>,) => {
-      return orvalMutator<OAuthProvidersEnvelope>(
-      {url: `/account/oauth/providers`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>
+) => {
+    return orvalMutator<OAuthProvidersEnvelope>(
+        { url: `/account/oauth/providers`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
@@ -3535,12 +3642,10 @@ export const listOAuthProviders = (
  */
 export const startOAuthLogin = (
     provider: string,
- options?: SecondParameter<typeof orvalMutator<unknown>>,) => {
-      return orvalMutator<unknown>(
-      {url: `/account/oauth/${provider}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>({ url: `/account/oauth/${provider}`, method: 'GET' }, options);
+};
 
 /**
  * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
@@ -3549,13 +3654,13 @@ export const startOAuthLogin = (
 export const completeOAuthLogin = (
     provider: string,
     params?: CompleteOAuthLoginParams,
- options?: SecondParameter<typeof orvalMutator<unknown>>,) => {
-      return orvalMutator<unknown>(
-      {url: `/account/oauth/${provider}/callback`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>(
+        { url: `/account/oauth/${provider}/callback`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * Returns a paginated list of user accounts.
@@ -3563,13 +3668,10 @@ export const completeOAuthLogin = (
  */
 export const listUsers = (
     params?: ListUsersParams,
- options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>,) => {
-      return orvalMutator<UsersResponseEnvelope>(
-      {url: `/users`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+) => {
+    return orvalMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params }, options);
+};
 
 /**
  * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
@@ -3577,14 +3679,18 @@ export const listUsers = (
  */
 export const createUser = (
     createUserRequest: CreateUserRequest,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/users`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createUserRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createUserRequest
+        },
+        options
+    );
+};
 
 /**
  * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
@@ -3592,35 +3698,40 @@ export const createUser = (
  */
 export const createUserWithMultipart = (
     createUserRequestMultipart: CreateUserRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {const formData = new FormData();
-formData.append(`email`, createUserRequestMultipart.email);
-formData.append(`username`, createUserRequestMultipart.username);
-if(createUserRequestMultipart.password !== undefined) {
- formData.append(`password`, createUserRequestMultipart.password);
- }
-if(createUserRequestMultipart.sendSetupEmail !== undefined) {
- formData.append(`sendSetupEmail`, createUserRequestMultipart.sendSetupEmail.toString())
- }
-if(createUserRequestMultipart.role !== undefined) {
- formData.append(`role`, createUserRequestMultipart.role);
- }
-if(createUserRequestMultipart.active !== undefined) {
- formData.append(`active`, createUserRequestMultipart.active.toString())
- }
-if(createUserRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
- }
-if(createUserRequestMultipart.locale !== undefined) {
- formData.append(`locale`, createUserRequestMultipart.locale);
- }
-
-      return orvalMutator<UserEnvelope>(
-      {url: `/users`, method: 'POST',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`email`, createUserRequestMultipart.email);
+    formData.append(`username`, createUserRequestMultipart.username);
+    if (createUserRequestMultipart.password !== undefined) {
+        formData.append(`password`, createUserRequestMultipart.password);
     }
+    if (createUserRequestMultipart.sendSetupEmail !== undefined) {
+        formData.append(`sendSetupEmail`, createUserRequestMultipart.sendSetupEmail.toString());
+    }
+    if (createUserRequestMultipart.role !== undefined) {
+        formData.append(`role`, createUserRequestMultipart.role);
+    }
+    if (createUserRequestMultipart.active !== undefined) {
+        formData.append(`active`, createUserRequestMultipart.active.toString());
+    }
+    if (createUserRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
+    }
+    if (createUserRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, createUserRequestMultipart.locale);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Updates an existing user's email or password. Optional image can be uploaded.
@@ -3628,14 +3739,18 @@ if(createUserRequestMultipart.locale !== undefined) {
  */
 export const updateUser = (
     updateUserRequest: UpdateUserRequest,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/users`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateUserRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateUserRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates an existing user's email or password. Optional image can be uploaded.
@@ -3643,43 +3758,48 @@ export const updateUser = (
  */
 export const updateUserWithMultipart = (
     updateUserRequestMultipart: UpdateUserRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {const formData = new FormData();
-formData.append(`id`, updateUserRequestMultipart.id);
-if(updateUserRequestMultipart.email !== undefined) {
- formData.append(`email`, updateUserRequestMultipart.email);
- }
-if(updateUserRequestMultipart.username !== undefined) {
- formData.append(`username`, updateUserRequestMultipart.username);
- }
-if(updateUserRequestMultipart.password !== undefined) {
- formData.append(`password`, updateUserRequestMultipart.password);
- }
-if(updateUserRequestMultipart.role !== undefined) {
- formData.append(`role`, updateUserRequestMultipart.role);
- }
-if(updateUserRequestMultipart.active !== undefined) {
- formData.append(`active`, updateUserRequestMultipart.active.toString())
- }
-if(updateUserRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
- }
-if(updateUserRequestMultipart.locale !== undefined) {
- formData.append(`locale`, updateUserRequestMultipart.locale);
- }
-if(updateUserRequestMultipart.phone !== undefined) {
- formData.append(`phone`, updateUserRequestMultipart.phone);
- }
-if(updateUserRequestMultipart.website !== undefined) {
- formData.append(`website`, updateUserRequestMultipart.website);
- }
-
-      return orvalMutator<UserEnvelope>(
-      {url: `/users`, method: 'PUT',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`id`, updateUserRequestMultipart.id);
+    if (updateUserRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateUserRequestMultipart.email);
     }
+    if (updateUserRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateUserRequestMultipart.username);
+    }
+    if (updateUserRequestMultipart.password !== undefined) {
+        formData.append(`password`, updateUserRequestMultipart.password);
+    }
+    if (updateUserRequestMultipart.role !== undefined) {
+        formData.append(`role`, updateUserRequestMultipart.role);
+    }
+    if (updateUserRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserRequestMultipart.active.toString());
+    }
+    if (updateUserRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
+    }
+    if (updateUserRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateUserRequestMultipart.locale);
+    }
+    if (updateUserRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateUserRequestMultipart.phone);
+    }
+    if (updateUserRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateUserRequestMultipart.website);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
@@ -3688,15 +3808,19 @@ if(updateUserRequestMultipart.website !== undefined) {
 export const deleteUser = (
     deleteUserRequest: DeleteUserRequest,
     params?: DeleteUserParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/users`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: deleteUserRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/users`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteUserRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
@@ -3704,12 +3828,10 @@ export const deleteUser = (
  */
 export const getUserById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/users/${id}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' }, options);
+};
 
 /**
  * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
@@ -3718,14 +3840,18 @@ export const getUserById = (
 export const updateUserById = (
     id: string,
     updateUserByIdRequest: UpdateUserByIdRequest,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {
-      return orvalMutator<UserEnvelope>(
-      {url: `/users/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateUserByIdRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateUserByIdRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
@@ -3734,42 +3860,47 @@ export const updateUserById = (
 export const updateUserByIdWithMultipart = (
     id: string,
     updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<UserEnvelope>>,) => {const formData = new FormData();
-if(updateUserByIdRequestMultipart.email !== undefined) {
- formData.append(`email`, updateUserByIdRequestMultipart.email);
- }
-if(updateUserByIdRequestMultipart.password !== undefined) {
- formData.append(`password`, updateUserByIdRequestMultipart.password);
- }
-if(updateUserByIdRequestMultipart.username !== undefined) {
- formData.append(`username`, updateUserByIdRequestMultipart.username);
- }
-if(updateUserByIdRequestMultipart.role !== undefined) {
- formData.append(`role`, updateUserByIdRequestMultipart.role);
- }
-if(updateUserByIdRequestMultipart.active !== undefined) {
- formData.append(`active`, updateUserByIdRequestMultipart.active.toString())
- }
-if(updateUserByIdRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
- }
-if(updateUserByIdRequestMultipart.locale !== undefined) {
- formData.append(`locale`, updateUserByIdRequestMultipart.locale);
- }
-if(updateUserByIdRequestMultipart.phone !== undefined) {
- formData.append(`phone`, updateUserByIdRequestMultipart.phone);
- }
-if(updateUserByIdRequestMultipart.website !== undefined) {
- formData.append(`website`, updateUserByIdRequestMultipart.website);
- }
-
-      return orvalMutator<UserEnvelope>(
-      {url: `/users/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (updateUserByIdRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateUserByIdRequestMultipart.email);
     }
+    if (updateUserByIdRequestMultipart.password !== undefined) {
+        formData.append(`password`, updateUserByIdRequestMultipart.password);
+    }
+    if (updateUserByIdRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateUserByIdRequestMultipart.username);
+    }
+    if (updateUserByIdRequestMultipart.role !== undefined) {
+        formData.append(`role`, updateUserByIdRequestMultipart.role);
+    }
+    if (updateUserByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
+    }
+    if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+    }
+    if (updateUserByIdRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateUserByIdRequestMultipart.locale);
+    }
+    if (updateUserByIdRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateUserByIdRequestMultipart.phone);
+    }
+    if (updateUserByIdRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateUserByIdRequestMultipart.website);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
@@ -3779,15 +3910,19 @@ export const deleteUserById = (
     id: string,
     hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteUserByIdParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/users/${id}`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: hardDeleteRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/users/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
@@ -3795,12 +3930,10 @@ export const deleteUserById = (
  */
 export const hardDeleteUserById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/users/${id}/hard`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
+};
 
 /**
  * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
@@ -3808,12 +3941,10 @@ export const hardDeleteUserById = (
  */
 export const adminDisableUserTwoFactor = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/users/${id}/2fa`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}/2fa`, method: 'DELETE' }, options);
+};
 
 /**
  * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
@@ -3821,14 +3952,18 @@ export const adminDisableUserTwoFactor = (
  */
 export const searchUsers = (
     searchUsersRequest: SearchUsersRequest,
- options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>,) => {
-      return orvalMutator<UsersResponseEnvelope>(
-      {url: `/users/search`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: searchUsersRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+) => {
+    return orvalMutator<UsersResponseEnvelope>(
+        {
+            url: `/users/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchUsersRequest
+        },
+        options
+    );
+};
 
 /**
  * Creates a user feedback/contact request and notifies admins via email.
@@ -3836,14 +3971,18 @@ export const searchUsers = (
  */
 export const createFeedbackRequest = (
     createFeedbackRequest: CreateFeedbackRequest,
- options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>,) => {
-      return orvalMutator<FeedbackRequestEnvelope>(
-      {url: `/feedback/contact`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createFeedbackRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/contact`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createFeedbackRequest
+        },
+        options
+    );
+};
 
 /**
  * Returns feedback/contact requests for admin review.
@@ -3851,13 +3990,13 @@ export const createFeedbackRequest = (
  */
 export const listFeedbackRequests = (
     params?: ListFeedbackRequestsParams,
- options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>,) => {
-      return orvalMutator<FeedbackRequestsResponseEnvelope>(
-      {url: `/feedback`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestsResponseEnvelope>(
+        { url: `/feedback`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
@@ -3865,14 +4004,18 @@ export const listFeedbackRequests = (
  */
 export const searchFeedbackRequests = (
     searchFeedbackRequestsRequest: SearchFeedbackRequestsRequest,
- options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>,) => {
-      return orvalMutator<FeedbackRequestsResponseEnvelope>(
-      {url: `/feedback/search`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: searchFeedbackRequestsRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestsResponseEnvelope>(
+        {
+            url: `/feedback/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchFeedbackRequestsRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates status/notes of a feedback request.
@@ -3881,14 +4024,18 @@ export const searchFeedbackRequests = (
 export const updateFeedbackRequestStatus = (
     id: string,
     updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
- options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>,) => {
-      return orvalMutator<FeedbackRequestEnvelope>(
-      {url: `/feedback/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateFeedbackRequestStatusRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateFeedbackRequestStatusRequest
+        },
+        options
+    );
+};
 
 /**
  * Permanently removes the feedback request identified by `{id}`.
@@ -3896,12 +4043,10 @@ export const updateFeedbackRequestStatus = (
  */
 export const deleteFeedbackRequest = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/feedback/${id}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
+};
 
 /**
  * Returns a paginated list of products.
@@ -3909,13 +4054,13 @@ export const deleteFeedbackRequest = (
  */
 export const listProducts = (
     params?: ListProductsParams,
- options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>,) => {
-      return orvalMutator<ProductsResponseEnvelope>(
-      {url: `/products`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+) => {
+    return orvalMutator<ProductsResponseEnvelope>(
+        { url: `/products`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * Creates a new product with optional image upload
@@ -3923,14 +4068,18 @@ export const listProducts = (
  */
 export const createProduct = (
     createProductRequest: CreateProductRequest,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createProductRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createProductRequest
+        },
+        options
+    );
+};
 
 /**
  * Creates a new product with optional image upload
@@ -3938,38 +4087,48 @@ export const createProduct = (
  */
 export const createProductWithMultipart = (
     createProductRequestMultipart: CreateProductRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {const formData = new FormData();
-formData.append(`title`, createProductRequestMultipart.title);
-formData.append(`price`, createProductRequestMultipart.price.toString())
-if(createProductRequestMultipart.onHand !== undefined) {
- formData.append(`onHand`, createProductRequestMultipart.onHand.toString())
- }
-if(createProductRequestMultipart.description !== undefined) {
- formData.append(`description`, createProductRequestMultipart.description);
- }
-if(createProductRequestMultipart.active !== undefined) {
- formData.append(`active`, createProductRequestMultipart.active.toString())
- }
-if(createProductRequestMultipart.requiresShipping !== undefined) {
- formData.append(`requiresShipping`, createProductRequestMultipart.requiresShipping.toString())
- }
-if(createProductRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
- }
-if(createProductRequestMultipart.categories !== undefined) {
- createProductRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
- }
-if(createProductRequestMultipart.tags !== undefined) {
- createProductRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
- }
-
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products`, method: 'POST',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`title`, createProductRequestMultipart.title);
+    formData.append(`price`, createProductRequestMultipart.price.toString());
+    if (createProductRequestMultipart.onHand !== undefined) {
+        formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
     }
+    if (createProductRequestMultipart.description !== undefined) {
+        formData.append(`description`, createProductRequestMultipart.description);
+    }
+    if (createProductRequestMultipart.active !== undefined) {
+        formData.append(`active`, createProductRequestMultipart.active.toString());
+    }
+    if (createProductRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            createProductRequestMultipart.requiresShipping.toString()
+        );
+    }
+    if (createProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
+    }
+    if (createProductRequestMultipart.categories !== undefined) {
+        createProductRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (createProductRequestMultipart.tags !== undefined) {
+        createProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Updates an existing product with optional image upload
@@ -3977,14 +4136,18 @@ if(createProductRequestMultipart.tags !== undefined) {
  */
 export const updateProduct = (
     updateProductRequest: UpdateProductRequest,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateProductRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateProductRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates an existing product with optional image upload
@@ -3992,36 +4155,46 @@ export const updateProduct = (
  */
 export const updateProductWithMultipart = (
     updateProductRequestMultipart: UpdateProductRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {const formData = new FormData();
-formData.append(`id`, updateProductRequestMultipart.id);
-formData.append(`title`, updateProductRequestMultipart.title);
-if(updateProductRequestMultipart.description !== undefined) {
- formData.append(`description`, updateProductRequestMultipart.description);
- }
-formData.append(`price`, updateProductRequestMultipart.price.toString())
-if(updateProductRequestMultipart.active !== undefined) {
- formData.append(`active`, updateProductRequestMultipart.active.toString())
- }
-if(updateProductRequestMultipart.requiresShipping !== undefined) {
- formData.append(`requiresShipping`, updateProductRequestMultipart.requiresShipping.toString())
- }
-if(updateProductRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
- }
-if(updateProductRequestMultipart.categories !== undefined) {
- updateProductRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
- }
-if(updateProductRequestMultipart.tags !== undefined) {
- updateProductRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
- }
-
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products`, method: 'PUT',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`id`, updateProductRequestMultipart.id);
+    formData.append(`title`, updateProductRequestMultipart.title);
+    if (updateProductRequestMultipart.description !== undefined) {
+        formData.append(`description`, updateProductRequestMultipart.description);
     }
+    formData.append(`price`, updateProductRequestMultipart.price.toString());
+    if (updateProductRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateProductRequestMultipart.active.toString());
+    }
+    if (updateProductRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            updateProductRequestMultipart.requiresShipping.toString()
+        );
+    }
+    if (updateProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
+    }
+    if (updateProductRequestMultipart.categories !== undefined) {
+        updateProductRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (updateProductRequestMultipart.tags !== undefined) {
+        updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
@@ -4030,28 +4203,32 @@ if(updateProductRequestMultipart.tags !== undefined) {
 export const deleteProduct = (
     deleteProductRequest: DeleteProductRequest,
     params?: DeleteProductParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/products`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: deleteProductRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/products`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteProductRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
  * @summary Catalogue facets
  */
 export const getCatalogueFacets = (
-
- options?: SecondParameter<typeof orvalMutator<CatalogueFacetsEnvelope>>,) => {
-      return orvalMutator<CatalogueFacetsEnvelope>(
-      {url: `/products/categories`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CatalogueFacetsEnvelope>>
+) => {
+    return orvalMutator<CatalogueFacetsEnvelope>(
+        { url: `/products/categories`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
@@ -4059,12 +4236,10 @@ export const getCatalogueFacets = (
  */
 export const getProductById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products/${id}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' }, options);
+};
 
 /**
  * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
@@ -4073,14 +4248,18 @@ export const getProductById = (
 export const updateProductById = (
     id: string,
     updateProductByIdRequest: UpdateProductByIdRequest,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateProductByIdRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateProductByIdRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
@@ -4089,35 +4268,45 @@ export const updateProductById = (
 export const updateProductByIdWithMultipart = (
     id: string,
     updateProductByIdRequestMultipart: UpdateProductByIdRequestMultipart,
- options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>,) => {const formData = new FormData();
-formData.append(`title`, updateProductByIdRequestMultipart.title);
-if(updateProductByIdRequestMultipart.description !== undefined) {
- formData.append(`description`, updateProductByIdRequestMultipart.description);
- }
-formData.append(`price`, updateProductByIdRequestMultipart.price.toString())
-if(updateProductByIdRequestMultipart.active !== undefined) {
- formData.append(`active`, updateProductByIdRequestMultipart.active.toString())
- }
-if(updateProductByIdRequestMultipart.requiresShipping !== undefined) {
- formData.append(`requiresShipping`, updateProductByIdRequestMultipart.requiresShipping.toString())
- }
-if(updateProductByIdRequestMultipart.imageUpload !== undefined) {
- formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);
- }
-if(updateProductByIdRequestMultipart.categories !== undefined) {
- updateProductByIdRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
- }
-if(updateProductByIdRequestMultipart.tags !== undefined) {
- updateProductByIdRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
- }
-
-      return orvalMutator<ProductEnvelope>(
-      {url: `/products/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-      options);
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`title`, updateProductByIdRequestMultipart.title);
+    if (updateProductByIdRequestMultipart.description !== undefined) {
+        formData.append(`description`, updateProductByIdRequestMultipart.description);
     }
+    formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
+    if (updateProductByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
+    }
+    if (updateProductByIdRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            updateProductByIdRequestMultipart.requiresShipping.toString()
+        );
+    }
+    if (updateProductByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);
+    }
+    if (updateProductByIdRequestMultipart.categories !== undefined) {
+        updateProductByIdRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (updateProductByIdRequestMultipart.tags !== undefined) {
+        updateProductByIdRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
 
 /**
  * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
@@ -4127,15 +4316,19 @@ export const deleteProductById = (
     id: string,
     hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteProductByIdParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/products/${id}`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: hardDeleteRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/products/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
@@ -4143,12 +4336,13 @@ export const deleteProductById = (
  */
 export const hardDeleteProductById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/products/${id}/hard`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/products/${id}/hard`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
@@ -4156,27 +4350,26 @@ export const hardDeleteProductById = (
  */
 export const searchProducts = (
     searchProductsRequest: SearchProductsRequest,
- options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>,) => {
-      return orvalMutator<ProductsResponseEnvelope>(
-      {url: `/products/search`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: searchProductsRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+) => {
+    return orvalMutator<ProductsResponseEnvelope>(
+        {
+            url: `/products/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchProductsRequest
+        },
+        options
+    );
+};
 
 /**
  * Returns all items currently in the authenticated user's cart along with a computed summary
  * @summary Get cart
  */
-export const getCart = (
-
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart`, method: 'GET'
-    },
-      options);
-    }
+export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' }, options);
+};
 
 /**
  * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
@@ -4184,14 +4377,18 @@ export const getCart = (
  */
 export const upsertCartItem = (
     upsertCartItemRequest: UpsertCartItemRequest,
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: upsertCartItemRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: upsertCartItemRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
@@ -4199,27 +4396,26 @@ export const upsertCartItem = (
  */
 export const removeCartItemByBody = (
     removeCartItemRequest: RemoveCartItemRequest,
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: removeCartItemRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: removeCartItemRequest
+        },
+        options
+    );
+};
 
 /**
  * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
  * @summary Clear cart
  */
-export const clearCart = (
-
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart/all`, method: 'DELETE'
-    },
-      options);
-    }
+export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart/all`, method: 'DELETE' }, options);
+};
 
 /**
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
@@ -4228,14 +4424,18 @@ export const clearCart = (
 export const updateCartItemById = (
     productId: string,
     updateCartItemByIdRequest: UpdateCartItemByIdRequest,
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart/${productId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateCartItemByIdRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart/${productId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateCartItemByIdRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
@@ -4243,25 +4443,26 @@ export const updateCartItemById = (
  */
 export const removeCartItem = (
     productId: string,
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart/${productId}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        { url: `/cart/${productId}`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * Returns a lightweight summary of the authenticated user's cart.
  * @summary Get cart summary
  */
 export const getCartSummary = (
-
- options?: SecondParameter<typeof orvalMutator<CartSummaryResponseEnvelope>>,) => {
-      return orvalMutator<CartSummaryResponseEnvelope>(
-      {url: `/cart/summary`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartSummaryResponseEnvelope>>
+) => {
+    return orvalMutator<CartSummaryResponseEnvelope>(
+        { url: `/cart/summary`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
@@ -4269,14 +4470,18 @@ export const getCartSummary = (
  */
 export const checkout = (
     checkoutRequest?: CheckoutRequest,
- options?: SecondParameter<typeof orvalMutator<CheckoutResponseEnvelope>>,) => {
-      return orvalMutator<CheckoutResponseEnvelope>(
-      {url: `/cart/checkout`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: checkoutRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CheckoutResponseEnvelope>>
+) => {
+    return orvalMutator<CheckoutResponseEnvelope>(
+        {
+            url: `/cart/checkout`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: checkoutRequest
+        },
+        options
+    );
+};
 
 /**
  * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
@@ -4284,25 +4489,23 @@ export const checkout = (
  */
 export const reorder = (
     orderId: Id,
- options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>,) => {
-      return orvalMutator<CartResponseEnvelope>(
-      {url: `/cart/reorder/${orderId}`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        { url: `/cart/reorder/${orderId}`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
  * @summary Get wishlist
  */
 export const getWishlist = (
-
- options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>,) => {
-      return orvalMutator<WishlistResponseEnvelope>(
-      {url: `/wishlist`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>({ url: `/wishlist`, method: 'GET' }, options);
+};
 
 /**
  * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
@@ -4310,14 +4513,18 @@ export const getWishlist = (
  */
 export const addWishlistItem = (
     addWishlistItemRequest: AddWishlistItemRequest,
- options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>,) => {
-      return orvalMutator<WishlistResponseEnvelope>(
-      {url: `/wishlist`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: addWishlistItemRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        {
+            url: `/wishlist`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: addWishlistItemRequest
+        },
+        options
+    );
+};
 
 /**
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
@@ -4325,12 +4532,13 @@ export const addWishlistItem = (
  */
 export const removeWishlistItem = (
     productId: string,
- options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>,) => {
-      return orvalMutator<WishlistResponseEnvelope>(
-      {url: `/wishlist/${productId}`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        { url: `/wishlist/${productId}`, method: 'DELETE' },
+        options
+    );
+};
 
 /**
  * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Returns the updated wishlist; read the cart for its own new state.
@@ -4338,12 +4546,13 @@ export const removeWishlistItem = (
  */
 export const moveWishlistItemToCart = (
     productId: string,
- options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>,) => {
-      return orvalMutator<WishlistResponseEnvelope>(
-      {url: `/wishlist/${productId}/move-to-cart`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        { url: `/wishlist/${productId}/move-to-cart`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * Returns a paginated list of orders.
@@ -4352,13 +4561,10 @@ export const moveWishlistItemToCart = (
  */
 export const listOrders = (
     params?: ListOrdersParams,
- options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>,) => {
-      return orvalMutator<OrdersResponseEnvelope>(
-      {url: `/orders`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+) => {
+    return orvalMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params }, options);
+};
 
 /**
  * Creates a new order directly from the supplied payload.
@@ -4366,14 +4572,18 @@ export const listOrders = (
  */
 export const createOrder = (
     createOrderRequest: CreateOrderRequest,
- options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>,) => {
-      return orvalMutator<OrderEnvelope>(
-      {url: `/orders`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createOrderRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createOrderRequest
+        },
+        options
+    );
+};
 
 /**
  * Updates an existing order identified by id in the request body.
@@ -4381,14 +4591,18 @@ export const createOrder = (
  */
 export const updateOrder = (
     updateOrderRequest: UpdateOrderRequest,
- options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>,) => {
-      return orvalMutator<OrderEnvelope>(
-      {url: `/orders`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateOrderRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateOrderRequest
+        },
+        options
+    );
+};
 
 /**
  * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
@@ -4397,15 +4611,19 @@ export const updateOrder = (
 export const deleteOrder = (
     deleteOrderRequest: DeleteOrderRequest,
     params?: DeleteOrderParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/orders`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: deleteOrderRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/orders`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteOrderRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
@@ -4414,14 +4632,18 @@ export const deleteOrder = (
  */
 export const searchOrders = (
     searchOrdersRequest: SearchOrdersRequest,
- options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>,) => {
-      return orvalMutator<OrdersResponseEnvelope>(
-      {url: `/orders/search`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: searchOrdersRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+) => {
+    return orvalMutator<OrdersResponseEnvelope>(
+        {
+            url: `/orders/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchOrdersRequest
+        },
+        options
+    );
+};
 
 /**
  * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
@@ -4429,12 +4651,10 @@ export const searchOrders = (
  */
 export const getOrderById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>,) => {
-      return orvalMutator<OrderEnvelope>(
-      {url: `/orders/${id}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' }, options);
+};
 
 /**
  * Updates the order identified by `{id}` in the path.
@@ -4443,14 +4663,18 @@ export const getOrderById = (
 export const updateOrderById = (
     id: string,
     updateOrderByIdRequest: UpdateOrderByIdRequest,
- options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>,) => {
-      return orvalMutator<OrderEnvelope>(
-      {url: `/orders/${id}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: updateOrderByIdRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateOrderByIdRequest
+        },
+        options
+    );
+};
 
 /**
  * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
@@ -4460,15 +4684,19 @@ export const deleteOrderById = (
     id: string,
     hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteOrderByIdParams,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/orders/${id}`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
-      data: hardDeleteRequest,
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/orders/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
 
 /**
  * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
@@ -4476,12 +4704,10 @@ export const deleteOrderById = (
  */
 export const hardDeleteOrderById = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<SuccessResponse>>,) => {
-      return orvalMutator<SuccessResponse>(
-      {url: `/orders/${id}/hard`, method: 'DELETE'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/orders/${id}/hard`, method: 'DELETE' }, options);
+};
 
 /**
  * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
@@ -4490,14 +4716,18 @@ export const hardDeleteOrderById = (
 export const cancelOrderById = (
     id: string,
     cancelOrderRequest?: CancelOrderRequest,
- options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>,) => {
-      return orvalMutator<OrderEnvelope>(
-      {url: `/orders/${id}/cancel`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: cancelOrderRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}/cancel`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: cancelOrderRequest
+        },
+        options
+    );
+};
 
 /**
  * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
@@ -4505,13 +4735,13 @@ export const cancelOrderById = (
  */
 export const getOrderInvoice = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<Blob>>,) => {
-      return orvalMutator<Blob>(
-      {url: `/orders/${id}/invoice`, method: 'GET',
-        responseType: 'blob'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<Blob>>
+) => {
+    return orvalMutator<Blob>(
+        { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
+        options
+    );
+};
 
 /**
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
@@ -4519,14 +4749,18 @@ export const getOrderInvoice = (
  */
 export const createPaymentIntent = (
     createPaymentIntentRequest: CreatePaymentIntentRequest,
- options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>,) => {
-      return orvalMutator<PaymentEnvelope>(
-      {url: `/payments/intent`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createPaymentIntentRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/intent`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createPaymentIntentRequest
+        },
+        options
+    );
+};
 
 /**
  * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
@@ -4534,12 +4768,13 @@ export const createPaymentIntent = (
  */
 export const getPaymentByOrder = (
     orderId: Id,
- options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>,) => {
-      return orvalMutator<PaymentEnvelope>(
-      {url: `/payments/order/${orderId}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
@@ -4547,12 +4782,13 @@ export const getPaymentByOrder = (
  */
 export const refundPaymentByOrder = (
     orderId: Id,
- options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>,) => {
-      return orvalMutator<PaymentEnvelope>(
-      {url: `/payments/order/${orderId}/refund`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/order/${orderId}/refund`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
@@ -4561,14 +4797,18 @@ export const refundPaymentByOrder = (
 export const confirmPayment = (
     id: string,
     confirmPaymentRequest: ConfirmPaymentRequest,
- options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>,) => {
-      return orvalMutator<PaymentEnvelope>(
-      {url: `/payments/${id}/confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: confirmPaymentRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/${id}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: confirmPaymentRequest
+        },
+        options
+    );
+};
 
 /**
  * The browser saying "I have finished at the provider". Re-reads the provider's own record and applies whatever it says, which is what makes the happy path feel synchronous while the webhook stays the source of truth. Idempotent and safe to call repeatedly: a payment already settled answers itself unchanged. Answers 409 `PAYMENT_DECLINED` when the provider's answer is a refusal, exactly as the confirm does. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
@@ -4576,12 +4816,10 @@ export const confirmPayment = (
  */
 export const syncPayment = (
     id: string,
- options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>,) => {
-      return orvalMutator<PaymentEnvelope>(
-      {url: `/payments/${id}/sync`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>({ url: `/payments/${id}/sync`, method: 'POST' }, options);
+};
 
 /**
  * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
@@ -4590,27 +4828,31 @@ export const syncPayment = (
  */
 export const receivePaymentWebhook = (
     paymentWebhookEvent: PaymentWebhookEvent,
- options?: SecondParameter<typeof orvalMutator<MessageResponse>>,) => {
-      return orvalMutator<MessageResponse>(
-      {url: `/payments/webhook`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: paymentWebhookEvent
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<MessageResponse>>
+) => {
+    return orvalMutator<MessageResponse>(
+        {
+            url: `/payments/webhook`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: paymentWebhookEvent
+        },
+        options
+    );
+};
 
 /**
  * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate.
  * @summary List shipping methods
  */
 export const listShippingMethods = (
-
- options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>,) => {
-      return orvalMutator<ShippingMethodsResponseEnvelope>(
-      {url: `/delivery/methods`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>
+) => {
+    return orvalMutator<ShippingMethodsResponseEnvelope>(
+        { url: `/delivery/methods`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
@@ -4618,25 +4860,26 @@ export const listShippingMethods = (
  */
 export const getShipmentByOrder = (
     orderId: Id,
- options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>,) => {
-      return orvalMutator<ShipmentEnvelope>(
-      {url: `/delivery/order/${orderId}`, method: 'GET'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
 
 /**
  * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
  * @summary Advance the fake courier
  */
 export const advanceCourier = (
-
- options?: SecondParameter<typeof orvalMutator<CourierAdvanceResponseEnvelope>>,) => {
-      return orvalMutator<CourierAdvanceResponseEnvelope>(
-      {url: `/delivery/advance`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<CourierAdvanceResponseEnvelope>>
+) => {
+    return orvalMutator<CourierAdvanceResponseEnvelope>(
+        { url: `/delivery/advance`, method: 'POST' },
+        options
+    );
+};
 
 /**
  * The stock board — every product with its two counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
@@ -4644,13 +4887,13 @@ export const advanceCourier = (
  */
 export const listInventoryLevels = (
     params?: ListInventoryLevelsParams,
- options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponseEnvelope>>,) => {
-      return orvalMutator<InventoryLevelsResponseEnvelope>(
-      {url: `/inventory/levels`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponseEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelsResponseEnvelope>(
+        { url: `/inventory/levels`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * A page of the ledger, newest first — one row per counter change, with both deltas and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
@@ -4658,13 +4901,13 @@ export const listInventoryLevels = (
  */
 export const listStockMovements = (
     params?: ListStockMovementsParams,
- options?: SecondParameter<typeof orvalMutator<StockMovementsResponseEnvelope>>,) => {
-      return orvalMutator<StockMovementsResponseEnvelope>(
-      {url: `/inventory/movements`, method: 'GET',
-        params
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<StockMovementsResponseEnvelope>>
+) => {
+    return orvalMutator<StockMovementsResponseEnvelope>(
+        { url: `/inventory/movements`, method: 'GET', params },
+        options
+    );
+};
 
 /**
  * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
@@ -4672,14 +4915,18 @@ export const listStockMovements = (
  */
 export const receiveStock = (
     receiptRequest: ReceiptRequest,
- options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>,) => {
-      return orvalMutator<InventoryLevelEnvelope>(
-      {url: `/inventory/receipts`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: receiptRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        {
+            url: `/inventory/receipts`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: receiptRequest
+        },
+        options
+    );
+};
 
 /**
  * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
@@ -4687,14 +4934,18 @@ export const receiveStock = (
  */
 export const adjustStock = (
     adjustmentRequest: AdjustmentRequest,
- options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>,) => {
-      return orvalMutator<InventoryLevelEnvelope>(
-      {url: `/inventory/adjustments`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: adjustmentRequest
-    },
-      options);
-    }
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        {
+            url: `/inventory/adjustments`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: adjustmentRequest
+        },
+        options
+    );
+};
 
 /**
  * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
@@ -4703,138 +4954,223 @@ export const adjustStock = (
  * @summary Expire stale reservations
  */
 export const sweepReservations = (
+    options?: SecondParameter<typeof orvalMutator<ReservationSweepEnvelope>>
+) => {
+    return orvalMutator<ReservationSweepEnvelope>(
+        { url: `/inventory/reservations/sweep`, method: 'POST' },
+        options
+    );
+};
 
- options?: SecondParameter<typeof orvalMutator<ReservationSweepEnvelope>>,) => {
-      return orvalMutator<ReservationSweepEnvelope>(
-      {url: `/inventory/reservations/sweep`, method: 'POST'
-    },
-      options);
-    }
-
-export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>
-export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>
-export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>
-export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>
-export type GetLocaleDictionaryResult = NonNullable<Awaited<ReturnType<typeof getLocaleDictionary>>>
-export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>
-export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>
-export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>
-export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>
-export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>
-export type ReplaceLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntries>>>
-export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>
-export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>
-export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>
-export type GetObservabilityEventsResult = NonNullable<Awaited<ReturnType<typeof getObservabilityEvents>>>
-export type GetObservabilityHealthResult = NonNullable<Awaited<ReturnType<typeof getObservabilityHealth>>>
-export type GetObservabilityMetricsResult = NonNullable<Awaited<ReturnType<typeof getObservabilityMetrics>>>
-export type GetObservabilityMetricsOverviewResult = NonNullable<Awaited<ReturnType<typeof getObservabilityMetricsOverview>>>
-export type GetObservabilityAuditLogsResult = NonNullable<Awaited<ReturnType<typeof getObservabilityAuditLogs>>>
-export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>
-export type GetAntibotChallengeResult = NonNullable<Awaited<ReturnType<typeof getAntibotChallenge>>>
-export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>
-export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>
-export type UpdateAccountWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateAccountWithMultipart>>>
-export type RequestAccountDeleteResult = NonNullable<Awaited<ReturnType<typeof requestAccountDelete>>>
-export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>
-export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>
-export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>
-export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>
-export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>
-export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddresses>>>
-export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>
-export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>
-export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>
-export type RequestEmailVerificationResult = NonNullable<Awaited<ReturnType<typeof requestEmailVerification>>>
-export type ConfirmEmailVerificationResult = NonNullable<Awaited<ReturnType<typeof confirmEmailVerification>>>
-export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>
-export type ConfirmAccountDeleteResult = NonNullable<Awaited<ReturnType<typeof confirmAccountDelete>>>
-export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>
-export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>
-export type SignupWithMultipartResult = NonNullable<Awaited<ReturnType<typeof signupWithMultipart>>>
-export type RequestPasswordResetResult = NonNullable<Awaited<ReturnType<typeof requestPasswordReset>>>
-export type ConfirmPasswordResetResult = NonNullable<Awaited<ReturnType<typeof confirmPasswordReset>>>
-export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>
-export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
-export type DeleteExpiredTokensResult = NonNullable<Awaited<ReturnType<typeof deleteExpiredTokens>>>
-export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>
-export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>
-export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>
-export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>
-export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>
-export type RemoveTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof removeTwoFactorMethod>>>
-export type SetupTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof setupTwoFactorMethod>>>
-export type ConfirmTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof confirmTwoFactorMethod>>>
-export type RegenerateBackupCodesResult = NonNullable<Awaited<ReturnType<typeof regenerateBackupCodes>>>
-export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>
-export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>
-export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>
-export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>
-export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>
-export type CreateUserWithMultipartResult = NonNullable<Awaited<ReturnType<typeof createUserWithMultipart>>>
-export type UpdateUserResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>
-export type UpdateUserWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateUserWithMultipart>>>
-export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>
-export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>
-export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>
-export type UpdateUserByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateUserByIdWithMultipart>>>
-export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>
-export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>
-export type AdminDisableUserTwoFactorResult = NonNullable<Awaited<ReturnType<typeof adminDisableUserTwoFactor>>>
-export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>
-export type CreateFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof createFeedbackRequest>>>
-export type ListFeedbackRequestsResult = NonNullable<Awaited<ReturnType<typeof listFeedbackRequests>>>
-export type SearchFeedbackRequestsResult = NonNullable<Awaited<ReturnType<typeof searchFeedbackRequests>>>
-export type UpdateFeedbackRequestStatusResult = NonNullable<Awaited<ReturnType<typeof updateFeedbackRequestStatus>>>
-export type DeleteFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof deleteFeedbackRequest>>>
-export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>
-export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
-export type CreateProductWithMultipartResult = NonNullable<Awaited<ReturnType<typeof createProductWithMultipart>>>
-export type UpdateProductResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>
-export type UpdateProductWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateProductWithMultipart>>>
-export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>
-export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>
-export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>
-export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>
-export type UpdateProductByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateProductByIdWithMultipart>>>
-export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>
-export type HardDeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteProductById>>>
-export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>
-export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>
-export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>
-export type RemoveCartItemByBodyResult = NonNullable<Awaited<ReturnType<typeof removeCartItemByBody>>>
-export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>
-export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>
-export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>
-export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>
-export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>
-export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>
-export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>
-export type AddWishlistItemResult = NonNullable<Awaited<ReturnType<typeof addWishlistItem>>>
-export type RemoveWishlistItemResult = NonNullable<Awaited<ReturnType<typeof removeWishlistItem>>>
-export type MoveWishlistItemToCartResult = NonNullable<Awaited<ReturnType<typeof moveWishlistItemToCart>>>
-export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>
-export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>
-export type UpdateOrderResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>
-export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>
-export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>
-export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>
-export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>
-export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>
-export type HardDeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteOrderById>>>
-export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>
-export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>
-export type CreatePaymentIntentResult = NonNullable<Awaited<ReturnType<typeof createPaymentIntent>>>
-export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>
-export type RefundPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof refundPaymentByOrder>>>
-export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>
-export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>
-export type ReceivePaymentWebhookResult = NonNullable<Awaited<ReturnType<typeof receivePaymentWebhook>>>
-export type ListShippingMethodsResult = NonNullable<Awaited<ReturnType<typeof listShippingMethods>>>
-export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>
-export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>
-export type ListInventoryLevelsResult = NonNullable<Awaited<ReturnType<typeof listInventoryLevels>>>
-export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>
-export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>
-export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>
-export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>
+export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
+export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
+export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>;
+export type GetLocaleDictionaryResult = NonNullable<
+    Awaited<ReturnType<typeof getLocaleDictionary>>
+>;
+export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
+export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
+export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
+export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
+export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>;
+export type ReplaceLocaleEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof replaceLocaleEntries>>
+>;
+export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>;
+export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
+export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
+export type GetObservabilityEventsResult = NonNullable<
+    Awaited<ReturnType<typeof getObservabilityEvents>>
+>;
+export type GetObservabilityHealthResult = NonNullable<
+    Awaited<ReturnType<typeof getObservabilityHealth>>
+>;
+export type GetObservabilityMetricsResult = NonNullable<
+    Awaited<ReturnType<typeof getObservabilityMetrics>>
+>;
+export type GetObservabilityMetricsOverviewResult = NonNullable<
+    Awaited<ReturnType<typeof getObservabilityMetricsOverview>>
+>;
+export type GetObservabilityAuditLogsResult = NonNullable<
+    Awaited<ReturnType<typeof getObservabilityAuditLogs>>
+>;
+export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
+export type GetAntibotChallengeResult = NonNullable<
+    Awaited<ReturnType<typeof getAntibotChallenge>>
+>;
+export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
+export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
+export type UpdateAccountWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateAccountWithMultipart>>
+>;
+export type RequestAccountDeleteResult = NonNullable<
+    Awaited<ReturnType<typeof requestAccountDelete>>
+>;
+export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
+export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
+export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
+export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
+export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;
+export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
+export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddresses>>>;
+export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
+export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>;
+export type RequestEmailVerificationResult = NonNullable<
+    Awaited<ReturnType<typeof requestEmailVerification>>
+>;
+export type ConfirmEmailVerificationResult = NonNullable<
+    Awaited<ReturnType<typeof confirmEmailVerification>>
+>;
+export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
+export type ConfirmAccountDeleteResult = NonNullable<
+    Awaited<ReturnType<typeof confirmAccountDelete>>
+>;
+export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
+export type SignupWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof signupWithMultipart>>
+>;
+export type RequestPasswordResetResult = NonNullable<
+    Awaited<ReturnType<typeof requestPasswordReset>>
+>;
+export type ConfirmPasswordResetResult = NonNullable<
+    Awaited<ReturnType<typeof confirmPasswordReset>>
+>;
+export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
+export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
+export type DeleteExpiredTokensResult = NonNullable<
+    Awaited<ReturnType<typeof deleteExpiredTokens>>
+>;
+export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
+export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
+export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
+export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type RemoveTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof removeTwoFactorMethod>>
+>;
+export type SetupTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof setupTwoFactorMethod>>
+>;
+export type ConfirmTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
+export type RegenerateBackupCodesResult = NonNullable<
+    Awaited<ReturnType<typeof regenerateBackupCodes>>
+>;
+export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
+export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
+export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
+export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
+export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
+export type CreateUserWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof createUserWithMultipart>>
+>;
+export type UpdateUserResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>;
+export type UpdateUserWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserWithMultipart>>
+>;
+export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
+export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
+export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
+export type UpdateUserByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
+>;
+export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
+export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
+export type AdminDisableUserTwoFactorResult = NonNullable<
+    Awaited<ReturnType<typeof adminDisableUserTwoFactor>>
+>;
+export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
+export type CreateFeedbackRequestResult = NonNullable<
+    Awaited<ReturnType<typeof createFeedbackRequest>>
+>;
+export type ListFeedbackRequestsResult = NonNullable<
+    Awaited<ReturnType<typeof listFeedbackRequests>>
+>;
+export type SearchFeedbackRequestsResult = NonNullable<
+    Awaited<ReturnType<typeof searchFeedbackRequests>>
+>;
+export type UpdateFeedbackRequestStatusResult = NonNullable<
+    Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
+>;
+export type DeleteFeedbackRequestResult = NonNullable<
+    Awaited<ReturnType<typeof deleteFeedbackRequest>>
+>;
+export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
+export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
+export type CreateProductWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof createProductWithMultipart>>
+>;
+export type UpdateProductResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>;
+export type UpdateProductWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateProductWithMultipart>>
+>;
+export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
+export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
+export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
+export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
+export type UpdateProductByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
+>;
+export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
+export type HardDeleteProductByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteProductById>>
+>;
+export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
+export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
+export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;
+export type RemoveCartItemByBodyResult = NonNullable<
+    Awaited<ReturnType<typeof removeCartItemByBody>>
+>;
+export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
+export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
+export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
+export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>;
+export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
+export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;
+export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>;
+export type AddWishlistItemResult = NonNullable<Awaited<ReturnType<typeof addWishlistItem>>>;
+export type RemoveWishlistItemResult = NonNullable<Awaited<ReturnType<typeof removeWishlistItem>>>;
+export type MoveWishlistItemToCartResult = NonNullable<
+    Awaited<ReturnType<typeof moveWishlistItemToCart>>
+>;
+export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
+export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
+export type UpdateOrderResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>;
+export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>;
+export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
+export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
+export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
+export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
+export type HardDeleteOrderByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteOrderById>>
+>;
+export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>;
+export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type CreatePaymentIntentResult = NonNullable<
+    Awaited<ReturnType<typeof createPaymentIntent>>
+>;
+export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
+export type RefundPaymentByOrderResult = NonNullable<
+    Awaited<ReturnType<typeof refundPaymentByOrder>>
+>;
+export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
+export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;
+export type ReceivePaymentWebhookResult = NonNullable<
+    Awaited<ReturnType<typeof receivePaymentWebhook>>
+>;
+export type ListShippingMethodsResult = NonNullable<
+    Awaited<ReturnType<typeof listShippingMethods>>
+>;
+export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
+export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>;
+export type ListInventoryLevelsResult = NonNullable<
+    Awaited<ReturnType<typeof listInventoryLevels>>
+>;
+export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
+export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
+export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>;
+export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>;

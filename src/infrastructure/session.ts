@@ -5,7 +5,7 @@
  * alone, so a restored-but-not-yet-identified session cannot be read as authenticated.
  */
 
-import { ref, computed } from 'vue';
+import { ref, shallowRef, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie } from '@guebbit/js-toolkit';
 import {
@@ -16,6 +16,8 @@ import {
     updateAccount as apiUpdateAccount
 } from '@api';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { createMongoAbility, type MongoAbility } from '@casl/ability';
+import { unpackRules } from '@casl/ability/extra';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -124,19 +126,41 @@ export const useSessionStore = defineStore('session', () => {
     const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
 
     /**
-     * Whether the visitor's role is unrestricted inside the shop. Derived from token AND viewer
+     * The rules the SERVER enforces, unpacked from `GET /account/abilities`.
+     *
+     * Not a copy of the policy — the policy itself, evaluated here. That is the whole point: a
+     * client that decides what to render from its own rules keeps a duplicate, and the duplicate
+     * drifts silently until somebody is shown a button that answers 403.
+     *
+     * **It has no authority.** It decides what to RENDER, never what is allowed; every request is
+     * re-evaluated server-side. An empty ability — before the fetch lands, or after it fails — is
+     * the least-privileged answer, so a slow network greys things out rather than opening them.
+     *
+     * `shallowRef`, not `ref`: an `Ability` holds its compiled rules in a frozen array, and Vue's
+     * deep proxy cannot hand those back unchanged — the read throws. Nothing here mutates the
+     * ability anyway; it is replaced wholesale when new rules arrive, which is exactly what a
+     * shallow ref is for.
+     */
+    const ability = shallowRef<MongoAbility>(createMongoAbility());
+
+    const setAbility = (rules: unknown[]) => {
+        ability.value = createMongoAbility(unpackRules(rules as never) as never);
+    };
+
+    /**
+     * Whether the visitor may do everything the shop has to offer. Derived from token AND viewer
      * for the reason given above.
      *
-     * The role list is the one place the frontend states it, and it is a RENDERING decision:
-     * greying out what the server would refuse. Until `GET /me/abilities` ships the server's own
-     * packed rules, this is a name comparison rather than a rule evaluation — which is why it is
-     * deliberately coarse, and why nothing but menu visibility hangs off it.
+     * Asked of the RULES rather than of a role name: `manage`/`all` is CASL's spelling of
+     * unrestricted, and it stays true through any renaming of a role because it is a property of
+     * the permission model rather than of this deployment's vocabulary.
      */
-    const UNRESTRICTED_ROLES = ['owner'];
-
-    const isAdmin = computed(() =>
-        Boolean(accessToken.value && UNRESTRICTED_ROLES.includes(viewer.value?.role ?? ''))
+    const isAdmin = computed(
+        () => Boolean(accessToken.value && viewer.value) && ability.value.can('delete', 'Product')
     );
+
+    /** Whether the visitor may take an action on a subject — what a screen greys out from. */
+    const can = (action: string, subjectType: string) => ability.value.can(action, subjectType);
 
     /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
@@ -273,6 +297,9 @@ export const useSessionStore = defineStore('session', () => {
     const logoutAll = () => apiLogoutAll().then(() => clearSession());
 
     return {
+        ability,
+        setAbility,
+        can,
         accessToken,
         viewer,
         isAuth,

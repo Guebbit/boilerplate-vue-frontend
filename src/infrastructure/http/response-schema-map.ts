@@ -87,6 +87,12 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
      * module owns every OTHER `/account/*` route.
      */
     { method: 'GET', pattern: /^\/account$/, schema: schemas.GetAccountResponse },
+    /*
+     * The caller's own rules. Infrastructure like the three below it: the session store fetches
+     * these for every identified viewer, and the shell greys out from them whether or not any
+     * particular module is enabled.
+     */
+    { method: 'GET', pattern: /^\/account\/abilities$/, schema: schemas.GetMyAbilitiesResponse },
     { method: 'GET', pattern: /^\/account\/refresh$/, schema: schemas.RefreshTokenResponse },
     { method: 'POST', pattern: /^\/account\/logout-all$/, schema: schemas.LogoutAllResponse },
     /*

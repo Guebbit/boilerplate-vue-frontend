@@ -77,6 +77,17 @@ beforeEach(() => {
     responses = {
         'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
         'GET /account': orvalEnvelope(USER),
+        // The rules the server would publish for this viewer. The store unpacks them with CASL's
+        // own reader, so a fixture that is not packed is a fixture no client could use.
+        'GET /account/abilities': orvalEnvelope({
+            tenantId: null,
+            scope: 'tenant',
+            rules: [
+                ['read', 'Product', { active: true, deletedAt: null }],
+                ['read', 'Order', { userId: 'u1', deletedAt: null }]
+            ],
+            version: 36
+        }),
         'POST /account/reset': orvalEnvelope(),
         'POST /account/reset-confirm': orvalEnvelope(),
         'POST /account/logout': orvalEnvelope(),
@@ -91,8 +102,13 @@ describe('login', () => {
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 // Order is the assertion: a profile fetched before the token is attached is an
-                // anonymous request, which answers 401 rather than the account.
-                expect(requestedUrls()).toEqual(['/account/login', '/account']);
+                // anonymous request, which answers 401 rather than the account. The rules follow
+                // the record, because they are about the person it just identified.
+                expect(requestedUrls()).toEqual([
+                    '/account/login',
+                    '/account',
+                    '/account/abilities'
+                ]);
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
 
@@ -130,8 +146,19 @@ describe('login', () => {
                 expect(session.isAdmin).toBe(false);
             }));
 
-    it('marks an admin as one, so the admin routes resolve', () => {
+    it('marks an unrestricted caller as one, so the admin routes resolve', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+        /*
+         * The RULES, not the role name. `isAdmin` asks what the server said this person may do —
+         * a name is who they are, and only the rules say what that lets them do. An owner's rules
+         * are the wildcard, which is CASL's `manage`/`all`.
+         */
+        responses['GET /account/abilities'] = orvalEnvelope({
+            tenantId: null,
+            scope: 'tenant',
+            rules: [['manage', 'all']],
+            version: 36
+        });
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')

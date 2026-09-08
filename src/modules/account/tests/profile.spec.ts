@@ -59,6 +59,17 @@ beforeEach(() => {
         // `getTokenFromResponse` reads.
         'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
         'GET /account': orvalEnvelope(USER),
+        // The rules the server would publish for this viewer. The store unpacks them with CASL's
+        // own reader, so a fixture that is not packed is a fixture no client could use.
+        'GET /account/abilities': orvalEnvelope({
+            tenantId: null,
+            scope: 'tenant',
+            rules: [
+                ['read', 'Product', { active: true, deletedAt: null }],
+                ['read', 'Order', { userId: 'u1', deletedAt: null }]
+            ],
+            version: 36
+        }),
         'DELETE /account': orvalEnvelope(),
         'DELETE /account/delete-confirm': orvalEnvelope(),
         'PUT /account': orvalEnvelope({ ...USER, username: 'ada2' }),
@@ -230,10 +241,28 @@ describe('own role', () => {
                 // What the server holds AFTER the write. The projection must follow this, not the
                 // value the form happened to send.
                 responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+                // And the rules that go with the new role: `isAdmin` asks what the server said
+                // this person may do, not what they are called.
+                responses['GET /account/abilities'] = orvalEnvelope({
+                    tenantId: null,
+                    scope: 'tenant',
+                    rules: [['manage', 'all']],
+                    version: 36
+                });
                 return profile.updateOwnRole('owner');
             })
             .then(() => {
-                expect(requestedUrls().at(-1)).toBe('/account');
+                // The record, then the rules that go with it — a role change is only real once
+                // the shell has both.
+                // Sorted: the rules are fetched without being awaited — a shell that blocked on
+                // learning what to hide would be worse than one that hides too much for a moment
+                // — so which of the two lands first is not a fact worth pinning.
+                expect(requestedUrls().slice(-2).toSorted()).toEqual([
+                    '/account',
+                    '/account/abilities'
+                ]);
+                // `isAdmin` reads the RULES, so the mock has to answer with an owner's — a role
+                // name alone no longer decides anything on this side either.
                 expect(useSessionStore().isAdmin).toBe(true);
             });
     });
@@ -252,7 +281,15 @@ describe('the account deletion flow', () => {
             .then(() => {
                 // Only a token has been emailed at this point. Signing the visitor out here would
                 // strand them holding a confirmation link they can no longer use.
-                expect(requestedUrls().at(-1)).toBe('/account');
+                // The record, then the rules that go with it — a role change is only real once
+                // the shell has both.
+                // Sorted: the rules are fetched without being awaited — a shell that blocked on
+                // learning what to hide would be worse than one that hides too much for a moment
+                // — so which of the two lands first is not a fact worth pinning.
+                expect(requestedUrls().slice(-2).toSorted()).toEqual([
+                    '/account',
+                    '/account/abilities'
+                ]);
                 expect(useSessionStore().isAuth).toBe(true);
             });
     });
@@ -314,8 +351,15 @@ describe('the self-service actions', () => {
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailVerification('a-token'))
             .then(() => {
-                // Authenticated: the freshly verified record is pulled back in.
-                expect(requestedUrls().at(-1)).toBe('/account');
+                // Authenticated: the freshly verified record is pulled back in, and the rules
+                // that go with it follow.
+                // Sorted: the rules are fetched without being awaited — a shell that blocked on
+                // learning what to hide would be worse than one that hides too much for a moment
+                // — so which of the two lands first is not a fact worth pinning.
+                expect(requestedUrls().slice(-2).toSorted()).toEqual([
+                    '/account',
+                    '/account/abilities'
+                ]);
             });
     });
 
