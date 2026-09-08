@@ -2287,6 +2287,8 @@ paths:
                 $ref: '#/components/schemas/ProductEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -2315,6 +2317,8 @@ paths:
           $ref: '#/components/responses/Success'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -2338,6 +2342,8 @@ paths:
           $ref: '#/components/responses/Success'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -3869,15 +3875,15 @@ components:
         from a hand-maintained duplicate that drifts — the drift is silent until somebody
         is shown a button that answers 403.
       required:
-        - tenantId
         - scope
         - rules
         - version
       properties:
         tenantId:
           type: string
-          nullable: true
-          description: The shop these rules are about. `null` in platform scope, and only there.
+          description: |
+            The shop these rules are about. Absent in platform scope, and only there —
+            a platform caller acts across the deployment rather than inside one shop.
         scope:
           type: string
           enum:
@@ -3891,7 +3897,19 @@ components:
             reason?]`, with trailing absent members omitted.
           items:
             type: array
-            items: {}
+            description: |
+              One packed rule. OpenAPI 3.0 has no tuple, so a position is declared
+              as the union of what it may hold: the action and the subject are
+              strings, `conditions` an object, `fields` a list of strings and
+              `inverted` a boolean.
+            items:
+              oneOf:
+                - type: string
+                - type: boolean
+                - type: object
+                - type: array
+                  items:
+                    type: string
         version:
           type: integer
           description: |

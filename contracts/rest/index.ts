@@ -144,6 +144,8 @@ export const AbilitiesScope = {
     platform: 'platform'
 } as const;
 
+export type AbilitiesRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
+
 /**
  * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
  * takes. A tuple per rule rather than an object, which is what makes shipping a few
@@ -157,17 +159,17 @@ export const AbilitiesScope = {
  */
 export interface Abilities {
     /**
-     * The shop these rules are about. `null` in platform scope, and only there.
-     * @nullable
+     * The shop these rules are about. Absent in platform scope, and only there —
+     * a platform caller acts across the deployment rather than inside one shop.
      */
-    tenantId: string | null;
+    tenantId?: string;
     /** Which of the two worlds this caller is acting in. Never both. */
     scope: AbilitiesScope;
     /**
      * CASL packed rules — `[action, subject, conditions?, fields?, inverted?,
      * reason?]`, with trailing absent members omitted.
      */
-    rules: unknown[][];
+    rules: AbilitiesRulesItemItem[][];
     /**
      * The permission model's own version, bumped when the KEYS change rather than
      * when a role does. A client caches these; this is what tells it the cache is

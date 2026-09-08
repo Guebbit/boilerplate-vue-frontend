@@ -1481,15 +1481,28 @@ export const GetMyAbilitiesResponse = zod.strictObject({
         .strictObject({
             tenantId: zod
                 .string()
-                .nullable()
+                .optional()
                 .describe(
-                    'The shop these rules are about. `null` in platform scope, and only there.'
+                    'The shop these rules are about. Absent in platform scope, and only there —\na platform caller acts across the deployment rather than inside one shop.\n'
                 ),
             scope: zod
                 .enum(['tenant', 'platform'])
                 .describe('Which of the two worlds this caller is acting in. Never both.'),
             rules: zod
-                .array(zod.array(zod.unknown()))
+                .array(
+                    zod
+                        .array(
+                            zod.union([
+                                zod.string(),
+                                zod.boolean(),
+                                zod.looseObject({}),
+                                zod.array(zod.string())
+                            ])
+                        )
+                        .describe(
+                            'One packed rule. OpenAPI 3.0 has no tuple, so a position is declared\nas the union of what it may hold: the action and the subject are\nstrings, `conditions` an object, `fields` a list of strings and\n`inverted` a boolean.\n'
+                        )
+                )
                 .describe(
                     'CASL packed rules — `[action, subject, conditions?, fields?, inverted?,\nreason?]`, with trailing absent members omitted.\n'
                 ),
