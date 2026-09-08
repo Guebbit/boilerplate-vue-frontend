@@ -20,7 +20,7 @@ import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/h
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
  *
- * Deliberately a minimal projection — `{ id, email, admin }` — rather than the domain `User`,
+ * Deliberately a minimal projection — `{ id, email, role }` — rather than the domain `User`,
  * which lives in `src/modules/account`. See `docs/theory/layers.md` for the split and for which
  * `/account` calls belong here.
  */
@@ -34,10 +34,14 @@ export interface SessionViewer {
      */
     email: string;
     /**
-     * Whether they hold administrator rights. Read by the route guards, so it is the one
-     * field here that decides access rather than describing a person.
+     * The role they hold inside the shop, by name — `customer`, `manager`, `warehouse`,
+     * `support`, `owner`, or one a deployment added.
+     *
+     * Read by the route guards, so it is the one field here that decides what is RENDERED rather
+     * than describing a person. It decides nothing else: the server re-evaluates every request,
+     * and a client that believed itself an owner would still be refused.
      */
-    admin: boolean;
+    role: string;
     /**
      * The visitor's own picture, for the avatar the account menu wears — the shell renders it on
      * every page, so it is one of the few user fields the shell genuinely needs rather than one
@@ -120,10 +124,19 @@ export const useSessionStore = defineStore('session', () => {
     const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
 
     /**
-     * Whether the visitor is a signed-in administrator. Derived from token AND viewer for the
-     * reason given above.
+     * Whether the visitor's role is unrestricted inside the shop. Derived from token AND viewer
+     * for the reason given above.
+     *
+     * The role list is the one place the frontend states it, and it is a RENDERING decision:
+     * greying out what the server would refuse. Until `GET /me/abilities` ships the server's own
+     * packed rules, this is a name comparison rather than a rule evaluation — which is why it is
+     * deliberately coarse, and why nothing but menu visibility hangs off it.
      */
-    const isAdmin = computed(() => Boolean(accessToken.value && viewer.value?.admin));
+    const UNRESTRICTED_ROLES = ['owner'];
+
+    const isAdmin = computed(() =>
+        Boolean(accessToken.value && UNRESTRICTED_ROLES.includes(viewer.value?.role ?? ''))
+    );
 
     /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
@@ -188,7 +201,7 @@ export const useSessionStore = defineStore('session', () => {
             const payload = getPayloadFromResponse<{
                 id: string;
                 email: string;
-                admin?: boolean;
+                role?: string;
                 imageUrl?: string;
                 thumbnailUrl?: string;
             }>(data);
@@ -196,7 +209,7 @@ export const useSessionStore = defineStore('session', () => {
                 payload && {
                     id: payload.id,
                     email: payload.email,
-                    admin: Boolean(payload.admin),
+                    role: payload.role ?? 'customer',
                     imageUrl: payload.imageUrl,
                     thumbnailUrl: payload.thumbnailUrl
                 }

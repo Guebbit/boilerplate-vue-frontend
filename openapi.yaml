@@ -1594,10 +1594,10 @@ paths:
           in: query
           schema:
             type: boolean
-        - name: admin
+        - name: role
           in: query
           schema:
-            type: boolean
+            type: string
         - name: verified
           in: query
           schema:
@@ -3859,8 +3859,8 @@ components:
           $ref: '#/components/schemas/Email'
         username:
           type: string
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
         verified:
@@ -6178,8 +6178,8 @@ components:
           type: string
         password:
           $ref: '#/components/schemas/PasswordNew'
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
         imageUrl:
@@ -6204,8 +6204,8 @@ components:
           type: string
         password:
           $ref: '#/components/schemas/PasswordNew'
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
         imageUpload:
@@ -6234,8 +6234,8 @@ components:
         sendSetupEmail:
           type: boolean
           default: false
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
           default: true
@@ -6259,8 +6259,8 @@ components:
         sendSetupEmail:
           type: boolean
           default: false
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
           default: true
@@ -6291,8 +6291,8 @@ components:
           $ref: '#/components/schemas/PasswordNew'
         username:
           type: string
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
         imageUrl:
@@ -6313,8 +6313,8 @@ components:
           $ref: '#/components/schemas/PasswordNew'
         username:
           type: string
-        admin:
-          type: boolean
+        role:
+          type: string
         active:
           type: boolean
         imageUpload:
@@ -6345,8 +6345,8 @@ components:
           type: string
         active:
           type: boolean
-        admin:
-          type: boolean
+        role:
+          type: string
         verified:
           type: boolean
     CreateFeedbackRequest:

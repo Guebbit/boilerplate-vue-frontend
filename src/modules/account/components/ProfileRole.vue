@@ -43,39 +43,52 @@ const { updateOwnRole } = useProfileStore();
 const { profile } = storeToRefs(useProfileStore());
 
 /**
+ * The two role names this widget moves between.
+ *
+ * Named here rather than typed inline because the strings are the contract: the server validates
+ * them against `shared/authorization-roles.yaml`, and a typo would be a role nothing declares.
+ */
+const UNRESTRICTED_ROLE = 'owner';
+const STANDARD_ROLE = 'customer';
+
+/**
  * Whether the signed-in visitor is an administrator.
  */
 const { isAdmin } = storeToRefs(useSessionStore());
 
 /**
- * The role shown in the admin-only select.
+ * The role name shown in the select.
  *
  * Seeded from the record and re-seeded whenever it changes underneath — the profile form's
  * "hydrate, never clobber" rule, without the dirty guard: a two-option select holds no keystrokes
  * that a refresh could garble.
  */
-const roleIsAdmin = ref(false);
+const selectedRole = ref(STANDARD_ROLE);
 
 watch(
     profile,
     (userProfile) => {
-        roleIsAdmin.value = Boolean(userProfile?.admin);
+        selectedRole.value = userProfile?.role ?? STANDARD_ROLE;
     },
     { immediate: true }
 );
 
 /**
  * The two role choices, translated.
+ *
+ * Two of the six presets, because this widget only exists to hand administration of a shop over
+ * or give it up. Assigning `manager`, `warehouse` or `support` is the staff screen's job, where
+ * it is a decision about someone else.
  */
 const roleOptions = computed(() => [
-    { value: true, title: t('generic.administrator') },
-    { value: false, title: t('generic.standard-user') }
+    { value: UNRESTRICTED_ROLE, title: t('generic.administrator') },
+    { value: STANDARD_ROLE, title: t('generic.standard-user') }
 ]);
 
 /**
  * Whether the select has been moved away from what the record says.
  */
-const roleIsDirty = computed(() => roleIsAdmin.value !== Boolean(profile.value?.admin));
+const roleIsDirty = computed(() => selectedRole.value !== (profile.value?.role ?? STANDARD_ROLE));
 
 /**
  * Applies the chosen role, confirming first when it gives administrator rights away.
@@ -91,13 +104,13 @@ const roleIsDirty = computed(() => roleIsAdmin.value !== Boolean(profile.value?.
  */
 const handleRoleChange = () => {
     if (!roleIsDirty.value) return Promise.resolve();
-    const wanted = roleIsAdmin.value;
+    const wanted = selectedRole.value;
     const restore = () => {
-        roleIsAdmin.value = Boolean(profile.value?.admin);
+        selectedRole.value = profile.value?.role ?? STANDARD_ROLE;
     };
 
     return (
-        wanted
+        wanted === UNRESTRICTED_ROLE
             ? Promise.resolve(true)
             : useDialogStore().confirm({
                   message: t('profile-page.confirm-self-demote'),
@@ -132,7 +145,7 @@ const handleRoleChange = () => {
             <p class="mb-4 opacity-80">{{ t('profile-page.role-intro') }}</p>
 
             <v-select
-                v-model="roleIsAdmin"
+                v-model="selectedRole"
                 :items="roleOptions"
                 :label="t('profile-page.label-role')"
                 data-test="role-select"

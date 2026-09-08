@@ -25,15 +25,14 @@ import * as zod from 'zod';
  * @summary API health check
  */
 export const GetHealthResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        status: zod
-            .enum(['ok'])
-            .describe('Liveness indicator. Always `ok` when the process is answering.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "status": zod.enum(['ok']).describe('Liveness indicator. Always `ok` when the process is answering.')
+})
+})
+
 
 /**
  * Every language this deployment offers, from both tiers, each stating what it can
@@ -58,9 +57,8 @@ export const GetHealthResponse = zod.strictObject({
 export const getLocalesResponseDataLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const getLocalesResponseDataLocalesItemTenantsItemMax = 64;
 
-export const getLocalesResponseDataLocalesItemTenantsItemRegExp = new RegExp(
-    '^[a-z0-9][a-z0-9-]*$'
-);
+
+export const getLocalesResponseDataLocalesItemTenantsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
 export const getLocalesResponseDataLocalesItemEntryCountMin = 0;
 
@@ -69,77 +67,28 @@ export const getLocalesResponseDataLocalesItemRevisionMin = 0;
 export const getLocalesResponseDataDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const getLocalesResponseDataFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetLocalesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            locales: zod
-                .array(
-                    zod
-                        .strictObject({
-                            tag: zod
-                                .string()
-                                .regex(getLocalesResponseDataLocalesItemTagRegExp)
-                                .describe(
-                                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                                ),
-                            name: zod.string(),
-                            nativeName: zod.string(),
-                            direction: zod
-                                .enum(['ltr', 'rtl'])
-                                .describe(
-                                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
-                                ),
-                            active: zod.boolean(),
-                            tenants: zod
-                                .array(
-                                    zod
-                                        .string()
-                                        .min(1)
-                                        .max(getLocalesResponseDataLocalesItemTenantsItemMax)
-                                        .regex(getLocalesResponseDataLocalesItemTenantsItemRegExp)
-                                        .describe(
-                                            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-                                        )
-                                )
-                                .min(1)
-                                .describe(
-                                    'Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions.'
-                                ),
-                            source: zod
-                                .enum(['static', 'dynamic', 'both'])
-                                .describe(
-                                    'Which tier a language came from — deployed files, the database, or both.'
-                                ),
-                            entryCount: zod
-                                .number()
-                                .min(getLocalesResponseDataLocalesItemEntryCountMin),
-                            revision: zod.number().min(getLocalesResponseDataLocalesItemRevisionMin)
-                        })
-                        .describe(
-                            'One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.'
-                        )
-                )
-                .describe('Every language, ordered by tag so the response is stable.'),
-            default: zod
-                .string()
-                .regex(getLocalesResponseDataDefaultRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            fallback: zod
-                .string()
-                .regex(getLocalesResponseDataFallbackRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                )
-        })
-        .describe(
-            'Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "locales": zod.array(zod.strictObject({
+  "tag": zod.string().regex(getLocalesResponseDataLocalesItemTagRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "name": zod.string(),
+  "nativeName": zod.string(),
+  "direction": zod.enum(['ltr', 'rtl']).describe('Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'),
+  "active": zod.boolean(),
+  "tenants": zod.array(zod.string().min(1).max(getLocalesResponseDataLocalesItemTenantsItemMax).regex(getLocalesResponseDataLocalesItemTenantsItemRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n')).min(1).describe('Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions.'),
+  "source": zod.enum(['static', 'dynamic', 'both']).describe('Which tier a language came from — deployed files, the database, or both.'),
+  "entryCount": zod.number().min(getLocalesResponseDataLocalesItemEntryCountMin),
+  "revision": zod.number().min(getLocalesResponseDataLocalesItemRevisionMin)
+}).describe('One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.')).describe('Every language, ordered by tag so the response is stable.'),
+  "default": zod.string().regex(getLocalesResponseDataDefaultRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "fallback": zod.string().regex(getLocalesResponseDataFallbackRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.')
+}).describe('Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.')
+})
+
 
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
@@ -151,67 +100,41 @@ export const GetLocalesResponse = zod.strictObject({
  */
 export const createLocaleBodyTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const createLocaleBodyActiveDefault = true;
 
 export const CreateLocaleBody = zod.strictObject({
-    tag: zod
-        .string()
-        .regex(createLocaleBodyTagRegExp)
-        .describe(
-            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
-    name: zod.string().min(1),
-    nativeName: zod.string().min(1),
-    direction: zod
-        .enum(['ltr', 'rtl'])
-        .optional()
-        .describe(
-            'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
-        ),
-    active: zod.boolean().default(createLocaleBodyActiveDefault)
-});
+  "tag": zod.string().regex(createLocaleBodyTagRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "name": zod.string().min(1),
+  "nativeName": zod.string().min(1),
+  "direction": zod.enum(['ltr', 'rtl']).optional().describe('Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'),
+  "active": zod.boolean().default(createLocaleBodyActiveDefault)
+})
 
 export const createLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const createLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
 export const createLocaleResponseDataRevisionMin = 0;
 
+
+
 export const CreateLocaleResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            id: zod.string().describe('Resource identifier'),
-            tag: zod
-                .string()
-                .regex(createLocaleResponseDataTagRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            baseLanguage: zod
-                .string()
-                .regex(createLocaleResponseDataBaseLanguageRegExp)
-                .describe(
-                    'The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'
-                ),
-            name: zod.string().describe('English name, for an admin list.'),
-            nativeName: zod
-                .string()
-                .describe("The language's own name, for a client's language picker."),
-            direction: zod
-                .enum(['ltr', 'rtl'])
-                .describe(
-                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
-                ),
-            active: zod.boolean(),
-            revision: zod.number().min(createLocaleResponseDataRevisionMin),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-        .describe(
-            'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "tag": zod.string().regex(createLocaleResponseDataTagRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "baseLanguage": zod.string().regex(createLocaleResponseDataBaseLanguageRegExp).describe('The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'),
+  "name": zod.string().describe('English name, for an admin list.'),
+  "nativeName": zod.string().describe('The language\'s own name, for a client\'s language picker.'),
+  "direction": zod.enum(['ltr', 'rtl']).describe('Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'),
+  "active": zod.boolean(),
+  "revision": zod.number().min(createLocaleResponseDataRevisionMin),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+}).describe('A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.')
+})
+
 
 /**
  * Every tenant this deployment holds words for — the keyspaces an entry can belong
@@ -228,37 +151,24 @@ export const CreateLocaleResponse = zod.strictObject({
  */
 export const getLocaleTenantsResponseDataTenantsItemIdMax = 64;
 
+
 export const getLocaleTenantsResponseDataTenantsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
+
+
 export const GetLocaleTenantsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        tenants: zod
-            .array(
-                zod
-                    .strictObject({
-                        id: zod
-                            .string()
-                            .min(1)
-                            .max(getLocaleTenantsResponseDataTenantsItemIdMax)
-                            .regex(getLocaleTenantsResponseDataTenantsItemIdRegExp)
-                            .describe(
-                                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-                            ),
-                        label: zod.string().describe('A human name, for an admin screen.'),
-                        kind: zod
-                            .enum(['frontend', 'backend'])
-                            .describe(
-                                "What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language."
-                            )
-                    })
-                    .describe('One tenant as the registry describes it.')
-            )
-            .min(1)
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "tenants": zod.array(zod.strictObject({
+  "id": zod.string().min(1).max(getLocaleTenantsResponseDataTenantsItemIdMax).regex(getLocaleTenantsResponseDataTenantsItemIdRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "label": zod.string().describe('A human name, for an admin screen.'),
+  "kind": zod.enum(['frontend', 'backend']).describe('What a tenant is. `backend` is this API\'s own copy, applied internally and never served; `frontend` is a client\'s copy, downloadable per language.')
+}).describe('One tenant as the registry describes it.')).min(1)
+})
+})
+
 
 /**
  * This API's own dictionary for one language — tier 1, the deployed files.
@@ -273,35 +183,24 @@ export const GetLocaleTenantsResponse = zod.strictObject({
  */
 export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetLocaleDictionaryParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(getLocaleDictionaryPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(getLocaleDictionaryPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const getLocaleDictionaryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetLocaleDictionaryResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            locale: zod
-                .string()
-                .regex(getLocaleDictionaryResponseDataLocaleRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            messages: zod
-                .record(zod.string(), zod.unknown())
-                .describe('Nested key\/value dictionary, the same shape the API loads.')
-        })
-        .describe(
-            "The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root."
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "locale": zod.string().regex(getLocaleDictionaryResponseDataLocaleRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "messages": zod.record(zod.string(), zod.unknown()).describe('Nested key\/value dictionary, the same shape the API loads.')
+}).describe('The API\'s OWN message dictionary for one language — its API-response copy and nothing else. It is never a client\'s UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API\'s keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.')
+})
+
 
 /**
  * Updates a language's display names, writing direction or visibility. The tag itself
@@ -311,70 +210,46 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
  */
 export const updateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const UpdateLocaleParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(updateLocalePathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
 
-export const UpdateLocaleBody = zod
-    .strictObject({
-        name: zod.string().min(1).optional(),
-        nativeName: zod.string().min(1).optional(),
-        direction: zod
-            .enum(['ltr', 'rtl'])
-            .optional()
-            .describe(
-                'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
-            ),
-        active: zod.boolean().optional()
-    })
-    .describe(
-        'Every field optional: an omitted one means \"leave it alone\", never \"clear it\". The tag is absent by design — see the operation description.'
-    );
+export const UpdateLocaleParams = zod.strictObject({
+  "locale": zod.string().regex(updateLocalePathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
+
+
+
+
+
+export const UpdateLocaleBody = zod.strictObject({
+  "name": zod.string().min(1).optional(),
+  "nativeName": zod.string().min(1).optional(),
+  "direction": zod.enum(['ltr', 'rtl']).optional().describe('Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'),
+  "active": zod.boolean().optional()
+}).describe('Every field optional: an omitted one means \"leave it alone\", never \"clear it\". The tag is absent by design — see the operation description.')
 
 export const updateLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const updateLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
 export const updateLocaleResponseDataRevisionMin = 0;
 
+
+
 export const UpdateLocaleResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            id: zod.string().describe('Resource identifier'),
-            tag: zod
-                .string()
-                .regex(updateLocaleResponseDataTagRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            baseLanguage: zod
-                .string()
-                .regex(updateLocaleResponseDataBaseLanguageRegExp)
-                .describe(
-                    'The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'
-                ),
-            name: zod.string().describe('English name, for an admin list.'),
-            nativeName: zod
-                .string()
-                .describe("The language's own name, for a client's language picker."),
-            direction: zod
-                .enum(['ltr', 'rtl'])
-                .describe(
-                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
-                ),
-            active: zod.boolean(),
-            revision: zod.number().min(updateLocaleResponseDataRevisionMin),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-        .describe(
-            'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "tag": zod.string().regex(updateLocaleResponseDataTagRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "baseLanguage": zod.string().regex(updateLocaleResponseDataBaseLanguageRegExp).describe('The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'),
+  "name": zod.string().describe('English name, for an admin list.'),
+  "nativeName": zod.string().describe('The language\'s own name, for a client\'s language picker.'),
+  "direction": zod.enum(['ltr', 'rtl']).describe('Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'),
+  "active": zod.boolean(),
+  "revision": zod.number().min(updateLocaleResponseDataRevisionMin),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+}).describe('A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.')
+})
+
 
 /**
  * Removes the language AND every entry translated into it.
@@ -386,18 +261,17 @@ export const UpdateLocaleResponse = zod.strictObject({
  */
 export const deleteLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const DeleteLocaleParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(deleteLocalePathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(deleteLocalePathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const DeleteLocaleResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * The dynamic dictionary for one language, built from its stored entries into the
@@ -425,55 +299,37 @@ export const DeleteLocaleResponse = zod.strictObject({
  */
 export const getLocaleMessagesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetLocaleMessagesParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(getLocaleMessagesPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(getLocaleMessagesPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const getLocaleMessagesQueryTenantMax = 64;
 
+
 export const getLocaleMessagesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
+
 export const GetLocaleMessagesQueryParams = zod.strictObject({
-    tenant: zod
-        .string()
-        .min(1)
-        .max(getLocaleMessagesQueryTenantMax)
-        .regex(getLocaleMessagesQueryTenantRegExp)
-        .optional()
-        .describe(
-            "Which frontend tenant's dictionary to build. Omitted, the deployment's default frontend tenant — a client paired one-to-one with this API never needs to say."
-        )
-});
+  "tenant": zod.string().min(1).max(getLocaleMessagesQueryTenantMax).regex(getLocaleMessagesQueryTenantRegExp).optional().describe('Which frontend tenant\'s dictionary to build. Omitted, the deployment\'s default frontend tenant — a client paired one-to-one with this API never needs to say.')
+})
 
 export const getLocaleMessagesResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const getLocaleMessagesResponseDataRevisionMin = 0;
 
+
+
 export const GetLocaleMessagesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            locale: zod
-                .string()
-                .regex(getLocaleMessagesResponseDataLocaleRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            revision: zod.number().min(getLocaleMessagesResponseDataRevisionMin),
-            messages: zod
-                .record(zod.string(), zod.unknown())
-                .describe(
-                    'Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404.'
-                )
-        })
-        .describe(
-            "The CLIENT's dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces."
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "locale": zod.string().regex(getLocaleMessagesResponseDataLocaleRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "revision": zod.number().min(getLocaleMessagesResponseDataRevisionMin),
+  "messages": zod.record(zod.string(), zod.unknown()).describe('Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404.')
+}).describe('The CLIENT\'s dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces.')
+})
+
 
 /**
  * The rows behind one language's dictionary, paginated and searchable — what a
@@ -485,12 +341,10 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  */
 export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const ListLocaleEntriesParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(listLocaleEntriesPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(listLocaleEntriesPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const listLocaleEntriesQueryPageDefault = 1;
 export const listLocaleEntriesQueryPageMax = 10000;
@@ -498,42 +352,25 @@ export const listLocaleEntriesQueryPageMax = 10000;
 export const listLocaleEntriesQueryPageSizeDefault = 10;
 export const listLocaleEntriesQueryPageSizeMax = 100;
 
+
 export const listLocaleEntriesQueryTenantMax = 64;
+
 
 export const listLocaleEntriesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
-export const ListLocaleEntriesQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listLocaleEntriesQueryPageMax)
-        .default(listLocaleEntriesQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listLocaleEntriesQueryPageSizeMax)
-        .default(listLocaleEntriesQueryPageSizeDefault),
-    text: zod.string().min(1).optional(),
-    tenant: zod
-        .string()
-        .min(1)
-        .max(listLocaleEntriesQueryTenantMax)
-        .regex(listLocaleEntriesQueryTenantRegExp)
-        .optional()
-        .describe(
-            "Restrict the listing to one tenant's dictionary. Omitted lists every tenant, which is what an admin screen wants before the operator has picked one."
-        )
-});
 
-export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
-);
+export const ListLocaleEntriesQueryParams = zod.strictObject({
+  "page": zod.number().min(1).max(listLocaleEntriesQueryPageMax).default(listLocaleEntriesQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listLocaleEntriesQueryPageSizeMax).default(listLocaleEntriesQueryPageSizeDefault),
+  "text": zod.string().min(1).optional(),
+  "tenant": zod.string().min(1).max(listLocaleEntriesQueryTenantMax).regex(listLocaleEntriesQueryTenantRegExp).optional().describe('Restrict the listing to one tenant\'s dictionary. Omitted lists every tenant, which is what an admin screen wants before the operator has picked one.')
+})
+
+export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const listLocaleEntriesResponseDataItemsItemTenantMax = 64;
 
-export const listLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
-    '^[a-z0-9][a-z0-9-]*$'
-);
+
+export const listLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listLocaleEntriesResponseDataMetaPageDefault = 1;
 export const listLocaleEntriesResponseDataMetaPageMax = 10000;
 
@@ -544,62 +381,31 @@ export const listLocaleEntriesResponseDataMetaTotalItemsMin = 0;
 
 export const listLocaleEntriesResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListLocaleEntriesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod
-                .strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    locale: zod
-                        .string()
-                        .regex(listLocaleEntriesResponseDataItemsItemLocaleRegExp)
-                        .describe(
-                            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                        ),
-                    tenant: zod
-                        .string()
-                        .min(1)
-                        .max(listLocaleEntriesResponseDataItemsItemTenantMax)
-                        .regex(listLocaleEntriesResponseDataItemsItemTenantRegExp)
-                        .describe(
-                            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-                        ),
-                    key: zod
-                        .string()
-                        .describe(
-                            'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
-                        ),
-                    value: zod.string(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional()
-                })
-                .describe(
-                    "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
-                )
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listLocaleEntriesResponseDataMetaPageMax)
-                .default(listLocaleEntriesResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listLocaleEntriesResponseDataMetaPageSizeMax)
-                .default(listLocaleEntriesResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listLocaleEntriesResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listLocaleEntriesResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "locale": zod.string().regex(listLocaleEntriesResponseDataItemsItemLocaleRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "tenant": zod.string().min(1).max(listLocaleEntriesResponseDataItemsItemTenantMax).regex(listLocaleEntriesResponseDataItemsItemTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "key": zod.string().describe('Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'),
+  "value": zod.string(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+}).describe('One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API\'s copy and a different one in a client\'s. Without it in the key, one would overwrite the other.')),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listLocaleEntriesResponseDataMetaPageMax).default(listLocaleEntriesResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listLocaleEntriesResponseDataMetaPageSizeMax).default(listLocaleEntriesResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listLocaleEntriesResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listLocaleEntriesResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * 409 if the key already exists in this language, and equally if it COLLIDES with one
@@ -609,69 +415,46 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  */
 export const createLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const CreateLocaleEntryParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(createLocaleEntryPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(createLocaleEntryPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const createLocaleEntryBodyTenantMax = 64;
 
+
 export const createLocaleEntryBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
+
+
 export const CreateLocaleEntryBody = zod.strictObject({
-    tenant: zod
-        .string()
-        .min(1)
-        .max(createLocaleEntryBodyTenantMax)
-        .regex(createLocaleEntryBodyTenantRegExp)
-        .describe(
-            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-        ),
-    key: zod.string().min(1),
-    value: zod.string()
-});
+  "tenant": zod.string().min(1).max(createLocaleEntryBodyTenantMax).regex(createLocaleEntryBodyTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "key": zod.string().min(1),
+  "value": zod.string()
+})
 
 export const createLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const createLocaleEntryResponseDataTenantMax = 64;
 
+
 export const createLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
+
 export const CreateLocaleEntryResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            id: zod.string().describe('Resource identifier'),
-            locale: zod
-                .string()
-                .regex(createLocaleEntryResponseDataLocaleRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            tenant: zod
-                .string()
-                .min(1)
-                .max(createLocaleEntryResponseDataTenantMax)
-                .regex(createLocaleEntryResponseDataTenantRegExp)
-                .describe(
-                    "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-                ),
-            key: zod
-                .string()
-                .describe(
-                    'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
-                ),
-            value: zod.string(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-        .describe(
-            "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "locale": zod.string().regex(createLocaleEntryResponseDataLocaleRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "tenant": zod.string().min(1).max(createLocaleEntryResponseDataTenantMax).regex(createLocaleEntryResponseDataTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "key": zod.string().describe('Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'),
+  "value": zod.string(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+}).describe('One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API\'s copy and a different one in a client\'s. Without it in the key, one would overwrite the other.')
+})
+
 
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
@@ -688,41 +471,25 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  */
 export const replaceLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const ReplaceLocaleEntriesParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(replaceLocaleEntriesPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(replaceLocaleEntriesPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const replaceLocaleEntriesBodyTenantMax = 64;
 
+
 export const replaceLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
-export const ReplaceLocaleEntriesBody = zod
-    .strictObject({
-        tenant: zod
-            .string()
-            .min(1)
-            .max(replaceLocaleEntriesBodyTenantMax)
-            .regex(replaceLocaleEntriesBodyTenantRegExp)
-            .describe(
-                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-            ),
-        entries: zod.array(
-            zod
-                .strictObject({
-                    key: zod.string().min(1),
-                    value: zod.string()
-                })
-                .describe(
-                    'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.'
-                )
-        )
-    })
-    .describe(
-        'The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.\nThe tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.'
-    );
+
+
+export const ReplaceLocaleEntriesBody = zod.strictObject({
+  "tenant": zod.string().min(1).max(replaceLocaleEntriesBodyTenantMax).regex(replaceLocaleEntriesBodyTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "entries": zod.array(zod.strictObject({
+  "key": zod.string().min(1),
+  "value": zod.string()
+}).describe('One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.'))
+}).describe('The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.\nThe tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.')
 
 export const replaceLocaleEntriesResponseDataCreatedMin = 0;
 
@@ -732,21 +499,20 @@ export const replaceLocaleEntriesResponseDataRemovedMin = 0;
 
 export const replaceLocaleEntriesResponseDataRevisionMin = 0;
 
+
+
 export const ReplaceLocaleEntriesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            created: zod.number().min(replaceLocaleEntriesResponseDataCreatedMin),
-            updated: zod.number().min(replaceLocaleEntriesResponseDataUpdatedMin),
-            removed: zod.number().min(replaceLocaleEntriesResponseDataRemovedMin),
-            revision: zod.number().min(replaceLocaleEntriesResponseDataRevisionMin)
-        })
-        .describe(
-            'What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "created": zod.number().min(replaceLocaleEntriesResponseDataCreatedMin),
+  "updated": zod.number().min(replaceLocaleEntriesResponseDataUpdatedMin),
+  "removed": zod.number().min(replaceLocaleEntriesResponseDataRemovedMin),
+  "revision": zod.number().min(replaceLocaleEntriesResponseDataRevisionMin)
+}).describe('What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.')
+})
+
 
 /**
  * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
@@ -758,43 +524,26 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  */
 export const mergeLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const MergeLocaleEntriesParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(mergeLocaleEntriesPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.')
-});
+  "locale": zod.string().regex(mergeLocaleEntriesPathLocaleRegExp).describe('A language tag from `GET \/locales`.')
+})
 
 export const mergeLocaleEntriesBodyTenantMax = 64;
 
+
 export const mergeLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
-export const MergeLocaleEntriesBody = zod
-    .strictObject({
-        tenant: zod
-            .string()
-            .min(1)
-            .max(mergeLocaleEntriesBodyTenantMax)
-            .regex(mergeLocaleEntriesBodyTenantRegExp)
-            .describe(
-                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-            ),
-        entries: zod
-            .array(
-                zod
-                    .strictObject({
-                        key: zod.string().min(1),
-                        value: zod.string()
-                    })
-                    .describe(
-                        'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.'
-                    )
-            )
-            .min(1)
-    })
-    .describe(
-        'Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.'
-    );
+
+
+
+export const MergeLocaleEntriesBody = zod.strictObject({
+  "tenant": zod.string().min(1).max(mergeLocaleEntriesBodyTenantMax).regex(mergeLocaleEntriesBodyTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "entries": zod.array(zod.strictObject({
+  "key": zod.string().min(1),
+  "value": zod.string()
+}).describe('One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.')).min(1)
+}).describe('Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.')
 
 export const mergeLocaleEntriesResponseDataCreatedMin = 0;
 
@@ -804,21 +553,20 @@ export const mergeLocaleEntriesResponseDataRemovedMin = 0;
 
 export const mergeLocaleEntriesResponseDataRevisionMin = 0;
 
+
+
 export const MergeLocaleEntriesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            created: zod.number().min(mergeLocaleEntriesResponseDataCreatedMin),
-            updated: zod.number().min(mergeLocaleEntriesResponseDataUpdatedMin),
-            removed: zod.number().min(mergeLocaleEntriesResponseDataRemovedMin),
-            revision: zod.number().min(mergeLocaleEntriesResponseDataRevisionMin)
-        })
-        .describe(
-            'What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "created": zod.number().min(mergeLocaleEntriesResponseDataCreatedMin),
+  "updated": zod.number().min(mergeLocaleEntriesResponseDataUpdatedMin),
+  "removed": zod.number().min(mergeLocaleEntriesResponseDataRemovedMin),
+  "revision": zod.number().min(mergeLocaleEntriesResponseDataRevisionMin)
+}).describe('What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.')
+})
+
 
 /**
  * Updates the value of one entry. The key is not editable — a key is the identity a
@@ -828,57 +576,38 @@ export const MergeLocaleEntriesResponse = zod.strictObject({
  */
 export const updateLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateLocaleEntryParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(updateLocaleEntryPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.'),
-    entryId: zod.string().describe('Identifier of one translation entry.')
-});
+  "locale": zod.string().regex(updateLocaleEntryPathLocaleRegExp).describe('A language tag from `GET \/locales`.'),
+  "entryId": zod.string().describe('Identifier of one translation entry.')
+})
 
 export const UpdateLocaleEntryBody = zod.strictObject({
-    value: zod.string()
-});
+  "value": zod.string()
+})
 
 export const updateLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const updateLocaleEntryResponseDataTenantMax = 64;
 
+
 export const updateLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
+
 export const UpdateLocaleEntryResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            id: zod.string().describe('Resource identifier'),
-            locale: zod
-                .string()
-                .regex(updateLocaleEntryResponseDataLocaleRegExp)
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            tenant: zod
-                .string()
-                .min(1)
-                .max(updateLocaleEntryResponseDataTenantMax)
-                .regex(updateLocaleEntryResponseDataTenantRegExp)
-                .describe(
-                    "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
-                ),
-            key: zod
-                .string()
-                .describe(
-                    'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
-                ),
-            value: zod.string(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-        .describe(
-            "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "locale": zod.string().regex(updateLocaleEntryResponseDataLocaleRegExp).describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "tenant": zod.string().min(1).max(updateLocaleEntryResponseDataTenantMax).regex(updateLocaleEntryResponseDataTenantRegExp).describe('The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant\'s rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant\'s rows are\nlayered over the API\'s own deployed files at resolution time.\n'),
+  "key": zod.string().describe('Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'),
+  "value": zod.string(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+}).describe('One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API\'s copy and a different one in a client\'s. Without it in the key, one would overwrite the other.')
+})
+
 
 /**
  * Removes a single key from one language. The other languages keep theirs.
@@ -886,26 +615,26 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
  */
 export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const DeleteLocaleEntryParams = zod.strictObject({
-    locale: zod
-        .string()
-        .regex(deleteLocaleEntryPathLocaleRegExp)
-        .describe('A language tag from `GET \/locales`.'),
-    entryId: zod.string().describe('Identifier of one translation entry.')
-});
+  "locale": zod.string().regex(deleteLocaleEntryPathLocaleRegExp).describe('A language tag from `GET \/locales`.'),
+  "entryId": zod.string().describe('Identifier of one translation entry.')
+})
 
 export const DeleteLocaleEntryResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
  */
-export const GetObservabilityEventsResponse = zod.unknown();
+export const GetObservabilityEventsResponse = zod.unknown()
+
 
 /**
  * Readiness snapshot: whether this instance can serve what it promises, and which
@@ -929,91 +658,54 @@ export const getObservabilityHealthResponseDataMemoryHeapTotalMin = 0;
 
 export const getObservabilityHealthResponseDataMemoryExternalMin = 0;
 
+
+
 export const GetObservabilityHealthResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        status: zod
-            .enum(['ok', 'degraded'])
-            .describe(
-                "READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.\nThis is not liveness. `GET \/` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back."
-            ),
-        environment: zod.string(),
-        service: zod.string(),
-        runtimeVersion: zod
-            .string()
-            .describe(
-                'The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open.'
-            ),
-        uptimeSeconds: zod.number().min(getObservabilityHealthResponseDataUptimeSecondsMin),
-        dependencies: zod
-            .strictObject({
-                database: zod.strictObject({
-                    status: zod
-                        .enum(['ready', 'connecting', 'unavailable', 'disabled'])
-                        .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
-                        )
-                }),
-                cache: zod.strictObject({
-                    status: zod
-                        .enum(['ready', 'connecting', 'unavailable', 'disabled'])
-                        .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
-                        )
-                }),
-                queue: zod.strictObject({
-                    status: zod
-                        .enum(['ready', 'connecting', 'unavailable', 'disabled'])
-                        .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
-                        )
-                })
-            })
-            .describe(
-                'Every backing service this process needs, read from the connection state each adapter already maintains. No I\/O: a health endpoint that opens sockets is polled every few seconds by every replica forever, and becomes an amplifier pointed at the infrastructure it reports on.'
-            ),
-        telemetry: zod
-            .strictObject({
-                loki: zod.boolean(),
-                otel: zod.boolean(),
-                umami: zod.boolean(),
-                faro: zod.boolean(),
-                analytics: zod.strictObject({
-                    provider: zod.enum(['umami', 'posthog', 'none']),
-                    configured: zod
-                        .boolean()
-                        .describe(
-                            'Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration.'
-                        )
-                })
-            })
-            .optional()
-            .describe(
-                'Which telemetry sinks this deployment is WIRED TO — read off the environment, never probed.\nDeliberately not part of `status`: these are destinations this service writes to, and losing one costs visibility rather than capability. An unreachable Loki does not make a checkout fail, so it must not colour the dot a dashboard shows for \"can this instance serve traffic\".'
-            ),
-        memory: zod
-            .strictObject({
-                rss: zod.number().min(getObservabilityHealthResponseDataMemoryRssMin),
-                heapUsed: zod.number().min(getObservabilityHealthResponseDataMemoryHeapUsedMin),
-                heapTotal: zod.number().min(getObservabilityHealthResponseDataMemoryHeapTotalMin),
-                external: zod.number().min(getObservabilityHealthResponseDataMemoryExternalMin)
-            })
-            .optional()
-            .describe(
-                "Process memory in BYTES, exactly as the runtime reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so each implementation owns a check that they stay identical."
-            ),
-        system: zod
-            .strictObject({
-                platform: zod.string(),
-                cpuCount: zod.number(),
-                loadAvg: zod.array(zod.number())
-            })
-            .optional(),
-        timestamp: zod.iso.datetime({ offset: true })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "status": zod.enum(['ok', 'degraded']).describe('READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`\' job to say.\nThis is not liveness. `GET \/` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.'),
+  "environment": zod.string(),
+  "service": zod.string(),
+  "runtimeVersion": zod.string().describe('The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open.'),
+  "uptimeSeconds": zod.number().min(getObservabilityHealthResponseDataUptimeSecondsMin),
+  "dependencies": zod.strictObject({
+  "database": zod.strictObject({
+  "status": zod.enum(['ready', 'connecting', 'unavailable', 'disabled']).describe('One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.')
+}),
+  "cache": zod.strictObject({
+  "status": zod.enum(['ready', 'connecting', 'unavailable', 'disabled']).describe('One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.')
+}),
+  "queue": zod.strictObject({
+  "status": zod.enum(['ready', 'connecting', 'unavailable', 'disabled']).describe('One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.')
+})
+}).describe('Every backing service this process needs, read from the connection state each adapter already maintains. No I\/O: a health endpoint that opens sockets is polled every few seconds by every replica forever, and becomes an amplifier pointed at the infrastructure it reports on.'),
+  "telemetry": zod.strictObject({
+  "loki": zod.boolean(),
+  "otel": zod.boolean(),
+  "umami": zod.boolean(),
+  "faro": zod.boolean(),
+  "analytics": zod.strictObject({
+  "provider": zod.enum(['umami', 'posthog', 'none']),
+  "configured": zod.boolean().describe('Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration.')
+})
+}).optional().describe('Which telemetry sinks this deployment is WIRED TO — read off the environment, never probed.\nDeliberately not part of `status`: these are destinations this service writes to, and losing one costs visibility rather than capability. An unreachable Loki does not make a checkout fail, so it must not colour the dot a dashboard shows for \"can this instance serve traffic\".'),
+  "memory": zod.strictObject({
+  "rss": zod.number().min(getObservabilityHealthResponseDataMemoryRssMin),
+  "heapUsed": zod.number().min(getObservabilityHealthResponseDataMemoryHeapUsedMin),
+  "heapTotal": zod.number().min(getObservabilityHealthResponseDataMemoryHeapTotalMin),
+  "external": zod.number().min(getObservabilityHealthResponseDataMemoryExternalMin)
+}).optional().describe('Process memory in BYTES, exactly as the runtime reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module\'s `asyncapi.yaml`. The two documents cannot `$ref` each other, so each implementation owns a check that they stay identical.'),
+  "system": zod.strictObject({
+  "platform": zod.string(),
+  "cpuCount": zod.number(),
+  "loadAvg": zod.array(zod.number())
+}).optional(),
+  "timestamp": zod.iso.datetime({"offset":true})
+})
+})
+
 
 /**
  * Raw Prometheus text (exposition format 0.0.4).
@@ -1021,7 +713,8 @@ export const GetObservabilityHealthResponse = zod.strictObject({
  * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
  * @summary Prometheus metrics
  */
-export const GetObservabilityMetricsResponse = zod.string();
+export const GetObservabilityMetricsResponse = zod.string()
+
 
 /**
  * Key operational metrics derived from Prometheus counters/histograms,
@@ -1066,99 +759,51 @@ export const getObservabilityMetricsOverviewResponseDataProcessMemoryHeapTotalMi
 
 export const getObservabilityMetricsOverviewResponseDataProcessMemoryExternalMin = 0;
 
+
+
 export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        http: zod.strictObject({
-            totalRequests: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataHttpTotalRequestsMin),
-            totalErrors: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataHttpTotalErrorsMin),
-            errorRate: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataHttpErrorRateMin)
-                .max(getObservabilityMetricsOverviewResponseDataHttpErrorRateMax)
-                .describe('Fraction of requests that returned 4xx\/5xx'),
-            inFlight: zod.number().min(getObservabilityMetricsOverviewResponseDataHttpInFlightMin),
-            latencyMs: zod.strictObject({
-                p50: zod.number().describe('Median latency in ms'),
-                p95: zod.number().describe('95th-percentile latency in ms')
-            })
-        }),
-        auth: zod.strictObject({
-            loginSuccess: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataAuthLoginSuccessMin)
-                .optional(),
-            loginFailure: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataAuthLoginFailureMin)
-                .optional(),
-            signupSuccess: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataAuthSignupSuccessMin)
-                .optional()
-        }),
-        business: zod.strictObject({
-            checkoutSuccess: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessCheckoutSuccessMin)
-                .optional(),
-            ordersCreated: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessOrdersCreatedMin)
-                .optional(),
-            lowStockProducts: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessLowStockProductsMin)
-                .optional(),
-            reservedUnits: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessReservedUnitsMin)
-                .optional()
-        }),
-        database: zod.strictObject({
-            queriesTotal: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataDatabaseQueriesTotalMin)
-                .optional(),
-            errorsTotal: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataDatabaseErrorsTotalMin)
-                .optional()
-        }),
-        process: zod.strictObject({
-            uptimeSeconds: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataProcessUptimeSecondsMin)
-                .optional(),
-            memory: zod
-                .strictObject({
-                    rss: zod
-                        .number()
-                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryRssMin),
-                    heapUsed: zod
-                        .number()
-                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapUsedMin),
-                    heapTotal: zod
-                        .number()
-                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapTotalMin),
-                    external: zod
-                        .number()
-                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryExternalMin)
-                })
-                .optional()
-                .describe(
-                    "Process memory in BYTES, exactly as the runtime reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so each implementation owns a check that they stay identical."
-                )
-        }),
-        timestamp: zod.iso.datetime({ offset: true })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "http": zod.strictObject({
+  "totalRequests": zod.number().min(getObservabilityMetricsOverviewResponseDataHttpTotalRequestsMin),
+  "totalErrors": zod.number().min(getObservabilityMetricsOverviewResponseDataHttpTotalErrorsMin),
+  "errorRate": zod.number().min(getObservabilityMetricsOverviewResponseDataHttpErrorRateMin).max(getObservabilityMetricsOverviewResponseDataHttpErrorRateMax).describe('Fraction of requests that returned 4xx\/5xx'),
+  "inFlight": zod.number().min(getObservabilityMetricsOverviewResponseDataHttpInFlightMin),
+  "latencyMs": zod.strictObject({
+  "p50": zod.number().describe('Median latency in ms'),
+  "p95": zod.number().describe('95th-percentile latency in ms')
+})
+}),
+  "auth": zod.strictObject({
+  "loginSuccess": zod.number().min(getObservabilityMetricsOverviewResponseDataAuthLoginSuccessMin).optional(),
+  "loginFailure": zod.number().min(getObservabilityMetricsOverviewResponseDataAuthLoginFailureMin).optional(),
+  "signupSuccess": zod.number().min(getObservabilityMetricsOverviewResponseDataAuthSignupSuccessMin).optional()
+}),
+  "business": zod.strictObject({
+  "checkoutSuccess": zod.number().min(getObservabilityMetricsOverviewResponseDataBusinessCheckoutSuccessMin).optional(),
+  "ordersCreated": zod.number().min(getObservabilityMetricsOverviewResponseDataBusinessOrdersCreatedMin).optional(),
+  "lowStockProducts": zod.number().min(getObservabilityMetricsOverviewResponseDataBusinessLowStockProductsMin).optional(),
+  "reservedUnits": zod.number().min(getObservabilityMetricsOverviewResponseDataBusinessReservedUnitsMin).optional()
+}),
+  "database": zod.strictObject({
+  "queriesTotal": zod.number().min(getObservabilityMetricsOverviewResponseDataDatabaseQueriesTotalMin).optional(),
+  "errorsTotal": zod.number().min(getObservabilityMetricsOverviewResponseDataDatabaseErrorsTotalMin).optional()
+}),
+  "process": zod.strictObject({
+  "uptimeSeconds": zod.number().min(getObservabilityMetricsOverviewResponseDataProcessUptimeSecondsMin).optional(),
+  "memory": zod.strictObject({
+  "rss": zod.number().min(getObservabilityMetricsOverviewResponseDataProcessMemoryRssMin),
+  "heapUsed": zod.number().min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapUsedMin),
+  "heapTotal": zod.number().min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapTotalMin),
+  "external": zod.number().min(getObservabilityMetricsOverviewResponseDataProcessMemoryExternalMin)
+}).optional().describe('Process memory in BYTES, exactly as the runtime reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module\'s `asyncapi.yaml`. The two documents cannot `$ref` each other, so each implementation owns a check that they stay identical.')
+}),
+  "timestamp": zod.iso.datetime({"offset":true})
+})
+})
+
 
 /**
  * Returns the most recent audit events, newest first, from the persisted audit trail.
@@ -1174,26 +819,16 @@ export const getObservabilityAuditLogsQueryPageMax = 10000;
 export const getObservabilityAuditLogsQueryPageSizeDefault = 10;
 export const getObservabilityAuditLogsQueryPageSizeMax = 100;
 
+
+
 export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
-    actor: zod.string().optional().describe('Filter by actor user ID'),
-    action: zod.string().optional().describe('Filter by action name (e.g. order.created)'),
-    outcome: zod.enum(['success', 'failure']).optional().describe('Filter by outcome'),
-    since: zod.iso
-        .datetime({ offset: true })
-        .optional()
-        .describe('Return events strictly after this ISO-8601 timestamp — an exclusive bound'),
-    page: zod
-        .number()
-        .min(1)
-        .max(getObservabilityAuditLogsQueryPageMax)
-        .default(getObservabilityAuditLogsQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(getObservabilityAuditLogsQueryPageSizeMax)
-        .default(getObservabilityAuditLogsQueryPageSizeDefault)
-});
+  "actor": zod.string().optional().describe('Filter by actor user ID'),
+  "action": zod.string().optional().describe('Filter by action name (e.g. order.created)'),
+  "outcome": zod.enum(['success', 'failure']).optional().describe('Filter by outcome'),
+  "since": zod.iso.datetime({"offset":true}).optional().describe('Return events strictly after this ISO-8601 timestamp — an exclusive bound'),
+  "page": zod.number().min(1).max(getObservabilityAuditLogsQueryPageMax).default(getObservabilityAuditLogsQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(getObservabilityAuditLogsQueryPageSizeMax).default(getObservabilityAuditLogsQueryPageSizeDefault)
+})
 
 export const getObservabilityAuditLogsResponseDataMetaPageDefault = 1;
 export const getObservabilityAuditLogsResponseDataMetaPageMax = 10000;
@@ -1205,126 +840,82 @@ export const getObservabilityAuditLogsResponseDataMetaTotalItemsMin = 0;
 
 export const getObservabilityAuditLogsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const GetObservabilityAuditLogsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                actor_user_id: zod.string(),
-                actor_role: zod.enum(['admin', 'user', 'anonymous']),
-                action: zod.string().describe('Dot-notation action name (e.g. order.created)'),
-                outcome: zod.enum(['success', 'failure']),
-                ip: zod.string().optional(),
-                user_agent: zod.string().optional(),
-                request_id: zod.string().optional(),
-                trace_id: zod.string().optional(),
-                target_type: zod.string().optional(),
-                target_id: zod.string().optional(),
-                metadata: zod.record(zod.string(), zod.unknown()).optional(),
-                timestamp: zod.iso.datetime({ offset: true }),
-                level: zod.enum(['info', 'warn'])
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(getObservabilityAuditLogsResponseDataMetaPageMax)
-                .default(getObservabilityAuditLogsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(getObservabilityAuditLogsResponseDataMetaPageSizeMax)
-                .default(getObservabilityAuditLogsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "actor_user_id": zod.string(),
+  "actor_role": zod.enum(['admin', 'user', 'anonymous']),
+  "action": zod.string().describe('Dot-notation action name (e.g. order.created)'),
+  "outcome": zod.enum(['success', 'failure']),
+  "ip": zod.string().optional(),
+  "user_agent": zod.string().optional(),
+  "request_id": zod.string().optional(),
+  "trace_id": zod.string().optional(),
+  "target_type": zod.string().optional(),
+  "target_id": zod.string().optional(),
+  "metadata": zod.record(zod.string(), zod.unknown()).optional(),
+  "timestamp": zod.iso.datetime({"offset":true}),
+  "level": zod.enum(['info', 'warn'])
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(getObservabilityAuditLogsResponseDataMetaPageMax).default(getObservabilityAuditLogsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(getObservabilityAuditLogsResponseDataMetaPageSizeMax).default(getObservabilityAuditLogsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
  * @summary Read the active human-challenge provider's public parameters, and every rung's status
  */
 export const GetAntibotConfigResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        provider: zod
-            .string()
-            .describe(
-                "The active implementation's name (`none` by default). `none` means no challenge is required — send no token.\n"
-            ),
-        parameters: zod
-            .record(zod.string(), zod.string())
-            .describe(
-                "What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.\n"
-            ),
-        rungs: zod
-            .strictObject({
-                identityBudgets: zod
-                    .boolean()
-                    .describe(
-                        'Rung 1 — always `true`. The identity\/address\/address-block budgets have no off switch.\n'
-                    ),
-                emailPolicy: zod
-                    .enum(['off', 'disposable', 'mx'])
-                    .describe(
-                        "Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.\n"
-                    )
-            })
-            .describe(
-                'Every rung\'s status, not just rung 3\'s provider — one answer to \"what is active on this deployment\" instead of asking each rung to publish its own.\n'
-            )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "provider": zod.string().describe('The active implementation\'s name (`none` by default). `none` means no challenge is required — send no token.\n'),
+  "parameters": zod.record(zod.string(), zod.string()).describe('What the client needs to render this provider\'s widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.\n'),
+  "rungs": zod.strictObject({
+  "identityBudgets": zod.boolean().describe('Rung 1 — always `true`. The identity\/address\/address-block budgets have no off switch.\n'),
+  "emailPolicy": zod.enum(['off', 'disposable', 'mx']).describe('Rung 2\'s active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.\n')
+}).describe('Every rung\'s status, not just rung 3\'s provider — one answer to \"what is active on this deployment\" instead of asking each rung to publish its own.\n')
+})
+})
+
 
 /**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
 export const GetAntibotChallengeResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            parameters: zod
-                .strictObject({
-                    algorithm: zod
-                        .string()
-                        .describe('Key-derivation function, e.g. `PBKDF2\/SHA-256`.'),
-                    nonce: zod.string(),
-                    salt: zod.string(),
-                    cost: zod.number().describe('Iteration count — how much work solving takes.'),
-                    keyLength: zod.number(),
-                    keyPrefix: zod.string(),
-                    keySignature: zod.string().optional(),
-                    memoryCost: zod.number().optional(),
-                    parallelism: zod.number().optional(),
-                    expiresAt: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Unix seconds after which the challenge is refused, solved or not.'
-                        )
-                })
-                .describe('What the solver needs to derive the key the challenge asks for.'),
-            signature: zod
-                .string()
-                .describe('HMAC over the parameters, proving this server issued them.')
-        })
-        .describe(
-            "ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.\n"
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "parameters": zod.strictObject({
+  "algorithm": zod.string().describe('Key-derivation function, e.g. `PBKDF2\/SHA-256`.'),
+  "nonce": zod.string(),
+  "salt": zod.string(),
+  "cost": zod.number().describe('Iteration count — how much work solving takes.'),
+  "keyLength": zod.number(),
+  "keyPrefix": zod.string(),
+  "keySignature": zod.string().optional(),
+  "memoryCost": zod.number().optional(),
+  "parallelism": zod.number().optional(),
+  "expiresAt": zod.number().optional().describe('Unix seconds after which the challenge is refused, solved or not.')
+}).describe('What the solver needs to derive the key the challenge asks for.'),
+  "signature": zod.string().describe('HMAC over the parameters, proving this server issued them.')
+}).describe('ALTCHA\'s challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.\n')
+})
+
 
 /**
  * Returns the full profile of the currently authenticated user
@@ -1332,47 +923,33 @@ export const GetAntibotChallengeResponse = zod.strictObject({
  */
 export const getAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetAccountResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(getAccountResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(getAccountResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
@@ -1382,80 +959,57 @@ export const updateAccountBodyUsernameMin = 3;
 
 export const updateAccountBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateAccountBody = zod.strictObject({
-    email: zod.email().optional(),
-    username: zod.string().min(updateAccountBodyUsernameMin).optional(),
-    locale: zod
-        .string()
-        .regex(updateAccountBodyLocaleRegExp)
-        .optional()
-        .describe(
-            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    phone: zod.string().optional(),
-    website: zod.string().optional(),
-    analyticsConsent: zod.boolean().optional()
-});
+  "email": zod.email().optional(),
+  "username": zod.string().min(updateAccountBodyUsernameMin).optional(),
+  "locale": zod.string().regex(updateAccountBodyLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional()
+})
 
 export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateAccountResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(updateAccountResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(updateAccountResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
  * @summary Request account deletion
  */
 export const RequestAccountDeleteResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
@@ -1465,43 +1019,29 @@ export const changePasswordBodyCurrentPasswordMin = 8;
 
 export const changePasswordBodyPasswordMin = 8;
 
-export const changePasswordBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const changePasswordBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const changePasswordBodyPasswordConfirmMin = 8;
 
+
+
 export const ChangePasswordBody = zod.strictObject({
-    currentPassword: zod
-        .string()
-        .min(changePasswordBodyCurrentPasswordMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        ),
-    password: zod
-        .string()
-        .min(changePasswordBodyPasswordMin)
-        .regex(changePasswordBodyPasswordRegExp)
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    passwordConfirm: zod
-        .string()
-        .min(changePasswordBodyPasswordConfirmMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        )
-});
+  "currentPassword": zod.string().min(changePasswordBodyCurrentPasswordMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.'),
+  "password": zod.string().min(changePasswordBodyPasswordMin).regex(changePasswordBodyPasswordRegExp).describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "passwordConfirm": zod.string().min(changePasswordBodyPasswordConfirmMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.')
+})
 
 export const ChangePasswordResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "token": zod.string().describe('Access JWT'),
+  "refreshToken": zod.string().optional().describe('Refresh token if returned by backend'),
+  "expiresIn": zod.number().optional().describe('Access token expiry in seconds')
+})
+})
+
 
 /**
  * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
@@ -1509,276 +1049,264 @@ export const ChangePasswordResponse = zod.strictObject({
  */
 export const reauthBodyPasswordMin = 8;
 
+
+
 export const ReauthBody = zod.strictObject({
-    password: zod
-        .string()
-        .min(reauthBodyPasswordMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        )
-});
+  "password": zod.string().min(reauthBodyPasswordMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.')
+})
 
 export const ReauthResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "token": zod.string().describe('Access JWT'),
+  "refreshToken": zod.string().optional().describe('Refresh token if returned by backend'),
+  "expiresIn": zod.number().optional().describe('Access token expiry in seconds')
+})
+})
+
 
 /**
  * Logs out the CURRENT session only — revokes the refresh token carried by the `jwt` cookie and clears the authentication cookies. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const LogoutResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
  * @summary List active sessions
  */
 export const GetSessionsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        sessions: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                expiration: zod.iso
-                    .datetime({ offset: true })
-                    .optional()
-                    .describe('Absent on a token issued without an expiry tier.'),
-                lastUsedAt: zod.iso
-                    .datetime({ offset: true })
-                    .optional()
-                    .describe(
-                        'When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list.'
-                    ),
-                current: zod
-                    .boolean()
-                    .describe(
-                        'Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session.'
-                    )
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "sessions": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "expiration": zod.iso.datetime({"offset":true}).optional().describe('Absent on a token issued without an expiry tier.'),
+  "lastUsedAt": zod.iso.datetime({"offset":true}).optional().describe('When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list.'),
+  "current": zod.boolean().describe('Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session.')
+}))
+})
+})
+
 
 /**
  * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
  * @summary Revoke one session
  */
 export const RevokeSessionParams = zod.strictObject({
-    sessionId: zod.string().describe('Session identifier from `GET \/account\/sessions`')
-});
+  "sessionId": zod.string().describe('Session identifier from `GET \/account\/sessions`')
+})
 
 export const RevokeSessionResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
  * @summary List saved addresses
  */
 export const GetAddressesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                label: zod
-                    .string()
-                    .optional()
-                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "addresses": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "label": zod.string().optional().describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean()
+}))
+})
+})
+
 
 /**
  * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
  * @summary Add an address
  */
 
+
+
+
+
+
+
 export const AddAddressBody = zod.strictObject({
-    label: zod.string().optional(),
-    fullName: zod.string().min(1),
-    street: zod.string().min(1),
-    city: zod.string().min(1),
-    zip: zod.string().min(1),
-    country: zod.string().min(1),
-    phone: zod.string().optional(),
-    default: zod.boolean().optional()
-});
+  "label": zod.string().optional(),
+  "fullName": zod.string().min(1),
+  "street": zod.string().min(1),
+  "city": zod.string().min(1),
+  "zip": zod.string().min(1),
+  "country": zod.string().min(1),
+  "phone": zod.string().optional(),
+  "default": zod.boolean().optional()
+})
 
 export const AddAddressResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                label: zod
-                    .string()
-                    .optional()
-                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "addresses": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "label": zod.string().optional().describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean()
+}))
+})
+})
+
 
 /**
  * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
  * @summary Update an address
  */
 export const UpdateAddressParams = zod.strictObject({
-    addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
-});
+  "addressId": zod.string().describe('Address identifier from `GET \/account\/addresses`')
+})
+
+
+
+
+
+
+
 
 export const UpdateAddressBody = zod.strictObject({
-    label: zod.string().optional(),
-    fullName: zod.string().min(1).optional(),
-    street: zod.string().min(1).optional(),
-    city: zod.string().min(1).optional(),
-    zip: zod.string().min(1).optional(),
-    country: zod.string().min(1).optional(),
-    phone: zod.string().optional(),
-    default: zod.boolean().optional()
-});
+  "label": zod.string().optional(),
+  "fullName": zod.string().min(1).optional(),
+  "street": zod.string().min(1).optional(),
+  "city": zod.string().min(1).optional(),
+  "zip": zod.string().min(1).optional(),
+  "country": zod.string().min(1).optional(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean().optional()
+})
 
 export const UpdateAddressResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                label: zod
-                    .string()
-                    .optional()
-                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "addresses": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "label": zod.string().optional().describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean()
+}))
+})
+})
+
 
 /**
  * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
  * @summary Remove an address
  */
 export const RemoveAddressParams = zod.strictObject({
-    addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
-});
+  "addressId": zod.string().describe('Address identifier from `GET \/account\/addresses`')
+})
 
 export const RemoveAddressResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                label: zod
-                    .string()
-                    .optional()
-                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "addresses": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "label": zod.string().optional().describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean()
+}))
+})
+})
+
 
 /**
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
  * @summary Request email verification
  */
 export const RequestEmailVerificationResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
  * @summary Confirm email verification
  */
 export const ConfirmEmailVerificationBody = zod.strictObject({
-    token: zod.string().describe('One-time email verification token (NOT a JWT).')
-});
+  "token": zod.string().describe('One-time email verification token (NOT a JWT).')
+})
 
 export const ConfirmEmailVerificationResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
  * @summary Confirm a pending email change
  */
 export const ConfirmEmailChangeBody = zod.strictObject({
-    token: zod.string().describe('One-time email verification token (NOT a JWT).')
-});
+  "token": zod.string().describe('One-time email verification token (NOT a JWT).')
+})
 
 export const ConfirmEmailChangeResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
  * @summary Confirm account deletion
  */
 export const ConfirmAccountDeleteBody = zod.strictObject({
-    token: zod.string().describe('One-time account deletion token (NOT a JWT).')
-});
+  "token": zod.string().describe('One-time account deletion token (NOT a JWT).')
+})
 
 export const ConfirmAccountDeleteResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
@@ -1786,227 +1314,116 @@ export const ConfirmAccountDeleteResponse = zod.strictObject({
  */
 export const loginBodyPasswordMin = 8;
 
+
+
 export const LoginBody = zod.strictObject({
-    email: zod.email(),
-    password: zod
-        .string()
-        .min(loginBodyPasswordMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        ),
-    remember: zod
-        .enum(['short', 'medium', 'long'])
-        .optional()
-        .describe(
-            'How long the refresh cookie outlives the tab — the \"remember me\" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.'
-        )
-});
+  "email": zod.email(),
+  "password": zod.string().min(loginBodyPasswordMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.'),
+  "remember": zod.enum(['short', 'medium', 'long']).optional().describe('How long the refresh cookie outlives the tab — the \"remember me\" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.')
+})
 
 export const LoginResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .union([
-            zod.strictObject({
-                token: zod.string().describe('Access JWT'),
-                refreshToken: zod
-                    .string()
-                    .optional()
-                    .describe('Refresh token if returned by backend'),
-                expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-            }),
-            zod.strictObject({
-                mfaRequired: zod
-                    .literal(true)
-                    .describe(
-                        'Always true — the credential check passed, but a second factor is required before a session is issued.'
-                    ),
-                challenge: zod
-                    .string()
-                    .describe(
-                        'A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST \/account\/login\/2fa, or to POST \/account\/login\/2fa\/send to have a code delivered first.'
-                    ),
-                expiresAt: zod.iso
-                    .datetime({ offset: true })
-                    .describe(
-                        'When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip.'
-                    ),
-                methods: zod
-                    .array(
-                        zod.strictObject({
-                            method: zod
-                                .string()
-                                .describe(
-                                    'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
-                                ),
-                            delivers: zod
-                                .boolean()
-                                .describe(
-                                    'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
-                                ),
-                            target: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
-                                ),
-                            enrolledAt: zod.iso
-                                .datetime({ offset: true })
-                                .optional()
-                                .describe(
-                                    'When this factor was armed. Absent while its enrollment is still pending confirmation.'
-                                ),
-                            resendAfter: zod
-                                .number()
-                                .optional()
-                                .describe(
-                                    'Seconds between two deliveries of this method. Absent for device methods.'
-                                ),
-                            enrollable: zod
-                                .boolean()
-                                .optional()
-                                .describe(
-                                    'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
-                                ),
-                            reason: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Why `enrollable` is false — a translated sentence a client can show as-is.'
-                                )
-                        })
-                    )
-                    .describe(
-                        'The factors armed on this account, in the order a client should offer them.'
-                    ),
-                defaultMethod: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one.'
-                    )
-            })
-        ])
-        .describe(
-            'Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.'
-        )
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.union([zod.strictObject({
+  "token": zod.string().describe('Access JWT'),
+  "refreshToken": zod.string().optional().describe('Refresh token if returned by backend'),
+  "expiresIn": zod.number().optional().describe('Access token expiry in seconds')
+}),zod.strictObject({
+  "mfaRequired": zod.literal(true).describe('Always true — the credential check passed, but a second factor is required before a session is issued.'),
+  "challenge": zod.string().describe('A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST \/account\/login\/2fa, or to POST \/account\/login\/2fa\/send to have a code delivered first.'),
+  "expiresAt": zod.iso.datetime({"offset":true}).describe('When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip.'),
+  "methods": zod.array(zod.strictObject({
+  "method": zod.string().describe('Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'),
+  "delivers": zod.boolean().describe('Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'),
+  "target": zod.string().optional().describe('Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'),
+  "enrolledAt": zod.iso.datetime({"offset":true}).optional().describe('When this factor was armed. Absent while its enrollment is still pending confirmation.'),
+  "resendAfter": zod.number().optional().describe('Seconds between two deliveries of this method. Absent for device methods.'),
+  "enrollable": zod.boolean().optional().describe('Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'),
+  "reason": zod.string().optional().describe('Why `enrollable` is false — a translated sentence a client can show as-is.')
+})).describe('The factors armed on this account, in the order a client should offer them.'),
+  "defaultMethod": zod.string().optional().describe('Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one.')
+})]).describe('Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.')
+})
+
 
 /**
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
  * @summary Signup
  */
 export const SignupHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
-        .string()
-        .optional()
-        .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
-        )
-});
+  "x-antibot-challenge-token": zod.string().optional().describe('The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n')
+})
 
 export const signupBodyUsernameMin = 3;
 
 export const signupBodyPasswordMin = 8;
 
-export const signupBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const signupBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const signupBodyPasswordConfirmMin = 8;
 
+
+
 export const SignupBody = zod.strictObject({
-    email: zod.email(),
-    username: zod.string().min(signupBodyUsernameMin),
-    password: zod
-        .string()
-        .min(signupBodyPasswordMin)
-        .regex(signupBodyPasswordRegExp)
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    passwordConfirm: zod
-        .string()
-        .min(signupBodyPasswordConfirmMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        ),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    termsAccepted: zod.literal(true),
-    analyticsConsent: zod.boolean().optional()
-});
+  "email": zod.email(),
+  "username": zod.string().min(signupBodyUsernameMin),
+  "password": zod.string().min(signupBodyPasswordMin).regex(signupBodyPasswordRegExp).describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "passwordConfirm": zod.string().min(signupBodyPasswordConfirmMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.'),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "termsAccepted": zod.literal(true),
+  "analyticsConsent": zod.boolean().optional()
+})
 
 export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const SignupResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(signupResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(signupResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
  * @summary Request password reset
  */
 export const RequestPasswordResetHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
-        .string()
-        .optional()
-        .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
-        )
-});
+  "x-antibot-challenge-token": zod.string().optional().describe('The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n')
+})
 
 export const RequestPasswordResetBody = zod.strictObject({
-    email: zod.email()
-});
+  "email": zod.email()
+})
 
 export const RequestPasswordResetResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
@@ -2014,76 +1431,68 @@ export const RequestPasswordResetResponse = zod.strictObject({
  */
 export const confirmPasswordResetBodyPasswordMin = 8;
 
-export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const confirmPasswordResetBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const confirmPasswordResetBodyPasswordConfirmMin = 8;
 
+
+
 export const ConfirmPasswordResetBody = zod.strictObject({
-    token: zod.string().describe('One-time password reset token (NOT a JWT).'),
-    password: zod
-        .string()
-        .min(confirmPasswordResetBodyPasswordMin)
-        .regex(confirmPasswordResetBodyPasswordRegExp)
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    passwordConfirm: zod
-        .string()
-        .min(confirmPasswordResetBodyPasswordConfirmMin)
-        .describe(
-            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-        )
-});
+  "token": zod.string().describe('One-time password reset token (NOT a JWT).'),
+  "password": zod.string().min(confirmPasswordResetBodyPasswordMin).regex(confirmPasswordResetBodyPasswordRegExp).describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "passwordConfirm": zod.string().min(confirmPasswordResetBodyPasswordConfirmMin).describe('An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site\'s password policy to whoever is guessing it.')
+})
 
 export const ConfirmPasswordResetResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
  * @summary Refresh access token
  */
 export const RefreshTokenResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('New access JWT'),
-        refreshToken: zod.string().optional().describe('New refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('New access token expiry in seconds')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "token": zod.string().describe('New access JWT'),
+  "refreshToken": zod.string().optional().describe('New refresh token if returned by backend'),
+  "expiresIn": zod.number().optional().describe('New access token expiry in seconds')
+})
+})
+
 
 /**
  * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
  * @summary Logout from all devices
  */
 export const LogoutAllResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
  * @summary Remove expired tokens
  */
 export const DeleteExpiredTokensResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  * @summary Export the caller's own data
  */
-export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
-);
+export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin = 0;
@@ -2103,690 +1512,375 @@ export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
 
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
 
+
+
+
 export const ExportAccountDataResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        exportedAt: zod.iso.datetime({ offset: true }),
-        profile: zod.strictObject({
-            id: zod.string().describe('Resource identifier'),
-            email: zod.email(),
-            username: zod.string(),
-            admin: zod.boolean().optional(),
-            active: zod.boolean().optional(),
-            verified: zod.boolean().optional(),
-            pendingEmail: zod.email().optional(),
-            imageUrl: zod
-                .string()
-                .optional()
-                .describe(
-                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                ),
-            thumbnailUrl: zod
-                .string()
-                .optional()
-                .describe(
-                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                ),
-            locale: zod
-                .string()
-                .regex(exportAccountDataResponseDataProfileLocaleRegExp)
-                .optional()
-                .describe(
-                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                ),
-            phone: zod.string().optional(),
-            website: zod.string().optional(),
-            analyticsConsent: zod.boolean().optional(),
-            termsAccepted: zod.boolean().optional(),
-            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
-        }),
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                label: zod
-                    .string()
-                    .optional()
-                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        ),
-        orders: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                userId: zod.string().optional().describe('Resource identifier'),
-                email: zod.email(),
-                items: zod.array(
-                    zod.strictObject({
-                        product: zod.strictObject({
-                            id: zod.string().describe('Resource identifier'),
-                            title: zod.string(),
-                            price: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin
-                                ),
-                            onHand: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin
-                                )
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin
-                                )
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin
-                                )
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
-                                ),
-                            description: zod.string().optional(),
-                            active: zod.boolean().optional(),
-                            requiresShipping: zod
-                                .boolean()
-                                .default(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault
-                                ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
-                            categories: zod.array(zod.string()).optional(),
-                            tags: zod.array(zod.string()).optional(),
-                            createdAt: zod.iso.datetime({ offset: true }).optional(),
-                            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
-                        }),
-                        quantity: zod.number().min(1)
-                    })
-                ),
-                totalItems: zod
-                    .number()
-                    .min(exportAccountDataResponseDataOrdersItemTotalItemsMin)
-                    .describe(
-                        'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-                    ),
-                totalQuantity: zod
-                    .number()
-                    .min(exportAccountDataResponseDataOrdersItemTotalQuantityMin)
-                    .describe('Sum of `quantity` across every line item.'),
-                totalPrice: zod
-                    .number()
-                    .min(exportAccountDataResponseDataOrdersItemTotalPriceMin)
-                    .describe(
-                        'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-                    ),
-                notes: zod.string().optional().describe('Optional order notes'),
-                shippingMethod: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-                    ),
-                shippingCost: zod
-                    .number()
-                    .min(exportAccountDataResponseDataOrdersItemShippingCostMin)
-                    .optional()
-                    .describe(
-                        'What that method cost at checkout time — a later rate change cannot re-price history.'
-                    ),
-                shippingAddress: zod
-                    .strictObject({
-                        fullName: zod.string(),
-                        street: zod.string(),
-                        city: zod.string(),
-                        zip: zod.string(),
-                        country: zod.string(),
-                        phone: zod.string().optional()
-                    })
-                    .optional(),
-                status: zod
-                    .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                    .describe(
-                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                    ),
-                actions: zod
-                    .strictObject({
-                        transitions: zod
-                            .array(
-                                zod
-                                    .enum([
-                                        'pending',
-                                        'paid',
-                                        'processing',
-                                        'shipped',
-                                        'delivered',
-                                        'cancelled'
-                                    ])
-                                    .describe(
-                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                                    )
-                            )
-                            .describe(
-                                "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                            ),
-                        cancel: zod
-                            .boolean()
-                            .describe(
-                                'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                            ),
-                        pay: zod
-                            .boolean()
-                            .describe(
-                                "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                            )
-                    })
-                    .optional()
-                    .describe(
-                        "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-                    ),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        payments: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                orderId: zod.string().describe('Resource identifier'),
-                amount: zod.number().min(exportAccountDataResponseDataPaymentsItemAmountMin),
-                currency: zod.string(),
-                status: zod.enum([
-                    'requires_confirmation',
-                    'requires_action',
-                    'processing',
-                    'succeeded',
-                    'declined',
-                    'refunded'
-                ]),
-                provider: zod.string(),
-                cardLast4: zod.string().optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        shipments: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                orderId: zod.string().describe('Resource identifier'),
-                trackingCode: zod.string(),
-                status: zod.enum(['shipped', 'delivered']),
-                deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        cart: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        wishlist: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier')
-            })
-        ),
-        sessions: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                type: zod.enum(['refresh']),
-                expiration: zod.iso.datetime({ offset: true }).optional(),
-                lastUsedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        auditLog: zod.array(
-            zod.strictObject({
-                actor_user_id: zod.string(),
-                actor_role: zod.enum(['admin', 'user', 'anonymous']),
-                action: zod.string().describe('Dotted action name, e.g. `order.created`.'),
-                outcome: zod.enum(['success', 'failure']),
-                ip: zod.string().optional(),
-                user_agent: zod.string().optional(),
-                request_id: zod.string().optional(),
-                trace_id: zod.string().optional(),
-                target_type: zod.string().optional(),
-                target_id: zod.string().optional(),
-                metadata: zod.record(zod.string(), zod.unknown()).optional(),
-                timestamp: zod.iso.datetime({ offset: true }),
-                level: zod.enum(['info', 'warn'])
-            })
-        ),
-        feedback: zod
-            .array(
-                zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    name: zod.string().optional(),
-                    email: zod.email(),
-                    subject: zod.string(),
-                    message: zod.string(),
-                    status: zod.string(),
-                    respondedAt: zod.iso.datetime({ offset: true }).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional()
-                })
-            )
-            .optional()
-            .describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "exportedAt": zod.iso.datetime({"offset":true}),
+  "profile": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(exportAccountDataResponseDataProfileLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "addresses": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "label": zod.string().optional().describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional(),
+  "default": zod.boolean()
+})),
+  "orders": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin),
+  "onHand": zod.number().min(exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(exportAccountDataResponseDataOrdersItemTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(exportAccountDataResponseDataOrdersItemTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(exportAccountDataResponseDataOrdersItemTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(exportAccountDataResponseDataOrdersItemShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "payments": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "amount": zod.number().min(exportAccountDataResponseDataPaymentsItemAmountMin),
+  "currency": zod.string(),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']),
+  "provider": zod.string(),
+  "cardLast4": zod.string().optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "shipments": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "trackingCode": zod.string(),
+  "status": zod.enum(['shipped', 'delivered']),
+  "deliveredAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "cart": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "wishlist": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier')
+})),
+  "sessions": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "type": zod.enum(['refresh']),
+  "expiration": zod.iso.datetime({"offset":true}).optional(),
+  "lastUsedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "auditLog": zod.array(zod.strictObject({
+  "actor_user_id": zod.string(),
+  "actor_role": zod.enum(['admin', 'user', 'anonymous']),
+  "action": zod.string().describe('Dotted action name, e.g. `order.created`.'),
+  "outcome": zod.enum(['success', 'failure']),
+  "ip": zod.string().optional(),
+  "user_agent": zod.string().optional(),
+  "request_id": zod.string().optional(),
+  "trace_id": zod.string().optional(),
+  "target_type": zod.string().optional(),
+  "target_id": zod.string().optional(),
+  "metadata": zod.record(zod.string(), zod.unknown()).optional(),
+  "timestamp": zod.iso.datetime({"offset":true}),
+  "level": zod.enum(['info', 'warn'])
+})),
+  "feedback": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.string(),
+  "respondedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional()
+})).optional().describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.')
+})
+})
+
 
 /**
  * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
  * @summary Complete a two-factor login
  */
 export const LoginTwoFactorBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
-    code: zod
-        .string()
-        .describe(
-            "A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's."
-        )
-});
+  "challenge": zod.string().describe('The challenge token from POST \/account\/login.'),
+  "code": zod.string().describe('A code from any armed method, or an unused backup code. Which method it came from is the server\'s problem, not the client\'s.')
+})
 
 export const LoginTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "token": zod.string().describe('Access JWT'),
+  "refreshToken": zod.string().optional().describe('Refresh token if returned by backend'),
+  "expiresIn": zod.number().optional().describe('Access token expiry in seconds')
+})
+})
+
 
 /**
  * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
  * @summary Send a login code
  */
 export const SendTwoFactorCodeBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
-    method: zod
-        .string()
-        .describe(
-            "Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true."
-        )
-});
+  "challenge": zod.string().describe('The challenge token from POST \/account\/login.'),
+  "method": zod.string().describe('Which armed delivered method to send through — a `method` from the challenge\'s own `methods` list whose `delivers` is true.')
+})
 
 export const SendTwoFactorCodeResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method the code went through, echoed back.'),
-        sentTo: zod
-            .string()
-            .describe(
-                'Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.'
-            ),
-        resendAfter: zod
-            .number()
-            .describe(
-                'Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.'
-            ),
-        expiresAt: zod.iso
-            .datetime({ offset: true })
-            .describe('When this code stops being accepted.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "method": zod.string().describe('The method the code went through, echoed back.'),
+  "sentTo": zod.string().describe('Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.'),
+  "resendAfter": zod.number().describe('Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.'),
+  "expiresAt": zod.iso.datetime({"offset":true}).describe('When this code stops being accepted.')
+})
+})
+
 
 /**
  * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
  * @summary Two-factor status
  */
 export const GetTwoFactorStatusResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        enabled: zod
-            .boolean()
-            .describe(
-                'Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry.'
-            ),
-        methods: zod
-            .array(
-                zod.strictObject({
-                    method: zod
-                        .string()
-                        .describe(
-                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
-                        ),
-                    delivers: zod
-                        .boolean()
-                        .describe(
-                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
-                        ),
-                    target: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
-                        ),
-                    enrolledAt: zod.iso
-                        .datetime({ offset: true })
-                        .optional()
-                        .describe(
-                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
-                        ),
-                    resendAfter: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Seconds between two deliveries of this method. Absent for device methods.'
-                        ),
-                    enrollable: zod
-                        .boolean()
-                        .optional()
-                        .describe(
-                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
-                        ),
-                    reason: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
-                        )
-                })
-            )
-            .describe(
-                'The factors armed on this account, plus any enrollment still pending confirmation.'
-            ),
-        available: zod
-            .array(
-                zod.strictObject({
-                    method: zod
-                        .string()
-                        .describe(
-                            'Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'
-                        ),
-                    delivers: zod
-                        .boolean()
-                        .describe(
-                            'Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'
-                        ),
-                    target: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'
-                        ),
-                    enrolledAt: zod.iso
-                        .datetime({ offset: true })
-                        .optional()
-                        .describe(
-                            'When this factor was armed. Absent while its enrollment is still pending confirmation.'
-                        ),
-                    resendAfter: zod
-                        .number()
-                        .optional()
-                        .describe(
-                            'Seconds between two deliveries of this method. Absent for device methods.'
-                        ),
-                    enrollable: zod
-                        .boolean()
-                        .optional()
-                        .describe(
-                            'Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'
-                        ),
-                    reason: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Why `enrollable` is false — a translated sentence a client can show as-is.'
-                        )
-                })
-            )
-            .describe(
-                'What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`.'
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe(
-                'How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.'
-            )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "enabled": zod.boolean().describe('Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry.'),
+  "methods": zod.array(zod.strictObject({
+  "method": zod.string().describe('Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'),
+  "delivers": zod.boolean().describe('Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'),
+  "target": zod.string().optional().describe('Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'),
+  "enrolledAt": zod.iso.datetime({"offset":true}).optional().describe('When this factor was armed. Absent while its enrollment is still pending confirmation.'),
+  "resendAfter": zod.number().optional().describe('Seconds between two deliveries of this method. Absent for device methods.'),
+  "enrollable": zod.boolean().optional().describe('Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'),
+  "reason": zod.string().optional().describe('Why `enrollable` is false — a translated sentence a client can show as-is.')
+})).describe('The factors armed on this account, plus any enrollment still pending confirmation.'),
+  "available": zod.array(zod.strictObject({
+  "method": zod.string().describe('Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it.'),
+  "delivers": zod.boolean().describe('Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a \"send me a code\" button for the former and nothing for the latter.'),
+  "target": zod.string().optional().describe('Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods.'),
+  "enrolledAt": zod.iso.datetime({"offset":true}).optional().describe('When this factor was armed. Absent while its enrollment is still pending confirmation.'),
+  "resendAfter": zod.number().optional().describe('Seconds between two deliveries of this method. Absent for device methods.'),
+  "enrollable": zod.boolean().optional().describe('Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`.'),
+  "reason": zod.string().optional().describe('Why `enrollable` is false — a translated sentence a client can show as-is.')
+})).describe('What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`.'),
+  "backupCodesRemaining": zod.number().describe('How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.')
+})
+})
+
 
 /**
  * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
  * @summary Disable two-factor authentication
  */
 export const DisableTwoFactorBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
+  "code": zod.string().describe('A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.')
+})
 
 export const DisableTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
  * @summary Remove one second factor
  */
 export const RemoveTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
+  "method": zod.string().describe('Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.')
+})
 
 export const RemoveTwoFactorMethodBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
+  "code": zod.string().describe('A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.')
+})
 
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
  * @summary Start enrolling one second factor
  */
 export const SetupTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
+  "method": zod.string().describe('Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.')
+})
 
 export const SetupTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method being enrolled, echoed back.'),
-        delivers: zod
-            .boolean()
-            .describe(
-                'Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`\/`otpauthUri`.'
-            ),
-        secret: zod
-            .string()
-            .optional()
-            .describe(
-                "A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`."
-            ),
-        otpauthUri: zod
-            .string()
-            .optional()
-            .describe(
-                'An otpauth:\/\/ URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`.'
-            ),
-        sentTo: zod
-            .string()
-            .optional()
-            .describe(
-                'Masked destination the enrollment code just went to. Absent unless `delivers`.'
-            ),
-        resendAfter: zod
-            .number()
-            .optional()
-            .describe('Seconds before another code may be requested. Absent unless `delivers`.'),
-        expiresAt: zod.iso
-            .datetime({ offset: true })
-            .optional()
-            .describe('When the delivered code stops being accepted. Absent unless `delivers`.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "method": zod.string().describe('The method being enrolled, echoed back.'),
+  "delivers": zod.boolean().describe('Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`\/`otpauthUri`.'),
+  "secret": zod.string().optional().describe('A device method\'s secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`.'),
+  "otpauthUri": zod.string().optional().describe('An otpauth:\/\/ URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`.'),
+  "sentTo": zod.string().optional().describe('Masked destination the enrollment code just went to. Absent unless `delivers`.'),
+  "resendAfter": zod.number().optional().describe('Seconds before another code may be requested. Absent unless `delivers`.'),
+  "expiresAt": zod.iso.datetime({"offset":true}).optional().describe('When the delivered code stops being accepted. Absent unless `delivers`.')
+})
+})
+
 
 /**
  * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
  * @summary Arm one second factor
  */
 export const ConfirmTwoFactorMethodParams = zod.strictObject({
-    method: zod
-        .string()
-        .describe(
-            'Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.'
-        )
-});
+  "method": zod.string().describe('Wire name of a second factor — a `method` from `GET \/account\/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel.')
+})
 
 export const ConfirmTwoFactorMethodBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.'
-        )
-});
+  "code": zod.string().describe('The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.')
+})
 
 export const ConfirmTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        method: zod.string().describe('The method just armed, echoed back.'),
-        backupCodes: zod
-            .array(zod.string())
-            .optional()
-            .describe(
-                'One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.'
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe('How many unused backup codes the account now holds.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "method": zod.string().describe('The method just armed, echoed back.'),
+  "backupCodes": zod.array(zod.string()).optional().describe('One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.'),
+  "backupCodesRemaining": zod.number().describe('How many unused backup codes the account now holds.')
+})
+})
+
 
 /**
  * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
  * @summary Regenerate backup codes
  */
 export const RegenerateBackupCodesBody = zod.strictObject({
-    code: zod
-        .string()
-        .describe(
-            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
-        )
-});
+  "code": zod.string().describe('A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.')
+})
 
 export const RegenerateBackupCodesResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        backupCodes: zod
-            .array(zod.string())
-            .describe(
-                "The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies."
-            ),
-        backupCodesRemaining: zod
-            .number()
-            .describe(
-                'How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.'
-            )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "backupCodes": zod.array(zod.string()).describe('The account\'s new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies.'),
+  "backupCodesRemaining": zod.number().describe('How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.')
+})
+})
+
 
 /**
  * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
  * @summary List enabled OAuth providers
  */
 export const ListOAuthProvidersResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        providers: zod
-            .array(zod.string())
-            .describe(
-                'Registry names this deployment holds credentials for, e.g. `[\"google\", \"github\"]`.'
-            )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "providers": zod.array(zod.string()).describe('Registry names this deployment holds credentials for, e.g. `[\"google\", \"github\"]`.')
+})
+})
+
 
 /**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
  * @summary Start an OAuth login
  */
 export const StartOAuthLoginParams = zod.strictObject({
-    provider: zod.string().describe('One of the names `GET \/account\/oauth\/providers` lists.')
-});
+  "provider": zod.string().describe('One of the names `GET \/account\/oauth\/providers` lists.')
+})
 
-export const StartOAuthLoginResponse = zod.void();
+export const StartOAuthLoginResponse = zod.void()
+
 
 /**
  * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
  * @summary Complete an OAuth login
  */
 export const CompleteOAuthLoginParams = zod.strictObject({
-    provider: zod.string()
-});
+  "provider": zod.string()
+})
 
 export const CompleteOAuthLoginQueryParams = zod.strictObject({
-    code: zod.string().optional(),
-    state: zod.string().optional(),
-    error: zod
-        .string()
-        .optional()
-        .describe('Set by the provider instead of `code` when the user declines consent.')
-});
+  "code": zod.string().optional(),
+  "state": zod.string().optional(),
+  "error": zod.string().optional().describe('Set by the provider instead of `code` when the user declines consent.')
+})
 
-export const CompleteOAuthLoginResponse = zod.void();
+export const CompleteOAuthLoginResponse = zod.void()
+
 
 /**
  * Returns a paginated list of user accounts.
@@ -2798,26 +1892,20 @@ export const listUsersQueryPageMax = 10000;
 export const listUsersQueryPageSizeDefault = 10;
 export const listUsersQueryPageSizeMax = 100;
 
+
+
+
 export const ListUsersQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listUsersQueryPageMax)
-        .default(listUsersQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listUsersQueryPageSizeMax)
-        .default(listUsersQueryPageSizeDefault),
-    text: zod.string().min(1).optional(),
-    id: zod.string().optional(),
-    email: zod.email().optional(),
-    username: zod.string().optional(),
-    active: zod.boolean().optional(),
-    admin: zod.boolean().optional(),
-    verified: zod.boolean().optional()
-});
+  "page": zod.number().min(1).max(listUsersQueryPageMax).default(listUsersQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listUsersQueryPageSizeMax).default(listUsersQueryPageSizeDefault),
+  "text": zod.string().min(1).optional(),
+  "id": zod.string().optional(),
+  "email": zod.email().optional(),
+  "username": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "role": zod.string().optional(),
+  "verified": zod.boolean().optional()
+})
 
 export const listUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const listUsersResponseDataMetaPageDefault = 1;
@@ -2830,69 +1918,42 @@ export const listUsersResponseDataMetaTotalItemsMin = 0;
 
 export const listUsersResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListUsersResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                email: zod.email(),
-                username: zod.string(),
-                admin: zod.boolean().optional(),
-                active: zod.boolean().optional(),
-                verified: zod.boolean().optional(),
-                pendingEmail: zod.email().optional(),
-                imageUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                    ),
-                thumbnailUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                    ),
-                locale: zod
-                    .string()
-                    .regex(listUsersResponseDataItemsItemLocaleRegExp)
-                    .optional()
-                    .describe(
-                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                    ),
-                phone: zod.string().optional(),
-                website: zod.string().optional(),
-                analyticsConsent: zod.boolean().optional(),
-                termsAccepted: zod.boolean().optional(),
-                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listUsersResponseDataMetaPageMax)
-                .default(listUsersResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listUsersResponseDataMetaPageSizeMax)
-                .default(listUsersResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listUsersResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listUsersResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(listUsersResponseDataItemsItemLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listUsersResponseDataMetaPageMax).default(listUsersResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listUsersResponseDataMetaPageSizeMax).default(listUsersResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listUsersResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listUsersResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
@@ -2900,85 +1961,53 @@ export const ListUsersResponse = zod.strictObject({
  */
 export const createUserBodyPasswordMin = 8;
 
-export const createUserBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const createUserBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const createUserBodySendSetupEmailDefault = false;
 export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const CreateUserBody = zod.strictObject({
-    email: zod.email(),
-    username: zod.string(),
-    password: zod
-        .string()
-        .min(createUserBodyPasswordMin)
-        .regex(createUserBodyPasswordRegExp)
-        .optional()
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
-    admin: zod.boolean().optional(),
-    active: zod.boolean().default(createUserBodyActiveDefault),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    locale: zod
-        .string()
-        .regex(createUserBodyLocaleRegExp)
-        .optional()
-        .describe(
-            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        )
-});
+  "email": zod.email(),
+  "username": zod.string(),
+  "password": zod.string().min(createUserBodyPasswordMin).regex(createUserBodyPasswordRegExp).optional().describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "sendSetupEmail": zod.boolean().default(createUserBodySendSetupEmailDefault),
+  "role": zod.string().optional(),
+  "active": zod.boolean().default(createUserBodyActiveDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "locale": zod.string().regex(createUserBodyLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.')
+})
 
 export const createUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const CreateUserResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(createUserResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(createUserResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates an existing user's email or password. Optional image can be uploaded.
@@ -2986,309 +2015,225 @@ export const CreateUserResponse = zod.strictObject({
  */
 export const updateUserBodyPasswordMin = 8;
 
-export const updateUserBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const updateUserBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const updateUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateUserBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    email: zod.email().optional(),
-    username: zod.string().optional(),
-    password: zod
-        .string()
-        .min(updateUserBodyPasswordMin)
-        .regex(updateUserBodyPasswordRegExp)
-        .optional()
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    admin: zod.boolean().optional(),
-    active: zod.boolean().optional(),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    locale: zod
-        .string()
-        .regex(updateUserBodyLocaleRegExp)
-        .optional()
-        .describe(
-            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
-    phone: zod.string().optional(),
-    website: zod.string().optional()
-});
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email().optional(),
+  "username": zod.string().optional(),
+  "password": zod.string().min(updateUserBodyPasswordMin).regex(updateUserBodyPasswordRegExp).optional().describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "locale": zod.string().regex(updateUserBodyLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional()
+})
 
 export const updateUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateUserResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(updateUserResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(updateUserResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete user
  */
 export const DeleteUserQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteUserBodyHardDeleteDefault = false;
 
 export const DeleteUserBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    hardDelete: zod.boolean().default(deleteUserBodyHardDeleteDefault)
-});
+  "id": zod.string().describe('Resource identifier'),
+  "hardDelete": zod.boolean().default(deleteUserBodyHardDeleteDefault)
+})
 
 export const DeleteUserResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
 export const GetUserByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const getUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const GetUserByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(getUserByIdResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(getUserByIdResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
  * @summary Edit user
  */
 export const UpdateUserByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const updateUserByIdBodyPasswordMin = 8;
 
-export const updateUserByIdBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
+
+export const updateUserByIdBodyPasswordRegExp = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$');
 export const updateUserByIdBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateUserByIdBody = zod.strictObject({
-    email: zod.email().optional(),
-    password: zod
-        .string()
-        .min(updateUserByIdBodyPasswordMin)
-        .regex(updateUserByIdBodyPasswordRegExp)
-        .optional()
-        .describe(
-            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
-        ),
-    username: zod.string().optional(),
-    admin: zod.boolean().optional(),
-    active: zod.boolean().optional(),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    locale: zod
-        .string()
-        .regex(updateUserByIdBodyLocaleRegExp)
-        .optional()
-        .describe(
-            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
-    phone: zod.string().optional(),
-    website: zod.string().optional()
-});
+  "email": zod.email().optional(),
+  "password": zod.string().min(updateUserByIdBodyPasswordMin).regex(updateUserByIdBodyPasswordRegExp).optional().describe('A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`\'s length floor — enforced server-side, not just by the paired frontend\'s form.'),
+  "username": zod.string().optional(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "locale": zod.string().regex(updateUserByIdBodyLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional()
+})
 
 export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
+
 export const UpdateUserByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        username: zod.string(),
-        admin: zod.boolean().optional(),
-        active: zod.boolean().optional(),
-        verified: zod.boolean().optional(),
-        pendingEmail: zod.email().optional(),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        locale: zod
-            .string()
-            .regex(updateUserByIdResponseDataLocaleRegExp)
-            .optional()
-            .describe(
-                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-            ),
-        phone: zod.string().optional(),
-        website: zod.string().optional(),
-        analyticsConsent: zod.boolean().optional(),
-        termsAccepted: zod.boolean().optional(),
-        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(updateUserByIdResponseDataLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
  * @summary Delete user
  */
 export const DeleteUserByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const DeleteUserByIdQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteUserByIdBodyHardDeleteDefault = false;
 
 export const DeleteUserByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteUserByIdBodyHardDeleteDefault)
-});
+  "hardDelete": zod.boolean().default(deleteUserByIdBodyHardDeleteDefault)
+})
 
 export const DeleteUserByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
  * @summary Permanently delete user
  */
 export const HardDeleteUserByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const HardDeleteUserByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
  * @summary Admin-assisted 2FA recovery
  */
 export const AdminDisableUserTwoFactorParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const AdminDisableUserTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
@@ -3300,33 +2245,22 @@ export const searchUsersBodyPageMax = 10000;
 export const searchUsersBodyPageSizeDefault = 10;
 export const searchUsersBodyPageSizeMax = 100;
 
-export const SearchUsersBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(searchUsersBodyPageMax)
-        .default(searchUsersBodyPageDefault)
-        .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-        ),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(searchUsersBodyPageSizeMax)
-        .default(searchUsersBodyPageSizeDefault)
-        .describe('Optional override; server may clamp to a max'),
-    text: zod.string().min(1).optional().describe('Free-text search string'),
-    id: zod.string().optional().describe('Resource identifier'),
-    email: zod.email().optional(),
-    username: zod.string().optional(),
-    active: zod.boolean().optional(),
-    admin: zod.boolean().optional(),
-    verified: zod.boolean().optional()
-});
 
-export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
-);
+
+
+export const SearchUsersBody = zod.strictObject({
+  "page": zod.number().min(1).max(searchUsersBodyPageMax).default(searchUsersBodyPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchUsersBodyPageSizeMax).default(searchUsersBodyPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "text": zod.string().min(1).optional().describe('Free-text search string'),
+  "id": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email().optional(),
+  "username": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "role": zod.string().optional(),
+  "verified": zod.boolean().optional()
+})
+
+export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const searchUsersResponseDataMetaPageDefault = 1;
 export const searchUsersResponseDataMetaPageMax = 10000;
 
@@ -3337,116 +2271,81 @@ export const searchUsersResponseDataMetaTotalItemsMin = 0;
 
 export const searchUsersResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const SearchUsersResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                email: zod.email(),
-                username: zod.string(),
-                admin: zod.boolean().optional(),
-                active: zod.boolean().optional(),
-                verified: zod.boolean().optional(),
-                pendingEmail: zod.email().optional(),
-                imageUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                    ),
-                thumbnailUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                    ),
-                locale: zod
-                    .string()
-                    .regex(searchUsersResponseDataItemsItemLocaleRegExp)
-                    .optional()
-                    .describe(
-                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-                    ),
-                phone: zod.string().optional(),
-                website: zod.string().optional(),
-                analyticsConsent: zod.boolean().optional(),
-                termsAccepted: zod.boolean().optional(),
-                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(searchUsersResponseDataMetaPageMax)
-                .default(searchUsersResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(searchUsersResponseDataMetaPageSizeMax)
-                .default(searchUsersResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(searchUsersResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(searchUsersResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "username": zod.string(),
+  "role": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "pendingEmail": zod.email().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "locale": zod.string().regex(searchUsersResponseDataItemsItemLocaleRegExp).optional().describe('BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'),
+  "phone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "analyticsConsent": zod.boolean().optional(),
+  "termsAccepted": zod.boolean().optional(),
+  "twoFactorEnabledAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(searchUsersResponseDataMetaPageMax).default(searchUsersResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchUsersResponseDataMetaPageSizeMax).default(searchUsersResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(searchUsersResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(searchUsersResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
 export const CreateFeedbackRequestHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
-        .string()
-        .optional()
-        .describe(
-            'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
-        )
-});
+  "x-antibot-challenge-token": zod.string().optional().describe('The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n')
+})
 
 export const createFeedbackRequestBodyWebsiteMax = 200;
 
+
+
 export const CreateFeedbackRequestBody = zod.strictObject({
-    name: zod.string().optional(),
-    email: zod.email(),
-    subject: zod.string(),
-    message: zod.string(),
-    website: zod
-        .string()
-        .max(createFeedbackRequestBodyWebsiteMax)
-        .optional()
-        .describe(
-            'Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.\n'
-        )
-});
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "website": zod.string().max(createFeedbackRequestBodyWebsiteMax).optional().describe('Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.\n')
+})
 
 export const CreateFeedbackRequestResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        name: zod.string().optional(),
-        email: zod.email(),
-        subject: zod.string(),
-        message: zod.string(),
-        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-        adminNotes: zod.string().optional(),
-        respondedAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+  "adminNotes": zod.string().optional(),
+  "respondedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Returns feedback/contact requests for admin review.
@@ -3458,22 +2357,16 @@ export const listFeedbackRequestsQueryPageMax = 10000;
 export const listFeedbackRequestsQueryPageSizeDefault = 10;
 export const listFeedbackRequestsQueryPageSizeMax = 100;
 
+
+
+
 export const ListFeedbackRequestsQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listFeedbackRequestsQueryPageMax)
-        .default(listFeedbackRequestsQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listFeedbackRequestsQueryPageSizeMax)
-        .default(listFeedbackRequestsQueryPageSizeDefault),
-    text: zod.string().min(1).optional(),
-    email: zod.email().optional(),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional()
-});
+  "page": zod.number().min(1).max(listFeedbackRequestsQueryPageMax).default(listFeedbackRequestsQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listFeedbackRequestsQueryPageSizeMax).default(listFeedbackRequestsQueryPageSizeDefault),
+  "text": zod.string().min(1).optional(),
+  "email": zod.email().optional(),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional()
+})
 
 export const listFeedbackRequestsResponseDataMetaPageDefault = 1;
 export const listFeedbackRequestsResponseDataMetaPageMax = 10000;
@@ -3485,45 +2378,34 @@ export const listFeedbackRequestsResponseDataMetaTotalItemsMin = 0;
 
 export const listFeedbackRequestsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListFeedbackRequestsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                name: zod.string().optional(),
-                email: zod.email(),
-                subject: zod.string(),
-                message: zod.string(),
-                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                adminNotes: zod.string().optional(),
-                respondedAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listFeedbackRequestsResponseDataMetaPageMax)
-                .default(listFeedbackRequestsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listFeedbackRequestsResponseDataMetaPageSizeMax)
-                .default(listFeedbackRequestsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listFeedbackRequestsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listFeedbackRequestsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+  "adminNotes": zod.string().optional(),
+  "respondedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listFeedbackRequestsResponseDataMetaPageMax).default(listFeedbackRequestsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listFeedbackRequestsResponseDataMetaPageSizeMax).default(listFeedbackRequestsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listFeedbackRequestsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listFeedbackRequestsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
@@ -3535,25 +2417,16 @@ export const searchFeedbackRequestsBodyPageMax = 10000;
 export const searchFeedbackRequestsBodyPageSizeDefault = 10;
 export const searchFeedbackRequestsBodyPageSizeMax = 100;
 
+
+
+
 export const SearchFeedbackRequestsBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(searchFeedbackRequestsBodyPageMax)
-        .default(searchFeedbackRequestsBodyPageDefault)
-        .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-        ),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(searchFeedbackRequestsBodyPageSizeMax)
-        .default(searchFeedbackRequestsBodyPageSizeDefault)
-        .describe('Optional override; server may clamp to a max'),
-    text: zod.string().min(1).optional().describe('Free-text search string'),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    email: zod.email().optional()
-});
+  "page": zod.number().min(1).max(searchFeedbackRequestsBodyPageMax).default(searchFeedbackRequestsBodyPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchFeedbackRequestsBodyPageSizeMax).default(searchFeedbackRequestsBodyPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "text": zod.string().min(1).optional().describe('Free-text search string'),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
+  "email": zod.email().optional()
+})
 
 export const searchFeedbackRequestsResponseDataMetaPageDefault = 1;
 export const searchFeedbackRequestsResponseDataMetaPageMax = 10000;
@@ -3565,90 +2438,81 @@ export const searchFeedbackRequestsResponseDataMetaTotalItemsMin = 0;
 
 export const searchFeedbackRequestsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const SearchFeedbackRequestsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                name: zod.string().optional(),
-                email: zod.email(),
-                subject: zod.string(),
-                message: zod.string(),
-                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                adminNotes: zod.string().optional(),
-                respondedAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(searchFeedbackRequestsResponseDataMetaPageMax)
-                .default(searchFeedbackRequestsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(searchFeedbackRequestsResponseDataMetaPageSizeMax)
-                .default(searchFeedbackRequestsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+  "adminNotes": zod.string().optional(),
+  "respondedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(searchFeedbackRequestsResponseDataMetaPageMax).default(searchFeedbackRequestsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchFeedbackRequestsResponseDataMetaPageSizeMax).default(searchFeedbackRequestsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(searchFeedbackRequestsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(searchFeedbackRequestsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Updates status/notes of a feedback request.
  * @summary Update feedback request status
  */
 export const UpdateFeedbackRequestStatusParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const UpdateFeedbackRequestStatusBody = zod.strictObject({
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    adminNotes: zod.string().optional()
-});
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
+  "adminNotes": zod.string().optional()
+})
 
 export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        name: zod.string().optional(),
-        email: zod.email(),
-        subject: zod.string(),
-        message: zod.string(),
-        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-        adminNotes: zod.string().optional(),
-        respondedAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string().optional(),
+  "email": zod.email(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+  "adminNotes": zod.string().optional(),
+  "respondedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Permanently removes the feedback request identified by `{id}`.
  * @summary Delete feedback request
  */
 export const DeleteFeedbackRequestParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const DeleteFeedbackRequestResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Returns a paginated list of products.
@@ -3660,31 +2524,25 @@ export const listProductsQueryPageMax = 10000;
 export const listProductsQueryPageSizeDefault = 10;
 export const listProductsQueryPageSizeMax = 100;
 
+
 export const listProductsQueryMinPriceMin = 0;
 
 export const listProductsQueryMaxPriceMin = 0;
 
+
+
 export const ListProductsQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listProductsQueryPageMax)
-        .default(listProductsQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listProductsQueryPageSizeMax)
-        .default(listProductsQueryPageSizeDefault),
-    text: zod.string().min(1).optional(),
-    id: zod.string().optional(),
-    category: zod.string().optional(),
-    tag: zod.string().optional(),
-    minPrice: zod.number().min(listProductsQueryMinPriceMin).optional(),
-    maxPrice: zod.number().min(listProductsQueryMaxPriceMin).optional(),
-    title: zod.string().optional(),
-    active: zod.boolean().optional()
-});
+  "page": zod.number().min(1).max(listProductsQueryPageMax).default(listProductsQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listProductsQueryPageSizeMax).default(listProductsQueryPageSizeDefault),
+  "text": zod.string().min(1).optional(),
+  "id": zod.string().optional(),
+  "category": zod.string().optional(),
+  "tag": zod.string().optional(),
+  "minPrice": zod.number().min(listProductsQueryMinPriceMin).optional(),
+  "maxPrice": zod.number().min(listProductsQueryMaxPriceMin).optional(),
+  "title": zod.string().optional(),
+  "active": zod.boolean().optional()
+})
 
 export const listProductsResponseDataItemsItemPriceMin = 0;
 
@@ -3705,77 +2563,40 @@ export const listProductsResponseDataMetaTotalItemsMin = 0;
 
 export const listProductsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListProductsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                title: zod.string(),
-                price: zod.number().min(listProductsResponseDataItemsItemPriceMin),
-                onHand: zod
-                    .number()
-                    .min(listProductsResponseDataItemsItemOnHandMin)
-                    .optional()
-                    .describe('Units physically present, whether or not they are spoken for.'),
-                reserved: zod
-                    .number()
-                    .min(listProductsResponseDataItemsItemReservedMin)
-                    .optional()
-                    .describe('Units held by an open order — present, but not for sale.'),
-                available: zod
-                    .number()
-                    .min(listProductsResponseDataItemsItemAvailableMin)
-                    .optional()
-                    .describe(
-                        'What a customer may actually buy. Derived from the two counters above.'
-                    ),
-                description: zod.string().optional(),
-                active: zod.boolean().optional(),
-                requiresShipping: zod
-                    .boolean()
-                    .default(listProductsResponseDataItemsItemRequiresShippingDefault),
-                imageUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                    ),
-                thumbnailUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                    ),
-                categories: zod.array(zod.string()).optional(),
-                tags: zod.array(zod.string()).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listProductsResponseDataMetaPageMax)
-                .default(listProductsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listProductsResponseDataMetaPageSizeMax)
-                .default(listProductsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listProductsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listProductsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(listProductsResponseDataItemsItemPriceMin),
+  "onHand": zod.number().min(listProductsResponseDataItemsItemOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(listProductsResponseDataItemsItemReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(listProductsResponseDataItemsItemAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(listProductsResponseDataItemsItemRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listProductsResponseDataMetaPageMax).default(listProductsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listProductsResponseDataMetaPageSizeMax).default(listProductsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listProductsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listProductsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Creates a new product with optional image upload
@@ -3790,21 +2611,16 @@ export const createProductBodyActiveDefault = true;
 export const createProductBodyRequiresShippingDefault = true;
 
 export const CreateProductBody = zod.strictObject({
-    title: zod.string(),
-    price: zod.number().min(createProductBodyPriceMin),
-    onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
-    description: zod.string().optional(),
-    active: zod.boolean().default(createProductBodyActiveDefault),
-    requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
-});
+  "title": zod.string(),
+  "price": zod.number().min(createProductBodyPriceMin),
+  "onHand": zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
+  "description": zod.string().optional(),
+  "active": zod.boolean().default(createProductBodyActiveDefault),
+  "requiresShipping": zod.boolean().default(createProductBodyRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional()
+})
 
 export const createProductResponseDataPriceMin = 0;
 
@@ -3817,50 +2633,29 @@ export const createProductResponseDataAvailableMin = 0;
 export const createProductResponseDataRequiresShippingDefault = true;
 
 export const CreateProductResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        title: zod.string(),
-        price: zod.number().min(createProductResponseDataPriceMin),
-        onHand: zod
-            .number()
-            .min(createProductResponseDataOnHandMin)
-            .optional()
-            .describe('Units physically present, whether or not they are spoken for.'),
-        reserved: zod
-            .number()
-            .min(createProductResponseDataReservedMin)
-            .optional()
-            .describe('Units held by an open order — present, but not for sale.'),
-        available: zod
-            .number()
-            .min(createProductResponseDataAvailableMin)
-            .optional()
-            .describe('What a customer may actually buy. Derived from the two counters above.'),
-        description: zod.string().optional(),
-        active: zod.boolean().optional(),
-        requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        categories: zod.array(zod.string()).optional(),
-        tags: zod.array(zod.string()).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(createProductResponseDataPriceMin),
+  "onHand": zod.number().min(createProductResponseDataOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(createProductResponseDataReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(createProductResponseDataAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(createProductResponseDataRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates an existing product with optional image upload
@@ -3868,22 +2663,19 @@ export const CreateProductResponse = zod.strictObject({
  */
 export const updateProductBodyPriceMin = 0;
 
+
+
 export const UpdateProductBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    title: zod.string(),
-    description: zod.string().optional(),
-    price: zod.number().min(updateProductBodyPriceMin),
-    active: zod.boolean().optional(),
-    requiresShipping: zod.boolean().optional(),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
-});
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "price": zod.number().min(updateProductBodyPriceMin),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional()
+})
 
 export const updateProductResponseDataPriceMin = 0;
 
@@ -3896,109 +2688,84 @@ export const updateProductResponseDataAvailableMin = 0;
 export const updateProductResponseDataRequiresShippingDefault = true;
 
 export const UpdateProductResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        title: zod.string(),
-        price: zod.number().min(updateProductResponseDataPriceMin),
-        onHand: zod
-            .number()
-            .min(updateProductResponseDataOnHandMin)
-            .optional()
-            .describe('Units physically present, whether or not they are spoken for.'),
-        reserved: zod
-            .number()
-            .min(updateProductResponseDataReservedMin)
-            .optional()
-            .describe('Units held by an open order — present, but not for sale.'),
-        available: zod
-            .number()
-            .min(updateProductResponseDataAvailableMin)
-            .optional()
-            .describe('What a customer may actually buy. Derived from the two counters above.'),
-        description: zod.string().optional(),
-        active: zod.boolean().optional(),
-        requiresShipping: zod.boolean().default(updateProductResponseDataRequiresShippingDefault),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        categories: zod.array(zod.string()).optional(),
-        tags: zod.array(zod.string()).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(updateProductResponseDataPriceMin),
+  "onHand": zod.number().min(updateProductResponseDataOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(updateProductResponseDataReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(updateProductResponseDataAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(updateProductResponseDataRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete product
  */
 export const DeleteProductQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteProductBodyHardDeleteDefault = false;
 
 export const DeleteProductBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    hardDelete: zod.boolean().default(deleteProductBodyHardDeleteDefault)
-});
+  "id": zod.string().describe('Resource identifier'),
+  "hardDelete": zod.boolean().default(deleteProductBodyHardDeleteDefault)
+})
 
 export const DeleteProductResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
  * @summary Catalogue facets
  */
 
+
+
+
 export const GetCatalogueFacetsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        categories: zod.array(
-            zod.strictObject({
-                name: zod.string(),
-                count: zod.number().min(1)
-            })
-        ),
-        tags: zod.array(
-            zod.strictObject({
-                name: zod.string(),
-                count: zod.number().min(1)
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "categories": zod.array(zod.strictObject({
+  "name": zod.string(),
+  "count": zod.number().min(1)
+})),
+  "tags": zod.array(zod.strictObject({
+  "name": zod.string(),
+  "count": zod.number().min(1)
+}))
+})
+})
+
 
 /**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
  * @summary Product details
  */
 export const GetProductByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const getProductByIdResponseDataPriceMin = 0;
 
@@ -4011,76 +2778,52 @@ export const getProductByIdResponseDataAvailableMin = 0;
 export const getProductByIdResponseDataRequiresShippingDefault = true;
 
 export const GetProductByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        title: zod.string(),
-        price: zod.number().min(getProductByIdResponseDataPriceMin),
-        onHand: zod
-            .number()
-            .min(getProductByIdResponseDataOnHandMin)
-            .optional()
-            .describe('Units physically present, whether or not they are spoken for.'),
-        reserved: zod
-            .number()
-            .min(getProductByIdResponseDataReservedMin)
-            .optional()
-            .describe('Units held by an open order — present, but not for sale.'),
-        available: zod
-            .number()
-            .min(getProductByIdResponseDataAvailableMin)
-            .optional()
-            .describe('What a customer may actually buy. Derived from the two counters above.'),
-        description: zod.string().optional(),
-        active: zod.boolean().optional(),
-        requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        categories: zod.array(zod.string()).optional(),
-        tags: zod.array(zod.string()).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(getProductByIdResponseDataPriceMin),
+  "onHand": zod.number().min(getProductByIdResponseDataOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(getProductByIdResponseDataReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(getProductByIdResponseDataAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
  * @summary Edit product
  */
 export const UpdateProductByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const updateProductByIdBodyPriceMin = 0;
 
+
+
 export const UpdateProductByIdBody = zod.strictObject({
-    title: zod.string(),
-    description: zod.string().optional(),
-    price: zod.number().min(updateProductByIdBodyPriceMin),
-    active: zod.boolean().optional(),
-    requiresShipping: zod.boolean().optional(),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
-});
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "price": zod.number().min(updateProductByIdBodyPriceMin),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().optional(),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional()
+})
 
 export const updateProductByIdResponseDataPriceMin = 0;
 
@@ -4093,95 +2836,69 @@ export const updateProductByIdResponseDataAvailableMin = 0;
 export const updateProductByIdResponseDataRequiresShippingDefault = true;
 
 export const UpdateProductByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        title: zod.string(),
-        price: zod.number().min(updateProductByIdResponseDataPriceMin),
-        onHand: zod
-            .number()
-            .min(updateProductByIdResponseDataOnHandMin)
-            .optional()
-            .describe('Units physically present, whether or not they are spoken for.'),
-        reserved: zod
-            .number()
-            .min(updateProductByIdResponseDataReservedMin)
-            .optional()
-            .describe('Units held by an open order — present, but not for sale.'),
-        available: zod
-            .number()
-            .min(updateProductByIdResponseDataAvailableMin)
-            .optional()
-            .describe('What a customer may actually buy. Derived from the two counters above.'),
-        description: zod.string().optional(),
-        active: zod.boolean().optional(),
-        requiresShipping: zod
-            .boolean()
-            .default(updateProductByIdResponseDataRequiresShippingDefault),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        categories: zod.array(zod.string()).optional(),
-        tags: zod.array(zod.string()).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(updateProductByIdResponseDataPriceMin),
+  "onHand": zod.number().min(updateProductByIdResponseDataOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(updateProductByIdResponseDataReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(updateProductByIdResponseDataAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(updateProductByIdResponseDataRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
  * @summary Delete product
  */
 export const DeleteProductByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const DeleteProductByIdQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteProductByIdBodyHardDeleteDefault = false;
 
 export const DeleteProductByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteProductByIdBodyHardDeleteDefault)
-});
+  "hardDelete": zod.boolean().default(deleteProductByIdBodyHardDeleteDefault)
+})
 
 export const DeleteProductByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
  * @summary Permanently delete product
  */
 export const HardDeleteProductByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const HardDeleteProductByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
@@ -4193,34 +2910,25 @@ export const searchProductsBodyPageMax = 10000;
 export const searchProductsBodyPageSizeDefault = 10;
 export const searchProductsBodyPageSizeMax = 100;
 
+
 export const searchProductsBodyMinPriceMin = 0;
 
 export const searchProductsBodyMaxPriceMin = 0;
 
+
+
 export const SearchProductsBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(searchProductsBodyPageMax)
-        .default(searchProductsBodyPageDefault)
-        .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-        ),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(searchProductsBodyPageSizeMax)
-        .default(searchProductsBodyPageSizeDefault)
-        .describe('Optional override; server may clamp to a max'),
-    text: zod.string().min(1).optional().describe('Free-text search string'),
-    id: zod.string().optional().describe('Resource identifier'),
-    minPrice: zod.number().min(searchProductsBodyMinPriceMin).optional(),
-    maxPrice: zod.number().min(searchProductsBodyMaxPriceMin).optional(),
-    category: zod.string().optional(),
-    tag: zod.string().optional(),
-    title: zod.string().optional(),
-    active: zod.boolean().optional()
-});
+  "page": zod.number().min(1).max(searchProductsBodyPageMax).default(searchProductsBodyPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchProductsBodyPageSizeMax).default(searchProductsBodyPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "text": zod.string().min(1).optional().describe('Free-text search string'),
+  "id": zod.string().optional().describe('Resource identifier'),
+  "minPrice": zod.number().min(searchProductsBodyMinPriceMin).optional(),
+  "maxPrice": zod.number().min(searchProductsBodyMaxPriceMin).optional(),
+  "category": zod.string().optional(),
+  "tag": zod.string().optional(),
+  "title": zod.string().optional(),
+  "active": zod.boolean().optional()
+})
 
 export const searchProductsResponseDataItemsItemPriceMin = 0;
 
@@ -4241,77 +2949,40 @@ export const searchProductsResponseDataMetaTotalItemsMin = 0;
 
 export const searchProductsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const SearchProductsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                title: zod.string(),
-                price: zod.number().min(searchProductsResponseDataItemsItemPriceMin),
-                onHand: zod
-                    .number()
-                    .min(searchProductsResponseDataItemsItemOnHandMin)
-                    .optional()
-                    .describe('Units physically present, whether or not they are spoken for.'),
-                reserved: zod
-                    .number()
-                    .min(searchProductsResponseDataItemsItemReservedMin)
-                    .optional()
-                    .describe('Units held by an open order — present, but not for sale.'),
-                available: zod
-                    .number()
-                    .min(searchProductsResponseDataItemsItemAvailableMin)
-                    .optional()
-                    .describe(
-                        'What a customer may actually buy. Derived from the two counters above.'
-                    ),
-                description: zod.string().optional(),
-                active: zod.boolean().optional(),
-                requiresShipping: zod
-                    .boolean()
-                    .default(searchProductsResponseDataItemsItemRequiresShippingDefault),
-                imageUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                    ),
-                thumbnailUrl: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                    ),
-                categories: zod.array(zod.string()).optional(),
-                tags: zod.array(zod.string()).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(searchProductsResponseDataMetaPageMax)
-                .default(searchProductsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(searchProductsResponseDataMetaPageSizeMax)
-                .default(searchProductsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(searchProductsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(searchProductsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(searchProductsResponseDataItemsItemPriceMin),
+  "onHand": zod.number().min(searchProductsResponseDataItemsItemOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(searchProductsResponseDataItemsItemReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(searchProductsResponseDataItemsItemAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(searchProductsResponseDataItemsItemRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(searchProductsResponseDataMetaPageMax).default(searchProductsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchProductsResponseDataMetaPageSizeMax).default(searchProductsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(searchProductsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(searchProductsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Returns all items currently in the authenticated user's cart along with a computed summary
@@ -4324,44 +2995,39 @@ export const getCartResponseDataSummaryTotalQuantityMin = 0;
 
 export const getCartResponseDataSummaryTotalMin = 0;
 
+
+
 export const GetCartResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(getCartResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(getCartResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(getCartResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(getCartResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(getCartResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(getCartResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
  * @summary Add/Edit cart item
  */
 
+
+
 export const UpsertCartItemBody = zod.strictObject({
-    productId: zod.string().describe('Resource identifier'),
-    quantity: zod.number().min(1)
-});
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})
+
 
 export const upsertCartItemResponseDataSummaryItemsCountMin = 0;
 
@@ -4369,42 +3035,35 @@ export const upsertCartItemResponseDataSummaryTotalQuantityMin = 0;
 
 export const upsertCartItemResponseDataSummaryTotalMin = 0;
 
+
+
 export const UpsertCartItemResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(upsertCartItemResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(upsertCartItemResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(upsertCartItemResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(upsertCartItemResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(upsertCartItemResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(upsertCartItemResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
  * @summary Remove item from cart
  */
 export const RemoveCartItemByBodyBody = zod.strictObject({
-    productId: zod.string().describe('Resource identifier')
-});
+  "productId": zod.string().describe('Resource identifier')
+})
+
 
 export const removeCartItemByBodyResponseDataSummaryItemsCountMin = 0;
 
@@ -4412,34 +3071,26 @@ export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
 
 export const removeCartItemByBodyResponseDataSummaryTotalMin = 0;
 
+
+
 export const RemoveCartItemByBodyResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(removeCartItemByBodyResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(removeCartItemByBodyResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(removeCartItemByBodyResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(removeCartItemByBodyResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
@@ -4452,47 +3103,43 @@ export const clearCartResponseDataSummaryTotalQuantityMin = 0;
 
 export const clearCartResponseDataSummaryTotalMin = 0;
 
+
+
 export const ClearCartResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(clearCartResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(clearCartResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(clearCartResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(clearCartResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(clearCartResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(clearCartResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const UpdateCartItemByIdParams = zod.strictObject({
-    productId: zod.string().describe('Product identifier')
-});
+  "productId": zod.string().describe('Product identifier')
+})
+
+
+
 
 export const UpdateCartItemByIdBody = zod.strictObject({
-    productId: zod.string().optional().describe('Resource identifier'),
-    quantity: zod.number().min(1)
-});
+  "productId": zod.string().optional().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})
+
 
 export const updateCartItemByIdResponseDataSummaryItemsCountMin = 0;
 
@@ -4500,42 +3147,35 @@ export const updateCartItemByIdResponseDataSummaryTotalQuantityMin = 0;
 
 export const updateCartItemByIdResponseDataSummaryTotalMin = 0;
 
+
+
 export const UpdateCartItemByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(updateCartItemByIdResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(updateCartItemByIdResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(updateCartItemByIdResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(updateCartItemByIdResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(updateCartItemByIdResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(updateCartItemByIdResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
  * @summary Remove item from cart
  */
 export const RemoveCartItemParams = zod.strictObject({
-    productId: zod.string().describe('Product identifier')
-});
+  "productId": zod.string().describe('Product identifier')
+})
+
 
 export const removeCartItemResponseDataSummaryItemsCountMin = 0;
 
@@ -4543,34 +3183,26 @@ export const removeCartItemResponseDataSummaryTotalQuantityMin = 0;
 
 export const removeCartItemResponseDataSummaryTotalMin = 0;
 
+
+
 export const RemoveCartItemResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(removeCartItemResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(removeCartItemResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(removeCartItemResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(removeCartItemResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(removeCartItemResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(removeCartItemResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Returns a lightweight summary of the authenticated user's cart.
@@ -4582,48 +3214,31 @@ export const getCartSummaryResponseDataTotalQuantityMin = 0;
 
 export const getCartSummaryResponseDataTotalMin = 0;
 
+
+
 export const GetCartSummaryResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        itemsCount: zod
-            .number()
-            .min(getCartSummaryResponseDataItemsCountMin)
-            .describe('Number of distinct cart lines\/items'),
-        totalQuantity: zod
-            .number()
-            .min(getCartSummaryResponseDataTotalQuantityMin)
-            .describe('Sum of quantities across all items'),
-        total: zod
-            .number()
-            .min(getCartSummaryResponseDataTotalMin)
-            .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-        currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "itemsCount": zod.number().min(getCartSummaryResponseDataItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(getCartSummaryResponseDataTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(getCartSummaryResponseDataTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+
 
 /**
  * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
  * @summary Checkout (place order from cart)
  */
 export const CheckoutBody = zod.strictObject({
-    email: zod.email().optional(),
-    notes: zod.string().optional().describe('Optional order notes'),
-    addressId: zod
-        .string()
-        .describe('Resource identifier')
-        .optional()
-        .describe(
-            "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere."
-        ),
-    shippingMethodId: zod
-        .string()
-        .optional()
-        .describe(
-            'Which shipping method (see `GET \/delivery\/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.'
-        )
-});
+  "email": zod.email().optional(),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "addressId": zod.string().describe('Resource identifier').optional().describe('Which of the caller\'s saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller\'s addresses refuses the checkout with 404 rather than shipping nowhere.'),
+  "shippingMethodId": zod.string().optional().describe('Which shipping method (see `GET \/delivery\/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.')
+})
 
 export const checkoutResponseDataOrderItemsItemProductPriceMin = 0;
 
@@ -4642,163 +3257,75 @@ export const checkoutResponseDataOrderTotalPriceMin = 0;
 
 export const checkoutResponseDataOrderShippingCostMin = 0;
 
+
+
 export const CheckoutResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        order: zod.strictObject({
-            id: zod.string().describe('Resource identifier'),
-            userId: zod.string().optional().describe('Resource identifier'),
-            email: zod.email(),
-            items: zod.array(
-                zod.strictObject({
-                    product: zod.strictObject({
-                        id: zod.string().describe('Resource identifier'),
-                        title: zod.string(),
-                        price: zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
-                        onHand: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductOnHandMin)
-                            .optional()
-                            .describe(
-                                'Units physically present, whether or not they are spoken for.'
-                            ),
-                        reserved: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductReservedMin)
-                            .optional()
-                            .describe('Units held by an open order — present, but not for sale.'),
-                        available: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductAvailableMin)
-                            .optional()
-                            .describe(
-                                'What a customer may actually buy. Derived from the two counters above.'
-                            ),
-                        description: zod.string().optional(),
-                        active: zod.boolean().optional(),
-                        requiresShipping: zod
-                            .boolean()
-                            .default(
-                                checkoutResponseDataOrderItemsItemProductRequiresShippingDefault
-                            ),
-                        imageUrl: zod
-                            .string()
-                            .optional()
-                            .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                            ),
-                        thumbnailUrl: zod
-                            .string()
-                            .optional()
-                            .describe(
-                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                            ),
-                        categories: zod.array(zod.string()).optional(),
-                        tags: zod.array(zod.string()).optional(),
-                        createdAt: zod.iso.datetime({ offset: true }).optional(),
-                        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                        deletedAt: zod.iso.datetime({ offset: true }).optional()
-                    }),
-                    quantity: zod.number().min(1)
-                })
-            ),
-            totalItems: zod
-                .number()
-                .min(checkoutResponseDataOrderTotalItemsMin)
-                .describe(
-                    'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-                ),
-            totalQuantity: zod
-                .number()
-                .min(checkoutResponseDataOrderTotalQuantityMin)
-                .describe('Sum of `quantity` across every line item.'),
-            totalPrice: zod
-                .number()
-                .min(checkoutResponseDataOrderTotalPriceMin)
-                .describe(
-                    'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-                ),
-            notes: zod.string().optional().describe('Optional order notes'),
-            shippingMethod: zod
-                .string()
-                .optional()
-                .describe(
-                    "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-                ),
-            shippingCost: zod
-                .number()
-                .min(checkoutResponseDataOrderShippingCostMin)
-                .optional()
-                .describe(
-                    'What that method cost at checkout time — a later rate change cannot re-price history.'
-                ),
-            shippingAddress: zod
-                .strictObject({
-                    fullName: zod.string(),
-                    street: zod.string(),
-                    city: zod.string(),
-                    zip: zod.string(),
-                    country: zod.string(),
-                    phone: zod.string().optional()
-                })
-                .optional(),
-            status: zod
-                .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                .describe(
-                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                ),
-            actions: zod
-                .strictObject({
-                    transitions: zod
-                        .array(
-                            zod
-                                .enum([
-                                    'pending',
-                                    'paid',
-                                    'processing',
-                                    'shipped',
-                                    'delivered',
-                                    'cancelled'
-                                ])
-                                .describe(
-                                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                                )
-                        )
-                        .describe(
-                            "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                        ),
-                    cancel: zod
-                        .boolean()
-                        .describe(
-                            'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                        ),
-                    pay: zod
-                        .boolean()
-                        .describe(
-                            "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                        )
-                })
-                .optional()
-                .describe(
-                    "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-                ),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
-        }),
-        message: zod.string().optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "order": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
+  "onHand": zod.number().min(checkoutResponseDataOrderItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(checkoutResponseDataOrderItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(checkoutResponseDataOrderItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(checkoutResponseDataOrderItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(checkoutResponseDataOrderTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(checkoutResponseDataOrderTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(checkoutResponseDataOrderTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(checkoutResponseDataOrderShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "message": zod.string().optional()
+})
+})
+
 
 /**
  * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const ReorderParams = zod.strictObject({
-    orderId: zod.string().describe("One of the caller's own orders")
-});
+  "orderId": zod.string().describe('One of the caller\'s own orders')
+})
+
 
 export const reorderResponseDataSummaryItemsCountMin = 0;
 
@@ -4806,114 +3333,102 @@ export const reorderResponseDataSummaryTotalQuantityMin = 0;
 
 export const reorderResponseDataSummaryTotalMin = 0;
 
+
+
 export const ReorderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod
-                .number()
-                .min(reorderResponseDataSummaryItemsCountMin)
-                .describe('Number of distinct cart lines\/items'),
-            totalQuantity: zod
-                .number()
-                .min(reorderResponseDataSummaryTotalQuantityMin)
-                .describe('Sum of quantities across all items'),
-            total: zod
-                .number()
-                .min(reorderResponseDataSummaryTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})),
+  "summary": zod.strictObject({
+  "itemsCount": zod.number().min(reorderResponseDataSummaryItemsCountMin).describe('Number of distinct cart lines\/items'),
+  "totalQuantity": zod.number().min(reorderResponseDataSummaryTotalQuantityMin).describe('Sum of quantities across all items'),
+  "total": zod.number().min(reorderResponseDataSummaryTotalMin).describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+  "currency": zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+})
+})
+})
+
 
 /**
  * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
  * @summary Get wishlist
  */
 export const GetWishlistResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier')
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier')
+}))
+})
+})
+
 
 /**
  * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
  * @summary Save a product
  */
 export const AddWishlistItemBody = zod.strictObject({
-    productId: zod.string().describe('Resource identifier')
-});
+  "productId": zod.string().describe('Resource identifier')
+})
 
 export const AddWishlistItemResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier')
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier')
+}))
+})
+})
+
 
 /**
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
  * @summary Remove a saved product
  */
 export const RemoveWishlistItemParams = zod.strictObject({
-    productId: zod.string().describe('Product identifier')
-});
+  "productId": zod.string().describe('Product identifier')
+})
 
 export const RemoveWishlistItemResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier')
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier')
+}))
+})
+})
+
 
 /**
  * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Returns the updated wishlist; read the cart for its own new state.
  * @summary Move a saved product into the cart
  */
 export const MoveWishlistItemToCartParams = zod.strictObject({
-    productId: zod.string().describe('Product identifier')
-});
+  "productId": zod.string().describe('Product identifier')
+})
 
 export const MoveWishlistItemToCartResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier')
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier')
+}))
+})
+})
+
 
 /**
  * Returns a paginated list of orders.
@@ -4926,27 +3441,18 @@ export const listOrdersQueryPageMax = 10000;
 export const listOrdersQueryPageSizeDefault = 10;
 export const listOrdersQueryPageSizeMax = 100;
 
+
+
 export const ListOrdersQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listOrdersQueryPageMax)
-        .default(listOrdersQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listOrdersQueryPageSizeMax)
-        .default(listOrdersQueryPageSizeDefault),
-    id: zod.string().optional(),
-    userId: zod.string().optional(),
-    productId: zod.string().optional(),
-    email: zod.email().optional(),
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional(),
-    notes: zod.string().optional()
-});
+  "page": zod.number().min(1).max(listOrdersQueryPageMax).default(listOrdersQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listOrdersQueryPageSizeMax).default(listOrdersQueryPageSizeDefault),
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productId": zod.string().optional(),
+  "email": zod.email().optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).optional(),
+  "notes": zod.string().optional()
+})
 
 export const listOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
@@ -4975,198 +3481,88 @@ export const listOrdersResponseDataMetaTotalItemsMin = 0;
 
 export const listOrdersResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListOrdersResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                userId: zod.string().optional().describe('Resource identifier'),
-                email: zod.email(),
-                items: zod.array(
-                    zod.strictObject({
-                        product: zod.strictObject({
-                            id: zod.string().describe('Resource identifier'),
-                            title: zod.string(),
-                            price: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
-                            onHand: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductOnHandMin)
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductReservedMin)
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductAvailableMin)
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
-                                ),
-                            description: zod.string().optional(),
-                            active: zod.boolean().optional(),
-                            requiresShipping: zod
-                                .boolean()
-                                .default(
-                                    listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
-                                ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
-                            categories: zod.array(zod.string()).optional(),
-                            tags: zod.array(zod.string()).optional(),
-                            createdAt: zod.iso.datetime({ offset: true }).optional(),
-                            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
-                        }),
-                        quantity: zod.number().min(1)
-                    })
-                ),
-                totalItems: zod
-                    .number()
-                    .min(listOrdersResponseDataItemsItemTotalItemsMin)
-                    .describe(
-                        'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-                    ),
-                totalQuantity: zod
-                    .number()
-                    .min(listOrdersResponseDataItemsItemTotalQuantityMin)
-                    .describe('Sum of `quantity` across every line item.'),
-                totalPrice: zod
-                    .number()
-                    .min(listOrdersResponseDataItemsItemTotalPriceMin)
-                    .describe(
-                        'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-                    ),
-                notes: zod.string().optional().describe('Optional order notes'),
-                shippingMethod: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-                    ),
-                shippingCost: zod
-                    .number()
-                    .min(listOrdersResponseDataItemsItemShippingCostMin)
-                    .optional()
-                    .describe(
-                        'What that method cost at checkout time — a later rate change cannot re-price history.'
-                    ),
-                shippingAddress: zod
-                    .strictObject({
-                        fullName: zod.string(),
-                        street: zod.string(),
-                        city: zod.string(),
-                        zip: zod.string(),
-                        country: zod.string(),
-                        phone: zod.string().optional()
-                    })
-                    .optional(),
-                status: zod
-                    .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                    .describe(
-                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                    ),
-                actions: zod
-                    .strictObject({
-                        transitions: zod
-                            .array(
-                                zod
-                                    .enum([
-                                        'pending',
-                                        'paid',
-                                        'processing',
-                                        'shipped',
-                                        'delivered',
-                                        'cancelled'
-                                    ])
-                                    .describe(
-                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                                    )
-                            )
-                            .describe(
-                                "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                            ),
-                        cancel: zod
-                            .boolean()
-                            .describe(
-                                'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                            ),
-                        pay: zod
-                            .boolean()
-                            .describe(
-                                "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                            )
-                    })
-                    .optional()
-                    .describe(
-                        "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-                    ),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listOrdersResponseDataMetaPageMax)
-                .default(listOrdersResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listOrdersResponseDataMetaPageSizeMax)
-                .default(listOrdersResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listOrdersResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listOrdersResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
+  "onHand": zod.number().min(listOrdersResponseDataItemsItemItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(listOrdersResponseDataItemsItemItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(listOrdersResponseDataItemsItemItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(listOrdersResponseDataItemsItemTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(listOrdersResponseDataItemsItemTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(listOrdersResponseDataItemsItemTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(listOrdersResponseDataItemsItemShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listOrdersResponseDataMetaPageMax).default(listOrdersResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listOrdersResponseDataMetaPageSizeMax).default(listOrdersResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listOrdersResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listOrdersResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Creates a new order directly from the supplied payload.
  * @summary Create order
  */
 
-export const CreateOrderBody = zod
-    .strictObject({
-        userId: zod.string().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod
-            .array(
-                zod.strictObject({
-                    productId: zod.string().describe('Resource identifier'),
-                    quantity: zod.number().min(1)
-                })
-            )
-            .min(1)
-    })
-    .describe('Create a new order.');
+
+
+
+export const CreateOrderBody = zod.strictObject({
+  "userId": zod.string().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})).min(1)
+}).describe('Create a new order.')
 
 export const createOrderResponseDataItemsItemProductPriceMin = 0;
 
@@ -5185,172 +3581,82 @@ export const createOrderResponseDataTotalPriceMin = 0;
 
 export const createOrderResponseDataShippingCostMin = 0;
 
+
+
 export const CreateOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    title: zod.string(),
-                    price: zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
-                    description: zod.string().optional(),
-                    active: zod.boolean().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
-                }),
-                quantity: zod.number().min(1)
-            })
-        ),
-        totalItems: zod
-            .number()
-            .min(createOrderResponseDataTotalItemsMin)
-            .describe(
-                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-            ),
-        totalQuantity: zod
-            .number()
-            .min(createOrderResponseDataTotalQuantityMin)
-            .describe('Sum of `quantity` across every line item.'),
-        totalPrice: zod
-            .number()
-            .min(createOrderResponseDataTotalPriceMin)
-            .describe(
-                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-            ),
-        notes: zod.string().optional().describe('Optional order notes'),
-        shippingMethod: zod
-            .string()
-            .optional()
-            .describe(
-                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-            ),
-        shippingCost: zod
-            .number()
-            .min(createOrderResponseDataShippingCostMin)
-            .optional()
-            .describe(
-                'What that method cost at checkout time — a later rate change cannot re-price history.'
-            ),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        status: zod
-            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-            .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-            ),
-        actions: zod
-            .strictObject({
-                transitions: zod
-                    .array(
-                        zod
-                            .enum([
-                                'pending',
-                                'paid',
-                                'processing',
-                                'shipped',
-                                'delivered',
-                                'cancelled'
-                            ])
-                            .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                            )
-                    )
-                    .describe(
-                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                    ),
-                cancel: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                    ),
-                pay: zod
-                    .boolean()
-                    .describe(
-                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
+  "onHand": zod.number().min(createOrderResponseDataItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(createOrderResponseDataItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(createOrderResponseDataItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(createOrderResponseDataTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(createOrderResponseDataTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(createOrderResponseDataTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(createOrderResponseDataShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates an existing order identified by id in the request body.
  * @summary Update order
  */
 
+
+
+
 export const UpdateOrderBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional()
-        .describe('Updated order status'),
-    userId: zod.string().optional().describe('Resource identifier'),
-    email: zod.email().optional(),
-    items: zod
-        .array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        )
-        .min(1)
-        .optional()
-});
+  "id": zod.string().describe('Resource identifier'),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).optional().describe('Updated order status'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email().optional(),
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})).min(1).optional()
+})
 
 export const updateOrderResponseDataItemsItemProductPriceMin = 0;
 
@@ -5369,174 +3675,85 @@ export const updateOrderResponseDataTotalPriceMin = 0;
 
 export const updateOrderResponseDataShippingCostMin = 0;
 
+
+
 export const UpdateOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    title: zod.string(),
-                    price: zod.number().min(updateOrderResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
-                    description: zod.string().optional(),
-                    active: zod.boolean().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(updateOrderResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
-                }),
-                quantity: zod.number().min(1)
-            })
-        ),
-        totalItems: zod
-            .number()
-            .min(updateOrderResponseDataTotalItemsMin)
-            .describe(
-                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-            ),
-        totalQuantity: zod
-            .number()
-            .min(updateOrderResponseDataTotalQuantityMin)
-            .describe('Sum of `quantity` across every line item.'),
-        totalPrice: zod
-            .number()
-            .min(updateOrderResponseDataTotalPriceMin)
-            .describe(
-                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-            ),
-        notes: zod.string().optional().describe('Optional order notes'),
-        shippingMethod: zod
-            .string()
-            .optional()
-            .describe(
-                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-            ),
-        shippingCost: zod
-            .number()
-            .min(updateOrderResponseDataShippingCostMin)
-            .optional()
-            .describe(
-                'What that method cost at checkout time — a later rate change cannot re-price history.'
-            ),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        status: zod
-            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-            .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-            ),
-        actions: zod
-            .strictObject({
-                transitions: zod
-                    .array(
-                        zod
-                            .enum([
-                                'pending',
-                                'paid',
-                                'processing',
-                                'shipped',
-                                'delivered',
-                                'cancelled'
-                            ])
-                            .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                            )
-                    )
-                    .describe(
-                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                    ),
-                cancel: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                    ),
-                pay: zod
-                    .boolean()
-                    .describe(
-                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(updateOrderResponseDataItemsItemProductPriceMin),
+  "onHand": zod.number().min(updateOrderResponseDataItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(updateOrderResponseDataItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(updateOrderResponseDataItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(updateOrderResponseDataItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(updateOrderResponseDataTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(updateOrderResponseDataTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(updateOrderResponseDataTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(updateOrderResponseDataShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete order
  */
 export const DeleteOrderQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteOrderBodyHardDeleteDefault = false;
 
 export const DeleteOrderBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    hardDelete: zod.boolean().default(deleteOrderBodyHardDeleteDefault)
-});
+  "id": zod.string().describe('Resource identifier'),
+  "hardDelete": zod.boolean().default(deleteOrderBodyHardDeleteDefault)
+})
 
 export const DeleteOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
@@ -5549,33 +3766,18 @@ export const searchOrdersBodyPageMax = 10000;
 export const searchOrdersBodyPageSizeDefault = 10;
 export const searchOrdersBodyPageSizeMax = 100;
 
+
+
 export const SearchOrdersBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(searchOrdersBodyPageMax)
-        .default(searchOrdersBodyPageDefault)
-        .describe(
-            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-        ),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(searchOrdersBodyPageSizeMax)
-        .default(searchOrdersBodyPageSizeDefault)
-        .describe('Optional override; server may clamp to a max'),
-    id: zod.string().optional().describe('Resource identifier'),
-    userId: zod.string().optional().describe('Resource identifier'),
-    productId: zod.string().optional().describe('Resource identifier'),
-    email: zod.email().optional(),
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional()
-        .describe(
-            "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-        ),
-    notes: zod.string().optional()
-});
+  "page": zod.number().min(1).max(searchOrdersBodyPageMax).default(searchOrdersBodyPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchOrdersBodyPageSizeMax).default(searchOrdersBodyPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "id": zod.string().optional().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "productId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email().optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).optional().describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "notes": zod.string().optional()
+})
 
 export const searchOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
@@ -5604,186 +3806,79 @@ export const searchOrdersResponseDataMetaTotalItemsMin = 0;
 
 export const searchOrdersResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const SearchOrdersResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                userId: zod.string().optional().describe('Resource identifier'),
-                email: zod.email(),
-                items: zod.array(
-                    zod.strictObject({
-                        product: zod.strictObject({
-                            id: zod.string().describe('Resource identifier'),
-                            title: zod.string(),
-                            price: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
-                            onHand: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductOnHandMin)
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductReservedMin)
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductAvailableMin)
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
-                                ),
-                            description: zod.string().optional(),
-                            active: zod.boolean().optional(),
-                            requiresShipping: zod
-                                .boolean()
-                                .default(
-                                    searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
-                                ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
-                            categories: zod.array(zod.string()).optional(),
-                            tags: zod.array(zod.string()).optional(),
-                            createdAt: zod.iso.datetime({ offset: true }).optional(),
-                            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
-                        }),
-                        quantity: zod.number().min(1)
-                    })
-                ),
-                totalItems: zod
-                    .number()
-                    .min(searchOrdersResponseDataItemsItemTotalItemsMin)
-                    .describe(
-                        'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-                    ),
-                totalQuantity: zod
-                    .number()
-                    .min(searchOrdersResponseDataItemsItemTotalQuantityMin)
-                    .describe('Sum of `quantity` across every line item.'),
-                totalPrice: zod
-                    .number()
-                    .min(searchOrdersResponseDataItemsItemTotalPriceMin)
-                    .describe(
-                        'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-                    ),
-                notes: zod.string().optional().describe('Optional order notes'),
-                shippingMethod: zod
-                    .string()
-                    .optional()
-                    .describe(
-                        "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-                    ),
-                shippingCost: zod
-                    .number()
-                    .min(searchOrdersResponseDataItemsItemShippingCostMin)
-                    .optional()
-                    .describe(
-                        'What that method cost at checkout time — a later rate change cannot re-price history.'
-                    ),
-                shippingAddress: zod
-                    .strictObject({
-                        fullName: zod.string(),
-                        street: zod.string(),
-                        city: zod.string(),
-                        zip: zod.string(),
-                        country: zod.string(),
-                        phone: zod.string().optional()
-                    })
-                    .optional(),
-                status: zod
-                    .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                    .describe(
-                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                    ),
-                actions: zod
-                    .strictObject({
-                        transitions: zod
-                            .array(
-                                zod
-                                    .enum([
-                                        'pending',
-                                        'paid',
-                                        'processing',
-                                        'shipped',
-                                        'delivered',
-                                        'cancelled'
-                                    ])
-                                    .describe(
-                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                                    )
-                            )
-                            .describe(
-                                "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                            ),
-                        cancel: zod
-                            .boolean()
-                            .describe(
-                                'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                            ),
-                        pay: zod
-                            .boolean()
-                            .describe(
-                                "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                            )
-                    })
-                    .optional()
-                    .describe(
-                        "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-                    ),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(searchOrdersResponseDataMetaPageMax)
-                .default(searchOrdersResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(searchOrdersResponseDataMetaPageSizeMax)
-                .default(searchOrdersResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(searchOrdersResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(searchOrdersResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
+  "onHand": zod.number().min(searchOrdersResponseDataItemsItemItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(searchOrdersResponseDataItemsItemItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(searchOrdersResponseDataItemsItemItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(searchOrdersResponseDataItemsItemTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(searchOrdersResponseDataItemsItemTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(searchOrdersResponseDataItemsItemTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(searchOrdersResponseDataItemsItemShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(searchOrdersResponseDataMetaPageMax).default(searchOrdersResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(searchOrdersResponseDataMetaPageSizeMax).default(searchOrdersResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(searchOrdersResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(searchOrdersResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
  * @summary Order details
  */
 export const GetOrderByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const getOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
@@ -5802,174 +3897,85 @@ export const getOrderByIdResponseDataTotalPriceMin = 0;
 
 export const getOrderByIdResponseDataShippingCostMin = 0;
 
+
+
 export const GetOrderByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    title: zod.string(),
-                    price: zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
-                    description: zod.string().optional(),
-                    active: zod.boolean().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
-                }),
-                quantity: zod.number().min(1)
-            })
-        ),
-        totalItems: zod
-            .number()
-            .min(getOrderByIdResponseDataTotalItemsMin)
-            .describe(
-                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-            ),
-        totalQuantity: zod
-            .number()
-            .min(getOrderByIdResponseDataTotalQuantityMin)
-            .describe('Sum of `quantity` across every line item.'),
-        totalPrice: zod
-            .number()
-            .min(getOrderByIdResponseDataTotalPriceMin)
-            .describe(
-                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-            ),
-        notes: zod.string().optional().describe('Optional order notes'),
-        shippingMethod: zod
-            .string()
-            .optional()
-            .describe(
-                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-            ),
-        shippingCost: zod
-            .number()
-            .min(getOrderByIdResponseDataShippingCostMin)
-            .optional()
-            .describe(
-                'What that method cost at checkout time — a later rate change cannot re-price history.'
-            ),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        status: zod
-            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-            .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-            ),
-        actions: zod
-            .strictObject({
-                transitions: zod
-                    .array(
-                        zod
-                            .enum([
-                                'pending',
-                                'paid',
-                                'processing',
-                                'shipped',
-                                'delivered',
-                                'cancelled'
-                            ])
-                            .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                            )
-                    )
-                    .describe(
-                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                    ),
-                cancel: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                    ),
-                pay: zod
-                    .boolean()
-                    .describe(
-                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
+  "onHand": zod.number().min(getOrderByIdResponseDataItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(getOrderByIdResponseDataItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(getOrderByIdResponseDataItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(getOrderByIdResponseDataTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(getOrderByIdResponseDataTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(getOrderByIdResponseDataTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(getOrderByIdResponseDataShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Updates the order identified by `{id}` in the path.
  * @summary Edit order
  */
 export const UpdateOrderByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
+
+
+
+
 
 export const UpdateOrderByIdBody = zod.strictObject({
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional()
-        .describe('Updated order status'),
-    userId: zod.string().optional().describe('Resource identifier'),
-    email: zod.email().optional(),
-    items: zod
-        .array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        )
-        .min(1)
-        .optional()
-});
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).optional().describe('Updated order status'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email().optional(),
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1)
+})).min(1).optional()
+})
 
 export const updateOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
@@ -5988,216 +3994,117 @@ export const updateOrderByIdResponseDataTotalPriceMin = 0;
 
 export const updateOrderByIdResponseDataShippingCostMin = 0;
 
+
+
 export const UpdateOrderByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    title: zod.string(),
-                    price: zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
-                    description: zod.string().optional(),
-                    active: zod.boolean().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(
-                            updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault
-                        ),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
-                }),
-                quantity: zod.number().min(1)
-            })
-        ),
-        totalItems: zod
-            .number()
-            .min(updateOrderByIdResponseDataTotalItemsMin)
-            .describe(
-                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-            ),
-        totalQuantity: zod
-            .number()
-            .min(updateOrderByIdResponseDataTotalQuantityMin)
-            .describe('Sum of `quantity` across every line item.'),
-        totalPrice: zod
-            .number()
-            .min(updateOrderByIdResponseDataTotalPriceMin)
-            .describe(
-                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-            ),
-        notes: zod.string().optional().describe('Optional order notes'),
-        shippingMethod: zod
-            .string()
-            .optional()
-            .describe(
-                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-            ),
-        shippingCost: zod
-            .number()
-            .min(updateOrderByIdResponseDataShippingCostMin)
-            .optional()
-            .describe(
-                'What that method cost at checkout time — a later rate change cannot re-price history.'
-            ),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        status: zod
-            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-            .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-            ),
-        actions: zod
-            .strictObject({
-                transitions: zod
-                    .array(
-                        zod
-                            .enum([
-                                'pending',
-                                'paid',
-                                'processing',
-                                'shipped',
-                                'delivered',
-                                'cancelled'
-                            ])
-                            .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                            )
-                    )
-                    .describe(
-                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                    ),
-                cancel: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                    ),
-                pay: zod
-                    .boolean()
-                    .describe(
-                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
+  "onHand": zod.number().min(updateOrderByIdResponseDataItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(updateOrderByIdResponseDataItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(updateOrderByIdResponseDataItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(updateOrderByIdResponseDataTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(updateOrderByIdResponseDataTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(updateOrderByIdResponseDataTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(updateOrderByIdResponseDataShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const DeleteOrderByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const DeleteOrderByIdQueryParams = zod.strictObject({
-    hardDelete: zod
-        .boolean()
-        .optional()
-        .describe(
-            'Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.'
-        )
-});
+  "hardDelete": zod.boolean().optional().describe('Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.')
+})
 
 export const deleteOrderByIdBodyHardDeleteDefault = false;
 
 export const DeleteOrderByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteOrderByIdBodyHardDeleteDefault)
-});
+  "hardDelete": zod.boolean().default(deleteOrderByIdBodyHardDeleteDefault)
+})
 
 export const DeleteOrderByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
  * @summary Permanently delete order
  */
 export const HardDeleteOrderByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const HardDeleteOrderByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const CancelOrderByIdParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const cancelOrderByIdBodyRefundDefault = true;
 
-export const CancelOrderByIdBody = zod
-    .strictObject({
-        refund: zod
-            .boolean()
-            .default(cancelOrderByIdBodyRefundDefault)
-            .describe(
-                '`false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST \/payments\/order\/{orderId}\/refund`.'
-            )
-    })
-    .describe(
-        "The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default."
-    );
+export const CancelOrderByIdBody = zod.strictObject({
+  "refund": zod.boolean().default(cancelOrderByIdBodyRefundDefault).describe('`false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST \/payments\/order\/{orderId}\/refund`.')
+}).describe('The operator\'s choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.')
 
 export const cancelOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
@@ -6216,546 +4123,265 @@ export const cancelOrderByIdResponseDataTotalPriceMin = 0;
 
 export const cancelOrderByIdResponseDataShippingCostMin = 0;
 
+
+
 export const CancelOrderByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        email: zod.email(),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod.string().describe('Resource identifier'),
-                    title: zod.string(),
-                    price: zod.number().min(cancelOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
-                    description: zod.string().optional(),
-                    active: zod.boolean().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(
-                            cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault
-                        ),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
-                }),
-                quantity: zod.number().min(1)
-            })
-        ),
-        totalItems: zod
-            .number()
-            .min(cancelOrderByIdResponseDataTotalItemsMin)
-            .describe(
-                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
-            ),
-        totalQuantity: zod
-            .number()
-            .min(cancelOrderByIdResponseDataTotalQuantityMin)
-            .describe('Sum of `quantity` across every line item.'),
-        totalPrice: zod
-            .number()
-            .min(cancelOrderByIdResponseDataTotalPriceMin)
-            .describe(
-                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
-            ),
-        notes: zod.string().optional().describe('Optional order notes'),
-        shippingMethod: zod
-            .string()
-            .optional()
-            .describe(
-                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
-            ),
-        shippingCost: zod
-            .number()
-            .min(cancelOrderByIdResponseDataShippingCostMin)
-            .optional()
-            .describe(
-                'What that method cost at checkout time — a later rate change cannot re-price history.'
-            ),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string(),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        status: zod
-            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-            .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-            ),
-        actions: zod
-            .strictObject({
-                transitions: zod
-                    .array(
-                        zod
-                            .enum([
-                                'pending',
-                                'paid',
-                                'processing',
-                                'shipped',
-                                'delivered',
-                                'cancelled'
-                            ])
-                            .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
-                            )
-                    )
-                    .describe(
-                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
-                    ),
-                cancel: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
-                    ),
-                pay: zod
-                    .boolean()
-                    .describe(
-                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "email": zod.email(),
+  "items": zod.array(zod.strictObject({
+  "product": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "title": zod.string(),
+  "price": zod.number().min(cancelOrderByIdResponseDataItemsItemProductPriceMin),
+  "onHand": zod.number().min(cancelOrderByIdResponseDataItemsItemProductOnHandMin).optional().describe('Units physically present, whether or not they are spoken for.'),
+  "reserved": zod.number().min(cancelOrderByIdResponseDataItemsItemProductReservedMin).optional().describe('Units held by an open order — present, but not for sale.'),
+  "available": zod.number().min(cancelOrderByIdResponseDataItemsItemProductAvailableMin).optional().describe('What a customer may actually buy. Derived from the two counters above.'),
+  "description": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "requiresShipping": zod.boolean().default(cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
+  "imageUrl": zod.string().optional().describe('Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'),
+  "thumbnailUrl": zod.string().optional().describe('Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'),
+  "categories": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+}),
+  "quantity": zod.number().min(1)
+})),
+  "totalItems": zod.number().min(cancelOrderByIdResponseDataTotalItemsMin).describe('Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'),
+  "totalQuantity": zod.number().min(cancelOrderByIdResponseDataTotalQuantityMin).describe('Sum of `quantity` across every line item.'),
+  "totalPrice": zod.number().min(cancelOrderByIdResponseDataTotalPriceMin).describe('Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'),
+  "notes": zod.string().optional().describe('Optional order notes'),
+  "shippingMethod": zod.string().optional().describe('The shipping method\'s id as the checkout froze it (e.g. standard, express, pickup).'),
+  "shippingCost": zod.number().min(cancelOrderByIdResponseDataShippingCostMin).optional().describe('What that method cost at checkout time — a later rate change cannot re-price history.'),
+  "shippingAddress": zod.strictObject({
+  "fullName": zod.string(),
+  "street": zod.string(),
+  "city": zod.string(),
+  "zip": zod.string(),
+  "country": zod.string(),
+  "phone": zod.string().optional()
+}).optional(),
+  "status": zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.'),
+  "actions": zod.strictObject({
+  "transitions": zod.array(zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']).describe('Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server\'s own lifecycle rules, answered per caller by `OrderActions`.')).describe('The statuses this caller may move the order to. Empty on a terminal order, and never contains the order\'s current status.'),
+  "cancel": zod.boolean().describe('Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'),
+  "pay": zod.boolean().describe('Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider\'s yes does the rest.')
+}).optional().describe('What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller\'s role, and a second copy in a separately deployed client is how the two come to disagree.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional(),
+  "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
  * @summary Download order invoice (PDF)
  */
 export const GetOrderInvoiceParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
-export const GetOrderInvoiceResponse = zod.unknown();
+export const GetOrderInvoiceResponse = zod.unknown()
+
 
 /**
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const CreatePaymentIntentBody = zod.strictObject({
-    orderId: zod.string().describe('Resource identifier')
-});
+  "orderId": zod.string().describe('Resource identifier')
+})
 
 export const createPaymentIntentResponseDataAmountMin = 0;
 
+
+
 export const CreatePaymentIntentResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        amount: zod
-            .number()
-            .min(createPaymentIntentResponseDataAmountMin)
-            .describe(
-                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
-            ),
-        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
-        status: zod
-            .enum([
-                'requires_confirmation',
-                'requires_action',
-                'processing',
-                'succeeded',
-                'declined',
-                'refunded'
-            ])
-            .describe(
-                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
-            ),
-        provider: zod
-            .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
-        clientSecret: zod
-            .string()
-            .optional()
-            .describe(
-                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
-            ),
-        actions: zod
-            .strictObject({
-                pay: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
-                    ),
-                refund: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "amount": zod.number().min(createPaymentIntentResponseDataAmountMin).describe('The order\'s total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.'),
+  "currency": zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']).describe('The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'),
+  "provider": zod.string().describe('Which provider implementation handled it (`fake` in the demo).'),
+  "clientSecret": zod.string().optional().describe('Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'),
+  "actions": zod.strictObject({
+  "pay": zod.boolean().describe('Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'),
+  "refund": zod.boolean().describe('Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.')
+}).optional().describe('What the requesting caller may do to this payment. Money is this module\'s to answer for; the order\'s own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
  * @summary Get the payment behind an order
  */
 export const GetPaymentByOrderParams = zod.strictObject({
-    orderId: zod.string().describe("One of the caller's own orders")
-});
+  "orderId": zod.string().describe('One of the caller\'s own orders')
+})
 
 export const getPaymentByOrderResponseDataAmountMin = 0;
 
+
+
 export const GetPaymentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        amount: zod
-            .number()
-            .min(getPaymentByOrderResponseDataAmountMin)
-            .describe(
-                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
-            ),
-        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
-        status: zod
-            .enum([
-                'requires_confirmation',
-                'requires_action',
-                'processing',
-                'succeeded',
-                'declined',
-                'refunded'
-            ])
-            .describe(
-                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
-            ),
-        provider: zod
-            .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
-        clientSecret: zod
-            .string()
-            .optional()
-            .describe(
-                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
-            ),
-        actions: zod
-            .strictObject({
-                pay: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
-                    ),
-                refund: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "amount": zod.number().min(getPaymentByOrderResponseDataAmountMin).describe('The order\'s total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.'),
+  "currency": zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']).describe('The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'),
+  "provider": zod.string().describe('Which provider implementation handled it (`fake` in the demo).'),
+  "clientSecret": zod.string().optional().describe('Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'),
+  "actions": zod.strictObject({
+  "pay": zod.boolean().describe('Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'),
+  "refund": zod.boolean().describe('Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.')
+}).optional().describe('What the requesting caller may do to this payment. Money is this module\'s to answer for; the order\'s own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const RefundPaymentByOrderParams = zod.strictObject({
-    orderId: zod.string().describe('The order whose payment is being returned')
-});
+  "orderId": zod.string().describe('The order whose payment is being returned')
+})
 
 export const refundPaymentByOrderResponseDataAmountMin = 0;
 
+
+
 export const RefundPaymentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        amount: zod
-            .number()
-            .min(refundPaymentByOrderResponseDataAmountMin)
-            .describe(
-                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
-            ),
-        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
-        status: zod
-            .enum([
-                'requires_confirmation',
-                'requires_action',
-                'processing',
-                'succeeded',
-                'declined',
-                'refunded'
-            ])
-            .describe(
-                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
-            ),
-        provider: zod
-            .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
-        clientSecret: zod
-            .string()
-            .optional()
-            .describe(
-                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
-            ),
-        actions: zod
-            .strictObject({
-                pay: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
-                    ),
-                refund: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "amount": zod.number().min(refundPaymentByOrderResponseDataAmountMin).describe('The order\'s total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.'),
+  "currency": zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']).describe('The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'),
+  "provider": zod.string().describe('Which provider implementation handled it (`fake` in the demo).'),
+  "clientSecret": zod.string().optional().describe('Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'),
+  "actions": zod.strictObject({
+  "pay": zod.boolean().describe('Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'),
+  "refund": zod.boolean().describe('Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.')
+}).optional().describe('What the requesting caller may do to this payment. Money is this module\'s to answer for; the order\'s own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Confirm a payment
  */
 export const ConfirmPaymentParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const confirmPaymentBodyPaymentMethodRefMin = 3;
 export const confirmPaymentBodyPaymentMethodRefMax = 255;
 
+
 export const confirmPaymentBodyPaymentMethodRefRegExp = new RegExp('^[\\w-]+$');
 
+
 export const ConfirmPaymentBody = zod.strictObject({
-    paymentMethodRef: zod
-        .string()
-        .min(confirmPaymentBodyPaymentMethodRefMin)
-        .max(confirmPaymentBodyPaymentMethodRefMax)
-        .regex(confirmPaymentBodyPaymentMethodRefRegExp)
-        .describe(
-            "The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. The fake provider recognises `pm_card_visa` (succeeds), `pm_card_declined`, `pm_card_authentication_required` and `pm_card_processing`; anything else succeeds."
-        )
-});
+  "paymentMethodRef": zod.string().min(confirmPaymentBodyPaymentMethodRefMin).max(confirmPaymentBodyPaymentMethodRefMax).regex(confirmPaymentBodyPaymentMethodRefRegExp).describe('The provider\'s opaque handle for the payment method, produced in the BROWSER by the provider\'s own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. The fake provider recognises `pm_card_visa` (succeeds), `pm_card_declined`, `pm_card_authentication_required` and `pm_card_processing`; anything else succeeds.')
+})
 
 export const confirmPaymentResponseDataAmountMin = 0;
 
+
+
 export const ConfirmPaymentResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        amount: zod
-            .number()
-            .min(confirmPaymentResponseDataAmountMin)
-            .describe(
-                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
-            ),
-        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
-        status: zod
-            .enum([
-                'requires_confirmation',
-                'requires_action',
-                'processing',
-                'succeeded',
-                'declined',
-                'refunded'
-            ])
-            .describe(
-                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
-            ),
-        provider: zod
-            .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
-        clientSecret: zod
-            .string()
-            .optional()
-            .describe(
-                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
-            ),
-        actions: zod
-            .strictObject({
-                pay: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
-                    ),
-                refund: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "amount": zod.number().min(confirmPaymentResponseDataAmountMin).describe('The order\'s total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.'),
+  "currency": zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']).describe('The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'),
+  "provider": zod.string().describe('Which provider implementation handled it (`fake` in the demo).'),
+  "clientSecret": zod.string().optional().describe('Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'),
+  "actions": zod.strictObject({
+  "pay": zod.boolean().describe('Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'),
+  "refund": zod.boolean().describe('Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.')
+}).optional().describe('What the requesting caller may do to this payment. Money is this module\'s to answer for; the order\'s own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * The browser saying "I have finished at the provider". Re-reads the provider's own record and applies whatever it says, which is what makes the happy path feel synchronous while the webhook stays the source of truth. Idempotent and safe to call repeatedly: a payment already settled answers itself unchanged. Answers 409 `PAYMENT_DECLINED` when the provider's answer is a refusal, exactly as the confirm does. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Re-read a payment from the provider and settle it
  */
 export const SyncPaymentParams = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
-});
+  "id": zod.string().describe('Resource identifier')
+})
 
 export const syncPaymentResponseDataAmountMin = 0;
 
+
+
 export const SyncPaymentResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().optional().describe('Resource identifier'),
-        amount: zod
-            .number()
-            .min(syncPaymentResponseDataAmountMin)
-            .describe(
-                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
-            ),
-        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
-        status: zod
-            .enum([
-                'requires_confirmation',
-                'requires_action',
-                'processing',
-                'succeeded',
-                'declined',
-                'refunded'
-            ])
-            .describe(
-                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
-            ),
-        provider: zod
-            .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
-        clientSecret: zod
-            .string()
-            .optional()
-            .describe(
-                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
-            ),
-        actions: zod
-            .strictObject({
-                pay: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
-                    ),
-                refund: zod
-                    .boolean()
-                    .describe(
-                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
-                    )
-            })
-            .optional()
-            .describe(
-                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
-            ),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "userId": zod.string().optional().describe('Resource identifier'),
+  "amount": zod.number().min(syncPaymentResponseDataAmountMin).describe('The order\'s total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.'),
+  "currency": zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+  "status": zod.enum(['requires_confirmation', 'requires_action', 'processing', 'succeeded', 'declined', 'refunded']).describe('The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'),
+  "provider": zod.string().describe('Which provider implementation handled it (`fake` in the demo).'),
+  "clientSecret": zod.string().optional().describe('Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'),
+  "actions": zod.strictObject({
+  "pay": zod.boolean().describe('Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'),
+  "refund": zod.boolean().describe('Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.')
+}).optional().describe('What the requesting caller may do to this payment. Money is this module\'s to answer for; the order\'s own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
@@ -6763,44 +4389,22 @@ export const SyncPaymentResponse = zod.strictObject({
  * @summary Provider webhook
  */
 export const ReceivePaymentWebhookHeader = zod.strictObject({
-    'x-payment-signature': zod
-        .string()
-        .describe(
-            '`t=<unix seconds>,v1=<hex hmac-sha256 of \"<t>.<raw body>\">`. `t` must be within 300 seconds of the server\'s clock or the delivery is rejected as stale, replay protection against a captured signature being resent later.'
-        )
-});
+  "x-payment-signature": zod.string().describe('`t=<unix seconds>,v1=<hex hmac-sha256 of \"<t>.<raw body>\">`. `t` must be within 300 seconds of the server\'s clock or the delivery is rejected as stale, replay protection against a captured signature being resent later.')
+})
 
-export const ReceivePaymentWebhookBody = zod
-    .strictObject({
-        id: zod
-            .string()
-            .describe("The provider's event id. Deduplicated, so a retry settles nothing twice."),
-        providerRef: zod
-            .string()
-            .optional()
-            .describe('Which intent the event is about. Absent for an event this API ignores.'),
-        status: zod
-            .enum(['requires_action', 'processing', 'succeeded', 'declined'])
-            .optional()
-            .describe(
-                "The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores."
-            ),
-        cardLast4: zod
-            .string()
-            .optional()
-            .describe(
-                'The only card digits a payment system may remember, as the provider reports them.'
-            )
-    })
-    .describe(
-        "One delivery, in this module's normalised shape. A real provider sends its OWN event shape and its implementation of the provider port translates it into this — the endpoint is documented in the terms the module acts on, not in any one vendor's vocabulary.\nFLAT on purpose. The provider's report could have been nested under a `state` object, mirroring how most vendors wrap theirs, but the adapter is where a vendor's shape is absorbed and nothing downstream reads these fields as a unit — so the nesting would have bought a second level for no reader."
-    );
+export const ReceivePaymentWebhookBody = zod.strictObject({
+  "id": zod.string().describe('The provider\'s event id. Deduplicated, so a retry settles nothing twice.'),
+  "providerRef": zod.string().optional().describe('Which intent the event is about. Absent for an event this API ignores.'),
+  "status": zod.enum(['requires_action', 'processing', 'succeeded', 'declined']).optional().describe('The provider\'s own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores.'),
+  "cardLast4": zod.string().optional().describe('The only card digits a payment system may remember, as the provider reports them.')
+}).describe('One delivery, in this module\'s normalised shape. A real provider sends its OWN event shape and its implementation of the provider port translates it into this — the endpoint is documented in the terms the module acts on, not in any one vendor\'s vocabulary.\nFLAT on purpose. The provider\'s report could have been nested under a `state` object, mirroring how most vendors wrap theirs, but the adapter is where a vendor\'s shape is absorbed and nothing downstream reads these fields as a unit — so the nesting would have bought a second level for no reader.')
 
 export const ReceivePaymentWebhookResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string()
+})
+
 
 /**
  * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate.
@@ -6810,58 +4414,45 @@ export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
 
+
+
 export const ListShippingMethodsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        methods: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .describe(
-                        'Stable id, frozen onto orders at checkout (standard, express, pickup).'
-                    ),
-                price: zod
-                    .number()
-                    .min(listShippingMethodsResponseDataMethodsItemPriceMin)
-                    .describe("Flat rate, in the shop's currency."),
-                freeAbove: zod
-                    .number()
-                    .min(listShippingMethodsResponseDataMethodsItemFreeAboveMin)
-                    .optional()
-                    .describe(
-                        'Items total at which this method becomes free. Absent — it never does.'
-                    )
-            })
-        )
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "methods": zod.array(zod.strictObject({
+  "id": zod.string().describe('Stable id, frozen onto orders at checkout (standard, express, pickup).'),
+  "price": zod.number().min(listShippingMethodsResponseDataMethodsItemPriceMin).describe('Flat rate, in the shop\'s currency.'),
+  "freeAbove": zod.number().min(listShippingMethodsResponseDataMethodsItemFreeAboveMin).optional().describe('Items total at which this method becomes free. Absent — it never does.')
+}))
+})
+})
+
 
 /**
  * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
  * @summary Get the shipment behind an order
  */
 export const GetShipmentByOrderParams = zod.strictObject({
-    orderId: zod.string().describe("One of the caller's own orders")
-});
+  "orderId": zod.string().describe('One of the caller\'s own orders')
+})
 
 export const GetShipmentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        orderId: zod.string().describe('Resource identifier'),
-        trackingCode: zod.string().describe("The courier's handle on the parcel."),
-        status: zod
-            .enum(['shipped', 'delivered'])
-            .describe("The tail of the order's lifecycle, as the courier sees it."),
-        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "orderId": zod.string().describe('Resource identifier'),
+  "trackingCode": zod.string().describe('The courier\'s handle on the parcel.'),
+  "status": zod.enum(['shipped', 'delivered']).describe('The tail of the order\'s lifecycle, as the courier sees it.'),
+  "deliveredAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})
+})
+
 
 /**
  * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
@@ -6869,17 +4460,17 @@ export const GetShipmentByOrderResponse = zod.strictObject({
  */
 export const advanceCourierResponseDataAdvancedMin = 0;
 
+
+
 export const AdvanceCourierResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        advanced: zod
-            .number()
-            .min(advanceCourierResponseDataAdvancedMin)
-            .describe('How many parcels arrived on this tick.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "advanced": zod.number().min(advanceCourierResponseDataAdvancedMin).describe('How many parcels arrived on this tick.')
+})
+})
+
 
 /**
  * The stock board — every product with its two counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
@@ -6894,22 +4485,10 @@ export const listInventoryLevelsQueryPageSizeMax = 100;
 export const listInventoryLevelsQueryLowOnlyDefault = false;
 
 export const ListInventoryLevelsQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listInventoryLevelsQueryPageMax)
-        .default(listInventoryLevelsQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listInventoryLevelsQueryPageSizeMax)
-        .default(listInventoryLevelsQueryPageSizeDefault),
-    lowOnly: zod
-        .boolean()
-        .default(listInventoryLevelsQueryLowOnlyDefault)
-        .describe("Only products at or under the deployment's low-availability threshold.")
-});
+  "page": zod.number().min(1).max(listInventoryLevelsQueryPageMax).default(listInventoryLevelsQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listInventoryLevelsQueryPageSizeMax).default(listInventoryLevelsQueryPageSizeDefault),
+  "lowOnly": zod.boolean().default(listInventoryLevelsQueryLowOnlyDefault).describe('Only products at or under the deployment\'s low-availability threshold.')
+})
 
 export const listInventoryLevelsResponseDataItemsItemOnHandMin = 0;
 
@@ -6927,44 +4506,29 @@ export const listInventoryLevelsResponseDataMetaTotalItemsMin = 0;
 
 export const listInventoryLevelsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListInventoryLevelsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                title: zod
-                    .string()
-                    .describe(
-                        'Carried so the board reads as a list of products rather than of ids.'
-                    ),
-                onHand: zod.number().min(listInventoryLevelsResponseDataItemsItemOnHandMin),
-                reserved: zod.number().min(listInventoryLevelsResponseDataItemsItemReservedMin),
-                available: zod.number().min(listInventoryLevelsResponseDataItemsItemAvailableMin)
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listInventoryLevelsResponseDataMetaPageMax)
-                .default(listInventoryLevelsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listInventoryLevelsResponseDataMetaPageSizeMax)
-                .default(listInventoryLevelsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listInventoryLevelsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listInventoryLevelsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "title": zod.string().describe('Carried so the board reads as a list of products rather than of ids.'),
+  "onHand": zod.number().min(listInventoryLevelsResponseDataItemsItemOnHandMin),
+  "reserved": zod.number().min(listInventoryLevelsResponseDataItemsItemReservedMin),
+  "available": zod.number().min(listInventoryLevelsResponseDataItemsItemAvailableMin)
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listInventoryLevelsResponseDataMetaPageMax).default(listInventoryLevelsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listInventoryLevelsResponseDataMetaPageSizeMax).default(listInventoryLevelsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listInventoryLevelsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listInventoryLevelsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * A page of the ledger, newest first — one row per counter change, with both deltas and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
@@ -6976,24 +4540,14 @@ export const listStockMovementsQueryPageMax = 10000;
 export const listStockMovementsQueryPageSizeDefault = 10;
 export const listStockMovementsQueryPageSizeMax = 100;
 
+
+
 export const ListStockMovementsQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listStockMovementsQueryPageMax)
-        .default(listStockMovementsQueryPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listStockMovementsQueryPageSizeMax)
-        .default(listStockMovementsQueryPageSizeDefault),
-    productId: zod.string().optional().describe("Narrow to one product's movements"),
-    reason: zod
-        .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust'])
-        .optional()
-        .describe('Narrow to one kind of transition')
-});
+  "page": zod.number().min(1).max(listStockMovementsQueryPageMax).default(listStockMovementsQueryPageDefault).describe('1-based page index'),
+  "pageSize": zod.number().min(1).max(listStockMovementsQueryPageSizeMax).default(listStockMovementsQueryPageSizeDefault),
+  "productId": zod.string().optional().describe('Narrow to one product\'s movements'),
+  "reason": zod.enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust']).optional().describe('Narrow to one kind of transition')
+})
 
 export const listStockMovementsResponseDataMetaPageDefault = 1;
 export const listStockMovementsResponseDataMetaPageMax = 10000;
@@ -7005,75 +4559,46 @@ export const listStockMovementsResponseDataMetaTotalItemsMin = 0;
 
 export const listStockMovementsResponseDataMetaTotalPagesMin = 0;
 
+
+
 export const ListStockMovementsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                id: zod.string().describe('Resource identifier'),
-                productId: zod.string().describe('Resource identifier'),
-                reason: zod
-                    .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust'])
-                    .describe(
-                        '\* `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.\n\* `commit` — the order was paid for and the units left. Both down.\n\* `release` — the hold was given up (the order was cancelled). `reserved` down.\n\* `expire` — the hold timed out unpaid. Same counters as `release`, different story.\n\* `receive` — a supplier delivery. `onHand` up.\n\* `adjust` — a stocktake correction, signed. `onHand` moves either way.\n'
-                    ),
-                onHandDelta: zod.number(),
-                reservedDelta: zod.number(),
-                reference: zod
-                    .string()
-                    .optional()
-                    .describe('The order the movement belongs to, when one does.'),
-                note: zod
-                    .string()
-                    .optional()
-                    .describe("Why an adjustment was made — the operator's own words."),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        meta: zod.strictObject({
-            page: zod
-                .number()
-                .min(1)
-                .max(listStockMovementsResponseDataMetaPageMax)
-                .default(listStockMovementsResponseDataMetaPageDefault)
-                .describe(
-                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
-                ),
-            pageSize: zod
-                .number()
-                .min(1)
-                .max(listStockMovementsResponseDataMetaPageSizeMax)
-                .default(listStockMovementsResponseDataMetaPageSizeDefault)
-                .describe('Optional override; server may clamp to a max'),
-            totalItems: zod.number().min(listStockMovementsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listStockMovementsResponseDataMetaTotalPagesMin)
-        })
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "items": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "productId": zod.string().describe('Resource identifier'),
+  "reason": zod.enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust']).describe('\* `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.\n\* `commit` — the order was paid for and the units left. Both down.\n\* `release` — the hold was given up (the order was cancelled). `reserved` down.\n\* `expire` — the hold timed out unpaid. Same counters as `release`, different story.\n\* `receive` — a supplier delivery. `onHand` up.\n\* `adjust` — a stocktake correction, signed. `onHand` moves either way.\n'),
+  "onHandDelta": zod.number(),
+  "reservedDelta": zod.number(),
+  "reference": zod.string().optional().describe('The order the movement belongs to, when one does.'),
+  "note": zod.string().optional().describe('Why an adjustment was made — the operator\'s own words.'),
+  "createdAt": zod.iso.datetime({"offset":true}).optional(),
+  "updatedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "meta": zod.strictObject({
+  "page": zod.number().min(1).max(listStockMovementsResponseDataMetaPageMax).default(listStockMovementsResponseDataMetaPageDefault).describe('1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'),
+  "pageSize": zod.number().min(1).max(listStockMovementsResponseDataMetaPageSizeMax).default(listStockMovementsResponseDataMetaPageSizeDefault).describe('Optional override; server may clamp to a max'),
+  "totalItems": zod.number().min(listStockMovementsResponseDataMetaTotalItemsMin),
+  "totalPages": zod.number().min(listStockMovementsResponseDataMetaTotalPagesMin)
+})
+})
+})
+
 
 /**
  * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
  * @summary Receive stock
  */
 
+
+
 export const ReceiveStockBody = zod.strictObject({
-    productId: zod.string().describe('Resource identifier'),
-    quantity: zod
-        .number()
-        .min(1)
-        .describe(
-            'How many units arrived. Strictly positive — a delivery that removes units is an adjustment.'
-        ),
-    note: zod
-        .string()
-        .optional()
-        .describe(
-            'Optional — the supplier, the delivery note number, whatever the operator wants on the row.'
-        )
-});
+  "productId": zod.string().describe('Resource identifier'),
+  "quantity": zod.number().min(1).describe('How many units arrived. Strictly positive — a delivery that removes units is an adjustment.'),
+  "note": zod.string().optional().describe('Optional — the supplier, the delivery note number, whatever the operator wants on the row.')
+})
 
 export const receiveStockResponseDataOnHandMin = 0;
 
@@ -7081,37 +4606,31 @@ export const receiveStockResponseDataReservedMin = 0;
 
 export const receiveStockResponseDataAvailableMin = 0;
 
+
+
 export const ReceiveStockResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        productId: zod.string().describe('Resource identifier'),
-        title: zod
-            .string()
-            .describe('Carried so the board reads as a list of products rather than of ids.'),
-        onHand: zod.number().min(receiveStockResponseDataOnHandMin),
-        reserved: zod.number().min(receiveStockResponseDataReservedMin),
-        available: zod.number().min(receiveStockResponseDataAvailableMin)
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "title": zod.string().describe('Carried so the board reads as a list of products rather than of ids.'),
+  "onHand": zod.number().min(receiveStockResponseDataOnHandMin),
+  "reserved": zod.number().min(receiveStockResponseDataReservedMin),
+  "available": zod.number().min(receiveStockResponseDataAvailableMin)
+})
+})
+
 
 /**
  * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
  * @summary Adjust stock
  */
 export const AdjustStockBody = zod.strictObject({
-    productId: zod.string().describe('Resource identifier'),
-    delta: zod
-        .number()
-        .describe(
-            'Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.'
-        ),
-    note: zod
-        .string()
-        .optional()
-        .describe('Why. An unexplained correction is the thing an audit is looking for.')
-});
+  "productId": zod.string().describe('Resource identifier'),
+  "delta": zod.number().describe('Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.'),
+  "note": zod.string().optional().describe('Why. An unexplained correction is the thing an audit is looking for.')
+})
 
 export const adjustStockResponseDataOnHandMin = 0;
 
@@ -7119,20 +4638,21 @@ export const adjustStockResponseDataReservedMin = 0;
 
 export const adjustStockResponseDataAvailableMin = 0;
 
+
+
 export const AdjustStockResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        productId: zod.string().describe('Resource identifier'),
-        title: zod
-            .string()
-            .describe('Carried so the board reads as a list of products rather than of ids.'),
-        onHand: zod.number().min(adjustStockResponseDataOnHandMin),
-        reserved: zod.number().min(adjustStockResponseDataReservedMin),
-        available: zod.number().min(adjustStockResponseDataAvailableMin)
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "productId": zod.string().describe('Resource identifier'),
+  "title": zod.string().describe('Carried so the board reads as a list of products rather than of ids.'),
+  "onHand": zod.number().min(adjustStockResponseDataOnHandMin),
+  "reserved": zod.number().min(adjustStockResponseDataReservedMin),
+  "available": zod.number().min(adjustStockResponseDataAvailableMin)
+})
+})
+
 
 /**
  * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
@@ -7142,14 +4662,13 @@ export const AdjustStockResponse = zod.strictObject({
  */
 export const sweepReservationsResponseDataExpiredMin = 0;
 
+
+
 export const SweepReservationsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        expired: zod
-            .number()
-            .min(sweepReservationsResponseDataExpiredMin)
-            .describe('How many holds this run released.')
-    })
-});
+  "success": zod.literal(true),
+  "status": zod.number(),
+  "message": zod.string(),
+  "data": zod.strictObject({
+  "expired": zod.number().min(sweepReservationsResponseDataExpiredMin).describe('How many holds this run released.')
+})
+})

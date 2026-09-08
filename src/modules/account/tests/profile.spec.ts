@@ -27,7 +27,7 @@ wireModulesIntoCore();
 /**
  * A representative user record, used across the fetch/update/role assertions below.
  */
-const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
+const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
 
 /**
  * Responses per endpoint, rebuilt for each test so one case cannot leak into the next.
@@ -63,7 +63,7 @@ beforeEach(() => {
         'DELETE /account/delete-confirm': orvalEnvelope(),
         'PUT /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
-        'PUT /users/u1': orvalEnvelope({ ...USER, admin: true }),
+        'PUT /users/u1': orvalEnvelope({ ...USER, role: 'owner' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/verify-request': orvalEnvelope(),
@@ -134,7 +134,7 @@ describe('updateProfile', () => {
 
         return store
             .fetchProfile(true)
-            .then(() => store.updateProfile({ username: 'ada2', admin: true }))
+            .then(() => store.updateProfile({ username: 'ada2', role: 'owner' }))
             .then(() => {
                 // The write, not the refetch that follows it — `updateProfile` re-reads the
                 // record afterwards, so the LAST call is a GET.
@@ -199,7 +199,7 @@ describe('own role', () => {
 
         return store
             .fetchProfile(true)
-            .then(() => store.updateOwnRole(true))
+            .then(() => store.updateOwnRole('owner'))
             .then(() => {
                 const put = vi
                     .mocked(orvalMutator)
@@ -216,7 +216,7 @@ describe('own role', () => {
                 // `PUT /account` is deliberately roleless; `/users/{id}` is behind the admin
                 // guard, so the API decides whether this visitor may promote anyone.
                 expect(put?.url).toBe('/users/u1');
-                expect(put?.data).toEqual({ admin: true });
+                expect(put?.data).toEqual({ role: 'owner' });
             });
     });
 
@@ -229,8 +229,8 @@ describe('own role', () => {
                 expect(useSessionStore().isAdmin).toBe(false);
                 // What the server holds AFTER the write. The projection must follow this, not the
                 // value the form happened to send.
-                responses['GET /account'] = orvalEnvelope({ ...USER, admin: true });
-                return profile.updateOwnRole(true);
+                responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+                return profile.updateOwnRole('owner');
             })
             .then(() => {
                 expect(requestedUrls().at(-1)).toBe('/account');
@@ -239,7 +239,7 @@ describe('own role', () => {
     });
 
     it('refuses when no profile is loaded, rather than writing to `/users/undefined`', () =>
-        expect(useProfileStore().updateOwnRole(true)).rejects.toThrow('invalid user'));
+        expect(useProfileStore().updateOwnRole('owner')).rejects.toThrow('invalid user'));
 });
 
 describe('the account deletion flow', () => {

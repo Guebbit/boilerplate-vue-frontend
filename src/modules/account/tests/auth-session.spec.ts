@@ -27,7 +27,7 @@ wireModulesIntoCore();
 /**
  * A representative user record, used across the login/session assertions below.
  */
-const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
+const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
 
 /**
  * Responses per endpoint, rebuilt for each test so one case cannot leak into the next.
@@ -124,14 +124,14 @@ describe('login', () => {
                 expect(session.viewer).toEqual({
                     id: 'u1',
                     email: 'ada@example.com',
-                    admin: false
+                    role: 'customer'
                 });
                 expect(session.isAuth).toBe(true);
                 expect(session.isAdmin).toBe(false);
             }));
 
     it('marks an admin as one, so the admin routes resolve', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, admin: true });
+        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')

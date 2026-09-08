@@ -55,7 +55,7 @@ const router = createRouter({
 const signInAsAdmin = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
-    session.viewer = { id: 'u1', email: 'operator@example.com', admin: true };
+    session.viewer = { id: 'u1', email: 'operator@example.com', role: 'owner' };
 };
 
 /**

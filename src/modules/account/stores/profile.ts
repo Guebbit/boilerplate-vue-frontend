@@ -96,7 +96,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
             user && {
                 id: user.id,
                 email: user.email,
-                admin: Boolean(user.admin),
+                role: user.role ?? 'customer',
                 imageUrl: user.imageUrl
             }
         );
@@ -221,13 +221,13 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * the shell's `isAdmin` projection must learn it from the record the server now holds — which
      * is what {@link publishViewer} does on the way through.
      *
-     * @param admin - The role to hold: `true` administrator, `false` standard user.
+     * @param role - The role name to hold, one of the presets the server declares.
      * @returns A promise resolving with the refreshed profile once the change has settled.
      */
-    const updateOwnRole = (admin: boolean) => {
+    const updateOwnRole = (role: string) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         const userId = selectedIdentifier.value;
-        return fetchAny(() => apiUpdateUserById(userId, { admin }).then(() => fetchProfile(true)));
+        return fetchAny(() => apiUpdateUserById(userId, { role }).then(() => fetchProfile(true)));
     };
 
     /**

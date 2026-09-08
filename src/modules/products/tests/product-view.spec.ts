@@ -46,7 +46,7 @@ const router = createRouter({
 const signIn = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
-    session.viewer = { id: 'u1', email: 'shopper@example.com', admin: false };
+    session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
 };
 
 /**

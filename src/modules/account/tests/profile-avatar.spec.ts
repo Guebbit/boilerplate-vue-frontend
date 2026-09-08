@@ -19,7 +19,7 @@ import {
 
 wireModulesIntoCore();
 
-const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
+const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
 
 let responses: Record<string, unknown>;
 

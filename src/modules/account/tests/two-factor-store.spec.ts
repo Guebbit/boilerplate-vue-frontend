@@ -320,7 +320,7 @@ describe('the login-time challenge', () => {
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
-            admin: false
+            role: 'customer'
         });
 
         return store.submitLoginCode('123456').then(() => {
@@ -339,7 +339,7 @@ describe('the login-time challenge', () => {
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
-            admin: false
+            role: 'customer'
         });
 
         return store.submitLoginCode('backup-code-xyz').then(() => {
