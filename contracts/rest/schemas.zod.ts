@@ -1214,6 +1214,18 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
             zod.strictObject({
                 actor_user_id: zod.string(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous']),
+                actor_role_name: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.'
+                    ),
+                actor_scope: zod
+                    .enum(['tenant', 'platform'])
+                    .optional()
+                    .describe(
+                        'Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.'
+                    ),
                 action: zod.string().describe('Dot-notation action name (e.g. order.created)'),
                 outcome: zod.enum(['success', 'failure']),
                 ip: zod.string().optional(),
@@ -1244,6 +1256,111 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
                 .describe('Optional override; server may clamp to a max'),
             totalItems: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalItemsMin),
             totalPages: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * A filtered, paged read over the same trail `GET /observability/audit` serves — but
+ * scoped to one shop and reached with a role a shop actually has, not a platform one.
+ * Newest first. `meta.totalItems` counts every entry matching the filters, not just
+ * the page.
+ *
+ * Requires `audit.read` — held by `manager`, `support` and `moderator` in the demo.
+ * @summary The shop's own action history
+ */
+export const listAuditEntriesQueryPageDefault = 1;
+export const listAuditEntriesQueryPageMax = 10000;
+
+export const listAuditEntriesQueryPageSizeDefault = 10;
+export const listAuditEntriesQueryPageSizeMax = 100;
+
+export const ListAuditEntriesQueryParams = zod.strictObject({
+    actor: zod.string().optional().describe('Filter by actor user ID'),
+    action: zod.string().optional().describe('Filter by action name (e.g. order.created)'),
+    outcome: zod.enum(['success', 'failure']).optional().describe('Filter by outcome'),
+    target: zod
+        .string()
+        .optional()
+        .describe('Filter by the id of the row the action was taken on (e.g. an order or a user)'),
+    since: zod.iso
+        .datetime({ offset: true })
+        .optional()
+        .describe('Return events strictly after this ISO-8601 timestamp — an exclusive bound'),
+    page: zod
+        .number()
+        .min(1)
+        .max(listAuditEntriesQueryPageMax)
+        .default(listAuditEntriesQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listAuditEntriesQueryPageSizeMax)
+        .default(listAuditEntriesQueryPageSizeDefault)
+});
+
+export const listAuditEntriesResponseDataMetaPageDefault = 1;
+export const listAuditEntriesResponseDataMetaPageMax = 10000;
+
+export const listAuditEntriesResponseDataMetaPageSizeDefault = 10;
+export const listAuditEntriesResponseDataMetaPageSizeMax = 100;
+
+export const listAuditEntriesResponseDataMetaTotalItemsMin = 0;
+
+export const listAuditEntriesResponseDataMetaTotalPagesMin = 0;
+
+export const ListAuditEntriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                actor_user_id: zod.string(),
+                actor_role: zod.enum(['admin', 'user', 'anonymous']),
+                actor_role_name: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.'
+                    ),
+                actor_scope: zod
+                    .enum(['tenant', 'platform'])
+                    .optional()
+                    .describe(
+                        'Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.'
+                    ),
+                action: zod.string().describe('Dot-notation action name (e.g. order.created)'),
+                outcome: zod.enum(['success', 'failure']),
+                ip: zod.string().optional(),
+                user_agent: zod.string().optional(),
+                request_id: zod.string().optional(),
+                trace_id: zod.string().optional(),
+                target_type: zod.string().optional(),
+                target_id: zod.string().optional(),
+                metadata: zod.record(zod.string(), zod.unknown()).optional(),
+                timestamp: zod.iso.datetime({ offset: true }),
+                level: zod.enum(['info', 'warn'])
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listAuditEntriesResponseDataMetaPageMax)
+                .default(listAuditEntriesResponseDataMetaPageDefault)
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listAuditEntriesResponseDataMetaPageSizeMax)
+                .default(listAuditEntriesResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(listAuditEntriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listAuditEntriesResponseDataMetaTotalPagesMin)
         })
     })
 });
@@ -2146,12 +2263,6 @@ export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
 );
 export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
 
-export const exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin = 0;
-
-export const exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin = 0;
-
-export const exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin = 0;
-
 export const exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault = true;
 export const exportAccountDataResponseDataOrdersItemTotalItemsMin = 0;
 
@@ -2235,33 +2346,6 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .number()
                                 .min(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin
-                                ),
-                            onHand: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin
-                                )
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin
-                                )
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(
-                                    exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin
-                                )
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
                                 ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
@@ -2430,6 +2514,18 @@ export const ExportAccountDataResponse = zod.strictObject({
             zod.strictObject({
                 actor_user_id: zod.string(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous']),
+                actor_role_name: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.'
+                    ),
+                actor_scope: zod
+                    .enum(['tenant', 'platform'])
+                    .optional()
+                    .describe(
+                        'Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.'
+                    ),
                 action: zod.string().describe('Dotted action name, e.g. `order.created`.'),
                 outcome: zod.enum(['success', 'failure']),
                 ip: zod.string().optional(),
@@ -4687,12 +4783,6 @@ export const CheckoutBody = zod.strictObject({
 
 export const checkoutResponseDataOrderItemsItemProductPriceMin = 0;
 
-export const checkoutResponseDataOrderItemsItemProductOnHandMin = 0;
-
-export const checkoutResponseDataOrderItemsItemProductReservedMin = 0;
-
-export const checkoutResponseDataOrderItemsItemProductAvailableMin = 0;
-
 export const checkoutResponseDataOrderItemsItemProductRequiresShippingDefault = true;
 export const checkoutResponseDataOrderTotalItemsMin = 0;
 
@@ -4717,25 +4807,6 @@ export const CheckoutResponse = zod.strictObject({
                         id: zod.string().describe('Resource identifier'),
                         title: zod.string(),
                         price: zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
-                        onHand: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductOnHandMin)
-                            .optional()
-                            .describe(
-                                'Units physically present, whether or not they are spoken for.'
-                            ),
-                        reserved: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductReservedMin)
-                            .optional()
-                            .describe('Units held by an open order — present, but not for sale.'),
-                        available: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductAvailableMin)
-                            .optional()
-                            .describe(
-                                'What a customer may actually buy. Derived from the two counters above.'
-                            ),
                         description: zod.string().optional(),
                         active: zod.boolean().optional(),
                         requiresShipping: zod
@@ -5010,12 +5081,6 @@ export const ListOrdersQueryParams = zod.strictObject({
 
 export const listOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
-export const listOrdersResponseDataItemsItemItemsItemProductOnHandMin = 0;
-
-export const listOrdersResponseDataItemsItemItemsItemProductReservedMin = 0;
-
-export const listOrdersResponseDataItemsItemItemsItemProductAvailableMin = 0;
-
 export const listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
 export const listOrdersResponseDataItemsItemTotalItemsMin = 0;
 
@@ -5053,27 +5118,6 @@ export const ListOrdersResponse = zod.strictObject({
                             price: zod
                                 .number()
                                 .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
-                            onHand: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductOnHandMin)
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductReservedMin)
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductAvailableMin)
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
-                                ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
                             requiresShipping: zod
@@ -5230,12 +5274,6 @@ export const CreateOrderBody = zod
 
 export const createOrderResponseDataItemsItemProductPriceMin = 0;
 
-export const createOrderResponseDataItemsItemProductOnHandMin = 0;
-
-export const createOrderResponseDataItemsItemProductReservedMin = 0;
-
-export const createOrderResponseDataItemsItemProductAvailableMin = 0;
-
 export const createOrderResponseDataItemsItemProductRequiresShippingDefault = true;
 export const createOrderResponseDataTotalItemsMin = 0;
 
@@ -5259,23 +5297,6 @@ export const CreateOrderResponse = zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
                     price: zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(createOrderResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -5414,12 +5435,6 @@ export const UpdateOrderBody = zod.strictObject({
 
 export const updateOrderResponseDataItemsItemProductPriceMin = 0;
 
-export const updateOrderResponseDataItemsItemProductOnHandMin = 0;
-
-export const updateOrderResponseDataItemsItemProductReservedMin = 0;
-
-export const updateOrderResponseDataItemsItemProductAvailableMin = 0;
-
 export const updateOrderResponseDataItemsItemProductRequiresShippingDefault = true;
 export const updateOrderResponseDataTotalItemsMin = 0;
 
@@ -5443,23 +5458,6 @@ export const UpdateOrderResponse = zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
                     price: zod.number().min(updateOrderResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(updateOrderResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -5639,12 +5637,6 @@ export const SearchOrdersBody = zod.strictObject({
 
 export const searchOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
-export const searchOrdersResponseDataItemsItemItemsItemProductOnHandMin = 0;
-
-export const searchOrdersResponseDataItemsItemItemsItemProductReservedMin = 0;
-
-export const searchOrdersResponseDataItemsItemItemsItemProductAvailableMin = 0;
-
 export const searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
 export const searchOrdersResponseDataItemsItemTotalItemsMin = 0;
 
@@ -5682,27 +5674,6 @@ export const SearchOrdersResponse = zod.strictObject({
                             price: zod
                                 .number()
                                 .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
-                            onHand: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductOnHandMin)
-                                .optional()
-                                .describe(
-                                    'Units physically present, whether or not they are spoken for.'
-                                ),
-                            reserved: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductReservedMin)
-                                .optional()
-                                .describe(
-                                    'Units held by an open order — present, but not for sale.'
-                                ),
-                            available: zod
-                                .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductAvailableMin)
-                                .optional()
-                                .describe(
-                                    'What a customer may actually buy. Derived from the two counters above.'
-                                ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
                             requiresShipping: zod
@@ -5847,12 +5818,6 @@ export const GetOrderByIdParams = zod.strictObject({
 
 export const getOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
-export const getOrderByIdResponseDataItemsItemProductOnHandMin = 0;
-
-export const getOrderByIdResponseDataItemsItemProductReservedMin = 0;
-
-export const getOrderByIdResponseDataItemsItemProductAvailableMin = 0;
-
 export const getOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const getOrderByIdResponseDataTotalItemsMin = 0;
 
@@ -5876,23 +5841,6 @@ export const GetOrderByIdResponse = zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
                     price: zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(getOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -6033,12 +5981,6 @@ export const UpdateOrderByIdBody = zod.strictObject({
 
 export const updateOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
-export const updateOrderByIdResponseDataItemsItemProductOnHandMin = 0;
-
-export const updateOrderByIdResponseDataItemsItemProductReservedMin = 0;
-
-export const updateOrderByIdResponseDataItemsItemProductAvailableMin = 0;
-
 export const updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const updateOrderByIdResponseDataTotalItemsMin = 0;
 
@@ -6062,23 +6004,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
                     price: zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(updateOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -6261,12 +6186,6 @@ export const CancelOrderByIdBody = zod
 
 export const cancelOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
-export const cancelOrderByIdResponseDataItemsItemProductOnHandMin = 0;
-
-export const cancelOrderByIdResponseDataItemsItemProductReservedMin = 0;
-
-export const cancelOrderByIdResponseDataItemsItemProductAvailableMin = 0;
-
 export const cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const cancelOrderByIdResponseDataTotalItemsMin = 0;
 
@@ -6290,23 +6209,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
                     price: zod.number().min(cancelOrderByIdResponseDataItemsItemProductPriceMin),
-                    onHand: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductOnHandMin)
-                        .optional()
-                        .describe('Units physically present, whether or not they are spoken for.'),
-                    reserved: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductReservedMin)
-                        .optional()
-                        .describe('Units held by an open order — present, but not for sale.'),
-                    available: zod
-                        .number()
-                        .min(cancelOrderByIdResponseDataItemsItemProductAvailableMin)
-                        .optional()
-                        .describe(
-                            'What a customer may actually buy. Derived from the two counters above.'
-                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod

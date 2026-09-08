@@ -119,7 +119,12 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
         method: 'GET',
         pattern: /^\/locales\/[^/]+$/,
         schema: schemas.GetLocaleDictionaryResponse
-    }
+    },
+    /*
+     * The shop-scoped audit trail (`GET /observability/audit`'s counterpart for a shop role
+     * rather than a platform one) — no module reads it yet, so it sits here until one does.
+     */
+    { method: 'GET', pattern: /^\/audit$/, schema: schemas.ListAuditEntriesResponse }
 ];
 
 /**

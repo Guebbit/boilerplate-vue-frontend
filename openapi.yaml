@@ -42,6 +42,8 @@ tags:
     description: Public system endpoints (ping, liveness).
   - name: Observability
     description: Operational observability endpoints (metrics, health, audit, events). Protected endpoints require admin role.
+  - name: Audit
+    description: The tenant's own action history — who did what, when, to which row. Read-only, and separate from Observability's operational audit, which is the platform operator's view across every shop.
 paths:
   /:
     get:
@@ -665,6 +667,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuditLogsResponseEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /audit:
+    get:
+      tags:
+        - Audit
+      summary: The shop's own action history
+      description: |
+        A filtered, paged read over the same trail `GET /observability/audit` serves — but
+        scoped to one shop and reached with a role a shop actually has, not a platform one.
+        Newest first. `meta.totalItems` counts every entry matching the filters, not just
+        the page.
+
+        Requires `audit.read` — held by `manager`, `support` and `moderator` in the demo.
+      operationId: listAuditEntries
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: actor
+          in: query
+          schema:
+            type: string
+          description: Filter by actor user ID
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Filter by action name (e.g. order.created)
+        - name: outcome
+          in: query
+          schema:
+            type: string
+            enum:
+              - success
+              - failure
+          description: Filter by outcome
+        - name: target
+          in: query
+          schema:
+            type: string
+          description: Filter by the id of the row the action was taken on (e.g. an order or a user)
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Return events strictly after this ISO-8601 timestamp — an exclusive bound
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Action history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEntryListResponseEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4093,6 +4157,50 @@ components:
           type: string
         phone:
           type: string
+    OrderLineProduct:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - price
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        title:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+        description:
+          type: string
+        active:
+          type: boolean
+        requiresShipping:
+          type: boolean
+          default: true
+        imageUrl:
+          $ref: '#/components/schemas/ImageUrl'
+        thumbnailUrl:
+          $ref: '#/components/schemas/ThumbnailUrl'
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
     OrderItem:
       type: object
       additionalProperties: false
@@ -4101,7 +4209,7 @@ components:
         - quantity
       properties:
         product:
-          $ref: '#/components/schemas/Product'
+          $ref: '#/components/schemas/OrderLineProduct'
         quantity:
           type: integer
           minimum: 1
@@ -5060,6 +5168,15 @@ components:
             - admin
             - user
             - anonymous
+        actor_role_name:
+          type: string
+          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
+        actor_scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
         action:
           type: string
           description: Dot-notation action name (e.g. order.created)
@@ -5121,6 +5238,95 @@ components:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
           $ref: '#/components/schemas/AuditLogsPage'
+    AuditEntryItem:
+      type: object
+      additionalProperties: false
+      required:
+        - actor_user_id
+        - actor_role
+        - action
+        - outcome
+        - timestamp
+        - level
+      properties:
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum:
+            - admin
+            - user
+            - anonymous
+        actor_role_name:
+          type: string
+          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
+        actor_scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+        action:
+          type: string
+          description: Dot-notation action name (e.g. order.created)
+        outcome:
+          type: string
+          enum:
+            - success
+            - failure
+        ip:
+          type: string
+        user_agent:
+          type: string
+        request_id:
+          type: string
+        trace_id:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+            - info
+            - warn
+    AuditEntryList:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntryItem'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    AuditEntryListResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/AuditEntryList'
     AntibotRungs:
       type: object
       additionalProperties: false
@@ -5834,6 +6040,15 @@ components:
             - admin
             - user
             - anonymous
+        actor_role_name:
+          type: string
+          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
+        actor_scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
         action:
           type: string
           description: Dotted action name, e.g. `order.created`.

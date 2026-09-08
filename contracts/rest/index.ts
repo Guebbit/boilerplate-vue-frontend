@@ -260,8 +260,25 @@ export interface OrderAddress {
     phone?: string;
 }
 
+export interface OrderLineProduct {
+    id: Id;
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    description?: string;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
+
 export interface OrderItem {
-    product: Product;
+    product: OrderLineProduct;
     /** @minimum 1 */
     quantity: number;
 }
@@ -848,6 +865,17 @@ export const AuditEventItemActorRole = {
     anonymous: 'anonymous'
 } as const;
 
+/**
+ * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ */
+export type AuditEventItemActorScope =
+    (typeof AuditEventItemActorScope)[keyof typeof AuditEventItemActorScope];
+
+export const AuditEventItemActorScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
 export type AuditEventItemOutcome =
     (typeof AuditEventItemOutcome)[keyof typeof AuditEventItemOutcome];
 
@@ -868,6 +896,10 @@ export const AuditEventItemLevel = {
 export interface AuditEventItem {
     actor_user_id: string;
     actor_role: AuditEventItemActorRole;
+    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
+    actor_role_name?: string;
+    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
+    actor_scope?: AuditEventItemActorScope;
     /** Dot-notation action name (e.g. order.created) */
     action: string;
     outcome: AuditEventItemOutcome;
@@ -892,6 +924,76 @@ export interface AuditLogsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: AuditLogsPage;
+}
+
+export type AuditEntryItemActorRole =
+    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
+
+export const AuditEntryItemActorRole = {
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous'
+} as const;
+
+/**
+ * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ */
+export type AuditEntryItemActorScope =
+    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
+
+export const AuditEntryItemActorScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+export type AuditEntryItemOutcome =
+    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
+
+export const AuditEntryItemOutcome = {
+    success: 'success',
+    failure: 'failure'
+} as const;
+
+export type AuditEntryItemMetadata = { [key: string]: unknown };
+
+export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
+
+export const AuditEntryItemLevel = {
+    info: 'info',
+    warn: 'warn'
+} as const;
+
+export interface AuditEntryItem {
+    actor_user_id: string;
+    actor_role: AuditEntryItemActorRole;
+    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
+    actor_role_name?: string;
+    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
+    actor_scope?: AuditEntryItemActorScope;
+    /** Dot-notation action name (e.g. order.created) */
+    action: string;
+    outcome: AuditEntryItemOutcome;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: AuditEntryItemMetadata;
+    timestamp: string;
+    level: AuditEntryItemLevel;
+}
+
+export interface AuditEntryList {
+    items: AuditEntryItem[];
+    meta: PaginationMeta;
+}
+
+export interface AuditEntryListResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuditEntryList;
 }
 
 /**
@@ -1280,6 +1382,17 @@ export const ExportAuditEntryActorRole = {
     anonymous: 'anonymous'
 } as const;
 
+/**
+ * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ */
+export type ExportAuditEntryActorScope =
+    (typeof ExportAuditEntryActorScope)[keyof typeof ExportAuditEntryActorScope];
+
+export const ExportAuditEntryActorScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
 export type ExportAuditEntryOutcome =
     (typeof ExportAuditEntryOutcome)[keyof typeof ExportAuditEntryOutcome];
 
@@ -1301,6 +1414,10 @@ export const ExportAuditEntryLevel = {
 export interface ExportAuditEntry {
     actor_user_id: string;
     actor_role: ExportAuditEntryActorRole;
+    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
+    actor_role_name?: string;
+    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
+    actor_scope?: ExportAuditEntryActorScope;
     /** Dotted action name, e.g. `order.created`. */
     action: string;
     outcome: ExportAuditEntryOutcome;
@@ -2424,6 +2541,49 @@ export const GetObservabilityAuditLogsOutcome = {
     failure: 'failure'
 } as const;
 
+export type ListAuditEntriesParams = {
+    /**
+     * Filter by actor user ID
+     */
+    actor?: string;
+    /**
+     * Filter by action name (e.g. order.created)
+     */
+    action?: string;
+    /**
+     * Filter by outcome
+     */
+    outcome?: ListAuditEntriesOutcome;
+    /**
+     * Filter by the id of the row the action was taken on (e.g. an order or a user)
+     */
+    target?: string;
+    /**
+     * Return events strictly after this ISO-8601 timestamp — an exclusive bound
+     */
+    since?: string;
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+};
+
+export type ListAuditEntriesOutcome =
+    (typeof ListAuditEntriesOutcome)[keyof typeof ListAuditEntriesOutcome];
+
+export const ListAuditEntriesOutcome = {
+    success: 'success',
+    failure: 'failure'
+} as const;
+
 export type CompleteOAuthLoginParams = {
     code?: string;
     state?: string;
@@ -3006,6 +3166,25 @@ export const getObservabilityAuditLogs = (
 ) => {
     return orvalMutator<AuditLogsResponseEnvelope>(
         { url: `/observability/audit`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * A filtered, paged read over the same trail `GET /observability/audit` serves — but
+ * scoped to one shop and reached with a role a shop actually has, not a platform one.
+ * Newest first. `meta.totalItems` counts every entry matching the filters, not just
+ * the page.
+ *
+ * Requires `audit.read` — held by `manager`, `support` and `moderator` in the demo.
+ * @summary The shop's own action history
+ */
+export const listAuditEntries = (
+    params?: ListAuditEntriesParams,
+    options?: SecondParameter<typeof orvalMutator<AuditEntryListResponseEnvelope>>
+) => {
+    return orvalMutator<AuditEntryListResponseEnvelope>(
+        { url: `/audit`, method: 'GET', params },
         options
     );
 };
@@ -4997,6 +5176,7 @@ export type GetObservabilityMetricsOverviewResult = NonNullable<
 export type GetObservabilityAuditLogsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityAuditLogs>>
 >;
+export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>;
 export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
 export type GetAntibotChallengeResult = NonNullable<
     Awaited<ReturnType<typeof getAntibotChallenge>>
