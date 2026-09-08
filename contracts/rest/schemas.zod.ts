@@ -6392,7 +6392,9 @@ export const CreatePaymentIntentResponse = zod.strictObject({
         amount: zod
             .number()
             .min(createPaymentIntentResponseDataAmountMin)
-            .describe("The order's total as the intent froze it."),
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
         currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
         status: zod
             .enum([
@@ -6418,7 +6420,9 @@ export const CreatePaymentIntentResponse = zod.strictObject({
         cardLast4: zod
             .string()
             .optional()
-            .describe('The only card digits a payment system may remember.'),
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
         actions: zod
             .strictObject({
                 pay: zod
@@ -6462,7 +6466,9 @@ export const GetPaymentByOrderResponse = zod.strictObject({
         amount: zod
             .number()
             .min(getPaymentByOrderResponseDataAmountMin)
-            .describe("The order's total as the intent froze it."),
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
         currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
         status: zod
             .enum([
@@ -6488,7 +6494,9 @@ export const GetPaymentByOrderResponse = zod.strictObject({
         cardLast4: zod
             .string()
             .optional()
-            .describe('The only card digits a payment system may remember.'),
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
         actions: zod
             .strictObject({
                 pay: zod
@@ -6532,7 +6540,9 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
         amount: zod
             .number()
             .min(refundPaymentByOrderResponseDataAmountMin)
-            .describe("The order's total as the intent froze it."),
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
         currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
         status: zod
             .enum([
@@ -6558,7 +6568,9 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
         cardLast4: zod
             .string()
             .optional()
-            .describe('The only card digits a payment system may remember.'),
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
         actions: zod
             .strictObject({
                 pay: zod
@@ -6618,7 +6630,9 @@ export const ConfirmPaymentResponse = zod.strictObject({
         amount: zod
             .number()
             .min(confirmPaymentResponseDataAmountMin)
-            .describe("The order's total as the intent froze it."),
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
         currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
         status: zod
             .enum([
@@ -6644,7 +6658,9 @@ export const ConfirmPaymentResponse = zod.strictObject({
         cardLast4: zod
             .string()
             .optional()
-            .describe('The only card digits a payment system may remember.'),
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
         actions: zod
             .strictObject({
                 pay: zod
@@ -6688,7 +6704,9 @@ export const SyncPaymentResponse = zod.strictObject({
         amount: zod
             .number()
             .min(syncPaymentResponseDataAmountMin)
-            .describe("The order's total as the intent froze it."),
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
         currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
         status: zod
             .enum([
@@ -6714,7 +6732,9 @@ export const SyncPaymentResponse = zod.strictObject({
         cardLast4: zod
             .string()
             .optional()
-            .describe('The only card digits a payment system may remember.'),
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
         actions: zod
             .strictObject({
                 pay: zod

@@ -1967,7 +1967,7 @@ export interface Payment {
     orderId: Id;
     userId?: Id;
     /**
-     * The order's total as the intent froze it.
+     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.
      * @minimum 0
      */
     amount: number;
@@ -1979,7 +1979,7 @@ export interface Payment {
     provider: string;
     /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
-    /** The only card digits a payment system may remember. */
+    /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
     cardLast4?: string;
     actions?: PaymentActions;
     createdAt?: string;

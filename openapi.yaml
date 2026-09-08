@@ -7194,7 +7194,7 @@ components:
           type: number
           format: double
           minimum: 0
-          description: The order's total as the intent froze it.
+          description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.
         currency:
           type: string
           description: ISO-4217 currency code (e.g. EUR)
@@ -7216,7 +7216,7 @@ components:
           description: 'Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
         cardLast4:
           type: string
-          description: The only card digits a payment system may remember.
+          description: The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
         actions:
           $ref: '#/components/schemas/PaymentActions'
         createdAt:
