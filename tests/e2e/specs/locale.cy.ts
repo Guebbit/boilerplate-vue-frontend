@@ -138,7 +138,7 @@ describe('the saved preference', () => {
         cy.logout();
         // The session is ended only once the viewer chip is gone — a locale-independent fact,
         // unlike any nav label after the switch above.
-        cy.contains('gino@pino.it').should('not.exist');
+        cy.contains('customer@example.com').should('not.exist');
         cy.loginAs('user');
 
         cy.get('html').should('have.attr', 'lang', 'it');

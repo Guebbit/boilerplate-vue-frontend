@@ -22,13 +22,13 @@ describe('Password reset', () => {
         cy.visit('/en/password-reset');
         cy.get('#password-reset-request-page [type=email]')
             .should('not.be.disabled')
-            .type('gino@pino.it');
+            .type('customer@example.com');
         cy.get('#password-reset-request-page button[type=submit]').click();
         // The enumeration-safe acknowledgement, same words whether the account exists or not.
         cy.contains('If the account exists').should('exist');
 
         // ── Open the email, follow the link ─────────────────────────────────────────
-        cy.demoEmailTo('gino@pino.it').then((email) => {
+        cy.demoEmailTo('customer@example.com').then((email) => {
             expect(email.template).to.equal('account.reset-request');
             cy.visit(`/en/password-reset/confirm?token=${email.token}`);
         });
@@ -45,7 +45,7 @@ describe('Password reset', () => {
 
         // ── The proof, both directions ──────────────────────────────────────────────
         cy.get('[type=email]').should('not.be.disabled').clear();
-        cy.get('[type=email]').should('not.be.disabled').type('gino@pino.it');
+        cy.get('[type=email]').should('not.be.disabled').type('customer@example.com');
         cy.get('[type=password]').should('not.be.disabled').clear();
         // The pre-reset password — proven dead now that the reset above replaced it.
         cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.user.password);

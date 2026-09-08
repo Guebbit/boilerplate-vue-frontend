@@ -2,7 +2,8 @@
  * The assertions that hold whatever the demo dataset happens to contain.
  *
  * Every other spec asserts exact counts, titles and prices — "four public products", "food (1)",
- * "Sallyno Panino". Those are the right assertions for a fixed dataset, and they share a blind
+ * "Premium Grain-Free Dog Food, 15kg". Those are the right assertions for a fixed dataset, and
+ * they share a blind
  * spot: they only look at the values they name. A page can render a broken image, log a TypeError
  * on every load, or push a 300px-wide table off the viewport, and every one of them stays green.
  *

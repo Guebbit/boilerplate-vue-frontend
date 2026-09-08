@@ -47,8 +47,8 @@ npm run dev                                        # Vite dev server on :8080
 ```
 
 Open `http://localhost:8080`. You get a browsable storefront with demo products, a working cart
-and a working login (`gino@pino.it` / `password`), served by the real API against a database that
-lives and dies with the demo process.
+and a working login (`customer@example.com` / `Demo-User1!`), served by the real API against a
+database that lives and dies with the demo process.
 
 ::: tip `cp .env-example .env` is not optional
 It is required for the container path too. The compose file bind-mounts the repo at `/app`, so

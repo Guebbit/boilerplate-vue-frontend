@@ -10,7 +10,7 @@
  * backend and `cy.loginAs()` simply cannot log in.
  */
 export const E2E_ACCOUNTS = {
-    user: { email: 'gino@pino.it', password: 'Demo-User1!' },
+    user: { email: 'customer@example.com', password: 'Demo-User1!' },
     admin: { email: 'root@root.it', password: 'Demo-Admin1!' }
 } as const;
 

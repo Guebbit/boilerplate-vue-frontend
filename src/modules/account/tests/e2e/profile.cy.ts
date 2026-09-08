@@ -142,7 +142,8 @@ describe('Profile self-service', () => {
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            // gino's real one; the new one satisfies `usersPasswordSchema` — the submit is no longer
+            // the demo customer's real one; the new one satisfies `usersPasswordSchema` — the
+            // submit is no longer
             // disabled behind an invalid form, it reveals the errors, so the fixture must pass them.
             cy.get('[data-test=current-password] input')
                 .should('not.be.disabled')
@@ -248,7 +249,7 @@ describe('Profile self-service', () => {
 
         it('an email change leaves the account verified, and shows no banner', () => {
             // Wait for hydration the way a person does: type only once the record shows.
-            cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
+            cy.get('#profile-page [type=email]').should('have.value', 'customer@example.com');
             cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
             cy.get('#profile-page [type=email]')
                 .should('not.be.disabled')

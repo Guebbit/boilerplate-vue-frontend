@@ -116,7 +116,7 @@ describe('Commerce', () => {
             const orderId = pathname.split('/').at(-1);
 
             cy.logout();
-            cy.contains('gino@pino.it').should('not.exist');
+            cy.contains('customer@example.com').should('not.exist');
             cy.loginAs('admin');
             cy.visit(`/en/orders/${orderId}/edit`);
         });

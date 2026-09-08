@@ -62,7 +62,7 @@ describe('The customer journey', () => {
         // (Only the demo profile has a readable outbox; live, the email leaves for real.)
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             if (liveProfile === true) return;
-            cy.demoEmailTo('gino@pino.it').then((email) => {
+            cy.demoEmailTo('customer@example.com').then((email) => {
                 // The outbox records template variables; the line items are structured data the
                 // orders page below asserts far more precisely than a variable dump could.
                 expect(email.template).to.equal('orders.order-confirm');
