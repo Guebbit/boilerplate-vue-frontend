@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import { getCookie } from '@guebbit/js-toolkit';
 import {
     getAccount as apiGetAccount,
+    getMyAbilities as apiGetMyAbilities,
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
@@ -143,6 +144,11 @@ export const useSessionStore = defineStore('session', () => {
      */
     const ability = shallowRef<MongoAbility>(createMongoAbility());
 
+    /**
+     * Replace the rules wholesale with what the server just published.
+     *
+     * @param rules - CASL's packed rule tuples, exactly as `GET /account/abilities` returns them
+     */
     const setAbility = (rules: unknown[]) => {
         ability.value = createMongoAbility(unpackRules(rules as never) as never);
     };
@@ -151,16 +157,14 @@ export const useSessionStore = defineStore('session', () => {
      * Whether the visitor may do everything the shop has to offer. Derived from token AND viewer
      * for the reason given above.
      *
-     * Asked of the RULES rather than of a role name: `manage`/`all` is CASL's spelling of
-     * unrestricted, and it stays true through any renaming of a role because it is a property of
-     * the permission model rather than of this deployment's vocabulary.
+     * Asked of the RULES rather than of a role name, so it stays true through any renaming of a
+     * role: deleting a product is a key only an unrestricted role holds, and no rule with a
+     * `manage` action is ever published — the server expands those into concrete actions before
+     * packing, precisely so a wildcard cannot leak to the client as an unbounded grant.
      */
     const isAdmin = computed(
         () => Boolean(accessToken.value && viewer.value) && ability.value.can('delete', 'Product')
     );
-
-    /** Whether the visitor may take an action on a subject — what a screen greys out from. */
-    const can = (action: string, subjectType: string) => ability.value.can(action, subjectType);
 
     /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
@@ -195,12 +199,36 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Records who the token belongs to.
+     * Records who the token belongs to, and asks the server what they may do.
+     *
+     * The two travel together on purpose: a viewer without rules is a shell that hides every
+     * control the visitor is entitled to, and the rules are fetched rather than derived from
+     * `role` because only the server's own rules say what a name allows.
+     *
+     * **Awaited by whoever restores the session**, so a route guard reading `isAdmin` decides on
+     * the rules rather than on the empty ability that precedes them — the redirect it would
+     * otherwise perform is indistinguishable from "not allowed".
+     *
+     * It fails quietly: an ability that never arrives is the empty one, which greys everything
+     * out. A shell that refused to render because it could not learn what to hide would be worse
+     * than one that hides too much.
      *
      * @param nextViewer - The claims projection, or `undefined` to forget it.
+     * @returns A promise resolving once the rules that go with the viewer have settled.
      */
-    const setViewer = (nextViewer?: SessionViewer) => {
+    const setViewer = (nextViewer?: SessionViewer): Promise<void> => {
         viewer.value = nextViewer;
+
+        if (!nextViewer) {
+            setAbility([]);
+            return Promise.resolve();
+        }
+
+        return apiGetMyAbilities()
+            .then((answer) => {
+                setAbility(getPayloadFromResponse<{ rules: unknown[] }>(answer)?.rules ?? []);
+            })
+            .catch(() => undefined);
     };
 
     /**
@@ -229,7 +257,7 @@ export const useSessionStore = defineStore('session', () => {
                 imageUrl?: string;
                 thumbnailUrl?: string;
             }>(data);
-            setViewer(
+            return setViewer(
                 payload && {
                     id: payload.id,
                     email: payload.email,
@@ -237,8 +265,7 @@ export const useSessionStore = defineStore('session', () => {
                     imageUrl: payload.imageUrl,
                     thumbnailUrl: payload.thumbnailUrl
                 }
-            );
-            return payload;
+            ).then(() => payload);
         });
 
     /**
@@ -276,6 +303,9 @@ export const useSessionStore = defineStore('session', () => {
     const clearSession = () => {
         accessToken.value = undefined;
         viewer.value = undefined;
+        // Back to the empty ability: a stranger's rules arrive with the next viewer, and until
+        // they do the least-privileged answer is the right one.
+        setAbility([]);
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
@@ -299,7 +329,6 @@ export const useSessionStore = defineStore('session', () => {
     return {
         ability,
         setAbility,
-        can,
         accessToken,
         viewer,
         isAuth,

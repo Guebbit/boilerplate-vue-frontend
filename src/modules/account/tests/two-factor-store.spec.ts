@@ -77,7 +77,6 @@ beforeEach(() => {
         // The caller's own rules. The session store fetches these for every identified viewer,
         // so every spec that logs somebody in needs an answer for them.
         'GET /account/abilities': orvalEnvelope({
-            tenantId: null,
             scope: 'tenant',
             rules: [['read', 'Product', { active: true, deletedAt: null }]],
             version: 36

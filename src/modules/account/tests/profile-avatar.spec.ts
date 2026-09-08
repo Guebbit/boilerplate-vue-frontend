@@ -70,7 +70,6 @@ beforeEach(() => {
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
         'GET /account/abilities': orvalEnvelope({
-            tenantId: null,
             scope: 'tenant',
             rules: [
                 ['read', 'Product', { active: true, deletedAt: null }],

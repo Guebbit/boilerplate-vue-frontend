@@ -13,9 +13,11 @@ import { createPinia, setActivePinia } from 'pinia';
 
 const updateAccountMock = vi.fn();
 const getAccountMock = vi.fn();
+const getMyAbilitiesMock = vi.fn();
 
 vi.mock('@api', () => ({
     getAccount: () => getAccountMock(),
+    getMyAbilities: () => getMyAbilitiesMock(),
     refreshToken: vi.fn(),
     logout: vi.fn(),
     logoutAll: vi.fn(),
@@ -28,7 +30,7 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
-    store.setViewer({ id: '1', email: 'a@b.c', admin: false });
+    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
     return store;
 };
 
@@ -36,6 +38,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     updateAccountMock.mockResolvedValue({ data: {} });
+    getMyAbilitiesMock.mockResolvedValue({ data: { scope: 'tenant', rules: [], version: 1 } });
 });
 
 describe('persistLocalePreference', () => {
@@ -198,7 +201,7 @@ describe('loadViewer', () => {
             data: {
                 id: '1',
                 email: 'a@b.c',
-                admin: false,
+                role: 'customer',
                 imageUrl: '/images/abc.png',
                 thumbnailUrl: '/images/thumbs/v1/abc.webp'
             }
@@ -213,12 +216,36 @@ describe('loadViewer', () => {
 
     it('leaves thumbnailUrl undefined for an account with none', () => {
         getAccountMock.mockResolvedValue({
-            data: { id: '1', email: 'a@b.c', admin: false, imageUrl: '/images/abc.png' }
+            data: { id: '1', email: 'a@b.c', role: 'customer', imageUrl: '/images/abc.png' }
         });
         const store = useSessionStore();
 
         return store.loadViewer().then(() => {
             expect(store.viewer?.thumbnailUrl).toBeUndefined();
         });
+    });
+
+    /*
+     * The reload case, and the reason the fetch sits beside `setViewer` rather than in the account
+     * store: a page load restores the session through this path alone, and a viewer whose rules
+     * never arrived is a screen that hides every control its visitor is entitled to.
+     */
+    it('loads the rules that go with the viewer, not just the projection', () => {
+        getAccountMock.mockResolvedValue({
+            data: { id: '1', email: 'a@b.c', role: 'owner' }
+        });
+        getMyAbilitiesMock.mockResolvedValue({
+            data: { scope: 'tenant', rules: [['delete', 'Product']], version: 1 }
+        });
+        const store = useSessionStore();
+        store.setAccessToken('token');
+
+        return store
+            .loadViewer()
+            .then(() => {})
+            .then(() => {
+                expect(store.ability.can('delete', 'Product')).toBe(true);
+                expect(store.isAdmin).toBe(true);
+            });
     });
 });

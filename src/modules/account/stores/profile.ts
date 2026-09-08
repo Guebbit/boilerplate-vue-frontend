@@ -22,8 +22,7 @@ import {
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
     updateUserById as apiUpdateUserById,
-    exportAccountData as apiExportAccountData,
-    getMyAbilities as apiGetMyAbilities
+    exportAccountData as apiExportAccountData
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
@@ -91,8 +90,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * lag behind the record this store holds.
      *
      * @param user - The freshly loaded or updated account record.
+     * @returns A promise resolving once the shell also holds the rules that go with them.
      */
-    const publishViewer = (user?: User) => {
+    const publishViewer = (user?: User) =>
         session.setViewer(
             user && {
                 id: user.id,
@@ -101,22 +101,6 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 imageUrl: user.imageUrl
             }
         );
-
-        /*
-         * And the rules that go with them. Fetched rather than derived from `role`, because the
-         * whole point of publishing them is that the client stops deriving: a role name says who
-         * somebody is, and only the server's own rules say what that lets them do.
-         *
-         * Fire-and-forget, and failing quietly on purpose: an ability that never arrives is the
-         * empty one, which greys everything out. A shell that refused to render because it could
-         * not learn what to hide would be worse than one that hides too much.
-         */
-        void apiGetMyAbilities()
-            .then((answer) => {
-                session.setAbility(answer.data.rules);
-            })
-            .catch(() => undefined);
-    };
 
     /**
      * Loads the authenticated user's profile and identifies them in the
@@ -140,9 +124,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     // Identify user in observability tools after profile is fetched
                     const obs = useObservabilityStore();
                     obs.identifyUser(payload.id, payload.email);
-                    // Keep the shell's projection in step with the record just loaded.
-                    publishViewer(payload);
-                    return payload;
+                    // Keep the shell's projection in step with the record just loaded, rules
+                    // included: a screen that renders before them hides what it should show.
+                    return publishViewer(payload).then(() => payload);
                 }),
             undefined,
             { forced }
@@ -192,9 +176,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     : apiUpdateAccount({ ...fields, imageUrl: userData.imageUrl }, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
+
                     // The projection must not lag the record — same rule as fetchProfile.
-                    if (payload) publishViewer(payload);
-                    return data;
+                    return payload ? publishViewer(payload).then(() => data) : data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             userData,

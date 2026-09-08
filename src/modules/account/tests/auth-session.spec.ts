@@ -80,7 +80,6 @@ beforeEach(() => {
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
         'GET /account/abilities': orvalEnvelope({
-            tenantId: null,
             scope: 'tenant',
             rules: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -151,12 +150,17 @@ describe('login', () => {
         /*
          * The RULES, not the role name. `isAdmin` asks what the server said this person may do —
          * a name is who they are, and only the rules say what that lets them do. An owner's rules
-         * are the wildcard, which is CASL's `manage`/`all`.
+         * are the concrete ones the server expands its wildcard into; no `manage` rule is ever
+         * published, so a fixture that used one would test a shape the server cannot send.
          */
         responses['GET /account/abilities'] = orvalEnvelope({
-            tenantId: null,
             scope: 'tenant',
-            rules: [['manage', 'all']],
+            rules: [
+                ['read', 'Product'],
+                ['create', 'Product'],
+                ['update', 'Product'],
+                ['delete', 'Product']
+            ],
             version: 36
         });
 
@@ -164,6 +168,30 @@ describe('login', () => {
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 expect(useSessionStore().isAdmin).toBe(true);
+            });
+    });
+
+    it('drops the rules when the session ends, so nothing stays unlocked', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+        responses['GET /account/abilities'] = orvalEnvelope({
+            scope: 'tenant',
+            rules: [['delete', 'Product']],
+            version: 36
+        });
+
+        return useAuthStore()
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => {
+                const session = useSessionStore();
+
+                expect(session.ability.can('delete', 'Product')).toBe(true);
+                session.clearSession();
+
+                // The empty ability, not the previous visitor's: what a screen renders for a
+                // stranger has to be what a stranger is allowed, and the next viewer's rules
+                // arrive with the next fetch.
+                expect(session.ability.can('delete', 'Product')).toBe(false);
+                expect(session.isAdmin).toBe(false);
             });
     });
 

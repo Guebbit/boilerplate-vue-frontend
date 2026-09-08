@@ -62,7 +62,6 @@ beforeEach(() => {
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
         'GET /account/abilities': orvalEnvelope({
-            tenantId: null,
             scope: 'tenant',
             rules: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -244,9 +243,13 @@ describe('own role', () => {
                 // And the rules that go with the new role: `isAdmin` asks what the server said
                 // this person may do, not what they are called.
                 responses['GET /account/abilities'] = orvalEnvelope({
-                    tenantId: null,
                     scope: 'tenant',
-                    rules: [['manage', 'all']],
+                    rules: [
+                        ['read', 'Product'],
+                        ['create', 'Product'],
+                        ['update', 'Product'],
+                        ['delete', 'Product']
+                    ],
                     version: 36
                 });
                 return profile.updateOwnRole('owner');
@@ -262,7 +265,7 @@ describe('own role', () => {
                     '/account/abilities'
                 ]);
                 // `isAdmin` reads the RULES, so the mock has to answer with an owner's — a role
-                // name alone no longer decides anything on this side either.
+                // name decides nothing on this side.
                 expect(useSessionStore().isAdmin).toBe(true);
             });
     });
