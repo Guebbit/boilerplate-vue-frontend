@@ -825,6 +825,18 @@ export interface ObservabilityHealthSystem {
 }
 
 /**
+ * One lease-guarded job's last observed outcome, read off its `leases` document (`src/infrastructure/persistence/lease.ts`). Absent `lastSuccessAt` means the job has never completed since its lease document was created; absent `lastError` means its most recent attempt did not fail.
+ * Not part of `status`, same reasoning as `telemetry`: a job that has not run recently costs staleness, not this instance's ability to serve a request — see docs/reference/ops.md#scheduled-jobs.
+ */
+export interface ObservabilityHealthJob {
+    name: string;
+    /** @nullable */
+    lastSuccessAt?: string | null;
+    /** @nullable */
+    lastError?: string | null;
+}
+
+/**
  * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
  * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
@@ -852,6 +864,8 @@ export interface ObservabilityHealth {
     telemetry?: ObservabilityHealthTelemetry;
     memory?: ProcessMemory;
     system?: ObservabilityHealthSystem;
+    /** Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`. */
+    jobs?: ObservabilityHealthJob[];
     timestamp: string;
 }
 

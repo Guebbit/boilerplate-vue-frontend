@@ -1219,6 +1219,22 @@ export const GetObservabilityHealthResponse = zod.strictObject({
                 loadAvg: zod.array(zod.number())
             })
             .optional(),
+        jobs: zod
+            .array(
+                zod
+                    .strictObject({
+                        name: zod.string(),
+                        lastSuccessAt: zod.iso.datetime({ offset: true }).nullish(),
+                        lastError: zod.string().nullish()
+                    })
+                    .describe(
+                        "One lease-guarded job's last observed outcome, read off its `leases` document (`src\/infrastructure\/persistence\/lease.ts`). Absent `lastSuccessAt` means the job has never completed since its lease document was created; absent `lastError` means its most recent attempt did not fail.\nNot part of `status`, same reasoning as `telemetry`: a job that has not run recently costs staleness, not this instance's ability to serve a request — see docs\/reference\/ops.md#scheduled-jobs."
+                    )
+            )
+            .optional()
+            .describe(
+                'Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`.'
+            ),
         timestamp: zod.iso.datetime({ offset: true })
     })
 });
