@@ -5548,8 +5548,10 @@ export const listWebhookDeliveries = (
 /**
  * Signs and POSTs again, synchronously, against the subscription's CURRENT url and
  * secret ring — not the ones this row was originally attempted with. Updates the same
- * row: `attempt` increments, `status`/`responseCode`/`durationMs`/`error` reflect this
- * replay. The single most-requested support action, per the design doc.
+ * row: `attempt` advances exactly like a real queued attempt would (one step forward
+ * on a failure with backoff tiers left, unchanged on success or exhaustion), and
+ * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
+ * most-requested support action, per the design doc.
  * @summary Re-send one delivery
  */
 export const replayWebhookDelivery = (
