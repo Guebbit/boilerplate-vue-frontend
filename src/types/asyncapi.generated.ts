@@ -25,8 +25,22 @@ export interface AnonymousSchema8 {
 export interface AnonymousSchema11 {
   'sseClients': number;
 }
+export interface OrderIdPayload {
+  'orderId': string;
+}
+export interface OrderCancelledPayload {
+  'orderId': string;
+  'refund': boolean;
+}
+export interface PaymentEventPayload {
+  'paymentId': string;
+  'orderId': string;
+}
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
+export type OrderCreatedEvent = OrderIdPayload;
+export type OrderCancelledEvent = OrderCancelledPayload;
+export type PaymentSucceededEvent = PaymentEventPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -39,6 +53,26 @@ export const OBSERVABILITY_CHANNELS = {
 
 /* Union of every "observability." channel name */
 export type ObservabilityChannel = (typeof OBSERVABILITY_CHANNELS)[keyof typeof OBSERVABILITY_CHANNELS];
+
+/* Channel names in the "order." namespace */
+export const ORDER_CHANNELS = {
+    CREATED: 'order.created',
+    PAID: 'order.paid',
+    SHIPPED: 'order.shipped',
+    CANCELLED: 'order.cancelled',
+} as const;
+
+/* Union of every "order." channel name */
+export type OrderChannel = (typeof ORDER_CHANNELS)[keyof typeof ORDER_CHANNELS];
+
+/* Channel names in the "payment." namespace */
+export const PAYMENT_CHANNELS = {
+    SUCCEEDED: 'payment.succeeded',
+    FAILED: 'payment.failed',
+} as const;
+
+/* Union of every "payment." channel name */
+export type PaymentChannel = (typeof PAYMENT_CHANNELS)[keyof typeof PAYMENT_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",

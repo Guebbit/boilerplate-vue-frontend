@@ -186,7 +186,14 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', `/orders/${ID}`, 'DeleteOrderByIdResponse'],
     ['DELETE', `/orders/${ID}/hard`, 'HardDeleteOrderByIdResponse'],
     ['POST', `/orders/${ID}/cancel`, 'CancelOrderByIdResponse'],
-    ['GET', '/products/categories', 'GetCatalogueFacetsResponse']
+    ['GET', '/products/categories', 'GetCatalogueFacetsResponse'],
+    ['GET', '/webhooks/subscriptions', 'ListWebhookSubscriptionsResponse'],
+    ['POST', '/webhooks/subscriptions', 'CreateWebhookSubscriptionResponse'],
+    ['PATCH', `/webhooks/subscriptions/${ID}`, 'UpdateWebhookSubscriptionResponse'],
+    ['DELETE', `/webhooks/subscriptions/${ID}`, 'DeleteWebhookSubscriptionResponse'],
+    ['GET', '/webhooks/deliveries', 'ListWebhookDeliveriesResponse'],
+    ['POST', `/webhooks/deliveries/${ID}/replay`, 'ReplayWebhookDeliveryResponse'],
+    ['GET', '/webhooks/events', 'ListWebhookEventsResponse']
 ];
 
 /**

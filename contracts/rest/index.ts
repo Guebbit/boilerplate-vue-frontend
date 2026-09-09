@@ -2490,6 +2490,143 @@ export interface ReservationSweepEnvelope {
     data: ReservationSweepResponse;
 }
 
+export interface WebhookSubscription {
+    id: Id;
+    url: string;
+    description?: string;
+    /**
+     * Names from `GET /webhooks/events` this subscription receives.
+     * @minItems 1
+     */
+    eventTypes: string[];
+    enabled: boolean;
+    /** @minimum 0 */
+    consecutiveFailures: number;
+    /** Set once `consecutiveFailures` crosses the auto-disable threshold. */
+    disabledAt?: string;
+    /** The ring's secret ids, oldest first — never the plaintext. */
+    secretIds: string[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface WebhookSubscriptionsResponse {
+    items: WebhookSubscription[];
+    meta: PaginationMeta;
+}
+
+export interface WebhookSubscriptionsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscriptionsResponse;
+}
+
+export interface CreateWebhookSubscriptionRequest {
+    /** Must be `https://`. Validated again, against the resolved IP, on every delivery. */
+    url: string;
+    description?: string;
+    /** @minItems 1 */
+    eventTypes: string[];
+}
+
+export interface WebhookSubscriptionCreated {
+    id: Id;
+    url: string;
+    description?: string;
+    /** @minItems 1 */
+    eventTypes: string[];
+    enabled: boolean;
+    /** @minimum 0 */
+    consecutiveFailures: number;
+    disabledAt?: string;
+    secretIds: string[];
+    createdAt: string;
+    updatedAt: string;
+    /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
+    secret?: string;
+    /** A rotated-in secret's plaintext, present only when `PATCH` was sent with `rotateSecret:true`. */
+    newSecret?: string;
+}
+
+export interface WebhookSubscriptionCreatedEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscriptionCreated;
+}
+
+export interface UpdateWebhookSubscriptionRequest {
+    url?: string;
+    description?: string;
+    /** @minItems 1 */
+    eventTypes?: string[];
+    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
+    enabled?: boolean;
+    /** Add a new secret to the ring; its plaintext comes back once, in `newSecret`. */
+    rotateSecret?: boolean;
+    /** Drop this secret id from the ring — the other half of a rotation, once every consumer has switched. */
+    removeSecretId?: string;
+}
+
+export type WebhookDeliveryStatus =
+    (typeof WebhookDeliveryStatus)[keyof typeof WebhookDeliveryStatus];
+
+export const WebhookDeliveryStatus = {
+    pending: 'pending',
+    'in-flight': 'in-flight',
+    succeeded: 'succeeded',
+    failed: 'failed',
+    exhausted: 'exhausted'
+} as const;
+
+export interface WebhookDelivery {
+    id: Id;
+    subscriptionId: string;
+    eventId: string;
+    eventType: string;
+    /** @minimum 1 */
+    attempt: number;
+    status: WebhookDeliveryStatus;
+    responseCode?: number;
+    durationMs?: number;
+    error?: string;
+    nextAttemptAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface WebhookDeliveriesResponse {
+    items: WebhookDelivery[];
+    meta: PaginationMeta;
+}
+
+export interface WebhookDeliveriesResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookDeliveriesResponse;
+}
+
+export interface WebhookDeliveryEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookDelivery;
+}
+
+export interface WebhookEventCatalogueEntry {
+    name: string;
+    description?: string;
+}
+
+export interface WebhookEventCatalogueResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookEventCatalogueEntry[];
+}
+
 /**
  * Success
  */
@@ -2903,6 +3040,42 @@ export type ListStockMovementsParams = {
      * Narrow to one kind of transition
      */
     reason?: StockMovementReason;
+};
+
+export type ListWebhookSubscriptionsParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Filter by whether the subscription is currently active.
+     */
+    enabled?: boolean;
+};
+
+export type ListWebhookDeliveriesParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    subscriptionId?: string;
+    status?: WebhookDeliveryStatus;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -5284,6 +5457,126 @@ export const sweepReservations = (
     );
 };
 
+/**
+ * Never returns a secret — the ring's plaintext exists only in the response of the
+ * call that minted it (`POST` here, or the rotate action on `PATCH .../{id}`).
+ * @summary List this shop's webhook subscriptions
+ */
+export const listWebhookSubscriptions = (
+    params?: ListWebhookSubscriptionsParams,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionsResponseEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionsResponseEnvelope>(
+        { url: `/webhooks/subscriptions`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Mints the ring's first secret and returns it in plaintext, once — the only
+ * response that ever carries it. `url` must be `https://` and must not resolve to a
+ * private, loopback or link-local address; that check runs again on every delivery,
+ * since a subscription's DNS can change after it is created.
+ * @summary Create a webhook subscription
+ */
+export const createWebhookSubscription = (
+    createWebhookSubscriptionRequest: CreateWebhookSubscriptionRequest,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+        {
+            url: `/webhooks/subscriptions`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createWebhookSubscriptionRequest
+        },
+        options
+    );
+};
+
+/**
+ * Partial update. `rotateSecret: true` adds a new secret to the ring and returns its
+ * plaintext in `newSecret` — the ring then carries two active secrets, and deliveries
+ * sign with both (two space-separated `v1,` values in `webhook-signature`) until
+ * `removeSecretId` names the old one to drop. Both may be sent in the same request.
+ * @summary Update a webhook subscription
+ */
+export const updateWebhookSubscription = (
+    id: string,
+    updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+        {
+            url: `/webhooks/subscriptions/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateWebhookSubscriptionRequest
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the subscription. Its delivery log is left in place, so past attempts stay auditable.
+ * @summary Delete a webhook subscription
+ */
+export const deleteWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/webhooks/subscriptions/${id}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * Every attempt, newest first, optionally filtered by subscription and status.
+ * @summary The delivery log
+ */
+export const listWebhookDeliveries = (
+    params?: ListWebhookDeliveriesParams,
+    options?: SecondParameter<typeof orvalMutator<WebhookDeliveriesResponseEnvelope>>
+) => {
+    return orvalMutator<WebhookDeliveriesResponseEnvelope>(
+        { url: `/webhooks/deliveries`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Signs and POSTs again, synchronously, against the subscription's CURRENT url and
+ * secret ring — not the ones this row was originally attempted with. Updates the same
+ * row: `attempt` increments, `status`/`responseCode`/`durationMs`/`error` reflect this
+ * replay. The single most-requested support action, per the design doc.
+ * @summary Re-send one delivery
+ */
+export const replayWebhookDelivery = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookDeliveryEnvelope>>
+) => {
+    return orvalMutator<WebhookDeliveryEnvelope>(
+        { url: `/webhooks/deliveries/${id}/replay`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Read straight from this module's own `asyncapi.yaml` fragment — the same source
+ * `asyncapi.public.yaml` is generated from — so this list and what the module can
+ * actually fire can never drift apart. See `docs/api/asyncapi-workflow.md`.
+ * @summary The public event catalogue
+ */
+export const listWebhookEvents = (
+    options?: SecondParameter<typeof orvalMutator<WebhookEventCatalogueResponseEnvelope>>
+) => {
+    return orvalMutator<WebhookEventCatalogueResponseEnvelope>(
+        { url: `/webhooks/events`, method: 'GET' },
+        options
+    );
+};
+
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
@@ -5500,3 +5793,22 @@ export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof lis
 export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
 export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>;
 export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>;
+export type ListWebhookSubscriptionsResult = NonNullable<
+    Awaited<ReturnType<typeof listWebhookSubscriptions>>
+>;
+export type CreateWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof createWebhookSubscription>>
+>;
+export type UpdateWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof updateWebhookSubscription>>
+>;
+export type DeleteWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof deleteWebhookSubscription>>
+>;
+export type ListWebhookDeliveriesResult = NonNullable<
+    Awaited<ReturnType<typeof listWebhookDeliveries>>
+>;
+export type ReplayWebhookDeliveryResult = NonNullable<
+    Awaited<ReturnType<typeof replayWebhookDelivery>>
+>;
+export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;

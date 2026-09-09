@@ -7443,3 +7443,354 @@ export const SweepReservationsResponse = zod.strictObject({
             .describe('How many holds this run released.')
     })
 });
+
+/**
+ * Never returns a secret — the ring's plaintext exists only in the response of the
+ * call that minted it (`POST` here, or the rotate action on `PATCH .../{id}`).
+ * @summary List this shop's webhook subscriptions
+ */
+export const listWebhookSubscriptionsQueryPageDefault = 1;
+export const listWebhookSubscriptionsQueryPageMax = 10000;
+
+export const listWebhookSubscriptionsQueryPageSizeDefault = 10;
+export const listWebhookSubscriptionsQueryPageSizeMax = 100;
+
+export const ListWebhookSubscriptionsQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .max(listWebhookSubscriptionsQueryPageMax)
+        .default(listWebhookSubscriptionsQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listWebhookSubscriptionsQueryPageSizeMax)
+        .default(listWebhookSubscriptionsQueryPageSizeDefault),
+    enabled: zod
+        .boolean()
+        .optional()
+        .describe('Filter by whether the subscription is currently active.')
+});
+
+export const listWebhookSubscriptionsResponseDataItemsItemConsecutiveFailuresMin = 0;
+
+export const listWebhookSubscriptionsResponseDataMetaPageDefault = 1;
+export const listWebhookSubscriptionsResponseDataMetaPageMax = 10000;
+
+export const listWebhookSubscriptionsResponseDataMetaPageSizeDefault = 10;
+export const listWebhookSubscriptionsResponseDataMetaPageSizeMax = 100;
+
+export const listWebhookSubscriptionsResponseDataMetaTotalItemsMin = 0;
+
+export const listWebhookSubscriptionsResponseDataMetaTotalPagesMin = 0;
+
+export const ListWebhookSubscriptionsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                url: zod.url(),
+                description: zod.string().optional(),
+                eventTypes: zod
+                    .array(zod.string())
+                    .min(1)
+                    .describe('Names from `GET \/webhooks\/events` this subscription receives.'),
+                enabled: zod.boolean(),
+                consecutiveFailures: zod
+                    .number()
+                    .min(listWebhookSubscriptionsResponseDataItemsItemConsecutiveFailuresMin),
+                disabledAt: zod.iso
+                    .datetime({ offset: true })
+                    .optional()
+                    .describe('Set once `consecutiveFailures` crosses the auto-disable threshold.'),
+                secretIds: zod
+                    .array(zod.string())
+                    .describe("The ring's secret ids, oldest first — never the plaintext."),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listWebhookSubscriptionsResponseDataMetaPageMax)
+                .default(listWebhookSubscriptionsResponseDataMetaPageDefault)
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listWebhookSubscriptionsResponseDataMetaPageSizeMax)
+                .default(listWebhookSubscriptionsResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(listWebhookSubscriptionsResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listWebhookSubscriptionsResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * Mints the ring's first secret and returns it in plaintext, once — the only
+ * response that ever carries it. `url` must be `https://` and must not resolve to a
+ * private, loopback or link-local address; that check runs again on every delivery,
+ * since a subscription's DNS can change after it is created.
+ * @summary Create a webhook subscription
+ */
+
+export const CreateWebhookSubscriptionBody = zod.strictObject({
+    url: zod
+        .url()
+        .describe(
+            'Must be `https:\/\/`. Validated again, against the resolved IP, on every delivery.'
+        ),
+    description: zod.string().optional(),
+    eventTypes: zod.array(zod.string()).min(1)
+});
+
+export const createWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+
+export const CreateWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        url: zod.url(),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(createWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                'The newly minted secret, in plaintext. Shown here once, on creation, and never again.'
+            ),
+        newSecret: zod
+            .string()
+            .optional()
+            .describe(
+                "A rotated-in secret's plaintext, present only when `PATCH` was sent with `rotateSecret:true`."
+            )
+    })
+});
+
+/**
+ * Partial update. `rotateSecret: true` adds a new secret to the ring and returns its
+ * plaintext in `newSecret` — the ring then carries two active secrets, and deliveries
+ * sign with both (two space-separated `v1,` values in `webhook-signature`) until
+ * `removeSecretId` names the old one to drop. Both may be sent in the same request.
+ * @summary Update a webhook subscription
+ */
+export const UpdateWebhookSubscriptionParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const UpdateWebhookSubscriptionBody = zod.strictObject({
+    url: zod.url().optional(),
+    description: zod.string().optional(),
+    eventTypes: zod.array(zod.string()).min(1).optional(),
+    enabled: zod
+        .boolean()
+        .optional()
+        .describe(
+            'Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`.'
+        ),
+    rotateSecret: zod
+        .boolean()
+        .optional()
+        .describe('Add a new secret to the ring; its plaintext comes back once, in `newSecret`.'),
+    removeSecretId: zod
+        .string()
+        .optional()
+        .describe(
+            'Drop this secret id from the ring — the other half of a rotation, once every consumer has switched.'
+        )
+});
+
+export const updateWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+
+export const UpdateWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        url: zod.url(),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(updateWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                'The newly minted secret, in plaintext. Shown here once, on creation, and never again.'
+            ),
+        newSecret: zod
+            .string()
+            .optional()
+            .describe(
+                "A rotated-in secret's plaintext, present only when `PATCH` was sent with `rotateSecret:true`."
+            )
+    })
+});
+
+/**
+ * Permanently removes the subscription. Its delivery log is left in place, so past attempts stay auditable.
+ * @summary Delete a webhook subscription
+ */
+export const DeleteWebhookSubscriptionParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const DeleteWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Every attempt, newest first, optionally filtered by subscription and status.
+ * @summary The delivery log
+ */
+export const listWebhookDeliveriesQueryPageDefault = 1;
+export const listWebhookDeliveriesQueryPageMax = 10000;
+
+export const listWebhookDeliveriesQueryPageSizeDefault = 10;
+export const listWebhookDeliveriesQueryPageSizeMax = 100;
+
+export const ListWebhookDeliveriesQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .max(listWebhookDeliveriesQueryPageMax)
+        .default(listWebhookDeliveriesQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listWebhookDeliveriesQueryPageSizeMax)
+        .default(listWebhookDeliveriesQueryPageSizeDefault),
+    subscriptionId: zod.string().optional(),
+    status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']).optional()
+});
+
+export const listWebhookDeliveriesResponseDataMetaPageDefault = 1;
+export const listWebhookDeliveriesResponseDataMetaPageMax = 10000;
+
+export const listWebhookDeliveriesResponseDataMetaPageSizeDefault = 10;
+export const listWebhookDeliveriesResponseDataMetaPageSizeMax = 100;
+
+export const listWebhookDeliveriesResponseDataMetaTotalItemsMin = 0;
+
+export const listWebhookDeliveriesResponseDataMetaTotalPagesMin = 0;
+
+export const ListWebhookDeliveriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                subscriptionId: zod.string(),
+                eventId: zod.string(),
+                eventType: zod.string(),
+                attempt: zod.number().min(1),
+                status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']),
+                responseCode: zod.number().optional(),
+                durationMs: zod.number().optional(),
+                error: zod.string().optional(),
+                nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listWebhookDeliveriesResponseDataMetaPageMax)
+                .default(listWebhookDeliveriesResponseDataMetaPageDefault)
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listWebhookDeliveriesResponseDataMetaPageSizeMax)
+                .default(listWebhookDeliveriesResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(listWebhookDeliveriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listWebhookDeliveriesResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * Signs and POSTs again, synchronously, against the subscription's CURRENT url and
+ * secret ring — not the ones this row was originally attempted with. Updates the same
+ * row: `attempt` increments, `status`/`responseCode`/`durationMs`/`error` reflect this
+ * replay. The single most-requested support action, per the design doc.
+ * @summary Re-send one delivery
+ */
+export const ReplayWebhookDeliveryParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const ReplayWebhookDeliveryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        subscriptionId: zod.string(),
+        eventId: zod.string(),
+        eventType: zod.string(),
+        attempt: zod.number().min(1),
+        status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']),
+        responseCode: zod.number().optional(),
+        durationMs: zod.number().optional(),
+        error: zod.string().optional(),
+        nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
+    })
+});
+
+/**
+ * Read straight from this module's own `asyncapi.yaml` fragment — the same source
+ * `asyncapi.public.yaml` is generated from — so this list and what the module can
+ * actually fire can never drift apart. See `docs/api/asyncapi-workflow.md`.
+ * @summary The public event catalogue
+ */
+export const ListWebhookEventsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.array(
+        zod.strictObject({
+            name: zod.string(),
+            description: zod.string().optional()
+        })
+    )
+});

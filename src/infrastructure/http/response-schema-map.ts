@@ -124,7 +124,44 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
      * The shop-scoped audit trail (`GET /observability/audit`'s counterpart for a shop role
      * rather than a platform one) — no module reads it yet, so it sits here until one does.
      */
-    { method: 'GET', pattern: /^\/audit$/, schema: schemas.ListAuditEntriesResponse }
+    { method: 'GET', pattern: /^\/audit$/, schema: schemas.ListAuditEntriesResponse },
+    /*
+     * Outbound webhooks: subscriptions, the delivery log, replay, and the public event catalogue.
+     * The backend admin surface is complete; no frontend module claims it yet (deferred — see the
+     * backend's DECISIONS.md, "Frontend admin screen for webhooks"), so these rows sit on this
+     * shelf until one does.
+     */
+    {
+        method: 'GET',
+        pattern: /^\/webhooks\/subscriptions$/,
+        schema: schemas.ListWebhookSubscriptionsResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/webhooks\/subscriptions$/,
+        schema: schemas.CreateWebhookSubscriptionResponse
+    },
+    {
+        method: 'PATCH',
+        pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
+        schema: schemas.UpdateWebhookSubscriptionResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
+        schema: schemas.DeleteWebhookSubscriptionResponse
+    },
+    {
+        method: 'GET',
+        pattern: /^\/webhooks\/deliveries$/,
+        schema: schemas.ListWebhookDeliveriesResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/webhooks\/deliveries\/[^/]+\/replay$/,
+        schema: schemas.ReplayWebhookDeliveryResponse
+    },
+    { method: 'GET', pattern: /^\/webhooks\/events$/, schema: schemas.ListWebhookEventsResponse }
 ];
 
 /**
