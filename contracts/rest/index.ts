@@ -281,6 +281,7 @@ export interface OrderItem {
     product: OrderLineProduct;
     /** @minimum 1 */
     quantity: number;
+    locale: Locale;
 }
 
 /**
@@ -670,6 +671,83 @@ export interface MergeLocaleEntriesRequest {
 
 export interface UpdateLocaleEntryRequest {
     value: string;
+}
+
+/**
+ * A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.
+ * @minLength 1
+ */
+export type TranslatableEntityType = string;
+
+/**
+ * What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one.
+ */
+export type TranslationOrigin = (typeof TranslationOrigin)[keyof typeof TranslationOrigin];
+
+export const TranslationOrigin = {
+    machine: 'machine',
+    human: 'human'
+} as const;
+
+/**
+ * Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose.
+ */
+export type TranslationFields = { [key: string]: string };
+
+/**
+ * One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`.
+ */
+export interface Translation {
+    id: Id;
+    entityType: TranslatableEntityType;
+    entityId: Id;
+    locale: Locale;
+    /** Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose. */
+    fields: TranslationFields;
+    /** Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content. */
+    sourceDigest?: string;
+    origin: TranslationOrigin;
+    /** The `translator` who last wrote this row, for the audit trail. */
+    translatedBy?: Id;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/**
+ * Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.
+ */
+export interface EntityTranslations {
+    entityType: TranslatableEntityType;
+    entityId: Id;
+    translations: Translation[];
+}
+
+export interface EntityTranslationsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: EntityTranslations;
+}
+
+/**
+ * Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates.
+ */
+export type UpsertTranslationRequestFields = { [key: string]: string };
+
+/**
+ * One locale's words for one entity. `origin` defaults to `human` — the door this write shape is exposed on is the `translator`'s, and a machine-produced draft is the exception, not the rule.
+ */
+export interface UpsertTranslationRequest {
+    /** Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. */
+    fields: UpsertTranslationRequestFields;
+    origin?: TranslationOrigin;
+}
+
+/**
+ * One or more locales for one entity, keyed by locale tag. A key absent from this map leaves that locale untouched; see the operation description for what an object and a `null` each mean.
+ */
+export interface UpsertTranslationsRequest {
+    [key: string]: UpsertTranslationRequest | null;
 }
 
 /**
@@ -1778,12 +1856,24 @@ export interface ProductsResponseEnvelope {
     data: ProductsResponse;
 }
 
-export interface UpdateProductRequest {
-    id: Id;
+export interface ProductTranslationFields {
     title: string;
     description?: string;
+}
+
+/**
+ * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.
+ */
+export interface ProductTranslationsWrite {
+    [key: string]: ProductTranslationFields | null;
+}
+
+export interface CreateProductRequest {
+    translations: ProductTranslationsWrite;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    onHand?: number;
     active?: boolean;
     requiresShipping?: boolean;
     imageUrl?: ImageUrl;
@@ -1791,12 +1881,13 @@ export interface UpdateProductRequest {
     tags?: string[];
 }
 
-export interface UpdateProductRequestMultipart {
-    id: Id;
-    title: string;
-    description?: string;
+export interface CreateProductRequestMultipart {
+    /** JSON-encoded `ProductTranslationsWrite`. */
+    translations: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    onHand?: number;
     active?: boolean;
     requiresShipping?: boolean;
     /** Optional product image */
@@ -1810,35 +1901,6 @@ export interface ProductEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Product;
-}
-
-export interface CreateProductRequest {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    onHand?: number;
-    description?: string;
-    active?: boolean;
-    requiresShipping?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface CreateProductRequestMultipart {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    onHand?: number;
-    description?: string;
-    active?: boolean;
-    requiresShipping?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
 }
 
 export interface DeleteProductRequest {
@@ -1864,11 +1926,10 @@ export interface CatalogueFacetsEnvelope {
     data: CatalogueFacetsResponse;
 }
 
-export interface UpdateProductByIdRequest {
-    title: string;
-    description?: string;
+export interface UpdateProductRequest {
+    translations?: ProductTranslationsWrite;
     /** @minimum 0 */
-    price: number;
+    price?: number;
     active?: boolean;
     requiresShipping?: boolean;
     imageUrl?: ImageUrl;
@@ -1876,17 +1937,53 @@ export interface UpdateProductByIdRequest {
     tags?: string[];
 }
 
-export interface UpdateProductByIdRequestMultipart {
-    title: string;
-    description?: string;
+export interface UpdateProductRequestMultipart {
+    /** JSON-encoded `ProductTranslationsWrite`. */
+    translations?: string;
     /** @minimum 0 */
-    price: number;
+    price?: number;
     active?: boolean;
     requiresShipping?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
     categories?: string[];
     tags?: string[];
+}
+
+export type ProductAdminTranslations = { [key: string]: ProductTranslationFields };
+
+/**
+ * A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source.
+ */
+export interface ProductAdmin {
+    id: Id;
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    readonly onHand?: number;
+    /** @minimum 0 */
+    readonly reserved?: number;
+    /** @minimum 0 */
+    readonly available?: number;
+    description?: string;
+    active?: boolean;
+    requiresShipping?: boolean;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    translations: ProductAdminTranslations;
+}
+
+export interface ProductAdminEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ProductAdmin;
 }
 
 export interface SearchProductsRequest {
@@ -3098,6 +3195,62 @@ export const deleteLocaleEntry = (
 };
 
 /**
+ * Every locale this entity has a row for, in one response — the admin shape a
+ * translation screen reads as a whole. A public read resolves to one language
+ * server-side; this is the only door that shows every language at once.
+ * @summary Read every translation an entity has
+ */
+export const getEntityTranslations = (
+    entityType: string,
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+) => {
+    return orvalMutator<EntityTranslationsEnvelope>(
+        { url: `/locales/translations/${entityType}/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
+ * signals inside the map, and no way to mistake one for another:
+ *
+ * | the body says      | the server does                                    |
+ * | ------------------ | --------------------------------------------------- |
+ * | key absent         | leaves that locale's row exactly as it is            |
+ * | `"it": { … }`      | upserts that locale's row — created or fully replaced |
+ * | `"it": null`       | deletes that locale's row                            |
+ *
+ * An empty `fields` object is a 422, never a delete — deletion is `null`, spent
+ * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
+ * never delete translated work. `null` on the fallback locale is a 422: deleting it
+ * would leave the entity with nothing to fall back to.
+ *
+ * 422 equally when a named locale does not exist or is not `active` in the `locales`
+ * collection, and when `fields` names a key the `translatables` registry does not
+ * declare for this `entityType` — the pointer names the locale, e.g.
+ * `translations.it.title`, so an editor with several tabs open can tell which one
+ * failed.
+ * @summary Merge one or more of an entity's translations
+ */
+export const upsertEntityTranslations = (
+    entityType: string,
+    id: string,
+    upsertTranslationsRequest: UpsertTranslationsRequest,
+    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+) => {
+    return orvalMutator<EntityTranslationsEnvelope>(
+        {
+            url: `/locales/translations/${entityType}/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: upsertTranslationsRequest
+        },
+        options
+    );
+};
+
+/**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
@@ -4244,7 +4397,7 @@ export const listProducts = (
 };
 
 /**
- * Creates a new product with optional image upload
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows.
  * @summary Create product
  */
 export const createProduct = (
@@ -4263,7 +4416,7 @@ export const createProduct = (
 };
 
 /**
- * Creates a new product with optional image upload
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows.
  * @summary Create product
  */
 export const createProductWithMultipart = (
@@ -4271,13 +4424,10 @@ export const createProductWithMultipart = (
     options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
     const formData = new FormData();
-    formData.append(`title`, createProductRequestMultipart.title);
+    formData.append(`translations`, createProductRequestMultipart.translations);
     formData.append(`price`, createProductRequestMultipart.price.toString());
     if (createProductRequestMultipart.onHand !== undefined) {
         formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
-    }
-    if (createProductRequestMultipart.description !== undefined) {
-        formData.append(`description`, createProductRequestMultipart.description);
     }
     if (createProductRequestMultipart.active !== undefined) {
         formData.append(`active`, createProductRequestMultipart.active.toString());
@@ -4304,72 +4454,6 @@ export const createProductWithMultipart = (
         {
             url: `/products`,
             method: 'POST',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
-
-/**
- * Updates an existing product with optional image upload
- * @summary Edit product
- */
-export const updateProduct = (
-    updateProductRequest: UpdateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
-) => {
-    return orvalMutator<ProductEnvelope>(
-        {
-            url: `/products`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateProductRequest
-        },
-        options
-    );
-};
-
-/**
- * Updates an existing product with optional image upload
- * @summary Edit product
- */
-export const updateProductWithMultipart = (
-    updateProductRequestMultipart: UpdateProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
-) => {
-    const formData = new FormData();
-    formData.append(`id`, updateProductRequestMultipart.id);
-    formData.append(`title`, updateProductRequestMultipart.title);
-    if (updateProductRequestMultipart.description !== undefined) {
-        formData.append(`description`, updateProductRequestMultipart.description);
-    }
-    formData.append(`price`, updateProductRequestMultipart.price.toString());
-    if (updateProductRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateProductRequestMultipart.active.toString());
-    }
-    if (updateProductRequestMultipart.requiresShipping !== undefined) {
-        formData.append(
-            `requiresShipping`,
-            updateProductRequestMultipart.requiresShipping.toString()
-        );
-    }
-    if (updateProductRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
-    }
-    if (updateProductRequestMultipart.categories !== undefined) {
-        updateProductRequestMultipart.categories.forEach((value) =>
-            formData.append(`categories`, value)
-        );
-    }
-    if (updateProductRequestMultipart.tags !== undefined) {
-        updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
-    }
-
-    return orvalMutator<ProductEnvelope>(
-        {
-            url: `/products`,
-            method: 'PUT',
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
         },
@@ -4423,65 +4507,94 @@ export const getProductById = (
 };
 
 /**
- * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+ * Updates the product identified by `{id}` in the path, merging. Every field but
+ * `translations` replaces the stored value when sent; `translations` merges one
+ * locale at a time — three signals, and no way to mistake one for another:
+ *
+ * | the body says      | the server does                        |
+ * | ------------------- | --------------------------------------- |
+ * | `"it"` absent       | leaves the Italian row exactly as it is |
+ * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
+ * | `"it": null`        | deletes the Italian row                 |
+ *
+ * An empty translation object is a 422, never a delete — deletion is `null`, spent
+ * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
+ * never delete translated work. `null` on the fallback locale is a 422: deleting it
+ * would leave the product with nothing to fall back to. A validation failure names
+ * the locale in its pointer, e.g. `translations.it.title`.
  * @summary Edit product
  */
 export const updateProductById = (
     id: string,
-    updateProductByIdRequest: UpdateProductByIdRequest,
+    updateProductRequest: UpdateProductRequest,
     options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
     return orvalMutator<ProductEnvelope>(
         {
             url: `/products/${id}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: updateProductByIdRequest
+            data: updateProductRequest
         },
         options
     );
 };
 
 /**
- * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+ * Updates the product identified by `{id}` in the path, merging. Every field but
+ * `translations` replaces the stored value when sent; `translations` merges one
+ * locale at a time — three signals, and no way to mistake one for another:
+ *
+ * | the body says      | the server does                        |
+ * | ------------------- | --------------------------------------- |
+ * | `"it"` absent       | leaves the Italian row exactly as it is |
+ * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
+ * | `"it": null`        | deletes the Italian row                 |
+ *
+ * An empty translation object is a 422, never a delete — deletion is `null`, spent
+ * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
+ * never delete translated work. `null` on the fallback locale is a 422: deleting it
+ * would leave the product with nothing to fall back to. A validation failure names
+ * the locale in its pointer, e.g. `translations.it.title`.
  * @summary Edit product
  */
 export const updateProductByIdWithMultipart = (
     id: string,
-    updateProductByIdRequestMultipart: UpdateProductByIdRequestMultipart,
+    updateProductRequestMultipart: UpdateProductRequestMultipart,
     options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
     const formData = new FormData();
-    formData.append(`title`, updateProductByIdRequestMultipart.title);
-    if (updateProductByIdRequestMultipart.description !== undefined) {
-        formData.append(`description`, updateProductByIdRequestMultipart.description);
+    if (updateProductRequestMultipart.translations !== undefined) {
+        formData.append(`translations`, updateProductRequestMultipart.translations);
     }
-    formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
-    if (updateProductByIdRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
+    if (updateProductRequestMultipart.price !== undefined) {
+        formData.append(`price`, updateProductRequestMultipart.price.toString());
     }
-    if (updateProductByIdRequestMultipart.requiresShipping !== undefined) {
+    if (updateProductRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateProductRequestMultipart.active.toString());
+    }
+    if (updateProductRequestMultipart.requiresShipping !== undefined) {
         formData.append(
             `requiresShipping`,
-            updateProductByIdRequestMultipart.requiresShipping.toString()
+            updateProductRequestMultipart.requiresShipping.toString()
         );
     }
-    if (updateProductByIdRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);
+    if (updateProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
     }
-    if (updateProductByIdRequestMultipart.categories !== undefined) {
-        updateProductByIdRequestMultipart.categories.forEach((value) =>
+    if (updateProductRequestMultipart.categories !== undefined) {
+        updateProductRequestMultipart.categories.forEach((value) =>
             formData.append(`categories`, value)
         );
     }
-    if (updateProductByIdRequestMultipart.tags !== undefined) {
-        updateProductByIdRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    if (updateProductRequestMultipart.tags !== undefined) {
+        updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
     }
 
     return orvalMutator<ProductEnvelope>(
         {
             url: `/products/${id}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
         },
@@ -4507,6 +4620,20 @@ export const deleteProductById = (
             data: hardDeleteRequest,
             params
         },
+        options
+    );
+};
+
+/**
+ * Every language this product has a row for, plus its price/stock/image — the shape the editor's form reads to populate its tabs. Unlike `GET /products/{id}`, this does not resolve to one language and is never cached: it's the screen someone is actively editing, the same reasoning `GET /locales/{locale}/entries` already applies.
+ * @summary Product, every language at once
+ */
+export const getProductAdmin = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ProductAdminEnvelope>>
+) => {
+    return orvalMutator<ProductAdminEnvelope>(
+        { url: `/products/${id}/admin`, method: 'GET' },
         options
     );
 };
@@ -5161,6 +5288,12 @@ export type ReplaceLocaleEntriesResult = NonNullable<
 export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>;
 export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
+export type GetEntityTranslationsResult = NonNullable<
+    Awaited<ReturnType<typeof getEntityTranslations>>
+>;
+export type UpsertEntityTranslationsResult = NonNullable<
+    Awaited<ReturnType<typeof upsertEntityTranslations>>
+>;
 export type GetObservabilityEventsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityEvents>>
 >;
@@ -5286,10 +5419,6 @@ export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createPr
 export type CreateProductWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof createProductWithMultipart>>
 >;
-export type UpdateProductResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>;
-export type UpdateProductWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateProductWithMultipart>>
->;
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
@@ -5298,6 +5427,7 @@ export type UpdateProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
 >;
 export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
+export type GetProductAdminResult = NonNullable<Awaited<ReturnType<typeof getProductAdmin>>>;
 export type HardDeleteProductByIdResult = NonNullable<
     Awaited<ReturnType<typeof hardDeleteProductById>>
 >;

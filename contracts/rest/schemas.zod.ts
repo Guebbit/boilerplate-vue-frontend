@@ -901,6 +901,214 @@ export const DeleteLocaleEntryResponse = zod.strictObject({
 });
 
 /**
+ * Every locale this entity has a row for, in one response — the admin shape a
+ * translation screen reads as a whole. A public read resolves to one language
+ * server-side; this is the only door that shows every language at once.
+ * @summary Read every translation an entity has
+ */
+
+export const GetEntityTranslationsParams = zod.strictObject({
+    entityType: zod.string().min(1).describe('A `translatables` registry key — `product` in V1.'),
+    id: zod.string().describe('Identifier of the translated entity — a product id, in V1.')
+});
+
+export const getEntityTranslationsResponseDataTranslationsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const GetEntityTranslationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            entityType: zod
+                .string()
+                .min(1)
+                .describe(
+                    'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                ),
+            entityId: zod.string().describe('Resource identifier'),
+            translations: zod.array(
+                zod
+                    .strictObject({
+                        id: zod.string().describe('Resource identifier'),
+                        entityType: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                            ),
+                        entityId: zod.string().describe('Resource identifier'),
+                        locale: zod
+                            .string()
+                            .regex(getEntityTranslationsResponseDataTranslationsItemLocaleRegExp)
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        fields: zod
+                            .record(zod.string(), zod.string())
+                            .describe(
+                                'Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose.'
+                            ),
+                        sourceDigest: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                "Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content."
+                            ),
+                        origin: zod
+                            .enum(['machine', 'human'])
+                            .describe(
+                                "What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one."
+                            ),
+                        translatedBy: zod
+                            .string()
+                            .describe('Resource identifier')
+                            .optional()
+                            .describe(
+                                'The `translator` who last wrote this row, for the audit trail.'
+                            ),
+                        createdAt: zod.iso.datetime({ offset: true }),
+                        updatedAt: zod.iso.datetime({ offset: true })
+                    })
+                    .describe(
+                        "One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`."
+                    )
+            )
+        })
+        .describe(
+            'Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.'
+        )
+});
+
+/**
+ * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
+ * signals inside the map, and no way to mistake one for another:
+ *
+ * | the body says      | the server does                                    |
+ * | ------------------ | --------------------------------------------------- |
+ * | key absent         | leaves that locale's row exactly as it is            |
+ * | `"it": { … }`      | upserts that locale's row — created or fully replaced |
+ * | `"it": null`       | deletes that locale's row                            |
+ *
+ * An empty `fields` object is a 422, never a delete — deletion is `null`, spent
+ * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
+ * never delete translated work. `null` on the fallback locale is a 422: deleting it
+ * would leave the entity with nothing to fall back to.
+ *
+ * 422 equally when a named locale does not exist or is not `active` in the `locales`
+ * collection, and when `fields` names a key the `translatables` registry does not
+ * declare for this `entityType` — the pointer names the locale, e.g.
+ * `translations.it.title`, so an editor with several tabs open can tell which one
+ * failed.
+ * @summary Merge one or more of an entity's translations
+ */
+
+export const UpsertEntityTranslationsParams = zod.strictObject({
+    entityType: zod.string().min(1).describe('A `translatables` registry key — `product` in V1.'),
+    id: zod.string().describe('Identifier of the translated entity — a product id, in V1.')
+});
+
+export const upsertEntityTranslationsBodyOneOriginDefault = `human`;
+
+export const UpsertEntityTranslationsBody = zod
+    .record(
+        zod.string(),
+        zod
+            .strictObject({
+                fields: zod
+                    .record(zod.string(), zod.string())
+                    .describe(
+                        'Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates.'
+                    ),
+                origin: zod
+                    .enum(['machine', 'human'])
+                    .describe(
+                        "What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one."
+                    )
+                    .default(upsertEntityTranslationsBodyOneOriginDefault)
+            })
+            .nullable()
+            .describe(
+                "Upserts this locale's row when an object, deletes it when `null`. A key this map does not name is left exactly as it is — see the operation description for the full three-way table."
+            )
+    )
+    .describe(
+        'One or more locales for one entity, keyed by locale tag. A key absent from this map leaves that locale untouched; see the operation description for what an object and a `null` each mean.'
+    );
+
+export const upsertEntityTranslationsResponseDataTranslationsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const UpsertEntityTranslationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            entityType: zod
+                .string()
+                .min(1)
+                .describe(
+                    'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                ),
+            entityId: zod.string().describe('Resource identifier'),
+            translations: zod.array(
+                zod
+                    .strictObject({
+                        id: zod.string().describe('Resource identifier'),
+                        entityType: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                            ),
+                        entityId: zod.string().describe('Resource identifier'),
+                        locale: zod
+                            .string()
+                            .regex(upsertEntityTranslationsResponseDataTranslationsItemLocaleRegExp)
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        fields: zod
+                            .record(zod.string(), zod.string())
+                            .describe(
+                                'Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose.'
+                            ),
+                        sourceDigest: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                "Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content."
+                            ),
+                        origin: zod
+                            .enum(['machine', 'human'])
+                            .describe(
+                                "What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one."
+                            ),
+                        translatedBy: zod
+                            .string()
+                            .describe('Resource identifier')
+                            .optional()
+                            .describe(
+                                'The `translator` who last wrote this row, for the audit trail.'
+                            ),
+                        createdAt: zod.iso.datetime({ offset: true }),
+                        updatedAt: zod.iso.datetime({ offset: true })
+                    })
+                    .describe(
+                        "One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`."
+                    )
+            )
+        })
+        .describe(
+            'Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.'
+        )
+});
+
+/**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
@@ -2264,6 +2472,9 @@ export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
 export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault = true;
+export const exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const exportAccountDataResponseDataOrdersItemTotalItemsMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemTotalQuantityMin = 0;
@@ -2372,7 +2583,13 @@ export const ExportAccountDataResponse = zod.strictObject({
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
                             deletedAt: zod.iso.datetime({ offset: true }).optional()
                         }),
-                        quantity: zod.number().min(1)
+                        quantity: zod.number().min(1),
+                        locale: zod
+                            .string()
+                            .regex(exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp)
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            )
                     })
                 ),
                 totalItems: zod
@@ -3934,7 +4151,7 @@ export const ListProductsResponse = zod.strictObject({
 });
 
 /**
- * Creates a new product with optional image upload
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows.
  * @summary Create product
  */
 export const createProductBodyPriceMin = 0;
@@ -3946,10 +4163,21 @@ export const createProductBodyActiveDefault = true;
 export const createProductBodyRequiresShippingDefault = true;
 
 export const CreateProductBody = zod.strictObject({
-    title: zod.string(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod
+                .strictObject({
+                    title: zod.string(),
+                    description: zod.string().optional()
+                })
+                .nullable()
+        )
+        .describe(
+            'One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.'
+        ),
     price: zod.number().min(createProductBodyPriceMin),
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
-    description: zod.string().optional(),
     active: zod.boolean().default(createProductBodyActiveDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     imageUrl: zod
@@ -3998,85 +4226,6 @@ export const CreateProductResponse = zod.strictObject({
         description: zod.string().optional(),
         active: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
-        imageUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-            ),
-        thumbnailUrl: zod
-            .string()
-            .optional()
-            .describe(
-                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-            ),
-        categories: zod.array(zod.string()).optional(),
-        tags: zod.array(zod.string()).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-
-/**
- * Updates an existing product with optional image upload
- * @summary Edit product
- */
-export const updateProductBodyPriceMin = 0;
-
-export const UpdateProductBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier'),
-    title: zod.string(),
-    description: zod.string().optional(),
-    price: zod.number().min(updateProductBodyPriceMin),
-    active: zod.boolean().optional(),
-    requiresShipping: zod.boolean().optional(),
-    imageUrl: zod
-        .string()
-        .optional()
-        .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
-});
-
-export const updateProductResponseDataPriceMin = 0;
-
-export const updateProductResponseDataOnHandMin = 0;
-
-export const updateProductResponseDataReservedMin = 0;
-
-export const updateProductResponseDataAvailableMin = 0;
-
-export const updateProductResponseDataRequiresShippingDefault = true;
-
-export const UpdateProductResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod.string().describe('Resource identifier'),
-        title: zod.string(),
-        price: zod.number().min(updateProductResponseDataPriceMin),
-        onHand: zod
-            .number()
-            .min(updateProductResponseDataOnHandMin)
-            .optional()
-            .describe('Units physically present, whether or not they are spoken for.'),
-        reserved: zod
-            .number()
-            .min(updateProductResponseDataReservedMin)
-            .optional()
-            .describe('Units held by an open order — present, but not for sale.'),
-        available: zod
-            .number()
-            .min(updateProductResponseDataAvailableMin)
-            .optional()
-            .describe('What a customer may actually buy. Derived from the two counters above.'),
-        description: zod.string().optional(),
-        active: zod.boolean().optional(),
-        requiresShipping: zod.boolean().default(updateProductResponseDataRequiresShippingDefault),
         imageUrl: zod
             .string()
             .optional()
@@ -4213,7 +4362,21 @@ export const GetProductByIdResponse = zod.strictObject({
 });
 
 /**
- * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+ * Updates the product identified by `{id}` in the path, merging. Every field but
+ * `translations` replaces the stored value when sent; `translations` merges one
+ * locale at a time — three signals, and no way to mistake one for another:
+ *
+ * | the body says      | the server does                        |
+ * | ------------------- | --------------------------------------- |
+ * | `"it"` absent       | leaves the Italian row exactly as it is |
+ * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
+ * | `"it": null`        | deletes the Italian row                 |
+ *
+ * An empty translation object is a 422, never a delete — deletion is `null`, spent
+ * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
+ * never delete translated work. `null` on the fallback locale is a 422: deleting it
+ * would leave the product with nothing to fall back to. A validation failure names
+ * the locale in its pointer, e.g. `translations.it.title`.
  * @summary Edit product
  */
 export const UpdateProductByIdParams = zod.strictObject({
@@ -4223,9 +4386,21 @@ export const UpdateProductByIdParams = zod.strictObject({
 export const updateProductByIdBodyPriceMin = 0;
 
 export const UpdateProductByIdBody = zod.strictObject({
-    title: zod.string(),
-    description: zod.string().optional(),
-    price: zod.number().min(updateProductByIdBodyPriceMin),
+    translations: zod
+        .record(
+            zod.string(),
+            zod
+                .strictObject({
+                    title: zod.string(),
+                    description: zod.string().optional()
+                })
+                .nullable()
+        )
+        .optional()
+        .describe(
+            'One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.'
+        ),
+    price: zod.number().min(updateProductByIdBodyPriceMin).optional(),
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     imageUrl: zod
@@ -4323,6 +4498,71 @@ export const DeleteProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Every language this product has a row for, plus its price/stock/image — the shape the editor's form reads to populate its tabs. Unlike `GET /products/{id}`, this does not resolve to one language and is never cached: it's the screen someone is actively editing, the same reasoning `GET /locales/{locale}/entries` already applies.
+ * @summary Product, every language at once
+ */
+export const GetProductAdminParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const getProductAdminResponseDataPriceMin = 0;
+
+export const getProductAdminResponseDataOnHandMin = 0;
+
+export const getProductAdminResponseDataReservedMin = 0;
+
+export const getProductAdminResponseDataAvailableMin = 0;
+
+export const getProductAdminResponseDataRequiresShippingDefault = true;
+
+export const GetProductAdminResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            title: zod.string(),
+            price: zod.number().min(getProductAdminResponseDataPriceMin),
+            onHand: zod.number().min(getProductAdminResponseDataOnHandMin).optional(),
+            reserved: zod.number().min(getProductAdminResponseDataReservedMin).optional(),
+            available: zod.number().min(getProductAdminResponseDataAvailableMin).optional(),
+            description: zod.string().optional(),
+            active: zod.boolean().optional(),
+            requiresShipping: zod
+                .boolean()
+                .default(getProductAdminResponseDataRequiresShippingDefault),
+            imageUrl: zod
+                .string()
+                .optional()
+                .describe(
+                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                ),
+            thumbnailUrl: zod
+                .string()
+                .optional()
+                .describe(
+                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                ),
+            categories: zod.array(zod.string()).optional(),
+            tags: zod.array(zod.string()).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            translations: zod.record(
+                zod.string(),
+                zod.strictObject({
+                    title: zod.string(),
+                    description: zod.string().optional()
+                })
+            )
+        })
+        .describe(
+            "A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`\/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source."
+        )
 });
 
 /**
@@ -4784,6 +5024,9 @@ export const CheckoutBody = zod.strictObject({
 export const checkoutResponseDataOrderItemsItemProductPriceMin = 0;
 
 export const checkoutResponseDataOrderItemsItemProductRequiresShippingDefault = true;
+export const checkoutResponseDataOrderItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const checkoutResponseDataOrderTotalItemsMin = 0;
 
 export const checkoutResponseDataOrderTotalQuantityMin = 0;
@@ -4832,7 +5075,13 @@ export const CheckoutResponse = zod.strictObject({
                         updatedAt: zod.iso.datetime({ offset: true }).optional(),
                         deletedAt: zod.iso.datetime({ offset: true }).optional()
                     }),
-                    quantity: zod.number().min(1)
+                    quantity: zod.number().min(1),
+                    locale: zod
+                        .string()
+                        .regex(checkoutResponseDataOrderItemsItemLocaleRegExp)
+                        .describe(
+                            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                        )
                 })
             ),
             totalItems: zod
@@ -5082,6 +5331,9 @@ export const ListOrdersQueryParams = zod.strictObject({
 export const listOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
 export const listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
+export const listOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const listOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const listOrdersResponseDataItemsItemTotalQuantityMin = 0;
@@ -5143,7 +5395,13 @@ export const ListOrdersResponse = zod.strictObject({
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
                             deletedAt: zod.iso.datetime({ offset: true }).optional()
                         }),
-                        quantity: zod.number().min(1)
+                        quantity: zod.number().min(1),
+                        locale: zod
+                            .string()
+                            .regex(listOrdersResponseDataItemsItemItemsItemLocaleRegExp)
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            )
                     })
                 ),
                 totalItems: zod
@@ -5275,6 +5533,9 @@ export const CreateOrderBody = zod
 export const createOrderResponseDataItemsItemProductPriceMin = 0;
 
 export const createOrderResponseDataItemsItemProductRequiresShippingDefault = true;
+export const createOrderResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const createOrderResponseDataTotalItemsMin = 0;
 
 export const createOrderResponseDataTotalQuantityMin = 0;
@@ -5320,7 +5581,13 @@ export const CreateOrderResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
                     deletedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(createOrderResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    )
             })
         ),
         totalItems: zod
@@ -5436,6 +5703,9 @@ export const UpdateOrderBody = zod.strictObject({
 export const updateOrderResponseDataItemsItemProductPriceMin = 0;
 
 export const updateOrderResponseDataItemsItemProductRequiresShippingDefault = true;
+export const updateOrderResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const updateOrderResponseDataTotalItemsMin = 0;
 
 export const updateOrderResponseDataTotalQuantityMin = 0;
@@ -5481,7 +5751,13 @@ export const UpdateOrderResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
                     deletedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(updateOrderResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    )
             })
         ),
         totalItems: zod
@@ -5638,6 +5914,9 @@ export const SearchOrdersBody = zod.strictObject({
 export const searchOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
 export const searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
+export const searchOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const searchOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const searchOrdersResponseDataItemsItemTotalQuantityMin = 0;
@@ -5699,7 +5978,13 @@ export const SearchOrdersResponse = zod.strictObject({
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
                             deletedAt: zod.iso.datetime({ offset: true }).optional()
                         }),
-                        quantity: zod.number().min(1)
+                        quantity: zod.number().min(1),
+                        locale: zod
+                            .string()
+                            .regex(searchOrdersResponseDataItemsItemItemsItemLocaleRegExp)
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            )
                     })
                 ),
                 totalItems: zod
@@ -5819,6 +6104,9 @@ export const GetOrderByIdParams = zod.strictObject({
 export const getOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const getOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const getOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const getOrderByIdResponseDataTotalItemsMin = 0;
 
 export const getOrderByIdResponseDataTotalQuantityMin = 0;
@@ -5864,7 +6152,13 @@ export const GetOrderByIdResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
                     deletedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(getOrderByIdResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    )
             })
         ),
         totalItems: zod
@@ -5982,6 +6276,9 @@ export const UpdateOrderByIdBody = zod.strictObject({
 export const updateOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const updateOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const updateOrderByIdResponseDataTotalItemsMin = 0;
 
 export const updateOrderByIdResponseDataTotalQuantityMin = 0;
@@ -6029,7 +6326,13 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
                     deletedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(updateOrderByIdResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    )
             })
         ),
         totalItems: zod
@@ -6187,6 +6490,9 @@ export const CancelOrderByIdBody = zod
 export const cancelOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const cancelOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const cancelOrderByIdResponseDataTotalItemsMin = 0;
 
 export const cancelOrderByIdResponseDataTotalQuantityMin = 0;
@@ -6234,7 +6540,13 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
                     deletedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(cancelOrderByIdResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    )
             })
         ),
         totalItems: zod
