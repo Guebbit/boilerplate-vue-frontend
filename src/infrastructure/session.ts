@@ -170,9 +170,8 @@ export const useSessionStore = defineStore('session', () => {
      * Whether the visitor may read entity translations, over the generic
      * `/locales/translations/{entityType}/{id}` door — the `translator` role's key, distinct from
      * {@link isAdmin} on purpose: that role never gets `products.manage`, so a mistranslation can
-     * never become a mischanged price. `route
-     * meta.access: 'translator'` reads this (alongside `isAdmin`, who can reach anything) rather
-     * than gating the screen on full admin.
+     * never become a mischanged price. `route meta.access: 'translator'` reads this (alongside
+     * `isAdmin`, who can reach anything) rather than gating the screen on full admin.
      */
     const canReadTranslations = computed(
         () => Boolean(accessToken.value && viewer.value) && ability.value.can('read', 'Translation')
