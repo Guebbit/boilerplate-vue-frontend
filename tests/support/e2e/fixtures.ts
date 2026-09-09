@@ -225,29 +225,45 @@ const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<str
 const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
     apiAs<T>('admin', path, method, body);
 
-Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) =>
-    adminApi<ProductLike>('/products', 'POST', {
-        // Unique per test, so a title assertion cannot pass on a row some other case created.
-        title: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
+/**
+ * The deployment's source language for product content — `NODE_FALLBACK_LOCALE` on the paired
+ * backend, `en` by default and never overridden in this demo stack (the frontend's own
+ * `VITE_APP_FALLBACK_LOCALE` defaults the same way). The write contract requires this locale's
+ * entry on every `POST /products` — there is no discoverable-at-runtime source for it here, so
+ * this fixture assumes the default the way `PUBLIC_PAGE_SIZE` above assumes the contract's
+ * page-size maximum.
+ */
+const FALLBACK_LOCALE = 'en';
+
+Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) => {
+    // Callers may override `translations` wholesale (a multi-language fixture) or just pass a
+    // flat `title`, which is folded into the fallback locale's entry below — the shape most
+    // specs actually want to write.
+    const { title, translations, ...rest } = overrides;
+    return adminApi<ProductLike>('/products', 'POST', {
         price: 10,
-        ...overrides
-    })
-);
+        ...rest,
+        translations: translations ?? {
+            [FALLBACK_LOCALE]: {
+                // Unique per test, so a title assertion cannot pass on a row some other case
+                // created.
+                title:
+                    title ?? `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`
+            }
+        }
+    });
+});
 
 Cypress.Commands.add('softDeleteProduct', (id: string) =>
     adminApi<null>(`/products/${id}`, 'DELETE')
 );
 
 /*
- * `title` and `price` ride along because `UpdateProductByIdRequest` declares them REQUIRED: the
- * update route replaces rather than patches, so a body carrying only `active` is a 422.
+ * `PATCH` merges: unlike the `PUT` this replaced, a body naming only `active` leaves everything
+ * else — including every language — exactly as it was.
  */
 Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
-    adminApi<null>(`/products/${product.id}`, 'PUT', {
-        title: product.title,
-        price: product.price,
-        active: false
-    })
+    adminApi<null>(`/products/${product.id}`, 'PATCH', { active: false })
 );
 
 Cypress.Commands.add('accountInRole', (role: E2ERole) =>

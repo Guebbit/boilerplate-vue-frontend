@@ -39,12 +39,14 @@ describe('products schema messages', () => {
     afterEach(() => setLocale('en'));
 
     it('resolves in English, then in Italian, from the same schema object', () => {
-        expect(messagesOf(productsSchema, { title: '', price: -1 })).toEqual(
+        const invalid = { price: -1, translations: { en: { title: '' } } };
+
+        expect(messagesOf(productsSchema, invalid)).toEqual(
             expect.arrayContaining([enMessages['products-form']['title-required']])
         );
 
         return setLocale('it').then(() => {
-            expect(messagesOf(productsSchema, { title: '', price: -1 })).toEqual(
+            expect(messagesOf(productsSchema, invalid)).toEqual(
                 expect.arrayContaining([itMessages['products-form']['title-required']])
             );
         });

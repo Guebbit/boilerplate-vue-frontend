@@ -75,7 +75,13 @@
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to product details",
         "button-go-to-list": "Back to products list",
-        "success-update": "Product updated successfully"
+        "success-update": "Product updated successfully",
+        "button-translations": "Translations"
+    },
+    "product-translation-tabs": {
+        "error-count": "{count} error(s)",
+        "button-remove-language": "Remove {name}",
+        "label-add-language": "Add language"
     },
     "navigation": {
         "label-products-list": "@:generic.product"

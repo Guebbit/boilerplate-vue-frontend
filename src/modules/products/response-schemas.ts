@@ -17,7 +17,6 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 export const productsResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/products$/, schema: schemas.ListProductsResponse },
     { method: 'POST', pattern: /^\/products$/, schema: schemas.CreateProductResponse },
-    { method: 'PUT', pattern: /^\/products$/, schema: schemas.UpdateProductResponse },
     { method: 'DELETE', pattern: /^\/products$/, schema: schemas.DeleteProductResponse },
     { method: 'POST', pattern: /^\/products\/search$/, schema: schemas.SearchProductsResponse },
     /* Before the `[^/]+` by-id row: `find()` returns the first match, and `categories` is a
@@ -29,11 +28,18 @@ export const productsResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetCatalogueFacetsResponse
     },
     { method: 'GET', pattern: /^\/products\/[^/]+$/, schema: schemas.GetProductByIdResponse },
-    { method: 'PUT', pattern: /^\/products\/[^/]+$/, schema: schemas.UpdateProductByIdResponse },
+    // PATCH, not PUT: the edit endpoint MERGES rather than replaces, and the choice lives in the
+    // method.
+    { method: 'PATCH', pattern: /^\/products\/[^/]+$/, schema: schemas.UpdateProductByIdResponse },
     {
         method: 'DELETE',
         pattern: /^\/products\/[^/]+$/,
         schema: schemas.DeleteProductByIdResponse
+    },
+    {
+        method: 'GET',
+        pattern: /^\/products\/[^/]+\/admin$/,
+        schema: schemas.GetProductAdminResponse
     },
     {
         method: 'DELETE',

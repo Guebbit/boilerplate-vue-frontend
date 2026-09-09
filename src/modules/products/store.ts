@@ -15,6 +15,7 @@ import {
     searchProducts,
     getCatalogueFacets,
     getProductById,
+    getProductAdmin,
     createProduct as apiCreateProduct,
     createProductWithMultipart,
     updateProductById,
@@ -24,8 +25,9 @@ import {
 } from '@api';
 import type {
     Product,
-    CreateProductRequestMultipart,
-    UpdateProductByIdRequestMultipart,
+    ProductAdmin,
+    CreateProductRequest,
+    UpdateProductRequest,
     SearchProductsRequest
 } from '@types';
 
@@ -34,6 +36,22 @@ import type {
  * is owned by the toolkit's search state).
  */
 type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
+
+/**
+ * `createProduct`'s payload: the JSON write body plus the optional file the form attaches.
+ *
+ * `translations` stays the JSON body's own shape (an object, not the multipart operation's
+ * JSON-encoded string) — the store is where that encoding happens, once, on the branch that
+ * actually needs it, rather than asking every caller to know two different wire shapes for the
+ * same field.
+ */
+export type CreateProductData = CreateProductRequest & { imageUpload?: Blob };
+
+/**
+ * `updateProduct`'s payload — the merging `PATCH` body plus the optional replacement image. See
+ * {@link CreateProductData} for why `translations` stays an object here too.
+ */
+export type UpdateProductData = UpdateProductRequest & { imageUpload?: Blob };
 
 /**
  * Products CRUD, paginated search and image upload.
@@ -76,13 +94,14 @@ export const useProductsStore = defineStore('products', () => {
         updateOne: updateProduct,
         deleteOne: deleteProduct,
         deleteTarget,
-        fetchAny
+        fetchAny,
+        resetAll
     } = useStructureCrudApi<
         Product,
         string,
         ProductsFilters,
-        CreateProductRequestMultipart,
-        UpdateProductByIdRequestMultipart,
+        CreateProductData,
+        UpdateProductData,
         AxiosRequestConfig
     >(
         {
@@ -108,28 +127,62 @@ export const useProductsStore = defineStore('products', () => {
             get: (productId) => getProductById(productId).then((response) => response.data),
 
             // Multipart only when there is a file: a JSON body is cheaper and, more to the point,
-            // the multipart endpoints are the only ones that have to parse a stream.
-            create: ({ imageUpload, ...productData }, options) =>
+            // the multipart endpoints are the only ones that have to parse a stream. Either way
+            // `translations` is built by the caller as an object; JSON-encoding it into the one
+            // multipart field that carries it happens here, not at every call site.
+            create: ({ imageUpload, translations, ...productData }, options) =>
                 (imageUpload
-                    ? createProductWithMultipart({ ...productData, imageUpload }, options)
-                    : apiCreateProduct(productData, options)
+                    ? createProductWithMultipart(
+                          {
+                              ...productData,
+                              translations: JSON.stringify(translations),
+                              imageUpload
+                          },
+                          options
+                      )
+                    : apiCreateProduct({ ...productData, translations }, options)
                 ).then((response) => response.data),
 
-            update: (productId, { imageUpload, ...productData }, options) =>
+            update: (productId, { imageUpload, translations, ...productData }, options) =>
                 (imageUpload
                     ? updateProductByIdWithMultipart(
                           productId,
-                          { ...productData, imageUpload },
+                          {
+                              ...productData,
+                              // `translations` is OPTIONAL on a PATCH: omitting the field entirely
+                              // means every locale is left alone, which is different from sending
+                              // an empty map. JSON-encoding `undefined` would produce the string
+                              // `"undefined"`, so the key itself is left off instead.
+                              ...(translations !== undefined && {
+                                  translations: JSON.stringify(translations)
+                              }),
+                              imageUpload
+                          },
                           options
                       )
-                    : updateProductById(productId, productData, options)
+                    : updateProductById(
+                          productId,
+                          // Same omission as the multipart branch above: `translations: undefined`
+                          // would still be a key ON the object, and axios serialises that key
+                          // away only for a top-level `undefined` — inconsistent with the
+                          // multipart branch and not worth relying on either way.
+                          { ...productData, ...(translations !== undefined && { translations }) },
+                          options
+                      )
                 ).then((response) => response.data),
 
             remove: (productId) => deleteProductById(productId),
 
-            // The new imageUrl comes back from the API, so the local patch must not carry the
-            // Blob: parking one in store state would keep the preview on bytes already uploaded.
-            optimisticPatch: ({ imageUpload: _uploaded, ...productData }) => productData
+            // Neither the uploaded Blob nor `translations` belongs in the optimistic patch: the
+            // new `imageUrl` comes back from the API, and a product's rendered `title`/
+            // `description` are resolved server-side from the fallback locale — this store has
+            // no way to guess them ahead of the response, so they stay whatever they were until
+            // the real one arrives.
+            optimisticPatch: ({
+                imageUpload: _uploaded,
+                translations: _translations,
+                ...productData
+            }) => productData
         },
         {
             loadingKey: 'products',
@@ -169,6 +222,20 @@ export const useProductsStore = defineStore('products', () => {
      */
     const hardDeleteProduct = (productId: string) =>
         deleteTarget(() => hardDeleteProductById(productId), productId);
+
+    /**
+     * The admin record for one product: every language it has a row for, not just the caller's
+     * resolved one — what `ProductEdit.vue` needs to populate its per-locale tabs.
+     *
+     * A plain ref rather than a `useStructureCrudApi` slice: `GET /products/{id}/admin` is
+     * deliberately uncached — it's the screen someone is actively editing — so there is no
+     * dictionary or TTL for it to share with the public read.
+     *
+     * @param productId - Which product.
+     * @returns A promise resolving with the admin record.
+     */
+    const fetchProductAdmin = (productId: string): Promise<ProductAdmin | undefined> =>
+        fetchAny(() => getProductAdmin(productId).then((response) => response.data));
 
     /**
      * The catalogue's filter chips: every public category and tag with its count. Fetched once
@@ -214,9 +281,15 @@ export const useProductsStore = defineStore('products', () => {
         watchSearchProducts,
         fetchProduct,
         watchProduct,
+        fetchProductAdmin,
         createProduct,
         updateProduct,
         deleteProduct,
-        hardDeleteProduct
+        hardDeleteProduct,
+        // Every cached record's `title`/`description` is resolved server-side against the
+        // caller's language — the module manifest wires this into `localeSensitive`/
+        // `resetOnLocaleChange`, so a language switch drops the dictionary instead of showing the
+        // wrong language until something happens to refetch it.
+        resetAll
     };
 });

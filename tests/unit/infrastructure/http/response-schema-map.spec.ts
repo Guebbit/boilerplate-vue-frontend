@@ -78,6 +78,11 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['PATCH', '/locales/es/entries', 'MergeLocaleEntriesResponse'],
     ['PUT', '/locales/es/entries/cart.title', 'UpdateLocaleEntryResponse'],
     ['DELETE', '/locales/es/entries/cart.title', 'DeleteLocaleEntryResponse'],
+    // Both `{entityType}` and `{id}` are `{...}` placeholders, so the spec-parity substitution
+    // below replaces each with the same `ID` constant — this row has to match that, not a real
+    // entity type, or `has one table row per declared operation` mismatches by shape.
+    ['GET', `/locales/translations/${ID}/${ID}`, 'GetEntityTranslationsResponse'],
+    ['PATCH', `/locales/translations/${ID}/${ID}`, 'UpsertEntityTranslationsResponse'],
     ['GET', '/observability/events', 'GetObservabilityEventsResponse'],
     ['GET', '/observability/health', 'GetObservabilityHealthResponse'],
     ['GET', '/observability/metrics', 'GetObservabilityMetricsResponse'],
@@ -137,12 +142,12 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', `/feedback/${ID}`, 'DeleteFeedbackRequestResponse'],
     ['GET', '/products', 'ListProductsResponse'],
     ['POST', '/products', 'CreateProductResponse'],
-    ['PUT', '/products', 'UpdateProductResponse'],
     ['DELETE', '/products', 'DeleteProductResponse'],
     ['POST', '/products/search', 'SearchProductsResponse'],
     ['GET', `/products/${ID}`, 'GetProductByIdResponse'],
-    ['PUT', `/products/${ID}`, 'UpdateProductByIdResponse'],
+    ['PATCH', `/products/${ID}`, 'UpdateProductByIdResponse'],
     ['DELETE', `/products/${ID}`, 'DeleteProductByIdResponse'],
+    ['GET', `/products/${ID}/admin`, 'GetProductAdminResponse'],
     ['DELETE', `/products/${ID}/hard`, 'HardDeleteProductByIdResponse'],
     ['GET', '/cart', 'GetCartResponse'],
     ['POST', '/cart', 'UpsertCartItemResponse'],

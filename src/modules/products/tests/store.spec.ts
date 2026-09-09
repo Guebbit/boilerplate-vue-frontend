@@ -1,9 +1,10 @@
 /**
  * @module
  * Unit coverage of the products store's own logic: which branch a create/update call takes (JSON
- * vs multipart) and how the request is shaped. The CRUD wrappers are thin over
- * `@guebbit/vue-toolkit`, so testing them would be testing the toolkit — the multipart branch is
- * what's actually this repo's logic.
+ * vs multipart), how `translations` is encoded on each, and `resetAll`'s locale-sensitive-cache
+ * role. The CRUD wrappers are thin over `@guebbit/vue-toolkit`, so testing them would be testing
+ * the toolkit — the multipart branch and the `translations` encoding are what's actually this
+ * repo's logic.
  *
  * `@api` is deliberately NOT mocked, since the FormData encoding lives in the generated client;
  * mocking the transport instead runs store → generated client → `orvalMutator` for real, and
@@ -76,6 +77,11 @@ const PRODUCT: Product = {
 };
 
 /**
+ * A minimal, valid `translations` map — the fallback locale's entry, title only.
+ */
+const TRANSLATIONS = { en: { title: 'Gadget' } };
+
+/**
  * Makes the transport answer with a paginated envelope for this test. `meta` matches the real
  * `PaginationMeta` shape — `search:` (`store.ts`) reads `meta.totalPages` for `pageTotal`, so an
  * envelope without one no longer represents a real response.
@@ -95,9 +101,6 @@ const respondWithItems = (items: unknown[]) =>
     );
 
 /**
- * The query parameters of the most recent request.
- */
-/**
  * The JSON body of the most recent request — what `POST /products/search` reads.
  */
 const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
@@ -111,17 +114,20 @@ describe('useProductsStore', () => {
     describe('createProduct', () => {
         it('posts JSON when no image is attached', () =>
             useProductsStore()
-                .createProduct({ title: 'Gadget', price: 49.99 })
+                .createProduct({ price: 49.99, translations: TRANSLATIONS })
                 .then(() => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/products', method: 'POST' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({ title: 'Gadget', price: 49.99 });
+                    expect(request.data).toMatchObject({
+                        price: 49.99,
+                        translations: TRANSLATIONS
+                    });
                 }));
 
         it('resolves with the created product, not with the envelope', () =>
             useProductsStore()
-                .createProduct({ title: 'Gadget', price: 49.99 })
+                .createProduct({ price: 49.99, translations: TRANSLATIONS })
                 .then((created) => {
                     // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
                     // wrapper that forgot to unwrap `response.data` would navigate to
@@ -131,17 +137,38 @@ describe('useProductsStore', () => {
 
         it('posts multipart to /products when an image is attached', () =>
             useProductsStore()
-                .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
+                .createProduct({
+                    price: 49.99,
+                    translations: TRANSLATIONS,
+                    imageUpload: new Blob(['x'])
+                })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/products', method: 'POST' });
-                    expect(lastFormData().get('title')).toBe('Gadget');
+                    expect(lastFormData().get('price')).toBe('49.99');
+                }));
+
+        it('JSON-encodes translations into the one multipart field that carries it', () =>
+            useProductsStore()
+                .createProduct({
+                    price: 49.99,
+                    translations: TRANSLATIONS,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const raw = lastFormData().get('translations');
+                    expect(typeof raw).toBe('string');
+                    expect(JSON.parse(raw as string)).toEqual(TRANSLATIONS);
                 }));
 
         it('sends a Blob image, not only a File', () =>
             // The contract types the field as Blob, and encoders that recurse into anything that
             // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
             useProductsStore()
-                .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
+                .createProduct({
+                    price: 49.99,
+                    translations: TRANSLATIONS,
+                    imageUpload: new Blob(['x'])
+                })
                 .then(() => {
                     expect(lastFormData().get('imageUpload')).toBeInstanceOf(Blob);
                 }));
@@ -149,8 +176,8 @@ describe('useProductsStore', () => {
         it('sends categories and tags as repeated fields, not indexed keys', () =>
             useProductsStore()
                 .createProduct({
-                    title: 'Gadget',
                     price: 49.99,
+                    translations: TRANSLATIONS,
                     categories: ['tools', 'home'],
                     tags: ['new'],
                     imageUpload: new Blob(['x'])
@@ -165,14 +192,14 @@ describe('useProductsStore', () => {
         it('omits unset optional fields instead of sending the string "undefined"', () =>
             useProductsStore()
                 .createProduct({
-                    title: 'Gadget',
                     price: 49.99,
-                    description: undefined,
+                    translations: TRANSLATIONS,
+                    active: undefined,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
                     const formData = lastFormData();
-                    expect(formData.has('description')).toBe(false);
+                    expect(formData.has('active')).toBe(false);
                     expect([...formData.values()]).not.toContain('undefined');
                 }));
 
@@ -185,7 +212,7 @@ describe('useProductsStore', () => {
 
             return useProductsStore()
                 .createProduct(
-                    { title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) },
+                    { price: 49.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
                     { onUploadProgress }
                 )
                 .then(() => {
@@ -198,35 +225,65 @@ describe('useProductsStore', () => {
     });
 
     describe('updateProduct', () => {
-        it('puts JSON when no new image is attached', () =>
+        it('PATCHes JSON when no new image is attached', () =>
             useProductsStore()
-                .updateProduct('p1', { title: 'Renamed', price: 9.99 })
+                .updateProduct('p1', { price: 9.99, translations: TRANSLATIONS })
                 .then(() => {
                     const request = lastRequest();
-                    expect(request).toMatchObject({ url: '/products/p1', method: 'PUT' });
+                    // PATCH, not PUT: the edit endpoint MERGES rather than replaces.
+                    expect(request).toMatchObject({ url: '/products/p1', method: 'PATCH' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({ title: 'Renamed' });
+                    expect(request.data).toMatchObject({ price: 9.99, translations: TRANSLATIONS });
                 }));
 
-        it('puts multipart when an image is attached', () =>
+        it('PATCHes multipart when an image is attached', () =>
             useProductsStore()
                 .updateProduct('p1', {
-                    title: 'Renamed',
                     price: 9.99,
+                    translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
-                    expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PUT' });
-                    expect(lastFormData().get('title')).toBe('Renamed');
+                    expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PATCH' });
+                    expect(lastFormData().get('price')).toBe('9.99');
+                }));
+
+        it('omits the translations field entirely when the call carries none, rather than an empty map', () =>
+            useProductsStore()
+                .updateProduct('p1', { price: 9.99 })
+                .then(() => {
+                    // Omission is the merge's own "leave every locale alone" signal — an empty
+                    // object on the wire would be a different, wrong statement.
+                    expect(lastRequest().data).not.toHaveProperty('translations');
+                }));
+
+        it('omits the translations field on a multipart PATCH that carries none', () =>
+            useProductsStore()
+                .updateProduct('p1', { price: 9.99, imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(lastFormData().has('translations')).toBe(false);
+                }));
+
+        it('sends a locale marked for removal as null, JSON-encoded like the rest of the map', () =>
+            useProductsStore()
+                .updateProduct('p1', {
+                    price: 9.99,
+                    translations: { it: null },
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const raw = lastFormData().get('translations');
+                    expect(JSON.parse(raw as string)).toEqual({ it: null });
                 }));
 
         /**
          * The other half of `optimisticPatch`, and the half the Blob test cannot see: an
          * implementation that patched NOTHING would also leave no `imageUpload` behind. What
-         * makes the patch worth having is that the edited row shows the new title while the
-         * request is still in flight.
+         * makes the patch worth having is that the edited price shows before the response
+         * arrives. `title` is deliberately NOT asserted here: it is resolved server-side from
+         * `translations`, which `optimisticPatch` skips on purpose (see `store.ts`).
          */
-        it('shows the edited fields before the response arrives', () => {
+        it('shows the edited price before the response arrives', () => {
             const store = useProductsStore();
             store.addProduct(PRODUCT);
 
@@ -245,8 +302,8 @@ describe('useProductsStore', () => {
             );
 
             const pending = store.updateProduct('p1', {
-                title: 'Renamed',
-                price: 9.99,
+                price: 12.5,
+                translations: TRANSLATIONS,
                 imageUpload: new Blob(['x'])
             });
 
@@ -257,15 +314,16 @@ describe('useProductsStore', () => {
             // this can only pass if the store was patched ahead of the response.
             return vi
                 .waitFor(() => {
-                    expect(store.products.p1.title).toBe('Renamed');
+                    expect(store.products.p1.price).toBe(12.5);
                 })
                 .then(() => {
                     expect(store.products.p1).not.toHaveProperty('imageUpload');
-                    release(orvalEnvelope({ ...PRODUCT, title: 'Renamed' }));
+                    expect(store.products.p1).not.toHaveProperty('translations');
+                    release(orvalEnvelope({ ...PRODUCT, price: 12.5 }));
                     return pending;
                 })
                 .then(() => {
-                    expect(store.products.p1.title).toBe('Renamed');
+                    expect(store.products.p1.price).toBe(12.5);
                 });
         });
 
@@ -275,8 +333,8 @@ describe('useProductsStore', () => {
 
             return store
                 .updateProduct('p1', {
-                    title: 'Renamed',
                     price: 9.99,
+                    translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -294,7 +352,7 @@ describe('useProductsStore', () => {
             return useProductsStore()
                 .updateProduct(
                     'p1',
-                    { title: 'Renamed', price: 9.99, imageUpload: new Blob(['x']) },
+                    { price: 9.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
                     { onUploadProgress }
                 )
                 .then(() => {
@@ -428,6 +486,33 @@ describe('useProductsStore', () => {
             });
         });
 
+        describe('fetchProductAdmin', () => {
+            it('requests the admin route and unwraps a single-record envelope', () => {
+                const ADMIN_PRODUCT = { ...PRODUCT, translations: { en: { title: 'Gadget' } } };
+                vi.mocked(orvalMutator).mockImplementation(
+                    (config: { url?: string; method?: string }) =>
+                        Promise.resolve(
+                            parseOrvalFixture(
+                                config.method,
+                                config.url,
+                                orvalEnvelope(ADMIN_PRODUCT)
+                            )
+                        )
+                );
+
+                return useProductsStore()
+                    .fetchProductAdmin('p1')
+                    .then((result) => {
+                        // The dedicated admin route, not the public single-language one.
+                        expect(lastRequest()).toMatchObject({
+                            url: '/products/p1/admin',
+                            method: 'GET'
+                        });
+                        expect(result).toEqual(ADMIN_PRODUCT);
+                    });
+            });
+        });
+
         describe('watchSearchProducts', () => {
             it('posts the store filters to /products/search, id included', () => {
                 respondWithItems([]);
@@ -516,6 +601,23 @@ describe('useProductsStore', () => {
      * should. A mutant in a value passed straight to a dependency is not this repo's to kill, and
      * writing a toolkit test to move a score is how the score stops meaning anything.
      */
+
+    /**
+     * `resetAll` is the toolkit's own dictionary/cache wipe, re-exported so the module manifest's
+     * `resetOnLocaleChange` can call it — see `products/module.ts` and
+     * `tests/unit/app/guards/locale-choice.spec.ts` for the guard side of this. What belongs HERE
+     * is only that the store actually surfaces it and that calling it empties the dictionary; the
+     * cache-invalidation machinery underneath is the toolkit's own suite's job.
+     */
+    it('resetAll empties the product dictionary', () => {
+        const store = useProductsStore();
+        store.addProduct(PRODUCT);
+        expect(store.products.p1).toBeDefined();
+
+        store.resetAll();
+
+        expect(store.products.p1).toBeUndefined();
+    });
 
     /**
      * Pinia identifies a store by the string passed to `defineStore`, and that string is also the

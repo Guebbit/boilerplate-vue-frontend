@@ -7,10 +7,12 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Create form for a product: builds a picked/extended slice of the shared products schema, wires
- * it to `useStructureFormValidation`, and submits through the store's multipart-aware `createProduct`.
+ * Create form for a product: one language tab per active locale (the fallback locale's first and
+ * always open), builds the `translations` map `POST /products` expects, and submits through the
+ * store's multipart-aware `createProduct`. See `translation-tab-errors.ts` for how a validation
+ * failure reaches the right tab's badge.
  */
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -21,7 +23,12 @@ import {
 } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
-import { z } from 'zod';
+import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
+import {
+    translationTabErrorCountsFromZodError,
+    translationTabErrorCountsFromServerError
+} from '@/modules/products/composables/translation-tab-errors.ts';
+import ProductTranslationTabs from '@/modules/products/components/ProductTranslationTabs.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -31,9 +38,13 @@ import {
 } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import type { ProductTranslationsWrite } from '@types';
 
 /**
  * Localized dictionary helper, with the active locale reference used to revalidate the form.
+ *
+ * The APP's interface language, unrelated to which language TAB is open below — an editor writing
+ * Italian product copy while using an English admin is the normal case.
  */
 const { t, locale } = useI18n();
 
@@ -53,54 +64,47 @@ const router = useRouter();
 const { createProduct } = useProductsStore();
 
 /**
- * Form definition
+ * The deployment's active locales and fallback tag — what the tab bar offers.
+ */
+const { locales, fallbackLocale, fetchActiveLocales } = useActiveLocales();
+void fetchActiveLocales();
+
+/**
+ * Form definition. `translations` mirrors the write body's own shape (`ProductTranslationsWrite`)
+ * rather than a bespoke per-field record, so no conversion happens between what the form holds
+ * and what the store sends.
  */
 interface ProductCreateForm {
-    title?: string;
     price?: number;
-    description?: string;
     active?: boolean;
+    translations: ProductTranslationsWrite;
     imageUpload?: File;
 }
 
 /**
  * Built once: the messages inside are thunks, resolved in the active language at parse time —
- * see `@/modules/users/schemas.ts`.
- *
- * The same `title`/`price` rules the edit form uses, from the same `productsSchema`, so the two
- * screens cannot disagree about what a valid product is.
+ * see `@/modules/users/schemas.ts`. `translations` is `productsSchema`'s own per-locale rule,
+ * picked rather than restated.
  */
-const createSchema = productsSchema.pick({ title: true, price: true }).extend({
-    description: z.string().optional(),
-    active: z.boolean().optional(),
+const createSchema = productsSchema.pick({ price: true, translations: true }).extend({
     imageUpload: imageUploadSchema
 });
 
-/**
- * Every field is seeded, and the empty string for `title` is not cosmetic.
- *
- * A field left `undefined` fails `z.string()` on its TYPE, and zod answers that with its own
- * built-in "Invalid input: expected string, received undefined" — in English, whatever the active
- * locale, because the schema's thunked message belongs to the `.min(1)` check the value never
- * reaches. Seeding `''` means an untouched field fails the length rule instead, which is the one
- * that speaks the user's language and says something useful.
- *
- * `price` starts at 0 for the same reason plus one more: the contract's minimum is 0, so the
- * starting value is already valid rather than an error waiting to be revealed.
- */
 const card = ref<InstanceType<typeof FormCard>>();
 
 /**
- * Toolkit form state and submit handler.
+ * Toolkit form state and submit handler. `price` starts at 0 — the contract's own minimum — so
+ * the field opens already valid instead of an error waiting to be revealed.
  */
 const {
     form,
     formErrors,
     showFormErrors: showErrors,
     isSubmitting,
-    handleSubmit
+    handleSubmit,
+    applyServerErrors
 } = useStructureFormValidation<ProductCreateForm>(
-    { title: '', price: 0, description: '', active: true },
+    { price: 0, active: true, translations: {} },
     createSchema,
     {
         // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
@@ -110,6 +114,88 @@ const {
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
+);
+
+/**
+ * Which language tabs are open, fallback locale first — derived from `form.translations` itself
+ * (every present, non-`null` key) rather than tracked separately, so a `resetForm()` cannot leave
+ * the tab bar out of sync with the data it is supposed to reflect.
+ */
+const openTags = computed(() => {
+    const tags = Object.keys(form.value.translations).filter(
+        (tag) => form.value.translations[tag] !== null
+    );
+    const fallback = fallbackLocale.value;
+    return fallback ? [fallback, ...tags.filter((tag) => tag !== fallback)] : tags;
+});
+
+/**
+ * The tab currently shown.
+ */
+const activeTab = ref<string>();
+
+/**
+ * Seeds the fallback locale's tab once it is known, and defaults the active tab to the first one
+ * open. The fallback slot is never removed on a create — a product with nothing to fall back to
+ * cannot be created at all — so this only ever ADDS the key, never re-checks it later.
+ */
+watch(
+    fallbackLocale,
+    (fallback) => {
+        if (!fallback || fallback in form.value.translations) return;
+        form.value.translations = {
+            ...form.value.translations,
+            [fallback]: { title: '', description: '' }
+        };
+        activeTab.value ??= fallback;
+    },
+    { immediate: true }
+);
+
+/**
+ * Opens a new, empty language tab.
+ *
+ * @param tag - The locale to open.
+ */
+const handleAddLocale = (tag: string) => {
+    form.value.translations = { ...form.value.translations, [tag]: { title: '', description: '' } };
+    activeTab.value = tag;
+};
+
+/**
+ * Drops a language tab. A create has nothing stored server-side yet, so this simply removes the
+ * key — unlike an edit's removal, it never becomes a `null` slot.
+ *
+ * @param tag - The locale to close. The fallback tag is never offered this action (see
+ *  `ProductTranslationTabs`), so it is never reached here either.
+ */
+const handleRemoveLocale = (tag: string) => {
+    const { [tag]: _removed, ...rest } = form.value.translations;
+    form.value.translations = rest;
+    if (activeTab.value === tag) activeTab.value = openTags.value[0];
+};
+
+/**
+ * Per-locale error counts for the tab badges — computed independently of
+ * `useStructureFormValidation`'s own `formErrors`, which collapses every `translations.*` issue
+ * into one flat bucket (see `translation-tab-errors.ts`). Only populated once a submit has
+ * revealed errors, so a pristine form shows no badges.
+ */
+const tabErrorCounts = ref<Record<string, number>>({});
+
+watch(
+    [showErrors, () => form.value],
+    ([showing]) => {
+        if (!showing) {
+            tabErrorCounts.value = {};
+            return;
+        }
+        const result = createSchema.safeParse(form.value);
+        tabErrorCounts.value = result.success
+            ? {}
+            : translationTabErrorCountsFromZodError(result.error);
+    },
+    { deep: true }
 );
 
 /**
@@ -136,17 +222,17 @@ const trackUpload = <T,>(
  *
  * @returns A promise resolving once the flow settles: on success a toast is
  *  shown and the new product's detail page is opened; on invalid input the errors
- *  are revealed; API failures are reported as toasts.
+ *  are revealed; API failures are reported as toasts, with a per-language 422 also
+ *  landing on the tab it names.
  */
 const submitForm = () =>
     handleSubmit(() =>
         trackUpload(form.value.imageUpload, (options) =>
             createProduct(
                 {
-                    title: form.value.title!,
                     price: form.value.price!,
-                    description: form.value.description || undefined,
                     active: form.value.active,
+                    translations: form.value.translations,
                     imageUpload: form.value.imageUpload
                 },
                 options
@@ -159,7 +245,12 @@ const submitForm = () =>
                 routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
             );
         })
-    ).catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => {
+        const serverTabErrors = translationTabErrorCountsFromServerError(error);
+        if (Object.keys(serverTabErrors).length > 0)
+            tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 </script>
 
 <template>
@@ -172,13 +263,44 @@ const submitForm = () =>
             :loading="isSubmitting"
             @submit="submitForm"
         >
-            <v-text-field
-                v-model="form.title"
-                type="text"
-                :label="t('product-create-page.label-title')"
-                :error-messages="showErrors ? formErrors.title : []"
-                class="mb-2"
+            <ProductTranslationTabs
+                v-model="activeTab"
+                :locales="locales"
+                :open-tags="openTags"
+                :fallback-tag="fallbackLocale"
+                :error-counts="tabErrorCounts"
+                @add="handleAddLocale"
+                @remove="handleRemoveLocale"
             />
+
+            <!--
+                `form.translations[tag]!` — `tag` always comes from `openTags`, and every open
+                tag's slot is seeded as an object by `handleAddLocale`/the fallback watcher above;
+                a create never puts `null` there (that signal only exists on the merging PATCH).
+            -->
+            <v-window v-model="activeTab">
+                <v-window-item v-for="tag in openTags" :key="tag" :value="tag">
+                    <v-text-field
+                        v-model="form.translations[tag]!.title"
+                        type="text"
+                        :label="t('product-create-page.label-title')"
+                        :error-messages="
+                            showErrors && !form.translations[tag]?.title
+                                ? [t('products-form.title-required')]
+                                : []
+                        "
+                        data-test="translation-title-field"
+                        class="mb-2"
+                    />
+                    <v-textarea
+                        v-model="form.translations[tag]!.description"
+                        :label="t('product-create-page.label-description')"
+                        :rows="5"
+                        data-test="translation-description-field"
+                    />
+                </v-window-item>
+            </v-window>
+
             <v-number-input
                 v-model="form.price"
                 :label="t('product-create-page.label-price')"
@@ -187,12 +309,8 @@ const submitForm = () =>
                 :precision="2"
                 control-variant="stacked"
                 :error-messages="showErrors ? formErrors.price : []"
-                class="mb-2"
-            />
-            <v-textarea
-                v-model="form.description"
-                :label="t('product-create-page.label-description')"
-                :rows="5"
+                data-test="product-price-field"
+                class="mb-2 mt-4"
             />
             <FormImageUpload
                 v-model="form.imageUpload"
