@@ -8,6 +8,7 @@ import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { productsResponseSchemas } from './response-schemas';
+import { useProductsStore } from './store';
 
 /**
  * The product catalogue: a public list and detail, plus admin create and edit.
@@ -38,5 +39,11 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
-    }
+    },
+    // The dictionary is keyed by product id alone, and every cached record's title/description
+    // is resolved server-side in whatever language the request carried, so a language switch has
+    // to wipe it. `useProductsStore()` is called INSIDE the callback, never at module scope,
+    // since Pinia is not installed yet when this manifest is evaluated.
+    localeSensitive: true,
+    resetOnLocaleChange: () => useProductsStore().resetAll()
 } satisfies AppModule;

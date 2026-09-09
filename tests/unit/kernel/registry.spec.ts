@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import {
+    collectLocaleSensitiveResets,
     collectModuleNavigation,
     collectModuleRoutes,
     groupNavigation,
@@ -96,6 +97,44 @@ describe('sortNavigation', () => {
         sortNavigation(entries);
 
         expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
+    });
+});
+
+describe('collectLocaleSensitiveResets', () => {
+    it('collects the reset callback of every module that declares itself locale-sensitive', () => {
+        const productsReset = vi.fn();
+        const cartReset = vi.fn();
+
+        const resets = collectLocaleSensitiveResets([
+            {
+                ...makeModule('products'),
+                localeSensitive: true,
+                resetOnLocaleChange: productsReset
+            },
+            { ...makeModule('cart'), localeSensitive: true, resetOnLocaleChange: cartReset },
+            makeModule('wishlist')
+        ]);
+
+        expect(resets).toEqual([productsReset, cartReset]);
+    });
+
+    it('skips a module that declares the flag with no callback, or a callback with no flag', () => {
+        const bothWired = vi.fn();
+        const callbackOnly = vi.fn();
+
+        const resets = collectLocaleSensitiveResets([
+            { ...makeModule('flag-only'), localeSensitive: true },
+            { ...makeModule('both'), localeSensitive: true, resetOnLocaleChange: bothWired },
+            { ...makeModule('callback-only'), resetOnLocaleChange: callbackOnly }
+        ]);
+
+        // Only the module wiring BOTH the flag and the callback contributes — see the doc on
+        // `AppModule.localeSensitive`/`resetOnLocaleChange` for why each is checked.
+        expect(resets).toEqual([bothWired]);
+    });
+
+    it('returns nothing for a build with no locale-sensitive module at all', () => {
+        expect(collectLocaleSensitiveResets([makeModule('orders')])).toEqual([]);
     });
 });
 

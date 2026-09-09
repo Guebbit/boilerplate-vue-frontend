@@ -8,6 +8,7 @@ import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { ordersResponseSchemas } from './response-schemas';
+import { useOrdersStore } from './store';
 
 /**
  * Orders: a customer's own order history, and the admin screens that edit an order's status.
@@ -39,5 +40,10 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
-    }
+    },
+    // Every cached order embeds its lines' resolved, language-dependent product text, so a
+    // language switch has to wipe it. `useOrdersStore()` runs inside the callback, never at
+    // module scope: Pinia is not installed yet when this manifest is evaluated.
+    localeSensitive: true,
+    resetOnLocaleChange: () => useOrdersStore().resetAll()
 } satisfies AppModule;

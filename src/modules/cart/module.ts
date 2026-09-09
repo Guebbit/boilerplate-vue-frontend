@@ -84,5 +84,11 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
-    }
+    },
+    // `productTitles` is the cart store's join against products' resolved, language-dependent
+    // titles (the cart's own lines carry no text of their own) — a language switch has to wipe
+    // it. `useCartStore()` runs inside the callback, never at module scope: Pinia is not
+    // installed yet when this manifest is evaluated.
+    localeSensitive: true,
+    resetOnLocaleChange: () => useCartStore().resetProductTitles()
 } satisfies AppModule;

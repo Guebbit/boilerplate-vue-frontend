@@ -77,6 +77,46 @@ describe('Italian locale', () => {
 });
 
 /**
+ * `useProductsStore`'s dictionary is keyed by product id alone, so nothing about the cached
+ * record says which language filled it in. A switch has to WIPE it and refetch, or a product
+ * page reads the language the visitor just left.
+ */
+describe('switching language wipes and refetches locale-sensitive stores', () => {
+    beforeEach(() => {
+        cy.visit('/en');
+        cy.resetState();
+    });
+
+    it('a product page shows the new language after an in-place switch, and the old one after switching back', () => {
+        const enTitle = `EN lamp ${Date.now()}`;
+        const itTitle = `IT lampada ${Date.now()}`;
+
+        cy.createProduct({
+            translations: { en: { title: enTitle }, it: { title: itTitle } }
+        }).then((product) => {
+            cy.visit(`/en/products/${product.id}`);
+            cy.contains(enTitle).should('exist');
+
+            cy.get('[data-test=language-switcher]').first().click();
+            cy.contains('.v-list-item-title', 'italian').click();
+            cy.url().should('include', '/it/');
+
+            // The router keeps this same page — `products/:id` carries no locale of its own — so
+            // an implementation that only cleared the cache on NAVIGATION and not on the switch
+            // itself would still be showing the English title here.
+            cy.contains(itTitle).should('exist');
+            cy.contains(enTitle).should('not.exist');
+
+            cy.get('[data-test=language-switcher]').first().click();
+            cy.contains('.v-list-item-title', 'english').click();
+            cy.url().should('include', '/en/');
+            cy.contains(enTitle).should('exist');
+            cy.contains(itTitle).should('not.exist');
+        });
+    });
+});
+
+/**
  * The switch itself, watched from the visitor's side of the glass: same tab, no reload, the
  * page re-speaks. The URL follows the choice, because the URL is where a guest's language lives.
  */

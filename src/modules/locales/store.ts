@@ -20,7 +20,9 @@ import {
     updateLocaleEntry,
     deleteLocaleEntry,
     replaceLocaleEntries,
-    mergeLocaleEntries
+    mergeLocaleEntries,
+    getEntityTranslations,
+    upsertEntityTranslations as apiUpsertEntityTranslations
 } from '@api';
 import type {
     LocaleCapability,
@@ -30,7 +32,9 @@ import type {
     UpdateLocaleRequest,
     CreateLocaleEntryRequest,
     LocaleEntryInput,
-    LocaleImportResult
+    LocaleImportResult,
+    Translation,
+    UpsertTranslationsRequest
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
@@ -370,6 +374,48 @@ export const useLocalesStore = defineStore('locales', () => {
             return collect(1, []);
         });
 
+    /**
+     * Every language one entity has a row for, as the generic `translations.manage` door reads
+     * it — what `EntityTranslations.vue` populates its tabs from.
+     *
+     * Not part of the toolkit's paginated resource above: this is one whole-entity read/write,
+     * never searched or paged, the same reasoning `fetchLanguages` already uses for the manifest.
+     *
+     * @param entityType - Which `translatables` registry entry, e.g. `product`.
+     * @param entityId - The entity's own id.
+     * @returns A promise resolving with every locale's row.
+     */
+    const fetchEntityTranslations = (
+        entityType: string,
+        entityId: string
+    ): Promise<Translation[] | undefined> =>
+        fetchAny(() =>
+            getEntityTranslations(entityType, entityId).then(
+                (response) => response.data.translations
+            )
+        );
+
+    /**
+     * Merges one or more locales of one entity's translations — an object upserts a locale, `null`
+     * deletes it, an absent key leaves it untouched: the same three-way table the editor's own
+     * `PATCH /products/{id}` door uses.
+     *
+     * @param entityType - Which `translatables` registry entry, e.g. `product`.
+     * @param entityId - The entity's own id.
+     * @param body - The locales to change.
+     * @returns A promise resolving with every locale's row, post-write.
+     */
+    const saveEntityTranslations = (
+        entityType: string,
+        entityId: string,
+        body: UpsertTranslationsRequest
+    ): Promise<Translation[] | undefined> =>
+        fetchAny(() =>
+            apiUpsertEntityTranslations(entityType, entityId, body).then(
+                (response) => response.data.translations
+            )
+        );
+
     return {
         capabilities,
         tenants,
@@ -383,6 +429,8 @@ export const useLocalesStore = defineStore('locales', () => {
         createLanguage,
         editLanguage,
         removeLanguage,
+        fetchEntityTranslations,
+        saveEntityTranslations,
 
         filters,
         loading,

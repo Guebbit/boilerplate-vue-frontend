@@ -19,8 +19,11 @@ import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
  *   business on them and is sent home.
  * - `auth` — any authenticated visitor.
  * - `admin` — authenticated *and* admin.
+ * - `translator` — authenticated, and either admin (who can reach anything) or holding the
+ *   narrower `translations.read` key: the generic entity-translations screen, which a
+ *   `translator` must reach without ever being handed `products.manage`.
  */
-export type RouteAccess = 'guest' | 'auth' | 'admin';
+export type RouteAccess = 'guest' | 'auth' | 'admin' | 'translator';
 
 /**
  * Declares `meta.access` so its VALUE is checked: `access: 'admni'` is a compile error.
@@ -55,15 +58,19 @@ declare module 'vue-router' {
  *
  * @param access - The route's requirement, from `meta.access`. Absent means public.
  * @param visitor - The visitor's current standing, as the profile store reports it.
+ *  `canReadTranslations` is optional so every existing call site (which has no reason to touch
+ *  `translations.read`) keeps type-checking unchanged; omitted, it reads as `false`.
  * @returns `true` when the route may be entered and its link shown.
  */
 export const canAccess = (
     access: RouteMeta['access'],
-    visitor: { isAuth: boolean; isAdmin: boolean }
+    visitor: { isAuth: boolean; isAdmin: boolean; canReadTranslations?: boolean }
 ): boolean => {
     if (!access) return true;
     if (access === 'guest') return !visitor.isAuth;
     if (access === 'auth') return visitor.isAuth;
+    if (access === 'translator')
+        return visitor.isAuth && (visitor.isAdmin || Boolean(visitor.canReadTranslations));
     return visitor.isAuth && visitor.isAdmin;
 };
 
@@ -122,8 +129,12 @@ export const tryRestoreAuth = (): Promise<void> => {
  *  visitor is always told why — silently bouncing someone reads as a broken link.
  */
 export const enforceRouteAccess = (to: RouteLocationNormalized) => {
-    const { isAuth, isAdmin } = storeToRefs(useSessionStore());
-    const visitor = { isAuth: isAuth.value, isAdmin: isAdmin.value };
+    const { isAuth, isAdmin, canReadTranslations } = storeToRefs(useSessionStore());
+    const visitor = {
+        isAuth: isAuth.value,
+        isAdmin: isAdmin.value,
+        canReadTranslations: canReadTranslations.value
+    };
     if (canAccess(to.meta.access, visitor)) return;
 
     const locale = to.params.locale as string;

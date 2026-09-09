@@ -163,6 +163,28 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
+
+    /**
+     * Whether this domain caches server text that a language switch can leave stale — a product
+     * title in a Pinia dictionary keyed by id alone, with nothing about the key that says which
+     * language filled it in.
+     *
+     * Paired with {@link resetOnLocaleChange}: this flag is what the locale guard reads to decide
+     * WHETHER a module owes a reset, the callback is HOW it performs one. A module with no
+     * server-text cache (or one already keyed/refetched per locale) simply omits both.
+     */
+    localeSensitive?: boolean;
+
+    /**
+     * Wipes this domain's locale-sensitive cache(s), called by the locale guard once a language
+     * switch has actually happened — never on an ordinary navigation that keeps the same one.
+     *
+     * A callback rather than a store reference: the kernel must not know Pinia exists, so a
+     * module wires its own store's reset action (or several, or a partial one that spares
+     * unrelated state) in here rather than exposing the store itself. Only meaningful alongside
+     * {@link localeSensitive}.
+     */
+    resetOnLocaleChange?: () => void;
 }
 
 /**
@@ -256,6 +278,24 @@ export const groupNavigation = (
  */
 export const collectModuleResponseSchemas = (appModules: AppModule[]): ResponseSchemaRoute[] =>
     appModules.flatMap((appModule) => appModule.responseSchemas ?? []);
+
+/**
+ * Collect every enabled, locale-sensitive module's reset callback, for the locale guard to run
+ * after an actual language switch.
+ *
+ * Reads both {@link AppModule.localeSensitive} and {@link AppModule.resetOnLocaleChange} rather
+ * than the callback alone, so a module can carry the flag as a statement of intent before it has
+ * written the callback (or vice-versa during a refactor) without either half silently doing the
+ * other's job.
+ *
+ * @param appModules - the enabled module list
+ */
+export const collectLocaleSensitiveResets = (appModules: AppModule[]): (() => void)[] =>
+    appModules.flatMap((appModule) =>
+        appModule.localeSensitive && appModule.resetOnLocaleChange
+            ? [appModule.resetOnLocaleChange]
+            : []
+    );
 
 /**
  * Group every enabled module's dictionary loaders by locale code, for

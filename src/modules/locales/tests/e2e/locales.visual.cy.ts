@@ -17,7 +17,24 @@ sweepVisual(
         // The board's header counts arrive with the LAST language's baselines, well after the
         // first row: a row-ready baseline photographs the counts half-computed.
         ['locales-dictionary', '/en/locales/dictionary', '[data-test=dictionary-missing-count]'],
-        ['locale-entries', '/en/locales/it', '[data-test=list-row]']
+        ['locale-entries', '/en/locales/it', '[data-test=list-row]'],
+        {
+            // The generic translation door has no static path — it needs a real product's id —
+            // so `route`/`readySelector` only get the sweep past its own list-row wait; `prepare`
+            // re-navigates to the real target and repeats the ready/settle wait against IT,
+            // before the freeze and the snapshot below run.
+            name: 'entity-translations',
+            route: '/en/locales',
+            readySelector: '[data-test=list-row]',
+            prepare: () => {
+                cy.productInRole('inStock').then((product) => {
+                    cy.visit(`/en/locales/translations/product/${product.id}`);
+                });
+                cy.get('[data-test=entity-translation-tabs]').should('exist');
+                cy.get('h1').should('be.visible');
+                cy.settleNetwork();
+            }
+        }
     ],
     'admin'
 );

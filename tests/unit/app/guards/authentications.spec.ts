@@ -8,7 +8,8 @@ import type { RouteLocationNormalized } from 'vue-router';
 const addMessageMock = vi.fn();
 const visitorStanding = {
     isAuth: ref(false),
-    isAdmin: ref(false)
+    isAdmin: ref(false),
+    canReadTranslations: ref(false)
 };
 
 vi.mock('@/infrastructure/session', () => ({
@@ -42,6 +43,7 @@ const route = (access?: RouteAccess) =>
 const guest = { isAuth: false, isAdmin: false };
 const user = { isAuth: true, isAdmin: false };
 const admin = { isAuth: true, isAdmin: true };
+const translator = { isAuth: true, isAdmin: false, canReadTranslations: true };
 
 describe('canAccess', () => {
     /*
@@ -61,7 +63,11 @@ describe('canAccess', () => {
         ['auth-only', 'auth', admin, true],
         ['admin-only', 'admin', guest, false],
         ['admin-only', 'admin', user, false],
-        ['admin-only', 'admin', admin, true]
+        ['admin-only', 'admin', admin, true],
+        ['translator-door', 'translator', guest, false],
+        ['translator-door', 'translator', user, false],
+        ['translator-door', 'translator', admin, true],
+        ['translator-door', 'translator', translator, true]
     ] as const)('%s route, isAuth=%o -> %s', (_label, access, visitor, expected) => {
         expect(canAccess(access, visitor)).toBe(expected);
     });
@@ -72,6 +78,7 @@ describe('enforceRouteAccess', () => {
         vi.clearAllMocks();
         visitorStanding.isAuth.value = false;
         visitorStanding.isAdmin.value = false;
+        visitorStanding.canReadTranslations.value = false;
     });
 
     it('lets a permitted navigation through without notifying anything', () => {
@@ -117,6 +124,23 @@ describe('enforceRouteAccess', () => {
         visitorStanding.isAdmin.value = true;
 
         expect(enforceRouteAccess(route('admin'))).toBeUndefined();
+        expect(addMessageMock).not.toHaveBeenCalled();
+    });
+
+    it('sends an authenticated non-translator home from a translator-door route', () => {
+        visitorStanding.isAuth.value = true;
+
+        const result = enforceRouteAccess(route('translator'));
+
+        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
+        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
+    });
+
+    it('lets a translator (not admin) into a translator-door route', () => {
+        visitorStanding.isAuth.value = true;
+        visitorStanding.canReadTranslations.value = true;
+
+        expect(enforceRouteAccess(route('translator'))).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
     });
 });

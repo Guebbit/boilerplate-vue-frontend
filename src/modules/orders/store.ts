@@ -77,7 +77,8 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOne: updateOrder,
         deleteOne: deleteOrder,
         deleteTarget,
-        fetchAny
+        fetchAny,
+        resetAll
     } = useStructureCrudApi<
         Order,
         string,
@@ -206,6 +207,11 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteOrder,
         cancelOrder,
         hardDeleteOrder,
-        downloadInvoice
+        downloadInvoice,
+        // Every cached order embeds its lines' `OrderLineProduct`, title and description
+        // included, resolved server-side in whatever language the request carried — the module
+        // manifest wires this into `localeSensitive`/`resetOnLocaleChange` so a language switch
+        // does not leave order history reading in the old one.
+        resetAll
     };
 });

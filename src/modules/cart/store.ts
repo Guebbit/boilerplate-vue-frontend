@@ -254,6 +254,18 @@ export const useCartStore = defineStore('cart', () => {
                 )
         ).then(() => productTitles.value);
 
+    /**
+     * Drops every resolved title, so the next `resolveTitles` call re-fetches instead of
+     * rendering a name resolved in the language the visitor just left.
+     *
+     * The module manifest wires this into `localeSensitive`/`resetOnLocaleChange`. Only this
+     * join is wiped: `cart`/`cartSummary` hold no translated text (`CartItem` is
+     * `{ productId, quantity }`), and a language switch must never cost the visitor their cart.
+     */
+    const resetProductTitles = () => {
+        productTitles.value = {};
+    };
+
     return {
         cart,
         cartItems,
@@ -268,6 +280,7 @@ export const useCartStore = defineStore('cart', () => {
         productTitles,
         titleOf,
         resolveTitles,
+        resetProductTitles,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,

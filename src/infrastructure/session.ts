@@ -167,6 +167,28 @@ export const useSessionStore = defineStore('session', () => {
     );
 
     /**
+     * Whether the visitor may read entity translations, over the generic
+     * `/locales/translations/{entityType}/{id}` door — the `translator` role's key, distinct from
+     * {@link isAdmin} on purpose: that role never gets `products.manage`, so a mistranslation can
+     * never become a mischanged price. `route
+     * meta.access: 'translator'` reads this (alongside `isAdmin`, who can reach anything) rather
+     * than gating the screen on full admin.
+     */
+    const canReadTranslations = computed(
+        () => Boolean(accessToken.value && viewer.value) && ability.value.can('read', 'Translation')
+    );
+
+    /**
+     * Whether the visitor may WRITE entity translations — `translations.manage`. Gates the save
+     * action on `EntityTranslations.vue`; {@link canReadTranslations} alone only gets a visitor
+     * into the screen, not through its submit.
+     */
+    const canManageTranslations = computed(
+        () =>
+            Boolean(accessToken.value && viewer.value) && ability.value.can('manage', 'Translation')
+    );
+
+    /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
      * `rememberMe` marker, so a later silent refresh (which does not know the original choice)
      * can tell the two cases apart. See `useAuthStore.login`'s `remember` param.
@@ -333,6 +355,8 @@ export const useSessionStore = defineStore('session', () => {
         viewer,
         isAuth,
         isAdmin,
+        canReadTranslations,
+        canManageTranslations,
         setAccessToken,
         setViewer,
         refreshToken,

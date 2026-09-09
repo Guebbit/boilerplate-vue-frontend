@@ -34,6 +34,15 @@ sweepA11y(
                 cy.get('[data-test=entry-create]').click();
                 cy.get('[data-test=entry-form]').should('be.visible');
             }
+        },
+        {
+            // The generic translation door's own screen — a real product's id, resolved off the
+            // running backend rather than baked into a literal (`A11ySweepRoute`'s function form).
+            name: 'entity translations',
+            route: () =>
+                cy
+                    .productInRole('inStock')
+                    .then((product) => `/en/locales/translations/product/${product.id}`)
         }
     ],
     'admin'

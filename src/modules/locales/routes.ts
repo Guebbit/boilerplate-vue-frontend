@@ -35,5 +35,16 @@ export default [
         name: 'LocaleEntries',
         meta: { access: 'admin', title: 'locale-entries-page.page-title' },
         component: () => import('./views/LocaleEntries.vue')
+    },
+    /*
+     * The generic translation door's own screen — `translator` rather than `admin`: an
+     * unrestricted admin may still reach it (`canAccess`'s `translator` branch admits both), but
+     * the narrower key is what lets the `translator` role in without `products.manage`.
+     */
+    {
+        path: 'locales/translations/:entityType/:id',
+        name: 'EntityTranslations',
+        meta: { access: 'translator', title: 'entity-translations-page.page-title' },
+        component: () => import('./views/EntityTranslations.vue')
     }
 ] satisfies RouteRecordRaw[];

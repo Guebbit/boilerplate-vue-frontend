@@ -2,7 +2,9 @@
  * @module
  * Router guard that keeps the active i18n locale in sync with the `:locale` route param —
  * loading the bundled dictionary plus any remote overrides on first use of a locale, and
- * redirecting to the default locale when the param is missing or unsupported.
+ * redirecting to the default locale when the param is missing or unsupported. Also wipes every
+ * locale-sensitive module's cache once a language switch actually happens, so a product title
+ * (or anything else server text) cannot survive under the wrong language.
  */
 import {
     getDefaultLocale,
@@ -14,6 +16,8 @@ import {
     type TranslationDictionaries
 } from '@/infrastructure/i18n';
 import { withLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
+import { collectLocaleSensitiveResets } from '@/kernel/registry';
+import { enabledModules } from '@/modules';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
 
 /**
@@ -52,6 +56,18 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
 };
 
 /**
+ * Wipes every enabled, locale-sensitive module's cache — `useProductsStore`'s dictionary, the
+ * cart's product-title join, and the rest `collectLocaleSensitiveResets` finds.
+ *
+ * Read `enabledModules` at call time rather than importing it into a module-level constant: the
+ * list never actually changes at runtime, but reading it lazily keeps this file's only
+ * `@/modules` touch inside the one function that needs it.
+ */
+const resetLocaleSensitiveStores = (): void => {
+    for (const reset of collectLocaleSensitiveResets(enabledModules)) reset();
+};
+
+/**
  * Router guard (registered on `beforeResolve`) that keeps the active i18n
  * language in sync with the `:locale` route param.
  *
@@ -67,19 +83,32 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // Locale segment coming from the URL (may be undefined on locale-less routes)
     const locale = to.params.locale as string;
 
+    // Snapshot before anything below can change it, so the reset it gates fires only for an
+    // ACTUAL switch — never for two pages visited back to back in the same language.
+    const previousLocale = getCurrentLocale();
+
+    /**
+     * Resolves the guard's `true` verdict, wiping locale-sensitive caches first if — and only
+     * if — the language genuinely changed underneath this navigation.
+     */
+    const settle = (): true => {
+        if (locale !== previousLocale) resetLocaleSensitiveStores();
+        return true;
+    };
+
     // Already loaded: just make sure it is the active language and proceed.
     // (covers back/forward navigation and direct URLs between loaded locales)
     if (loadedLanguages.includes(locale))
-        return (
-            getCurrentLocale() === locale ? Promise.resolve() : changeLanguage(locale)
-        ).then<true>(() => true);
+        return (getCurrentLocale() === locale ? Promise.resolve() : changeLanguage(locale)).then(
+            settle
+        );
 
     // Supported but not yet loaded: fetch it, register the messages, activate it.
     if (supportedLanguages.includes(locale))
         return fetchLanguageApi(locale)
             .then(([lang, vocabulary]) => updateLocale(lang, vocabulary).then(() => lang))
             .then((lang) => changeLanguage(lang))
-            .then<true>(() => true);
+            .then(settle);
 
     // Missing, unsupported or empty locale: redirect to the same route with the
     // browser/default locale injected into the params.

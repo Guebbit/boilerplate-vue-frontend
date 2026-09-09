@@ -47,5 +47,15 @@ export const localesResponseSchemas: ResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/locales\/[^/]+\/entries\/[^/]+$/,
         schema: schemas.DeleteLocaleEntryResponse
+    },
+    {
+        method: 'GET',
+        pattern: /^\/locales\/translations(?:\/[^/]+){2}$/,
+        schema: schemas.GetEntityTranslationsResponse
+    },
+    {
+        method: 'PATCH',
+        pattern: /^\/locales\/translations(?:\/[^/]+){2}$/,
+        schema: schemas.UpsertEntityTranslationsResponse
     }
 ];

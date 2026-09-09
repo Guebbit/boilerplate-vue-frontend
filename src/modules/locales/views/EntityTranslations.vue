@@ -1,0 +1,361 @@
+<script lang="ts">
+export default {
+    name: 'EntityTranslationsPage'
+};
+</script>
+
+<script setup lang="ts">
+/**
+ * @module
+ * The generic translation door's own screen: `GET`/`PATCH /translations/{entityType}/{id}`, one
+ * tab per language the entity has a row for. Reachable for any `translatables`-registered entity
+ * — currently only `product`, linked from `ProductEdit.vue`'s "Translations" action — and reads
+ * only whatever fields the fetched rows actually carry, since the field set is a per-entity
+ * registry lookup this generic screen has no other way to know — the accepted trade for staying
+ * generic across entity types.
+ *
+ * Gated on `translations.read` (the route's `meta.access: 'translator'`) for entry, and
+ * `translations.manage` for the save action — a translator never needs, and never gets,
+ * `products.manage`.
+ */
+import { computed, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { ArrowLeft, Plus, X } from 'lucide-vue-next';
+import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { useLocalesStore } from '@/modules/locales/store.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import type { Translation, UpsertTranslationsRequest } from '@types';
+import { TranslationOrigin } from '@types';
+
+/**
+ * Localized dictionary helper.
+ */
+const { t } = useI18n();
+
+/**
+ * Current route, read for `:entityType`/`:id`.
+ */
+const route = useRoute();
+
+/**
+ * Toast dispatcher.
+ */
+const { addMessage } = useNotificationsStore();
+
+/**
+ * The locales store: the language manifest (for the tab universe) and the two generic
+ * translation actions.
+ */
+const localesStore = useLocalesStore();
+
+/**
+ * The manifest and its fallback locale.
+ */
+const { capabilities, fallbackLocale } = storeToRefs(localesStore);
+
+/**
+ * Whether the visitor may save — `translations.manage`. The route itself only requires
+ * `translations.read`, so a read-only translator (or an admin, who has both) can still reach this
+ * screen with the save action hidden.
+ */
+const { canManageTranslations } = storeToRefs(useSessionStore());
+
+/**
+ * The entity this screen edits, from the route.
+ */
+const entityType = computed(() => String(route.params.entityType));
+const entityId = computed(() => String(route.params.id));
+
+/**
+ * Every active locale — the tab bar's "add language" universe.
+ */
+const activeLocales = computed(() => capabilities.value.filter((capability) => capability.active));
+
+/**
+ * The rows as last fetched, kept around so `handleAddLocale` can restore a removed-then-readded
+ * tab's original content instead of blanking it.
+ */
+const rows = ref<Translation[]>([]);
+
+/**
+ * Every field name across the fetched rows — this entity's translatable fields, discovered from
+ * the data itself rather than a schema this generic screen does not have.
+ */
+const fieldNames = computed(() => {
+    const names = new Set<string>();
+    for (const row of rows.value) for (const key of Object.keys(row.fields)) names.add(key);
+    return [...names];
+});
+
+/**
+ * The editable draft, one entry per open locale: an object to upsert, or `null` for a tab marked
+ * for removal — the same three-way shape `UpsertTranslationsRequest` itself uses, so submission
+ * is a direct pass-through.
+ */
+const drafts = ref<Record<string, Record<string, string> | null>>({});
+
+/**
+ * Which locales the LAST fetch actually had a row for — removing one of these sends `null`;
+ * removing a tab opened only this session just drops it.
+ */
+const originalTags = ref<string[]>([]);
+
+/**
+ * Which language tabs are open, fallback locale first — derived from `drafts` itself.
+ */
+const openTags = computed(() => {
+    const tags = Object.keys(drafts.value).filter((tag) => drafts.value[tag] !== null);
+    const fallback = fallbackLocale.value;
+    return fallback ? [fallback, ...tags.filter((tag) => tag !== fallback)] : tags;
+});
+
+/**
+ * Locales with no open tab — the "add language" picker's own items.
+ */
+const closedLocales = computed(() =>
+    activeLocales.value.filter(({ tag }) => !openTags.value.includes(tag))
+);
+
+/**
+ * The tab currently shown.
+ */
+const activeTab = ref<string>();
+
+/**
+ * The "add language" select's own model — always reset to `null` once a pick is reported, so the
+ * control reads as a one-shot action rather than a language that stays "selected".
+ */
+const addSelection = ref<string | null>(null);
+
+/**
+ * Reports a language pick and resets the select.
+ *
+ * @param tag - The picked locale, or `null` when the select was cleared.
+ */
+const handlePickLocale = (tag: string | null) => {
+    if (tag) handleAddLocale(tag);
+    addSelection.value = null;
+};
+
+/**
+ * Whether a fetch or save is in flight.
+ */
+const loading = ref(false);
+const saving = ref(false);
+
+/**
+ * (Re)loads the manifest (once) and this entity's translation rows, then rebuilds the drafts.
+ *
+ * @returns A promise resolving once the screen's state reflects the server's.
+ */
+const load = () => {
+    loading.value = true;
+    return Promise.all([
+        capabilities.value.length === 0 ? localesStore.fetchLanguages() : Promise.resolve(),
+        localesStore.fetchEntityTranslations(entityType.value, entityId.value)
+    ])
+        .then(([, translations]) => {
+            rows.value = translations ?? [];
+            const byLocale: Record<string, Record<string, string> | null> = {};
+            for (const row of rows.value) byLocale[row.locale] = { ...row.fields };
+            drafts.value = byLocale;
+            originalTags.value = Object.keys(byLocale);
+            activeTab.value = openTags.value[0];
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+        .finally(() => {
+            loading.value = false;
+        });
+};
+
+watch([entityType, entityId], () => void load(), { immediate: true });
+
+/**
+ * Opens a language tab — one this entity already had a row for comes back with that row's
+ * content; a genuinely new one starts with every known field blank.
+ *
+ * @param tag - The locale to open.
+ */
+const handleAddLocale = (tag: string) => {
+    const restored = rows.value.find((row) => row.locale === tag)?.fields;
+    drafts.value = {
+        ...drafts.value,
+        [tag]: restored
+            ? { ...restored }
+            : Object.fromEntries(fieldNames.value.map((name) => [name, '']))
+    };
+    activeTab.value = tag;
+};
+
+/**
+ * Closes a language tab. One the last fetch already had a row for is marked `null` — the merge's
+ * delete signal; one opened only this session, never saved, is dropped outright.
+ *
+ * @param tag - The locale to close.
+ */
+const handleRemoveLocale = (tag: string) => {
+    if (originalTags.value.includes(tag)) {
+        drafts.value = { ...drafts.value, [tag]: null };
+    } else {
+        const { [tag]: _removed, ...rest } = drafts.value;
+        drafts.value = rest;
+    }
+    if (activeTab.value === tag) activeTab.value = openTags.value[0];
+};
+
+/**
+ * Whether any open tab has a blank field — an empty string is a 422 on the API's own door, never
+ * a delete (that is `null`), so this is caught before the request rather than after.
+ */
+const hasEmptyField = computed(() =>
+    openTags.value.some((tag) => Object.values(drafts.value[tag] ?? {}).some((value) => !value))
+);
+
+/**
+ * Saves every open and removed locale in one merging write.
+ *
+ * @returns A promise resolving once the write lands and the screen has reloaded from it; a toast
+ *  either way.
+ */
+const handleSave = () => {
+    if (hasEmptyField.value) {
+        addMessage(t('entity-translations-page.error-empty-field'));
+        return Promise.resolve();
+    }
+
+    const body: UpsertTranslationsRequest = {};
+    for (const [tag, fields] of Object.entries(drafts.value))
+        body[tag] = fields === null ? null : { fields, origin: TranslationOrigin.human };
+
+    saving.value = true;
+    return localesStore
+        .saveEntityTranslations(entityType.value, entityId.value, body)
+        .then(() => {
+            addMessage(t('entity-translations-page.success-save'));
+            return load();
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+        .finally(() => {
+            saving.value = false;
+        });
+};
+
+/**
+ * A locale's native name, from the manifest, falling back to the bare tag before it loads.
+ *
+ * @param tag - The locale.
+ */
+const nativeNameOf = (tag: string) =>
+    capabilities.value.find((capability) => capability.tag === tag)?.nativeName ?? tag;
+</script>
+
+<template>
+    <LayoutDefault id="entity-translations-page" :title="t('entity-translations-page.page-title')">
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            <v-btn
+                variant="text"
+                data-test="back-link"
+                :to="routerLinkI18n({ name: 'LocalesList' })"
+            >
+                <ArrowLeft :size="16" class="mr-1" aria-hidden="true" />
+                {{ t('entity-translations-page.back') }}
+            </v-btn>
+            <span class="font-mono text-sm opacity-70" data-test="entity-subject">
+                {{ entityType }} / {{ entityId }}
+            </span>
+        </div>
+
+        <v-card class="p-5">
+            <div class="mb-4 flex flex-wrap items-center gap-2">
+                <v-tabs v-model="activeTab" data-test="entity-translation-tabs">
+                    <v-tab
+                        v-for="tag in openTags"
+                        :key="tag"
+                        :value="tag"
+                        :data-test="`entity-translation-tab-${tag}`"
+                    >
+                        {{ nativeNameOf(tag) }}
+                        <v-btn
+                            v-if="tag !== fallbackLocale"
+                            icon
+                            size="x-small"
+                            variant="text"
+                            density="compact"
+                            class="ml-1"
+                            data-test="entity-translation-tab-remove"
+                            :aria-label="
+                                t('entity-translations-page.button-remove-language', {
+                                    name: nativeNameOf(tag)
+                                })
+                            "
+                            @click.stop="handleRemoveLocale(tag)"
+                        >
+                            <X :size="14" aria-hidden="true" />
+                        </v-btn>
+                    </v-tab>
+                </v-tabs>
+
+                <v-select
+                    v-if="closedLocales.length > 0"
+                    v-model="addSelection"
+                    :items="closedLocales"
+                    item-title="nativeName"
+                    item-value="tag"
+                    :label="t('entity-translations-page.label-add-language')"
+                    hide-details
+                    density="compact"
+                    class="max-w-56"
+                    data-test="entity-translation-add-language"
+                    @update:model-value="handlePickLocale"
+                >
+                    <template #prepend>
+                        <Plus :size="16" aria-hidden="true" />
+                    </template>
+                </v-select>
+            </div>
+
+            <p v-if="!loading && openTags.length === 0" class="opacity-75">
+                {{ t('entity-translations-page.empty') }}
+            </p>
+
+            <!--
+                `drafts[tag]!` — every open tab's slot is an object: `null` only ever lands on a
+                tab CLOSED by `handleRemoveLocale`, which also removes it from `openTags`.
+            -->
+            <v-window v-model="activeTab">
+                <v-window-item v-for="tag in openTags" :key="tag" :value="tag">
+                    <v-textarea
+                        v-for="field in fieldNames"
+                        :key="field"
+                        v-model="drafts[tag]![field]"
+                        :label="field"
+                        :rows="field === 'description' ? 5 : 1"
+                        :error-messages="
+                            !drafts[tag]?.[field]
+                                ? [t('entity-translations-page.error-field-required')]
+                                : []
+                        "
+                        class="mb-2"
+                        data-test="entity-translation-field"
+                    />
+                </v-window-item>
+            </v-window>
+
+            <v-btn
+                v-if="canManageTranslations"
+                color="primary"
+                :loading="saving"
+                :disabled="loading || openTags.length === 0"
+                data-test="entity-translations-save"
+                @click="handleSave"
+            >
+                {{ t('entity-translations-page.button-save') }}
+            </v-btn>
+        </v-card>
+    </LayoutDefault>
+</template>

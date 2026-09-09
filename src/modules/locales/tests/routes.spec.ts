@@ -26,7 +26,10 @@ describe('locales route access', () => {
     it.each([
         ['LocalesList', 'admin'],
         ['LocalesDictionary', 'admin'],
-        ['LocaleEntries', 'admin']
+        ['LocaleEntries', 'admin'],
+        // Narrower than `admin` on purpose: the `translator` role reaches the generic
+        // translations door without ever holding `products.manage`.
+        ['EntityTranslations', 'translator']
     ])('%s declares access: %s', (name, access) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
@@ -36,7 +39,7 @@ describe('locales route access', () => {
         // Catches a new route added without an access decision being made for it — the
         // delete-everything dictionary import is otherwise unguarded by any spec.
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
-            ['LocalesList', 'LocalesDictionary', 'LocaleEntries'].toSorted()
+            ['LocalesList', 'LocalesDictionary', 'LocaleEntries', 'EntityTranslations'].toSorted()
         );
     });
 });
