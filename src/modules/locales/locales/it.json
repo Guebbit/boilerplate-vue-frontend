@@ -155,8 +155,6 @@
         "page-title": "Traduzioni entità",
         "back": "Torna alle lingue",
         "empty": "Questa entità non ha nessuna lingua aperta. Aggiungine una per iniziare a tradurla.",
-        "label-add-language": "Aggiungi lingua",
-        "button-remove-language": "Rimuovi {name}",
         "button-save": "Salva traduzioni",
         "success-save": "Traduzioni salvate",
         "error-empty-field": "Ogni campo di una scheda aperta deve avere un valore prima di salvare.",

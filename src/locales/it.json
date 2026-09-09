@@ -78,6 +78,11 @@
         "upload-progress": "Caricamento… {percent}%",
         "preview-alt": "Anteprima immagine"
     },
+    "translation-tabs": {
+        "error-count": "{count} errore/i",
+        "button-remove-language": "Rimuovi {name}",
+        "label-add-language": "Aggiungi lingua"
+    },
     "image": {
         "placeholder-alt": "Nessuna immagine disponibile — immagine segnaposto"
     },

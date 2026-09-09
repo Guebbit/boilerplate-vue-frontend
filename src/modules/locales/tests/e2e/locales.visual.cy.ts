@@ -30,7 +30,7 @@ sweepVisual(
                 cy.productInRole('inStock').then((product) => {
                     cy.visit(`/en/locales/translations/product/${product.id}`);
                 });
-                cy.get('[data-test=entity-translation-tabs]').should('exist');
+                cy.get('[data-test=translation-tabs]').should('exist');
                 cy.get('h1').should('be.visible');
                 cy.settleNetwork();
             }

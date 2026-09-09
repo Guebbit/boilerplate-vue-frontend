@@ -78,11 +78,6 @@
         "success-update": "Prodotto aggiornato con successo",
         "button-translations": "Traduzioni"
     },
-    "product-translation-tabs": {
-        "error-count": "{count} errore/i",
-        "button-remove-language": "Rimuovi {name}",
-        "label-add-language": "Aggiungi lingua"
-    },
     "navigation": {
         "label-products-list": "@:generic.product"
     }

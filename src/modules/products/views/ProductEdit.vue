@@ -29,7 +29,8 @@ import {
     translationTabErrorCountsFromZodError,
     translationTabErrorCountsFromServerError
 } from '@/modules/products/composables/translation-tab-errors.ts';
-import ProductTranslationTabs from '@/modules/products/components/ProductTranslationTabs.vue';
+import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
+import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Languages, Package, Pencil } from 'lucide-vue-next';
@@ -213,14 +214,13 @@ watch(adminProduct, (product) => {
  * Which language tabs are open, fallback locale first — derived from `form.translations` itself
  * (every present, non-`null` key) rather than tracked separately, so a `resetForm()` cannot leave
  * the tab bar out of sync with the data it is supposed to reflect.
+ *
+ * The fallback tag is prepended only once `form.translations` actually has an entry for it —
+ * never manufactured here — which is what keeps this safe against `fetchActiveLocales()` (an
+ * independent fetch) resolving before `loadAdminProduct()` does: a fallback with no entry yet
+ * simply has no tab, rather than an active one whose `form.translations[tag]` is `undefined`.
  */
-const openTags = computed(() => {
-    const tags = Object.keys(form.value.translations).filter(
-        (tag) => form.value.translations[tag] !== null
-    );
-    const fallback = fallbackLocale.value;
-    return fallback ? [fallback, ...tags.filter((tag) => tag !== fallback)] : tags;
-});
+const openTags = useTranslationTabOrder(() => form.value.translations, fallbackLocale);
 
 /**
  * The tab currently shown, defaulted to the first one open once the admin record has loaded.
@@ -268,7 +268,7 @@ const handleAddLocale = (tag: string) => {
  * for a `null` to delete.
  *
  * @param tag - The locale to close. The fallback tag is never offered this action (see
- *  `ProductTranslationTabs`), so it is never reached here either.
+ *  `TranslationTabs`), so it is never reached here either.
  */
 const handleRemoveLocale = (tag: string) => {
     if (originalTags.value.includes(tag)) {
@@ -411,7 +411,7 @@ const submitForm = () =>
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <ProductTranslationTabs
+                    <TranslationTabs
                         v-model="activeTab"
                         :locales="locales"
                         :open-tags="openTags"

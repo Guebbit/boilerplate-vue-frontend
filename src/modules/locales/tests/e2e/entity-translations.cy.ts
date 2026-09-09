@@ -26,7 +26,7 @@ describe('Entity translations — the generic admin door', () => {
         }).then((product) => {
             cy.visit(`/en/locales/translations/product/${product.id}`);
 
-            cy.get('[data-test=entity-translation-tab-it]').click();
+            cy.get('[data-test=translation-tab-it]').click();
             cy.get('[data-test=entity-translation-field]:visible').clear();
             cy.get('[data-test=entity-translation-field]:visible').type(editedItTitle);
             cy.get('[data-test=entity-translations-save]').click();

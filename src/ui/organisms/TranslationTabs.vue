@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * @module
- * The tab bar every per-language product form (create, edit) shares: one tab per open locale,
- * the fallback locale first and never removable, an error-count badge per tab, an "add language"
- * picker for any active locale not open yet, and a remove button on every other open tab.
+ * The tab bar every per-locale translation screen shares — the product create/edit forms and the
+ * generic entity-translations screen: one tab per open locale, the fallback locale first and
+ * never removable, an optional error-count badge per tab, an "add language" picker for any active
+ * locale not open yet, and a remove button on every other open tab.
  *
- * Purely presentational — `v-model` is the active tab, `add`/`remove` report the admin's intent,
- * and the caller (`ProductCreate.vue`/`ProductEdit.vue`) owns the actual form data per locale.
+ * Purely presentational — `v-model` is the active tab, `add`/`remove` report the caller's intent,
+ * and the caller owns the actual per-locale data and its ordering (see `useTranslationTabOrder`).
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -22,7 +23,12 @@ export interface TranslationTabLocale {
     direction: 'ltr' | 'rtl';
 }
 
-const { locales, openTags, fallbackTag, errorCounts } = defineProps<{
+const {
+    locales,
+    openTags,
+    fallbackTag,
+    errorCounts = {}
+} = defineProps<{
     /**
      * Every active locale this deployment offers — the universe the "add language" picker
      * chooses from.
@@ -42,10 +48,10 @@ const { locales, openTags, fallbackTag, errorCounts } = defineProps<{
     fallbackTag?: string;
 
     /**
-     * Error count per open locale, from `translationTabErrorCounts` — a tab with a positive
-     * count wears a badge.
+     * Error count per open locale. A tab with a positive count wears a badge. Optional: a caller
+     * with no per-tab validation (the generic entity-translations screen) simply omits it.
      */
-    errorCounts: Record<string, number>;
+    errorCounts?: Record<string, number>;
 }>();
 
 /**
@@ -111,7 +117,7 @@ const handlePick = (tag: string | null) => {
                     :model-value="Boolean(errorCounts[locale.tag])"
                     :content="errorCounts[locale.tag]"
                     :label="
-                        t('product-translation-tabs.error-count', {
+                        t('translation-tabs.error-count', {
                             count: errorCounts[locale.tag] ?? 0
                         })
                     "
@@ -129,7 +135,7 @@ const handlePick = (tag: string | null) => {
                     class="ml-1"
                     data-test="translation-tab-remove"
                     :aria-label="
-                        t('product-translation-tabs.button-remove-language', {
+                        t('translation-tabs.button-remove-language', {
                             name: locale.nativeName
                         })
                     "
@@ -146,7 +152,7 @@ const handlePick = (tag: string | null) => {
             :items="closedLocales"
             item-title="nativeName"
             item-value="tag"
-            :label="t('product-translation-tabs.label-add-language')"
+            :label="t('translation-tabs.label-add-language')"
             hide-details
             density="compact"
             class="max-w-56"

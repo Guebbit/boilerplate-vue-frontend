@@ -19,7 +19,7 @@ import type { LocaleCapability } from '@types';
 export const useActiveLocales = () => {
     /**
      * Every active locale, tag/nativeName/direction — what
-     * `ProductTranslationTabs`'s `locales` prop renders.
+     * `TranslationTabs`'s `locales` prop renders.
      */
     const locales = ref<LocaleCapability[]>([]);
 

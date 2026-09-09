@@ -12,7 +12,7 @@ export default {
  * store's multipart-aware `createProduct`. See `translation-tab-errors.ts` for how a validation
  * failure reaches the right tab's badge.
  */
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -28,7 +28,8 @@ import {
     translationTabErrorCountsFromZodError,
     translationTabErrorCountsFromServerError
 } from '@/modules/products/composables/translation-tab-errors.ts';
-import ProductTranslationTabs from '@/modules/products/components/ProductTranslationTabs.vue';
+import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
+import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -121,13 +122,7 @@ const {
  * (every present, non-`null` key) rather than tracked separately, so a `resetForm()` cannot leave
  * the tab bar out of sync with the data it is supposed to reflect.
  */
-const openTags = computed(() => {
-    const tags = Object.keys(form.value.translations).filter(
-        (tag) => form.value.translations[tag] !== null
-    );
-    const fallback = fallbackLocale.value;
-    return fallback ? [fallback, ...tags.filter((tag) => tag !== fallback)] : tags;
-});
+const openTags = useTranslationTabOrder(() => form.value.translations, fallbackLocale);
 
 /**
  * The tab currently shown.
@@ -167,7 +162,7 @@ const handleAddLocale = (tag: string) => {
  * key — unlike an edit's removal, it never becomes a `null` slot.
  *
  * @param tag - The locale to close. The fallback tag is never offered this action (see
- *  `ProductTranslationTabs`), so it is never reached here either.
+ *  `TranslationTabs`), so it is never reached here either.
  */
 const handleRemoveLocale = (tag: string) => {
     const { [tag]: _removed, ...rest } = form.value.translations;
@@ -263,7 +258,7 @@ const submitForm = () =>
             :loading="isSubmitting"
             @submit="submitForm"
         >
-            <ProductTranslationTabs
+            <TranslationTabs
                 v-model="activeTab"
                 :locales="locales"
                 :open-tags="openTags"

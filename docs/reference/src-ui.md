@@ -28,17 +28,22 @@ Small, single-purpose, and composed into the organisms below.
 | `src/ui/molecules/ListPagination.vue`   | The paginator: page count in, page changes out, no knowledge of what is being paged.               | [State & Routing](../tools/state-and-routing.md)   |
 | `src/ui/molecules/TableLoadingBar.vue`  | The loading bar a `v-data-table` renders through its `#loader` slot.                               | [UI Kit](./src-ui.md)                              |
 
+`src/ui/composables/use-translation-tab-order.ts` derives "which tabs are open, fallback first"
+from any per-locale record — the one piece of logic `TranslationTabs.vue` below does not own,
+since it differs per caller's own state shape.
+
 ## Organisms
 
-| File                                    | What it is                                                                                                                          | Read next                                                  |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with sorting, loading and pagination wired in.                  | [Admin Dashboard](../tools/admin-dashboard.md)             |
-| `src/ui/organisms/ItemDetailLayout.vue` | The shared skeleton for entity detail and edit pages — product, order, user. What keeps twelve detail screens looking like one app. | [Admin Dashboard](../tools/admin-dashboard.md)             |
-| `src/ui/organisms/ItemDetailHero.vue`   | The header band of that skeleton: title, subtitle, actions.                                                                         | [UI Kit](./src-ui.md)                                      |
-| `src/ui/organisms/CardDetail.vue`       | A card presenting one entity's fields.                                                                                              | [UI Kit](./src-ui.md)                                      |
-| `src/ui/organisms/CardInfo.vue`         | A gradient tile keyed to the theme accent, for summary panels.                                                                      | [UI Kit](./src-ui.md)                                      |
-| `src/ui/organisms/CardMaterialStat.vue` | A statistic tile with a coloured top border keyed to the theme accent — the dashboard's number cards.                               | [Admin Dashboard](../tools/admin-dashboard.md)             |
-| `src/ui/organisms/DialogHost.vue`       | Renders the head of the confirmation queue and answers it. Mounted once by the layout; every `confirm()` in the app resolves here.  | [Accessibility testing](../tools/accessibility-testing.md) |
+| File                                    | What it is                                                                                                                                                                        | Read next                                                  |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with sorting, loading and pagination wired in.                                                                | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/ItemDetailLayout.vue` | The shared skeleton for entity detail and edit pages — product, order, user. What keeps twelve detail screens looking like one app.                                               | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/ItemDetailHero.vue`   | The header band of that skeleton: title, subtitle, actions.                                                                                                                       | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardDetail.vue`       | A card presenting one entity's fields.                                                                                                                                            | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardInfo.vue`         | A gradient tile keyed to the theme accent, for summary panels.                                                                                                                    | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardMaterialStat.vue` | A statistic tile with a coloured top border keyed to the theme accent — the dashboard's number cards.                                                                             | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/DialogHost.vue`       | Renders the head of the confirmation queue and answers it. Mounted once by the layout; every `confirm()` in the app resolves here.                                                | [Accessibility testing](../tools/accessibility-testing.md) |
+| `src/ui/organisms/TranslationTabs.vue`  | The per-locale tab bar shared by the product create/edit forms and the generic entity-translations screen — open tabs, an "add language" picker, per-tab remove and error badges. | [UI Kit](./src-ui.md)                                      |
 
 ## The dialog store
 

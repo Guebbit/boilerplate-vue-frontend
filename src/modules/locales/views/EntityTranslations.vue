@@ -23,12 +23,14 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { ArrowLeft, Plus, X } from 'lucide-vue-next';
+import { ArrowLeft } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
+import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import type { Translation, UpsertTranslationsRequest } from '@types';
 import { TranslationOrigin } from '@types';
 
@@ -106,41 +108,16 @@ const drafts = ref<Record<string, Record<string, string> | null>>({});
 const originalTags = ref<string[]>([]);
 
 /**
- * Which language tabs are open, fallback locale first — derived from `drafts` itself.
+ * Which language tabs are open, fallback locale first — derived from `drafts` itself. Shared with
+ * the product create/edit forms, which read a differently-shaped record for the same ordering —
+ * see `useTranslationTabOrder`.
  */
-const openTags = computed(() => {
-    const tags = Object.keys(drafts.value).filter((tag) => drafts.value[tag] !== null);
-    const fallback = fallbackLocale.value;
-    return fallback ? [fallback, ...tags.filter((tag) => tag !== fallback)] : tags;
-});
-
-/**
- * Locales with no open tab — the "add language" picker's own items.
- */
-const closedLocales = computed(() =>
-    activeLocales.value.filter(({ tag }) => !openTags.value.includes(tag))
-);
+const openTags = useTranslationTabOrder(() => drafts.value, fallbackLocale);
 
 /**
  * The tab currently shown.
  */
 const activeTab = ref<string>();
-
-/**
- * The "add language" select's own model — always reset to `null` once a pick is reported, so the
- * control reads as a one-shot action rather than a language that stays "selected".
- */
-const addSelection = ref<string | null>(null);
-
-/**
- * Reports a language pick and resets the select.
- *
- * @param tag - The picked locale, or `null` when the select was cleared.
- */
-const handlePickLocale = (tag: string | null) => {
-    if (tag) handleAddLocale(tag);
-    addSelection.value = null;
-};
 
 /**
  * Whether a fetch or save is in flight.
@@ -244,14 +221,6 @@ const handleSave = () => {
             saving.value = false;
         });
 };
-
-/**
- * A locale's native name, from the manifest, falling back to the bare tag before it loads.
- *
- * @param tag - The locale.
- */
-const nativeNameOf = (tag: string) =>
-    capabilities.value.find((capability) => capability.tag === tag)?.nativeName ?? tag;
 </script>
 
 <template>
@@ -271,53 +240,14 @@ const nativeNameOf = (tag: string) =>
         </div>
 
         <v-card class="p-5">
-            <div class="mb-4 flex flex-wrap items-center gap-2">
-                <v-tabs v-model="activeTab" data-test="entity-translation-tabs">
-                    <v-tab
-                        v-for="tag in openTags"
-                        :key="tag"
-                        :value="tag"
-                        :data-test="`entity-translation-tab-${tag}`"
-                    >
-                        {{ nativeNameOf(tag) }}
-                        <v-btn
-                            v-if="tag !== fallbackLocale"
-                            icon
-                            size="x-small"
-                            variant="text"
-                            density="compact"
-                            class="ml-1"
-                            data-test="entity-translation-tab-remove"
-                            :aria-label="
-                                t('entity-translations-page.button-remove-language', {
-                                    name: nativeNameOf(tag)
-                                })
-                            "
-                            @click.stop="handleRemoveLocale(tag)"
-                        >
-                            <X :size="14" aria-hidden="true" />
-                        </v-btn>
-                    </v-tab>
-                </v-tabs>
-
-                <v-select
-                    v-if="closedLocales.length > 0"
-                    v-model="addSelection"
-                    :items="closedLocales"
-                    item-title="nativeName"
-                    item-value="tag"
-                    :label="t('entity-translations-page.label-add-language')"
-                    hide-details
-                    density="compact"
-                    class="max-w-56"
-                    data-test="entity-translation-add-language"
-                    @update:model-value="handlePickLocale"
-                >
-                    <template #prepend>
-                        <Plus :size="16" aria-hidden="true" />
-                    </template>
-                </v-select>
-            </div>
+            <TranslationTabs
+                v-model="activeTab"
+                :locales="activeLocales"
+                :open-tags="openTags"
+                :fallback-tag="fallbackLocale"
+                @add="handleAddLocale"
+                @remove="handleRemoveLocale"
+            />
 
             <p v-if="!loading && openTags.length === 0" class="opacity-75">
                 {{ t('entity-translations-page.empty') }}

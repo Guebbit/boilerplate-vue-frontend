@@ -78,6 +78,11 @@
         "upload-progress": "Uploading… {percent}%",
         "preview-alt": "Image preview"
     },
+    "translation-tabs": {
+        "error-count": "{count} error(s)",
+        "button-remove-language": "Remove {name}",
+        "label-add-language": "Add language"
+    },
     "image": {
         "placeholder-alt": "No image available — placeholder picture"
     },

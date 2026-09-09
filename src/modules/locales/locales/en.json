@@ -155,8 +155,6 @@
         "page-title": "Entity translations",
         "back": "Back to languages",
         "empty": "This entity has no language open. Add one to start translating it.",
-        "label-add-language": "Add language",
-        "button-remove-language": "Remove {name}",
         "button-save": "Save translations",
         "success-save": "Translations saved",
         "error-empty-field": "Every field on an open tab must have a value before saving.",
