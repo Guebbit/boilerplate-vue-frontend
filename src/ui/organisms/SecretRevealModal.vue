@@ -1,15 +1,17 @@
 <script lang="ts">
 export default {
-    name: 'WebhookSecretRevealModal'
+    name: 'SecretRevealModal'
 };
 </script>
 
 <script setup lang="ts">
 /**
  * @module
- * The one-time secret-reveal dialog, shared by creating a subscription and rotating one's secret
- * — both hand a plaintext secret to the view exactly once, never retrievable again. Modeled on
- * `account/components/TwoFactorBackupCodes.vue`: blocking, the checkbox is the only way out.
+ * The one-time secret-reveal dialog: a plaintext secret shown once and never retrievable again.
+ * Shared by every module that mints a machine credential — webhooks' subscription secret, the
+ * api-keys module's minted key — the mechanism is identical, only the wording differs at the call
+ * site. Modeled on `account/components/TwoFactorBackupCodes.vue`: blocking, the checkbox is the
+ * only way out.
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -17,13 +19,23 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { Copy } from 'lucide-vue-next';
 
 /**
- * The one-time secret to display. Shown once and never again.
+ * The one-time secret to display, and the wording around it. `title`/`intro` default to a neutral
+ * pair rather than requiring every caller to pass one — every current caller does anyway, because
+ * "this secret" means something different per credential kind ("subscription" vs. "credential").
  */
-const { secret } = defineProps<{
+const { secret, title, intro } = defineProps<{
     /**
      * The plaintext secret to show, in the clear, once.
      */
     secret: string;
+    /**
+     * Overrides the generic dialog title.
+     */
+    title?: string;
+    /**
+     * Overrides the generic intro paragraph.
+     */
+    intro?: string;
 }>();
 
 /**
@@ -62,25 +74,25 @@ watch(
  * context, which every deployment of this app already is (the app itself is https-only).
  */
 const copySecret = () =>
-    navigator.clipboard.writeText(secret).then(() => addMessage(t('webhook-secret-modal.copied')));
+    navigator.clipboard.writeText(secret).then(() => addMessage(t('generic.secret-reveal-copied')));
 </script>
 
 <template>
-    <v-card data-test="webhook-secret-reveal">
-        <v-card-title>{{ t('webhook-secret-modal.title') }}</v-card-title>
+    <v-card data-test="secret-reveal">
+        <v-card-title>{{ title ?? t('generic.secret-reveal-title') }}</v-card-title>
         <v-card-text>
-            <p class="mb-4">{{ t('webhook-secret-modal.intro') }}</p>
+            <p class="mb-4">{{ intro ?? t('generic.secret-reveal-intro') }}</p>
             <div class="mb-4 flex items-center gap-2">
                 <code
                     class="flex-1 overflow-x-auto rounded bg-black/5 p-3 font-mono text-sm"
-                    data-test="webhook-secret-value"
+                    data-test="secret-reveal-value"
                 >
                     {{ secret }}
                 </code>
                 <v-btn
                     variant="tonal"
                     icon
-                    :aria-label="t('webhook-secret-modal.button-copy')"
+                    :aria-label="t('generic.secret-reveal-button-copy')"
                     @click="copySecret"
                 >
                     <Copy :size="18" aria-hidden="true" />
@@ -88,8 +100,8 @@ const copySecret = () =>
             </div>
             <v-checkbox
                 v-model="confirmedSaved"
-                :label="t('webhook-secret-modal.confirm-saved')"
-                data-test="webhook-secret-confirm-saved"
+                :label="t('generic.secret-reveal-confirm-saved')"
+                data-test="secret-reveal-confirm-saved"
             />
         </v-card-text>
         <v-card-actions>
@@ -98,10 +110,10 @@ const copySecret = () =>
                 color="primary"
                 variant="flat"
                 :disabled="!confirmedSaved"
-                data-test="webhook-secret-continue"
+                data-test="secret-reveal-continue"
                 @click="emit('done')"
             >
-                {{ t('webhook-secret-modal.button-continue') }}
+                {{ t('generic.secret-reveal-button-continue') }}
             </v-btn>
         </v-card-actions>
     </v-card>

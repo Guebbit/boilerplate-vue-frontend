@@ -22,7 +22,7 @@ import { useWebhooksStore } from '@/modules/webhooks/store';
 import { webhookCreateSchema } from '@/modules/webhooks/schemas.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
-import WebhookSecretRevealModal from '@/modules/webhooks/components/WebhookSecretRevealModal.vue';
+import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import {
     notifyErrorMessages,
     VUETIFY_INVALID_FIELD_SELECTOR
@@ -125,9 +125,11 @@ const handleSecretDone = () => {
 <template>
     <LayoutDefault id="webhook-create-page" :title="t('webhook-create-page.page-title')">
         <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
-            <WebhookSecretRevealModal
+            <SecretRevealModal
                 v-if="revealedSecret"
                 :secret="revealedSecret"
+                :title="t('webhook-secret-modal.title')"
+                :intro="t('webhook-secret-modal.intro')"
                 @done="handleSecretDone"
             />
         </v-dialog>

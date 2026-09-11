@@ -23,7 +23,13 @@
         "confirm": "Confirm",
         "fix-errors": "Please fix the highlighted form errors.",
         "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly.",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "secret-reveal-title": "Save this secret now",
+        "secret-reveal-intro": "This is the only time this secret is shown.",
+        "secret-reveal-button-copy": "Copy to clipboard",
+        "secret-reveal-copied": "Copied to clipboard",
+        "secret-reveal-confirm-saved": "I have saved this secret",
+        "secret-reveal-button-continue": "Continue"
     },
     "reauth-dialog": {
         "title": "Confirm it's you",

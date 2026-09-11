@@ -43,11 +43,7 @@
     },
     "webhook-secret-modal": {
         "title": "Save this secret now",
-        "intro": "This is the only time this secret is shown. Use it to verify that a delivery really came from this shop. If you lose it, you will need to rotate the subscription for a new one.",
-        "button-copy": "Copy to clipboard",
-        "copied": "Copied to clipboard",
-        "confirm-saved": "I have saved this secret",
-        "button-continue": "Continue"
+        "intro": "This is the only time this secret is shown. Use it to verify that a delivery really came from this shop. If you lose it, you will need to rotate the subscription for a new one."
     },
     "webhook-target-page": {
         "page-title": "Webhook subscription",

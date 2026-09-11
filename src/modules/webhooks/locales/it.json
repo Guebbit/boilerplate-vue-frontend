@@ -43,11 +43,7 @@
     },
     "webhook-secret-modal": {
         "title": "Salva subito questo segreto",
-        "intro": "Questa è l'unica volta in cui questo segreto viene mostrato. Serve a verificare che una consegna provenga davvero da questo negozio. Se lo perdi, dovrai ruotare la sottoscrizione per ottenerne uno nuovo.",
-        "button-copy": "Copia negli appunti",
-        "copied": "Copiato negli appunti",
-        "confirm-saved": "Ho salvato questo segreto",
-        "button-continue": "Continua"
+        "intro": "Questa è l'unica volta in cui questo segreto viene mostrato. Serve a verificare che una consegna provenga davvero da questo negozio. Se lo perdi, dovrai ruotare la sottoscrizione per ottenerne uno nuovo."
     },
     "webhook-target-page": {
         "page-title": "Sottoscrizione webhook",

@@ -21,7 +21,7 @@ import { useWebhooksStore } from '@/modules/webhooks/store';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import WebhookSecretRevealModal from '@/modules/webhooks/components/WebhookSecretRevealModal.vue';
+import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import { Webhook } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -177,9 +177,11 @@ const handleDelete = () => {
 <template>
     <LayoutDefault id="webhook-target" :title="t('webhook-target-page.page-title')">
         <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
-            <WebhookSecretRevealModal
+            <SecretRevealModal
                 v-if="revealedSecret"
                 :secret="revealedSecret"
+                :title="t('webhook-secret-modal.title')"
+                :intro="t('webhook-secret-modal.intro')"
                 @done="revealedSecret = undefined"
             />
         </v-dialog>

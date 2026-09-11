@@ -23,7 +23,13 @@
         "confirm": "Conferma",
         "fix-errors": "Correggi gli errori evidenziati nel modulo.",
         "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio.",
-        "notifications": "Notifiche"
+        "notifications": "Notifiche",
+        "secret-reveal-title": "Salva subito questo segreto",
+        "secret-reveal-intro": "Questa è l'unica volta in cui questo segreto viene mostrato.",
+        "secret-reveal-button-copy": "Copia negli appunti",
+        "secret-reveal-copied": "Copiato negli appunti",
+        "secret-reveal-confirm-saved": "Ho salvato questo segreto",
+        "secret-reveal-button-continue": "Continua"
     },
     "reauth-dialog": {
         "title": "Confermaci che sei tu",
