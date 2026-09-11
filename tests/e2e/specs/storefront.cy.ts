@@ -52,7 +52,7 @@ describe('Storefront', () => {
 
     describe('order actions', () => {
         it('cancels a pending order and buying again refills the cart', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             // Any order the cancel gate is still open on — the page hides the button for every
             // other status, so the role IS the precondition this case needs.
             cy.orderInRole('cancellable').then((order) => {

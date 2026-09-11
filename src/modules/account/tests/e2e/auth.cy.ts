@@ -40,9 +40,9 @@ describe('Authentication', () => {
 
         it('logs in successfully and redirects to home', () => {
             cy.get('[type=email]').should('not.be.disabled').clear();
-            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.email);
+            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.email);
             cy.get('[type=password]').should('not.be.disabled').clear();
-            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.password);
+            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.password);
             cy.get('form').submit();
 
             cy.url().should('not.include', '/login');
@@ -56,8 +56,8 @@ describe('Authentication', () => {
          * reads httpOnly cookies, a page script could not.
          */
         it('keeps the session only minutes unless asked to remember', () => {
-            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.email);
-            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.password);
+            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.email);
+            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.password);
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
@@ -68,8 +68,8 @@ describe('Authentication', () => {
         });
 
         it('remember me keeps the session for days', () => {
-            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.email);
-            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.admin.password);
+            cy.get('[type=email]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.email);
+            cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.owner.password);
             cy.get('[type=checkbox]').check({ force: true });
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
@@ -179,7 +179,7 @@ describe('Authentication', () => {
     describe('Live session refresh (live profile only)', () => {
         it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', () => {
             cy.skipUnlessLive();
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/orders');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 

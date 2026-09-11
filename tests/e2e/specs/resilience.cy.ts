@@ -170,7 +170,7 @@ describe('Resilience', () => {
         });
 
         it('admin-only routes: admin, users', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             assertRouteIsHealthy('/en/admin', '#admin-page');
             assertRouteIsHealthy('/en/users', '#users-list-page');
         });
@@ -183,7 +183,7 @@ describe('Resilience', () => {
         });
 
         it('opens a detail page for every product an admin can see, including the sparse one', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/products');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 
@@ -233,7 +233,7 @@ describe('Resilience', () => {
 
     describe('pagination agrees with the rows actually rendered', () => {
         it('shows the pagination control only when the catalogue does not fit on one page', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/products');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 

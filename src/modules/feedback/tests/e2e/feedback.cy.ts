@@ -15,7 +15,7 @@ describe('Feedback', () => {
         // One page session throughout: the admin walks from the form to the inbox through the
         // app's own navigation, which is the more honest test of the two pages being wired
         // together — and the only one that proves the ticket survived without a reload.
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input')
             .should('not.be.disabled')
@@ -40,7 +40,7 @@ describe('Feedback', () => {
         // filling it is what a generic bot autofill does, not what a person driving the UI would.
         // `{ force: true }` is what makes Cypress fill an element it would otherwise refuse to
         // touch for being invisible, which is the honeypot's whole point.
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('bot@example.com');
         cy.get('[data-test=contact-subject] input').type('Buy now');
@@ -56,7 +56,7 @@ describe('Feedback', () => {
     });
 
     it('an admin can permanently delete a ticket, and it disappears from the inbox', () => {
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
@@ -85,7 +85,7 @@ describe('Feedback', () => {
     });
 
     it('declining the delete confirmation leaves the ticket in place', () => {
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');

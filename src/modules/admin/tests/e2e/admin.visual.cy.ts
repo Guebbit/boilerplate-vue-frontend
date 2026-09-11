@@ -13,4 +13,4 @@
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
-sweepVisual('admin', [['admin-dashboard', '/en/admin', '#admin-page']], 'admin');
+sweepVisual('admin', [['admin-dashboard', '/en/admin', '#admin-page']], 'owner');

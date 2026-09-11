@@ -38,5 +38,5 @@ sweepA11y(
         ['user detail', userDetail],
         ['user edit', userEdit]
     ],
-    'admin'
+    'owner'
 );

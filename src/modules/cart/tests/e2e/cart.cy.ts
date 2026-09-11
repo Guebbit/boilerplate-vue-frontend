@@ -33,7 +33,7 @@ describe('Cart', () => {
 
     describe('Empty cart', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/cart');
             cy.get('body').then((bodyElement) => {
                 if (bodyElement.find('[data-test=cart-clear]').length > 0) {
@@ -61,7 +61,7 @@ describe('Cart', () => {
 
     describe('Cart with items', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/cart');
             cy.get('[data-test=cart-item]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });

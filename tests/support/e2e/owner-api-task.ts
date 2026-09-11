@@ -1,7 +1,7 @@
 /**
  * One authenticated admin API call, made from Node.
  *
- * Registered as the `adminApi` task in `cypress.config.ts` and used by `fixtures.ts` to provision
+ * Registered as the `ownerApi` task in `cypress.config.ts` and used by `fixtures.ts` to provision
  * the subjects a visibility spec needs. It runs OUTSIDE the browser for the reason the
  * `createSession` task beside it does: a plain fetch carries no browser cookie jar, so the page's
  * own refresh cookie — and with it which session counts as "current" — is left untouched.
@@ -28,7 +28,7 @@ const unwrap = <T>(response: Response, context: string): Promise<T> =>
     response.json().then((payload: { success?: boolean; data?: T; message?: string }) => {
         if (!response.ok)
             throw new Error(
-                `adminApi: ${context} answered ${String(response.status)} — ${payload.message ?? 'no message'}`
+                `ownerApi: ${context} answered ${String(response.status)} — ${payload.message ?? 'no message'}`
             );
         return payload.data as T;
     });
@@ -42,7 +42,7 @@ const login = (apiUrl: string, email: string, password: string): Promise<string>
         .then((response) => unwrap<{ token: string }>(response, 'POST /account/login'))
         .then(({ token }) => token);
 
-export const adminApi = <T>({
+export const ownerApi = <T>({
     apiUrl,
     path,
     method,

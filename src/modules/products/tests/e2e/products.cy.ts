@@ -82,12 +82,12 @@ describe('Products', () => {
             });
         });
 
-        // The list is public, the create page is not: `products/create` is guarded by `isAdmin`,
+        // The list is public, the create page is not: `products/create` needs `products.create`,
         // so offering the button to an anonymous visitor would be an invitation to a redirect.
         it('offers the Create product button to admins only', () => {
             cy.get('[data-test=create-product]').should('not.exist');
 
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/products');
             cy.get('[data-test=create-product]').should('exist').click();
 
@@ -106,7 +106,7 @@ describe('Products', () => {
         });
 
         it('shows View, Edit, Delete and Hard delete actions per row for admin users', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/products');
             cy.get('[data-test=list-row]').should('have.length.at.least', 1);
             cy.get('[data-test=list-row]')
@@ -126,7 +126,7 @@ describe('Products', () => {
                     cy.softDeleteProduct(softDeleted.id);
                     cy.deactivateProduct(inactive);
 
-                    cy.loginAs('admin');
+                    cy.loginAs('owner');
                     cy.visit('/en/products');
                     cy.contains('[data-test=list-row]', softDeleted.title).should('exist');
                     cy.contains('[data-test=list-row]', inactive.title).should('exist');

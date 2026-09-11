@@ -117,7 +117,7 @@ describe('Commerce', () => {
 
             cy.logout();
             cy.contains('customer@example.com').should('not.exist');
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit(`/en/orders/${orderId}/edit`);
         });
         cy.get('#order-edit-page').should('exist');

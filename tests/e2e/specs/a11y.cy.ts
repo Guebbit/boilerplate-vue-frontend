@@ -132,5 +132,5 @@ sweepA11y(
             }
         }
     ],
-    'admin'
+    'owner'
 );

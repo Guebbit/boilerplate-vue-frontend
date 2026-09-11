@@ -11,7 +11,7 @@ describe('Entity translations — the generic admin door', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.resetState();
-        cy.loginAs('admin');
+        cy.loginAs('owner');
     });
 
     it('an edited translation reaches the storefront', () => {

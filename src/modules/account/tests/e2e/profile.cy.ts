@@ -117,7 +117,7 @@ describe('Profile self-service', () => {
 
         it('lets an administrator see it, and asks before rights are given away', () => {
             cy.logout();
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/profile');
 
             cy.get('[data-test=profile-role]').should('exist');

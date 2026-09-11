@@ -45,5 +45,5 @@ sweepA11y(
                     .then((product) => `/en/locales/translations/product/${product.id}`)
         }
     ],
-    'admin'
+    'owner'
 );

@@ -8,4 +8,4 @@
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
-sweepVisual('users', [['users-list', '/en/users', '#users-list-page']], 'admin');
+sweepVisual('users', [['users-list', '/en/users', '#users-list-page']], 'owner');

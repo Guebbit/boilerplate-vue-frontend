@@ -9,4 +9,4 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-sweepA11y('realtime', [['realtime playground', '/en/playground/realtime']], 'admin');
+sweepA11y('realtime', [['realtime playground', '/en/playground/realtime']], 'owner');

@@ -8,7 +8,7 @@
         "cypress.config.*",
         "tests/support/e2e/visual-task.ts",
         "tests/support/e2e/a11y-task.ts",
-        "tests/support/e2e/admin-api-task.ts"
+        "tests/support/e2e/owner-api-task.ts"
     ],
     "compilerOptions": {
         "composite": true,

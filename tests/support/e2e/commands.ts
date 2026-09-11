@@ -37,9 +37,9 @@ declare global {
             /**
              * Logs in through the real UI flow against the profile's backend.
              *
-             * @param role - 'user' (default) or 'admin'
+             * @param role - 'user' (default) or 'owner'
              */
-            loginAs(role?: 'user' | 'admin'): Chainable<void>;
+            loginAs(role?: 'user' | 'owner'): Chainable<void>;
 
             /**
              * Starts counting API requests, so `settleNetwork()` can tell when the page has

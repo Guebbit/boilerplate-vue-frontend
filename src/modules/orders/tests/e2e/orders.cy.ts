@@ -11,7 +11,7 @@ describe('Orders', () => {
 
     describe('Orders list', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/orders');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
@@ -52,7 +52,8 @@ describe('Orders', () => {
     });
 
     /*
-     * The admin-only row actions are gated on `isAdmin` — a customer reaching their own orders
+     * The staff row actions are gated on `orders.update`/`orders.delete` — a customer reaching
+     * their own orders
      * list must see View and nothing else, same model as
      * `src/modules/products/tests/e2e/products.cy.ts`'s per-role visibility. The seeded `user`
      * account's own order fixture is soft-deleted (see `orders/demo.ts`), so this needs a fresh

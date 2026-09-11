@@ -44,6 +44,16 @@ interface ProductLike {
     categories?: string[];
 }
 
+/**
+ * The `WebhookSubscription` fields the a11y sweep reads. Structural for the same reason
+ * {@link ProductLike} is — `tsconfig.cypress.json` does not claim `contracts/`.
+ */
+interface WebhookSubscriptionLike {
+    id: string;
+    url: string;
+    eventTypes: string[];
+}
+
 export type ProductRole = 'inStock' | 'rich' | 'outOfStock';
 
 /*
@@ -154,6 +164,18 @@ declare global {
              * @param role - whose account the order is created under
              */
             createOrder(role: E2ERole): Chainable<{ id: string; userId: string; status: string }>;
+
+            /**
+             * Creates a webhook subscription as admin, server-side, and yields it as the API
+             * serialised it — the webhooks module has no seeded demo fixture to look one up from,
+             * so a page addressed by a subscription's id (its detail/edit routes, and a deep-linked
+             * delivery-log filter) needs one made rather than found.
+             *
+             * @param overrides - fields to send instead of, or beside, the defaults
+             */
+            createWebhookSubscription(
+                overrides?: Record<string, unknown>
+            ): Chainable<WebhookSubscriptionLike>;
         }
     }
 }
@@ -212,7 +234,7 @@ Cypress.Commands.add('productInRole', (role: ProductRole) =>
  */
 const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<string, unknown>) =>
     cy.env(['apiUrl']).then(({ apiUrl }) =>
-        cy.task<T>('adminApi', {
+        cy.task<T>('ownerApi', {
             apiUrl: String(apiUrl),
             path,
             method,
@@ -221,9 +243,9 @@ const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<str
         })
     );
 
-/** The overwhelmingly common case: provisioning needs the admin. */
-const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
-    apiAs<T>('admin', path, method, body);
+/** The overwhelmingly common case: provisioning needs the account that holds every key. */
+const ownerApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
+    apiAs<T>('owner', path, method, body);
 
 /**
  * The deployment's source language for product content — `NODE_FALLBACK_LOCALE` on the paired
@@ -240,7 +262,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
     // flat `title`, which is folded into the fallback locale's entry below — the shape most
     // specs actually want to write.
     const { title, translations, ...rest } = overrides;
-    return adminApi<ProductLike>('/products', 'POST', {
+    return ownerApi<ProductLike>('/products', 'POST', {
         price: 10,
         ...rest,
         translations: translations ?? {
@@ -255,7 +277,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
 });
 
 Cypress.Commands.add('softDeleteProduct', (id: string) =>
-    adminApi<null>(`/products/${id}`, 'DELETE')
+    ownerApi<null>(`/products/${id}`, 'DELETE')
 );
 
 /*
@@ -263,7 +285,7 @@ Cypress.Commands.add('softDeleteProduct', (id: string) =>
  * else — including every language — exactly as it was.
  */
 Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
-    adminApi<null>(`/products/${product.id}`, 'PATCH', { active: false })
+    ownerApi<null>(`/products/${product.id}`, 'PATCH', { active: false })
 );
 
 Cypress.Commands.add('accountInRole', (role: E2ERole) =>
@@ -288,7 +310,7 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
 Cypress.Commands.add('createOrder', (role: E2ERole) =>
     cy.accountInRole(role).then((account) =>
         cy.createProduct().then((product) =>
-            adminApi<{ id: string; userId: string; status: string }>('/orders', 'POST', {
+            ownerApi<{ id: string; userId: string; status: string }>('/orders', 'POST', {
                 userId: account.id,
                 email: account.email,
                 items: [{ productId: product.id, quantity: 1 }]
@@ -297,9 +319,19 @@ Cypress.Commands.add('createOrder', (role: E2ERole) =>
     )
 );
 
+Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unknown> = {}) =>
+    ownerApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
+        // Unique per test, so two specs creating one in the same run never collide on the SSRF
+        // guard's DNS resolution for the same host.
+        url: `https://example.com/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
+        eventTypes: ['order.created'],
+        ...overrides
+    })
+);
+
 Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
-    cy.accountInRole('admin').then((account) =>
-        adminApi<{ items: { id: string; status: string; userId?: string }[] }>(
+    cy.accountInRole('owner').then((account) =>
+        ownerApi<{ items: { id: string; status: string; userId?: string }[] }>(
             `/orders?pageSize=${String(PUBLIC_PAGE_SIZE)}`,
             'GET'
         ).then((page) => {

@@ -105,7 +105,7 @@ describe('Image upload', () => {
 
     describe('Product edit', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             openHydratedProductEditForm();
         });
 
@@ -197,7 +197,7 @@ describe('Image upload', () => {
 
     describe('Product create', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/products/create');
             cy.get('#product-create-page').should('exist');
         });
@@ -251,7 +251,7 @@ describe('Image upload', () => {
          * (`createUserWithMultipart`) and a different endpoint from the update branch above.
          */
         it('creates a user with an avatar and lands on their detail page', () => {
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             cy.visit('/en/users/create');
 
             cy.get('input[type=email]').should('not.be.disabled').type('uploader@example.com');
@@ -301,7 +301,7 @@ describe('Image upload', () => {
     describe('Live backend', () => {
         it('stores the upload and serves it back over HTTP', () => {
             cy.skipUnlessLive();
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             openHydratedProductEditForm();
 
             selectSampleImage();
@@ -323,7 +323,7 @@ describe('Image upload', () => {
 
         it('produces a thumbnail alongside the promoted image', () => {
             cy.skipUnlessLive();
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             openHydratedProductEditForm();
 
             selectSampleImage();
@@ -368,7 +368,7 @@ describe('Image upload', () => {
          */
         it('answers 422 when the declared type and the actual bytes disagree', () => {
             cy.skipUnlessLive();
-            cy.loginAs('admin');
+            cy.loginAs('owner');
             openHydratedProductEditForm();
 
             cy.get('input[type=file]').selectFile(

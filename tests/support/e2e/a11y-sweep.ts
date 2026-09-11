@@ -87,7 +87,7 @@ const resolveRoute = (route: A11ySweepRoute): Cypress.Chainable<string> =>
 export const sweepA11y = (
     label: string,
     routes: readonly A11ySweepEntry[],
-    role?: 'user' | 'admin'
+    role?: 'user' | 'owner'
 ): void => {
     describe(`accessibility — ${label}`, () => {
         beforeEach(() => {

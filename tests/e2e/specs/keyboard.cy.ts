@@ -148,7 +148,7 @@ describe('keyboard', () => {
     });
 
     it('opens the administration menu with ArrowDown and closes it with Escape', () => {
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         cy.visit('/en');
         cy.get('h1').should('exist');
         // `aria-expanded` flips when the menu opens, and the menu opens through a transition —
@@ -191,7 +191,7 @@ describe('keyboard', () => {
     });
 
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {
-        cy.loginAs('admin');
+        cy.loginAs('owner');
         // By role: the admin's own pending order is the one the cancel button, and so the
         // confirmation dialog this case is about, exist on.
         cy.orderInRole('cancellable').then((order) => {

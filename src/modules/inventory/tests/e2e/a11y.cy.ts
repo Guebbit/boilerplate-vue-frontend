@@ -20,5 +20,5 @@ sweepA11y(
         // `StockBoard` and the 7-column `MovementLedger` stacked into cards below `sm`.
         { name: 'inventory ledger, phone viewport', route: '/en/inventory', viewport: PHONE }
     ],
-    'admin'
+    'owner'
 );

@@ -11,4 +11,4 @@ import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
 sweepA11y('feedback — public', [['contact', '/en/contact']]);
 
-sweepA11y('feedback — admin', [['feedback inbox', '/en/feedback']], 'admin');
+sweepA11y('feedback — admin', [['feedback inbox', '/en/feedback']], 'owner');

@@ -11,5 +11,5 @@ import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 sweepVisual(
     'realtime',
     [['realtime-playground', '/en/playground/realtime', '#realtime-playground-page']],
-    'admin'
+    'owner'
 );
