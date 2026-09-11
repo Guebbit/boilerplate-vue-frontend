@@ -1,8 +1,9 @@
 /**
  * @module
- * Route table for the webhooks module: each record pairs a path with the lazy-loaded
- * view and the `meta.access` level the router guard enforces. Admin-only throughout —
- * a webhook subscription has no audience outside the shop's own staff.
+ * Route table for the webhooks module: each record pairs a path with the lazy-loaded view and the
+ * rule the router guard checks. Each screen names the action it performs — reading the list is not
+ * the same permission as minting a subscription — so a read-only role reaches the log and stops
+ * there.
  */
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -25,7 +26,7 @@ export default [
         name: 'WebhookCreate',
         meta: {
             access: 'auth',
-            can: ['read', 'WebhookSubscription'],
+            can: ['create', 'WebhookSubscription'],
             title: 'webhook-create-page.page-title'
         },
         component: () => import('@/modules/webhooks/views/WebhookCreate.vue')
@@ -46,7 +47,7 @@ export default [
         name: 'WebhookEdit',
         meta: {
             access: 'auth',
-            can: ['read', 'WebhookSubscription'],
+            can: ['update', 'WebhookSubscription'],
             title: 'webhook-edit-page.page-title'
         },
         component: () => import('@/modules/webhooks/views/WebhookEdit.vue'),

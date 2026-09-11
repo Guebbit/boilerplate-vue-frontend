@@ -25,9 +25,9 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 describe('webhooks route access', () => {
     it.each([
         ['WebhooksList', 'auth', 'read', 'WebhookSubscription'],
-        ['WebhookCreate', 'auth', 'read', 'WebhookSubscription'],
+        ['WebhookCreate', 'auth', 'create', 'WebhookSubscription'],
         ['WebhookTarget', 'auth', 'read', 'WebhookSubscription'],
-        ['WebhookEdit', 'auth', 'read', 'WebhookSubscription'],
+        ['WebhookEdit', 'auth', 'update', 'WebhookSubscription'],
         ['WebhookDeliveries', 'auth', 'read', 'WebhookSubscription']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();

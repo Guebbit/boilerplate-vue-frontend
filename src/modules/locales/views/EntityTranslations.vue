@@ -14,9 +14,8 @@ export default {
  * registry lookup this generic screen has no other way to know — the accepted trade for staying
  * generic across entity types.
  *
- * Gated on `translations.read` (the route's `meta.can`) for entry. The SAVE is
- * `translations.manage`, which no client can ask for — see the note on `session` below — so it
- * renders for anyone who may read and the server refuses the rest.
+ * Gated on `translations.read` (the route's `meta.can`) for entry, and `translations.update` for
+ * the save — the same two keys the API checks, asked of the rules it published.
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -61,13 +60,9 @@ const localesStore = useLocalesStore();
 const { capabilities, fallbackLocale } = storeToRefs(localesStore);
 
 /**
- * The session, for the rule this screen renders from.
- *
- * The SAVE is `translations.manage`, and that key is not answerable here: the server expands a
- * `manage` key into concrete actions and never publishes a `manage` RULE, so no client can ask
- * for one. So the save renders for anyone who may read, and the server refuses the write it will
- * not accept — the one place in this app where a button can still answer 403, and it is a gap in
- * the key declarations rather than in this screen.
+ * The session, for the two rules this screen renders from: `translations.read` to enter, and
+ * `translations.update` for the save. They are separate keys, so a reader sees the languages a
+ * product has and no way to change them.
  */
 const session = useSessionStore();
 
@@ -281,7 +276,7 @@ const handleSave = () => {
             </v-window>
 
             <v-btn
-                v-if="session.can('read', 'Translation')"
+                v-if="session.can('update', 'Translation')"
                 color="primary"
                 :loading="saving"
                 :disabled="loading || openTags.length === 0"
