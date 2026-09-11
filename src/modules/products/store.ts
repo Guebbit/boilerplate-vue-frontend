@@ -287,9 +287,9 @@ export const useProductsStore = defineStore('products', () => {
         deleteProduct,
         hardDeleteProduct,
         // Every cached record's `title`/`description` is resolved server-side against the
-        // caller's language — the module manifest wires this into `localeSensitive`/
-        // `resetOnLocaleChange`, so a language switch drops the dictionary instead of showing the
-        // wrong language until something happens to refetch it.
+        // caller's language — the module manifest wires this into `resetOnLocaleChange`, so a
+        // language switch drops the dictionary instead of showing the wrong language until
+        // something happens to refetch it.
         resetAll
     };
 });

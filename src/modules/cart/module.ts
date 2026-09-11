@@ -89,6 +89,5 @@ export default {
     // titles (the cart's own lines carry no text of their own) — a language switch has to wipe
     // it. `useCartStore()` runs inside the callback, never at module scope: Pinia is not
     // installed yet when this manifest is evaluated.
-    localeSensitive: true,
     resetOnLocaleChange: () => useCartStore().resetProductTitles()
 } satisfies AppModule;

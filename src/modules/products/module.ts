@@ -44,6 +44,5 @@ export default {
     // is resolved server-side in whatever language the request carried, so a language switch has
     // to wipe it. `useProductsStore()` is called INSIDE the callback, never at module scope,
     // since Pinia is not installed yet when this manifest is evaluated.
-    localeSensitive: true,
     resetOnLocaleChange: () => useProductsStore().resetAll()
 } satisfies AppModule;

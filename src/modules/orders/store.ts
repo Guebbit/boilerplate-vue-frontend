@@ -210,8 +210,8 @@ export const useOrdersStore = defineStore('orders', () => {
         downloadInvoice,
         // Every cached order embeds its lines' `OrderLineProduct`, title and description
         // included, resolved server-side in whatever language the request carried — the module
-        // manifest wires this into `localeSensitive`/`resetOnLocaleChange` so a language switch
-        // does not leave order history reading in the old one.
+        // manifest wires this into `resetOnLocaleChange` so a language switch does not leave
+        // order history reading in the old one.
         resetAll
     };
 });

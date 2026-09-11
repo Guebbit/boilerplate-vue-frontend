@@ -101,36 +101,17 @@ describe('sortNavigation', () => {
 });
 
 describe('collectLocaleSensitiveResets', () => {
-    it('collects the reset callback of every module that declares itself locale-sensitive', () => {
+    it('collects the reset callback of every module that declares one', () => {
         const productsReset = vi.fn();
         const cartReset = vi.fn();
 
         const resets = collectLocaleSensitiveResets([
-            {
-                ...makeModule('products'),
-                localeSensitive: true,
-                resetOnLocaleChange: productsReset
-            },
-            { ...makeModule('cart'), localeSensitive: true, resetOnLocaleChange: cartReset },
+            { ...makeModule('products'), resetOnLocaleChange: productsReset },
+            { ...makeModule('cart'), resetOnLocaleChange: cartReset },
             makeModule('wishlist')
         ]);
 
         expect(resets).toEqual([productsReset, cartReset]);
-    });
-
-    it('skips a module that declares the flag with no callback, or a callback with no flag', () => {
-        const bothWired = vi.fn();
-        const callbackOnly = vi.fn();
-
-        const resets = collectLocaleSensitiveResets([
-            { ...makeModule('flag-only'), localeSensitive: true },
-            { ...makeModule('both'), localeSensitive: true, resetOnLocaleChange: bothWired },
-            { ...makeModule('callback-only'), resetOnLocaleChange: callbackOnly }
-        ]);
-
-        // Only the module wiring BOTH the flag and the callback contributes — see the doc on
-        // `AppModule.localeSensitive`/`resetOnLocaleChange` for why each is checked.
-        expect(resets).toEqual([bothWired]);
     });
 
     it('returns nothing for a build with no locale-sensitive module at all', () => {
