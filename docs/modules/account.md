@@ -47,8 +47,8 @@ Eleven screens, six stores, and the widest API surface of any module here — wh
 misleadingly ordinary-looking domain. Three things about it are worth knowing before you edit it.
 
 **The session is not in here.** The token lives in `infrastructure/session`, because
-`infrastructure/http` has to read it on every request and the router guards read `isAuth`/`isAdmin`
-before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
+`infrastructure/http` has to read it on every request and the router guards read `isAuth` and the
+caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
 
 **One domain, six stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
@@ -88,20 +88,20 @@ Six stores, listed by what each one's setup function returns — an internal ref
 
 ## Screens
 
-| Path                     | Route name             | Access   | View                             |
-| ------------------------ | ---------------------- | -------- | -------------------------------- |
-| `login`                  | `Login`                | `guest`  | `views/Login.vue`                |
-| `signup`                 | `Signup`               | `guest`  | `views/Signup.vue`               |
-| `login/2fa`              | `TwoFactorChallenge`   | `guest`  | `views/TwoFactorChallenge.vue`   |
-| `password-reset`         | `PasswordResetRequest` | `guest`  | `views/PasswordResetRequest.vue` |
-| `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | `views/PasswordResetConfirm.vue` |
-| `account-delete/confirm` | `AccountDeleteConfirm` | `public` | `views/AccountDeleteConfirm.vue` |
-| `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | `views/VerifyEmailConfirm.vue`   |
-| `oauth/callback`         | `OAuthCallback`        | `public` | `views/OAuthCallback.vue`        |
-| `profile`                | `Profile`              | `auth`   | `views/Profile.vue`              |
-| `logout`                 | `Logout`               | `public` | `—`                              |
+| Path                     | Route name             | Access   | Permission | View                             |
+| ------------------------ | ---------------------- | -------- | ---------- | -------------------------------- |
+| `login`                  | `Login`                | `guest`  | —          | `views/Login.vue`                |
+| `signup`                 | `Signup`               | `guest`  | —          | `views/Signup.vue`               |
+| `login/2fa`              | `TwoFactorChallenge`   | `guest`  | —          | `views/TwoFactorChallenge.vue`   |
+| `password-reset`         | `PasswordResetRequest` | `guest`  | —          | `views/PasswordResetRequest.vue` |
+| `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | —          | `views/PasswordResetConfirm.vue` |
+| `account-delete/confirm` | `AccountDeleteConfirm` | `public` | —          | `views/AccountDeleteConfirm.vue` |
+| `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | —          | `views/VerifyEmailConfirm.vue`   |
+| `oauth/callback`         | `OAuthCallback`        | `public` | —          | `views/OAuthCallback.vue`        |
+| `profile`                | `Profile`              | `auth`   | —          | `views/Profile.vue`              |
+| `logout`                 | `Logout`               | `public` | `—`        |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -145,9 +145,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route     | Label key                  | Section   | Order | Icon | Badge |
-| --------- | -------------------------- | --------- | ----- | ---- | ----- |
-| `Profile` | `navigation.label-profile` | `account` | 70    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| --------- | -------------------------- | --- | --- | --- | --- | --- |
+| `Profile` | `navigation.label-profile` | `account` | 70 | yes | — |
 
 #### Analytics events
 

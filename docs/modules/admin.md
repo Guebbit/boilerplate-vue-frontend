@@ -67,11 +67,11 @@ This module owns no store. Whatever state its screens read belongs to a module i
 
 ## Screens
 
-| Path    | Route name | Access  | View              |
-| ------- | ---------- | ------- | ----------------- |
-| `admin` | `Admin`    | `admin` | `views/Admin.vue` |
+| Path    | Route name | Access | Permission                   | View              |
+| ------- | ---------- | ------ | ---------------------------- | ----------------- |
+| `admin` | `Admin`    | `auth` | `read ObservabilitySnapshot` | `views/Admin.vue` |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -89,9 +89,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route   | Label key                | Section | Order | Icon | Badge |
-| ------- | ------------------------ | ------- | ----- | ---- | ----- |
-| `Admin` | `navigation.label-admin` | `admin` | 40    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| ------- | ------------------------ | --- | --- | --- | --- | --- |
+| `Admin` | `navigation.label-admin` | `admin` | 40 | yes | — |
 
 ## Files
 

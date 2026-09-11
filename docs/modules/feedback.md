@@ -32,9 +32,10 @@ No module depends on this one and it depends on none. Deleting the folder and it
 A ticket references no other domain's records, and both screens talk only to this module's own
 endpoints — so it depends on nothing and nothing depends on it.
 
-The two screens are opposite ends of one workflow and share nothing but a store: `contact` is public,
-`feedback` is `admin`. That split is a property of the routes' own `meta.access`, not of anything in
-this folder, which is why the menu entry can be contributed without restating a permission.
+The two screens are opposite ends of one workflow and share nothing but a store: `contact` is
+public, `feedback` needs `['read', 'Feedback']`. That split is a property of the routes' own
+declarations, not of anything in this folder, which is why the menu entry can be contributed
+without restating a permission.
 
 ::: tip A leaf in both directions
 Together with [`demo`](./demo.md) and [`realtime`](./realtime.md), this is a module to read when you
@@ -86,12 +87,12 @@ is not part of the surface.
 
 ## Screens
 
-| Path       | Route name      | Access   | View                      |
-| ---------- | --------------- | -------- | ------------------------- |
-| `contact`  | `Contact`       | `public` | `views/Contact.vue`       |
-| `feedback` | `FeedbackInbox` | `admin`  | `views/FeedbackInbox.vue` |
+| Path       | Route name      | Access   | Permission      | View                      |
+| ---------- | --------------- | -------- | --------------- | ------------------------- |
+| `contact`  | `Contact`       | `public` | —               | `views/Contact.vue`       |
+| `feedback` | `FeedbackInbox` | `auth`   | `read Feedback` | `views/FeedbackInbox.vue` |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -110,10 +111,10 @@ validation on and deleting the folder turns it off.
 
 #### Navigation entries
 
-| Route           | Label key                   | Section | Order | Icon | Badge |
-| --------------- | --------------------------- | ------- | ----- | ---- | ----- |
-| `Contact`       | `navigation.label-contact`  | `main`  | 95    | yes  | —     |
-| `FeedbackInbox` | `navigation.label-feedback` | `admin` | 45    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| --------------- | --------------------------- | --- | --- | --- | --- | --- |
+| `Contact` | `navigation.label-contact` | `main` | 95 | yes | — |
+| `FeedbackInbox` | `navigation.label-feedback` | `admin` | 45 | yes | — |
 
 #### Analytics events
 

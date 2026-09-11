@@ -13,7 +13,8 @@ contract this app carries and cannot honour. See [AsyncAPI Workflow](../api/asyn
 
 Requires the admin role — non-admins are redirected Home by the route's `meta.access`, not by a
 check inside the component. See [Sitemap & Access Control](../theory/sitemap.md). The gate exists
-because the stream itself (`GET /observability/events`) is admin-only on the API side too — see
+because the stream itself (`GET /observability/events`) needs `platform.observability.read` on the
+API side too — see
 [Admin Dashboard](admin-dashboard.md).
 
 ## Transport at a glance

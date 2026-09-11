@@ -4,7 +4,7 @@ Two tiers of translation, and the rule that keeps them from merging into one.
 
 ::: tip At a glance
 **Tier 1** — what the app bundles. Always present, never editable at runtime.
-**Tier 2** — what a translator edited. Optional, per key, layered on top.
+**Tier 2** — what an editor edited. Optional, per key, layered on top.
 **Breaks if you change** — the merge direction. Overrides patch keys; they never introduce them.
 :::
 
@@ -16,7 +16,7 @@ flowchart TD
     B["tier 1 — bundled<br/><i>src/locales/ + every module's locales/</i>"] --> M["the merge<br/><i>dictionaries.ts</i>"]
     S["tier 2 — server rows<br/><i>GET /locales/{tag}/messages</i>"] --> M
     M --> R["what a visitor reads"]
-    A["this module's screens<br/><i>a translator edits</i>"] -.->|"writes"| S
+    A["this module's screens<br/><i>an editor edits</i>"] -.->|"writes"| S
 
     classDef bundled fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef server fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -40,7 +40,7 @@ exists for.
 Neither tier may add a key the bundled files do not already define and expect it to render. **The
 files decide what exists; the rows decide what it says.**
 
-Drop that rule and a translator can create a key the code never reads, which renders nowhere and
+Drop that rule and an editor can create a key the code never reads, which renders nowhere and
 looks like a bug in the app rather than a misunderstanding of the tool.
 :::
 

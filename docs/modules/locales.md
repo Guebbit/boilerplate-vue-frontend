@@ -34,7 +34,7 @@ you misunderstand it.
 
 The **consumer** half lives in `infrastructure/i18n/locale-overrides.ts` and needs no module at all:
 every visitor's locale switch reads it, on every page, whether or not anyone can edit a translation.
-This module is the screens a translator edits _through_.
+This module is the screens an editor edits the dictionary _through_.
 
 ::: tip What deleting this module costs, precisely
 The two admin screens. **Every language already translated keeps rendering**, because rendering never
@@ -53,7 +53,7 @@ at all falls back per key for whatever nobody has translated yet.
 flowchart TD
     B["Bundled JSON<br/>src/locales + each module's locales/"] --> M{"Deep merge,<br/>key by key"}
     A["GET /locales<br/>manifest: which languages, and what may be asked of each"] --> O
-    O["GET /locales/{tag}/messages<br/>the rows a translator edited"] --> M
+    O["GET /locales/{tag}/messages<br/>the rows an editor edited"] --> M
     M --> R["Rendered dictionary"]
 
     U["An unedited key"] -.->|"no server row"| K["keeps its bundled text"]
@@ -80,13 +80,13 @@ Store `locales`, from `store.ts`. Only what the setup function returns is listed
 
 ## Screens
 
-| Path                 | Route name          | Access  | View                          |
-| -------------------- | ------------------- | ------- | ----------------------------- |
-| `locales`            | `LocalesList`       | `admin` | `views/LocalesList.vue`       |
-| `locales/dictionary` | `LocalesDictionary` | `admin` | `views/LocalesDictionary.vue` |
-| `locales/:tag`       | `LocaleEntries`     | `admin` | `views/LocaleEntries.vue`     |
+| Path                 | Route name          | Access | Permission      | View                          |
+| -------------------- | ------------------- | ------ | --------------- | ----------------------------- |
+| `locales`            | `LocalesList`       | `auth` | `update Locale` | `views/LocalesList.vue`       |
+| `locales/dictionary` | `LocalesDictionary` | `auth` | `update Locale` | `views/LocalesDictionary.vue` |
+| `locales/:tag`       | `LocaleEntries`     | `auth` | `update Locale` | `views/LocaleEntries.vue`     |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -108,9 +108,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route         | Label key                  | Section | Order | Icon | Badge |
-| ------------- | -------------------------- | ------- | ----- | ---- | ----- |
-| `LocalesList` | `navigation.label-locales` | `admin` | 43    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| ------------- | -------------------------- | --- | --- | --- | --- | --- |
+| `LocalesList` | `navigation.label-locales` | `admin` | 43 | yes | — |
 
 ## Files
 

@@ -20,6 +20,21 @@ below mark the boundary. See [Strategic DDD](./strategic-ddd.md) and
 
 ---
 
+## Authorization — the words every module borrows
+
+Not a module's vocabulary but the API's, and the one place this client evaluates a policy rather
+than rendering an answer. See [Security](../tools/security.md#route-guards).
+
+| Term               | What it means here                                                                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Permission key** | The unit of access, e.g. `products.update`. Declared in the API's own key file; a deployment may never invent one. This client never spells a key — it asks about the RULE the key produces. |
+| **Rule**           | An `[action, subject]` pair as CASL evaluates it: `['update', 'Product']`. What `meta.can` declares and what `session.can()` answers.                                                        |
+| **Action**         | One of `read`, `create`, `update`, `delete`. `manage` exists on the API's keys and is never published as a rule, so no screen may ask for it.                                                |
+| **Subject**        | The type a rule is about — `Product`, `Order`, `User`, `ObservabilitySnapshot`. Singular, and NOT the key's plural first segment.                                                            |
+| **Role**           | A named bundle of keys — `customer`, `manager`, `warehouse`, `support`, `editor`, `moderator`, `owner`, `operator`. Data the deployment may edit, so nothing here branches on the name.      |
+| **Scope**          | `tenant` (this shop) or `platform` (the installation). Two abilities, never merged; neither can satisfy the other's keys.                                                                    |
+| **Ability**        | The compiled rule set this client asks. Fetched, never derived — a client that computed its own would keep a duplicate that drifts.                                                          |
+
 ## `account`
 
 | Term                 | What it means here                                                                                                                           |
@@ -64,7 +79,7 @@ below mark the boundary. See [Strategic DDD](./strategic-ddd.md) and
 | Term                | What it means here                                                          |
 | ------------------- | --------------------------------------------------------------------------- |
 | **Contact request** | A message from anyone, account or not. Identified by the email on the form. |
-| **Inbox**           | The admin side of the same collection. Triage, nothing more.                |
+| **Inbox**           | The staff side of the same collection. Triage, nothing more.                |
 
 ## `inventory`
 
@@ -86,11 +101,11 @@ below mark the boundary. See [Strategic DDD](./strategic-ddd.md) and
 
 ## `orders`
 
-| Term        | What it means here                                                                                                         |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Order**   | What a customer bought, frozen. This client renders it and never edits its substance — only an admin moves its status.     |
-| **Status**  | Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour. |
-| **Reorder** | Refilling the cart from a past order. The one write this module makes into another module’s state.                         |
+| Term        | What it means here                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Order**   | What a customer bought, frozen. This client renders it and never edits its substance — only a caller holding `orders.update` moves its status. |
+| **Status**  | Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour.                     |
+| **Reorder** | Refilling the cart from a past order. The one write this module makes into another module’s state.                                             |
 
 ## `payments`
 
@@ -116,11 +131,11 @@ below mark the boundary. See [Strategic DDD](./strategic-ddd.md) and
 
 ## `users`
 
-| Term            | What it means here                                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **User**        | The person record, admin-facing. The same row `account` edits from the inside.                                              |
-| **Admin**       | A flag on the User, not a role table. Two levels of access is the whole model.                                              |
-| **Field rules** | The Zod schemas every user-shaped form validates against. This module’s one export, and the reason `account` depends on it. |
+| Term            | What it means here                                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **User**        | The person record, staff-facing. The same row `account` edits from the inside.                                                |
+| **Role**        | The named bundle of keys this person holds, e.g. `manager`. A name the API owns; what it ALLOWS is the rules, never the name. |
+| **Field rules** | The Zod schemas every user-shaped form validates against. This module’s one export, and the reason `account` depends on it.   |
 
 ## `wishlist`
 

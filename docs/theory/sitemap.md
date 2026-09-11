@@ -7,50 +7,54 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 Every screen the enabled modules contribute, generated from their route records — the same records
 each [module page](../modules/) renders, so the two cannot disagree.
 
-| Module                                 | Path                     | Route name             | Access   | View                             |
-| -------------------------------------- | ------------------------ | ---------------------- | -------- | -------------------------------- |
-| [`account`](../modules/account.md)     | `login`                  | `Login`                | `guest`  | `views/Login.vue`                |
-| [`account`](../modules/account.md)     | `signup`                 | `Signup`               | `guest`  | `views/Signup.vue`               |
-| [`account`](../modules/account.md)     | `password-reset`         | `PasswordResetRequest` | `guest`  | `views/PasswordResetRequest.vue` |
-| [`account`](../modules/account.md)     | `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | `views/PasswordResetConfirm.vue` |
-| [`account`](../modules/account.md)     | `account-delete/confirm` | `AccountDeleteConfirm` | `public` | `views/AccountDeleteConfirm.vue` |
-| [`account`](../modules/account.md)     | `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | `views/VerifyEmailConfirm.vue`   |
-| [`account`](../modules/account.md)     | `profile`                | `Profile`              | `auth`   | `views/Profile.vue`              |
-| [`account`](../modules/account.md)     | `logout`                 | `Logout`               | `public` | `—`                              |
-| [`admin`](../modules/admin.md)         | `admin`                  | `Admin`                | `admin`  | `views/Admin.vue`                |
-| [`cart`](../modules/cart.md)           | `cart`                   | `Cart`                 | `auth`   | `views/Cart.vue`                 |
-| [`demo`](../modules/demo.md)           | `playground`             | `Playground`           | `public` | `views/Playground.vue`           |
-| [`feedback`](../modules/feedback.md)   | `contact`                | `Contact`              | `public` | `views/Contact.vue`              |
-| [`feedback`](../modules/feedback.md)   | `feedback`               | `FeedbackInbox`        | `admin`  | `views/FeedbackInbox.vue`        |
-| [`inventory`](../modules/inventory.md) | `inventory`              | `InventoryLedger`      | `admin`  | `views/InventoryLedger.vue`      |
-| [`locales`](../modules/locales.md)     | `locales`                | `LocalesList`          | `admin`  | `views/LocalesList.vue`          |
-| [`locales`](../modules/locales.md)     | `locales/dictionary`     | `LocalesDictionary`    | `admin`  | `views/LocalesDictionary.vue`    |
-| [`locales`](../modules/locales.md)     | `locales/:tag`           | `LocaleEntries`        | `admin`  | `views/LocaleEntries.vue`        |
-| [`orders`](../modules/orders.md)       | `orders`                 | `OrdersList`           | `auth`   | `views/OrdersList.vue`           |
-| [`orders`](../modules/orders.md)       | `orders/:id`             | `OrderTarget`          | `auth`   | `views/Order.vue`                |
-| [`orders`](../modules/orders.md)       | `orders/:id/edit`        | `OrderEdit`            | `admin`  | `views/OrderEdit.vue`            |
-| [`products`](../modules/products.md)   | `products`               | `ProductsList`         | `public` | `views/ProductsList.vue`         |
-| [`products`](../modules/products.md)   | `products/create`        | `ProductCreate`        | `admin`  | `views/ProductCreate.vue`        |
-| [`products`](../modules/products.md)   | `products/:id`           | `ProductTarget`        | `public` | `views/Product.vue`              |
-| [`products`](../modules/products.md)   | `products/:id/edit`      | `ProductEdit`          | `admin`  | `views/ProductEdit.vue`          |
-| [`realtime`](../modules/realtime.md)   | `playground/realtime`    | `RealtimePlayground`   | `admin`  | `views/RealtimePlayground.vue`   |
-| [`users`](../modules/users.md)         | `users`                  | `UsersList`            | `admin`  | `views/UsersList.vue`            |
-| [`users`](../modules/users.md)         | `users/create`           | `UserCreate`           | `admin`  | `views/UserCreate.vue`           |
-| [`users`](../modules/users.md)         | `users/:id`              | `UserTarget`           | `admin`  | `views/User.vue`                 |
-| [`users`](../modules/users.md)         | `users/:id/edit`         | `UserEdit`             | `admin`  | `views/UserEdit.vue`             |
-| [`wishlist`](../modules/wishlist.md)   | `wishlist`               | `Wishlist`             | `auth`   | `views/Wishlist.vue`             |
+| Module                                 | Path                     | Route name             | Access   | Permission                   | View                             |
+| -------------------------------------- | ------------------------ | ---------------------- | -------- | ---------------------------- | -------------------------------- |
+| [`account`](../modules/account.md)     | `login`                  | `Login`                | `guest`  | —                            | `views/Login.vue`                |
+| [`account`](../modules/account.md)     | `signup`                 | `Signup`               | `guest`  | —                            | `views/Signup.vue`               |
+| [`account`](../modules/account.md)     | `password-reset`         | `PasswordResetRequest` | `guest`  | —                            | `views/PasswordResetRequest.vue` |
+| [`account`](../modules/account.md)     | `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | —                            | `views/PasswordResetConfirm.vue` |
+| [`account`](../modules/account.md)     | `account-delete/confirm` | `AccountDeleteConfirm` | `public` | —                            | `views/AccountDeleteConfirm.vue` |
+| [`account`](../modules/account.md)     | `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | —                            | `views/VerifyEmailConfirm.vue`   |
+| [`account`](../modules/account.md)     | `profile`                | `Profile`              | `auth`   | —                            | `views/Profile.vue`              |
+| [`account`](../modules/account.md)     | `logout`                 | `Logout`               | `public` | —                            | `—`                              |
+| [`admin`](../modules/admin.md)         | `admin`                  | `Admin`                | `auth`   | `read ObservabilitySnapshot` | `views/Admin.vue`                |
+| [`cart`](../modules/cart.md)           | `cart`                   | `Cart`                 | `auth`   | —                            | `views/Cart.vue`                 |
+| [`demo`](../modules/demo.md)           | `playground`             | `Playground`           | `public` | —                            | `views/Playground.vue`           |
+| [`feedback`](../modules/feedback.md)   | `contact`                | `Contact`              | `public` | —                            | `views/Contact.vue`              |
+| [`feedback`](../modules/feedback.md)   | `feedback`               | `FeedbackInbox`        | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`        |
+| [`inventory`](../modules/inventory.md) | `inventory`              | `InventoryLedger`      | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`      |
+| [`locales`](../modules/locales.md)     | `locales`                | `LocalesList`          | `auth`   | `update Locale`              | `views/LocalesList.vue`          |
+| [`locales`](../modules/locales.md)     | `locales/dictionary`     | `LocalesDictionary`    | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`    |
+| [`locales`](../modules/locales.md)     | `locales/:tag`           | `LocaleEntries`        | `auth`   | `update Locale`              | `views/LocaleEntries.vue`        |
+| [`orders`](../modules/orders.md)       | `orders`                 | `OrdersList`           | `auth`   | —                            | `views/OrdersList.vue`           |
+| [`orders`](../modules/orders.md)       | `orders/:id`             | `OrderTarget`          | `auth`   | —                            | `views/Order.vue`                |
+| [`orders`](../modules/orders.md)       | `orders/:id/edit`        | `OrderEdit`            | `auth`   | `update Order`               | `views/OrderEdit.vue`            |
+| [`products`](../modules/products.md)   | `products`               | `ProductsList`         | `public` | —                            | `views/ProductsList.vue`         |
+| [`products`](../modules/products.md)   | `products/create`        | `ProductCreate`        | `auth`   | `create Product`             | `views/ProductCreate.vue`        |
+| [`products`](../modules/products.md)   | `products/:id`           | `ProductTarget`        | `public` | —                            | `views/Product.vue`              |
+| [`products`](../modules/products.md)   | `products/:id/edit`      | `ProductEdit`          | `auth`   | `update Product`             | `views/ProductEdit.vue`          |
+| [`realtime`](../modules/realtime.md)   | `playground/realtime`    | `RealtimePlayground`   | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`   |
+| [`users`](../modules/users.md)         | `users`                  | `UsersList`            | `auth`   | `read User`                  | `views/UsersList.vue`            |
+| [`users`](../modules/users.md)         | `users/create`           | `UserCreate`           | `auth`   | `create User`                | `views/UserCreate.vue`           |
+| [`users`](../modules/users.md)         | `users/:id`              | `UserTarget`           | `auth`   | `read User`                  | `views/User.vue`                 |
+| [`users`](../modules/users.md)         | `users/:id/edit`         | `UserEdit`             | `auth`   | `update User`                | `views/UserEdit.vue`             |
+| [`wishlist`](../modules/wishlist.md)   | `wishlist`               | `Wishlist`             | `auth`   | —                            | `views/Wishlist.vue`             |
 
-30 screens across 12 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access`, which is the only place a permission is declared — a menu entry inherits it rather than restating it.
+30 screens across 12 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
+`meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
+`GET /account/abilities`. Together they are the only place a screen's requirement is declared; a
+menu entry inherits both rather than restating them. There is no `admin` level: a screen names the
+permission it needs, because "administrator" could never say _of what_.
 
 ### Navigation sections
 
 A navigation entry also says **where** it sits, with `section` — placement, never permission:
 
-| Section   | Desktop (`lg` and up)                                                       | Phone drawer           |
-| --------- | --------------------------------------------------------------------------- | ---------------------- |
-| `main`    | Inline in the app bar, each entry its glyph and its label in full           | Under "Browse"         |
-| `account` | The account menu (the signed-in visitor's icon), with logout at the end     | Under "Your account"   |
-| `admin`   | The administration menu, rendered only when at least one entry is reachable | Under "Administration" |
+| Section   | Desktop (`lg` and up)                                                   | Phone drawer           |
+| --------- | ----------------------------------------------------------------------- | ---------------------- |
+| `main`    | Inline in the app bar, each entry its glyph and its label in full       | Under "Browse"         |
+| `account` | The account menu (the signed-in visitor's icon), with logout at the end | Under "Your account"   |
+| `admin`   | The staff menu, rendered only when at least one entry is reachable      | Under "Administration" |
 
 Every entry carries a lucide `icon`. Whether a section's chrome renders at all follows from the same `meta.access` rule as the entries: an anonymous visitor sees neither menu, and a drawer heading appears only above something visible.
 
@@ -92,9 +96,9 @@ flowchart TD
     AuthCheck -- no --> AuthLogin[Redirect → /login?continue=…]
     AuthCheck -- yes --> Locale
 
-    Guard -->|admin| AdminCheck{Admin role?}
-    AdminCheck -- no --> AdminHome[Redirect → Home]
-    AdminCheck -- yes --> Locale
+    Guard -->|"can: [action, subject]"| RuleCheck{"Holds the rule?"}
+    RuleCheck -- no --> RuleHome[Redirect → Home]
+    RuleCheck -- yes --> Locale
 
     Locale{Locale loaded?} -- no --> Inject[localeChoice: load or inject default]
     Inject --> View[Render view]
@@ -115,12 +119,12 @@ flowchart TD
 
 ## Where guards live
 
-| Guard                | File                                | Registered on                 | Effect                                                                                                                                            |
-| -------------------- | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)          | Silently restores the access token from the refresh endpoint, then loads the viewer, so `isAuth`/`isAdmin` are settled before anything reads them |
-| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second)         | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                          |
-| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`               | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                 |
-| `exampleGuard`       | `src/modules/demo/guards.ts`        | `beforeEnter` on `Playground` | Teaching-only: shows what a guard can and cannot reach. Scoped to one route, never app-wide                                                       |
+| Guard                | File                                | Registered on                 | Effect                                                                                                                                                                          |
+| -------------------- | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)          | Silently restores the access token from the refresh endpoint, then the viewer, then the rules that go with them, so `isAuth` and `can()` are settled before anything reads them |
+| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second)         | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                                                        |
+| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`               | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                                               |
+| `exampleGuard`       | `src/modules/demo/guards.ts`        | `beforeEnter` on `Playground` | Teaching-only: shows what a guard can and cannot reach. Scoped to one route, never app-wide                                                                                     |
 
 `canAccess` in the same file is not a guard — it is the shared predicate both `enforceRouteAccess`
 and `AppNavigation` call.
@@ -128,7 +132,7 @@ and `AppNavigation` call.
 ## Auth persistence
 
 `tryRestoreAuth` runs in `router.beforeEach` on **every** navigation, not just guarded ones.
-This ensures that public pages (e.g. `ProductsList`) still render the correct admin controls after a hard page reload, without requiring a separate protected route guard.
+This ensures that public pages (e.g. `ProductsList`) still render the correct staff controls after a hard page reload, without requiring a separate protected route guard.
 
 ## Related pages
 

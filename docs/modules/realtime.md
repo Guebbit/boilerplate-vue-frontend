@@ -77,8 +77,9 @@ It pairs with the backend's `observability` module, because it consumes
 `GET /observability/events` — the SSE stream that module serves. There is no backend `realtime`
 module, and there should not be: the stream is one route on a dashboard, not a domain.
 
-The playground route is `admin`. A live metrics feed is an operator's tool, and the guard on the
-route is the only place that is declared.
+The playground route needs `['read', 'ObservabilitySnapshot']` — a PLATFORM key, so a shop's own
+unrestricted role cannot reach it and a platform operator can. A live metrics feed is an
+operator's tool, and the route's `meta.can` is the only place that is declared.
 
 ## State
 
@@ -92,19 +93,19 @@ Store `realtime-observability`, from `store.ts`. Only what the setup function re
 
 ## Screens
 
-| Path                  | Route name           | Access  | View                           |
-| --------------------- | -------------------- | ------- | ------------------------------ |
-| `playground/realtime` | `RealtimePlayground` | `admin` | `views/RealtimePlayground.vue` |
+| Path                  | Route name           | Access | Permission                   | View                           |
+| --------------------- | -------------------- | ------ | ---------------------------- | ------------------------------ |
+| `playground/realtime` | `RealtimePlayground` | `auth` | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue` |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
 #### Navigation entries
 
-| Route                | Label key                   | Section | Order | Icon | Badge |
-| -------------------- | --------------------------- | ------- | ----- | ---- | ----- |
-| `RealtimePlayground` | `navigation.label-realtime` | `admin` | 30    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| -------------------- | --------------------------- | --- | --- | --- | --- | --- |
+| `RealtimePlayground` | `navigation.label-realtime` | `admin` | 30 | yes | — |
 
 ## Files
 

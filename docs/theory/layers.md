@@ -237,8 +237,8 @@ Both are initialized in `src/main.ts` and accessed via `useObservabilityStore()`
 
 ### The session store is not the account module
 
-`infrastructure/http` reads the access token on every request and the router guards read `isAuth` /
-`isAdmin` before any domain code runs — both are the bottom of the stack. The _user record_ — the
+`infrastructure/http` reads the access token on every request and the router guards read `isAuth`
+and the caller's own rules before any domain code runs — both are the bottom of the stack. The _user record_ — the
 editable `User`, its email, its avatar, the endpoints that change it — is domain knowledge and
 lives in `src/modules/account`.
 
@@ -302,7 +302,7 @@ Three sources, one job each, and no fourth:
    offline floor.
 2. **`GET /locales`** — what the deployment offers right now, with `nativeName`, `direction` and
    per-language `scopes`. `mergeRemoteLocales` unions it into `supportedLanguages` at boot, which
-   is how a language added by a translator appears in the switcher with no frontend deploy.
+   is how a language an editor adds appears in the switcher with no frontend deploy.
 3. **`GET /locales/{locale}/messages`** — what has been edited for one of them.
 
 There is deliberately no env list. Naming a language in `.env` claimed support without supplying

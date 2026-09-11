@@ -1,7 +1,8 @@
 # users
 
 ::: tip At a glance
-**Owns** — user administration: the admin-only list, detail, create and edit screens.
+**Owns** — user administration: the list, detail, create and edit screens, each behind the
+`users.*` rule it needs.
 **Depends on** — nothing. A user record exists whether or not anyone is signed in.
 **Breaks if you change** — `schemas.ts`. [`account`](./account.md) validates every one of its forms against it.
 :::
@@ -52,8 +53,10 @@ or not anyone is signed in, so this module depends on nothing — and deleting
 validating nothing.
 :::
 
-Everything here is `admin` in `meta.access`, and the equivalent self-service actions — profile read,
-account deletion — live under [`account`](./account.md). The two never share a screen.
+Every screen here declares the `users.*` rule it needs — `read` to list or view, `create` to add,
+`update` to edit — so a `support` role that may update an account and not create one gets exactly
+the screens it can use. The equivalent self-service actions — profile read, account deletion —
+live under [`account`](./account.md). The two never share a screen.
 
 `users/create` is declared before `users/:id` for the same reason the products routes are: vue-router
 would rank it correctly either way, and a reader should not have to know that.
@@ -76,14 +79,14 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 
 ## Screens
 
-| Path             | Route name   | Access  | View                   |
-| ---------------- | ------------ | ------- | ---------------------- |
-| `users`          | `UsersList`  | `admin` | `views/UsersList.vue`  |
-| `users/create`   | `UserCreate` | `admin` | `views/UserCreate.vue` |
-| `users/:id`      | `UserTarget` | `admin` | `views/User.vue`       |
-| `users/:id/edit` | `UserEdit`   | `admin` | `views/UserEdit.vue`   |
+| Path             | Route name   | Access | Permission    | View                   |
+| ---------------- | ------------ | ------ | ------------- | ---------------------- |
+| `users`          | `UsersList`  | `auth` | `read User`   | `views/UsersList.vue`  |
+| `users/create`   | `UserCreate` | `auth` | `create User` | `views/UserCreate.vue` |
+| `users/:id`      | `UserTarget` | `auth` | `read User`   | `views/User.vue`       |
+| `users/:id/edit` | `UserEdit`   | `auth` | `update User` | `views/UserEdit.vue`   |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -106,9 +109,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route       | Label key                     | Section | Order | Icon | Badge |
-| ----------- | ----------------------------- | ------- | ----- | ---- | ----- |
-| `UsersList` | `navigation.label-users-list` | `admin` | 50    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| ----------- | ----------------------------- | --- | --- | --- | --- | --- |
+| `UsersList` | `navigation.label-users-list` | `admin` | 50 | yes | — |
 
 ## Files
 

@@ -64,19 +64,19 @@ Store `counter`, from `store.ts`. Only what the setup function returns is listed
 
 ## Screens
 
-| Path         | Route name   | Access   | View                   |
-| ------------ | ------------ | -------- | ---------------------- |
-| `playground` | `Playground` | `public` | `views/Playground.vue` |
+| Path         | Route name   | Access   | Permission | View                   |
+| ------------ | ------------ | -------- | ---------- | ---------------------- |
+| `playground` | `Playground` | `public` | —          | `views/Playground.vue` |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
 #### Navigation entries
 
-| Route        | Label key                     | Section | Order | Icon | Badge |
-| ------------ | ----------------------------- | ------- | ----- | ---- | ----- |
-| `Playground` | `navigation.label-playground` | `main`  | 20    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| ------------ | ----------------------------- | --- | --- | --- | --- | --- |
+| `Playground` | `navigation.label-playground` | `main` | 20 | yes | — |
 
 ## Files
 

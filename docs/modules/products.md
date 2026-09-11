@@ -79,14 +79,14 @@ Store `products`, from `store.ts`. Only what the setup function returns is liste
 
 ## Screens
 
-| Path                | Route name      | Access   | View                      |
-| ------------------- | --------------- | -------- | ------------------------- |
-| `products`          | `ProductsList`  | `public` | `views/ProductsList.vue`  |
-| `products/create`   | `ProductCreate` | `admin`  | `views/ProductCreate.vue` |
-| `products/:id`      | `ProductTarget` | `public` | `views/Product.vue`       |
-| `products/:id/edit` | `ProductEdit`   | `admin`  | `views/ProductEdit.vue`   |
+| Path                | Route name      | Access   | Permission       | View                      |
+| ------------------- | --------------- | -------- | ---------------- | ------------------------- |
+| `products`          | `ProductsList`  | `public` | —                | `views/ProductsList.vue`  |
+| `products/create`   | `ProductCreate` | `auth`   | `create Product` | `views/ProductCreate.vue` |
+| `products/:id`      | `ProductTarget` | `public` | —                | `views/Product.vue`       |
+| `products/:id/edit` | `ProductEdit`   | `auth`   | `update Product` | `views/ProductEdit.vue`   |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -109,9 +109,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route          | Label key                        | Section | Order | Icon | Badge |
-| -------------- | -------------------------------- | ------- | ----- | ---- | ----- |
-| `ProductsList` | `navigation.label-products-list` | `main`  | 60    | yes  | —     |
+| Route | Label key | Section | Order | Icon | Badge |
+| -------------- | -------------------------------- | --- | --- | --- | --- | --- |
+| `ProductsList` | `navigation.label-products-list` | `main` | 60 | yes | — |
 
 ## Files
 

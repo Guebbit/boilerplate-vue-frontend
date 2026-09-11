@@ -80,8 +80,9 @@ Module routes are children of a `/:locale` parent, which is why every URL carrie
 segment. Then three guards run in order: `localeChoice`, `tryRestoreAuth`, `enforceRouteAccess`.
 (A route may add its own, as the `demo` module's Playground does.)
 
-**Take away:** access control is `meta: { access: 'admin' }` on a route, enforced centrally by
-`enforceRouteAccess` — never inside a component. See [Sitemap & Access Control](./sitemap.md).
+**Take away:** access control is declared on the route — `meta.access` for standing, `meta.can`
+for the permission — and enforced centrally by `enforceRouteAccess`, never inside a component.
+See [Sitemap & Access Control](./sitemap.md).
 
 ### 5 · `src/modules/products/module.ts` — one module, declared
 
@@ -94,8 +95,9 @@ the first request needs it (response schemas) — the manifest is the whole surf
 
 Four routes, all lazily imported, paths relative to the locale parent.
 
-**Take away:** `meta: { access: 'admin' }` on create/edit is the whole authorization declaration for
-those pages.
+**Take away:** `meta: { access: 'auth', can: ['create', 'Product'] }` on create (and `update` on
+edit) is the whole authorization declaration for those pages — the rule the API itself checks,
+not a role name.
 
 ### 7 · `src/modules/products/views/ProductsList.vue` — one page
 
