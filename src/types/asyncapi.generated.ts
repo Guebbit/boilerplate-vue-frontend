@@ -38,9 +38,14 @@ export interface PaymentEventPayload {
 }
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
+export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
+export type HeartbeatEvent = ObservabilityMetricsPayload;
 export type OrderCreatedEvent = OrderIdPayload;
+export type OrderPaidEvent = OrderIdPayload;
+export type OrderShippedEvent = OrderIdPayload;
 export type OrderCancelledEvent = OrderCancelledPayload;
 export type PaymentSucceededEvent = PaymentEventPayload;
+export type PaymentFailedEvent = PaymentEventPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
