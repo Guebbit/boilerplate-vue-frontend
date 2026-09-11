@@ -134,22 +134,30 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
+export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
+
 /**
- * Which of the two worlds this caller is acting in. Never both.
+ * CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
+ * with trailing absent members omitted.
  */
-export type AbilitiesScope = (typeof AbilitiesScope)[keyof typeof AbilitiesScope];
-
-export const AbilitiesScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AbilitiesRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
+export type PackedRules = PackedRulesItemItem[][];
 
 /**
  * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
  * takes. A tuple per rule rather than an object, which is what makes shipping a few
  * dozen of them cheap.
+ *
+ * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+ * list. A request resolves to exactly one scope — the one the key it is asking about
+ * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+ * the installation's health dashboard sit in one navigation. Publishing only the
+ * caller's tenant rules left every platform screen with no rule to grey out, so it
+ * was gated on a tenant key that happened to correlate, which is exactly the
+ * hand-maintained guess this endpoint exists to abolish.
+ *
+ * The two lists never merge. A tenant rule can never satisfy a platform key and the
+ * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+ * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
  *
  * The client's copy has NO AUTHORITY: it decides what to render, never what is
  * allowed, and every request is re-evaluated server-side. Published so a client greys
@@ -159,21 +167,28 @@ export type AbilitiesRulesItemItem = string | boolean | { [key: string]: unknown
  */
 export interface Abilities {
     /**
-     * The shop these rules are about. Absent in platform scope, and only there —
-     * a platform caller acts across the deployment rather than inside one shop.
+     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
+     * membership at all — a pure platform operator administers the installation
+     * rather than acting inside one shop.
      */
     tenantId?: string;
-    /** Which of the two worlds this caller is acting in. Never both. */
-    scope: AbilitiesScope;
     /**
-     * CASL packed rules — `[action, subject, conditions?, fields?, inverted?,
-     * reason?]`, with trailing absent members omitted.
+     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
+     * membership; for an anonymous visitor it is the `guest` role's rules, which
+     * are a value in the model rather than an absence.
      */
-    rules: AbilitiesRulesItemItem[][];
+    tenant: PackedRules;
+    /**
+     * What the caller may do ACROSS the installation — health, metrics, the
+     * operational audit. Empty for everyone but a platform operator, which is
+     * most callers: an operator is not a super-member and holds no shop's keys.
+     */
+    platform: PackedRules;
     /**
      * The permission model's own version, bumped when the KEYS change rather than
      * when a role does. A client caches these; this is what tells it the cache is
-     * about a different model, not merely a different person.
+     * about a different model, not merely a different person. One number for both
+     * lists — the keys file they are declared in is one file.
      */
     version: number;
 }
@@ -3727,6 +3742,11 @@ export const requestAccountDelete = (
  * Published so a client can grey out what it would be refused, from the same rules
  * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
  * drifts, and the drift is silent until somebody is shown a button that answers 403.
+ *
+ * Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
+ * one its key declares — but a client renders the shop's screens and the
+ * installation's health dashboard from a single navigation, so it needs both and must
+ * never merge them.
  *
  * **The client's copy has no authority.** It decides what to RENDER, never what is
  * allowed; every request is re-evaluated server-side. Published here because the

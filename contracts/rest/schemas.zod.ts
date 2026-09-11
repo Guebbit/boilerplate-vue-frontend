@@ -1805,6 +1805,11 @@ export const RequestAccountDeleteResponse = zod.strictObject({
  * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
  * drifts, and the drift is silent until somebody is shown a button that answers 403.
  *
+ * Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
+ * one its key declares — but a client renders the shop's screens and the
+ * installation's health dashboard from a single navigation, so it needs both and must
+ * never merge them.
+ *
  * **The client's copy has no authority.** It decides what to RENDER, never what is
  * allowed; every request is re-evaluated server-side. Published here because the
  * alternative is every client inventing the same guess.
@@ -1824,12 +1829,9 @@ export const GetMyAbilitiesResponse = zod.strictObject({
                 .string()
                 .optional()
                 .describe(
-                    'The shop these rules are about. Absent in platform scope, and only there —\na platform caller acts across the deployment rather than inside one shop.\n'
+                    "The shop `tenant`'s rules are about. Absent when the caller has no tenant\nmembership at all — a pure platform operator administers the installation\nrather than acting inside one shop.\n"
                 ),
-            scope: zod
-                .enum(['tenant', 'platform'])
-                .describe('Which of the two worlds this caller is acting in. Never both.'),
-            rules: zod
+            tenant: zod
                 .array(
                     zod
                         .array(
@@ -1841,20 +1843,44 @@ export const GetMyAbilitiesResponse = zod.strictObject({
                             ])
                         )
                         .describe(
-                            'One packed rule. OpenAPI 3.0 has no tuple, so a position is declared\nas the union of what it may hold: the action and the subject are\nstrings, `conditions` an object, `fields` a list of strings and\n`inverted` a boolean.\n'
+                            'One packed rule. OpenAPI 3.0 has no tuple, so a position is declared as the\nunion of what it may hold: the action and the subject are strings, `conditions`\nan object, `fields` a list of strings and `inverted` a boolean.\n'
                         )
                 )
                 .describe(
-                    'CASL packed rules — `[action, subject, conditions?, fields?, inverted?,\nreason?]`, with trailing absent members omitted.\n'
+                    'CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,\nwith trailing absent members omitted.\n'
+                )
+                .describe(
+                    "What the caller may do INSIDE their shop. Empty for a caller with no tenant\nmembership; for an anonymous visitor it is the `guest` role's rules, which\nare a value in the model rather than an absence.\n"
+                ),
+            platform: zod
+                .array(
+                    zod
+                        .array(
+                            zod.union([
+                                zod.string(),
+                                zod.boolean(),
+                                zod.looseObject({}),
+                                zod.array(zod.string())
+                            ])
+                        )
+                        .describe(
+                            'One packed rule. OpenAPI 3.0 has no tuple, so a position is declared as the\nunion of what it may hold: the action and the subject are strings, `conditions`\nan object, `fields` a list of strings and `inverted` a boolean.\n'
+                        )
+                )
+                .describe(
+                    'CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,\nwith trailing absent members omitted.\n'
+                )
+                .describe(
+                    "What the caller may do ACROSS the installation — health, metrics, the\noperational audit. Empty for everyone but a platform operator, which is\nmost callers: an operator is not a super-member and holds no shop's keys.\n"
                 ),
             version: zod
                 .number()
                 .describe(
-                    "The permission model's own version, bumped when the KEYS change rather than\nwhen a role does. A client caches these; this is what tells it the cache is\nabout a different model, not merely a different person.\n"
+                    "The permission model's own version, bumped when the KEYS change rather than\nwhen a role does. A client caches these; this is what tells it the cache is\nabout a different model, not merely a different person. One number for both\nlists — the keys file they are declared in is one file.\n"
                 )
         })
         .describe(
-            "What the caller may do, as CASL's packed-rule format — the shape `unpackRules`\ntakes. A tuple per rule rather than an object, which is what makes shipping a few\ndozen of them cheap.\n\nThe client's copy has NO AUTHORITY: it decides what to render, never what is\nallowed, and every request is re-evaluated server-side. Published so a client greys\nout what it would be refused from the same rules the server enforces, rather than\nfrom a hand-maintained duplicate that drifts — the drift is silent until somebody\nis shown a button that answers 403.\n"
+            "What the caller may do, as CASL's packed-rule format — the shape `unpackRules`\ntakes. A tuple per rule rather than an object, which is what makes shipping a few\ndozen of them cheap.\n\nBOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule\nlist. A request resolves to exactly one scope — the one the key it is asking about\ndeclares — but a CLIENT renders screens from both at once: a shop's catalogue and\nthe installation's health dashboard sit in one navigation. Publishing only the\ncaller's tenant rules left every platform screen with no rule to grey out, so it\nwas gated on a tenant key that happened to correlate, which is exactly the\nhand-maintained guess this endpoint exists to abolish.\n\nThe two lists never merge. A tenant rule can never satisfy a platform key and the\nreverse is equally impossible (`shared\/authorization-keys.yaml`'s one invariant),\nso a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.\n\nThe client's copy has NO AUTHORITY: it decides what to render, never what is\nallowed, and every request is re-evaluated server-side. Published so a client greys\nout what it would be refused from the same rules the server enforces, rather than\nfrom a hand-maintained duplicate that drifts — the drift is silent until somebody\nis shown a button that answers 403.\n"
         )
 });
 
