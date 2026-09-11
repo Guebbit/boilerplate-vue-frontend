@@ -79,8 +79,10 @@ const { fetchProductAdmin, updateProduct } = useProductsStore();
 
 /**
  * Whether the visitor may reach the generic translations screen — the same `translations.read`
- * the screen itself is gated on, asked of the server's own rules. A `translator` holds it without
- * ever being handed `products.manage`, and an unrestricted role holds it like everything else.
+ * the screen itself is gated on, asked of the server's own rules. A translations-only role would
+ * hold it without ever being handed `products.manage`, and an unrestricted role holds it like
+ * everything else — `editor`, the shipped role with `translations.manage`, also carries
+ * `products.manage`, so it never exercises that distinction.
  */
 const session = useSessionStore();
 const mayViewTranslations = computed(() => session.can('read', 'Translation'));

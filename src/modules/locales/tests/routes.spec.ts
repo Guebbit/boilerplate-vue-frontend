@@ -27,8 +27,9 @@ describe('locales route access', () => {
         ['LocalesList', 'auth', 'update', 'Locale'],
         ['LocalesDictionary', 'auth', 'update', 'Locale'],
         ['LocaleEntries', 'auth', 'update', 'Locale'],
-        // A different key from the three above, on purpose: the `translator` role reaches the
-        // generic translations door on `translations.read` without ever holding `locales.update`.
+        // A different key from the three above, on purpose: a translations-only role would reach
+        // the generic translations door on `translations.read` without ever holding
+        // `locales.update` — no shipped role holds that shape, but the key stays separable.
         ['EntityTranslations', 'auth', 'read', 'Translation']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();
