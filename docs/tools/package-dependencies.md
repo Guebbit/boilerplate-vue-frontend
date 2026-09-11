@@ -21,7 +21,7 @@ Groups are organised by concern, with same-namespace tools together where that h
 | Build toolchain                | `vite`, `@vitejs/plugin-vue`, `vue-tsc`, `sass`, `sass-embedded`                                                                           | SFC compilation, type-check, styles                                     | [Runtime](./runtime.md)                          |
 | TypeScript                     | `typescript`                                                                                                                               | source language                                                         | [Runtime](./runtime.md)                          |
 | API codegen                    | `orval`                                                                                                                                    | generate `contracts/rest/` from `openapi.yaml`                          | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| AsyncAPI codegen               | `@asyncapi/cli`, `@asyncapi/modelina`                                                                                                      | validate `asyncapi.yaml`; generate `src/types/asyncapi.generated.ts`    | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| AsyncAPI codegen               | `@asyncapi/parser`, `@asyncapi/modelina`, `@stoplight/spectral-formatters`                                                                 | validate `asyncapi.yaml`; generate `src/types/asyncapi.generated.ts`    | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | OpenAPI linting                | `@stoplight/spectral-cli`                                                                                                                  | lint `openapi.yaml` against `spectral.yaml`                             | [OpenAPI Workflow](../api/openapi-workflow.md)   |
 | HTTP interception (unit tests) | `msw`                                                                                                                                      | Node adapter standing in for a server in the transport-layer unit specs | [Unit testing](./unit-testing.md)                |
 | Unit testing                   | `vitest`, `@vue/test-utils`, `jsdom`                                                                                                       | unit test runner + Vue component mounting + DOM environment             | [Testing](./testing-and-docs.md)                 |
@@ -40,6 +40,11 @@ Groups are organised by concern, with same-namespace tools together where that h
   correct: it is a required peer of `@guebbit/vue-toolkit@4`. Do not remove it because a search
   finds no `import` — the toolkit's composables need it at runtime.
 - Grafana Faro and Umami are no-ops when their env vars are absent — safe to ship without configuring them.
+- **`@asyncapi/cli` is deliberately not here.** It measured at ~446 MB transitive in this repo (and
+  again in the paired backend), bundled a web app (Studio) nobody opened, and by default sent a
+  telemetry event to a third party on every `npm run lint:asyncapi` — including inside the
+  pre-commit gate. Validation is covered directly by `@asyncapi/parser`, a library
+  `@asyncapi/modelina` already pulls in.
 
 ## Related pages
 

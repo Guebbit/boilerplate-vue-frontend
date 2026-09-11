@@ -30,7 +30,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `build`                     | `vue-tsc` type-check + Vite production build                                                                  | [Runtime](./runtime.md)                          |
 | `lint` / `lint:fix`         | ESLint check or autofix                                                                                       | [Testing](./testing-and-docs.md)                 |
 | `lint:openapi`              | Lint `openapi.yaml` with Spectral                                                                             | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| `lint:asyncapi`             | Validate `asyncapi.yaml` with the AsyncAPI CLI                                                                | [Testing](./testing-and-docs.md)                 |
+| `lint:asyncapi`             | Validate `asyncapi.yaml` with `@asyncapi/parser`'s default ruleset                                            | [Testing](./testing-and-docs.md)                 |
 | `prettier` / `prettier:fix` | Prettier check or rewrite                                                                                     | [Testing](./testing-and-docs.md)                 |
 | `check:asyncapi-types`      | Fail if `src/types/asyncapi.generated.ts` is not what `asyncapi.yaml` generates; writes nothing               | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:spec-identity`       | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI    | [Testing](./testing-and-docs.md)                 |

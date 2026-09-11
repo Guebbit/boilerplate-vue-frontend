@@ -65,11 +65,11 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 ## Tooling used here
 
-| Tool                                                  | Job                                                                   |
-| ----------------------------------------------------- | --------------------------------------------------------------------- |
-| `@asyncapi/cli`                                       | validates `asyncapi.yaml` (`npm run lint:asyncapi`)                   |
-| `@asyncapi/modelina`                                  | generates TypeScript types from AsyncAPI schemas                      |
-| custom `scripts/contracts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
+| Tool                                                  | Job                                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `@asyncapi/parser`                                    | validates `asyncapi.yaml` (`npm run lint:asyncapi`, via `scripts/contracts/validate-asyncapi.ts`) |
+| `@asyncapi/modelina`                                  | generates TypeScript types from AsyncAPI schemas                                                  |
+| custom `scripts/contracts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map                             |
 
 ## Commands
 
