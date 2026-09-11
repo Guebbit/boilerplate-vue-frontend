@@ -1,0 +1,46 @@
+{
+    "api-keys-form": {
+        "name-required": "Il nome è obbligatorio",
+        "name-too-long": "Il nome è troppo lungo",
+        "permissions-required": "Scegli almeno un permesso",
+        "expires-at-past": "La scadenza deve essere nel futuro"
+    },
+    "api-keys-list-page": {
+        "page-title": "Chiavi API",
+        "button-create": "Nuova credenziale",
+        "column-name": "Nome",
+        "column-public-prefix": "Prefisso",
+        "column-permissions": "Permessi",
+        "column-status": "Stato",
+        "column-last-used-at": "Ultimo utilizzo",
+        "column-created-at": "Creata il",
+        "column-actions": "Azioni",
+        "table-caption": "Chiavi API",
+        "status-active": "Attiva",
+        "status-expired": "Scaduta",
+        "status-revoked": "Revocata",
+        "button-revoke": "Revoca",
+        "button-revoke-named": "Revoca la credenziale {name}",
+        "confirm-revoke": "Revocare questa credenziale? Chi la sta ancora usando smetterà immediatamente di autenticarsi.",
+        "success-revoke": "Credenziale revocata"
+    },
+    "api-key-create-page": {
+        "page-title": "Nuova chiave API",
+        "label-name": "Nome",
+        "label-permissions": "Permessi",
+        "hint-permissions": "Digita una chiave di permesso e premi invio, es. products.read. Deve essere una chiave che possiedi attualmente.",
+        "label-expires-at": "Scade il",
+        "hint-expires-at": "Facoltativo. Lascia vuoto per una credenziale che non scade mai.",
+        "button-submit": "Genera credenziale",
+        "button-go-to-list": "Torna alle chiavi API",
+        "success-create": "Credenziale generata",
+        "error-permission-refused": "Non posseduta: {key}"
+    },
+    "api-key-secret-modal": {
+        "title": "Salva subito questa credenziale",
+        "intro": "Questa è l'unica volta in cui questo segreto viene mostrato. Se lo perdi, genera una nuova credenziale e revoca questa."
+    },
+    "navigation": {
+        "label-api-keys": "Chiave API | Chiavi API"
+    }
+}

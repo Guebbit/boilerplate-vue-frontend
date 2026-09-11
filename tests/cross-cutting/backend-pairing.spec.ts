@@ -47,6 +47,7 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
         counterparts: ['observability', 'audit-logs'],
         why: 'The dashboard is one screen over two backend domains: `observability` serves health and the metrics overview, `audit-logs` owns the trail behind its audit table.'
     },
+    'api-keys': { counterparts: ['api-keys'] },
     cart: { counterparts: ['cart'] },
     delivery: { counterparts: ['delivery'] },
     demo: {

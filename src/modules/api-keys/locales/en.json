@@ -1,0 +1,46 @@
+{
+    "api-keys-form": {
+        "name-required": "A name is required",
+        "name-too-long": "The name is too long",
+        "permissions-required": "Choose at least one permission",
+        "expires-at-past": "The expiry must be in the future"
+    },
+    "api-keys-list-page": {
+        "page-title": "API keys",
+        "button-create": "New credential",
+        "column-name": "Name",
+        "column-public-prefix": "Prefix",
+        "column-permissions": "Permissions",
+        "column-status": "Status",
+        "column-last-used-at": "Last used",
+        "column-created-at": "Created at",
+        "column-actions": "Actions",
+        "table-caption": "API keys",
+        "status-active": "Active",
+        "status-expired": "Expired",
+        "status-revoked": "Revoked",
+        "button-revoke": "Revoke",
+        "button-revoke-named": "Revoke credential {name}",
+        "confirm-revoke": "Revoke this credential? Anything still using it will stop authenticating immediately.",
+        "success-revoke": "Credential revoked"
+    },
+    "api-key-create-page": {
+        "page-title": "New API key",
+        "label-name": "Name",
+        "label-permissions": "Permissions",
+        "hint-permissions": "Type a permission key and press enter, e.g. products.read. Must be a key you currently hold.",
+        "label-expires-at": "Expires at",
+        "hint-expires-at": "Optional. Leave blank for a credential that never expires.",
+        "button-submit": "Mint credential",
+        "button-go-to-list": "Back to API keys",
+        "success-create": "Credential minted",
+        "error-permission-refused": "Not held: {key}"
+    },
+    "api-key-secret-modal": {
+        "title": "Save this credential now",
+        "intro": "This is the only time this secret is shown. If you lose it, mint a new credential and revoke this one."
+    },
+    "navigation": {
+        "label-api-keys": "API key | API keys"
+    }
+}

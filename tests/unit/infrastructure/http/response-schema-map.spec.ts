@@ -193,7 +193,10 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', `/webhooks/subscriptions/${ID}`, 'DeleteWebhookSubscriptionResponse'],
     ['GET', '/webhooks/deliveries', 'ListWebhookDeliveriesResponse'],
     ['POST', `/webhooks/deliveries/${ID}/replay`, 'ReplayWebhookDeliveryResponse'],
-    ['GET', '/webhooks/events', 'ListWebhookEventsResponse']
+    ['GET', '/webhooks/events', 'ListWebhookEventsResponse'],
+    ['GET', '/api-keys', 'ListApiKeysResponse'],
+    ['POST', '/api-keys', 'MintApiKeyResponse'],
+    ['DELETE', `/api-keys/${ID}`, 'RevokeApiKeyResponse']
 ];
 
 /**

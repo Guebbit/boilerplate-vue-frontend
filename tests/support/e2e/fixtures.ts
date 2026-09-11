@@ -54,6 +54,14 @@ interface WebhookSubscriptionLike {
     eventTypes: string[];
 }
 
+interface ApiKeyLike {
+    id: string;
+    name: string;
+    publicPrefix: string;
+    permissions: string[];
+    secret: string;
+}
+
 export type ProductRole = 'inStock' | 'rich' | 'outOfStock';
 
 /*
@@ -176,6 +184,16 @@ declare global {
             createWebhookSubscription(
                 overrides?: Record<string, unknown>
             ): Chainable<WebhookSubscriptionLike>;
+
+            /**
+             * Mints a machine-to-machine credential as admin, server-side, and yields it as the
+             * API serialised it (secret included) — the api-keys module has no seeded demo
+             * fixture, so a page exercising an existing credential's row needs one minted rather
+             * than found.
+             *
+             * @param overrides - fields to send instead of, or beside, the defaults
+             */
+            mintApiKey(overrides?: Record<string, unknown>): Chainable<ApiKeyLike>;
         }
     }
 }
@@ -325,6 +343,16 @@ Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unk
         // guard's DNS resolution for the same host.
         url: `https://example.com/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
         eventTypes: ['order.created'],
+        ...overrides
+    })
+);
+
+Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
+    ownerApi<ApiKeyLike>('/api-keys', 'POST', {
+        // Unique per test; `products.read` is a real declared tenant key the e2e owner
+        // (`all.manage`) holds — an invented string is a 422, mint's own floor.
+        name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
+        permissions: ['products.read'],
         ...overrides
     })
 );
