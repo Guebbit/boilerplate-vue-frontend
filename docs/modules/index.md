@@ -52,6 +52,7 @@ flowchart LR
         direction TB
         account["account"]
         admin["admin"]
+        apiKeys["api-keys"]
         demo["demo"]
         feedback["feedback"]
         locales["locales"]
@@ -73,7 +74,7 @@ flowchart LR
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
     class delivery,inventory,payments,webhooks,wishlist supporting;
-    class account,admin,demo,feedback,locales,realtime,users generic;
+    class account,admin,apiKeys,demo,feedback,locales,realtime,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
@@ -127,12 +128,13 @@ assembles reads a state that belongs to the domain it came from.
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 15      | 3    | 5          | 7       | 35      | 14     | 9             |
+| 16      | 3    | 5          | 8       | 37      | 15     | 9             |
 
 | Module                        | Subdomain    | Screens | Store                    | API calls | Depends on | Depended on by |
 | ----------------------------- | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
 | [`account`](./account.md)     | `generic`    | 8       | `account`                | 18        | 1          | 0              |
 | [`admin`](./admin.md)         | `generic`    | 1       | —                        | 5         | 0          | 0              |
+| [`api-keys`](./api-keys.md)   | `generic`    | 2       | `api-keys`               | 3         | 0          | 0              |
 | [`cart`](./cart.md)           | `core`       | 1       | `cart`                   | 8         | 1          | 3              |
 | [`delivery`](./delivery.md)   | `supporting` | 0       | `delivery`               | 3         | 0          | 2              |
 | [`demo`](./demo.md)           | `generic`    | 1       | `counter`                | 0         | 0          | 0              |
@@ -149,7 +151,7 @@ assembles reads a state that belongs to the domain it came from.
 
 ## The two repositories
 
-Twelve of fifteen domains exist on both sides under the same name. **The other three are the
+Thirteen of sixteen domains exist on both sides under the same name. **The other three are the
 interesting ones**, and until this table the asymmetry was written down nowhere in either repository:
 [`admin`](./admin.md) renders two backend modules, [`realtime`](./realtime.md) consumes a stream one
 of them serves, and [`demo`](./demo.md) has no backend domain at all.
@@ -163,6 +165,7 @@ job, not a checked one.
 | ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`account`](./account.md)     | `account`                      | —                                                                                                                                                                               |
 | [`admin`](./admin.md)         | `observability` + `audit-logs` | The dashboard is one screen over two backend domains: `observability` serves health and the metrics overview, `audit-logs` owns the trail behind its audit table.               |
+| [`api-keys`](./api-keys.md)   | `api-keys`                     | —                                                                                                                                                                               |
 | [`cart`](./cart.md)           | `cart`                         | —                                                                                                                                                                               |
 | [`delivery`](./delivery.md)   | `delivery`                     | —                                                                                                                                                                               |
 | [`demo`](./demo.md)           | _none_                         | A client-side showcase of the shared UI kit. It pairs with the demo profile and the seeded dataset rather than with any backend domain.                                         |

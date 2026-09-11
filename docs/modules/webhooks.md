@@ -43,19 +43,22 @@ needs a `get` operation this API does not have.
 
 **The secret ring gets its own hand-written store actions, not the generic `createOne`/
 `updateOne`.** Creating a subscription and rotating its secret both receive a plaintext secret in
-the response, meant to be shown exactly once (`WebhookSecretRevealModal.vue`, modeled on the
-two-factor backup-codes screen). The toolkit's generic create/update path caches whatever the API
-call resolves to, verbatim — which would leave that plaintext sitting in this store's reactive
-state indefinitely, readable by anything with `getRecord(id)`. `createSubscription` and
-`rotateSecret` instead run the call through `fetchAny` (no automatic caching), strip the secret
-field by hand, and cache the rest — while still returning the full response, secret included, to
-the view that needs it for the one-time reveal. `tests/store.spec.ts` asserts this directly: after
-either call, the plaintext never appears anywhere in `JSON.stringify(store.subscriptions)`.
+the response, meant to be shown exactly once through the shared
+`src/ui/organisms/SecretRevealModal.vue` (promoted out of this module when `api-keys` needed the
+same mechanism; modeled on the two-factor backup-codes screen). The toolkit's generic create/update
+path caches whatever the API call resolves to, verbatim — which would leave that plaintext sitting
+in this store's reactive state indefinitely, readable by anything with `getRecord(id)`.
+`createSubscription` and `rotateSecret` instead run the call through `fetchAny` (no automatic
+caching), strip the secret field by hand, and cache the rest — while still returning the full
+response, secret included, to the view that needs it for the one-time reveal. `tests/store.spec.ts`
+asserts this directly: after either call, the plaintext never appears anywhere in
+`JSON.stringify(store.subscriptions)`.
 
 ::: tip Deleting this module
-Nothing outside `src/modules/webhooks/` references it — no store, no schema, no component. `rm -rf`
-the folder and its line in `src/modules.ts`; the backend module is unaffected, since this client
-never wrote to it beyond what any HTTP client could.
+Nothing outside `src/modules/webhooks/` references it — no store, no schema. `rm -rf` the folder
+and its line in `src/modules.ts`; `src/ui/organisms/SecretRevealModal.vue` stays (`api-keys` uses
+it too). The backend module is unaffected, since this client never wrote to it beyond what any
+HTTP client could.
 :::
 
 ## State
@@ -112,7 +115,6 @@ Two entries from one manifest — the same split the `feedback` module uses for 
 | File                                      | What it is                                                                                                                                                  | Explained in                          |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `components/WebhookDeliveriesFilters.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `components/WebhookSecretRevealModal.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `locales/en.json`                         | This domain's translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
 | `locales/it.json`                         | This domain's translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
 | `module.ts`                               | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |

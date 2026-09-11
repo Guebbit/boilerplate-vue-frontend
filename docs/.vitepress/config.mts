@@ -85,6 +85,7 @@ export default withMermaid(
                                 link: '/modules/admin',
                                 items: [{ text: 'The dashboard', link: '/modules/admin-dashboard' }]
                             },
+                            { text: 'api-keys', link: '/modules/api-keys' },
                             { text: 'demo', link: '/modules/demo' },
                             { text: 'feedback', link: '/modules/feedback' },
                             {
