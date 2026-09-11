@@ -9,10 +9,10 @@ export default {
  * @module
  * The generic translation door's own screen: `GET`/`PATCH /translations/{entityType}/{id}`, one
  * tab per language the entity has a row for. Reachable for any `translatables`-registered entity
- * — currently only `product`, linked from `ProductEdit.vue`'s "Translations" action — and reads
- * only whatever fields the fetched rows actually carry, since the field set is a per-entity
- * registry lookup this generic screen has no other way to know — the accepted trade for staying
- * generic across entity types.
+ * — currently only `product`, linked from `ProductEdit.vue`'s "Translations" action. The field
+ * set comes from the response's own `fields`, the registry's declared list for this entity type —
+ * never guessed from whatever the fetched rows happen to carry, which would offer nothing for a
+ * field no row has filled in yet.
  *
  * Gated on `translations.read` (the route's `meta.can`) for entry, and `translations.update` for
  * the save — the same two keys the API checks, asked of the rules it published.
@@ -84,14 +84,10 @@ const activeLocales = computed(() => capabilities.value.filter((capability) => c
 const rows = ref<Translation[]>([]);
 
 /**
- * Every field name across the fetched rows — this entity's translatable fields, discovered from
- * the data itself rather than a schema this generic screen does not have.
+ * This entity's translatable fields, as declared by the `translatables` registry — the response's
+ * own `fields`, not discovered from whichever rows happen to have a value already.
  */
-const fieldNames = computed(() => {
-    const names = new Set<string>();
-    for (const row of rows.value) for (const key of Object.keys(row.fields)) names.add(key);
-    return [...names];
-});
+const fieldNames = ref<string[]>([]);
 
 /**
  * The editable draft, one entry per open locale: an object to upsert, or `null` for a tab marked
@@ -135,8 +131,9 @@ const load = () => {
         capabilities.value.length === 0 ? localesStore.fetchLanguages() : Promise.resolve(),
         localesStore.fetchEntityTranslations(entityType.value, entityId.value)
     ])
-        .then(([, translations]) => {
-            rows.value = translations ?? [];
+        .then(([, result]) => {
+            rows.value = result?.translations ?? [];
+            fieldNames.value = result?.fields ?? [];
             const byLocale: Record<string, Record<string, string> | null> = {};
             for (const row of rows.value) byLocale[row.locale] = { ...row.fields };
             drafts.value = byLocale;
@@ -185,28 +182,26 @@ const handleRemoveLocale = (tag: string) => {
 };
 
 /**
- * Whether any open tab has a blank field — an empty string is a 422 on the API's own door, never
- * a delete (that is `null`), so this is caught before the request rather than after.
- */
-const hasEmptyField = computed(() =>
-    openTags.value.some((tag) => Object.values(drafts.value[tag] ?? {}).some((value) => !value))
-);
-
-/**
- * Saves every open and removed locale in one merging write.
+ * Saves every open and removed locale in one merging write. A blank field is dropped from its
+ * locale's body rather than blocking the save — an empty string is a 422 on the API's own door
+ * (never a delete, that is `null`), and `barebones`-shaped rows mean some field is routinely
+ * blank on a screen offering every registry field regardless of what a row already has.
  *
  * @returns A promise resolving once the write lands and the screen has reloaded from it; a toast
  *  either way.
  */
 const handleSave = () => {
-    if (hasEmptyField.value) {
-        addMessage(t('entity-translations-page.error-empty-field'));
-        return Promise.resolve();
-    }
-
     const body: UpsertTranslationsRequest = {};
-    for (const [tag, fields] of Object.entries(drafts.value))
-        body[tag] = fields === null ? null : { fields, origin: TranslationOrigin.human };
+    for (const [tag, fields] of Object.entries(drafts.value)) {
+        if (fields === null) {
+            body[tag] = null;
+            continue;
+        }
+        const nonBlank = Object.fromEntries(
+            Object.entries(fields).filter(([, value]) => value !== '')
+        );
+        body[tag] = { fields: nonBlank, origin: TranslationOrigin.human };
+    }
 
     saving.value = true;
     return localesStore
@@ -264,13 +259,15 @@ const handleSave = () => {
                         v-model="drafts[tag]![field]"
                         :label="field"
                         :rows="field === 'description' ? 5 : 1"
-                        :error-messages="
-                            !drafts[tag]?.[field]
-                                ? [t('entity-translations-page.error-field-required')]
-                                : []
+                        :hint="
+                            drafts[tag]?.[field]
+                                ? undefined
+                                : t('entity-translations-page.hint-field-blank-skipped')
                         "
+                        persistent-hint
                         class="mb-2"
                         data-test="entity-translation-field"
+                        :data-field="field"
                     />
                 </v-window-item>
             </v-window>

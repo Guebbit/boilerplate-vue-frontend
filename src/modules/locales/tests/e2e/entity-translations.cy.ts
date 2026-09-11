@@ -27,8 +27,13 @@ describe('Entity translations — the generic admin door', () => {
             cy.visit(`/en/locales/translations/product/${product.id}`);
 
             cy.get('[data-test=translation-tab-it]').click();
-            cy.get('[data-test=entity-translation-field]:visible').clear();
-            cy.get('[data-test=entity-translation-field]:visible').type(editedItTitle);
+            // The `it` row was seeded with only `title` — `description` renders too, from the
+            // registry's declared field set, but blank and left alone. Targeting `title`
+            // specifically is what keeps this edit from also typing into `description`.
+            cy.get('[data-test=entity-translation-field][data-field=title]:visible').clear();
+            cy.get('[data-test=entity-translation-field][data-field=title]:visible').type(
+                editedItTitle
+            );
             cy.get('[data-test=entity-translations-save]').click();
             cy.contains('Translations saved').should('exist');
 

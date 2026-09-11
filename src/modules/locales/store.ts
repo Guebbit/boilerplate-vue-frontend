@@ -33,7 +33,7 @@ import type {
     CreateLocaleEntryRequest,
     LocaleEntryInput,
     LocaleImportResult,
-    Translation,
+    EntityTranslations,
     UpsertTranslationsRequest
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
@@ -375,24 +375,23 @@ export const useLocalesStore = defineStore('locales', () => {
         });
 
     /**
-     * Every language one entity has a row for, as the generic `translations.manage` door reads
-     * it — what `EntityTranslations.vue` populates its tabs from.
+     * Every language one entity has a row for, plus the field set the `translatables` registry
+     * declares for it — as the generic `translations.manage` door reads it, and what
+     * `EntityTranslations.vue` populates its tabs and fields from.
      *
      * Not part of the toolkit's paginated resource above: this is one whole-entity read/write,
      * never searched or paged, the same reasoning `fetchLanguages` already uses for the manifest.
      *
      * @param entityType - Which `translatables` registry entry, e.g. `product`.
      * @param entityId - The entity's own id.
-     * @returns A promise resolving with every locale's row.
+     * @returns A promise resolving with every locale's row and the entity's field set.
      */
     const fetchEntityTranslations = (
         entityType: string,
         entityId: string
-    ): Promise<Translation[] | undefined> =>
+    ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
         fetchAny(() =>
-            getEntityTranslations(entityType, entityId).then(
-                (response) => response.data.translations
-            )
+            getEntityTranslations(entityType, entityId).then((response) => response.data)
         );
 
     /**
@@ -403,16 +402,16 @@ export const useLocalesStore = defineStore('locales', () => {
      * @param entityType - Which `translatables` registry entry, e.g. `product`.
      * @param entityId - The entity's own id.
      * @param body - The locales to change.
-     * @returns A promise resolving with every locale's row, post-write.
+     * @returns A promise resolving with every locale's row and the entity's field set, post-write.
      */
     const saveEntityTranslations = (
         entityType: string,
         entityId: string,
         body: UpsertTranslationsRequest
-    ): Promise<Translation[] | undefined> =>
+    ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
         fetchAny(() =>
             apiUpsertEntityTranslations(entityType, entityId, body).then(
-                (response) => response.data.translations
+                (response) => response.data
             )
         );
 

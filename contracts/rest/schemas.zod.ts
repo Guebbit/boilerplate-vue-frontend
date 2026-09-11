@@ -975,7 +975,12 @@ export const GetEntityTranslationsResponse = zod.strictObject({
                     .describe(
                         "One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`."
                     )
-            )
+            ),
+            fields: zod
+                .array(zod.string())
+                .describe(
+                    'Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.'
+                )
         })
         .describe(
             'Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.'
@@ -1101,7 +1106,12 @@ export const UpsertEntityTranslationsResponse = zod.strictObject({
                     .describe(
                         "One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`."
                     )
-            )
+            ),
+            fields: zod
+                .array(zod.string())
+                .describe(
+                    'Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.'
+                )
         })
         .describe(
             'Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.'

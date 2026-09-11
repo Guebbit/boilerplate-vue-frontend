@@ -735,6 +735,8 @@ export interface EntityTranslations {
     entityType: TranslatableEntityType;
     entityId: Id;
     translations: Translation[];
+    /** Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already. */
+    fields: string[];
 }
 
 export interface EntityTranslationsEnvelope {

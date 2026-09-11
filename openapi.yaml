@@ -5408,6 +5408,7 @@ components:
         - entityType
         - entityId
         - translations
+        - fields
       description: Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.
       properties:
         entityType:
@@ -5418,6 +5419,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Translation'
+        fields:
+          type: array
+          items:
+            type: string
+          description: Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.
     EntityTranslationsEnvelope:
       type: object
       additionalProperties: false

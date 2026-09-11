@@ -157,8 +157,7 @@
         "empty": "Questa entità non ha nessuna lingua aperta. Aggiungine una per iniziare a tradurla.",
         "button-save": "Salva traduzioni",
         "success-save": "Traduzioni salvate",
-        "error-empty-field": "Ogni campo di una scheda aperta deve avere un valore prima di salvare.",
-        "error-field-required": "Questo campo è obbligatorio"
+        "hint-field-blank-skipped": "Lasciato vuoto — questo campo verrà ignorato e manterrà il valore attuale."
     },
     "navigation": {
         "label-locales": "Lingua | Lingue"
