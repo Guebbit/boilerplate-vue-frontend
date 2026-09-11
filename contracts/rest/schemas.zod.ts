@@ -2298,12 +2298,25 @@ export const LoginResponse = zod.strictObject({
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
  * @summary Signup
  */
+export const signupHeaderIdempotencyKeyMax = 200;
+
+export const signupHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
 export const SignupHeader = zod.strictObject({
     'x-antibot-challenge-token': zod
         .string()
         .optional()
         .describe(
             'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+        ),
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(signupHeaderIdempotencyKeyMax)
+        .regex(signupHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
         )
 });
 
@@ -3794,12 +3807,25 @@ export const SearchUsersResponse = zod.strictObject({
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
+export const createFeedbackRequestHeaderIdempotencyKeyMax = 200;
+
+export const createFeedbackRequestHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
 export const CreateFeedbackRequestHeader = zod.strictObject({
     'x-antibot-challenge-token': zod
         .string()
         .optional()
         .describe(
             'The token the active human-challenge provider issued to the client — see `GET \/antibot\/config`. Absent when that provider is `none`.\n'
+        ),
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createFeedbackRequestHeaderIdempotencyKeyMax)
+        .regex(createFeedbackRequestHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
         )
 });
 
@@ -5530,6 +5556,21 @@ export const ListOrdersResponse = zod.strictObject({
  * Creates a new order directly from the supplied payload.
  * @summary Create order
  */
+export const createOrderHeaderIdempotencyKeyMax = 200;
+
+export const createOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const CreateOrderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createOrderHeaderIdempotencyKeyMax)
+        .regex(createOrderHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
+});
 
 export const CreateOrderBody = zod
     .strictObject({
@@ -6665,6 +6706,22 @@ export const GetOrderInvoiceResponse = zod.unknown();
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
+export const createPaymentIntentHeaderIdempotencyKeyMax = 200;
+
+export const createPaymentIntentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const CreatePaymentIntentHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createPaymentIntentHeaderIdempotencyKeyMax)
+        .regex(createPaymentIntentHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
+});
+
 export const CreatePaymentIntentBody = zod.strictObject({
     orderId: zod.string().describe('Resource identifier')
 });
@@ -6817,6 +6874,22 @@ export const RefundPaymentByOrderParams = zod.strictObject({
     orderId: zod.string().describe('The order whose payment is being returned')
 });
 
+export const refundPaymentByOrderHeaderIdempotencyKeyMax = 200;
+
+export const refundPaymentByOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const RefundPaymentByOrderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(refundPaymentByOrderHeaderIdempotencyKeyMax)
+        .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
+});
+
 export const refundPaymentByOrderResponseDataAmountMin = 0;
 
 export const RefundPaymentByOrderResponse = zod.strictObject({
@@ -6889,6 +6962,22 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
  */
 export const ConfirmPaymentParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
+});
+
+export const confirmPaymentHeaderIdempotencyKeyMax = 200;
+
+export const confirmPaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const ConfirmPaymentHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(confirmPaymentHeaderIdempotencyKeyMax)
+        .regex(confirmPaymentHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
 });
 
 export const confirmPaymentBodyPaymentMethodRefMin = 3;
@@ -7795,4 +7884,152 @@ export const ListWebhookEventsResponse = zod.strictObject({
             description: zod.string().optional()
         })
     )
+});
+
+/**
+ * Never returns a credential's secret — that exists only in the response of the call that minted it.
+ * @summary List this shop's machine-to-machine credentials
+ */
+export const listApiKeysQueryPageDefault = 1;
+export const listApiKeysQueryPageMax = 10000;
+
+export const listApiKeysQueryPageSizeDefault = 10;
+export const listApiKeysQueryPageSizeMax = 100;
+
+export const ListApiKeysQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .max(listApiKeysQueryPageMax)
+        .default(listApiKeysQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listApiKeysQueryPageSizeMax)
+        .default(listApiKeysQueryPageSizeDefault)
+});
+
+export const listApiKeysResponseDataMetaPageDefault = 1;
+export const listApiKeysResponseDataMetaPageMax = 10000;
+
+export const listApiKeysResponseDataMetaPageSizeDefault = 10;
+export const listApiKeysResponseDataMetaPageSizeMax = 100;
+
+export const listApiKeysResponseDataMetaTotalItemsMin = 0;
+
+export const listApiKeysResponseDataMetaTotalPagesMin = 0;
+
+export const ListApiKeysResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                name: zod.string(),
+                publicPrefix: zod
+                    .string()
+                    .describe(
+                        "The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which."
+                    ),
+                permissions: zod
+                    .array(zod.string())
+                    .min(1)
+                    .describe(
+                        "The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time."
+                    ),
+                lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+                expiresAt: zod.iso.datetime({ offset: true }).optional(),
+                revokedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listApiKeysResponseDataMetaPageMax)
+                .default(listApiKeysResponseDataMetaPageDefault)
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listApiKeysResponseDataMetaPageSizeMax)
+                .default(listApiKeysResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(listApiKeysResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listApiKeysResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * Mints `sk_<prefix>_<secret>` and returns it in plaintext, once — the only response
+ * that ever carries it. `permissions` must be a non-empty subset of the CALLER's own
+ * currently-held tenant permissions: a key can never reach further than the person
+ * who minted it, and that floor is re-checked on every request the key later makes,
+ * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ * @summary Mint a machine-to-machine credential
+ */
+export const mintApiKeyBodyNameMax = 200;
+
+export const MintApiKeyBody = zod.strictObject({
+    name: zod
+        .string()
+        .min(1)
+        .max(mintApiKeyBodyNameMax)
+        .describe('A caller-chosen label — what this credential is for, shown back in the list.'),
+    permissions: zod
+        .array(zod.string())
+        .min(1)
+        .describe(
+            "The permission keys to mint this credential with. Must be a subset of the caller's own current permissions, or the request is refused with 422."
+        ),
+    expiresAt: zod.iso
+        .datetime({ offset: true })
+        .optional()
+        .describe('Optional. Once past, the credential is refused exactly like a revoked one.')
+});
+
+export const MintApiKeyResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        name: zod.string(),
+        publicPrefix: zod.string(),
+        permissions: zod.array(zod.string()).min(1),
+        lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+        expiresAt: zod.iso.datetime({ offset: true }).optional(),
+        revokedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .describe(
+                'The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.'
+            )
+    })
+});
+
+/**
+ * A soft state change, not a delete: `revokedAt` is stamped and every future
+ * presentation of the credential is refused, but its row (and audit history) stays
+ * readable. Immediate — there is no grace window.
+ * @summary Revoke a machine-to-machine credential
+ */
+export const RevokeApiKeyParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const RevokeApiKeyResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
 });

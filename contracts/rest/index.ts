@@ -2627,6 +2627,73 @@ export interface WebhookEventCatalogueResponseEnvelope {
     data: WebhookEventCatalogueEntry[];
 }
 
+export interface ApiKey {
+    id: Id;
+    name: string;
+    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+    publicPrefix: string;
+    /**
+     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * @minItems 1
+     */
+    permissions: string[];
+    lastUsedAt?: string;
+    expiresAt?: string;
+    revokedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ApiKeysResponse {
+    items: ApiKey[];
+    meta: PaginationMeta;
+}
+
+export interface ApiKeysResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ApiKeysResponse;
+}
+
+export interface MintApiKeyRequest {
+    /**
+     * A caller-chosen label — what this credential is for, shown back in the list.
+     * @minLength 1
+     * @maxLength 200
+     */
+    name: string;
+    /**
+     * The permission keys to mint this credential with. Must be a subset of the caller's own current permissions, or the request is refused with 422.
+     * @minItems 1
+     */
+    permissions: string[];
+    /** Optional. Once past, the credential is refused exactly like a revoked one. */
+    expiresAt?: string;
+}
+
+export interface ApiKeyCreated {
+    id: Id;
+    name: string;
+    publicPrefix: string;
+    /** @minItems 1 */
+    permissions: string[];
+    lastUsedAt?: string;
+    expiresAt?: string;
+    revokedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    /** The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again. */
+    secret: string;
+}
+
+export interface ApiKeyCreatedEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ApiKeyCreated;
+}
+
 /**
  * Success
  */
@@ -2677,6 +2744,11 @@ export type TextParamParameter = Text;
  * The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
  */
 export type AntibotChallengeTokenHeaderParameter = string;
+
+/**
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+ */
+export type IdempotencyKeyHeaderParameter = string;
 
 export type IdParamParameter = Id;
 
@@ -3076,6 +3148,21 @@ export type ListWebhookDeliveriesParams = {
     pageSize?: PageSizeParamParameter;
     subscriptionId?: string;
     status?: WebhookDeliveryStatus;
+};
+
+export type ListApiKeysParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -5579,6 +5666,56 @@ export const listWebhookEvents = (
     );
 };
 
+/**
+ * Never returns a credential's secret — that exists only in the response of the call that minted it.
+ * @summary List this shop's machine-to-machine credentials
+ */
+export const listApiKeys = (
+    params?: ListApiKeysParams,
+    options?: SecondParameter<typeof orvalMutator<ApiKeysResponseEnvelope>>
+) => {
+    return orvalMutator<ApiKeysResponseEnvelope>(
+        { url: `/api-keys`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Mints `sk_<prefix>_<secret>` and returns it in plaintext, once — the only response
+ * that ever carries it. `permissions` must be a non-empty subset of the CALLER's own
+ * currently-held tenant permissions: a key can never reach further than the person
+ * who minted it, and that floor is re-checked on every request the key later makes,
+ * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ * @summary Mint a machine-to-machine credential
+ */
+export const mintApiKey = (
+    mintApiKeyRequest: MintApiKeyRequest,
+    options?: SecondParameter<typeof orvalMutator<ApiKeyCreatedEnvelope>>
+) => {
+    return orvalMutator<ApiKeyCreatedEnvelope>(
+        {
+            url: `/api-keys`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: mintApiKeyRequest
+        },
+        options
+    );
+};
+
+/**
+ * A soft state change, not a delete: `revokedAt` is stamped and every future
+ * presentation of the credential is refused, but its row (and audit history) stays
+ * readable. Immediate — there is no grace window.
+ * @summary Revoke a machine-to-machine credential
+ */
+export const revokeApiKey = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/api-keys/${id}`, method: 'DELETE' }, options);
+};
+
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
@@ -5814,3 +5951,6 @@ export type ReplayWebhookDeliveryResult = NonNullable<
     Awaited<ReturnType<typeof replayWebhookDelivery>>
 >;
 export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;
+export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
+export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
+export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
