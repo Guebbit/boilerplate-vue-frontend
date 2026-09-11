@@ -248,4 +248,32 @@ describe('loadViewer', () => {
                 expect(store.can('delete', 'Product')).toBe(true);
             });
     });
+
+    /**
+     * `declaredSubjects` is what lets a typo in a route's `meta.can` be caught rather than just
+     * quietly matching no rule — see `can`'s own docblock for why it warns instead of throwing.
+     */
+    it('carries the published subject set alongside the rules', () => {
+        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'owner' } });
+        getMyAbilitiesMock.mockResolvedValue({
+            data: { platform: [], tenant: [], version: 1, subjects: ['Order', 'Product'] }
+        });
+        const store = useSessionStore();
+        store.setAccessToken('token');
+
+        return store.loadViewer().then(() => {
+            expect(store.declaredSubjects).toEqual(new Set(['Order', 'Product']));
+        });
+    });
+
+    /** A response that omits `subjects` altogether must not wipe out a set already known. */
+    it('leaves a previously published subject set alone when a response omits it', () => {
+        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'owner' } });
+        const store = useSessionStore();
+        store.setAbilities({ tenant: [], platform: [], subjects: ['Order'] });
+
+        store.setAbilities({ tenant: [['read', 'Order']], platform: [] });
+
+        expect(store.declaredSubjects).toEqual(new Set(['Order']));
+    });
 });

@@ -167,6 +167,13 @@ export type PackedRules = PackedRulesItemItem[][];
  */
 export interface Abilities {
     /**
+     * Every CASL subject a declared key names, deduplicated and sorted — the
+     * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
+     * a client's own `meta.can` rules are typed against the real set rather than
+     * an unchecked string a typo can silently fail closed on.
+     */
+    subjects: string[];
+    /**
      * The shop `tenant`'s rules are about. Absent when the caller has no tenant
      * membership at all — a pure platform operator administers the installation
      * rather than acting inside one shop.

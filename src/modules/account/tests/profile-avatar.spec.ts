@@ -75,7 +75,8 @@ beforeEach(() => {
                 ['read', 'Product', { active: true, deletedAt: null }],
                 ['read', 'Order', { userId: 'u1', deletedAt: null }]
             ],
-            version: 36
+            version: 36,
+            subjects: ['Order', 'Product']
         }),
         'PUT /account': orvalEnvelope({ ...USER, imageUrl: undefined })
     };

@@ -67,7 +67,8 @@ beforeEach(() => {
                 ['read', 'Product', { active: true, deletedAt: null }],
                 ['read', 'Order', { userId: 'u1', deletedAt: null }]
             ],
-            version: 36
+            version: 36,
+            subjects: ['Order', 'Product']
         }),
         'DELETE /account': orvalEnvelope(),
         'DELETE /account/delete-confirm': orvalEnvelope(),
@@ -250,7 +251,8 @@ describe('own role', () => {
                         ['update', 'Product'],
                         ['delete', 'Product']
                     ],
-                    version: 36
+                    version: 36,
+                    subjects: ['Product']
                 });
                 return profile.updateOwnRole('owner');
             })

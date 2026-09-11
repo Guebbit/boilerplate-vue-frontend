@@ -79,7 +79,8 @@ beforeEach(() => {
         'GET /account/abilities': orvalEnvelope({
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36
+            version: 36,
+            subjects: ['Product']
         }),
         'GET /account/2fa': STATUS_OFF
     };

@@ -1835,6 +1835,11 @@ export const GetMyAbilitiesResponse = zod.strictObject({
     message: zod.string(),
     data: zod
         .strictObject({
+            subjects: zod
+                .array(zod.string())
+                .describe(
+                    "Every CASL subject a declared key names, deduplicated and sorted — the\n`Order`\/`Product`\/`ApiKey`\/... a rule's second element may be. Published so\na client's own `meta.can` rules are typed against the real set rather than\nan unchecked string a typo can silently fail closed on.\n"
+                ),
             tenantId: zod
                 .string()
                 .optional()

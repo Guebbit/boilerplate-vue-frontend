@@ -49,7 +49,8 @@ beforeEach(() => {
         'GET /account/abilities': orvalEnvelope({
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36
+            version: 36,
+            subjects: ['Product']
         }),
         'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
         'GET /account': orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })

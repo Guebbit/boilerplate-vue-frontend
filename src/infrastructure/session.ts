@@ -18,6 +18,7 @@ import {
     updateAccount as apiUpdateAccount
 } from '@api';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility } from '@casl/ability';
 import { unpackRules } from '@casl/ability/extra';
 import type { Abilities } from '@types';
@@ -162,18 +163,33 @@ export const useSessionStore = defineStore('session', () => {
     const platformAbility = shallowRef<MongoAbility>(createMongoAbility());
 
     /**
+     * Every CASL subject a declared key names, as last published by `GET /account/abilities` —
+     * not caller-specific (it is the registry's whole declared set, the same for everyone who
+     * asks), so unlike the two abilities above it is never emptied on logout; there is nothing
+     * privileged in it to revoke. Empty until the first fetch lands, which {@link can} treats as
+     * "not yet known" rather than "no subject is valid".
+     */
+    const declaredSubjects = ref<Set<string>>(new Set());
+
+    /** Subjects already warned about, so a route repeatedly asking about the same typo logs once. */
+    const warnedSubjects = new Set<string>();
+
+    /**
      * Replace both rule sets wholesale with what the server just published.
      *
      * @param rules - the payload's two packed-rule lists, exactly as `GET /account/abilities`
-     *  returns them; omit either to empty it
+     *  returns them, plus its declared subject set; omit `tenant`/`platform` to empty them
      */
-    const setAbilities = (rules: Pick<Partial<Abilities>, 'tenant' | 'platform'> = {}) => {
+    const setAbilities = (
+        rules: Pick<Partial<Abilities>, 'tenant' | 'platform' | 'subjects'> = {}
+    ) => {
         tenantAbility.value = createMongoAbility(
             unpackRules((rules.tenant ?? []) as never) as never
         );
         platformAbility.value = createMongoAbility(
             unpackRules((rules.platform ?? []) as never) as never
         );
+        if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
     };
 
     /**
@@ -193,12 +209,32 @@ export const useSessionStore = defineStore('session', () => {
      * the `guest` role's, which is a value in the model, but nothing here is rendered for someone
      * the app has not identified yet.
      *
+     * A subject nothing declares matches no rule and answers `false` — the fail-closed direction,
+     * but in development it is also a LOUD one: {@link declaredSubjects} names the real set, so a
+     * typo in a route's `meta.can` warns once in the console instead of just rendering an
+     * unreachable page with no clue why.
+     *
      * @param action - a CASL action: `read`, `create`, `update`, `delete`
      * @param subject - the CASL subject type the key names, e.g. `Product`, `WebhookSubscription`
      */
-    const can = (action: PermissionAction, subject: string): boolean =>
-        Boolean(accessToken.value && viewer.value) &&
-        (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject));
+    const can = (action: PermissionAction, subject: string): boolean => {
+        if (
+            import.meta.env.DEV &&
+            declaredSubjects.value.size > 0 &&
+            !declaredSubjects.value.has(subject) &&
+            !warnedSubjects.has(subject)
+        ) {
+            warnedSubjects.add(subject);
+            warn(
+                `[session] "${subject}" is not a subject any declared key names — check meta.can for a typo. Known subjects: ${[...declaredSubjects.value].toSorted().join(', ')}`
+            );
+        }
+
+        return (
+            Boolean(accessToken.value && viewer.value) &&
+            (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject))
+        );
+    };
 
     /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
@@ -363,6 +399,7 @@ export const useSessionStore = defineStore('session', () => {
     return {
         tenantAbility,
         platformAbility,
+        declaredSubjects,
         setAbilities,
         can,
         accessToken,

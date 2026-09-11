@@ -85,7 +85,8 @@ beforeEach(() => {
                 ['read', 'Product', { active: true, deletedAt: null }],
                 ['read', 'Order', { userId: 'u1', deletedAt: null }]
             ],
-            version: 36
+            version: 36,
+            subjects: ['Order', 'Product']
         }),
         'POST /account/reset': orvalEnvelope(),
         'POST /account/reset-confirm': orvalEnvelope(),
@@ -161,7 +162,8 @@ describe('login', () => {
                 ['update', 'Product'],
                 ['delete', 'Product']
             ],
-            version: 36
+            version: 36,
+            subjects: ['Product']
         });
 
         return useAuthStore()
@@ -182,7 +184,8 @@ describe('login', () => {
         responses['GET /account/abilities'] = orvalEnvelope({
             platform: [],
             tenant: [['delete', 'Product']],
-            version: 36
+            version: 36,
+            subjects: ['Product']
         });
 
         return useAuthStore()
