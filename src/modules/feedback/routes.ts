@@ -19,7 +19,11 @@ export default [
     {
         path: 'feedback',
         name: 'FeedbackInbox',
-        meta: { access: 'admin', title: 'feedback-inbox-page.page-title' },
+        meta: {
+            access: 'auth',
+            can: ['read', 'Feedback'],
+            title: 'feedback-inbox-page.page-title'
+        },
         component: () => import('@/modules/feedback/views/FeedbackInbox.vue')
     }
 ] satisfies RouteRecordRaw[];

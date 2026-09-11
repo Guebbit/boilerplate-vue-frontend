@@ -29,12 +29,18 @@ import { ref } from 'vue';
 import { createPinia } from 'pinia';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import vuetify from '@/ui/vuetify';
-import type { RouteAccess } from '@/app/guards/authentications';
+import type { RouteAccess, RoutePermission } from '@/app/guards/authentications';
+
+/**
+ * The rules the mocked session answers with, as `"action subject"` strings — the nav asks the
+ * store's `can`, and what is under test is the filtering, not CASL.
+ */
+const held = ref<string[]>([]);
 
 const session = {
     isAuth: ref(false),
-    isAdmin: ref(false),
-    viewer: ref<{ email: string } | undefined>(undefined)
+    viewer: ref<{ email: string } | undefined>(undefined),
+    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`)
 };
 
 /**
@@ -57,7 +63,12 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
     LateThing: undefined,
     MemberThing: 'auth',
     PinnedThing: 'auth',
-    StaffThing: 'admin'
+    StaffThing: 'auth'
+};
+
+/** The permission each route declares, where it declares one. */
+const routePermission: Record<string, RoutePermission | undefined> = {
+    StaffThing: ['read', 'User']
 };
 
 /** The live count behind the member entry's badge; `0` renders no badge at all. */
@@ -152,7 +163,9 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({
         push: vi.fn(),
         replace: vi.fn(),
-        resolve: ({ name }: { name: string }) => ({ meta: { access: routeAccess[name] } }),
+        resolve: ({ name }: { name: string }) => ({
+            meta: { access: routeAccess[name], can: routePermission[name] }
+        }),
         hasRoute: (name: string) => registeredRoutes.value.includes(name)
     })
 }));
@@ -206,7 +219,7 @@ const isHidden = (wrapper: ReturnType<typeof mountNav>['wrapper'], label: string
 describe('Navigation', () => {
     beforeEach(() => {
         session.isAuth.value = false;
-        session.isAdmin.value = false;
+        held.value = [];
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
@@ -239,9 +252,9 @@ describe('Navigation', () => {
         expect(text).not.toContain('navigation.label-staff');
     });
 
-    it('shows the admin entries to an admin', () => {
+    it('shows a staff entry to whoever holds the rule it declares', () => {
         session.isAuth.value = true;
-        session.isAdmin.value = true;
+        held.value = ['read User'];
 
         const { text } = mountNav();
 
@@ -261,9 +274,9 @@ describe('Navigation', () => {
         ]);
     });
 
-    it('lists the drawer sections in kernel order: main, then account, then admin', () => {
+    it('lists the drawer sections in kernel order: main, then account, then staff', () => {
         session.isAuth.value = true;
-        session.isAdmin.value = true;
+        held.value = ['read User'];
 
         const text = mountNav().wrapper.find('#app-drawer').text();
 
@@ -471,7 +484,7 @@ describe('Navigation', () => {
         expect(mountNav().wrapper.find('[data-test="admin-menu"]').exists()).toBe(false);
 
         session.isAuth.value = true;
-        session.isAdmin.value = true;
+        held.value = ['read User'];
         const { wrapper } = mountNav();
 
         expect(wrapper.find('[data-test="admin-menu"]').attributes('aria-label')).toBe(
@@ -494,7 +507,7 @@ describe('Navigation', () => {
         expect(guest.find('[data-test="drawer-section-admin"]').exists()).toBe(false);
 
         session.isAuth.value = true;
-        session.isAdmin.value = true;
+        held.value = ['read User'];
         const admin = mountNav().wrapper;
         expect(admin.findAll('#app-drawer .v-list-subheader').map((h) => h.text())).toEqual([
             'navigation.section-main',

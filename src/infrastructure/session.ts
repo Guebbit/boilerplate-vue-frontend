@@ -1,8 +1,9 @@
 /**
  * @module
  * Pinia store for the token/viewer pair that gates the app: an in-memory access token plus a
- * minimal projection of who holds it. `isAuth`/`isAdmin` derive from both together, never either
- * alone, so a restored-but-not-yet-identified session cannot be read as authenticated.
+ * minimal projection of who holds it, and the two CASL abilities every screen is gated on.
+ * `isAuth` derives from token AND viewer together, never either alone, so a
+ * restored-but-not-yet-identified session cannot be read as authenticated.
  */
 
 import { ref, shallowRef, computed } from 'vue';
@@ -19,6 +20,17 @@ import {
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { createMongoAbility, type MongoAbility } from '@casl/ability';
 import { unpackRules } from '@casl/ability/extra';
+import type { Abilities } from '@types';
+
+/**
+ * The four concrete actions a screen may ask about — CASL's own vocabulary, as
+ * `shared/authorization-keys.yaml` declares it, minus the wildcard.
+ *
+ * `manage` is deliberately absent from what a CLIENT may ask for: the server expands a `manage`
+ * key into the concrete actions its module declares and never publishes a `manage` RULE, so
+ * asking for one always answers no. A screen asks for the action it actually performs.
+ */
+export type PermissionAction = 'read' | 'create' | 'update' | 'delete';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -105,7 +117,7 @@ const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
 const clearCookie = (name: string) => writeCookie(name, '', 0);
 
 /**
- * Store instance: see the module doc above for the `isAuth`/`isAdmin` derivation rule.
+ * Store instance: see the module doc above for the `isAuth` derivation rule.
  */
 export const useSessionStore = defineStore('session', () => {
     /**
@@ -127,7 +139,9 @@ export const useSessionStore = defineStore('session', () => {
     const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
 
     /**
-     * The rules the SERVER enforces, unpacked from `GET /account/abilities`.
+     * The rules the SERVER enforces, unpacked from `GET /account/abilities` — one ability per
+     * scope, because the model has two worlds and they never merge. `tenant` is what the caller
+     * may do inside this shop; `platform` is what they may do across the installation.
      *
      * Not a copy of the policy — the policy itself, evaluated here. That is the whole point: a
      * client that decides what to render from its own rules keeps a duplicate, and the duplicate
@@ -138,54 +152,53 @@ export const useSessionStore = defineStore('session', () => {
      * the least-privileged answer, so a slow network greys things out rather than opening them.
      *
      * `shallowRef`, not `ref`: an `Ability` holds its compiled rules in a frozen array, and Vue's
-     * deep proxy cannot hand those back unchanged — the read throws. Nothing here mutates the
-     * ability anyway; it is replaced wholesale when new rules arrive, which is exactly what a
+     * deep proxy cannot hand those back unchanged — the read throws. Nothing here mutates an
+     * ability anyway; each is replaced wholesale when new rules arrive, which is exactly what a
      * shallow ref is for.
      */
-    const ability = shallowRef<MongoAbility>(createMongoAbility());
+    const tenantAbility = shallowRef<MongoAbility>(createMongoAbility());
+
+    /** The caller's rules over the INSTALLATION — health, metrics, the operational audit. Empty for almost everyone. */
+    const platformAbility = shallowRef<MongoAbility>(createMongoAbility());
 
     /**
-     * Replace the rules wholesale with what the server just published.
+     * Replace both rule sets wholesale with what the server just published.
      *
-     * @param rules - CASL's packed rule tuples, exactly as `GET /account/abilities` returns them
+     * @param rules - the payload's two packed-rule lists, exactly as `GET /account/abilities`
+     *  returns them; omit either to empty it
      */
-    const setAbility = (rules: unknown[]) => {
-        ability.value = createMongoAbility(unpackRules(rules as never) as never);
+    const setAbilities = (rules: Pick<Partial<Abilities>, 'tenant' | 'platform'> = {}) => {
+        tenantAbility.value = createMongoAbility(
+            unpackRules((rules.tenant ?? []) as never) as never
+        );
+        platformAbility.value = createMongoAbility(
+            unpackRules((rules.platform ?? []) as never) as never
+        );
     };
 
     /**
-     * Whether the visitor may do everything the shop has to offer. Derived from token AND viewer
-     * for the reason given above.
+     * May this visitor do `action` to `subject`, according to the server's own rules?
      *
-     * Asked of the RULES rather than of a role name, so it stays true through any renaming of a
-     * role: deleting a product is a key only an unrestricted role holds, and no rule with a
-     * `manage` action is ever published — the server expands those into concrete actions before
-     * packing, precisely so a wildcard cannot leak to the client as an unbounded grant.
+     * The one question every guard, nav entry and action button asks — never a role name, so it
+     * stays true through any renaming or re-cutting of a role, and never a hand-written list of
+     * "what an admin can do", which is the duplicate this whole mechanism exists to delete.
+     *
+     * Asks BOTH abilities rather than picking one by subject: a subject is declared in exactly one
+     * scope (`shared/authorization-keys.yaml`), so at most one of them can ever answer yes, and
+     * the alternative is a hand-maintained subject-to-scope table in this repo that would drift
+     * from the one in that file. The two rule sets stay separate objects — this asks them in turn,
+     * it does not merge them, which is what keeps a tenant rule from satisfying a platform key.
+     *
+     * Answers `false` for a signed-out visitor without consulting anything: a stranger's rules are
+     * the `guest` role's, which is a value in the model, but nothing here is rendered for someone
+     * the app has not identified yet.
+     *
+     * @param action - a CASL action: `read`, `create`, `update`, `delete`
+     * @param subject - the CASL subject type the key names, e.g. `Product`, `WebhookSubscription`
      */
-    const isAdmin = computed(
-        () => Boolean(accessToken.value && viewer.value) && ability.value.can('delete', 'Product')
-    );
-
-    /**
-     * Whether the visitor may read entity translations, over the generic
-     * `/locales/translations/{entityType}/{id}` door — the `translator` role's key, distinct from
-     * {@link isAdmin} on purpose: that role never gets `products.manage`, so a mistranslation can
-     * never become a mischanged price. `route meta.access: 'translator'` reads this (alongside
-     * `isAdmin`, who can reach anything) rather than gating the screen on full admin.
-     */
-    const canReadTranslations = computed(
-        () => Boolean(accessToken.value && viewer.value) && ability.value.can('read', 'Translation')
-    );
-
-    /**
-     * Whether the visitor may WRITE entity translations — `translations.manage`. Gates the save
-     * action on `EntityTranslations.vue`; {@link canReadTranslations} alone only gets a visitor
-     * into the screen, not through its submit.
-     */
-    const canManageTranslations = computed(
-        () =>
-            Boolean(accessToken.value && viewer.value) && ability.value.can('manage', 'Translation')
-    );
+    const can = (action: PermissionAction, subject: string): boolean =>
+        Boolean(accessToken.value && viewer.value) &&
+        (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject));
 
     /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
@@ -226,8 +239,8 @@ export const useSessionStore = defineStore('session', () => {
      * control the visitor is entitled to, and the rules are fetched rather than derived from
      * `role` because only the server's own rules say what a name allows.
      *
-     * **Awaited by whoever restores the session**, so a route guard reading `isAdmin` decides on
-     * the rules rather than on the empty ability that precedes them — the redirect it would
+     * **Awaited by whoever restores the session**, so a route guard asking {@link can} decides on
+     * the rules rather than on the empty abilities that precede them — the redirect it would
      * otherwise perform is indistinguishable from "not allowed".
      *
      * It fails quietly: an ability that never arrives is the empty one, which greys everything
@@ -241,13 +254,13 @@ export const useSessionStore = defineStore('session', () => {
         viewer.value = nextViewer;
 
         if (!nextViewer) {
-            setAbility([]);
+            setAbilities();
             return Promise.resolve();
         }
 
         return apiGetMyAbilities()
             .then((answer) => {
-                setAbility(getPayloadFromResponse<{ rules: unknown[] }>(answer)?.rules ?? []);
+                setAbilities(getPayloadFromResponse<Abilities>(answer));
             })
             .catch(() => undefined);
     };
@@ -324,9 +337,9 @@ export const useSessionStore = defineStore('session', () => {
     const clearSession = () => {
         accessToken.value = undefined;
         viewer.value = undefined;
-        // Back to the empty ability: a stranger's rules arrive with the next viewer, and until
+        // Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
         // they do the least-privileged answer is the right one.
-        setAbility([]);
+        setAbilities();
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
@@ -348,14 +361,13 @@ export const useSessionStore = defineStore('session', () => {
     const logoutAll = () => apiLogoutAll().then(() => clearSession());
 
     return {
-        ability,
-        setAbility,
+        tenantAbility,
+        platformAbility,
+        setAbilities,
+        can,
         accessToken,
         viewer,
         isAuth,
-        isAdmin,
-        canReadTranslations,
-        canManageTranslations,
         setAccessToken,
         setViewer,
         refreshToken,

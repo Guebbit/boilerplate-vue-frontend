@@ -22,7 +22,11 @@ export default [
         // should not have to know the ranking rules to be sure.
         path: 'products/create',
         name: 'ProductCreate',
-        meta: { access: 'admin', title: 'product-create-page.page-title' },
+        meta: {
+            access: 'auth',
+            can: ['create', 'Product'],
+            title: 'product-create-page.page-title'
+        },
         component: () => import('@/modules/products/views/ProductCreate.vue')
     },
     {
@@ -35,7 +39,7 @@ export default [
     {
         path: 'products/:id/edit',
         name: 'ProductEdit',
-        meta: { access: 'admin', title: 'product-edit-page.page-title' },
+        meta: { access: 'auth', can: ['update', 'Product'], title: 'product-edit-page.page-title' },
         component: () => import('@/modules/products/views/ProductEdit.vue'),
         props: true
     }

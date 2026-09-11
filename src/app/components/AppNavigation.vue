@@ -58,7 +58,8 @@ const { t } = useI18n();
 /**
  * Session flags and the signed-in visitor, used to filter nav entries and render the account menu.
  */
-const { isAuth, isAdmin, viewer } = storeToRefs(useSessionStore());
+const session = useSessionStore();
+const { isAuth, viewer } = storeToRefs(session);
 
 /**
  * Vite public base path (always slash-terminated), used to resolve assets
@@ -169,15 +170,15 @@ const badgeDetails = new Map(
  * Deliberately no visibility flag on the entries. Each entry's requirement is read off the
  * resolved route, so the menu shows exactly the pages the router would let the visitor enter —
  * see {@link canAccess}. A section whose every entry is out of reach comes back empty, and the
- * chrome that would have shown it (the admin menu, a drawer heading) does not render.
+ * chrome that would have shown it (the staff menu, a drawer heading) does not render.
  *
  * @returns The localized, locale-prefixed visible entries, keyed by section.
  */
 const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> => {
-    const visitor = { isAuth: isAuth.value, isAdmin: isAdmin.value };
+    const visitor = { isAuth: isAuth.value, can: session.can };
     const resolve = (entries: AppNavigationEntry[]): AppNavItem[] =>
         entries
-            .filter(({ name }) => canAccess(router.resolve({ name }).meta.access, visitor))
+            .filter(({ name }) => canAccess(router.resolve({ name }).meta, visitor))
             .map(({ name, label, plural, icon, pinned }) => ({
                 name,
                 // `plural` is optional on the manifest: a module that has not thought about it

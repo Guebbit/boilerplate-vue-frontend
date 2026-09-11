@@ -16,7 +16,6 @@ export default {
 import { computed, ref, watch } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
 import {
     useNotificationsStore,
     useStructureFormValidation,
@@ -79,11 +78,12 @@ const { id } = defineProps<{
 const { fetchProductAdmin, updateProduct } = useProductsStore();
 
 /**
- * Whether the visitor may reach the generic translations screen — an admin (who can reach
- * anything) or a `translator` (`translations.read`, never `products.manage`).
+ * Whether the visitor may reach the generic translations screen — the same `translations.read`
+ * the screen itself is gated on, asked of the server's own rules. A `translator` holds it without
+ * ever being handed `products.manage`, and an unrestricted role holds it like everything else.
  */
-const { isAdmin, canReadTranslations } = storeToRefs(useSessionStore());
-const mayViewTranslations = computed(() => isAdmin.value || canReadTranslations.value);
+const session = useSessionStore();
+const mayViewTranslations = computed(() => session.can('read', 'Translation'));
 
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers to add.

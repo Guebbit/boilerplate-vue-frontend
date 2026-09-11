@@ -21,13 +21,14 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 
 describe('products route access', () => {
     it.each([
-        ['ProductsList', undefined],
-        ['ProductCreate', 'admin'],
-        ['ProductTarget', undefined],
-        ['ProductEdit', 'admin']
-    ])('%s declares access: %s', (name, access) => {
+        ['ProductsList', undefined, undefined, undefined],
+        ['ProductCreate', 'auth', 'create', 'Product'],
+        ['ProductTarget', undefined, undefined, undefined],
+        ['ProductEdit', 'auth', 'update', 'Product']
+    ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
+        expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
     it('declares no route this file does not know about', () => {

@@ -62,7 +62,7 @@ const {
 /**
  * Whether the signed-in visitor may see the admin-only actions (create, edit, delete).
  */
-const { isAdmin } = storeToRefs(useSessionStore());
+const session = useSessionStore();
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -279,7 +279,7 @@ const handleHardDelete = (productId: string) =>
                     <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
                     <v-spacer />
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('create', 'Product')"
                         color="secondary"
                         data-test="create-product"
                         :to="routerLinkI18n({ name: 'ProductCreate' })"
@@ -337,7 +337,7 @@ const handleHardDelete = (productId: string) =>
                         {{ t('products-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('update', 'Product')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -350,7 +350,7 @@ const handleHardDelete = (productId: string) =>
                         {{ t('products-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('delete', 'Product')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
@@ -364,7 +364,7 @@ const handleHardDelete = (productId: string) =>
                         {{ t('products-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('delete', 'Product')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

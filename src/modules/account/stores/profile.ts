@@ -86,8 +86,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * Push what the shell and the guards are allowed to know into the session store.
      *
-     * Called on every path that learns the visitor's identity, so that `isAuth` / `isAdmin` never
-     * lag behind the record this store holds.
+     * Called on every path that learns the visitor's identity, so that `isAuth` and the rules the
+     * guards read never lag behind the record this store holds.
      *
      * @param user - The freshly loaded or updated account record.
      * @returns A promise resolving once the shell also holds the rules that go with them.
@@ -218,8 +218,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * products. The users barrel publishes vocabulary, and it stays that way.
      *
      * The profile is refetched rather than patched: demoting yourself is a real outcome here, and
-     * the shell's `isAdmin` projection must learn it from the record the server now holds — which
-     * is what {@link publishViewer} does on the way through.
+     * the rules the shell renders from must be re-fetched for the role the server now holds —
+     * which is what {@link publishViewer} does on the way through.
      *
      * @param role - The role name to hold, one of the presets the server declares.
      * @returns A promise resolving with the refreshed profile once the change has settled.

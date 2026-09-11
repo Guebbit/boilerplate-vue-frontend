@@ -38,7 +38,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     updateAccountMock.mockResolvedValue({ data: {} });
-    getMyAbilitiesMock.mockResolvedValue({ data: { scope: 'tenant', rules: [], version: 1 } });
+    getMyAbilitiesMock.mockResolvedValue({ data: { platform: [], tenant: [], version: 1 } });
 });
 
 describe('persistLocalePreference', () => {
@@ -235,7 +235,7 @@ describe('loadViewer', () => {
             data: { id: '1', email: 'a@b.c', role: 'owner' }
         });
         getMyAbilitiesMock.mockResolvedValue({
-            data: { scope: 'tenant', rules: [['delete', 'Product']], version: 1 }
+            data: { platform: [], tenant: [['delete', 'Product']], version: 1 }
         });
         const store = useSessionStore();
         store.setAccessToken('token');
@@ -244,8 +244,8 @@ describe('loadViewer', () => {
             .loadViewer()
             .then(() => {})
             .then(() => {
-                expect(store.ability.can('delete', 'Product')).toBe(true);
-                expect(store.isAdmin).toBe(true);
+                expect(store.tenantAbility.can('delete', 'Product')).toBe(true);
+                expect(store.can('delete', 'Product')).toBe(true);
             });
     });
 });

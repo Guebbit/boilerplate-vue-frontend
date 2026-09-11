@@ -25,10 +25,14 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('admin route access', () => {
-    it.each([['Admin', 'admin']])('%s declares access: %s', (name, access) => {
-        expect(byName(name)).toBeDefined();
-        expect(byName(name)?.meta?.access).toBe(access);
-    });
+    it.each([['Admin', 'auth', 'read', 'ObservabilitySnapshot']])(
+        '%s declares access %s, permission %s %s',
+        (name, access, action, subject) => {
+            expect(byName(name)).toBeDefined();
+            expect(byName(name)?.meta?.access).toBe(access);
+            expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
+        }
+    );
 
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it.

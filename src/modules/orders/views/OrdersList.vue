@@ -63,7 +63,7 @@ const {
 /**
  * Whether the signed-in user may see the admin-only row actions.
  */
-const { isAdmin } = storeToRefs(useSessionStore());
+const session = useSessionStore();
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -267,7 +267,7 @@ const handleHardDelete = (orderId: string) =>
                         {{ t('orders-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('update', 'Order')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -278,7 +278,7 @@ const handleHardDelete = (orderId: string) =>
                         {{ t('orders-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('delete', 'Order')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
@@ -290,7 +290,7 @@ const handleHardDelete = (orderId: string) =>
                         {{ t('orders-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="isAdmin"
+                        v-if="session.can('delete', 'Order')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

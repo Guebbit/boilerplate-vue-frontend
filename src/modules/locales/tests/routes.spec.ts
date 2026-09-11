@@ -24,15 +24,16 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 
 describe('locales route access', () => {
     it.each([
-        ['LocalesList', 'admin'],
-        ['LocalesDictionary', 'admin'],
-        ['LocaleEntries', 'admin'],
-        // Narrower than `admin` on purpose: the `translator` role reaches the generic
-        // translations door without ever holding `products.manage`.
-        ['EntityTranslations', 'translator']
-    ])('%s declares access: %s', (name, access) => {
+        ['LocalesList', 'auth', 'update', 'Locale'],
+        ['LocalesDictionary', 'auth', 'update', 'Locale'],
+        ['LocaleEntries', 'auth', 'update', 'Locale'],
+        // A different key from the three above, on purpose: the `translator` role reaches the
+        // generic translations door on `translations.read` without ever holding `locales.update`.
+        ['EntityTranslations', 'auth', 'read', 'Translation']
+    ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
+        expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
     it('declares no route this file does not know about', () => {

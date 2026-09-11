@@ -10,12 +10,13 @@ import routes from '../routes';
 
 describe('feedback route access', () => {
     it.each([
-        ['Contact', undefined],
-        ['FeedbackInbox', 'admin']
-    ])('%s declares access: %s', (name, access) => {
+        ['Contact', undefined, undefined, undefined],
+        ['FeedbackInbox', 'auth', 'read', 'Feedback']
+    ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         const route = routes.find((record) => record.name === name);
         expect(route).toBeDefined();
         expect(route?.meta?.access).toBe(access);
+        expect(route?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
     it('declares no route this file does not know about', () => {

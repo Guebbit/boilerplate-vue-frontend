@@ -12,7 +12,11 @@ export default [
     {
         path: 'playground/realtime',
         name: 'RealtimePlayground',
-        meta: { access: 'admin', title: 'realtime-playground-page.page-title' },
+        meta: {
+            access: 'auth',
+            can: ['read', 'ObservabilitySnapshot'],
+            title: 'realtime-playground-page.page-title'
+        },
         component: () => import('@/modules/realtime/views/RealtimePlayground.vue')
     }
 ] satisfies RouteRecordRaw[];

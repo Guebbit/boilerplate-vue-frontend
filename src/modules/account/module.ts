@@ -22,7 +22,8 @@ import { accountResponseSchemas } from './response-schemas';
  *
  * The session itself is not in here: the token lives in `infrastructure/session`, because
  * `infrastructure/http` has to read it on every request and the router guards have to read
- * `isAuth`/`isAdmin` before any domain code runs. This module owns the user's editable record.
+ * `isAuth` and the caller's rules before any domain code runs. This module owns the user's
+ * editable record.
  *
  * There is no `index.ts` next to this file, and that is the answer rather than an omission: account
  * is a consumer, not a provider, and no other domain has ever needed anything from it. A barrel

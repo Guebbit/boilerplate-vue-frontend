@@ -25,7 +25,7 @@ export default [
     {
         path: 'orders/:id/edit',
         name: 'OrderEdit',
-        meta: { access: 'admin', title: 'order-edit-page.page-title' },
+        meta: { access: 'auth', can: ['update', 'Order'], title: 'order-edit-page.page-title' },
         component: () => import('@/modules/orders/views/OrderEdit.vue'),
         props: true
     }

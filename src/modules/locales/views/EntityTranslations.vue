@@ -14,9 +14,9 @@ export default {
  * registry lookup this generic screen has no other way to know — the accepted trade for staying
  * generic across entity types.
  *
- * Gated on `translations.read` (the route's `meta.access: 'translator'`) for entry, and
- * `translations.manage` for the save action — a translator never needs, and never gets,
- * `products.manage`.
+ * Gated on `translations.read` (the route's `meta.can`) for entry. The SAVE is
+ * `translations.manage`, which no client can ask for — see the note on `session` below — so it
+ * renders for anyone who may read and the server refuses the rest.
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -61,11 +61,15 @@ const localesStore = useLocalesStore();
 const { capabilities, fallbackLocale } = storeToRefs(localesStore);
 
 /**
- * Whether the visitor may save — `translations.manage`. The route itself only requires
- * `translations.read`, so a read-only translator (or an admin, who has both) can still reach this
- * screen with the save action hidden.
+ * The session, for the rule this screen renders from.
+ *
+ * The SAVE is `translations.manage`, and that key is not answerable here: the server expands a
+ * `manage` key into concrete actions and never publishes a `manage` RULE, so no client can ask
+ * for one. So the save renders for anyone who may read, and the server refuses the write it will
+ * not accept — the one place in this app where a button can still answer 403, and it is a gap in
+ * the key declarations rather than in this screen.
  */
-const { canManageTranslations } = storeToRefs(useSessionStore());
+const session = useSessionStore();
 
 /**
  * The entity this screen edits, from the route.
@@ -277,7 +281,7 @@ const handleSave = () => {
             </v-window>
 
             <v-btn
-                v-if="canManageTranslations"
+                v-if="session.can('read', 'Translation')"
                 color="primary"
                 :loading="saving"
                 :disabled="loading || openTags.length === 0"

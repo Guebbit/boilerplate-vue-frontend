@@ -12,7 +12,11 @@ export default [
     {
         path: 'admin',
         name: 'Admin',
-        meta: { access: 'admin', title: 'admin-page.page-title' },
+        meta: {
+            access: 'auth',
+            can: ['read', 'ObservabilitySnapshot'],
+            title: 'admin-page.page-title'
+        },
         component: () => import('@/modules/admin/views/Admin.vue')
     }
 ] satisfies RouteRecordRaw[];

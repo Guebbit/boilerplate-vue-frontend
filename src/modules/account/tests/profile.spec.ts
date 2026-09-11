@@ -62,8 +62,8 @@ beforeEach(() => {
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
         'GET /account/abilities': orvalEnvelope({
-            scope: 'tenant',
-            rules: [
+            platform: [],
+            tenant: [
                 ['read', 'Product', { active: true, deletedAt: null }],
                 ['read', 'Order', { userId: 'u1', deletedAt: null }]
             ],
@@ -236,15 +236,15 @@ describe('own role', () => {
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
-                expect(useSessionStore().isAdmin).toBe(false);
+                expect(useSessionStore().can('delete', 'Product')).toBe(false);
                 // What the server holds AFTER the write. The projection must follow this, not the
                 // value the form happened to send.
                 responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
-                // And the rules that go with the new role: `isAdmin` asks what the server said
+                // And the rules that go with the new role: a screen asks what the server said
                 // this person may do, not what they are called.
                 responses['GET /account/abilities'] = orvalEnvelope({
-                    scope: 'tenant',
-                    rules: [
+                    platform: [],
+                    tenant: [
                         ['read', 'Product'],
                         ['create', 'Product'],
                         ['update', 'Product'],
@@ -264,9 +264,9 @@ describe('own role', () => {
                     '/account',
                     '/account/abilities'
                 ]);
-                // `isAdmin` reads the RULES, so the mock has to answer with an owner's — a role
+                // Every gate reads the RULES, so the mock has to answer with an owner's — a role
                 // name decides nothing on this side.
-                expect(useSessionStore().isAdmin).toBe(true);
+                expect(useSessionStore().can('delete', 'Product')).toBe(true);
             });
     });
 

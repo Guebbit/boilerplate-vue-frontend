@@ -8,7 +8,7 @@ export default {
 /**
  * @module
  * Single-file component: `<script setup>` wires session/delivery-store state, the template
- * renders conditionally on `shipment` being loaded, with the courier button gated by `isAdmin`
+ * renders conditionally on `shipment` being loaded, with the courier button gated on `delivery.update`
  * and the shipment's `status`.
  */
 
@@ -54,7 +54,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Whether the current session may see the courier button.
  */
-const { isAdmin } = storeToRefs(useSessionStore());
+const session = useSessionStore();
 
 /**
  * Delivery store, for the courier action.
@@ -96,7 +96,7 @@ onMounted(() => {
             <span class="text-sm" data-test="shipment-tracking">{{ shipment.trackingCode }}</span>
         </div>
         <v-btn
-            v-if="isAdmin && shipment.status === 'shipped'"
+            v-if="session.can('update', 'Shipment') && shipment.status === 'shipped'"
             class="mt-3"
             color="secondary"
             variant="tonal"

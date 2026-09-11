@@ -25,7 +25,7 @@ vi.mock('@/infrastructure/session', () => ({ useSessionStore: () => sessionStore
 vi.mock('@guebbit/js-toolkit', () => ({ getCookie: (name: string) => getCookieMock(name) }));
 vi.mock('@guebbit/vue-toolkit', () => ({ useNotificationsStore: () => ({ addMessage: vi.fn() }) }));
 vi.mock('pinia', () => ({
-    storeToRefs: () => ({ isAuth: { value: false }, isAdmin: { value: false } })
+    storeToRefs: () => ({ isAuth: { value: false } })
 }));
 vi.mock('@/infrastructure/i18n', () => ({ translate: (key: string) => key }));
 

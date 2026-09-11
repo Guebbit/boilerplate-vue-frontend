@@ -54,7 +54,7 @@ const STANDARD_ROLE = 'customer';
 /**
  * Whether the signed-in visitor is an administrator.
  */
-const { isAdmin } = storeToRefs(useSessionStore());
+const session = useSessionStore();
 
 /**
  * The role name shown in the select.
@@ -137,7 +137,7 @@ const handleRoleChange = () => {
         different endpoint under a different authorisation, and folding it into "Save changes"
         would put two authorisations behind one button.
     -->
-    <template v-if="isAdmin">
+    <template v-if="session.can('read', 'User')">
         <v-divider class="my-6" />
 
         <section data-test="profile-role">
