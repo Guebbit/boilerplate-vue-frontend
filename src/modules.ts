@@ -24,6 +24,7 @@ import payments from '@/modules/payments/module';
 import products from '@/modules/products/module';
 import realtime from '@/modules/realtime/module';
 import users from '@/modules/users/module';
+import webhooks from '@/modules/webhooks/module';
 import wishlist from '@/modules/wishlist/module';
 
 /**
@@ -43,5 +44,6 @@ export const enabledModules: AppModule[] = [
     products,
     realtime,
     users,
+    webhooks,
     wishlist
 ];

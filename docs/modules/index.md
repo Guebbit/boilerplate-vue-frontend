@@ -45,6 +45,7 @@ flowchart LR
         delivery["delivery"]
         inventory["inventory"]
         payments["payments"]
+        webhooks["webhooks"]
         wishlist["wishlist"]
     end
     subgraph GENERIC["generic"]
@@ -71,7 +72,7 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,payments,wishlist supporting;
+    class delivery,inventory,payments,webhooks,wishlist supporting;
     class account,admin,demo,feedback,locales,realtime,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
@@ -126,7 +127,7 @@ assembles reads a state that belongs to the domain it came from.
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 14      | 3    | 4          | 7       | 30      | 13     | 9             |
+| 15      | 3    | 5          | 7       | 35      | 14     | 9             |
 
 | Module                        | Subdomain    | Screens | Store                    | API calls | Depends on | Depended on by |
 | ----------------------------- | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -143,11 +144,12 @@ assembles reads a state that belongs to the domain it came from.
 | [`products`](./products.md)   | `core`       | 4       | `products`               | 10        | 2          | 1              |
 | [`realtime`](./realtime.md)   | `generic`    | 1       | `realtime-observability` | 0         | 0          | 0              |
 | [`users`](./users.md)         | `generic`    | 4       | `users`                  | 9         | 0          | 1              |
+| [`webhooks`](./webhooks.md)   | `supporting` | 5       | `webhooks`               | 7         | 0          | 0              |
 | [`wishlist`](./wishlist.md)   | `supporting` | 1       | `wishlist`               | 4         | 1          | 1              |
 
 ## The two repositories
 
-Eleven of fourteen domains exist on both sides under the same name. **The other three are the
+Twelve of fifteen domains exist on both sides under the same name. **The other three are the
 interesting ones**, and until this table the asymmetry was written down nowhere in either repository:
 [`admin`](./admin.md) renders two backend modules, [`realtime`](./realtime.md) consumes a stream one
 of them serves, and [`demo`](./demo.md) has no backend domain at all.
@@ -172,4 +174,5 @@ job, not a checked one.
 | [`products`](./products.md)   | `products`                     | —                                                                                                                                                                               |
 | [`realtime`](./realtime.md)   | `observability`                | It consumes `GET /observability/events`, the SSE stream that module serves. There is no backend `realtime` module because the stream is one route on a dashboard, not a domain. |
 | [`users`](./users.md)         | `users`                        | —                                                                                                                                                                               |
+| [`webhooks`](./webhooks.md)   | `webhooks`                     | —                                                                                                                                                                               |
 | [`wishlist`](./wishlist.md)   | `wishlist`                     | —                                                                                                                                                                               |

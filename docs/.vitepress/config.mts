@@ -71,6 +71,7 @@ export default withMermaid(
                             { text: 'delivery', link: '/modules/delivery' },
                             { text: 'inventory', link: '/modules/inventory' },
                             { text: 'payments', link: '/modules/payments' },
+                            { text: 'webhooks', link: '/modules/webhooks' },
                             { text: 'wishlist', link: '/modules/wishlist' }
                         ]
                     },

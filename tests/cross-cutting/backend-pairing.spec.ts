@@ -64,6 +64,7 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
         why: 'It consumes `GET /observability/events`, the SSE stream that module serves. There is no backend `realtime` module because the stream is one route on a dashboard, not a domain.'
     },
     users: { counterparts: ['users'] },
+    webhooks: { counterparts: ['webhooks'] },
     wishlist: { counterparts: ['wishlist'] }
 };
 
