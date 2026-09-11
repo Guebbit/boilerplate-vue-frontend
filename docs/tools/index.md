@@ -59,5 +59,5 @@ flowchart LR
 | Observability | **[Observability](./observability.md)**               | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store.                        |
 | Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                            |
 | Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                         |
-| Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__demo` control surface.             |
+| Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.             |
 | API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                               |

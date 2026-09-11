@@ -76,52 +76,51 @@ A failing e2e shard additionally writes its whole Cypress output to `reports/e2e
 
 ## Where test data comes from
 
-Four things across the two repos can hand you an entity, and each answers a question the others cannot.
+Three things in the backend can hand you an entity, and each answers a question the others cannot. This repo holds a copy of none of them.
 
-| Source                                                    | Repo | What it is for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `boilerplate-node-backend/db/demo/demo-data.json`         | BE   | **The demo dataset, as the API answers it.** Every seeded row, serialized — ids, emails, admin flags, titles, prices, who has what in their cart and their orders, and the schema defaults each record actually ended up with. The one dataset a human sees when they open either app. **Produced and kept in the backend** by `npm run seed:export`, which seeds a throwaway database with the real seeders and reads it back through the real serializers. This repo holds no copy: the demo profile the suites run against seeds from the backend's own fixtures directly |
-| `src/modules/<name>/demo.ts`                              | BE   | **The records themselves**, per module, before the schema and serializer have had their say. The file you edit to change what the demo data IS                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `boilerplate-node-backend/src/modules/<name>/fixtures.ts` | BE   | **Arbitrary throwaway entities** — "give me _a_ product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset, and one per module, beside the `src/modules/<name>/demo.ts` that fixes the dataset. This repo has no equivalent yet; see the note below                                                                                                                                                                                                                                                                             |
-| `boilerplate-node-backend/tests/support/contract-data.ts` | BE   | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to _reject_                                                                                                                                                                                                                                                                                                                                                                        |
+| Source                                                     | Repo | What it is for                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boilerplate-node-backend/scenarios/*.ts`                  | BE   | **The demo dataset.** The seeded records, one file per module that owns them — ids, emails, roles, titles, prices, who has what in their cart and their orders. The one dataset a human sees when they open either app, and the file you edit to change what the demo data IS. Seeded by the backend's own models and hooks, and read from here only through the API |
+| `boilerplate-node-backend/src/modules/<name>/factories.ts` | BE   | **Arbitrary throwaway entities** — "give me _a_ product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset. This repo has no equivalent yet; see the note below                                                                                                                                                         |
+| `boilerplate-node-backend/tests/support/contract-data.ts`  | BE   | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to _reject_                                                                                                                                                                |
 
-Reading it as a shape: **one** dataset, authored once and published as the API's own output, plus **two** generators that exist because "the demo data" and "some data" and "deliberately illegal data" are three different questions.
+Reading it as a shape: **one** dataset, authored once and seeded by the backend's own code, plus **two** generators that exist because "the demo data" and "some data" and "deliberately illegal data" are three different questions.
 
-There is no mapper on either side, and that is the property worth protecting. The two repos used to share a file of plain FACTS and map it separately, and the two mappers drifted silently: this one invented `active: true` to mirror a backend default nobody had checked, and carried no `locale` at all. Publishing the API's output instead of the inputs killed that class of bug — there is only one mapper now, and it is the API's.
+There is no mapper on either side, and that is the property worth protecting. The two repos used to share a file of plain FACTS and map it separately, and the two mappers drifted silently: this one invented `active: true` to mirror a backend default nobody had checked, and carried no `locale` at all. Reading the seeded rows back through the API instead killed that class of bug — there is only one mapper now, and it is the API's.
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 55}}}%%
 flowchart TB
-    subgraph one["One dataset, published not mapped"]
+    subgraph one["One dataset, seeded not copied"]
         direction TB
-        Records["BE src/modules/*/demo.ts<br/>the records, per module"]
-        Records --> Export["seed:export<br/>real seeders + real serializers"]
-        Export --> Dataset["demo-data.json<br/>the backend's gated snapshot"]
+        Records["BE scenarios/*.ts<br/>the records, per module"]
+        Records --> Seed["POST /__test/restore · scenario:apply:reset<br/>real models + real hooks"]
+        Seed --> Api["the seeded database<br/>read here only through the API"]
     end
 
     subgraph two["Two generators, two questions"]
         direction TB
-        Factories["BE tests/helpers/factories/*<br/><i>give me A product</i>"]
-        ContractData["BE tests/helpers/contract-data.ts<br/><i>give me an ILLEGAL one</i>"]
+        Factories["BE src/modules/*/factories.ts<br/><i>give me A product</i>"]
+        ContractData["BE tests/support/contract-data.ts<br/><i>give me an ILLEGAL one</i>"]
     end
 
     classDef source fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef mapper fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef gen fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Records source;
-    class Export,Dataset mapper;
+    class Seed,Api mapper;
     class Factories,ContractData gen;
 ```
 
 ### The three questions, and why none absorbs another
 
-- **"Give me _the_ demo data."** → `boilerplate-node-backend/db/demo/demo-data.json`, changed through the `src/modules/<name>/demo.ts` of the backend module that owns the records and republished with `npm run seed:export`. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated. A shape the demo data cannot currently produce is a record to ADD, not a generator to introduce.
-- **"Give me _a_ product, I do not care which."** → the backend's `factories/*`. The opposite need: fresh, isolated, overridable per test, and never the demo data — 25 test files there would interfere with each other if they shared rows.
+- **"Give me _the_ demo data."** → `boilerplate-node-backend/scenarios/`, changed in the file of the backend module that owns the records. Every restore reseeds it — `POST /__test/restore` under the demo profile, `scenario:apply:reset` under the live one. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated. A shape the demo data cannot currently produce is a record to ADD, not a generator to introduce.
+- **"Give me _a_ product, I do not care which."** → the backend's `src/modules/<name>/factories.ts`. The opposite need: fresh, isolated, overridable per test, and never the demo data — the backend's test files would interfere with each other if they shared rows.
 - **"Give me one the API must _reject_."** → `boilerplate-node-backend/tests/support/contract-data.ts`. Derived from the zod schemas so each payload violates exactly one declared constraint. Nothing else can produce something deliberately illegal, which is the difference between a contract test and a fixture.
 
 Merging any two would mean one of those questions stops being asked. The merge that _was_ worth doing — the demo dataset, previously written out by hand on both sides — is the one already done.
 
-**The one gap:** this repo has no counterpart to the backend's per-module `fixtures.ts`, so "give me a product" is hand-rolled wherever it is needed — `src/modules/products/tests/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
+**The one gap:** this repo has no counterpart to the backend's per-module `src/modules/<name>/factories.ts`, so "give me a product" is hand-rolled wherever it is needed — `src/modules/products/tests/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
 
 ## What each layer can and cannot catch
 

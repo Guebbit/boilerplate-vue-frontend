@@ -22,9 +22,9 @@ What each concern maps to now:
 
 | Concern                                        | Where it lives                                                                                              |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Seeded, deterministic data                     | The backend's own `db/demo` fixtures, seeded at boot and on every reset                                     |
-| Reset between e2e specs                        | `POST /__demo/reset` — drops the in-memory database and reseeds, in-process                                 |
-| Reading "sent" emails (reset tokens)           | `GET /__demo/emails` — in demo mode the mailer records to an outbox instead of SMTP                         |
+| Seeded, deterministic data                     | The backend's own `scenarios/` dataset, seeded at boot and on every restore                                 |
+| Restore between e2e specs                      | `POST /__test/restore` — empties the in-memory database and reseeds the `shop` scenario, in-process         |
+| Reading "sent" emails (reset tokens)           | `GET /__test/emails` — in demo mode the mailer records to an outbox instead of SMTP                         |
 | Contract conformance of responses              | `orvalMutator` parses every response through its OpenAPI-derived Zod schema (see [Live E2E](./live-e2e.md)) |
 | Full-stack behaviour (real Redis, real broker) | The **live profile**, unchanged: `npm run test:e2e:live` and the required `test-e2e-live` CI job            |
 
@@ -32,7 +32,7 @@ What each concern maps to now:
 
 `npm run test:e2e` builds the bundle once, then boots **one demo backend per shard** (ports `3101+`) so the four Cypress processes cannot see each other's writes — the isolation MSW's in-page state used to provide, now with the real application behind it. Each shard's Cypress carries `CYPRESS_apiUrl`, and the overwritten `cy.visit` injects it into the page as the `__E2E_API_URL` runtime override the axios client reads before falling back to the baked `VITE_API_URL` (`src/infrastructure/http/client.ts`).
 
-`cy.resetState()` POSTs the shard's own `/__demo/reset` before every spec; `cy.demoEmailTo(address)` reads the outbox. Specs that need the full stack open with `cy.skipUnlessLive()`; specs that hinge on the outbox open with `cy.skipUnlessDemo()`, because against the live profile the emails leave through a real queue a browser cannot read.
+`cy.resetState()` POSTs the shard's own `/__test/restore` before every spec; `cy.demoEmailTo(address)` reads the outbox. Specs that need the full stack open with `cy.skipUnlessLive()`; specs that hinge on the outbox open with `cy.skipUnlessDemo()`, because against the live profile the emails leave through a real queue a browser cannot read.
 
 ## Working without any backend
 

@@ -193,9 +193,9 @@ export default defineConfig({
             // which is more predictable here than relying on loadEnv to have picked up a
             // process-level override.
             liveProfile: false,
-            // Only used by the live profile: `cy.resetState()` shells out to this checkout's
-            // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
-            // override, or a sibling-checkout default, always resolved to an absolute path — see
+            // Only used by the live profile: `cy.resetState()` shells out to this checkout, through
+            // `LIVE_RESET_COMMAND` below, to restore the seed scenario between tests. `BACKEND_PATH`
+            // env override, or a sibling-checkout default, always resolved to an absolute path — see
             // scripts/pairing/paired-backend-path.ts, shared with scripts/pairing/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),

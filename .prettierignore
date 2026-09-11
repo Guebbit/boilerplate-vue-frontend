@@ -23,11 +23,6 @@ reports
 # bundler and prettier already agree.
 openapi.yaml
 
-# The demo dataset, copied verbatim from the backend's `npm run seed:export` output and
-# hash-compared against it by `check:spec-identity`. Reformatting it here would read as a forked
-# dataset — this repo authors nothing in it.
-tests/fixtures/demo-data.json
-
 # Working directories that belong to tooling rather than to this codebase, and to whoever is
 # running it rather than to this repo's formatting rules. Prettier scans the whole tree, so an
 # unformatted scratch directory here fails `prettier:check` — which is in `npm run complete`, which

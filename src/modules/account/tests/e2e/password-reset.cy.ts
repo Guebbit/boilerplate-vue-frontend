@@ -4,7 +4,7 @@
  * rather than assumed, so the test proves the emailed link is the one that works.
  *
  * Both halves of the outcome are proven at the login form — the old password stops working AND
- * the new one starts. `cy.demoEmailTo` reads the demo backend's `/__demo/emails` outbox, so these
+ * the new one starts. `cy.demoEmailTo` reads the demo backend's `/__test/emails` outbox, so these
  * specs only mean something against the demo profile.
  */
 import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';

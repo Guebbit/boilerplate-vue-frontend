@@ -41,7 +41,7 @@ env:
     # What `cy.resetState()` shells out to between specs. There is no default in the code — unset
     # means "do not reset" — so the pairing has to be spelled out here as it is in `.env-example`;
     # this is the Node twin's, the PHP one goes through composer.
-    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- db:seed:reset
+    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- scenario:apply:reset
 
 jobs:
     test-e2e-live:

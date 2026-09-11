@@ -4,7 +4,7 @@
  * as a guest, then prove the password gate is real (wrong password refused, right one accepted).
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
- * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), a fresh
+ * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__test/emails`), a fresh
  * page load, so the account has to genuinely exist server-side for the second half to work.
  */
 describe('Registration', () => {

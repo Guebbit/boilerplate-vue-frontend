@@ -4,13 +4,13 @@ import { E2E_ACCOUNTS } from './accounts';
 import { asStub } from '../stub';
 
 /*
- * A demo reset drops the in-memory database and reseeds it inside the backend process
- * (`POST /__demo/reset`, see the backend's `src/app/demo.ts`) — measured in tens of
- * milliseconds, budgeted generously for a CI box under load.
+ * A demo restore empties the in-memory database and reseeds it inside the backend process
+ * (`POST /__test/restore`, see the backend's `src/app/demo.ts`) — measured at ~0.6s for `shop`,
+ * mostly the seed accounts' bcrypt hashes; budgeted generously for a CI box under load.
  */
 const DEMO_RESET_TIMEOUT_MS = 30_000;
 const APP_READY_TIMEOUT_MS = 15_000;
-// A live reset drops and re-seeds the database; measured at ~0.6s locally, with headroom for a
+// A live reset empties and re-seeds the database; measured at ~0.6s locally, with headroom for a
 // cold tsx start and a slower CI disk.
 const LIVE_RESET_TIMEOUT_MS = 60_000;
 
@@ -23,14 +23,14 @@ declare global {
             /**
              * Return the backing data to its known seed state, whichever profile is running.
              *
-             * - demo profile (default): POSTs the backend's `/__demo/reset`, which drops the
-             *   in-memory database and reseeds it from the modules' demo fixtures, in-process.
-             * - live profile: runs the backend's own seed-reset command, which drops the real
-             *   database, re-seeds the same fixtures and clears the cache. With no
-             *   `LIVE_RESET_COMMAND` in `.env` there is no such command, and nothing is reset.
+             * - demo profile (default): POSTs the backend's `/__test/restore`, which empties the
+             *   in-memory database and reseeds the `shop` scenario, in-process.
+             * - live profile: runs the backend's own restore command, which empties the real
+             *   database, re-seeds the same scenario and clears the cache. With no
+             *   `LIVE_RESET_COMMAND` in `.env` there is no such command, and nothing is restored.
              *
-             * Both land on the dataset in the backend's `db/demo/index.ts`, which is why the same
-             * specs and the same `cy.loginAs()` credentials work against either.
+             * Both land on the scenario in the backend's `scenarios/index.ts`, which is why the
+             * same specs and the same `cy.loginAs()` credentials work against either.
              */
             resetState(): Chainable<void>;
 
@@ -105,13 +105,13 @@ declare global {
              * Skips the current test unless running against the demo profile.
              *
              * The inverse of `skipUnlessLive`, for the flows that hinge on the demo outbox
-             * (`/__demo/emails`): against the live backend the emails leave through a real queue
+             * (`/__test/emails`): against the live backend the emails leave through a real queue
              * a browser cannot read, so there is nothing to assert.
              */
             skipUnlessDemo(): Chainable<void>;
 
             /**
-             * The newest email the demo backend "sent" to an address, from the `/__demo/emails`
+             * The newest email the demo backend "sent" to an address, from the `/__test/emails`
              * outbox. Fails the test when there is none — an empty inbox is an answer too.
              *
              * @param address - the recipient to look for
@@ -235,11 +235,11 @@ Cypress.Commands.add(
             .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
             .then(({ liveProfile, liveResetCommand, apiUrl }) => {
                 if (liveProfile !== true)
-                    // The demo backend resets itself in-process; a plain request is all it takes,
-                    // and a non-2xx already fails the test.
+                    // The demo backend restores itself in-process; a plain request is all it takes,
+                    // and a non-2xx already fails the test. No body, so the scenario is `shop`.
                     return cy.request({
                         method: 'POST',
-                        url: `${String(apiUrl)}/__demo/reset`,
+                        url: `${String(apiUrl)}/__test/restore`,
                         timeout: DEMO_RESET_TIMEOUT_MS
                     });
                 // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell
@@ -385,7 +385,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('demoEmailTo', (address: string) =>
     cy
         .env(['apiUrl'])
-        .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__demo/emails`))
+        .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
         .then((response) => {
             const { emails } = response.body as { emails: DemoOutboxEmail[] };
             const email = emails.find(({ to }) => to === address);

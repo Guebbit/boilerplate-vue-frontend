@@ -102,7 +102,7 @@ npm run host -- dev
 
 The `test-e2e-live` CI job sets all of this itself, including the two `VITE_UMAMI_*` build variables, since a runner has no `.env`.
 
-`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- db:seed:reset` uses to reset state between specs. `test:e2e:live` itself builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
+`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- scenario:apply:reset` uses to restore state between specs. `test:e2e:live` itself builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
@@ -110,7 +110,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (under the demo profile it POSTs the backend's in-process `/__demo/reset` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/pairing/paired-backend-path.ts`, which `cypress.config.ts` reads:
+`cy.resetState()` shells out to the backend checkout for `host -- scenario:apply:reset` (under the demo profile it POSTs the backend's in-process `/__test/restore` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/pairing/paired-backend-path.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -134,7 +134,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here, and not in a copy either. The demo dataset is published by the backend's `npm run seed:export` and stays there: it is not in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the _database a deployment actually builds_ matches the published dataset is a property of the backend's seeders, and the backend asserts it in its own commit gate: `npm run check:seed-export` re-seeds a throwaway database with the real seeders, reads it back through the real serializers, and fails if the result differs from the committed artefact.
+Not here, and not in a copy either. The demo dataset lives in the backend's `scenarios/` and stays there: nothing in it is in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the seeded rows still hold what the specs lean on is a property of the backend's scenarios, and the backend asserts it in its own test suite: each module declares the guarantees its scenario makes, and `boilerplate-node-backend/scenarios/check.ts` fails the suite when a freshly seeded database stops holding one.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 
