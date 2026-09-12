@@ -282,6 +282,15 @@ export interface OrderAddress {
     phone?: string;
 }
 
+export interface OrderTransferInstructions {
+    beneficiary: string;
+    iban: string;
+    /** Absent when the deployment has not configured one. */
+    bic?: string;
+    /** The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order. */
+    reference: string;
+}
+
 export interface OrderLineProduct {
     id: Id;
     title: string;
@@ -305,6 +314,16 @@ export interface OrderItem {
     quantity: number;
     locale: Locale;
 }
+
+/**
+ * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
+ */
+export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
+
+export const PaymentMethodId = {
+    card: 'card',
+    bank_transfer: 'bank_transfer'
+} as const;
 
 /**
  * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
@@ -362,6 +381,9 @@ export interface Order {
      */
     shippingCost?: number;
     shippingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     actions?: OrderActions;
     createdAt?: string;
@@ -2102,6 +2124,8 @@ export interface CheckoutRequest {
     addressId?: Id;
     /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
     shippingMethodId?: string;
+    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. */
+    paymentMethod?: PaymentMethodId;
 }
 
 export interface CheckoutResponse {
@@ -2202,6 +2226,7 @@ export interface SearchOrdersRequest {
     productId?: Id;
     email?: Email;
     status?: OrderStatus;
+    paymentMethod?: PaymentMethodId;
     notes?: string;
 }
 
@@ -2235,6 +2260,26 @@ export interface UpdateOrderByIdRequest {
 export interface CancelOrderRequest {
     /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
     refund?: boolean;
+}
+
+export interface PaymentMethodOption {
+    id: PaymentMethodId;
+    /**
+     * How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
+     * @minimum 0
+     */
+    holdHours?: number;
+}
+
+export interface PaymentMethodsResponse {
+    methods: PaymentMethodOption[];
+}
+
+export interface PaymentMethodsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PaymentMethodsResponse;
 }
 
 export interface CreatePaymentIntentRequest {
@@ -3126,6 +3171,10 @@ export type ListOrdersParams = {
     productId?: ProductIdParamParameter;
     email?: Email;
     status?: OrderStatus;
+    /**
+     * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
+     */
+    paymentMethod?: PaymentMethodId;
     notes?: string;
 };
 
@@ -5402,6 +5451,19 @@ export const getOrderInvoice = (
 };
 
 /**
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * @summary List payment methods
+ */
+export const listPaymentMethods = (
+    options?: SecondParameter<typeof orvalMutator<PaymentMethodsResponseEnvelope>>
+) => {
+    return orvalMutator<PaymentMethodsResponseEnvelope>(
+        { url: `/payments/methods`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
@@ -6004,6 +6066,7 @@ export type HardDeleteOrderByIdResult = NonNullable<
 >;
 export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type CreatePaymentIntentResult = NonNullable<
     Awaited<ReturnType<typeof createPaymentIntent>>
 >;

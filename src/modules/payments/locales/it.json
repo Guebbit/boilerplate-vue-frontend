@@ -26,6 +26,22 @@
         "refunded-by-hand": "Rimborsato — il denaro è stato restituito al cliente al di fuori di questa applicazione.",
         "none": "Nessun pagamento."
     },
+    "payment-method-selector": {
+        "title": "Metodo di pagamento",
+        "method-card": "Carta",
+        "method-bank_transfer": "Bonifico bancario"
+    },
+    "transfer-instructions-panel": {
+        "title": "Istruzioni per il bonifico",
+        "label-deadline": "Terremo il tuo ordine in attesa fino al {payBy}.",
+        "label-beneficiary": "Beneficiario",
+        "label-iban": "IBAN",
+        "label-bic": "BIC",
+        "label-reference": "Riferimento",
+        "button-copy-iban": "Copia IBAN",
+        "button-copy-reference": "Copia riferimento",
+        "hint-reference": "Includi il riferimento nella causale del bonifico, così potremo abbinare il tuo pagamento a questo ordine."
+    },
     "record-offline-payment-form": {
         "label-method": "Come è arrivato",
         "method-bank_transfer": "Bonifico bancario",

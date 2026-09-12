@@ -2702,6 +2702,28 @@ export const ExportAccountDataResponse = zod.strictObject({
                         phone: zod.string().optional()
                     })
                     .optional(),
+                paymentMethod: zod
+                    .enum(['card', 'bank_transfer'])
+                    .optional()
+                    .describe(
+                        'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+                    ),
+                payBy: zod.iso.datetime({ offset: true }).optional(),
+                transferInstructions: zod
+                    .strictObject({
+                        beneficiary: zod.string(),
+                        iban: zod.string(),
+                        bic: zod
+                            .string()
+                            .optional()
+                            .describe('Absent when the deployment has not configured one.'),
+                        reference: zod
+                            .string()
+                            .describe(
+                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                            )
+                    })
+                    .optional(),
                 status: zod
                     .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                     .describe(
@@ -5086,6 +5108,8 @@ export const GetCartSummaryResponse = zod.strictObject({
  * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
  * @summary Checkout (place order from cart)
  */
+export const checkoutBodyPaymentMethodDefault = `card`;
+
 export const CheckoutBody = zod.strictObject({
     email: zod.email().optional(),
     notes: zod.string().optional().describe('Optional order notes'),
@@ -5101,6 +5125,15 @@ export const CheckoutBody = zod.strictObject({
         .optional()
         .describe(
             'Which shipping method (see `GET \/delivery\/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.'
+        ),
+    paymentMethod: zod
+        .enum(['card', 'bank_transfer'])
+        .describe(
+            'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+        )
+        .default(checkoutBodyPaymentMethodDefault)
+        .describe(
+            'How the customer intends to pay (see `GET \/payments\/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`.'
         )
 });
 
@@ -5205,6 +5238,28 @@ export const CheckoutResponse = zod.strictObject({
                     zip: zod.string(),
                     country: zod.string(),
                     phone: zod.string().optional()
+                })
+                .optional(),
+            paymentMethod: zod
+                .enum(['card', 'bank_transfer'])
+                .optional()
+                .describe(
+                    'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+                ),
+            payBy: zod.iso.datetime({ offset: true }).optional(),
+            transferInstructions: zod
+                .strictObject({
+                    beneficiary: zod.string(),
+                    iban: zod.string(),
+                    bic: zod
+                        .string()
+                        .optional()
+                        .describe('Absent when the deployment has not configured one.'),
+                    reference: zod
+                        .string()
+                        .describe(
+                            "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        )
                 })
                 .optional(),
             status: zod
@@ -5408,6 +5463,12 @@ export const ListOrdersQueryParams = zod.strictObject({
     status: zod
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
         .optional(),
+    paymentMethod: zod
+        .enum(['card', 'bank_transfer'])
+        .optional()
+        .describe(
+            'Filter to orders placed with this method — the admin \"awaiting transfer\" view combines this with `status=pending`.'
+        ),
     notes: zod.string().optional()
 });
 
@@ -5525,6 +5586,28 @@ export const ListOrdersResponse = zod.strictObject({
                         zip: zod.string(),
                         country: zod.string(),
                         phone: zod.string().optional()
+                    })
+                    .optional(),
+                paymentMethod: zod
+                    .enum(['card', 'bank_transfer'])
+                    .optional()
+                    .describe(
+                        'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+                    ),
+                payBy: zod.iso.datetime({ offset: true }).optional(),
+                transferInstructions: zod
+                    .strictObject({
+                        beneficiary: zod.string(),
+                        iban: zod.string(),
+                        bic: zod
+                            .string()
+                            .optional()
+                            .describe('Absent when the deployment has not configured one.'),
+                        reference: zod
+                            .string()
+                            .describe(
+                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                            )
                     })
                     .optional(),
                 status: zod
@@ -5728,6 +5811,28 @@ export const CreateOrderResponse = zod.strictObject({
                 phone: zod.string().optional()
             })
             .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                    )
+            })
+            .optional(),
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
@@ -5898,6 +6003,28 @@ export const UpdateOrderResponse = zod.strictObject({
                 phone: zod.string().optional()
             })
             .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                    )
+            })
+            .optional(),
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
@@ -6005,6 +6132,12 @@ export const SearchOrdersBody = zod.strictObject({
         .optional()
         .describe(
             "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+        ),
+    paymentMethod: zod
+        .enum(['card', 'bank_transfer'])
+        .optional()
+        .describe(
+            'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
         ),
     notes: zod.string().optional()
 });
@@ -6123,6 +6256,28 @@ export const SearchOrdersResponse = zod.strictObject({
                         zip: zod.string(),
                         country: zod.string(),
                         phone: zod.string().optional()
+                    })
+                    .optional(),
+                paymentMethod: zod
+                    .enum(['card', 'bank_transfer'])
+                    .optional()
+                    .describe(
+                        'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+                    ),
+                payBy: zod.iso.datetime({ offset: true }).optional(),
+                transferInstructions: zod
+                    .strictObject({
+                        beneficiary: zod.string(),
+                        iban: zod.string(),
+                        bic: zod
+                            .string()
+                            .optional()
+                            .describe('Absent when the deployment has not configured one.'),
+                        reference: zod
+                            .string()
+                            .describe(
+                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                            )
                     })
                     .optional(),
                 status: zod
@@ -6299,6 +6454,28 @@ export const GetOrderByIdResponse = zod.strictObject({
                 phone: zod.string().optional()
             })
             .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                    )
+            })
+            .optional(),
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
@@ -6471,6 +6648,28 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 zip: zod.string(),
                 country: zod.string(),
                 phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                    )
             })
             .optional(),
         status: zod
@@ -6687,6 +6886,28 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 phone: zod.string().optional()
             })
             .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                    )
+            })
+            .optional(),
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
@@ -6742,6 +6963,36 @@ export const GetOrderInvoiceParams = zod.strictObject({
 });
 
 export const GetOrderInvoiceResponse = zod.unknown();
+
+/**
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * @summary List payment methods
+ */
+export const listPaymentMethodsResponseDataMethodsItemHoldHoursMin = 0;
+
+export const ListPaymentMethodsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        methods: zod.array(
+            zod.strictObject({
+                id: zod
+                    .enum(['card', 'bank_transfer'])
+                    .describe(
+                        'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+                    ),
+                holdHours: zod
+                    .number()
+                    .min(listPaymentMethodsResponseDataMethodsItemHoldHoursMin)
+                    .optional()
+                    .describe(
+                        "How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes."
+                    )
+            })
+        )
+    })
+});
 
 /**
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.

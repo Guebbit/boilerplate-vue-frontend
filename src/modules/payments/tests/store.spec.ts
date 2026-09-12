@@ -79,6 +79,27 @@ beforeEach(() => {
     };
 });
 
+describe('fetchMethods', () => {
+    it('mirrors the methods the API offers', () => {
+        responses['GET /payments/methods'] = orvalEnvelope({
+            methods: [{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]
+        });
+        const store = usePaymentsStore();
+        return store.fetchMethods().then((methods) => {
+            expect(methods).toEqual([{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]);
+            expect(store.methods).toEqual(methods);
+        });
+    });
+
+    it('offers only card when this deployment has not configured a transfer', () => {
+        responses['GET /payments/methods'] = orvalEnvelope({ methods: [{ id: 'card' }] });
+        const store = usePaymentsStore();
+        return store.fetchMethods().then(() => {
+            expect(store.methods).toEqual([{ id: 'card' }]);
+        });
+    });
+});
+
 describe('fetchPaymentForOrder', () => {
     it('mirrors what the API answered', () => {
         const store = usePaymentsStore();

@@ -162,6 +162,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/wishlist', 'AddWishlistItemResponse'],
     ['DELETE', `/wishlist/${ID}`, 'RemoveWishlistItemResponse'],
     ['POST', `/wishlist/${ID}/move-to-cart`, 'MoveWishlistItemToCartResponse'],
+    ['GET', '/payments/methods', 'ListPaymentMethodsResponse'],
     ['POST', '/payments/intent', 'CreatePaymentIntentResponse'],
     ['GET', `/payments/order/${ID}`, 'GetPaymentByOrderResponse'],
     ['POST', `/payments/order/${ID}/refund`, 'RefundPaymentByOrderResponse'],

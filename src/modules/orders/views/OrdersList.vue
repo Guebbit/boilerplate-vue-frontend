@@ -124,6 +124,20 @@ const STATUS_COLORS = {
 const statusColor = (status?: OrderStatus) => (status ? STATUS_COLORS[status] : 'secondary');
 
 /**
+ * The "awaiting transfer" filter: a `pending` order placed with `bank_transfer`, the two fields
+ * an operator needs to find money still owed on a checkout choice rather than a card decline.
+ * Modelled as one toggle over two filter fields, since neither is useful alone in this view.
+ */
+const awaitingTransferOnly = computed<boolean>({
+    get: () =>
+        filters.value.status === 'pending' && filters.value.paymentMethod === 'bank_transfer',
+    set: (value) => {
+        filters.value.status = value ? 'pending' : undefined;
+        filters.value.paymentMethod = value ? 'bank_transfer' : undefined;
+    }
+});
+
+/**
  * Applies the current filters, restarting from the first page.
  *
  * @returns The search promise, resolving once the page is loaded.
@@ -214,6 +228,13 @@ const handleHardDelete = (orderId: string) =>
                         hide-details
                     />
                 </div>
+                <v-checkbox
+                    v-model="awaitingTransferOnly"
+                    :label="t('orders-list-page.filter-awaiting-transfer')"
+                    data-test="filter-awaiting-transfer"
+                    hide-details
+                    class="mt-2"
+                />
                 <div class="mt-4 flex flex-wrap gap-2">
                     <v-btn type="submit" color="primary">
                         <Search :size="16" class="mr-1" aria-hidden="true" />

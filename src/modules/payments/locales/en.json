@@ -26,6 +26,22 @@
         "refunded-by-hand": "Refunded — the money was returned to the customer outside this application.",
         "none": "No payment yet."
     },
+    "payment-method-selector": {
+        "title": "Payment method",
+        "method-card": "Card",
+        "method-bank_transfer": "Bank transfer"
+    },
+    "transfer-instructions-panel": {
+        "title": "Bank transfer instructions",
+        "label-deadline": "We'll hold your order until {payBy}.",
+        "label-beneficiary": "Beneficiary",
+        "label-iban": "IBAN",
+        "label-bic": "BIC",
+        "label-reference": "Reference",
+        "button-copy-iban": "Copy IBAN",
+        "button-copy-reference": "Copy reference",
+        "hint-reference": "Include the reference in your transfer's description, so we can match your payment to this order."
+    },
     "record-offline-payment-form": {
         "label-method": "How it arrived",
         "method-bank_transfer": "Bank transfer",

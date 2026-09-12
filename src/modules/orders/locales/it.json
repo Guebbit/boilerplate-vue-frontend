@@ -20,6 +20,7 @@
         "filter-user-id": "ID utente",
         "filter-product-id": "ID prodotto",
         "filter-email": "Email",
+        "filter-awaiting-transfer": "In attesa di bonifico",
         "table-caption": "Ordini",
         "button-view-named": "Visualizza ordine {id}",
         "button-edit-named": "Modifica ordine {id}",

@@ -2924,6 +2924,11 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/OrderStatus'
+        - name: paymentMethod
+          in: query
+          description: Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
         - name: notes
           in: query
           schema:
@@ -3261,6 +3266,23 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /payments/methods:
+    get:
+      tags:
+        - Payments
+      summary: List payment methods
+      description: Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+      operationId: listPaymentMethods
+      security: []
+      responses:
+        '200':
+          description: The methods
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodsResponseEnvelope'
         '500':
           $ref: '#/components/responses/InternalError'
   /payments/intent:
@@ -4686,6 +4708,24 @@ components:
           type: string
         phone:
           type: string
+    OrderTransferInstructions:
+      type: object
+      additionalProperties: false
+      required:
+        - beneficiary
+        - iban
+        - reference
+      properties:
+        beneficiary:
+          type: string
+        iban:
+          type: string
+        bic:
+          type: string
+          description: Absent when the deployment has not configured one.
+        reference:
+          type: string
+          description: The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order.
     OrderLineProduct:
       type: object
       additionalProperties: false
@@ -4745,6 +4785,12 @@ components:
           minimum: 1
         locale:
           $ref: '#/components/schemas/Locale'
+    PaymentMethodId:
+      type: string
+      enum:
+        - card
+        - bank_transfer
+      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
     OrderStatus:
       type: string
       enum:
@@ -4829,6 +4875,13 @@ components:
           description: What that method cost at checkout time — a later rate change cannot re-price history.
         shippingAddress:
           $ref: '#/components/schemas/OrderAddress'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodId'
+        payBy:
+          type: string
+          format: date-time
+        transferInstructions:
+          $ref: '#/components/schemas/OrderTransferInstructions'
         status:
           $ref: '#/components/schemas/OrderStatus'
         actions:
@@ -7955,6 +8008,11 @@ components:
         shippingMethodId:
           type: string
           description: Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.
+        paymentMethod:
+          allOf:
+            - $ref: '#/components/schemas/PaymentMethodId'
+          default: card
+          description: How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`.
     CheckoutResponse:
       type: object
       additionalProperties: false
@@ -8146,6 +8204,8 @@ components:
           $ref: '#/components/schemas/Email'
         status:
           $ref: '#/components/schemas/OrderStatus'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodId'
         notes:
           type: string
     UpdateOrderByIdRequest:
@@ -8180,6 +8240,45 @@ components:
           type: boolean
           default: true
           description: '`false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`.'
+    PaymentMethodOption:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+      properties:
+        id:
+          $ref: '#/components/schemas/PaymentMethodId'
+        holdHours:
+          type: number
+          minimum: 0
+          description: How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
+    PaymentMethodsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - methods
+      properties:
+        methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodOption'
+    PaymentMethodsResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/PaymentMethodsResponse'
     CreatePaymentIntentRequest:
       type: object
       additionalProperties: false

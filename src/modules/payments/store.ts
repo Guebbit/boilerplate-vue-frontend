@@ -13,9 +13,10 @@ import {
     syncPayment,
     getPaymentByOrder,
     refundPaymentByOrder,
-    recordOfflinePayment as recordOfflinePaymentRequest
+    recordOfflinePayment as recordOfflinePaymentRequest,
+    listPaymentMethods
 } from '@api';
-import type { Payment, RecordOfflinePaymentRequest } from '@types';
+import type { Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
@@ -47,6 +48,25 @@ export const usePaymentsStore = defineStore('payments', () => {
      * The current order's payment, or undefined while none exists (no intent yet, or a guest).
      */
     const payment = ref<Payment | undefined>();
+
+    /**
+     * The methods this deployment offers — `card` always, `bank_transfer` once the deployment has
+     * configured it. Quoted, not authoritative: checkout re-validates the choice server-side.
+     */
+    const methods = ref<PaymentMethodOption[]>([]);
+
+    /**
+     * Loads the payment methods this deployment offers.
+     *
+     * @returns A promise resolving with the methods.
+     */
+    const fetchMethods = () =>
+        fetchAny(() =>
+            listPaymentMethods().then((response) => {
+                methods.value = response.data.methods;
+                return methods.value;
+            })
+        );
 
     /**
      * Loads the payment behind an order. A 404 is an answer — no intent yet — not an error:
@@ -156,6 +176,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     return {
         loading,
         payment,
+        methods,
+        fetchMethods,
         fetchPaymentForOrder,
         payForOrder,
         finishAtProvider,
