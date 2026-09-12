@@ -430,7 +430,14 @@ const submitForm = () =>
                         which also removes it from `openTags` in the same call.
                     -->
                     <v-window v-model="activeTab">
-                        <v-window-item v-for="tag in openTags" :key="tag" :value="tag">
+                        <v-window-item
+                            v-for="tag in openTags"
+                            :key="tag"
+                            :value="tag"
+                            :id="`translation-panel-${tag}`"
+                            role="tabpanel"
+                            :aria-labelledby="`translation-tab-${tag}`"
+                        >
                             <v-text-field
                                 v-model="form.translations[tag]!.title"
                                 type="text"

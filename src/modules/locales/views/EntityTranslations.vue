@@ -252,7 +252,14 @@ const handleSave = () => {
                 tab CLOSED by `handleRemoveLocale`, which also removes it from `openTags`.
             -->
             <v-window v-model="activeTab">
-                <v-window-item v-for="tag in openTags" :key="tag" :value="tag">
+                <v-window-item
+                    v-for="tag in openTags"
+                    :key="tag"
+                    :value="tag"
+                    :id="`translation-panel-${tag}`"
+                    role="tabpanel"
+                    :aria-labelledby="`translation-tab-${tag}`"
+                >
                     <v-textarea
                         v-for="field in fieldNames"
                         :key="field"

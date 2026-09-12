@@ -26,9 +26,12 @@ describe('Product write surface', () => {
             cy.get('[data-test=product-price-field] input').type('19.99');
 
             // Open the Italian tab and fill it, in the SAME submit as the English one above.
+            // Scoped by the panel's own id, not `:visible`: `v-window`'s slide transition leaves
+            // both panels reporting nonzero size for a moment, which `:visible` alone can't tell
+            // apart — Cypress's own actionability retry is what actually waits out the animation.
             cy.get('[data-test=translation-tab-add]').click();
             cy.contains('.v-list-item-title', 'Italiano').click();
-            cy.get('[data-test=translation-title-field]:visible').type(itTitle);
+            cy.get('#translation-panel-it [data-test=translation-title-field]').type(itTitle);
 
             cy.get('form').first().submit();
             cy.url().should('include', '/products/').and('not.include', '/create');
@@ -65,15 +68,19 @@ describe('Product write surface', () => {
                 cy.get('[data-test=translation-tab-it]').should('exist');
                 cy.get('[data-test=translation-tab-es]').should('exist');
 
-                // Edit the Spanish tab's title.
+                // Edit the Spanish tab's title. Scoped by the panel id — see the create spec's
+                // own comment for why `:visible` alone races `v-window`'s slide transition.
                 cy.get('[data-test=translation-tab-es]').click();
-                cy.get('[data-test=translation-title-field]:visible').clear();
-                cy.get('[data-test=translation-title-field]:visible').type(editedEsTitle);
+                cy.get('#translation-panel-es [data-test=translation-title-field]').clear();
+                cy.get('#translation-panel-es [data-test=translation-title-field]').type(
+                    editedEsTitle
+                );
 
-                // Remove the Italian tab, in the SAME save as the Spanish edit above.
-                cy.get('[data-test=translation-tab-it]')
-                    .find('[data-test=translation-tab-remove]')
-                    .click();
+                // Remove the Italian tab, in the SAME save as the Spanish edit above. The remove
+                // button lives beside the bar, not inside the tab, and acts on whichever tab is
+                // active — so select Italian first.
+                cy.get('[data-test=translation-tab-it]').click();
+                cy.get('[data-test=translation-tab-remove]').click();
                 cy.get('[data-test=translation-tab-it]').should('not.exist');
 
                 cy.get('form').first().submit();
@@ -85,7 +92,7 @@ describe('Product write surface', () => {
                 cy.get('[data-test=translation-tab-it]').should('not.exist');
                 cy.get('[data-test=translation-tab-en]').should('exist');
                 cy.get('[data-test=translation-tab-es]').click();
-                cy.get('[data-test=translation-title-field]:visible').should(
+                cy.get('#translation-panel-es [data-test=translation-title-field]').should(
                     'have.value',
                     editedEsTitle
                 );
@@ -104,9 +111,10 @@ describe('Product write surface', () => {
                 cy.visit(`/en/products/${product.id}/edit`);
 
                 // Blank the Italian tab's title, then switch away to English before saving — the
-                // failure has to surface without the Italian tab being the one on screen.
+                // failure has to surface without the Italian tab being the one on screen. Scoped
+                // by the panel id — see the create spec's own comment for why.
                 cy.get('[data-test=translation-tab-it]').click();
-                cy.get('[data-test=translation-title-field]:visible').clear();
+                cy.get('#translation-panel-it [data-test=translation-title-field]').clear();
                 cy.get('[data-test=translation-tab-en]').click();
 
                 cy.get('form').first().submit();

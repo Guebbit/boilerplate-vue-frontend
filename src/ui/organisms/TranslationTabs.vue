@@ -4,7 +4,14 @@
  * The tab bar every per-locale translation screen shares — the product create/edit forms and the
  * generic entity-translations screen: one tab per open locale, the fallback locale first and
  * never removable, an optional error-count badge per tab, an "add language" picker for any active
- * locale not open yet, and a remove button on every other open tab.
+ * locale not open yet, and one remove button beside the bar that acts on whichever tab is active.
+ *
+ * The remove control sits outside `<v-tabs>` on purpose: axe's `nested-interactive` flags any
+ * focusable control inside a `role="tab"`, and a sibling `<button>` inside `role="tablist"` trips
+ * `aria-required-children` instead — no shape with the button inside the tab bar satisfies both.
+ * Every tab also carries `id`/`aria-controls` pointing at the matching `v-window-item`, which the
+ * caller completes with `role="tabpanel"`/`aria-labelledby` — the WAI-ARIA APG tabs pattern,
+ * finished rather than half-wired.
  *
  * Purely presentational — `v-model` is the active tab, `add`/`remove` report the caller's intent,
  * and the caller owns the actual per-locale data and its ordering (see `useTranslationTabOrder`).
@@ -42,8 +49,8 @@ const {
     openTags: string[];
 
     /**
-     * The deployment's fallback locale. Its tab renders with no remove button: `null` on that
-     * slot is a 422, so the UI never offers the action that would produce it.
+     * The deployment's fallback locale. The remove button hides whenever this is the active tab:
+     * `null` on that slot is a 422, so the UI never offers the action that would produce it.
      */
     fallbackTag?: string;
 
@@ -88,6 +95,12 @@ const openLocales = computed(() =>
 const closedLocales = computed(() => locales.filter(({ tag }) => !openTags.includes(tag)));
 
 /**
+ * The active tab's own row, for the single remove button's label — `undefined` before the first
+ * tab settles, same window as `activeTab` itself being `undefined`.
+ */
+const activeLocale = computed(() => openLocales.value.find(({ tag }) => tag === activeTab.value));
+
+/**
  * The "add language" select's own model — always reset to `null` once a pick is reported, so the
  * control reads as a one-shot action rather than a language that stays "selected".
  */
@@ -111,6 +124,8 @@ const handlePick = (tag: string | null) => {
                 v-for="locale in openLocales"
                 :key="locale.tag"
                 :value="locale.tag"
+                :id="`translation-tab-${locale.tag}`"
+                :aria-controls="`translation-panel-${locale.tag}`"
                 :data-test="`translation-tab-${locale.tag}`"
             >
                 <v-badge
@@ -126,25 +141,25 @@ const handlePick = (tag: string | null) => {
                 >
                     <span :dir="locale.direction">{{ locale.nativeName }}</span>
                 </v-badge>
-                <v-btn
-                    v-if="locale.tag !== fallbackTag"
-                    icon
-                    size="x-small"
-                    variant="text"
-                    density="compact"
-                    class="ml-1"
-                    data-test="translation-tab-remove"
-                    :aria-label="
-                        t('translation-tabs.button-remove-language', {
-                            name: locale.nativeName
-                        })
-                    "
-                    @click.stop="emit('remove', locale.tag)"
-                >
-                    <X :size="14" aria-hidden="true" />
-                </v-btn>
             </v-tab>
         </v-tabs>
+
+        <v-btn
+            v-if="activeLocale && activeLocale.tag !== fallbackTag"
+            icon
+            size="x-small"
+            variant="text"
+            density="compact"
+            data-test="translation-tab-remove"
+            :aria-label="
+                t('translation-tabs.button-remove-language', {
+                    name: activeLocale.nativeName
+                })
+            "
+            @click="emit('remove', activeLocale.tag)"
+        >
+            <X :size="14" aria-hidden="true" />
+        </v-btn>
 
         <v-select
             v-if="closedLocales.length > 0"
