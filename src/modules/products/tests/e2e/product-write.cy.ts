@@ -92,7 +92,12 @@ describe('Product write surface', () => {
                 cy.get('[data-test=translation-tab-it]').should('not.exist');
                 cy.get('[data-test=translation-tab-en]').should('exist');
                 cy.get('[data-test=translation-tab-es]').click();
-                cy.get('#translation-panel-es [data-test=translation-title-field]').should(
+                // `data-test=translation-title-field` sits on `<v-text-field>` itself, which
+                // Vuetify renders as a wrapping `<div>` — it has no `.value` of its own. `.type()`/
+                // `.clear()` above work directly on it because Vuetify delegates a click/focus on
+                // the wrapper to the real `<input>` inside; `have.value` needs that `<input>` by
+                // name, or it always reads the wrapper's (nonexistent) value as `''`.
+                cy.get('#translation-panel-es [data-test=translation-title-field] input').should(
                     'have.value',
                     editedEsTitle
                 );
