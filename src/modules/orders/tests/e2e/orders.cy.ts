@@ -53,22 +53,16 @@ describe('Orders', () => {
 
     /*
      * The staff row actions are gated on `orders.update`/`orders.delete` — a customer reaching
-     * their own orders
-     * list must see View and nothing else, same model as
+     * their own orders list must see View and nothing else, same model as
      * `src/modules/products/tests/e2e/products.cy.ts`'s per-role visibility. The seeded `user`
-     * account's own order fixture is soft-deleted (see `orders/demo.ts`), so this needs a fresh
-     * one made rather than found.
+     * account has three visible orders of its own (its fourth, oldest one is soft-deleted) — no
+     * provisioning needed, same as the admin block above.
      */
     describe('Orders list — a non-admin customer', () => {
         beforeEach(() => {
-            cy.createOrder('user').then(() => {
-                cy.loginAs('user');
-                cy.visit('/en/orders');
-                cy.get('[data-test=list-row]', { timeout: 10_000 }).should(
-                    'have.length.at.least',
-                    1
-                );
-            });
+            cy.loginAs('user');
+            cy.visit('/en/orders');
+            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
 
         it('shows only the View action for non-admin users', () => {

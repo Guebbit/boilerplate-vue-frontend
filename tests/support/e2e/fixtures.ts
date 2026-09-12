@@ -120,9 +120,15 @@ declare global {
             /**
              * The caller's first order that can still be cancelled, read as admin.
              *
+             * `productTitle` is the order's first line — a spec asserting that "buy again" really
+             * refilled the cart, rather than a cart that already had something in it, needs a
+             * title to look for.
+             *
              * @param role - the only role so far: an order the cancel gate is open on
              */
-            orderInRole(role: 'cancellable'): Chainable<{ id: string; status: string }>;
+            orderInRole(
+                role: 'cancellable'
+            ): Chainable<{ id: string; status: string; productTitle: string }>;
 
             /**
              * The seeded account `cy.loginAs(role)` signs in as, as the API serialises it.
@@ -159,19 +165,6 @@ declare global {
              * @param id - the product to unpublish
              */
             deactivateProduct(product: ProductLike): Chainable<null>;
-
-            /**
-             * Creates an order owned by the named role's seeded account, server-side as admin,
-             * carrying one line of a freshly created product.
-             *
-             * Provisions rather than reads: `orderInRole`'s dataset is the admin's own orders, and
-             * the seeded `user` account's one fixture is soft-deleted on purpose (see
-             * `orders/demo.ts`) — so a spec needing that account's own, VISIBLE order has nothing
-             * to find and must make one.
-             *
-             * @param role - whose account the order is created under
-             */
-            createOrder(role: E2ERole): Chainable<{ id: string; userId: string; status: string }>;
 
             /**
              * Creates a webhook subscription as admin, server-side, and yields it as the API
@@ -316,27 +309,6 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
     })
 );
 
-/*
- * Orders are per-caller, so this one cannot use the public list: it reads them as the admin the
- * order specs sign in as. `pending` is the status the cancel gate is open on — the page hides the
- * button for every other, so a spec clicking it needs the role rather than the row.
- *
- * Restricted to the admin's OWN orders, which is not the same set: staff read every caller's, and
- * "cancel, then buy again" is an action on your own — buying again from someone else's order
- * refills nothing. The account is asked for its id rather than told one.
- */
-Cypress.Commands.add('createOrder', (role: E2ERole) =>
-    cy.accountInRole(role).then((account) =>
-        cy.createProduct().then((product) =>
-            ownerApi<{ id: string; userId: string; status: string }>('/orders', 'POST', {
-                userId: account.id,
-                email: account.email,
-                items: [{ productId: product.id, quantity: 1 }]
-            })
-        )
-    )
-);
-
 Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unknown> = {}) =>
     ownerApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
         // Unique per test, so two specs creating one in the same run never collide on the SSRF
@@ -357,12 +329,25 @@ Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
     })
 );
 
+/*
+ * Orders are per-caller, so this one cannot use the public list: it reads them as the admin the
+ * order specs sign in as. `pending` is the status the cancel gate is open on — the page hides the
+ * button for every other, so a spec clicking it needs the role rather than the row.
+ *
+ * Restricted to the admin's OWN orders, which is not the same set: staff read every caller's, and
+ * "cancel, then buy again" is an action on your own — buying again from someone else's order
+ * refills nothing. The account is asked for its id rather than told one.
+ */
 Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
     cy.accountInRole('owner').then((account) =>
-        ownerApi<{ items: { id: string; status: string; userId?: string }[] }>(
-            `/orders?pageSize=${String(PUBLIC_PAGE_SIZE)}`,
-            'GET'
-        ).then((page) => {
+        ownerApi<{
+            items: {
+                id: string;
+                status: string;
+                userId?: string;
+                items: { product: { title: string } }[];
+            }[];
+        }>(`/orders?pageSize=${String(PUBLIC_PAGE_SIZE)}`, 'GET').then((page) => {
             const found = page?.items.find(
                 (order) => order.status === 'pending' && order.userId === account.id
             );
@@ -370,7 +355,11 @@ Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
                 throw new Error(
                     `orderInRole: this backend's demo dataset gives the admin no "${role}" order`
                 );
-            return found;
+            return {
+                id: found.id,
+                status: found.status,
+                productTitle: found.items[0].product.title
+            };
         })
     )
 );

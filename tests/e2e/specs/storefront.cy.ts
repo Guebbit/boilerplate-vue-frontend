@@ -54,8 +54,13 @@ describe('Storefront', () => {
         it('cancels a pending order and buying again refills the cart', () => {
             cy.loginAs('owner');
             // Any order the cancel gate is still open on — the page hides the button for every
-            // other status, so the role IS the precondition this case needs.
+            // other status, so the role IS the precondition this case needs. The owner's seeded
+            // cart already carries lines of its own, so "at least one cart item" would pass
+            // whether or not reorder did anything — `productTitle` is what makes this assert the
+            // REORDERED line specifically, not just a non-empty cart.
+            let productTitle = '';
             cy.orderInRole('cancellable').then((order) => {
+                productTitle = order.productTitle;
                 cy.visit(`/en/orders/${order.id}`);
             });
 
@@ -68,7 +73,10 @@ describe('Storefront', () => {
 
             cy.get('[data-test=order-reorder]').click();
             cy.get('#cart-page').should('exist');
-            cy.get('[data-test=cart-item]').should('have.length.at.least', 1);
+            // `productTitle` is set inside the `.then()` above; reading it here, inside another
+            // `.then()`, is what makes this see that value rather than the empty string the
+            // `let` was declared with — Cypress queues commands, it doesn't await them in place.
+            cy.then(() => cy.contains('[data-test=cart-item]', productTitle).should('exist'));
         });
     });
 });
