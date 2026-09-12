@@ -9,7 +9,7 @@
 describe('Storefront', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     describe('catalogue facets', () => {
@@ -41,8 +41,8 @@ describe('Storefront', () => {
     describe('product page', () => {
         it('shows the shelf and blocks buying what is out of stock', () => {
             cy.loginAs('user');
-            cy.productInRole('outOfStock').then((product) => {
-                cy.visit(`/en/products/${product.id}`);
+            cy.subjectId('product.outOfStock').then((id) => {
+                cy.visit(`/en/products/${id}`);
             });
 
             cy.get('[data-test=add-to-cart]').should('be.disabled');
@@ -55,8 +55,8 @@ describe('Storefront', () => {
             cy.loginAs('owner');
             // Any order the cancel gate is still open on — the page hides the button for every
             // other status, so the role IS the precondition this case needs.
-            cy.orderInRole('cancellable').then((order) => {
-                cy.visit(`/en/orders/${order.id}`);
+            cy.subjectId('order.ownerPending').then((id) => {
+                cy.visit(`/en/orders/${id}`);
             });
 
             cy.get('[data-test=order-cancel]').click();

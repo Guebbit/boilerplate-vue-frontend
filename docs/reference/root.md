@@ -43,11 +43,11 @@ The REST and realtime specs, the Orval config and the Spectral ruleset are on
 
 ## Test runners
 
-| File                        | What it is                                                                                                                                                                                  | Read next                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `vitest.config.ts`          | The unit and component suite — everything that can run in jsdom: pure functions, stores, composables, and single components mounted with `@vue/test-utils`.                                 | [Unit Testing](../tools/unit-testing.md) · [Testing (overview)](../tools/testing-and-docs.md) |
-| `vitest.config.mutation.ts` | The same run as Stryker drives it. Extends the base config with the parts that make no sense per-mutant removed.                                                                            | [Mutation Testing](../tools/mutation-testing.md)                                              |
-| `cypress.config.ts`         | Every suite that needs a real browser. Two profiles over one set of specs: the specs do not know which backend they are talking to, and `cy.resetState()` branches on a `liveProfile` flag. | [Component Testing](../tools/component-testing.md) · [Live E2E](../tools/live-e2e.md)         |
+| File                        | What it is                                                                                                                                                                               | Read next                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `vitest.config.ts`          | The unit and component suite — everything that can run in jsdom: pure functions, stores, composables, and single components mounted with `@vue/test-utils`.                              | [Unit Testing](../tools/unit-testing.md) · [Testing (overview)](../tools/testing-and-docs.md) |
+| `vitest.config.mutation.ts` | The same run as Stryker drives it. Extends the base config with the parts that make no sense per-mutant removed.                                                                         | [Mutation Testing](../tools/mutation-testing.md)                                              |
+| `cypress.config.ts`         | Every suite that needs a real browser. Two profiles over one set of specs: the specs do not know which backend they are talking to, and `cy.restore()` branches on a `liveProfile` flag. | [Component Testing](../tools/component-testing.md) · [Live E2E](../tools/live-e2e.md)         |
 
 ## Mutation testing
 

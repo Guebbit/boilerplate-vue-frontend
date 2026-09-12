@@ -41,8 +41,8 @@ sweepA11y(
             name: 'entity translations',
             route: () =>
                 cy
-                    .productInRole('inStock')
-                    .then((product) => `/en/locales/translations/product/${product.id}`)
+                    .subjectId('product.inStock')
+                    .then((id) => `/en/locales/translations/product/${id}`)
         }
     ],
     'owner'

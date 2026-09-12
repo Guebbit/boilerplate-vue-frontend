@@ -2,7 +2,7 @@
  * `scripts/pairing/paired-backend-path.ts` — where both halves of the pairing look for the other repo.
  *
  * One resolver serves two callers that fail in different ways: `cypress.config.ts` shells into the
- * result with `npm --prefix` for `cy.resetState()`, and `check-spec-identity.ts` hashes files under
+ * result with `npm --prefix` for `cy.restore()`, and `check-spec-identity.ts` hashes files under
  * it. A wrong answer is a confusing npm error in the first and a false fork report in the second,
  * so what it does with a MISSING value matters more than what it does with a present one.
  *
@@ -21,7 +21,8 @@ import {
     resolveBackendDemoCommand,
     resolveBackendDemoShardLimit,
     resolveBackendPath,
-    resolveLiveResetCommand
+    resolveLiveResetCommand,
+    LIVE_SCENARIO_FILE
 } from '../../../../scripts/pairing/paired-backend-path';
 
 const previous = process.env.BACKEND_PATH;
@@ -122,6 +123,14 @@ describe('resolveLiveResetCommand', () => {
         expect(resolveLiveResetCommand()).toBe(
             'composer --working-dir=/srv/checkouts/php-backend host -- db:seed:reset'
         );
+    });
+
+    // The live profile's only way to learn the seeded accounts and subject ids: a live deployment
+    // mounts no `GET /__test/scenario`, so the reset writes the same JSON to a file instead.
+    it('substitutes {describeTo} with the file the description is read back from', () => {
+        process.env.LIVE_RESET_COMMAND = 'reset --describe-to={describeTo}';
+
+        expect(resolveLiveResetCommand()).toBe(`reset --describe-to=${LIVE_SCENARIO_FILE}`);
     });
 });
 

@@ -88,7 +88,7 @@ const expectNoPendingLocalPreview = () =>
  * failure looks exactly like a broken image field. The hydrated title is the real signal.
  */
 const openHydratedProductEditForm = () =>
-    cy.productInRole('inStock').then((product) => {
+    cy.subjectProduct('product.inStock').then((product) => {
         cy.visit(`/en/products/${product.id}/edit`);
         cy.get('#product-edit-page input[type=text]').first().should('have.value', product.title);
     });
@@ -100,7 +100,7 @@ const selectSampleImage = () =>
 describe('Image upload', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     describe('Product edit', () => {

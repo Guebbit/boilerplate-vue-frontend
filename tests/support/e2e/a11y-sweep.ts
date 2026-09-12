@@ -45,7 +45,7 @@ export interface A11ySweepCase {
      *
      * The function form is what lets a route carry a record's id without naming one: the id is
      * resolved inside the test, off the backend actually running, rather than baked into a
-     * literal at collection time — see `cy.productInRole()`.
+     * literal at collection time — see `cy.subjectId()`.
      */
     route: A11ySweepRoute;
     /**
@@ -92,7 +92,7 @@ export const sweepA11y = (
     describe(`accessibility — ${label}`, () => {
         beforeEach(() => {
             cy.visit('/en');
-            cy.resetState();
+            cy.restore();
             if (role) cy.loginAs(role);
         });
 

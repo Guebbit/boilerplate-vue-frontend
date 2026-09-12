@@ -6,7 +6,7 @@
  * `createSession` task beside it does: a plain fetch carries no browser cookie jar, so the page's
  * own refresh cookie — and with it which session counts as "current" — is left untouched.
  *
- * The token is fetched per call rather than cached. `cy.resetState()` drops and reseeds the
+ * The token is fetched per call rather than cached. `cy.restore()` drops and reseeds the
  * database between tests, which invalidates whatever was issued before it; against an in-memory
  * backend the extra round-trip is a few milliseconds, and a stale-token retry path would cost
  * more to keep honest than it saves.

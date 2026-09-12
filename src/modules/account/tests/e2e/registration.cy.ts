@@ -10,7 +10,7 @@
 describe('Registration', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en');
     });
 

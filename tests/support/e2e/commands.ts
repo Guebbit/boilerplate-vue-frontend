@@ -1,12 +1,13 @@
 /// <reference types="cypress" />
 
-import { E2E_ACCOUNTS } from './accounts';
+import { loadScenario, seedAccount, type E2ERole } from './scenario';
 import { asStub } from '../stub';
 
 /*
- * A demo restore empties the in-memory database and reseeds it inside the backend process
- * (`POST /__test/restore`, see the backend's `src/app/demo.ts`) — measured at ~0.6s for `shop`,
- * mostly the seed accounts' bcrypt hashes; budgeted generously for a CI box under load.
+ * A demo restore empties the in-memory database and puts a scenario back inside the backend
+ * process (`POST /__test/restore`, see the backend's `src/app/demo.ts`) — a replay of a copy that
+ * process built at boot, measured in milliseconds. Budgeted generously anyway for a CI box under
+ * load, since the FIRST restore of a process may still be building it.
  */
 const DEMO_RESET_TIMEOUT_MS = 30_000;
 const APP_READY_TIMEOUT_MS = 15_000;
@@ -21,25 +22,29 @@ declare global {
         // merging only works against the exact interface it declares.
         interface Chainable {
             /**
-             * Return the backing data to its known seed state, whichever profile is running.
+             * Put the backing data back to a named scenario, whichever profile is running.
              *
              * - demo profile (default): POSTs the backend's `/__test/restore`, which empties the
-             *   in-memory database and reseeds the `shop` scenario, in-process.
-             * - live profile: runs the backend's own restore command, which empties the real
-             *   database, re-seeds the same scenario and clears the cache. With no
-             *   `LIVE_RESET_COMMAND` in `.env` there is no such command, and nothing is restored.
+             *   in-memory database and replays the copy that process built at boot.
+             * - live profile: runs the backend's own restore command, which rebuilds the real
+             *   database and writes its description to a file. With no `LIVE_RESET_COMMAND` in
+             *   `.env` there is no such command, and nothing is restored.
              *
-             * Both land on the scenario in the backend's `scenarios/index.ts`, which is why the
-             * same specs and the same `cy.loginAs()` credentials work against either.
+             * Both land on a scenario in the backend's own registry, which is why the same specs
+             * work against either. Afterwards `cy.subjectId()` answers for the scenario just
+             * restored — `blank` promises no rows at all, so a spec that restores it must make
+             * whatever it asserts on.
+             *
+             * @param scenario - which scenario; omitted, the backend's own default (`shop`)
              */
-            resetState(): Chainable<void>;
+            restore(scenario?: string): Chainable<void>;
 
             /**
              * Logs in through the real UI flow against the profile's backend.
              *
-             * @param role - 'user' (default) or 'owner'
+             * @param role - which seeded account; `user` by default
              */
-            loginAs(role?: 'user' | 'owner'): Chainable<void>;
+            loginAs(role?: E2ERole): Chainable<void>;
 
             /**
              * Starts counting API requests, so `settleNetwork()` can tell when the page has
@@ -229,17 +234,19 @@ Cypress.on('window:before:load', (contentWindow) => {
 // a union of different `Chainable<...>` wrappers comes back as `Chainable<Chainable<...> | ...>`
 // instead. Answered through the repo's one sanctioned seam, same as `visitAndAwaitApp` below.
 Cypress.Commands.add(
-    'resetState',
-    asStub<Cypress.CommandFn<'resetState'>>(() =>
+    'restore',
+    asStub<Cypress.CommandFn<'restore'>>((scenario?: string) =>
         cy
             .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
             .then(({ liveProfile, liveResetCommand, apiUrl }) => {
                 if (liveProfile !== true)
-                    // The demo backend restores itself in-process; a plain request is all it takes,
-                    // and a non-2xx already fails the test. No body, so the scenario is `shop`.
+                    // The demo backend restores itself in-process; a plain request is all it
+                    // takes, and a non-2xx already fails the test. No `scenario` in the body
+                    // means the backend's own default.
                     return cy.request({
                         method: 'POST',
                         url: `${String(apiUrl)}/__test/restore`,
+                        body: scenario === undefined ? {} : { scenario },
                         timeout: DEMO_RESET_TIMEOUT_MS
                     });
                 // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell
@@ -247,9 +254,13 @@ Cypress.Commands.add(
                 // than silent, because a spec that assumed a seed dataset fails later and
                 // elsewhere.
                 if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
-                    return cy.log('resetState: LIVE_RESET_COMMAND is unset — not resetting');
+                    return cy.log('restore: LIVE_RESET_COMMAND is unset — not restoring');
                 return resetLiveDatabase(liveResetCommand);
             })
+            // Re-read rather than kept: a different scenario promises different rows, and
+            // under the live profile the reset that just ran is what WROTE the description.
+            .then(() => loadScenario())
+            .then(() => undefined)
     )
 );
 
@@ -361,7 +372,7 @@ Cypress.Commands.overwrite(
 // A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
 // A `.then()` callback that returns nothing types as "subject unchanged" — `Chainable<{
 // liveProfile: ... }>`, not `Chainable<void>` — so this goes through the same seam as
-// `resetState` above.
+// `restore` above.
 Cypress.Commands.add(
     'skipUnlessLive',
     asStub<Cypress.CommandFn<'skipUnlessLive'>>(function skipUnlessLive(this: Mocha.Context) {
@@ -459,8 +470,8 @@ Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
     cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
 });
 
-Cypress.Commands.add('loginAs', (role = 'user') => {
-    const credentials = E2E_ACCOUNTS[role];
+Cypress.Commands.add('loginAs', (role: E2ERole = 'user') => {
+    const credentials = seedAccount(role);
 
     cy.visit('/en/login');
     cy.get('[type=email]').clear();

@@ -1,30 +1,26 @@
 /// <reference types="cypress" />
 
 /**
- * Demo-dataset access that names a ROLE rather than a record.
+ * Demo-dataset access that names a PROPERTY rather than a record.
  *
  * The specs run against whichever backend the profile supplied, and an id or a title is that
  * backend's private choice — `Id` is deliberately format-free in the shared contract, so a spec
- * naming one has adopted a constraint the contract refused to make. Two ways out, and the choice
- * between them is about what the spec is for:
+ * naming one has adopted a constraint the contract refused to make. Three ways out, and the
+ * choice between them is about what the spec is for:
  *
- * - `cy.productInRole()` and `cy.accountInRole()` FIND a subject. For specs that need a product or
- *   a user to act on but do not care which — a detail page to audit, a row to edit, an event to
- *   attribute.
+ * - `cy.subjectId()` ASKS the backend which row fills a named guarantee (`./scenario.ts`), and
+ *   `cy.subjectProduct()` fetches that row. For specs that need a product or an order in a
+ *   particular state — a detail page to audit, an out-of-stock badge to see. The backend PROMISES
+ *   the name; nothing here guesses at a row.
+ * - `cy.accountInRole()` FINDS a person, by asking the API who a seeded login is.
  * - `cy.createProduct()` / `cy.softDeleteProduct()` / `cy.deactivateProduct()` MAKE one. For specs
  *   asserting a visibility RULE: creating the row and hiding it tests the transition, where a
  *   pre-hidden fixture only tests a tableau.
  */
 
-import { E2E_ACCOUNTS, type E2ERole } from './accounts';
+import { seedAccount, type E2ERole } from './scenario';
 import { asStub } from '../stub';
 
-/**
- * The `Product` fields the roles below branch on.
- *
- * Structural rather than imported from `@api`: `tsconfig.cypress.json` is a composite project
- * that does not claim `contracts/`, and the roles only ever read these six.
- */
 /**
  * The slice of Cypress' undocumented, internal `state()` API this file reads: the currently
  * running Mocha test, for a per-test-unique id. Not part of the public `Cypress` type, so the
@@ -35,12 +31,17 @@ interface CypressWithRunnableState {
     state: (key: 'runnable') => { id: string };
 }
 
+/**
+ * The `Product` fields anything here reads: an id to visit, a title and a price to assert on, and
+ * the categories the storefront's facet chips count.
+ *
+ * Structural rather than imported from `@api`: `tsconfig.cypress.json` is a composite project
+ * that does not claim `contracts/`.
+ */
 interface ProductLike {
     id: string;
     title: string;
     price: number;
-    onHand?: number;
-    description?: string;
     categories?: string[];
 }
 
@@ -62,34 +63,12 @@ interface ApiKeyLike {
     secret: string;
 }
 
-export type ProductRole = 'inStock' | 'rich' | 'outOfStock';
-
 /*
- * What each role MEANS, in the contract's vocabulary — not which record happens to fill it.
- *
- * `rich` is the shape with every optional field populated — its opposite, the bare shape
- * `POST /products` answers with when only the required fields are sent, has no e2e case that
- * needs a real backend to draw one: `src/modules/products/tests/product-view.spec.ts` seeds that
- * shape directly and asserts on it in milliseconds, which is what it means for a shape to not
- * need a fixture. Asking for `inStock` and then asserting on a description gets whichever the
- * backend happened to list first — and a case that skips when it draws the wrong one reports
- * success while covering nothing.
- */
-const ROLE_PREDICATES: Record<ProductRole, (product: ProductLike) => boolean> = {
-    inStock: (product) => (product.onHand ?? 0) > 0,
-    rich: (product) =>
-        (product.onHand ?? 0) > 0 &&
-        Boolean(product.description) &&
-        (product.categories?.length ?? 0) > 0,
-    outOfStock: (product) => product.onHand === 0
-};
-
-/*
- * Every role above is publicly visible, so the lookup uses the PUBLIC list: no login, no admin
- * token, and nothing that could disturb the session or analytics state a spec is measuring.
- * `pageSize` is the contract maximum (`shared/contracts/openapi.root.yaml`'s `PageSize.maximum`) —
- * a backend may seed more rows than that in total, which is what `publicProducts()` below walks
- * every page for, rather than assuming one request is the whole catalogue.
+ * `publicProducts()` reads the PUBLIC list: no login, no admin token, and nothing that could
+ * disturb the session or analytics state a spec is measuring. `pageSize` is the contract maximum
+ * (`shared/contracts/openapi.root.yaml`'s `PageSize.maximum`) — a backend seeds more rows than
+ * that in total, which is what the walk below exists for rather than assuming one request is the
+ * whole catalogue. Its readers need the WHOLE list: a facet count, and a title-to-id map.
  */
 const PUBLIC_PAGE_SIZE = 100;
 
@@ -98,15 +77,16 @@ declare global {
     namespace Cypress {
         interface Chainable {
             /**
-             * The first product in the demo dataset filling `role`, read off the running backend.
+             * The catalogue row behind a `product.*` guarantee, as the public API serves it.
              *
-             * Throws naming the role when the dataset has none — a backend seeded without one
-             * cannot cover the branch behind it, and that should fail loudly rather than leave a
-             * spec quietly asserting nothing.
+             * `cy.subjectId()` answers the id; this is for the two specs that also need the row —
+             * a title to assert against, a price to read. The PUBLIC endpoint, so it covers the
+             * buyable guarantees (`product.inStock`, `product.rich`, `product.outOfStock`) and
+             * not the hidden ones, which by definition no anonymous request can fetch.
              *
-             * @param role - which branch the spec needs a subject for
+             * @param name - a `product.*` guarantee name
              */
-            productInRole(role: ProductRole): Chainable<ProductLike>;
+            subjectProduct(name: string): Chainable<ProductLike>;
 
             /**
              * Every product an anonymous visitor may see, as the API lists them.
@@ -118,21 +98,14 @@ declare global {
             publicProducts(): Chainable<ProductLike[]>;
 
             /**
-             * The caller's first order that can still be cancelled, read as admin.
-             *
-             * @param role - the only role so far: an order the cancel gate is open on
-             */
-            orderInRole(role: 'cancellable'): Chainable<{ id: string; status: string }>;
-
-            /**
              * The seeded account `cy.loginAs(role)` signs in as, as the API serialises it.
              *
              * A page addressed by a user's id — `/en/users/{id}` and its edit form — needs one,
-             * and the id is the backend's to choose. The account asks the API who it is instead:
-             * the credentials in `accounts.ts` are the suite's own, honoured by every backend that
-             * can pair with this repo, so they name a subject without naming a record.
+             * and the id is the backend's to choose. `cy.account()` answers WHO to sign in as and
+             * this answers WHAT the API calls them, by asking `GET /account` with their own
+             * credentials — so a subject is named without a record being named.
              *
-             * @param role - which of the two seeded accounts
+             * @param role - which seeded account
              */
             accountInRole(role: E2ERole): Chainable<{ id: string; email: string }>;
 
@@ -164,10 +137,10 @@ declare global {
              * Creates an order owned by the named role's seeded account, server-side as admin,
              * carrying one line of a freshly created product.
              *
-             * Provisions rather than reads: `orderInRole`'s dataset is the admin's own orders, and
-             * the seeded `user` account's one fixture is soft-deleted on purpose (see
-             * `orders/demo.ts`) — so a spec needing that account's own, VISIBLE order has nothing
-             * to find and must make one.
+             * Provisions rather than reads: the backend's `order.*` guarantees name the admin's
+             * orders, and the one it puts on the `user` account is soft-deleted on purpose — so a
+             * spec needing that account's own, VISIBLE order has nothing to ask for and must make
+             * one.
              *
              * @param role - whose account the order is created under
              */
@@ -232,16 +205,18 @@ Cypress.Commands.add('publicProducts', () =>
     cy.env(['apiUrl']).then(({ apiUrl }) => walkPublicProducts(String(apiUrl), 1, []))
 );
 
-Cypress.Commands.add('productInRole', (role: ProductRole) =>
-    cy.publicProducts().then((items) => {
-        const found = items.find((product) => ROLE_PREDICATES[role](product));
-        if (!found)
-            throw new Error(
-                `productInRole: this backend's demo dataset has no product in role "${role}" ` +
-                    `(${String(items.length)} publicly visible products were offered)`
-            );
-        return found;
-    })
+Cypress.Commands.add('subjectProduct', (name: string) =>
+    cy
+        .subjectId(name)
+        .then((id) =>
+            cy
+                .env(['apiUrl'])
+                .then(({ apiUrl }) =>
+                    cy
+                        .request(`${String(apiUrl)}/products/${id}`)
+                        .then((response) => (response.body as { data: ProductLike }).data)
+                )
+        )
 );
 
 /*
@@ -257,7 +232,7 @@ const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<str
             path,
             method,
             body,
-            ...E2E_ACCOUNTS[role]
+            ...seedAccount(role)
         })
     );
 
@@ -355,22 +330,4 @@ Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
         permissions: ['products.read'],
         ...overrides
     })
-);
-
-Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
-    cy.accountInRole('owner').then((account) =>
-        ownerApi<{ items: { id: string; status: string; userId?: string }[] }>(
-            `/orders?pageSize=${String(PUBLIC_PAGE_SIZE)}`,
-            'GET'
-        ).then((page) => {
-            const found = page?.items.find(
-                (order) => order.status === 'pending' && order.userId === account.id
-            );
-            if (!found)
-                throw new Error(
-                    `orderInRole: this backend's demo dataset gives the admin no "${role}" order`
-                );
-            return found;
-        })
-    )
 );

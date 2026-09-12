@@ -9,7 +9,7 @@
 describe('Italian locale', () => {
     beforeEach(() => {
         cy.visit('/it');
-        cy.resetState();
+        cy.restore();
     });
 
     it('renders the home page in Italian and marks the document language', () => {
@@ -84,7 +84,7 @@ describe('Italian locale', () => {
 describe('switching language wipes and refetches locale-sensitive stores', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('a product page shows the new language after an in-place switch, and the old one after switching back', () => {
@@ -123,7 +123,7 @@ describe('switching language wipes and refetches locale-sensitive stores', () =>
 describe('switching the language in place', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('re-translates the current page and moves the URL under the new locale', () => {
@@ -148,7 +148,7 @@ describe('switching the language in place', () => {
 describe('the saved preference', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en');
     });
 
@@ -198,7 +198,7 @@ describe('the saved preference', () => {
 describe('a locale only the API has', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('is offered in the switcher even though this app has no dictionary for it', () => {

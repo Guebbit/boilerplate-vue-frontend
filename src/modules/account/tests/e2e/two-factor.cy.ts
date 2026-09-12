@@ -5,12 +5,12 @@
  * `cy.enrollEmailTwoFactor` only mean something against the demo profile, so every case here opens
  * with `cy.skipUnlessDemo()`, same as `password-reset.cy.ts`.
  */
-import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
+import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
 describe('Two-factor authentication', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en');
     });
 
@@ -19,15 +19,15 @@ describe('Two-factor authentication', () => {
 
         // ── Arm email as a second factor ────────────────────────────────────────────
         cy.loginAs('user');
-        cy.enrollEmailTwoFactor(E2E_ACCOUNTS.user.email);
+        cy.enrollEmailTwoFactor(seedAccount('user').email);
         cy.get('[data-test=two-factor-armed]').should('contain.text', 'Email');
         cy.get('[data-test="two-factor-remove-email"]').should('exist');
 
         // ── The next login stops at the challenge, not straight through ────────────
         cy.logout();
         cy.visit('/en/login');
-        cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
-        cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+        cy.get('[type=email]').type(seedAccount('user').email);
+        cy.get('[type=password]').type(seedAccount('user').password);
         cy.get('form').submit();
         cy.get('#two-factor-challenge-page').should('exist');
         cy.url().should('include', '/login/2fa');
@@ -36,11 +36,11 @@ describe('Two-factor authentication', () => {
         cy.get('[data-test=two-factor-challenge-send]').click();
         // The template is asserted here and only here: it is what pins the login-challenge mail
         // to the right backend template, not something every code read needs to restate.
-        cy.demoEmailTo(E2E_ACCOUNTS.user.email).then((email) => {
+        cy.demoEmailTo(seedAccount('user').email).then((email) => {
             expect(email.template).to.equal('account.two-factor-code');
         });
         cy.typeMailedTwoFactorCode(
-            E2E_ACCOUNTS.user.email,
+            seedAccount('user').email,
             '[data-test=two-factor-challenge-code]'
         );
         cy.get('[data-test=two-factor-challenge-submit]').click();
@@ -56,12 +56,12 @@ describe('Two-factor authentication', () => {
         cy.skipUnlessDemo();
 
         cy.loginAs('user');
-        cy.enrollEmailTwoFactor(E2E_ACCOUNTS.user.email);
+        cy.enrollEmailTwoFactor(seedAccount('user').email);
         cy.logout();
 
         cy.visit('/en/login');
-        cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
-        cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+        cy.get('[type=email]').type(seedAccount('user').email);
+        cy.get('[type=password]').type(seedAccount('user').password);
         cy.get('form').submit();
         cy.get('#two-factor-challenge-page').should('exist');
 
@@ -82,7 +82,7 @@ describe('Two-factor authentication', () => {
         cy.visit('/en/profile');
         cy.get('[data-test=two-factor-add-email]').click();
         cy.get('[data-test=two-factor-enroll]').should('be.visible');
-        cy.typeMailedTwoFactorCode(E2E_ACCOUNTS.user.email, '[data-test=two-factor-enroll-code]');
+        cy.typeMailedTwoFactorCode(seedAccount('user').email, '[data-test=two-factor-enroll-code]');
         cy.get('[data-test=two-factor-enroll-confirm]').click();
         cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
 
@@ -121,7 +121,7 @@ describe('Two-factor authentication', () => {
         cy.visit('/en/profile');
         cy.get('[data-test=two-factor-add-email]').click();
         cy.get('[data-test=two-factor-enroll]').should('be.visible');
-        cy.typeMailedTwoFactorCode(E2E_ACCOUNTS.user.email, '[data-test=two-factor-enroll-code]');
+        cy.typeMailedTwoFactorCode(seedAccount('user').email, '[data-test=two-factor-enroll-code]');
         cy.get('[data-test=two-factor-enroll-confirm]').click();
         cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
 
@@ -144,8 +144,8 @@ describe('Two-factor authentication', () => {
         // ── The next login goes straight through — no challenge left to answer ─────────────
         cy.logout();
         cy.visit('/en/login');
-        cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
-        cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+        cy.get('[type=email]').type(seedAccount('user').email);
+        cy.get('[type=password]').type(seedAccount('user').password);
         cy.get('form').submit();
         cy.url().should('not.include', '/login');
         cy.get('#home-page').should('exist');

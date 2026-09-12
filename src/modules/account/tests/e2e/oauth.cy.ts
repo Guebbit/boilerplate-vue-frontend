@@ -9,7 +9,7 @@
 describe('Social login (OAuth)', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en');
     });
 

@@ -38,10 +38,12 @@ env:
     NODE_VERSION: 22
     # Where the backend checkout lands, and what the frontend's scripts/pairing/paired-backend-path.ts resolves.
     BACKEND_PATH: .backend
-    # What `cy.resetState()` shells out to between specs. There is no default in the code — unset
+    # What `cy.restore()` shells out to between specs. There is no default in the code — unset
     # means "do not reset" — so the pairing has to be spelled out here as it is in `.env-example`;
-    # this is the Node twin's, the PHP one goes through composer.
-    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- scenario:apply:reset
+    # this is the Node twin's, the PHP one goes through composer. `{describeTo}` is where the
+    # backend writes the accounts and subject ids: a live deployment mounts no `/__test/scenario`,
+    # so this file is the only way the specs learn them.
+    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- scenario:apply:reset -- --describe-to={describeTo}
 
 jobs:
     test-e2e-live:
@@ -144,7 +146,7 @@ jobs:
               run: npm ci
 
             # The specs are written against the seed dataset, so the database has to hold it
-            # before anything starts — and `cy.resetState()` re-runs the seed between specs, which
+            # before anything starts — and `cy.restore()` re-runs the seed between specs, which
             # is what `LIVE_RESET_COMMAND` above runs.
             #
             # `host` is a PREFIX runner, not a suffix: it exports the localhost database and cache

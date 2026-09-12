@@ -8,7 +8,7 @@
 describe('Feedback', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('a message sent through the form lands in the inbox', () => {

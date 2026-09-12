@@ -8,7 +8,7 @@
  * every routed module has one of these, so the split cannot quietly lose a domain.
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
-import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
+import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
 /*
  * The three confirm pages take a one-time token from the email link. A token the demo outbox
@@ -53,11 +53,11 @@ sweepA11y('account — guest', [
         prepare: () => {
             cy.skipUnlessDemo();
             cy.loginAs('user');
-            cy.enrollEmailTwoFactor(E2E_ACCOUNTS.user.email);
+            cy.enrollEmailTwoFactor(seedAccount('user').email);
             cy.logout();
             cy.visit('/en/login');
-            cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
-            cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+            cy.get('[type=email]').type(seedAccount('user').email);
+            cy.get('[type=password]').type(seedAccount('user').password);
             cy.get('form').submit();
             cy.get('#two-factor-challenge-page').should('exist');
         }

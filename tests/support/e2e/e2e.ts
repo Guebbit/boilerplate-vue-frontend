@@ -22,6 +22,7 @@ import 'cypress-axe';
  * — which is why `keyboard.cy.ts` could not be written without this.
  */
 import 'cypress-real-events';
+import './scenario';
 import './commands';
 import './fixtures';
 

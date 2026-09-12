@@ -32,7 +32,7 @@ What each concern maps to now:
 
 `npm run test:e2e` builds the bundle once, then boots **one demo backend per shard** (ports `3101+`) so the four Cypress processes cannot see each other's writes — the isolation MSW's in-page state used to provide, now with the real application behind it. Each shard's Cypress carries `CYPRESS_apiUrl`, and the overwritten `cy.visit` injects it into the page as the `__E2E_API_URL` runtime override the axios client reads before falling back to the baked `VITE_API_URL` (`src/infrastructure/http/client.ts`).
 
-`cy.resetState()` POSTs the shard's own `/__test/restore` before every spec; `cy.demoEmailTo(address)` reads the outbox. Specs that need the full stack open with `cy.skipUnlessLive()`; specs that hinge on the outbox open with `cy.skipUnlessDemo()`, because against the live profile the emails leave through a real queue a browser cannot read.
+`cy.restore()` POSTs the shard's own `/__test/restore` before every spec — a replay of a copy the backend process built at boot, so it costs milliseconds — and then re-reads `GET /__test/scenario`, which is where `cy.subjectId('order.paid')` and `seedAccount('owner')` get their answers. `cy.demoEmailTo(address)` reads the outbox. Specs that need the full stack open with `cy.skipUnlessLive()`; specs that hinge on the outbox open with `cy.skipUnlessDemo()`, because against the live profile the emails leave through a real queue a browser cannot read.
 
 ## Working without any backend
 
