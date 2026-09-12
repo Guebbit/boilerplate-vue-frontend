@@ -2265,6 +2265,18 @@ export const PaymentStatus = {
     refunded: 'refunded'
 } as const;
 
+/**
+ * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there.
+ */
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+export const PaymentMethod = {
+    card: 'card',
+    bank_transfer: 'bank_transfer',
+    cash: 'cash',
+    other: 'other'
+} as const;
+
 export interface Payment {
     id: Id;
     orderId: Id;
@@ -2278,8 +2290,19 @@ export interface Payment {
     currency: string;
     /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
-    /** Which provider implementation handled it (`fake` in the demo). */
+    /** Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`), or a real PSP's name. */
     provider: string;
+    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there. */
+    method: PaymentMethod;
+    /**
+     * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /payments/order/{orderId}/offline`; absent from a card payment.
+     * @maxLength 120
+     */
+    reference?: string;
+    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/order/{orderId}/offline`; absent from a card payment. */
+    receivedAt?: string;
+    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise. */
+    refundedByHand?: boolean;
     /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
@@ -2294,6 +2317,30 @@ export interface PaymentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Payment;
+}
+
+/**
+ * How the money arrived. `card` is not offered here — that path is `POST /payments/intent`.
+ */
+export type RecordOfflinePaymentRequestMethod =
+    (typeof RecordOfflinePaymentRequestMethod)[keyof typeof RecordOfflinePaymentRequestMethod];
+
+export const RecordOfflinePaymentRequestMethod = {
+    bank_transfer: 'bank_transfer',
+    cash: 'cash',
+    other: 'other'
+} as const;
+
+export interface RecordOfflinePaymentRequest {
+    /** How the money arrived. `card` is not offered here — that path is `POST /payments/intent`. */
+    method: RecordOfflinePaymentRequestMethod;
+    /**
+     * A bank transaction id, a receipt number — whatever ties this record to the money.
+     * @maxLength 120
+     */
+    reference?: string;
+    /** When the money arrived. Must not be in the future. Defaults to now. */
+    receivedAt?: string;
 }
 
 export interface ConfirmPaymentRequest {
@@ -5402,6 +5449,26 @@ export const refundPaymentByOrder = (
 };
 
 /**
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Record a payment that arrived outside the provider
+ */
+export const recordOfflinePayment = (
+    orderId: Id,
+    recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/order/${orderId}/offline`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: recordOfflinePaymentRequest
+        },
+        options
+    );
+};
+
+/**
  * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Confirm a payment
  */
@@ -5943,6 +6010,9 @@ export type CreatePaymentIntentResult = NonNullable<
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
 export type RefundPaymentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof refundPaymentByOrder>>
+>;
+export type RecordOfflinePaymentResult = NonNullable<
+    Awaited<ReturnType<typeof recordOfflinePayment>>
 >;
 export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
 export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;

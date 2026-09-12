@@ -67,6 +67,8 @@
         "button-go-to-details": "Back to order details",
         "button-go-to-list": "Back to orders list",
         "success-update": "Order updated successfully",
+        "record-offline-title": "Record a payment by hand",
+        "record-offline-hint": "Money that arrived outside the card provider — cash at the counter, a phone order paid by transfer.",
         "actions-title": "Cancellation and refund",
         "actions-hint": "Each control is enabled only while the API would accept it.",
         "button-cancel-only": "Cancel order",

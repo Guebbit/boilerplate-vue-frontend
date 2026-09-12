@@ -67,6 +67,8 @@
         "button-go-to-details": "Torna ai dettagli ordine",
         "button-go-to-list": "Torna alla lista ordini",
         "success-update": "Ordine aggiornato con successo",
+        "record-offline-title": "Registra un pagamento a mano",
+        "record-offline-hint": "Denaro arrivato al di fuori del provider della carta — contanti alla cassa, un ordine telefonico pagato con bonifico.",
         "actions-title": "Annullamento e rimborso",
         "actions-hint": "Ogni comando è attivo solo finché l'API lo accetterebbe.",
         "button-cancel-only": "Annulla ordine",

@@ -18,7 +18,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
-import { useOrderRefund } from '@/modules/payments';
+import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
@@ -108,6 +108,21 @@ const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
  * button needs.
  */
 const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
+
+/**
+ * Whether the order can still reach `paid` — the same gate the customer's own card form uses,
+ * asked here for the operator's "record it by hand" form instead. An in-flight card charge is a
+ * narrower case this flag does not see; the API's own 409 for it surfaces as that form's toast.
+ */
+const canRecordOffline = computed(() => currentOrder.value?.actions?.pay === true);
+
+/**
+ * Reloads the order once money has been recorded by hand — its status moved `pending → paid`
+ * server-side, which the form's own state does not reflect.
+ */
+const onOfflinePaymentRecorded = () => {
+    if (id) void fetchOrder(id);
+};
 
 /**
  * Cancels the order, with or without returning the money.
@@ -320,6 +335,21 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         </v-btn>
                     </div>
                 </form>
+
+                <!--
+                    Money coming in another way — cash, a transfer — while the order can still
+                    reach `paid`. Own section: it is not a cancel/refund action, and it needs three
+                    fields the buttons below have no room for.
+                -->
+                <div v-if="canRecordOffline && id" class="mt-6 border-t pt-5">
+                    <h3 class="text-lg font-semibold">
+                        {{ t('order-edit-page.record-offline-title') }}
+                    </h3>
+                    <p class="mt-1 mb-3 opacity-75">
+                        {{ t('order-edit-page.record-offline-hint') }}
+                    </p>
+                    <RecordOfflinePaymentForm :order-id="id" @recorded="onOfflinePaymentRecorded" />
+                </div>
 
                 <!--
                     The operator's three money actions. Each is disabled on the server's own

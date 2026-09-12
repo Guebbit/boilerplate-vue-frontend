@@ -207,6 +207,27 @@ onMounted(() => {
                     {{ formatCurrency(payment.amount, payment.currency) }}
                 </span>
             </div>
+            <!--
+                Offline-only fields: `method` is `card` for anything the provider handled, so this
+                only says something new when an admin recorded the money by hand.
+            -->
+            <p
+                v-if="payment.method !== 'card'"
+                class="mt-2 mb-0 text-sm opacity-75"
+                data-test="payment-offline-detail"
+            >
+                {{ t(`payments-panel.method-offline-${payment.method}`) }}
+                <template v-if="payment.reference">
+                    — {{ t('payments-panel.label-reference', { reference: payment.reference }) }}
+                </template>
+            </p>
+            <p
+                v-if="payment.refundedByHand"
+                class="mt-2 mb-0 text-sm"
+                data-test="payment-refunded-by-hand"
+            >
+                {{ t('payments-panel.refunded-by-hand') }}
+            </p>
         </template>
 
         <p v-else class="m-0 text-sm opacity-75">{{ t('payments-panel.none') }}</p>

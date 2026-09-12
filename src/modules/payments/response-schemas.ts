@@ -35,6 +35,11 @@ export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
     },
     {
         method: 'POST',
+        pattern: /^\/payments\/order\/[^/]+\/offline$/,
+        schema: schemas.RecordOfflinePaymentResponse
+    },
+    {
+        method: 'POST',
         pattern: /^\/payments\/[^/]+\/confirm$/,
         schema: schemas.ConfirmPaymentResponse
     },

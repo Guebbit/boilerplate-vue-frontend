@@ -6769,6 +6769,8 @@ export const CreatePaymentIntentBody = zod.strictObject({
 
 export const createPaymentIntentResponseDataAmountMin = 0;
 
+export const createPaymentIntentResponseDataReferenceMax = 120;
+
 export const CreatePaymentIntentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6798,7 +6800,33 @@ export const CreatePaymentIntentResponse = zod.strictObject({
             ),
         provider: zod
             .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(createPaymentIntentResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
         clientSecret: zod
             .string()
             .optional()
@@ -6843,6 +6871,8 @@ export const GetPaymentByOrderParams = zod.strictObject({
 
 export const getPaymentByOrderResponseDataAmountMin = 0;
 
+export const getPaymentByOrderResponseDataReferenceMax = 120;
+
 export const GetPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6872,7 +6902,33 @@ export const GetPaymentByOrderResponse = zod.strictObject({
             ),
         provider: zod
             .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(getPaymentByOrderResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
         clientSecret: zod
             .string()
             .optional()
@@ -6933,6 +6989,8 @@ export const RefundPaymentByOrderHeader = zod.strictObject({
 
 export const refundPaymentByOrderResponseDataAmountMin = 0;
 
+export const refundPaymentByOrderResponseDataReferenceMax = 120;
+
 export const RefundPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6962,7 +7020,172 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
             ),
         provider: zod
             .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(refundPaymentByOrderResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
+        clientSecret: zod
+            .string()
+            .optional()
+            .describe(
+                'Returned by `POST \/payments\/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response.'
+            ),
+        cardLast4: zod
+            .string()
+            .optional()
+            .describe(
+                'The only card digits a payment system may remember. Survives a refund — refunding does not clear it.'
+            ),
+        actions: zod
+            .strictObject({
+                pay: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/payments\/{id}\/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.'
+                    ),
+                refund: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/payments\/order\/{orderId}\/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.'
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Record a payment that arrived outside the provider
+ */
+export const RecordOfflinePaymentParams = zod.strictObject({
+    orderId: zod.string().describe('The order the money arrived for. Must still be `pending`')
+});
+
+export const recordOfflinePaymentHeaderIdempotencyKeyMax = 200;
+
+export const recordOfflinePaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const RecordOfflinePaymentHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(recordOfflinePaymentHeaderIdempotencyKeyMax)
+        .regex(recordOfflinePaymentHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
+});
+
+export const recordOfflinePaymentBodyReferenceMax = 120;
+
+export const RecordOfflinePaymentBody = zod.strictObject({
+    method: zod
+        .enum(['bank_transfer', 'cash', 'other'])
+        .describe(
+            'How the money arrived. `card` is not offered here — that path is `POST \/payments\/intent`.'
+        ),
+    reference: zod
+        .string()
+        .max(recordOfflinePaymentBodyReferenceMax)
+        .optional()
+        .describe(
+            'A bank transaction id, a receipt number — whatever ties this record to the money.'
+        ),
+    receivedAt: zod.iso
+        .datetime({ offset: true })
+        .optional()
+        .describe('When the money arrived. Must not be in the future. Defaults to now.')
+});
+
+export const recordOfflinePaymentResponseDataAmountMin = 0;
+
+export const recordOfflinePaymentResponseDataReferenceMax = 120;
+
+export const RecordOfflinePaymentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        orderId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        amount: zod
+            .number()
+            .min(recordOfflinePaymentResponseDataAmountMin)
+            .describe(
+                "The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation."
+            ),
+        currency: zod.string().describe('ISO-4217 currency code (e.g. EUR)'),
+        status: zod
+            .enum([
+                'requires_confirmation',
+                'requires_action',
+                'processing',
+                'succeeded',
+                'declined',
+                'refunded'
+            ])
+            .describe(
+                'The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST \/payments\/{id}\/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs\/modules\/payments.md#status-transitions'
+            ),
+        provider: zod
+            .string()
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(recordOfflinePaymentResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
         clientSecret: zod
             .string()
             .optional()
@@ -7039,6 +7262,8 @@ export const ConfirmPaymentBody = zod.strictObject({
 
 export const confirmPaymentResponseDataAmountMin = 0;
 
+export const confirmPaymentResponseDataReferenceMax = 120;
+
 export const ConfirmPaymentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7068,7 +7293,33 @@ export const ConfirmPaymentResponse = zod.strictObject({
             ),
         provider: zod
             .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(confirmPaymentResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
         clientSecret: zod
             .string()
             .optional()
@@ -7113,6 +7364,8 @@ export const SyncPaymentParams = zod.strictObject({
 
 export const syncPaymentResponseDataAmountMin = 0;
 
+export const syncPaymentResponseDataReferenceMax = 120;
+
 export const SyncPaymentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7142,7 +7395,33 @@ export const SyncPaymentResponse = zod.strictObject({
             ),
         provider: zod
             .string()
-            .describe('Which provider implementation handled it (`fake` in the demo).'),
+            .describe(
+                "Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST \/payments\/order\/{orderId}\/offline`), or a real PSP's name."
+            ),
+        method: zod
+            .enum(['card', 'bank_transfer', 'cash', 'other'])
+            .describe(
+                'How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST \/payments\/order\/{orderId}\/offline`, from what the admin chose there.'
+            ),
+        reference: zod
+            .string()
+            .max(syncPaymentResponseDataReferenceMax)
+            .optional()
+            .describe(
+                'Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        receivedAt: zod.iso
+            .datetime({ offset: true })
+            .optional()
+            .describe(
+                'When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST \/payments\/order\/{orderId}\/offline`; absent from a card payment.'
+            ),
+        refundedByHand: zod
+            .boolean()
+            .optional()
+            .describe(
+                "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise."
+            ),
         clientSecret: zod
             .string()
             .optional()

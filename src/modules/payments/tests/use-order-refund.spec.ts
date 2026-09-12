@@ -28,6 +28,7 @@ const payment = (refund: boolean) => ({
     currency: 'EUR',
     status: refund ? 'succeeded' : 'refunded',
     provider: 'fake',
+    method: 'card',
     actions: { pay: false, refund }
 });
 

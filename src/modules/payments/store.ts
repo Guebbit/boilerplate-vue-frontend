@@ -12,9 +12,10 @@ import {
     confirmPayment,
     syncPayment,
     getPaymentByOrder,
-    refundPaymentByOrder
+    refundPaymentByOrder,
+    recordOfflinePayment as recordOfflinePaymentRequest
 } from '@api';
-import type { Payment } from '@types';
+import type { Payment, RecordOfflinePaymentRequest } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
@@ -132,12 +133,33 @@ export const usePaymentsStore = defineStore('payments', () => {
             })
         );
 
+    /**
+     * Records money that arrived outside the provider — cash, a transfer, by hand. Admin-only at
+     * the API; a caller without the role gets the 403 this rethrows.
+     *
+     * The order itself moves `pending → paid` server-side, which this call does not answer for —
+     * unlike `payForOrder`, whose caller reloads the order once the LOCAL payment says `succeeded`,
+     * this one has no in-flight state to wait out, so the caller reloads the order right away.
+     *
+     * @param orderId - The order the money arrived for.
+     * @param body - The method, an optional reference, and when the money actually arrived.
+     * @returns A promise resolving with the payment as it now stands.
+     */
+    const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) =>
+        fetchAny(() =>
+            recordOfflinePaymentRequest(orderId, body).then((response) => {
+                payment.value = response.data;
+                return payment.value;
+            })
+        );
+
     return {
         loading,
         payment,
         fetchPaymentForOrder,
         payForOrder,
         finishAtProvider,
-        refundForOrder
+        refundForOrder,
+        recordOfflinePayment
     };
 });

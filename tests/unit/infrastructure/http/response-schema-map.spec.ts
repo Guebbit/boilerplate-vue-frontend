@@ -165,6 +165,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/payments/intent', 'CreatePaymentIntentResponse'],
     ['GET', `/payments/order/${ID}`, 'GetPaymentByOrderResponse'],
     ['POST', `/payments/order/${ID}/refund`, 'RefundPaymentByOrderResponse'],
+    ['POST', `/payments/order/${ID}/offline`, 'RecordOfflinePaymentResponse'],
     ['POST', `/payments/${ID}/confirm`, 'ConfirmPaymentResponse'],
     ['POST', `/payments/${ID}/sync`, 'SyncPaymentResponse'],
     ['GET', '/delivery/methods', 'ListShippingMethodsResponse'],
