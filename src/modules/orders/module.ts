@@ -44,5 +44,5 @@ export default {
     // Every cached order embeds its lines' resolved, language-dependent product text, so a
     // language switch has to wipe it. `useOrdersStore()` runs inside the callback, never at
     // module scope: Pinia is not installed yet when this manifest is evaluated.
-    resetOnLocaleChange: () => useOrdersStore().resetAll()
+    resetOnLocaleChange: () => useOrdersStore().resetForLocaleChange()
 } satisfies AppModule;

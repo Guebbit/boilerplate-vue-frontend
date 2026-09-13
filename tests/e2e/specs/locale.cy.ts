@@ -68,7 +68,7 @@ describe('Italian locale', () => {
         cy.get('.v-messages__message').should('contain.text', 'Check your email address');
 
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'italian').click();
+        cy.get('[data-test=language-option-it]').click();
 
         cy.url().should('include', '/it/login');
         cy.get('.v-messages__message').should('contain.text', "Controlla l'indirizzo email");
@@ -98,7 +98,7 @@ describe('switching language wipes and refetches locale-sensitive stores', () =>
             cy.contains(enTitle).should('exist');
 
             cy.get('[data-test=language-switcher]').first().click();
-            cy.contains('.v-list-item-title', 'italian').click();
+            cy.get('[data-test=language-option-it]').click();
             cy.url().should('include', '/it/');
 
             // The router keeps this same page — `products/:id` carries no locale of its own — so
@@ -108,7 +108,7 @@ describe('switching language wipes and refetches locale-sensitive stores', () =>
             cy.contains(enTitle).should('not.exist');
 
             cy.get('[data-test=language-switcher]').first().click();
-            cy.contains('.v-list-item-title', 'english').click();
+            cy.get('[data-test=language-option-en]').click();
             cy.url().should('include', '/en/');
             cy.contains(enTitle).should('exist');
             cy.contains(itTitle).should('not.exist');
@@ -131,7 +131,7 @@ describe('switching the language in place', () => {
         cy.contains('Welcome to your Vue boilerplate').should('exist');
 
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'italian').click();
+        cy.get('[data-test=language-option-it]').click();
 
         cy.get('html').should('have.attr', 'lang', 'it');
         cy.url().should('include', '/it');
@@ -156,7 +156,7 @@ describe('the saved preference', () => {
         cy.skipUnlessDemo();
 
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'italian').click();
+        cy.get('[data-test=language-option-it]').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
         // The proof a guest's switch wrote nothing: the account's saved preference still rules
@@ -170,7 +170,7 @@ describe('the saved preference', () => {
 
         cy.loginAs('user');
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'italian').click();
+        cy.get('[data-test=language-option-it]').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
         // End the session through the UI, then come back through the ENGLISH login form —
@@ -205,7 +205,7 @@ describe('a locale only the API has', () => {
         cy.visit('/en');
 
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'spanish').should('exist');
+        cy.get('[data-test=language-option-es]').should('exist');
     });
 
     it('activates, and falls back per key for UI copy it has no Spanish for', () => {
@@ -249,7 +249,7 @@ describe('a locale only the API has', () => {
         });
 
         cy.get('[data-test=language-switcher]').first().click();
-        cy.contains('.v-list-item-title', 'spanish').click();
+        cy.get('[data-test=language-option-es]').click();
 
         cy.get('html').should('have.attr', 'lang', 'es');
         cy.url().should('include', '/es');

@@ -1,7 +1,7 @@
 /**
  * @module
  * Unit coverage of the products store's own logic: which branch a create/update call takes (JSON
- * vs multipart), how `translations` is encoded on each, and `resetAll`'s locale-sensitive-cache
+ * vs multipart), how `translations` is encoded on each, and `resetForLocaleChange`'s cache
  * role. The CRUD wrappers are thin over `@guebbit/vue-toolkit`, so testing them would be testing
  * the toolkit — the multipart branch and the `translations` encoding are what's actually this
  * repo's logic.
@@ -603,18 +603,21 @@ describe('useProductsStore', () => {
      */
 
     /**
-     * `resetAll` is the toolkit's own dictionary/cache wipe, re-exported so the module manifest's
-     * `resetOnLocaleChange` can call it — see `products/module.ts` and
-     * `tests/unit/app/guards/locale-choice.spec.ts` for the guard side of this. What belongs HERE
-     * is only that the store actually surfaces it and that calling it empties the dictionary; the
-     * cache-invalidation machinery underneath is the toolkit's own suite's job.
+     * `resetForLocaleChange` is what the module manifest's `resetOnLocaleChange` calls — see
+     * `products/module.ts`, and `tests/unit/app/guards/locale-choice.spec.ts` for the guard side.
+     * What belongs HERE is only that the store surfaces it and that calling it empties the
+     * dictionary; the cache-invalidation machinery underneath is the toolkit's own suite's job.
+     *
+     * It clears the cached RESPONSES as well as the records, which is the half that was missing:
+     * dropping the dictionary alone let the next read come straight back out of the query cache,
+     * in the language the visitor had just left, without making a request at all.
      */
-    it('resetAll empties the product dictionary', () => {
+    it('resetForLocaleChange empties the product dictionary', () => {
         const store = useProductsStore();
         store.addProduct(PRODUCT);
         expect(store.products.p1).toBeDefined();
 
-        store.resetAll();
+        store.resetForLocaleChange();
 
         expect(store.products.p1).toBeUndefined();
     });

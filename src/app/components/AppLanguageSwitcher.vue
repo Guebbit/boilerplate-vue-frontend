@@ -7,7 +7,7 @@
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';
-import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { supportedLanguages } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
@@ -26,15 +26,19 @@ const route = useRoute();
 const { t, locale } = useI18n();
 
 /**
- * Switches the app language and re-enters the current route under the new locale.
+ * Re-enters the current route under the new locale.
  *
- * Everything here is routing, which is the only part of a language switch that belongs to the app
- * shell. The i18n runtime owns loading the dictionary (`changeLanguage`) and the session store
- * owns remembering the choice for whoever can have one remembered — this component decides
- * neither, and does not know whether anyone is signed in.
+ * ROUTING ONLY, and that is the whole point: `localeChoice` loads the dictionary, activates the
+ * language and wipes every locale-sensitive module's cache, all off the `:locale` param it is
+ * handed. Activating the language HERE first would defeat the last of those — the guard decides
+ * whether a switch happened by comparing the param against the locale that is already active, so
+ * a caller that switches before navigating makes every switch look like no switch at all, and a
+ * product page keeps showing the title it fetched in the language the visitor just left.
  *
  * `persistLocalePreference` is deliberately NOT awaited: the page must be in the new language
- * before the account endpoint has answered, and a failed write must not un-switch it.
+ * before the account endpoint has answered, and a failed write must not un-switch it. The session
+ * store owns remembering the choice for whoever can have one remembered; this component does not
+ * know whether anyone is signed in.
  *
  * @param newLocale - Locale code picked by the user, e.g. `it`.
  * @returns A promise resolving once the router settles: on the same route with
@@ -42,19 +46,15 @@ const { t, locale } = useI18n();
  */
 function switchLanguage(newLocale: string) {
     void useSessionStore().persistLocalePreference(newLocale);
-    return Promise.resolve(
-        // change language
-        changeLanguage(newLocale)
-            // then change route, according to new Locale
-            .then(() =>
-                router.replace({
-                    params: {
-                        ...route.params,
-                        locale: newLocale
-                    },
-                    query: route.query
-                })
-            )
+    return (
+        router
+            .replace({
+                params: {
+                    ...route.params,
+                    locale: newLocale
+                },
+                query: route.query
+            })
             // if it fails: go home (with locale recalc)
             .catch(() => router.push('/'))
     );
@@ -89,6 +89,7 @@ function switchLanguage(newLocale: string) {
                 :active="locale === sLocale"
                 :aria-current="locale === sLocale ? 'true' : undefined"
                 color="primary"
+                :data-test="`language-option-${sLocale}`"
                 @click="switchLanguage(sLocale)"
             >
                 <v-list-item-title>{{ t(`generic.${sLocale}`) }}</v-list-item-title>

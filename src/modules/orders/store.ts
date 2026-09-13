@@ -78,7 +78,7 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteOne: deleteOrder,
         deleteTarget,
         fetchAny,
-        resetAll
+        destroy
     } = useStructureCrudApi<
         Order,
         string,
@@ -208,10 +208,21 @@ export const useOrdersStore = defineStore('orders', () => {
         cancelOrder,
         hardDeleteOrder,
         downloadInvoice,
-        // Every cached order embeds its lines' `OrderLineProduct`, title and description
-        // included, resolved server-side in whatever language the request carried — the module
-        // manifest wires this into `resetOnLocaleChange` so a language switch does not leave
-        // order history reading in the old one.
-        resetAll
+        /**
+         * Forget everything a language switch invalidated: the cached orders AND the cached
+         * RESPONSES behind them.
+         *
+         * Every cached order embeds its lines' `OrderLineProduct`, title and description
+         * included, resolved server-side in whatever language the request carried. Dropping the
+         * records alone is not enough — the toolkit answers a repeat fetch from its own query
+         * cache while that entry is still fresh, so the next read puts the old language straight
+         * back without making a request. `destroy()` clears both halves; this store owns its
+         * query client, so nothing else loses a cache.
+         *
+         * The module manifest wires this into `resetOnLocaleChange`.
+         */
+        resetForLocaleChange: () => {
+            destroy();
+        }
     };
 });

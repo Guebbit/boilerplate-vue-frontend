@@ -95,7 +95,7 @@ export const useProductsStore = defineStore('products', () => {
         deleteOne: deleteProduct,
         deleteTarget,
         fetchAny,
-        resetAll
+        destroy
     } = useStructureCrudApi<
         Product,
         string,
@@ -286,10 +286,22 @@ export const useProductsStore = defineStore('products', () => {
         updateProduct,
         deleteProduct,
         hardDeleteProduct,
-        // Every cached record's `title`/`description` is resolved server-side against the
-        // caller's language — the module manifest wires this into `resetOnLocaleChange`, so a
-        // language switch drops the dictionary instead of showing the wrong language until
-        // something happens to refetch it.
-        resetAll
+        /**
+         * Forget everything a language switch invalidated: the cached records AND the cached
+         * RESPONSES behind them.
+         *
+         * Every record's `title` and `description` were resolved server-side against the caller's
+         * language, so after a switch both are wrong. Dropping the records alone is not enough —
+         * the toolkit answers a repeat fetch from its own query cache while that entry is still
+         * fresh, so the next read puts the old language straight back and no request is ever made.
+         * `destroy()` clears both halves; this store owns its query client, so nothing else loses
+         * a cache.
+         *
+         * The module manifest wires this into `resetOnLocaleChange`, which
+         * `src/app/guards/locale-choice.ts` runs once a switch has actually happened.
+         */
+        resetForLocaleChange: () => {
+            destroy();
+        }
     };
 });
