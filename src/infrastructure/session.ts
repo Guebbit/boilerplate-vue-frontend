@@ -69,6 +69,16 @@ export interface SessionViewer {
      * remote/default image or while a digest job is still pending.
      */
     thumbnailUrl?: string;
+    /**
+     * Whether they have proved they hold the address in {@link email}.
+     *
+     * Here rather than in the account module's record because the SHELL is what warns them: the
+     * banner rides every page, not just the profile. Required, and `false` when the API omits the
+     * field, so this side reads an account the API has never seen confirmed exactly the way
+     * `requireVerified` does — anything else shows no warning to precisely the people the checkout
+     * is about to refuse.
+     */
+    verified: boolean;
 }
 
 /**
@@ -326,6 +336,7 @@ export const useSessionStore = defineStore('session', () => {
                 role?: string;
                 imageUrl?: string;
                 thumbnailUrl?: string;
+                verified?: boolean;
             }>(data);
             return setViewer(
                 payload && {
@@ -333,7 +344,8 @@ export const useSessionStore = defineStore('session', () => {
                     email: payload.email,
                     role: payload.role ?? 'customer',
                     imageUrl: payload.imageUrl,
-                    thumbnailUrl: payload.thumbnailUrl
+                    thumbnailUrl: payload.thumbnailUrl,
+                    verified: payload.verified ?? false
                 }
             ).then(() => payload);
         });

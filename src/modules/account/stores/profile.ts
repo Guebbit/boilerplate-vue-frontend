@@ -98,7 +98,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 id: user.id,
                 email: user.email,
                 role: user.role ?? 'customer',
-                imageUrl: user.imageUrl
+                imageUrl: user.imageUrl,
+                // `?? false` for the same reason the API's own guard reads it that way: a record
+                // predating the field is not evidence the address was ever proved.
+                verified: user.verified ?? false
             }
         );
 

@@ -24,7 +24,6 @@ import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import ProfileVerificationBanner from '@/modules/account/components/ProfileVerificationBanner.vue';
 import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
 import ProfileRole from '@/modules/account/components/ProfileRole.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
@@ -217,8 +216,6 @@ const submitForm = () => {
 
 <template>
     <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
-        <ProfileVerificationBanner />
-
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <ProfileAvatar />
 

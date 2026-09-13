@@ -14,6 +14,7 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
+import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -179,6 +180,10 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         }}</a>
 
         <AppHealthBanner />
+
+        <!-- Rides every page on purpose: the checkout is too late to learn the address is unproved -->
+        <AppVerificationBanner />
+
         <AppNavigation>
             <slot name="navigation" />
         </AppNavigation>

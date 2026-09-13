@@ -38,6 +38,11 @@
         "button-submit": "Confirm",
         "error-wrong-password": "That password is not right. Try again."
     },
+    "verification-banner": {
+        "message": "Your email address is not verified yet. Check your inbox, or resend the link.",
+        "button-resend": "Resend",
+        "sent": "Verification email sent, check your inbox."
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "You are already logged",

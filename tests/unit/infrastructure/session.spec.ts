@@ -30,7 +30,7 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
-    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
+    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer', verified: true });
     return store;
 };
 

@@ -38,6 +38,11 @@
         "button-submit": "Conferma",
         "error-wrong-password": "Password non corretta. Riprova."
     },
+    "verification-banner": {
+        "message": "Il tuo indirizzo email non è ancora verificato. Controlla la posta o invia di nuovo il link.",
+        "button-resend": "Invia di nuovo",
+        "sent": "Email di verifica inviata, controlla la posta."
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "Sei già loggato",

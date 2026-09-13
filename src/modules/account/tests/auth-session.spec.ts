@@ -136,11 +136,14 @@ describe('login', () => {
                 const session = useSessionStore();
 
                 // The projection, not the record: the shell is not allowed to know what a `User`
-                // is, so anything beyond these three fields leaking in is a regression.
+                // is, so anything beyond these four fields leaking in is a regression.
+                // `verified: false` because `USER` carries no such field — the same reading the
+                // API's own guard takes of a record that never proved its address.
                 expect(session.viewer).toEqual({
                     id: 'u1',
                     email: 'ada@example.com',
-                    role: 'customer'
+                    role: 'customer',
+                    verified: false
                 });
                 expect(session.isAuth).toBe(true);
                 expect(session.can('delete', 'Product')).toBe(false);
