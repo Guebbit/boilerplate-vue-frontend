@@ -100,6 +100,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/account/refresh', 'RefreshTokenResponse'],
     ['PUT', '/account', 'UpdateAccountResponse'],
     ['POST', '/account/password', 'ChangePasswordResponse'],
+    ['POST', '/account/password/check', 'CheckPasswordBreachedResponse'],
     ['POST', '/account/logout', 'LogoutResponse'],
     ['GET', '/account/sessions', 'GetSessionsResponse'],
     ['DELETE', `/account/sessions/${ID}`, 'RevokeSessionResponse'],

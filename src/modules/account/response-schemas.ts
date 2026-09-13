@@ -40,6 +40,11 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     },
     { method: 'PUT', pattern: /^\/account$/, schema: schemas.UpdateAccountResponse },
     { method: 'POST', pattern: /^\/account\/password$/, schema: schemas.ChangePasswordResponse },
+    {
+        method: 'POST',
+        pattern: /^\/account\/password\/check$/,
+        schema: schemas.CheckPasswordBreachedResponse
+    },
     { method: 'POST', pattern: /^\/account\/logout$/, schema: schemas.LogoutResponse },
     { method: 'GET', pattern: /^\/account\/sessions$/, schema: schemas.GetSessionsResponse },
     {
