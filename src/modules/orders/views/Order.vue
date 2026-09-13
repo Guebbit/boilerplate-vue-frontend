@@ -24,6 +24,7 @@ import { useCartStore } from '@/modules/cart';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Download, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
+import LazyImage from '@/ui/molecules/LazyImage.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
@@ -303,19 +304,40 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                 :key="'order-item-' + item.product.id"
                                 class="rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
                             >
-                                <div
-                                    class="mb-2 flex items-center justify-between gap-3 font-semibold"
-                                >
-                                    <span>{{ item.product.title || item.product.id }}</span>
-                                    <v-chip size="small" variant="tonal" color="tertiary">
-                                        × {{ item.quantity }}
-                                    </v-chip>
-                                </div>
-                                <div class="flex items-center justify-between gap-3">
-                                    <p class="m-0 opacity-75">
-                                        {{ t('order-target-page.label-product-id') }}
-                                    </p>
-                                    <strong>{{ item.product.id }}</strong>
+                                <div class="flex items-start gap-3">
+                                    <!--
+                                        The picture is resolved LIVE against the catalogue product
+                                        (`item.current`), never frozen — `null` once that product
+                                        is hard-deleted, which `LazyImage` already renders as its
+                                        own placeholder. See SECURITY_HOLES_7_STORAGE_QUOTA.
+                                    -->
+                                    <LazyImage
+                                        :src="item.current?.imageUrl"
+                                        :thumbnail-src="item.current?.thumbnailUrl"
+                                        :alt="
+                                            t('order-target-page.image-alt', {
+                                                name: item.product.title || item.product.id
+                                            })
+                                        "
+                                        :width="56"
+                                        :height="56"
+                                    />
+                                    <div class="min-w-0 flex-1">
+                                        <div
+                                            class="mb-2 flex items-center justify-between gap-3 font-semibold"
+                                        >
+                                            <span>{{ item.product.title || item.product.id }}</span>
+                                            <v-chip size="small" variant="tonal" color="tertiary">
+                                                × {{ item.quantity }}
+                                            </v-chip>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3">
+                                            <p class="m-0 opacity-75">
+                                                {{ t('order-target-page.label-product-id') }}
+                                            </p>
+                                            <strong>{{ item.product.id }}</strong>
+                                        </div>
+                                    </div>
                                 </div>
                             </article>
                         </div>

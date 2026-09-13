@@ -2671,18 +2671,6 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .default(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault
                                 ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
                             categories: zod.array(zod.string()).optional(),
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2695,6 +2683,24 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .regex(exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp)
                             .describe(
                                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        current: zod
+                            .strictObject({
+                                imageUrl: zod
+                                    .string()
+                                    .describe(
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                    ),
+                                thumbnailUrl: zod
+                                    .string()
+                                    .optional()
+                                    .describe(
+                                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                                    )
+                            })
+                            .nullable()
+                            .describe(
+                                "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                             )
                     })
                 ),
@@ -5209,18 +5215,6 @@ export const CheckoutResponse = zod.strictObject({
                             .default(
                                 checkoutResponseDataOrderItemsItemProductRequiresShippingDefault
                             ),
-                        imageUrl: zod
-                            .string()
-                            .optional()
-                            .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                            ),
-                        thumbnailUrl: zod
-                            .string()
-                            .optional()
-                            .describe(
-                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                            ),
                         categories: zod.array(zod.string()).optional(),
                         tags: zod.array(zod.string()).optional(),
                         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -5233,6 +5227,24 @@ export const CheckoutResponse = zod.strictObject({
                         .regex(checkoutResponseDataOrderItemsItemLocaleRegExp)
                         .describe(
                             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                        ),
+                    current: zod
+                        .strictObject({
+                            imageUrl: zod
+                                .string()
+                                .describe(
+                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                ),
+                            thumbnailUrl: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                                )
+                        })
+                        .nullable()
+                        .describe(
+                            "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                         )
                 })
             ),
@@ -5557,18 +5569,6 @@ export const ListOrdersResponse = zod.strictObject({
                                 .default(
                                     listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
                             categories: zod.array(zod.string()).optional(),
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -5581,6 +5581,24 @@ export const ListOrdersResponse = zod.strictObject({
                             .regex(listOrdersResponseDataItemsItemItemsItemLocaleRegExp)
                             .describe(
                                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        current: zod
+                            .strictObject({
+                                imageUrl: zod
+                                    .string()
+                                    .describe(
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                    ),
+                                thumbnailUrl: zod
+                                    .string()
+                                    .optional()
+                                    .describe(
+                                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                                    )
+                            })
+                            .nullable()
+                            .describe(
+                                "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                             )
                     })
                 ),
@@ -5780,18 +5798,6 @@ export const CreateOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -5804,6 +5810,24 @@ export const CreateOrderResponse = zod.strictObject({
                     .regex(createOrderResponseDataItemsItemLocaleRegExp)
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                     )
             })
         ),
@@ -5972,18 +5996,6 @@ export const UpdateOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(updateOrderResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -5996,6 +6008,24 @@ export const UpdateOrderResponse = zod.strictObject({
                     .regex(updateOrderResponseDataItemsItemLocaleRegExp)
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                     )
             })
         ),
@@ -6227,18 +6257,6 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .default(
                                     searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
-                            imageUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                                ),
-                            thumbnailUrl: zod
-                                .string()
-                                .optional()
-                                .describe(
-                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                                ),
                             categories: zod.array(zod.string()).optional(),
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -6251,6 +6269,24 @@ export const SearchOrdersResponse = zod.strictObject({
                             .regex(searchOrdersResponseDataItemsItemItemsItemLocaleRegExp)
                             .describe(
                                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        current: zod
+                            .strictObject({
+                                imageUrl: zod
+                                    .string()
+                                    .describe(
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                    ),
+                                thumbnailUrl: zod
+                                    .string()
+                                    .optional()
+                                    .describe(
+                                        'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                                    )
+                            })
+                            .nullable()
+                            .describe(
+                                "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                             )
                     })
                 ),
@@ -6423,18 +6459,6 @@ export const GetOrderByIdResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -6447,6 +6471,24 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .regex(getOrderByIdResponseDataItemsItemLocaleRegExp)
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                     )
             })
         ),
@@ -6619,18 +6661,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .default(
                             updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -6643,6 +6673,24 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .regex(updateOrderByIdResponseDataItemsItemLocaleRegExp)
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                     )
             })
         ),
@@ -6855,18 +6903,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .default(
                             cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
-                    imageUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-                        ),
-                    thumbnailUrl: zod
-                        .string()
-                        .optional()
-                        .describe(
-                            'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
-                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -6879,6 +6915,24 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .regex(cancelOrderByIdResponseDataItemsItemLocaleRegExp)
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
                     )
             })
         ),

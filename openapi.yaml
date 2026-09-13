@@ -4776,10 +4776,6 @@ components:
         requiresShipping:
           type: boolean
           default: true
-        imageUrl:
-          $ref: '#/components/schemas/ImageUrl'
-        thumbnailUrl:
-          $ref: '#/components/schemas/ThumbnailUrl'
         categories:
           type: array
           items:
@@ -4797,6 +4793,16 @@ components:
         deletedAt:
           type: string
           format: date-time
+    OrderLineCurrent:
+      type: object
+      additionalProperties: false
+      required:
+        - imageUrl
+      properties:
+        imageUrl:
+          $ref: '#/components/schemas/ImageUrl'
+        thumbnailUrl:
+          $ref: '#/components/schemas/ThumbnailUrl'
     OrderItem:
       type: object
       additionalProperties: false
@@ -4804,6 +4810,7 @@ components:
         - product
         - quantity
         - locale
+        - current
       properties:
         product:
           $ref: '#/components/schemas/OrderLineProduct'
@@ -4812,6 +4819,11 @@ components:
           minimum: 1
         locale:
           $ref: '#/components/schemas/Locale'
+        current:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/OrderLineCurrent'
+          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
     PaymentMethodId:
       type: string
       enum:

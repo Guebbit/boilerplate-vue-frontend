@@ -299,8 +299,6 @@ export interface OrderLineProduct {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -308,11 +306,18 @@ export interface OrderLineProduct {
     deletedAt?: string;
 }
 
+export interface OrderLineCurrent {
+    imageUrl: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+}
+
 export interface OrderItem {
     product: OrderLineProduct;
     /** @minimum 1 */
     quantity: number;
     locale: Locale;
+    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current: OrderLineCurrent | null;
 }
 
 /**

@@ -243,7 +243,14 @@ describe('localeChoice — locale-sensitive store resets', () => {
     const ORDER: Order = {
         id: 'o1',
         email: 'buyer@example.com',
-        items: [{ product: { id: 'p1', title: 'Gadget', price: 9.99 }, quantity: 1, locale: 'en' }],
+        items: [
+            {
+                product: { id: 'p1', title: 'Gadget', price: 9.99 },
+                quantity: 1,
+                locale: 'en',
+                current: null
+            }
+        ],
         totalItems: 1,
         totalQuantity: 1,
         totalPrice: 9.99,
