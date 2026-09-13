@@ -11,8 +11,10 @@ import { asStub } from '../stub';
  */
 const DEMO_RESET_TIMEOUT_MS = 30_000;
 const APP_READY_TIMEOUT_MS = 15_000;
-// A live reset empties and re-seeds the database; measured at ~0.6s locally, with headroom for a
-// cold tsx start and a slower CI disk.
+// A live reset shells out to the backend, which empties the database and then BUILDS the shop by
+// driving several hundred real requests through it — measured at ~5s locally, well up from the
+// row-inserting seeder it replaced. The budget keeps its headroom for a cold tsx start and a
+// slower CI disk.
 const LIVE_RESET_TIMEOUT_MS = 60_000;
 
 declare global {

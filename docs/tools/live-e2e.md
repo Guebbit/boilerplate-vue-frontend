@@ -72,6 +72,15 @@ Boot the backend with the same allowance its own test suites use (`boilerplate-n
 NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDRESS_MAX=1000 npm run host -- dev
 ```
 
+The same three go in front of `compose:restart` when the backend runs in its container — they are
+declared in `docker-compose.yml` precisely so a run can raise them from the shell.
+
+This covers the BROWSER's traffic only. `cy.restore()` is several hundred API requests of its own
+now that the backend builds its demo shop by driving it, and those are deliberately kept off these
+buckets entirely: the seeder counts in its own memory rather than the deployment's Redis, so it
+neither spends a real visitor's allowance nor inherits what one already spent. See
+`boilerplate-node-backend/scenarios/rate-limits.ts`.
+
 All three are needed and they are separate buckets: the global one covers browsing, and the credential budget is itself a pair — one per account named, one per address calling — so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
 
 ### Why `test:e2e:live` runs on Chromium, not Cypress' default Electron
