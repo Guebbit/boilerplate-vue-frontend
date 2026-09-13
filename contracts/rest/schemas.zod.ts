@@ -2578,14 +2578,25 @@ export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
 export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault = true;
+export const exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMin = 0;
+export const exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMax = 1;
+
 export const exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const exportAccountDataResponseDataOrdersItemItemsItemTaxAmountMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemItemsItemNetAmountMin = 0;
+
 export const exportAccountDataResponseDataOrdersItemTotalItemsMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemTotalQuantityMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemTotalPriceMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemNetTotalMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemTaxTotalMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
 
@@ -2663,6 +2674,9 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .number()
                                 .min(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin
+                                )
+                                .describe(
+                                    'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
                                 ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
@@ -2675,7 +2689,19 @@ export const ExportAccountDataResponse = zod.strictObject({
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
+                            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                            taxRate: zod
+                                .number()
+                                .min(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMin
+                                )
+                                .max(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMax
+                                )
+                                .optional()
+                                .describe(
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                )
                         }),
                         quantity: zod.number().min(1),
                         locale: zod
@@ -2701,6 +2727,20 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .nullable()
                             .describe(
                                 "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                            ),
+                        taxAmount: zod
+                            .number()
+                            .min(exportAccountDataResponseDataOrdersItemItemsItemTaxAmountMin)
+                            .optional()
+                            .describe(
+                                "VAT included in this line's total, at its own frozen `taxRate`."
+                            ),
+                        netAmount: zod
+                            .number()
+                            .min(exportAccountDataResponseDataOrdersItemItemsItemNetAmountMin)
+                            .optional()
+                            .describe(
+                                "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
                     })
                 ),
@@ -2719,6 +2759,20 @@ export const ExportAccountDataResponse = zod.strictObject({
                     .min(exportAccountDataResponseDataOrdersItemTotalPriceMin)
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+                    ),
+                netTotal: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemNetTotalMin)
+                    .optional()
+                    .describe(
+                        "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+                    ),
+                taxTotal: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemTaxTotalMin)
+                    .optional()
+                    .describe(
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -2751,6 +2805,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
+                invoiceNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -4232,7 +4287,18 @@ export const ListProductsResponse = zod.strictObject({
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
                 title: zod.string(),
-                price: zod.number().min(listProductsResponseDataItemsItemPriceMin),
+                price: zod
+                    .number()
+                    .min(listProductsResponseDataItemsItemPriceMin)
+                    .describe(
+                        'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+                    ),
+                taxClass: zod
+                    .enum(['reduced', 'zero'])
+                    .optional()
+                    .describe(
+                        "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+                    ),
                 onHand: zod
                     .number()
                     .min(listProductsResponseDataItemsItemOnHandMin)
@@ -4321,7 +4387,16 @@ export const CreateProductBody = zod.strictObject({
         .describe(
             'One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.'
         ),
-    price: zod.number().min(createProductBodyPriceMin),
+    price: zod
+        .number()
+        .min(createProductBodyPriceMin)
+        .describe('Gross — VAT included. Same convention as `Product.price`.'),
+    taxClass: zod
+        .enum(['reduced', 'zero'])
+        .optional()
+        .describe(
+            "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+        ),
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     active: zod.boolean().default(createProductBodyActiveDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
@@ -4352,7 +4427,18 @@ export const CreateProductResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         title: zod.string(),
-        price: zod.number().min(createProductResponseDataPriceMin),
+        price: zod
+            .number()
+            .min(createProductResponseDataPriceMin)
+            .describe(
+                'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        taxClass: zod
+            .enum(['reduced', 'zero'])
+            .optional()
+            .describe(
+                "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
         onHand: zod
             .number()
             .min(createProductResponseDataOnHandMin)
@@ -4467,7 +4553,18 @@ export const GetProductByIdResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         title: zod.string(),
-        price: zod.number().min(getProductByIdResponseDataPriceMin),
+        price: zod
+            .number()
+            .min(getProductByIdResponseDataPriceMin)
+            .describe(
+                'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        taxClass: zod
+            .enum(['reduced', 'zero'])
+            .optional()
+            .describe(
+                "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
         onHand: zod
             .number()
             .min(getProductByIdResponseDataOnHandMin)
@@ -4545,7 +4642,17 @@ export const UpdateProductByIdBody = zod.strictObject({
         .describe(
             'One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.'
         ),
-    price: zod.number().min(updateProductByIdBodyPriceMin).optional(),
+    price: zod
+        .number()
+        .min(updateProductByIdBodyPriceMin)
+        .optional()
+        .describe('Gross — VAT included. Same convention as `Product.price`.'),
+    taxClass: zod
+        .enum(['reduced', 'zero'])
+        .optional()
+        .describe(
+            "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+        ),
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     imageUrl: zod
@@ -4575,7 +4682,18 @@ export const UpdateProductByIdResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         title: zod.string(),
-        price: zod.number().min(updateProductByIdResponseDataPriceMin),
+        price: zod
+            .number()
+            .min(updateProductByIdResponseDataPriceMin)
+            .describe(
+                'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        taxClass: zod
+            .enum(['reduced', 'zero'])
+            .optional()
+            .describe(
+                "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
         onHand: zod
             .number()
             .min(updateProductByIdResponseDataOnHandMin)
@@ -4671,7 +4789,16 @@ export const GetProductAdminResponse = zod.strictObject({
         .strictObject({
             id: zod.string().describe('Resource identifier'),
             title: zod.string(),
-            price: zod.number().min(getProductAdminResponseDataPriceMin),
+            price: zod
+                .number()
+                .min(getProductAdminResponseDataPriceMin)
+                .describe('Gross — VAT included. Same convention as `Product.price`.'),
+            taxClass: zod
+                .enum(['reduced', 'zero'])
+                .optional()
+                .describe(
+                    "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+                ),
             onHand: zod.number().min(getProductAdminResponseDataOnHandMin).optional(),
             reserved: zod.number().min(getProductAdminResponseDataReservedMin).optional(),
             available: zod.number().min(getProductAdminResponseDataAvailableMin).optional(),
@@ -4791,7 +4918,18 @@ export const SearchProductsResponse = zod.strictObject({
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
                 title: zod.string(),
-                price: zod.number().min(searchProductsResponseDataItemsItemPriceMin),
+                price: zod
+                    .number()
+                    .min(searchProductsResponseDataItemsItemPriceMin)
+                    .describe(
+                        'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+                    ),
+                taxClass: zod
+                    .enum(['reduced', 'zero'])
+                    .optional()
+                    .describe(
+                        "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+                    ),
                 onHand: zod
                     .number()
                     .min(searchProductsResponseDataItemsItemOnHandMin)
@@ -5180,14 +5318,25 @@ export const CheckoutBody = zod.strictObject({
 export const checkoutResponseDataOrderItemsItemProductPriceMin = 0;
 
 export const checkoutResponseDataOrderItemsItemProductRequiresShippingDefault = true;
+export const checkoutResponseDataOrderItemsItemProductTaxRateMin = 0;
+export const checkoutResponseDataOrderItemsItemProductTaxRateMax = 1;
+
 export const checkoutResponseDataOrderItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const checkoutResponseDataOrderItemsItemTaxAmountMin = 0;
+
+export const checkoutResponseDataOrderItemsItemNetAmountMin = 0;
+
 export const checkoutResponseDataOrderTotalItemsMin = 0;
 
 export const checkoutResponseDataOrderTotalQuantityMin = 0;
 
 export const checkoutResponseDataOrderTotalPriceMin = 0;
+
+export const checkoutResponseDataOrderNetTotalMin = 0;
+
+export const checkoutResponseDataOrderTaxTotalMin = 0;
 
 export const checkoutResponseDataOrderShippingCostMin = 0;
 
@@ -5205,7 +5354,12 @@ export const CheckoutResponse = zod.strictObject({
                     product: zod.strictObject({
                         id: zod.string().describe('Resource identifier'),
                         title: zod.string(),
-                        price: zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
+                        price: zod
+                            .number()
+                            .min(checkoutResponseDataOrderItemsItemProductPriceMin)
+                            .describe(
+                                'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                            ),
                         description: zod.string().optional(),
                         active: zod.boolean().optional(),
                         requiresShipping: zod
@@ -5217,7 +5371,15 @@ export const CheckoutResponse = zod.strictObject({
                         tags: zod.array(zod.string()).optional(),
                         createdAt: zod.iso.datetime({ offset: true }).optional(),
                         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                        deletedAt: zod.iso.datetime({ offset: true }).optional()
+                        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                        taxRate: zod
+                            .number()
+                            .min(checkoutResponseDataOrderItemsItemProductTaxRateMin)
+                            .max(checkoutResponseDataOrderItemsItemProductTaxRateMax)
+                            .optional()
+                            .describe(
+                                'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            )
                     }),
                     quantity: zod.number().min(1),
                     locale: zod
@@ -5243,6 +5405,20 @@ export const CheckoutResponse = zod.strictObject({
                         .nullable()
                         .describe(
                             "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                        ),
+                    taxAmount: zod
+                        .number()
+                        .min(checkoutResponseDataOrderItemsItemTaxAmountMin)
+                        .optional()
+                        .describe(
+                            "VAT included in this line's total, at its own frozen `taxRate`."
+                        ),
+                    netAmount: zod
+                        .number()
+                        .min(checkoutResponseDataOrderItemsItemNetAmountMin)
+                        .optional()
+                        .describe(
+                            "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                         )
                 })
             ),
@@ -5261,6 +5437,20 @@ export const CheckoutResponse = zod.strictObject({
                 .min(checkoutResponseDataOrderTotalPriceMin)
                 .describe(
                     'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+                ),
+            netTotal: zod
+                .number()
+                .min(checkoutResponseDataOrderNetTotalMin)
+                .optional()
+                .describe(
+                    "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+                ),
+            taxTotal: zod
+                .number()
+                .min(checkoutResponseDataOrderTaxTotalMin)
+                .optional()
+                .describe(
+                    "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
                 ),
             notes: zod.string().optional().describe('Optional order notes'),
             shippingMethod: zod
@@ -5293,6 +5483,7 @@ export const CheckoutResponse = zod.strictObject({
                     'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                 ),
             payBy: zod.iso.datetime({ offset: true }).optional(),
+            invoiceNumber: zod.string().optional(),
             transferInstructions: zod
                 .strictObject({
                     beneficiary: zod.string(),
@@ -5521,14 +5712,25 @@ export const ListOrdersQueryParams = zod.strictObject({
 export const listOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
 export const listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
+export const listOrdersResponseDataItemsItemItemsItemProductTaxRateMin = 0;
+export const listOrdersResponseDataItemsItemItemsItemProductTaxRateMax = 1;
+
 export const listOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const listOrdersResponseDataItemsItemItemsItemTaxAmountMin = 0;
+
+export const listOrdersResponseDataItemsItemItemsItemNetAmountMin = 0;
+
 export const listOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const listOrdersResponseDataItemsItemTotalQuantityMin = 0;
 
 export const listOrdersResponseDataItemsItemTotalPriceMin = 0;
+
+export const listOrdersResponseDataItemsItemNetTotalMin = 0;
+
+export const listOrdersResponseDataItemsItemTaxTotalMin = 0;
 
 export const listOrdersResponseDataItemsItemShippingCostMin = 0;
 
@@ -5559,7 +5761,10 @@ export const ListOrdersResponse = zod.strictObject({
                             title: zod.string(),
                             price: zod
                                 .number()
-                                .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
+                                .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin)
+                                .describe(
+                                    'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                                ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
                             requiresShipping: zod
@@ -5571,7 +5776,15 @@ export const ListOrdersResponse = zod.strictObject({
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
+                            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                            taxRate: zod
+                                .number()
+                                .min(listOrdersResponseDataItemsItemItemsItemProductTaxRateMin)
+                                .max(listOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
+                                .optional()
+                                .describe(
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                )
                         }),
                         quantity: zod.number().min(1),
                         locale: zod
@@ -5597,6 +5810,20 @@ export const ListOrdersResponse = zod.strictObject({
                             .nullable()
                             .describe(
                                 "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                            ),
+                        taxAmount: zod
+                            .number()
+                            .min(listOrdersResponseDataItemsItemItemsItemTaxAmountMin)
+                            .optional()
+                            .describe(
+                                "VAT included in this line's total, at its own frozen `taxRate`."
+                            ),
+                        netAmount: zod
+                            .number()
+                            .min(listOrdersResponseDataItemsItemItemsItemNetAmountMin)
+                            .optional()
+                            .describe(
+                                "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
                     })
                 ),
@@ -5615,6 +5842,20 @@ export const ListOrdersResponse = zod.strictObject({
                     .min(listOrdersResponseDataItemsItemTotalPriceMin)
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+                    ),
+                netTotal: zod
+                    .number()
+                    .min(listOrdersResponseDataItemsItemNetTotalMin)
+                    .optional()
+                    .describe(
+                        "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+                    ),
+                taxTotal: zod
+                    .number()
+                    .min(listOrdersResponseDataItemsItemTaxTotalMin)
+                    .optional()
+                    .describe(
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -5647,6 +5888,7 @@ export const ListOrdersResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
+                invoiceNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -5766,14 +6008,25 @@ export const CreateOrderBody = zod
 export const createOrderResponseDataItemsItemProductPriceMin = 0;
 
 export const createOrderResponseDataItemsItemProductRequiresShippingDefault = true;
+export const createOrderResponseDataItemsItemProductTaxRateMin = 0;
+export const createOrderResponseDataItemsItemProductTaxRateMax = 1;
+
 export const createOrderResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const createOrderResponseDataItemsItemTaxAmountMin = 0;
+
+export const createOrderResponseDataItemsItemNetAmountMin = 0;
+
 export const createOrderResponseDataTotalItemsMin = 0;
 
 export const createOrderResponseDataTotalQuantityMin = 0;
 
 export const createOrderResponseDataTotalPriceMin = 0;
+
+export const createOrderResponseDataNetTotalMin = 0;
+
+export const createOrderResponseDataTaxTotalMin = 0;
 
 export const createOrderResponseDataShippingCostMin = 0;
 
@@ -5790,7 +6043,12 @@ export const CreateOrderResponse = zod.strictObject({
                 product: zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
-                    price: zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
+                    price: zod
+                        .number()
+                        .min(createOrderResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -5800,7 +6058,15 @@ export const CreateOrderResponse = zod.strictObject({
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(createOrderResponseDataItemsItemProductTaxRateMin)
+                        .max(createOrderResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
                 }),
                 quantity: zod.number().min(1),
                 locale: zod
@@ -5826,6 +6092,18 @@ export const CreateOrderResponse = zod.strictObject({
                     .nullable()
                     .describe(
                         "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(createOrderResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(createOrderResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
             })
         ),
@@ -5844,6 +6122,20 @@ export const CreateOrderResponse = zod.strictObject({
             .min(createOrderResponseDataTotalPriceMin)
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(createOrderResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(createOrderResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -5876,6 +6168,7 @@ export const CreateOrderResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -5964,14 +6257,25 @@ export const UpdateOrderBody = zod.strictObject({
 export const updateOrderResponseDataItemsItemProductPriceMin = 0;
 
 export const updateOrderResponseDataItemsItemProductRequiresShippingDefault = true;
+export const updateOrderResponseDataItemsItemProductTaxRateMin = 0;
+export const updateOrderResponseDataItemsItemProductTaxRateMax = 1;
+
 export const updateOrderResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const updateOrderResponseDataItemsItemTaxAmountMin = 0;
+
+export const updateOrderResponseDataItemsItemNetAmountMin = 0;
+
 export const updateOrderResponseDataTotalItemsMin = 0;
 
 export const updateOrderResponseDataTotalQuantityMin = 0;
 
 export const updateOrderResponseDataTotalPriceMin = 0;
+
+export const updateOrderResponseDataNetTotalMin = 0;
+
+export const updateOrderResponseDataTaxTotalMin = 0;
 
 export const updateOrderResponseDataShippingCostMin = 0;
 
@@ -5988,7 +6292,12 @@ export const UpdateOrderResponse = zod.strictObject({
                 product: zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
-                    price: zod.number().min(updateOrderResponseDataItemsItemProductPriceMin),
+                    price: zod
+                        .number()
+                        .min(updateOrderResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -5998,7 +6307,15 @@ export const UpdateOrderResponse = zod.strictObject({
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(updateOrderResponseDataItemsItemProductTaxRateMin)
+                        .max(updateOrderResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
                 }),
                 quantity: zod.number().min(1),
                 locale: zod
@@ -6024,6 +6341,18 @@ export const UpdateOrderResponse = zod.strictObject({
                     .nullable()
                     .describe(
                         "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(updateOrderResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(updateOrderResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
             })
         ),
@@ -6042,6 +6371,20 @@ export const UpdateOrderResponse = zod.strictObject({
             .min(updateOrderResponseDataTotalPriceMin)
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(updateOrderResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(updateOrderResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -6074,6 +6417,7 @@ export const UpdateOrderResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6209,14 +6553,25 @@ export const SearchOrdersBody = zod.strictObject({
 export const searchOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
 
 export const searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
+export const searchOrdersResponseDataItemsItemItemsItemProductTaxRateMin = 0;
+export const searchOrdersResponseDataItemsItemItemsItemProductTaxRateMax = 1;
+
 export const searchOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const searchOrdersResponseDataItemsItemItemsItemTaxAmountMin = 0;
+
+export const searchOrdersResponseDataItemsItemItemsItemNetAmountMin = 0;
+
 export const searchOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const searchOrdersResponseDataItemsItemTotalQuantityMin = 0;
 
 export const searchOrdersResponseDataItemsItemTotalPriceMin = 0;
+
+export const searchOrdersResponseDataItemsItemNetTotalMin = 0;
+
+export const searchOrdersResponseDataItemsItemTaxTotalMin = 0;
 
 export const searchOrdersResponseDataItemsItemShippingCostMin = 0;
 
@@ -6247,7 +6602,10 @@ export const SearchOrdersResponse = zod.strictObject({
                             title: zod.string(),
                             price: zod
                                 .number()
-                                .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
+                                .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin)
+                                .describe(
+                                    'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                                ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
                             requiresShipping: zod
@@ -6259,7 +6617,15 @@ export const SearchOrdersResponse = zod.strictObject({
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
                             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                            deletedAt: zod.iso.datetime({ offset: true }).optional()
+                            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                            taxRate: zod
+                                .number()
+                                .min(searchOrdersResponseDataItemsItemItemsItemProductTaxRateMin)
+                                .max(searchOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
+                                .optional()
+                                .describe(
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                )
                         }),
                         quantity: zod.number().min(1),
                         locale: zod
@@ -6285,6 +6651,20 @@ export const SearchOrdersResponse = zod.strictObject({
                             .nullable()
                             .describe(
                                 "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                            ),
+                        taxAmount: zod
+                            .number()
+                            .min(searchOrdersResponseDataItemsItemItemsItemTaxAmountMin)
+                            .optional()
+                            .describe(
+                                "VAT included in this line's total, at its own frozen `taxRate`."
+                            ),
+                        netAmount: zod
+                            .number()
+                            .min(searchOrdersResponseDataItemsItemItemsItemNetAmountMin)
+                            .optional()
+                            .describe(
+                                "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
                     })
                 ),
@@ -6303,6 +6683,20 @@ export const SearchOrdersResponse = zod.strictObject({
                     .min(searchOrdersResponseDataItemsItemTotalPriceMin)
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+                    ),
+                netTotal: zod
+                    .number()
+                    .min(searchOrdersResponseDataItemsItemNetTotalMin)
+                    .optional()
+                    .describe(
+                        "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+                    ),
+                taxTotal: zod
+                    .number()
+                    .min(searchOrdersResponseDataItemsItemTaxTotalMin)
+                    .optional()
+                    .describe(
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -6335,6 +6729,7 @@ export const SearchOrdersResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
+                invoiceNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -6427,14 +6822,25 @@ export const GetOrderByIdParams = zod.strictObject({
 export const getOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const getOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const getOrderByIdResponseDataItemsItemProductTaxRateMin = 0;
+export const getOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
+
 export const getOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const getOrderByIdResponseDataItemsItemTaxAmountMin = 0;
+
+export const getOrderByIdResponseDataItemsItemNetAmountMin = 0;
+
 export const getOrderByIdResponseDataTotalItemsMin = 0;
 
 export const getOrderByIdResponseDataTotalQuantityMin = 0;
 
 export const getOrderByIdResponseDataTotalPriceMin = 0;
+
+export const getOrderByIdResponseDataNetTotalMin = 0;
+
+export const getOrderByIdResponseDataTaxTotalMin = 0;
 
 export const getOrderByIdResponseDataShippingCostMin = 0;
 
@@ -6451,7 +6857,12 @@ export const GetOrderByIdResponse = zod.strictObject({
                 product: zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
-                    price: zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
+                    price: zod
+                        .number()
+                        .min(getOrderByIdResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -6461,7 +6872,15 @@ export const GetOrderByIdResponse = zod.strictObject({
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(getOrderByIdResponseDataItemsItemProductTaxRateMin)
+                        .max(getOrderByIdResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
                 }),
                 quantity: zod.number().min(1),
                 locale: zod
@@ -6487,6 +6906,18 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .nullable()
                     .describe(
                         "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(getOrderByIdResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(getOrderByIdResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
             })
         ),
@@ -6505,6 +6936,20 @@ export const GetOrderByIdResponse = zod.strictObject({
             .min(getOrderByIdResponseDataTotalPriceMin)
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(getOrderByIdResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(getOrderByIdResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -6537,6 +6982,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6627,14 +7073,25 @@ export const UpdateOrderByIdBody = zod.strictObject({
 export const updateOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const updateOrderByIdResponseDataItemsItemProductTaxRateMin = 0;
+export const updateOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
+
 export const updateOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const updateOrderByIdResponseDataItemsItemTaxAmountMin = 0;
+
+export const updateOrderByIdResponseDataItemsItemNetAmountMin = 0;
+
 export const updateOrderByIdResponseDataTotalItemsMin = 0;
 
 export const updateOrderByIdResponseDataTotalQuantityMin = 0;
 
 export const updateOrderByIdResponseDataTotalPriceMin = 0;
+
+export const updateOrderByIdResponseDataNetTotalMin = 0;
+
+export const updateOrderByIdResponseDataTaxTotalMin = 0;
 
 export const updateOrderByIdResponseDataShippingCostMin = 0;
 
@@ -6651,7 +7108,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 product: zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
-                    price: zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
+                    price: zod
+                        .number()
+                        .min(updateOrderByIdResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -6663,7 +7125,15 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(updateOrderByIdResponseDataItemsItemProductTaxRateMin)
+                        .max(updateOrderByIdResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
                 }),
                 quantity: zod.number().min(1),
                 locale: zod
@@ -6689,6 +7159,18 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .nullable()
                     .describe(
                         "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(updateOrderByIdResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(updateOrderByIdResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
             })
         ),
@@ -6707,6 +7189,20 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             .min(updateOrderByIdResponseDataTotalPriceMin)
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(updateOrderByIdResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(updateOrderByIdResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -6739,6 +7235,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6869,14 +7366,25 @@ export const CancelOrderByIdBody = zod
 export const cancelOrderByIdResponseDataItemsItemProductPriceMin = 0;
 
 export const cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const cancelOrderByIdResponseDataItemsItemProductTaxRateMin = 0;
+export const cancelOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
+
 export const cancelOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const cancelOrderByIdResponseDataItemsItemTaxAmountMin = 0;
+
+export const cancelOrderByIdResponseDataItemsItemNetAmountMin = 0;
+
 export const cancelOrderByIdResponseDataTotalItemsMin = 0;
 
 export const cancelOrderByIdResponseDataTotalQuantityMin = 0;
 
 export const cancelOrderByIdResponseDataTotalPriceMin = 0;
+
+export const cancelOrderByIdResponseDataNetTotalMin = 0;
+
+export const cancelOrderByIdResponseDataTaxTotalMin = 0;
 
 export const cancelOrderByIdResponseDataShippingCostMin = 0;
 
@@ -6893,7 +7401,12 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 product: zod.strictObject({
                     id: zod.string().describe('Resource identifier'),
                     title: zod.string(),
-                    price: zod.number().min(cancelOrderByIdResponseDataItemsItemProductPriceMin),
+                    price: zod
+                        .number()
+                        .min(cancelOrderByIdResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
                     requiresShipping: zod
@@ -6905,7 +7418,15 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
                     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional()
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(cancelOrderByIdResponseDataItemsItemProductTaxRateMin)
+                        .max(cancelOrderByIdResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
                 }),
                 quantity: zod.number().min(1),
                 locale: zod
@@ -6931,6 +7452,18 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .nullable()
                     .describe(
                         "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(cancelOrderByIdResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(cancelOrderByIdResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
             })
         ),
@@ -6949,6 +7482,20 @@ export const CancelOrderByIdResponse = zod.strictObject({
             .min(cancelOrderByIdResponseDataTotalPriceMin)
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(cancelOrderByIdResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(cancelOrderByIdResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -6981,6 +7528,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),

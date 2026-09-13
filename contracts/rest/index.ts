@@ -236,11 +236,25 @@ export interface UserEnvelope {
     data: User;
 }
 
+/**
+ * A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+ */
+export type TaxClass = (typeof TaxClass)[keyof typeof TaxClass];
+
+export const TaxClass = {
+    reduced: 'reduced',
+    zero: 'zero'
+} as const;
+
 export interface Product {
     id: Id;
     title: string;
-    /** @minimum 0 */
+    /**
+     * Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.
+     * @minimum 0
+     */
     price: number;
+    taxClass?: TaxClass;
     /**
      * Units physically present, whether or not they are spoken for.
      * @minimum 0
@@ -295,7 +309,10 @@ export interface OrderTransferInstructions {
 export interface OrderLineProduct {
     id: Id;
     title: string;
-    /** @minimum 0 */
+    /**
+     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price: number;
     description?: string;
     active?: boolean;
@@ -305,6 +322,12 @@ export interface OrderLineProduct {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
+    /**
+     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.
+     * @minimum 0
+     * @maximum 1
+     */
+    taxRate?: number;
 }
 
 export interface OrderLineCurrent {
@@ -319,6 +342,16 @@ export interface OrderItem {
     locale: Locale;
     /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
     current: OrderLineCurrent | null;
+    /**
+     * VAT included in this line's total, at its own frozen `taxRate`.
+     * @minimum 0
+     */
+    readonly taxAmount?: number;
+    /**
+     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+     * @minimum 0
+     */
+    readonly netAmount?: number;
 }
 
 /**
@@ -377,6 +410,16 @@ export interface Order {
      * @minimum 0
      */
     totalPrice: number;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order.
+     * @minimum 0
+     */
+    readonly netTotal?: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order.
+     * @minimum 0
+     */
+    readonly taxTotal?: number;
     /** Optional order notes */
     notes?: string;
     /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
@@ -389,6 +432,7 @@ export interface Order {
     shippingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
     payBy?: string;
+    readonly invoiceNumber?: string;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     actions?: OrderActions;
@@ -1960,8 +2004,12 @@ export interface ProductTranslationsWrite {
 
 export interface CreateProductRequest {
     translations: ProductTranslationsWrite;
-    /** @minimum 0 */
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price: number;
+    taxClass?: TaxClass;
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
@@ -1974,8 +2022,12 @@ export interface CreateProductRequest {
 export interface CreateProductRequestMultipart {
     /** JSON-encoded `ProductTranslationsWrite`. */
     translations: string;
-    /** @minimum 0 */
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price: number;
+    taxClass?: TaxClass;
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
@@ -2018,8 +2070,12 @@ export interface CatalogueFacetsEnvelope {
 
 export interface UpdateProductRequest {
     translations?: ProductTranslationsWrite;
-    /** @minimum 0 */
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price?: number;
+    taxClass?: TaxClass;
     active?: boolean;
     requiresShipping?: boolean;
     imageUrl?: ImageUrl;
@@ -2030,8 +2086,12 @@ export interface UpdateProductRequest {
 export interface UpdateProductRequestMultipart {
     /** JSON-encoded `ProductTranslationsWrite`. */
     translations?: string;
-    /** @minimum 0 */
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price?: number;
+    taxClass?: TaxClass;
     active?: boolean;
     requiresShipping?: boolean;
     /** Optional product image */
@@ -2048,8 +2108,12 @@ export type ProductAdminTranslations = { [key: string]: ProductTranslationFields
 export interface ProductAdmin {
     id: Id;
     title: string;
-    /** @minimum 0 */
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
     price: number;
+    taxClass?: TaxClass;
     /** @minimum 0 */
     readonly onHand?: number;
     /** @minimum 0 */
@@ -4873,6 +4937,9 @@ export const createProductWithMultipart = (
     const formData = new FormData();
     formData.append(`translations`, createProductRequestMultipart.translations);
     formData.append(`price`, createProductRequestMultipart.price.toString());
+    if (createProductRequestMultipart.taxClass !== undefined) {
+        formData.append(`taxClass`, createProductRequestMultipart.taxClass);
+    }
     if (createProductRequestMultipart.onHand !== undefined) {
         formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
     }
@@ -5016,6 +5083,9 @@ export const updateProductByIdWithMultipart = (
     }
     if (updateProductRequestMultipart.price !== undefined) {
         formData.append(`price`, updateProductRequestMultipart.price.toString());
+    }
+    if (updateProductRequestMultipart.taxClass !== undefined) {
+        formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
     }
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());

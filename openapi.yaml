@@ -4640,6 +4640,12 @@ components:
         deletedAt:
           type: string
           format: date-time
+    TaxClass:
+      type: string
+      enum:
+        - reduced
+        - zero
+      description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
     Product:
       type: object
       additionalProperties: false
@@ -4656,6 +4662,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         onHand:
           type: integer
           minimum: 0
@@ -4767,6 +4776,7 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
         description:
           type: string
         active:
@@ -4791,6 +4801,12 @@ components:
         deletedAt:
           type: string
           format: date-time
+        taxRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.
     OrderLineCurrent:
       type: object
       additionalProperties: false
@@ -4822,6 +4838,18 @@ components:
           allOf:
             - $ref: '#/components/schemas/OrderLineCurrent'
           description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: VAT included in this line's total, at its own frozen `taxRate`.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
     PaymentMethodId:
       type: string
       enum:
@@ -4899,6 +4927,18 @@ components:
           minimum: 0
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
+        netTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order.
+        taxTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: 'Every VAT collected on this order: the lines'' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line''s own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order.'
         notes:
           type: string
           description: Optional order notes
@@ -4917,6 +4957,10 @@ components:
         payBy:
           type: string
           format: date-time
+        invoiceNumber:
+          type: string
+          readOnly: true
+          example: 2026-000041
         transferInstructions:
           $ref: '#/components/schemas/OrderTransferInstructions'
         status:
@@ -7679,6 +7723,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         onHand:
           type: integer
           minimum: 0
@@ -7713,6 +7760,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         onHand:
           type: integer
           minimum: 0
@@ -7817,6 +7867,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         active:
           type: boolean
         requiresShipping:
@@ -7842,6 +7895,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         active:
           type: boolean
         requiresShipping:
@@ -7876,6 +7932,9 @@ components:
           type: number
           format: double
           minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          $ref: '#/components/schemas/TaxClass'
         onHand:
           type: integer
           minimum: 0
