@@ -24,14 +24,15 @@ import { unpackRules } from '@casl/ability/extra';
 import type { Abilities } from '@types';
 
 /**
- * The four concrete actions a screen may ask about — CASL's own vocabulary, as
- * `shared/authorization-keys.yaml` declares it, minus the wildcard.
+ * The concrete actions a screen may ask about — CASL's own vocabulary, as
+ * `shared/authorization-keys.yaml` declares it, minus the wildcard. `checkout` is the one
+ * addition beyond CRUD, `cart.checkout`'s action and nowhere else.
  *
  * `manage` is deliberately absent from what a CLIENT may ask for: the server expands a `manage`
  * key into the concrete actions its module declares and never publishes a `manage` RULE, so
  * asking for one always answers no. A screen asks for the action it actually performs.
  */
-export type PermissionAction = 'read' | 'create' | 'update' | 'delete';
+export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'checkout';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -69,16 +70,6 @@ export interface SessionViewer {
      * remote/default image or while a digest job is still pending.
      */
     thumbnailUrl?: string;
-    /**
-     * Whether they have proved they hold the address in {@link email}.
-     *
-     * Here rather than in the account module's record because the SHELL is what warns them: the
-     * banner rides every page, not just the profile. Required, and `false` when the API omits the
-     * field, so this side reads an account the API has never seen confirmed exactly the way
-     * `requireVerified` does — anything else shows no warning to precisely the people the checkout
-     * is about to refuse.
-     */
-    verified: boolean;
 }
 
 /**
@@ -336,16 +327,16 @@ export const useSessionStore = defineStore('session', () => {
                 role?: string;
                 imageUrl?: string;
                 thumbnailUrl?: string;
-                verified?: boolean;
             }>(data);
             return setViewer(
                 payload && {
                     id: payload.id,
                     email: payload.email,
-                    role: payload.role ?? 'customer',
+                    // `unverified`, not `customer` — same least-privileged fallback the backend
+                    // resolves an absent role to (`account/module.ts`).
+                    role: payload.role ?? 'unverified',
                     imageUrl: payload.imageUrl,
-                    thumbnailUrl: payload.thumbnailUrl,
-                    verified: payload.verified ?? false
+                    thumbnailUrl: payload.thumbnailUrl
                 }
             ).then(() => payload);
         });

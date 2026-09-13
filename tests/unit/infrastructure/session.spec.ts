@@ -30,7 +30,7 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
-    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer', verified: true });
+    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
     return store;
 };
 
@@ -247,6 +247,23 @@ describe('loadViewer', () => {
                 expect(store.tenantAbility.can('delete', 'Product')).toBe(true);
                 expect(store.can('delete', 'Product')).toBe(true);
             });
+    });
+
+    /**
+     * `checkout` is the one action beyond CRUD `can` accepts — `cart.checkout`'s action and
+     * nowhere else, see `PermissionAction`'s own docblock.
+     */
+    it('answers a checkout ability the same way it answers a CRUD one', () => {
+        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'customer' } });
+        getMyAbilitiesMock.mockResolvedValue({
+            data: { platform: [], tenant: [['checkout', 'Cart']], version: 1 }
+        });
+        const store = useSessionStore();
+        store.setAccessToken('token');
+
+        return store.loadViewer().then(() => {
+            expect(store.can('checkout', 'Cart')).toBe(true);
+        });
     });
 
     /**

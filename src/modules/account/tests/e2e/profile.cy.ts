@@ -257,7 +257,7 @@ describe('Profile self-service', () => {
             cy.get('#profile-page form button[type=submit]').first().click();
 
             /*
-             * The API parks the new address in `pendingEmail` and leaves `email`/`verified` alone
+             * The API parks the new address in `pendingEmail` and leaves `email`/`verifiedAt` alone
              * until a token proves it, so asking for a change never unverifies the account. No
              * banner, because nothing about the CURRENT address changed.
              */

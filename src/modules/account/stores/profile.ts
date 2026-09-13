@@ -97,11 +97,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
             user && {
                 id: user.id,
                 email: user.email,
-                role: user.role ?? 'customer',
-                imageUrl: user.imageUrl,
-                // `?? false` for the same reason the API's own guard reads it that way: a record
-                // predating the field is not evidence the address was ever proved.
-                verified: user.verified ?? false
+                // `unverified`, not `customer` — same least-privileged fallback the backend
+                // resolves an absent role to (`account/module.ts`).
+                role: user.role ?? 'unverified',
+                imageUrl: user.imageUrl
             }
         );
 
@@ -143,8 +142,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * routing self-service through them answered every non-admin a 403 — the bug this store
      * shipped until the API grew the self-service route. The payload is deliberately what a user
      * owns: no `password` (that is {@link changePassword}, which proves the current one) and no
-     * role or account state. Changing the email unverifies the account server-side; the fresh
-     * record in the response carries that, so the banner appears without a refetch.
+     * role or account state. A new email is parked in `pendingEmail` rather than applied — `email`
+     * and the verification state stay untouched until `POST /account/email-change-confirm` proves
+     * it — so the fresh record in the response is what shows the caller their change is pending.
      *
      * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone` and
      *  `website` are sent. An `imageUpload` switches the call to `multipart/form-data` — the
@@ -163,7 +163,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         // Listed field by field rather than spread: a `Partial<User>` can carry `role`,
-        // `verified` or `deletedAt`, and none of those is a user's to send. The two branches
+        // `verifiedAt` or `deletedAt`, and none of those is a user's to send. The two branches
         // differ only in how the picture travels.
         const fields = {
             email: userData.email,
@@ -191,10 +191,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
             { loadingKey: avatarLoadingPostfix(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
-             * Refetch rather than trust the local patch: `updateTarget` merges what was SENT,
-             * and the server writes facts the patch never carried — an email change comes back
-             * `verified: false`, and the banner reads the record, not the response. One extra
-             * GET per profile save, for a store that never invents state.
+             * Refetch rather than trust the local patch: `updateTarget` merges what was SENT, and
+             * the server writes facts the patch never carried — a new `pendingEmail`, a processed
+             * avatar digest. One extra GET per profile save, for a store that never invents state.
              */
             fetchProfile(true).then(() => result)
         );
