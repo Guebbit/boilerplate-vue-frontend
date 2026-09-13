@@ -113,7 +113,7 @@ A screenshot is only useful if an unchanged app produces identical pixels twice.
 1. **Viewport** — pinned to 1280×800 in `cypress.config.ts`. Image size is part of the diff.
 2. **Clock** — frozen by `cy.freezeForVisual()`. Anything rendering a date or a relative time changes by the minute.
 3. **Animations** — killed by the same command, via an injected stylesheet that zeroes every `transition` and `animation`. A screenshot caught mid-transition differs from itself between runs.
-4. **Data** — the demo profile, whose backend reseeds the same dataset on every reset. `cy.resetState()` in the `beforeEach` guarantees identical data and a signed-out session; the navigation gains a whole column (Cart, Orders, the account email, Logout) when signed in, so auth state changes the layout, not just the content.
+4. **Data** — the demo profile, whose backend puts the same dataset back on every restore. `cy.restore()` in the `beforeEach` guarantees identical data and a signed-out session; the navigation gains a whole column (Cart, Orders, the account email, Logout) when signed in, so auth state changes the layout, not just the content.
 5. **The page actually being the page.** See below — this one was a real bug.
 
 ### The bug this suite found in the test harness

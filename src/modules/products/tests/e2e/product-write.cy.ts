@@ -11,7 +11,7 @@ const unique = () => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 describe('Product write surface', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.loginAs('owner');
     });
 

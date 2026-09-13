@@ -24,8 +24,10 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
  * move itself is a wishlist endpoint, and this store is only asked to refetch. Either way the cart
  * is the one publishing a store, while the modules it depends on publish components and schemas.
  *
- * The one arrow going out is `delivery`, and it is `published-language`: the checkout mounts
- * `ShippingSelector` and never learns what a shipping rate is.
+ * Two arrows go out, both `published-language`: `delivery`, whose `ShippingSelector` the checkout
+ * mounts without ever learning what a shipping rate is, and `payments`, whose
+ * `PaymentMethodSelector` the checkout mounts the same way — this store never learns what a
+ * payment method costs to offer, only which ids exist.
  *
  * Checkout is the one screen where price, stock, address and shipping have to agree at once,
  * and the only place this client holds a multi-step flow of its own. Every other module points

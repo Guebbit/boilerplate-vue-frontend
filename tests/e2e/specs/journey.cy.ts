@@ -11,8 +11,8 @@
 describe('The customer journey', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
-        // `cy.resetState()` clears the session server-side, but the page in front of it already
+        cy.restore();
+        // `cy.restore()` clears the session server-side, but the page in front of it already
         // booted with the old one — reload so the journey genuinely starts as a guest.
         cy.visit('/en');
     });

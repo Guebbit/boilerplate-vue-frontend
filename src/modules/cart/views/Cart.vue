@@ -26,10 +26,11 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
-import type { CartItem } from '@types';
+import type { CartItem, PaymentMethodId } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { ShippingSelector } from '@/modules/delivery';
+import { PaymentMethodSelector } from '@/modules/payments';
 
 /**
  * Translation function.
@@ -70,6 +71,11 @@ const { cartItems, cartSummary } = storeToRefs(useCartStore());
 const shippingMethodId = ref<string | undefined>();
 
 /**
+ * The chosen payment method — optional; the API defaults an omitted choice to `card`.
+ */
+const paymentMethodId = ref<PaymentMethodId | undefined>();
+
+/**
  * The short lines a `CART_INSUFFICIENT_STOCK` refusal named, rendered inline so the customer
  * fixes the basket in one pass rather than being refused again on the next attempt. Empty
  * whenever the last checkout did not end in this particular refusal.
@@ -93,11 +99,12 @@ const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
  */
 const checkout = () => {
     insufficientStockLines.value = [];
-    return placeOrder(
-        shippingMethodId.value === undefined
-            ? undefined
-            : { shippingMethodId: shippingMethodId.value }
-    )
+    return placeOrder({
+        ...(shippingMethodId.value === undefined
+            ? {}
+            : { shippingMethodId: shippingMethodId.value }),
+        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value })
+    })
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
@@ -276,6 +283,7 @@ onMounted(() =>
                     </dl>
                     <v-divider class="my-3" />
                     <ShippingSelector v-model="shippingMethodId" :items-total="cartSummary.total" />
+                    <PaymentMethodSelector v-model="paymentMethodId" />
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>

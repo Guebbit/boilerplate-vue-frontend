@@ -2,7 +2,7 @@
  * Cypress configuration — every suite that needs a real browser.
  *
  * ── Two profiles over one set of specs ───────────────────────────────────────────────────────
- * The specs do not know which backend they are talking to. `cy.resetState()` branches on the
+ * The specs do not know which backend they are talking to. `cy.restore()` branches on the
  * `liveProfile` flag, so the same file runs against the demo backend (the default) or
  * against the real API — see the `test:e2e*` scripts.
  * A spec that only makes sense in one profile opens with `cy.skipUnlessLive()` rather than being
@@ -20,7 +20,13 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
-import { resolveBackendPath, resolveLiveResetCommand } from './scripts/pairing/paired-backend-path';
+// The live profile's description file, read by the `readScenarioFile` task below.
+import { existsSync, readFileSync } from 'node:fs';
+import {
+    LIVE_SCENARIO_FILE,
+    resolveBackendPath,
+    resolveLiveResetCommand
+} from './scripts/pairing/paired-backend-path';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
@@ -125,7 +131,23 @@ export default defineConfig({
                 warn: (message: string) => {
                     console.warn(`[e2e] ${message}`);
                     return null;
-                }
+                },
+
+                /*
+                 * What the LIVE backend's last reset said it seeded — the accounts and the row id
+                 * behind each guarantee name. The demo profile asks `GET /__test/scenario`
+                 * instead; a live deployment mounts no such route, so its own
+                 * `--describe-to=<file>` writes the same JSON and this reads it back.
+                 *
+                 * `null` rather than a throw when the file is absent: a checkout with no
+                 * `LIVE_RESET_COMMAND` never resets and so never describes itself, which is a
+                 * supported configuration. `tests/support/e2e/scenario.ts` turns the `null` into
+                 * an error naming the variable, at the moment a spec actually needs an account.
+                 */
+                readScenarioFile: () =>
+                    existsSync(LIVE_SCENARIO_FILE)
+                        ? (JSON.parse(readFileSync(LIVE_SCENARIO_FILE, 'utf8')) as unknown)
+                        : null
             });
         },
         /*
@@ -193,17 +215,21 @@ export default defineConfig({
             // which is more predictable here than relying on loadEnv to have picked up a
             // process-level override.
             liveProfile: false,
-            // Only used by the live profile: `cy.resetState()` shells out to this checkout, through
+            // Only used by the live profile: `cy.restore()` shells out to this checkout, through
             // `LIVE_RESET_COMMAND` below, to restore the seed scenario between tests. `BACKEND_PATH`
             // env override, or a sibling-checkout default, always resolved to an absolute path — see
             // scripts/pairing/paired-backend-path.ts, shared with scripts/pairing/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
-            // Only used by the live profile: the command `cy.resetState()` shells out to. The two
+            // Only used by the live profile: the command `cy.restore()` shells out to. The two
             // paired backends expose the reset through different runners, so this is a command
             // rather than a script name — see scripts/pairing/paired-backend-path.ts. `null` when
             // LIVE_RESET_COMMAND is unset, and then the live profile does not reset at all.
             liveResetCommand: resolveLiveResetCommand() ?? null,
+            // Only used by the live profile: where that reset command's `--describe-to` writes
+            // the accounts and subject ids `tests/support/e2e/scenario.ts` then reads. The demo
+            // profile asks `GET /__test/scenario` instead, which a live deployment never mounts.
+            liveScenarioFile: LIVE_SCENARIO_FILE,
             /*
              * Where the live profile reads its analytics back from. Both repos write into ONE
              * Umami website, and `analytics.cy.ts` is the only thing that can prove each event

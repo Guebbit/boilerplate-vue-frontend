@@ -27,7 +27,7 @@
  * emitted into nothing and there is no row to count.
  * `cy.skipUnlessLive()` is the repo's existing answer for that, and using it rather than a local
  * check is what keeps the reason in one place: this spec is live-only for the same reason
- * `cy.resetState()` is, and it should stop running for the same reason too.
+ * `cy.restore()` is, and it should stop running for the same reason too.
  */
 
 /**
@@ -203,7 +203,7 @@ describe('Analytics, end to end', () => {
     it('records one add-to-cart once, not twice', () => {
         const since = Date.now() - 60 * 1000;
 
-        cy.resetState();
+        cy.restore();
 
         umamiSession().then((session) => {
             eventCounts(session, since).then((before) => {
@@ -214,8 +214,8 @@ describe('Analytics, end to end', () => {
                     // click that sets both trackers off at once. Any in-stock product walks the
                     // same path a person does, so the subject is asked for by role.
                     cy.loginAs('user');
-                    cy.productInRole('inStock').then((product) => {
-                        cy.visit(`/en/products/${product.id}`);
+                    cy.subjectId('product.inStock').then((id) => {
+                        cy.visit(`/en/products/${id}`);
                     });
 
                     cy.get('[data-test=add-to-cart]').should('be.enabled').click();

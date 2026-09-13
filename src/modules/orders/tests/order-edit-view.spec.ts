@@ -10,6 +10,8 @@
  * `@/modules/payments` is mocked rather than imported past its barrel — `useOrderRefund` would
  * otherwise fire a real, unmocked HTTP call this suite has nothing to answer, and reaching its
  * store directly is exactly what `eslint-plugin-boundaries` forbids for a sibling module.
+ * `RecordOfflinePaymentForm` is stubbed the same way, for the same reason: mounting the real one
+ * would wire in `useRecordOfflinePayment` and a live payments store this suite never seeds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -30,7 +32,11 @@ import type { Order } from '@types';
 wireModulesIntoCore();
 
 vi.mock('@/modules/payments', () => ({
-    useOrderRefund: () => ({ canRefund: ref(false), refund: () => Promise.resolve() })
+    useOrderRefund: () => ({ canRefund: ref(false), refund: () => Promise.resolve() }),
+    RecordOfflinePaymentForm: {
+        name: 'RecordOfflinePaymentForm',
+        template: '<div data-test="record-offline-payment-form" />'
+    }
 }));
 
 /**
@@ -160,6 +166,44 @@ describe('a list-cache arrival gains actions', () => {
                 expect(
                     wrapper.get('[data-test=button-cancel-and-refund]').attributes('disabled')
                 ).not.toBe(undefined);
+            });
+    });
+});
+
+describe('recording a payment by hand', () => {
+    it('offers the form while the order can still reach paid', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: { transitions: [OrderStatus.cancelled], cancel: true, pay: true }
+        });
+
+        const wrapper = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(true);
+            });
+    });
+
+    it('withdraws the form once the order can no longer reach paid', () => {
+        // The same gate the customer's own card form uses — a paid, shipped or cancelled order has
+        // nothing left for either form to record.
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.paid,
+            actions: { transitions: [OrderStatus.processing], cancel: true, pay: false }
+        });
+
+        const wrapper = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(
+                    false
+                );
             });
     });
 });

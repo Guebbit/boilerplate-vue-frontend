@@ -1,14 +1,18 @@
 /**
  * @module
- * Payments — public barrel. One component: the panel the order page mounts.
+ * Payments — public barrel. Four components: the panel and the transfer-instructions card the
+ * order page mounts, the method choice the cart's checkout mounts, and the form the operator's
+ * order-edit page mounts.
  *
- * The store stays inside. Paying happens ON an order, through the panel, and a sibling reaching
- * the store directly would be building a second pay flow next to the one that exists.
- *
- * `useOrderRefund` is the one thing published beside the panel, because the operator's refund is a
- * second legitimate consumer and it is not a pay flow. It answers one question and performs one
- * action, which is why publishing it does not reopen what the paragraph above closes.
+ * The store stays inside, and so does `useRecordOfflinePayment`: only the form above uses it, and
+ * that form lives in this same module, so there is no sibling for it to be published to.
+ * `useOrderRefund` is different — `orders`' own edit page calls it directly, which is why it alone
+ * crosses the barrel. It answers one question and performs one action, which is why publishing it
+ * does not reopen what reaching the store directly would.
  */
 
 export { default as PaymentPanel } from './components/PaymentPanel.vue';
+export { default as PaymentMethodSelector } from './components/PaymentMethodSelector.vue';
+export { default as TransferInstructionsPanel } from './components/TransferInstructionsPanel.vue';
+export { default as RecordOfflinePaymentForm } from './components/RecordOfflinePaymentForm.vue';
 export { useOrderRefund } from './composables/use-order-refund';

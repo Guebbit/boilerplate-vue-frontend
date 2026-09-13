@@ -27,8 +27,8 @@ sweepVisual(
             route: '/en/locales',
             readySelector: '[data-test=list-row]',
             prepare: () => {
-                cy.productInRole('inStock').then((product) => {
-                    cy.visit(`/en/locales/translations/product/${product.id}`);
+                cy.subjectId('product.inStock').then((id) => {
+                    cy.visit(`/en/locales/translations/product/${id}`);
                 });
                 cy.get('[data-test=translation-tabs]').should('exist');
                 cy.get('h1').should('be.visible');

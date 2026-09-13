@@ -9,8 +9,8 @@ export default {
  * @module
  * Order detail page for both the customer and the operator. Loads one order
  * by route id, forces a detail re-fetch when the cached record lacks
- * `actions`, and mounts the payment/shipment panels as self-contained
- * published-language components.
+ * `actions`, and mounts the payment/transfer-instructions/shipment panels as
+ * self-contained published-language components.
  */
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
@@ -37,7 +37,7 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
-import { PaymentPanel } from '@/modules/payments';
+import { PaymentPanel, TransferInstructionsPanel } from '@/modules/payments';
 import { ShipmentPanel } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 
@@ -264,6 +264,11 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :order-payable="currentOrder.actions?.pay"
                         @paid="fetchOrder(currentOrder.id, { forced: true })"
+                    />
+                    <TransferInstructionsPanel
+                        v-if="currentOrder?.transferInstructions"
+                        :instructions="currentOrder.transferInstructions"
+                        :pay-by="currentOrder.payBy"
                     />
                     <ShipmentPanel
                         v-if="currentOrder"

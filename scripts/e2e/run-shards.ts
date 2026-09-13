@@ -19,7 +19,7 @@
  *
  * ── WHY THIS IS SAFE HERE, AND NOT SAFE FOR THE LIVE PROFILE ─────────────────────────────────────
  * Each shard gets its OWN demo backend (the paired repo's `npm run demo`: the real API against an
- * in-memory Mongo, seeded, booted below on ports 3101+). `cy.resetState()` reseeds only that
+ * in-memory Mongo, seeded, booted below on ports 3101+). `cy.restore()` reseeds only that
  * shard's database, so shards cannot see each other. The built bundle is shared; each shard's
  * Cypress carries `CYPRESS_apiUrl`, which `cy.visit` injects into the page as the runtime
  * `__E2E_API_URL` override (see `src/infrastructure/http/client.ts`).
@@ -63,7 +63,7 @@ try {
 if (process.env.CYPRESS_liveProfile === 'true') {
     console.error(
         '\n[e2e-shard] Refusing to shard the LIVE profile.\n\n' +
-            '  cy.resetState() re-seeds the paired backend’s ONE real database, which every\n' +
+            '  cy.restore() re-seeds the paired backend’s ONE real database, which every\n' +
             '  shard would reset out from under the others. Run `npm run test:e2e:live`, which\n' +
             '  is sequential for exactly this reason. (The demo profile shards safely: each\n' +
             '  shard boots its own in-memory backend below.)\n'
@@ -122,7 +122,7 @@ console.log(
  * COLD cache race that work. Observed three times, always on the first sharded run after a support
  * file was edited, never on a warm run and never on a solo one: one shard gets a truncated bundle
  * and fails with `Unexpected end of input`, or loads a support file that never registered its
- * commands and fails with `cy.resetState is not a function`. Both are load-time failures — no test
+ * commands and fails with `cy.restore is not a function`. Both are load-time failures — no test
  * had run — which is how they are distinguishable from an ordinary flaky assertion.
  *
  * A stagger is the cheapest fix that addresses the cause: the first process populates the cache

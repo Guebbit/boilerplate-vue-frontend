@@ -13,7 +13,7 @@
 describe('Wishlist', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('the heart saves and unsaves from the product page', () => {

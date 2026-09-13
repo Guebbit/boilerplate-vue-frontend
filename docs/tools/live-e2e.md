@@ -110,7 +110,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `host -- scenario:apply:reset` (under the demo profile it POSTs the backend's in-process `/__test/restore` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/pairing/paired-backend-path.ts`, which `cypress.config.ts` reads:
+`cy.restore()` shells out to the backend checkout for `host -- scenario:apply:reset` (under the demo profile it POSTs the backend's in-process `/__test/restore` instead — see `tests/support/e2e/commands.ts`). The live command also carries `--describe-to={describeTo}`: a live deployment mounts no `/__test/scenario`, so the reset writes the accounts and subject ids to a file that `tests/support/e2e/scenario.ts` reads back. Without `LIVE_RESET_COMMAND` there is no reset and no description, and a spec asking for either says so. Which checkout that is comes from `scripts/pairing/paired-backend-path.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -134,7 +134,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here, and not in a copy either. The demo dataset lives in the backend's `scenarios/` and stays there: nothing in it is in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and the login credentials the suites type are their own — `tests/support/e2e/accounts.ts`, which any paired backend must honour. Whether the seeded rows still hold what the specs lean on is a property of the backend's scenarios, and the backend asserts it in its own test suite: each module declares the guarantees its scenario makes, and `boilerplate-node-backend/scenarios/check.ts` fails the suite when a freshly seeded database stops holding one.
+Not here, and not in a copy either. The demo dataset lives in the backend's `scenarios/` and stays there: nothing in it is in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and it no longer keeps a copy of the credentials either: the backend publishes them, along with a row id per guarantee name, and `tests/support/e2e/scenario.ts` asks. Whether those rows still hold what the specs lean on is a property of the backend's scenarios, and the backend asserts it in its own test suite: each module declares the guarantees its scenario makes, and `boilerplate-node-backend/scenarios/check.ts` fails the suite when a built scenario stops offering one.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 
@@ -144,14 +144,15 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 ## File map
 
-| Path                                             | Contents                                                          |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| `scripts/pairing/paired-backend-path.ts`         | `resolveBackendPath()`, read by `cypress.config.ts`               |
-| `src/infrastructure/http/index.ts`               | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate                    |
-| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against         |
-| `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs) |
-| `tests/support/e2e/commands.ts`                  | `cy.resetState()`'s live branch, `cy.skipUnlessLive()`            |
-| `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                |
+| Path                                             | Contents                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| `scripts/pairing/paired-backend-path.ts`         | `resolveBackendPath()`, read by `cypress.config.ts`                |
+| `src/infrastructure/http/index.ts`               | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate                     |
+| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against          |
+| `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs)  |
+| `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`                |
+| `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file |
+| `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                 |
 
 ## Related pages
 

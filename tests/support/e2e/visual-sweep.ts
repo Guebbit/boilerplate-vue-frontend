@@ -76,7 +76,7 @@ export const sweepVisual = (
              * suite stay green.
              */
             cy.visit('/en');
-            cy.resetState();
+            cy.restore();
             if (role) cy.loginAs(role);
         });
 

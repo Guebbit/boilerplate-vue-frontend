@@ -12,9 +12,11 @@ import {
     confirmPayment,
     syncPayment,
     getPaymentByOrder,
-    refundPaymentByOrder
+    refundPaymentByOrder,
+    recordOfflinePayment as recordOfflinePaymentRequest,
+    listPaymentMethods
 } from '@api';
-import type { Payment } from '@types';
+import type { Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
@@ -46,6 +48,25 @@ export const usePaymentsStore = defineStore('payments', () => {
      * The current order's payment, or undefined while none exists (no intent yet, or a guest).
      */
     const payment = ref<Payment | undefined>();
+
+    /**
+     * The methods this deployment offers — `card` always, `bank_transfer` once the deployment has
+     * configured it. Quoted, not authoritative: checkout re-validates the choice server-side.
+     */
+    const methods = ref<PaymentMethodOption[]>([]);
+
+    /**
+     * Loads the payment methods this deployment offers.
+     *
+     * @returns A promise resolving with the methods.
+     */
+    const fetchMethods = () =>
+        fetchAny(() =>
+            listPaymentMethods().then((response) => {
+                methods.value = response.data.methods;
+                return methods.value;
+            })
+        );
 
     /**
      * Loads the payment behind an order. A 404 is an answer — no intent yet — not an error:
@@ -132,12 +153,35 @@ export const usePaymentsStore = defineStore('payments', () => {
             })
         );
 
+    /**
+     * Records money that arrived outside the provider — cash, a transfer, by hand. Admin-only at
+     * the API; a caller without the role gets the 403 this rethrows.
+     *
+     * The order itself moves `pending → paid` server-side, which this call does not answer for —
+     * unlike `payForOrder`, whose caller reloads the order once the LOCAL payment says `succeeded`,
+     * this one has no in-flight state to wait out, so the caller reloads the order right away.
+     *
+     * @param orderId - The order the money arrived for.
+     * @param body - The method, an optional reference, and when the money actually arrived.
+     * @returns A promise resolving with the payment as it now stands.
+     */
+    const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) =>
+        fetchAny(() =>
+            recordOfflinePaymentRequest(orderId, body).then((response) => {
+                payment.value = response.data;
+                return payment.value;
+            })
+        );
+
     return {
         loading,
         payment,
+        methods,
+        fetchMethods,
         fetchPaymentForOrder,
         payForOrder,
         finishAtProvider,
-        refundForOrder
+        refundForOrder,
+        recordOfflinePayment
     };
 });

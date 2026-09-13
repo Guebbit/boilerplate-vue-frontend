@@ -135,7 +135,7 @@ describe('Resilience', () => {
         // Visit first so every case starts from a rendered app; the reset itself is a plain
         // request to the demo backend and needs no page.
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     /*

@@ -16,6 +16,11 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
  */
 export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
     {
+        method: 'GET',
+        pattern: /^\/payments\/methods$/,
+        schema: schemas.ListPaymentMethodsResponse
+    },
+    {
         method: 'POST',
         pattern: /^\/payments\/intent$/,
         schema: schemas.CreatePaymentIntentResponse
@@ -32,6 +37,11 @@ export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
         method: 'POST',
         pattern: /^\/payments\/order\/[^/]+\/refund$/,
         schema: schemas.RefundPaymentByOrderResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/payments\/order\/[^/]+\/offline$/,
+        schema: schemas.RecordOfflinePaymentResponse
     },
     {
         method: 'POST',

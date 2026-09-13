@@ -38,7 +38,7 @@ const SHOWN_TOOLTIP = '.v-tooltip.v-overlay--active .v-overlay__content';
 describe('keyboard', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     it('reaches the skip link on the first Tab, and the skip link lands on the main region', () => {
@@ -194,8 +194,8 @@ describe('keyboard', () => {
         cy.loginAs('owner');
         // By role: the admin's own pending order is the one the cancel button, and so the
         // confirmation dialog this case is about, exist on.
-        cy.orderInRole('cancellable').then((order) => {
-            cy.visit(`/en/orders/${order.id}`);
+        cy.subjectId('order.ownerPending').then((id) => {
+            cy.visit(`/en/orders/${id}`);
         });
         cy.get('[data-test=order-cancel]').click();
         cy.get('[data-test=app-dialog-message]').should('be.visible');

@@ -28,7 +28,8 @@ const PAYMENT = {
     amount: 50,
     currency: 'EUR',
     status: 'requires_confirmation',
-    provider: 'fake'
+    provider: 'fake',
+    method: 'card'
 };
 
 let responses: Record<string, unknown>;
@@ -76,6 +77,27 @@ beforeEach(() => {
         'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'GET /payments/order/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
     };
+});
+
+describe('fetchMethods', () => {
+    it('mirrors the methods the API offers', () => {
+        responses['GET /payments/methods'] = orvalEnvelope({
+            methods: [{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]
+        });
+        const store = usePaymentsStore();
+        return store.fetchMethods().then((methods) => {
+            expect(methods).toEqual([{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]);
+            expect(store.methods).toEqual(methods);
+        });
+    });
+
+    it('offers only card when this deployment has not configured a transfer', () => {
+        responses['GET /payments/methods'] = orvalEnvelope({ methods: [{ id: 'card' }] });
+        const store = usePaymentsStore();
+        return store.fetchMethods().then(() => {
+            expect(store.methods).toEqual([{ id: 'card' }]);
+        });
+    });
 });
 
 describe('fetchPaymentForOrder', () => {
@@ -183,6 +205,52 @@ describe('finishAtProvider', () => {
         return expect(store.finishAtProvider('payment-1')).rejects.toMatchObject({
             status: 409,
             errors: [{ code: 'PAYMENT_DECLINED' }]
+        });
+    });
+});
+
+describe('recordOfflinePayment', () => {
+    it('sends the method and reference, and mirrors the settled payment', () => {
+        responses['POST /payments/order/order-1/offline'] = orvalEnvelope({
+            ...PAYMENT,
+            provider: 'manual',
+            method: 'cash',
+            reference: 'till-42',
+            status: 'succeeded'
+        });
+        const store = usePaymentsStore();
+
+        return store
+            .recordOfflinePayment('order-1', { method: 'cash', reference: 'till-42' })
+            .then(() => {
+                const call = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
+                    .find(({ url }) => url.endsWith('/offline'));
+
+                expect(call?.data).toEqual({ method: 'cash', reference: 'till-42' });
+                expect(store.payment).toMatchObject({ provider: 'manual', method: 'cash' });
+            });
+    });
+
+    /**
+     * The interesting failure this endpoint has that the card path does not: a card charge is
+     * already reachable at the provider, so recording money too could charge twice. Not an
+     * absence and not a decline — the caller's toast carries the server's own message.
+     */
+    it('lets a refusal through — a card charge already in flight, for instance', () => {
+        responses['POST /payments/order/order-1/offline'] = {
+            status: 409,
+            code: 'PAYMENT_IN_FLIGHT',
+            message: 'A card payment is already in progress for this order.'
+        };
+        const store = usePaymentsStore();
+
+        return expect(
+            store.recordOfflinePayment('order-1', { method: 'bank_transfer' })
+        ).rejects.toMatchObject({
+            status: 409,
+            errors: [{ code: 'PAYMENT_IN_FLIGHT' }]
         });
     });
 });

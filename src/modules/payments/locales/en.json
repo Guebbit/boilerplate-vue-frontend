@@ -19,6 +19,38 @@
         "explain-requires_action": "Your bank wants to confirm this payment. Finish it in the window your bank opened, then tell us here.",
         "explain-processing": "The provider is still settling this payment. It can take a while; we will email you when it lands.",
         "label-card-ending": "card ending {last4}",
+        "method-offline-bank_transfer": "Paid by bank transfer",
+        "method-offline-cash": "Paid in cash",
+        "method-offline-other": "Paid another way",
+        "label-reference": "reference {reference}",
+        "refunded-by-hand": "Refunded — the money was returned to the customer outside this application.",
         "none": "No payment yet."
+    },
+    "payment-method-selector": {
+        "title": "Payment method",
+        "method-card": "Card",
+        "method-bank_transfer": "Bank transfer"
+    },
+    "transfer-instructions-panel": {
+        "title": "Bank transfer instructions",
+        "label-deadline": "We'll hold your order until {payBy}.",
+        "label-beneficiary": "Beneficiary",
+        "label-iban": "IBAN",
+        "label-bic": "BIC",
+        "label-reference": "Reference",
+        "button-copy-iban": "Copy IBAN",
+        "button-copy-reference": "Copy reference",
+        "hint-reference": "Include the reference in your transfer's description, so we can match your payment to this order."
+    },
+    "record-offline-payment-form": {
+        "label-method": "How it arrived",
+        "method-bank_transfer": "Bank transfer",
+        "method-cash": "Cash",
+        "method-other": "Other",
+        "label-reference": "Reference",
+        "label-received-at": "Date received",
+        "button-submit": "Record payment",
+        "success": "Payment recorded — the order is paid.",
+        "error-method-required": "Choose how the money arrived."
     }
 }

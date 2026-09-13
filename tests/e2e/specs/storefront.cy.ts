@@ -9,7 +9,7 @@
 describe('Storefront', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     describe('catalogue facets', () => {
@@ -41,8 +41,8 @@ describe('Storefront', () => {
     describe('product page', () => {
         it('shows the shelf and blocks buying what is out of stock', () => {
             cy.loginAs('user');
-            cy.productInRole('outOfStock').then((product) => {
-                cy.visit(`/en/products/${product.id}`);
+            cy.subjectId('product.outOfStock').then((id) => {
+                cy.visit(`/en/products/${id}`);
             });
 
             cy.get('[data-test=add-to-cart]').should('be.disabled');
@@ -54,13 +54,13 @@ describe('Storefront', () => {
         it('cancels a pending order and buying again refills the cart', () => {
             cy.loginAs('owner');
             // Any order the cancel gate is still open on — the page hides the button for every
-            // other status, so the role IS the precondition this case needs. The owner's seeded
-            // cart already carries lines of its own, so "at least one cart item" would pass
+            // other status, so the guarantee IS the precondition this case needs. The owner's
+            // seeded cart already carries lines of its own, so "at least one cart item" would pass
             // whether or not reorder did anything — `productTitle` is what makes this assert the
             // REORDERED line specifically, not just a non-empty cart.
             let productTitle = '';
-            cy.orderInRole('cancellable').then((order) => {
-                productTitle = order.productTitle;
+            cy.subjectOrder('order.ownerPending').then((order) => {
+                productTitle = order.items[0].product.title;
                 cy.visit(`/en/orders/${order.id}`);
             });
 

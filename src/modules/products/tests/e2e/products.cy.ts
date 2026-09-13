@@ -10,7 +10,7 @@ const PAGE_ONE_SIZE = 10;
 describe('Products', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
     });
 
     describe('Products list', () => {
@@ -186,7 +186,7 @@ describe('Products', () => {
         let subject: { id: string; title: string; price: number; description?: string };
 
         beforeEach(() => {
-            cy.productInRole('rich').then((product) => {
+            cy.subjectProduct('product.rich').then((product) => {
                 subject = product;
                 cy.visit(`/en/products/${product.id}`);
             });

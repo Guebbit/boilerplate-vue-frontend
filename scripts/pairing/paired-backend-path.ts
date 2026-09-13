@@ -3,7 +3,7 @@ import path from 'node:path';
 /**
  * Default sibling-checkout location of the paired backend, relative to this repo's root.
  * Shared between `cypress.config.ts` (which passes it to `cy.exec('npm --prefix ...')` for
- * `cy.resetState()`) and `scripts/pairing/check-spec-identity.ts`, so the two can never silently
+ * `cy.restore()`) and `scripts/pairing/check-spec-identity.ts`, so the two can never silently
  * disagree about which backend they mean.
  *
  * It is the REPOSITORY name, so that the obvious thing produces a working layout:
@@ -31,7 +31,18 @@ export const resolveBackendPath = (): string =>
     path.resolve(process.cwd(), process.env.BACKEND_PATH?.trim() || DEFAULT_BACKEND_PATH);
 
 /**
- * The command `cy.resetState()` runs to put the live backend's database back to its seed state,
+ * Where the live profile's reset writes its description of what it seeded, and where
+ * `cy.scenario()` reads it back.
+ *
+ * A file, because a live backend never mounts `GET /__test/scenario` — the demo control surface
+ * is not something a real deployment carries. The backend's own `--describe-to=<file>` writes the
+ * same JSON that route serves: the scenario name, the seed logins, and a row id per guarantee
+ * name. Under `reports/`, which is already `.gitignore`d.
+ */
+export const LIVE_SCENARIO_FILE = path.resolve('reports/e2e/scenario.json');
+
+/**
+ * The command `cy.restore()` runs to put the live backend's database back to its seed state,
  * or `undefined` when `LIVE_RESET_COMMAND` is unset — in which case the live profile simply does
  * not reset between specs, rather than shelling into a guess.
  *
@@ -44,12 +55,19 @@ export const resolveBackendPath = (): string =>
  * other's.
  *
  * `{backend}` is substituted with the resolved absolute backend path, so the value does not have
- * to repeat what `BACKEND_PATH` already says. An EMPTY value counts as unset, for the same reason
- * `BACKEND_PATH` does: every `.env` copied from `.env-example` defines it.
+ * to repeat what `BACKEND_PATH` already says. `{describeTo}` is substituted with
+ * {@link LIVE_SCENARIO_FILE} — the reset is also where a live backend gets a chance to say what
+ * it seeded, since a live deployment never mounts `/__test/scenario`. An EMPTY value counts as
+ * unset, for the same reason `BACKEND_PATH` does: every `.env` copied from `.env-example`
+ * defines it.
  */
 export const resolveLiveResetCommand = (): string | undefined => {
     const command = process.env.LIVE_RESET_COMMAND?.trim();
-    return command ? command.replaceAll('{backend}', resolveBackendPath()) : undefined;
+    return command
+        ? command
+              .replaceAll('{backend}', resolveBackendPath())
+              .replaceAll('{describeTo}', LIVE_SCENARIO_FILE)
+        : undefined;
 };
 
 /**

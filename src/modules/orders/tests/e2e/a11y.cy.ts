@@ -21,13 +21,12 @@ const PHONE = [390, 844] as const;
 /**
  * Resolves the detail-page URL of a pending order owned by the current backend profile.
  */
-const orderDetail = () => cy.orderInRole('cancellable').then((order) => `/en/orders/${order.id}`);
+const orderDetail = () => cy.subjectId('order.ownerPending').then((id) => `/en/orders/${id}`);
 
 /**
  * Resolves the edit-page URL of a pending order owned by the current backend profile.
  */
-const orderEdit = () =>
-    cy.orderInRole('cancellable').then((order) => `/en/orders/${order.id}/edit`);
+const orderEdit = () => cy.subjectId('order.ownerPending').then((id) => `/en/orders/${id}/edit`);
 
 sweepA11y(
     'orders — signed in',

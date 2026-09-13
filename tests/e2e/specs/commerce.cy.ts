@@ -30,7 +30,7 @@ const moveOrderTo = (label: RegExp, text: string) => {
 describe('Commerce', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en');
     });
 

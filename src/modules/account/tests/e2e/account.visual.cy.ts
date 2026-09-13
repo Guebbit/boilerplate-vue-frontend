@@ -8,7 +8,7 @@
  * re-record with `npm run test:e2e:visual:update` only after LOOKING at the diff image.
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
-import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
+import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
 sweepVisual('account', [['login', '/en/login', '#login-page']]);
 
@@ -30,7 +30,7 @@ sweepVisual(
                 cy.get('[data-test=two-factor-add-email]').click();
                 cy.get('[data-test=two-factor-enroll]').should('be.visible');
                 cy.typeMailedTwoFactorCode(
-                    E2E_ACCOUNTS.user.email,
+                    seedAccount('user').email,
                     '[data-test=two-factor-enroll-code]'
                 );
                 cy.get('[data-test=two-factor-enroll-confirm]').click();
@@ -53,11 +53,11 @@ sweepVisual(
             prepare: () => {
                 cy.skipUnlessDemo();
                 cy.loginAs('user');
-                cy.enrollEmailTwoFactor(E2E_ACCOUNTS.user.email);
+                cy.enrollEmailTwoFactor(seedAccount('user').email);
                 cy.logout();
                 cy.visit('/en/login');
-                cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
-                cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+                cy.get('[type=email]').type(seedAccount('user').email);
+                cy.get('[type=password]').type(seedAccount('user').password);
                 cy.get('form').submit();
                 cy.get('#two-factor-challenge-page').should('exist');
             }

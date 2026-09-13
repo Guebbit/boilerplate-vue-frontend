@@ -8,7 +8,7 @@
  * What these specs pin is the page honouring those invariants, not the rules themselves — those
  * are the backend's to test.
  */
-import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
+import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
 /**
  * Fills the address dialog's six required inputs and saves.
@@ -34,7 +34,7 @@ const fillAddress = (label: string, street: string) => {
 describe('Profile access', () => {
     it('a guest asking for /profile lands on the login, target remembered', () => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en/profile');
 
         cy.get('#login-page').should('exist');
@@ -47,7 +47,7 @@ describe('Profile access', () => {
         // into its outbox is refused. The happy guest path lives in registration.cy.ts, where
         // the token comes from an actual signup email.
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.visit('/en/verify-email/confirm?token=a-token-nobody-issued');
 
         cy.get('[data-test=verify-token] input').should('have.value', 'a-token-nobody-issued');
@@ -69,8 +69,8 @@ const loginFromAnotherDevice = () =>
         .then(({ apiUrl }) =>
             cy.task('createSession', {
                 apiUrl: String(apiUrl),
-                email: E2E_ACCOUNTS.user.email,
-                password: E2E_ACCOUNTS.user.password
+                email: seedAccount('user').email,
+                password: seedAccount('user').password
             })
         )
         .then((created) => expect(created, 'the second session').to.equal(true));
@@ -78,7 +78,7 @@ const loginFromAnotherDevice = () =>
 describe('Profile self-service', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetState();
+        cy.restore();
         cy.loginAs('user');
         cy.visit('/en/profile');
         cy.get('#profile-page').should('exist');
@@ -147,7 +147,7 @@ describe('Profile self-service', () => {
             // disabled behind an invalid form, it reveals the errors, so the fixture must pass them.
             cy.get('[data-test=current-password] input')
                 .should('not.be.disabled')
-                .type(E2E_ACCOUNTS.user.password);
+                .type(seedAccount('user').password);
             cy.get('[data-test=new-password] input')
                 .should('not.be.disabled')
                 .type('BrandNew_Secret1!');

@@ -74,7 +74,8 @@ const mountCart = () => {
             plugins: [router, vuetify, i18n],
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
-                ShippingSelector: { template: '<div />' }
+                ShippingSelector: { template: '<div />' },
+                PaymentMethodSelector: { template: '<div />' }
             }
         }
     });

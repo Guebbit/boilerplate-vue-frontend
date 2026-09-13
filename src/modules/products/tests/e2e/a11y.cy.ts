@@ -16,14 +16,12 @@ const PHONE = [390, 844] as const;
 /**
  * Detail-page URL for a populated product, resolved from a seeded role rather than a literal id.
  */
-const productDetail = () =>
-    cy.productInRole('rich').then((product) => `/en/products/${product.id}`);
+const productDetail = () => cy.subjectId('product.rich').then((id) => `/en/products/${id}`);
 
 /**
  * Edit-page URL for the same populated product.
  */
-const productEdit = () =>
-    cy.productInRole('rich').then((product) => `/en/products/${product.id}/edit`);
+const productEdit = () => cy.subjectId('product.rich').then((id) => `/en/products/${id}/edit`);
 
 sweepA11y('products — public', [
     ['products list', '/en/products'],
