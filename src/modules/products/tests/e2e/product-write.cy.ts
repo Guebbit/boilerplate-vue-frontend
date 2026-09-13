@@ -21,7 +21,11 @@ describe('Product write surface', () => {
             const itTitle = `IT lampada ${unique()}`;
 
             cy.visit('/en/products/create');
-            cy.get('[data-test=translation-title-field]:visible').type(enTitle);
+            // ` input`, never the `data-test` element itself: Vuetify puts `data-test` on the
+            // field's WRAPPER, and typing at a wrapper lands wherever focus happens to be — which,
+            // with the tab bar's own `v-select` a sibling away, means the first space in a title
+            // opens the language picker and the rest of the string filters it.
+            cy.get('#translation-panel-en [data-test=translation-title-field] input').type(enTitle);
             cy.get('[data-test=product-price-field] input').clear();
             cy.get('[data-test=product-price-field] input').type('19.99');
 
@@ -31,7 +35,21 @@ describe('Product write surface', () => {
             // apart — Cypress's own actionability retry is what actually waits out the animation.
             cy.get('[data-test=translation-tab-add]').click();
             cy.contains('.v-list-item-title', 'Italiano').click();
-            cy.get('#translation-panel-it [data-test=translation-title-field]').type(itTitle);
+            /*
+             * Wait for the picker to have taken focus BACK before typing. Vuetify hands focus to a
+             * `v-select`'s activator when its menu closes, and it does so a beat after the pick —
+             * inside the window this would otherwise be typing in. The title then keeps only what
+             * was typed before the hand-back and the picker's own filter keeps the rest, which
+             * reads as a create that silently refused. A person is slower than that beat; Cypress
+             * is not. Waiting for it makes the click below the last thing to take focus.
+             */
+            cy.get('[data-test=translation-tab-add] input').should('be.focused');
+            cy.get('#translation-panel-it [data-test=translation-title-field] input').click();
+            cy.get('#translation-panel-it [data-test=translation-title-field] input').type(itTitle);
+            cy.get('#translation-panel-it [data-test=translation-title-field] input').should(
+                'have.value',
+                itTitle
+            );
 
             cy.get('form').first().submit();
             cy.url().should('include', '/products/').and('not.include', '/create');

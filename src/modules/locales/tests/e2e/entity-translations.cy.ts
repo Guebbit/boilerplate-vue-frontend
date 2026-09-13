@@ -27,13 +27,23 @@ describe('Entity translations — the generic admin door', () => {
             cy.visit(`/en/locales/translations/product/${product.id}`);
 
             cy.get('[data-test=translation-tab-it]').click();
-            // The `it` row was seeded with only `title` — `description` renders too, from the
-            // registry's declared field set, but blank and left alone. Targeting `title`
-            // specifically is what keeps this edit from also typing into `description`.
-            cy.get('[data-test=entity-translation-field][data-field=title]:visible').clear();
-            cy.get('[data-test=entity-translation-field][data-field=title]:visible').type(
-                editedItTitle
-            );
+            /*
+             * Scoped to the `it` PANEL, not filtered by `:visible`. Every open locale's fields
+             * stay in the DOM — `v-window` renders them all — so `:visible` is a race with the
+             * tab transition: the outgoing panel is still on screen for a frame, both panels
+             * match, and `cy.type()` refuses a two-element subject. The panel's own id is the
+             * one selector that names exactly one of them.
+             *
+             * `data-field=title` because the `it` row was seeded with only a title —
+             * `description` renders too, from the registry's declared field set, but blank and
+             * left alone.
+             */
+            cy.get(
+                '#translation-panel-it [data-test=entity-translation-field][data-field=title]'
+            ).clear();
+            cy.get(
+                '#translation-panel-it [data-test=entity-translation-field][data-field=title]'
+            ).type(editedItTitle);
             cy.get('[data-test=entity-translations-save]').click();
             cy.contains('Translations saved').should('exist');
 

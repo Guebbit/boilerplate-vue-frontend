@@ -86,12 +86,36 @@ const expectNoPendingLocalPreview = () =>
  * `#product-edit-page` is the layout's id and exists before the product has loaded, so it is not
  * a readiness gate: submitting on it fails validation on the still-empty title and price, and the
  * failure looks exactly like a broken image field. The hydrated title is the real signal.
+ *
+ * Named by `data-test`, never "the page's first text input": the tab bar's "add language" picker
+ * is a `v-select`, which Vuetify renders as a text input of its own and puts AHEAD of the form
+ * whenever the product has a locale it does not translate yet. Drilled into with ` input` because
+ * `data-test` on a `v-text-field` lands on its wrapper, and `have.value` on a wrapper reads `''`
+ * however hydrated the field is.
  */
 const openHydratedProductEditForm = () =>
     cy.subjectProduct('product.inStock').then((product) => {
         cy.visit(`/en/products/${product.id}/edit`);
-        cy.get('#product-edit-page input[type=text]').first().should('have.value', product.title);
+        cy.get('[data-test=translation-title-field] input')
+            .first()
+            .should('have.value', product.title);
     });
+
+/**
+ * Types a title into the active language tab's own field.
+ *
+ * Named by `data-test` and drilled into with ` input`, never "the page's first text input": the
+ * tab bar's "add language" picker is a `v-select`, which Vuetify renders as a text input of its
+ * own and puts AHEAD of the form. Typing a title into THAT opens the picker, and everything after
+ * the first space lands in its filter instead of the field — which reads as a create that simply
+ * did not save.
+ *
+ * @param title - what to type
+ */
+const typeTitle = (title: string) => {
+    cy.get('[data-test=translation-title-field] input').first().should('not.be.disabled');
+    cy.get('[data-test=translation-title-field] input').first().type(title);
+};
 
 /** Picks the fixture image. `force` because Vuetify keeps the real input visually hidden. */
 const selectSampleImage = () =>
@@ -181,11 +205,10 @@ describe('Image upload', () => {
         });
 
         it('saves ordinary field edits without an image, as before', () => {
-            cy.get('#product-edit-page input[type=text]').first().should('not.be.disabled').clear();
-            cy.get('#product-edit-page input[type=text]')
-                .first()
-                .should('not.be.disabled')
-                .type('Renamed product');
+            // The title field by name, for the reason `openHydratedProductEditForm` gives.
+            cy.get('[data-test=translation-title-field] input').first().should('not.be.disabled');
+            cy.get('[data-test=translation-title-field] input').first().clear();
+            cy.get('[data-test=translation-title-field] input').first().type('Renamed product');
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
@@ -213,10 +236,7 @@ describe('Image upload', () => {
         });
 
         it('creates a product with an image and opens its detail page', () => {
-            cy.get('#product-create-page input[type=text]')
-                .first()
-                .should('not.be.disabled')
-                .type('Uploaded product');
+            typeTitle('Uploaded product');
             selectSampleImage();
             cy.get('form').submit();
 
@@ -226,10 +246,7 @@ describe('Image upload', () => {
         });
 
         it('creates a product without an image, taking the JSON branch', () => {
-            cy.get('#product-create-page input[type=text]')
-                .first()
-                .should('not.be.disabled')
-                .type('Plain product');
+            typeTitle('Plain product');
             cy.get('form').submit();
 
             cy.contains('Product created successfully').should('exist');
