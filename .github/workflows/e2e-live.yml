@@ -190,6 +190,14 @@ jobs:
                   NODE_MONGODB_HOST: localhost
                   NODE_REDIS_URL: ''
                   NODE_REDIS_HOST: localhost
+                  # src/kernel/required-config.ts refuses to boot without these — throwaway
+                  # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
+                  # a real deployment's secrets have no place in a CI runner that dies with the job.
+                  NODE_URL: http://localhost:3000/
+                  NODE_TOKEN_ACCESS: ci-not-a-secret-access-token
+                  NODE_TOKEN_REFRESH: ci-not-a-secret-refresh-token
+                  NODE_TOTP_ENCRYPTION_KEY: ci-not-a-secret-totp-key
+                  NODE_WEBHOOK_SECRET_ENCRYPTION_KEY: ci-not-a-secret-webhook-key
                   # The server-side half of the analytics pair. Unset, the backend logs "events
                   # are being discarded" and carries on — Umami would be up, the browser tracker
                   # would still write, and `analytics.cy.ts` would read one row where it expects
