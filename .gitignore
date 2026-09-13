@@ -57,3 +57,10 @@ coverage
 # docs/tools/ai-auditing.md. The prompts themselves are versioned; this is one developer's
 # convenience, regenerable with a single ln -s.
 /.claude/commands/audit
+
+# Root-level Markdown is WORKING NOTES: a plan, an audit, a handover, written for one change and
+# deleted when it lands.
+/*.md
+!/README.md
+!/CHANGELOG.md
+!/CLAUDE.md
