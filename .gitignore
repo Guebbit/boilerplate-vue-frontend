@@ -6,10 +6,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# local env
-.env
-.env.local
-.env.*.local
+# local env. `.env*` rather than the three exact spellings: a backup, an export or a tool's
+# scratch copy (`.env.bak`, `.env.save`) carries the same secrets as `.env` itself, and the rule
+# that only names files someone thought of is the one that misses the next.
+.env*
+!.env-example
 
 # tests
 /tests/e2e/videos/
