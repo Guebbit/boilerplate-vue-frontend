@@ -9,6 +9,13 @@
  * from there to the end the page never reloads.
  */
 describe('The customer journey', () => {
+    /**
+     * The shelf's count as the guest first saw it — the value the cancel has to restore.
+     *
+     * Captured rather than written down: see where it is read, below.
+     */
+    let stockBeforeBuying: string;
+
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
@@ -25,7 +32,15 @@ describe('The customer journey', () => {
         cy.get('[data-test=row-view]').first().click();
 
         cy.get('#product-target').should('exist');
-        cy.get('[data-test=product-stock]').should('contain.text', '30');
+        // Read, never asserted as a literal: the shelf's count is the backend's own, and the
+        // paired backend produces it by driving a seeded order history rather than writing a
+        // number down. What this spec is actually about is that the count comes BACK — so it is
+        // captured here and compared with itself after the cancel.
+        cy.get('[data-test=product-stock]')
+            .invoke('text')
+            .then((text) => {
+                stockBeforeBuying = text;
+            });
         // The wall: buying is offered, disabled, and explained; saving is not offered at all.
         cy.get('[data-test=add-to-cart]').should('be.disabled');
         cy.contains('Sign in to buy').should('exist');
@@ -41,7 +56,7 @@ describe('The customer journey', () => {
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('contain.text', '30');
+        cy.get('[data-test=product-stock]').should('have.text', stockBeforeBuying);
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
@@ -93,6 +108,6 @@ describe('The customer journey', () => {
         // on whatever the unfiltered list re-rendered underneath it.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('contain.text', '30');
+        cy.get('[data-test=product-stock]').should('have.text', stockBeforeBuying);
     });
 });

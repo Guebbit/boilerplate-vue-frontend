@@ -213,10 +213,17 @@ describe('a locale only the API has', () => {
 
         cy.get('#products-list-page').should('exist');
         cy.get('html').should('have.attr', 'lang', 'es');
-        // The overrides carry a handful of keys and not this heading, so `fallbackLocale`
-        // supplies the English one — the page renders rather than showing raw keys, which is what
-        // "degrades per key" means.
-        cy.get('h1').should('contain.text', 'Products list');
+
+        /*
+         * Both halves on ONE page, which is what makes "per key" a claim rather than a hope: the
+         * backend's Spanish overlay carries `products-list-page.page-title` and `generic.reset`,
+         * and nothing else this page renders. So the heading and the reset button arrive in
+         * Spanish while the search button beside it falls back to English — and the page renders
+         * throughout rather than showing raw keys, which is what degrading per key means.
+         */
+        cy.get('h1').should('contain.text', 'Catálogo de productos');
+        cy.contains('button', 'Restablecer').should('exist');
+        cy.contains('button', 'Search').should('exist');
     });
 
     /**
