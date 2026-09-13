@@ -299,8 +299,6 @@ export interface OrderLineProduct {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -308,11 +306,18 @@ export interface OrderLineProduct {
     deletedAt?: string;
 }
 
+export interface OrderLineCurrent {
+    imageUrl: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+}
+
 export interface OrderItem {
     product: OrderLineProduct;
     /** @minimum 1 */
     quantity: number;
     locale: Locale;
+    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current: OrderLineCurrent | null;
 }
 
 /**
@@ -1254,6 +1259,31 @@ export interface AuthTokensEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: AuthTokens;
+}
+
+export interface PasswordCheckRequest {
+    /**
+     * A CANDIDATE password, not `PasswordNew` — this runs while someone is still typing, so it accepts anything non-empty rather than the contract's own composition rule.
+     * @minLength 1
+     */
+    password: string;
+}
+
+export interface PasswordCheck {
+    /** Whether the candidate matches a known-breached password — the bundled list or, when enabled, the HIBP range lookup. Advisory: the four password-SET paths are the actual gate, not this field. */
+    breached: boolean;
+    /**
+     * How many times HIBP has seen this exact password. Present only when HIBP is what caught it — never for a bundled-list hit, and never when rung 2 is disabled or unreachable.
+     * @minimum 0
+     */
+    count?: number;
+}
+
+export interface PasswordCheckEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PasswordCheck;
 }
 
 export interface ReauthRequest {
@@ -3888,6 +3918,25 @@ export const changePassword = (
 };
 
 /**
+ * Advisory only — never blocks anything itself. Reports whether a CANDIDATE password (not yet required to satisfy `PasswordNew`) matches a known-breached password, so a signup or password-change form can warn before submission. Unauthenticated, since signup needs it before an account exists. The four password-SET paths remain the actual gate, checked again server-side regardless of what this endpoint answered.
+ * @summary Check a candidate password's breach status
+ */
+export const checkPasswordBreached = (
+    passwordCheckRequest: PasswordCheckRequest,
+    options?: SecondParameter<typeof orvalMutator<PasswordCheckEnvelope>>
+) => {
+    return orvalMutator<PasswordCheckEnvelope>(
+        {
+            url: `/account/password/check`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: passwordCheckRequest
+        },
+        options
+    );
+};
+
+/**
  * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
  * @summary Re-authenticate (step-up)
  */
@@ -5928,6 +5977,9 @@ export type RequestAccountDeleteResult = NonNullable<
 >;
 export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
+export type CheckPasswordBreachedResult = NonNullable<
+    Awaited<ReturnType<typeof checkPasswordBreached>>
+>;
 export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;

@@ -46,6 +46,7 @@
         "label-date": "Date",
         "label-items": "Items",
         "label-product-id": "Product",
+        "image-alt": "Photo of {name}",
         "label-quantity": "Quantity",
         "loading": "Loading order...",
         "button-go-to-list": "Go to orders list",
