@@ -250,7 +250,18 @@ const submitForm = () =>
 
 <template>
     <LayoutDefault id="product-create-page" :title="t('product-create-page.page-title')">
+        <!--
+            No form until the language manifest has landed. `GET /locales` names the fallback
+            locale, and the watcher above seeds ITS tab — so until both have happened the form has
+            a submit button and no title field, and `translations` is an empty map. An empty map is
+            valid to `productsSchema` on purpose (a merging PATCH with no languages means "change
+            nothing"), so nothing client-side stops a submit, and the API answers 422 "the en
+            translation is required" — a refusal the user cannot act on, under a field that is not
+            on screen yet.
+        -->
+        <v-skeleton-loader v-if="openTags.length === 0" type="article, actions" />
         <FormCard
+            v-else
             ref="card"
             :submit-label="t('product-create-page.button-submit')"
             :back-to="{ name: 'ProductsList' }"
