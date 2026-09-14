@@ -34,8 +34,11 @@ import type {
 /**
  * Search criteria for the products list, i.e. everything but pagination (which
  * is owned by the toolkit's search state).
+ *
+ * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
+ * one-element array `SearchProductsRequest.id` now requires, in `search:` below.
  */
-type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
+type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
 
 /**
  * `createProduct`'s payload: the JSON write body plus the optional file the form attaches.
@@ -113,8 +116,9 @@ export const useProductsStore = defineStore('products', () => {
                     pageSize,
                     text: filters.text,
                     // `id`, not `productId`: the spec names it `id` on both the GET query and the
-                    // POST /products/search body, and that is what the API reads.
-                    id: filters.id,
+                    // POST /products/search body, and that is what the API reads. The API now
+                    // reads a batch of ids; the filter box searches for one, so it's wrapped here.
+                    id: filters.id ? [filters.id] : undefined,
                     minPrice: filters.minPrice,
                     maxPrice: filters.maxPrice,
                     category: filters.category,

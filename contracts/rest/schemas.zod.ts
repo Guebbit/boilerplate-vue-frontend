@@ -3377,6 +3377,8 @@ export const listUsersQueryPageMax = 10000;
 export const listUsersQueryPageSizeDefault = 10;
 export const listUsersQueryPageSizeMax = 100;
 
+export const listUsersQueryIdMax = 100;
+
 export const ListUsersQueryParams = zod.strictObject({
     page: zod
         .number()
@@ -3390,7 +3392,11 @@ export const ListUsersQueryParams = zod.strictObject({
         .max(listUsersQueryPageSizeMax)
         .default(listUsersQueryPageSizeDefault),
     text: zod.string().min(1).optional(),
-    id: zod.string().optional(),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(listUsersQueryIdMax)
+        .optional(),
     email: zod.email().optional(),
     username: zod.string().optional(),
     active: zod.boolean().optional(),
@@ -3878,6 +3884,8 @@ export const searchUsersBodyPageMax = 10000;
 export const searchUsersBodyPageSizeDefault = 10;
 export const searchUsersBodyPageSizeMax = 100;
 
+export const searchUsersBodyIdMax = 100;
+
 export const SearchUsersBody = zod.strictObject({
     page: zod
         .number()
@@ -3894,7 +3902,11 @@ export const SearchUsersBody = zod.strictObject({
         .default(searchUsersBodyPageSizeDefault)
         .describe('Optional override; server may clamp to a max'),
     text: zod.string().min(1).optional().describe('Free-text search string'),
-    id: zod.string().optional().describe('Resource identifier'),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(searchUsersBodyIdMax)
+        .optional(),
     email: zod.email().optional(),
     username: zod.string().optional(),
     active: zod.boolean().optional(),
@@ -4250,6 +4262,8 @@ export const listProductsQueryPageMax = 10000;
 export const listProductsQueryPageSizeDefault = 10;
 export const listProductsQueryPageSizeMax = 100;
 
+export const listProductsQueryIdMax = 100;
+
 export const listProductsQueryMinPriceMin = 0;
 
 export const listProductsQueryMaxPriceMin = 0;
@@ -4267,7 +4281,11 @@ export const ListProductsQueryParams = zod.strictObject({
         .max(listProductsQueryPageSizeMax)
         .default(listProductsQueryPageSizeDefault),
     text: zod.string().min(1).optional(),
-    id: zod.string().optional(),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(listProductsQueryIdMax)
+        .optional(),
     category: zod.string().optional(),
     tag: zod.string().optional(),
     minPrice: zod.number().min(listProductsQueryMinPriceMin).optional(),
@@ -4878,6 +4896,8 @@ export const searchProductsBodyPageMax = 10000;
 export const searchProductsBodyPageSizeDefault = 10;
 export const searchProductsBodyPageSizeMax = 100;
 
+export const searchProductsBodyIdMax = 100;
+
 export const searchProductsBodyMinPriceMin = 0;
 
 export const searchProductsBodyMaxPriceMin = 0;
@@ -4898,7 +4918,11 @@ export const SearchProductsBody = zod.strictObject({
         .default(searchProductsBodyPageSizeDefault)
         .describe('Optional override; server may clamp to a max'),
     text: zod.string().min(1).optional().describe('Free-text search string'),
-    id: zod.string().optional().describe('Resource identifier'),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(searchProductsBodyIdMax)
+        .optional(),
     minPrice: zod.number().min(searchProductsBodyMinPriceMin).optional(),
     maxPrice: zod.number().min(searchProductsBodyMaxPriceMin).optional(),
     category: zod.string().optional(),
@@ -5698,6 +5722,8 @@ export const listOrdersQueryPageMax = 10000;
 export const listOrdersQueryPageSizeDefault = 10;
 export const listOrdersQueryPageSizeMax = 100;
 
+export const listOrdersQueryIdMax = 100;
+
 export const ListOrdersQueryParams = zod.strictObject({
     page: zod
         .number()
@@ -5710,7 +5736,11 @@ export const ListOrdersQueryParams = zod.strictObject({
         .min(1)
         .max(listOrdersQueryPageSizeMax)
         .default(listOrdersQueryPageSizeDefault),
-    id: zod.string().optional(),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(listOrdersQueryIdMax)
+        .optional(),
     userId: zod.string().optional(),
     productId: zod.string().optional(),
     email: zod.email().optional(),
@@ -6533,6 +6563,8 @@ export const searchOrdersBodyPageMax = 10000;
 export const searchOrdersBodyPageSizeDefault = 10;
 export const searchOrdersBodyPageSizeMax = 100;
 
+export const searchOrdersBodyIdMax = 100;
+
 export const SearchOrdersBody = zod.strictObject({
     page: zod
         .number()
@@ -6548,7 +6580,11 @@ export const SearchOrdersBody = zod.strictObject({
         .max(searchOrdersBodyPageSizeMax)
         .default(searchOrdersBodyPageSizeDefault)
         .describe('Optional override; server may clamp to a max'),
-    id: zod.string().optional().describe('Resource identifier'),
+    id: zod
+        .array(zod.string().describe('Resource identifier'))
+        .min(1)
+        .max(searchOrdersBodyIdMax)
+        .optional(),
     userId: zod.string().optional().describe('Resource identifier'),
     productId: zod.string().optional().describe('Resource identifier'),
     email: zod.email().optional(),

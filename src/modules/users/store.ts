@@ -32,8 +32,11 @@ import type {
 /**
  * Search criteria for the users list, i.e. everything but pagination (which is
  * owned by the toolkit's search state).
+ *
+ * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
+ * one-element array `SearchUsersRequest.id` now requires, in `search:` below.
  */
-type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
+type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
 
 /**
  * Users CRUD, paginated search and avatar upload.
@@ -95,7 +98,8 @@ export const useUsersStore = defineStore('users', () => {
                     page,
                     pageSize,
                     text: filters.text,
-                    id: filters.id,
+                    // The API reads a batch of ids; the filter box searches for one.
+                    id: filters.id ? [filters.id] : undefined,
                     email: filters.email,
                     username: filters.username,
                     active: filters.active

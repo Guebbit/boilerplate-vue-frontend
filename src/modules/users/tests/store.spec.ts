@@ -337,8 +337,9 @@ describe('useUsersStore', () => {
                     expect(lastBody()).toMatchObject({
                         text: 'ada',
                         // Passed through under its own name here — contrast with the products
-                        // store, where the same field is sent as `productId`.
-                        id: 'u1',
+                        // store, where the same field is sent as `productId`. The filter box
+                        // searches for one id; the API reads a batch.
+                        id: ['u1'],
                         email: 'ada@example.com',
                         username: 'ada',
                         active: true

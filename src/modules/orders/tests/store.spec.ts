@@ -214,7 +214,8 @@ describe('useOrdersStore', () => {
                 .then(() => {
                     expect(searchOrders).toHaveBeenCalledWith(
                         expect.objectContaining({
-                            id: 'o1',
+                            // The filter box searches for one id; the API reads a batch.
+                            id: ['o1'],
                             userId: 'u1',
                             productId: 'p1',
                             email: 'ada@example.com'

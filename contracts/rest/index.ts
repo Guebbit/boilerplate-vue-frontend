@@ -1916,7 +1916,11 @@ export interface SearchUsersRequest {
     page?: Page;
     pageSize?: PageSize;
     text?: Text;
-    id?: Id;
+    /**
+     * @minItems 1
+     * @maxItems 100
+     */
+    id?: Id[];
     email?: Email;
     username?: string;
     active?: boolean;
@@ -2156,7 +2160,11 @@ export interface SearchProductsRequest {
     page?: Page;
     pageSize?: PageSize;
     text?: Text;
-    id?: Id;
+    /**
+     * @minItems 1
+     * @maxItems 100
+     */
+    id?: Id[];
     /** @minimum 0 */
     minPrice?: number;
     /** @minimum 0 */
@@ -2327,7 +2335,11 @@ export interface DeleteOrderRequest {
 export interface SearchOrdersRequest {
     page?: Page;
     pageSize?: PageSize;
-    id?: Id;
+    /**
+     * @minItems 1
+     * @maxItems 100
+     */
+    id?: Id[];
     userId?: Id;
     productId?: Id;
     email?: Email;
@@ -2972,7 +2984,7 @@ export type AntibotChallengeTokenHeaderParameter = string;
  */
 export type IdempotencyKeyHeaderParameter = string;
 
-export type IdParamParameter = Id;
+export type IdParamParameter = Id[];
 
 export type UserIdParamParameter = Id;
 
@@ -3154,7 +3166,8 @@ export type ListUsersParams = {
      */
     text?: TextParamParameter;
     /**
-     * Resource identifier
+     * @minItems 1
+     * @maxItems 100
      */
     id?: IdParamParameter;
     email?: Email;
@@ -3218,7 +3231,8 @@ export type ListProductsParams = {
      */
     text?: TextParamParameter;
     /**
-     * Resource identifier
+     * @minItems 1
+     * @maxItems 100
      */
     id?: IdParamParameter;
     category?: string;
@@ -3263,7 +3277,8 @@ export type ListOrdersParams = {
      */
     pageSize?: PageSizeParamParameter;
     /**
-     * Resource identifier
+     * @minItems 1
+     * @maxItems 100
      */
     id?: IdParamParameter;
     /**

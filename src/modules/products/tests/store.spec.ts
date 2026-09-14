@@ -533,7 +533,8 @@ describe('useProductsStore', () => {
                         expect(parameters).toMatchObject({
                             text: 'gad',
                             // `id`, the name the API actually reads; `productId` filters nothing.
-                            id: 'p1',
+                            // The filter box searches for one id; the API reads a batch.
+                            id: ['p1'],
                             minPrice: 5,
                             maxPrice: 50
                         });

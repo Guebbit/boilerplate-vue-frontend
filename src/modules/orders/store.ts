@@ -28,8 +28,12 @@ import type {
 /**
  * Search criteria for the orders list, i.e. everything but pagination (which is
  * owned by the toolkit's search state).
+ *
+ * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
+ * one-element array `SearchOrdersRequest.id` now requires, in `search:` below. `userId`/
+ * `productId` are untouched — they stay scalar in the contract.
  */
-type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
+type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
 
 /**
  * Orders CRUD, paginated search and invoices.
@@ -93,7 +97,8 @@ export const useOrdersStore = defineStore('orders', () => {
                 searchOrders({
                     page,
                     pageSize,
-                    id: filters.id,
+                    // The API reads a batch of ids; the filter box searches for one.
+                    id: filters.id ? [filters.id] : undefined,
                     userId: filters.userId,
                     productId: filters.productId,
                     email: filters.email
