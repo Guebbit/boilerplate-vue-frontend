@@ -15,7 +15,7 @@
         "text-terms": "Accetto i {terms} e la {privacy}",
         "text-analytics-consent": "Condividi dati di utilizzo anonimi per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
-        "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
+        "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno."
     },
     "profile-page": {
         "page-title": "Il tuo profilo",

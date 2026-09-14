@@ -100,16 +100,19 @@ describe('Authentication', () => {
             cy.get('.v-messages__message').should('exist');
         });
 
-        it('signs up successfully and redirects to login (no auto-login)', () => {
+        it('signs up successfully and lands signed in, unverified', () => {
             cy.get('[type=email]').should('not.be.disabled').type('newuser@example.com');
             cy.get('[type=password]').eq(0).should('not.be.disabled').type('NewUser_Pass1!');
             cy.get('[type=password]').eq(1).should('not.be.disabled').type('NewUser_Pass1!');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 
+            // `unverified` is a role, not a waiting room: the session starts here and the banner
+            // is what asks for the address, rather than a login form standing in the way.
             cy.url().should('not.include', '/signup');
-            cy.url().should('include', '/login');
-            cy.get('#login-page').should('exist');
+            cy.url().should('not.include', '/login');
+            cy.get('#home-page').should('exist');
+            cy.get('[data-test=verify-banner]').should('exist');
         });
     });
 

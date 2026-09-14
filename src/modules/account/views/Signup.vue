@@ -26,8 +26,9 @@ import {
     oauthStartUrl,
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
-import { RouterLink, useRouter, useRoute } from 'vue-router';
+import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
@@ -49,14 +50,10 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Router instance, for the navigations this file performs.
+ * Where a fresh session lands — the same ending both login steps use, so a signup that now
+ * carries a session honours `?continue=` exactly as they do.
  */
-const router = useRouter();
-
-/**
- * Current route, read for its params, query and name.
- */
-const route = useRoute();
+const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
  * Which OAuth providers to offer, fetched once — see the store's own doc for why a later mount
@@ -163,8 +160,10 @@ const { signup } = useAuthStore();
 /**
  * Validates the form and registers the account.
  *
- * Signup does not log the user in: the account still needs email confirmation,
- * so they are sent to the login page instead of getting a profile/session.
+ * Signup DOES log the user in — `POST /account/signup` sets the session cookies, so the router's
+ * own restore guard mints the access token on the way to `Home`, the same bootstrap the OAuth
+ * callback relies on. The new account holds `unverified`: it browses freely and is stopped at the
+ * till, where `AppVerificationBanner` has been warning it since the first page.
  *
  * @returns A promise resolving once the flow settles. Invalid input is revealed, announced and
  *  focused by the toolkit before the handler runs; API failures land on the field the server
@@ -188,7 +187,7 @@ const submitForm = () =>
                 options
             )
         )
-            .then(() => router.push({ name: 'Login', query: route.query }))
+            .then(() => redirectAfterLogin())
             .then(() => addMessage(t('signup-page.success-email-code-sent')))
     ).catch((error) => {
         if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);

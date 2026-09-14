@@ -303,7 +303,10 @@ describe('Image upload', () => {
             cy.get('input[type=checkbox]').first().check({ force: true });
             cy.get('form').submit();
 
-            cy.url().should('include', '/login');
+            // Signed in from signup, so the upload's success is the new account's own page
+            // rather than a login form.
+            cy.url().should('not.include', '/signup');
+            cy.get('#home-page').should('exist');
         });
     });
 

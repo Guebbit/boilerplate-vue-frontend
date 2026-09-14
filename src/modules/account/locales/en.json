@@ -15,7 +15,7 @@
         "text-terms": "I accept the {terms} and the {privacy}",
         "text-analytics-consent": "Share anonymous usage analytics to help us improve the product",
         "button-submit": "Register now",
-        "success-email-code-sent": "Registration successful. We sent an email with a verification code."
+        "success-email-code-sent": "Welcome! We sent a link to confirm your email address — you can look around in the meantime."
     },
     "profile-page": {
         "page-title": "User Profile",

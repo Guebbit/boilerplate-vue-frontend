@@ -1,11 +1,14 @@
 /**
  * @module
- * End-to-end registration arc across page reloads: signup, spend the emailed verification token
- * as a guest, then prove the password gate is real (wrong password refused, right one accepted).
+ * End-to-end registration arc across page reloads: signup lands SIGNED IN as `unverified`, then
+ * the emailed token is spent as a guest, then the password gate is proven real (wrong password
+ * refused, right one accepted).
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
  * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__test/emails`), a fresh
- * page load, so the account has to genuinely exist server-side for the second half to work.
+ * page load, so the account has to genuinely exist server-side for the second half to work. The
+ * logout in the middle is what makes the token-spending half a GUEST's — the link is opened from
+ * a mailbox, which may not be on the device that signed up.
  */
 describe('Registration', () => {
     beforeEach(() => {
@@ -28,8 +31,13 @@ describe('Registration', () => {
         cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
 
-        // No auto-login: the form hands over to the login page and the email does the rest.
-        cy.get('#login-page').should('exist');
+        // Signed in from the first moment: `POST /account/signup` sets the session cookies, so
+        // the new account lands on Home as `unverified` — wearing the banner, not shut out.
+        cy.get('#home-page').should('exist');
+        cy.get('[data-test=verify-banner]').should('exist');
+
+        // Back to being a guest, so the emailed link below is opened the way a real one is.
+        cy.logout();
 
         // ── The verification email ──────────────────────────────────────────────────
         cy.demoEmailTo('new.customer@example.com').then((email) => {
@@ -75,17 +83,18 @@ describe('Registration', () => {
         // shares this form, and `[type=checkbox]` would check both.
         cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
-        cy.get('#login-page').should('exist');
 
-        // Log in WITHOUT touching the email first: the account works, but wears the banner.
-        cy.get('[type=email]').should('not.be.disabled').clear();
-        cy.get('[type=email]').should('not.be.disabled').type('slow.reader@example.com');
-        cy.get('[type=password]').should('not.be.disabled').clear();
-        cy.get('[type=password]').should('not.be.disabled').type('Another_Pass1!');
-        cy.get('form').submit();
-        cy.url().should('not.include', '/login');
+        // No login step at all: the banner is up before the visitor has touched their inbox,
+        // which is the point — a warning first met at the till arrives too late.
+        cy.get('#home-page').should('exist');
+        cy.get('[data-test=verify-banner]').should('exist');
         cy.visit('/en/profile');
         cy.get('[data-test=verify-banner]').should('exist');
+
+        // Pressing Resend hands back the server's own cooldown, and the button honours it rather
+        // than letting the next press spend a 429.
+        cy.get('[data-test=verify-resend]').click();
+        cy.get('[data-test=verify-resend]').should('be.disabled');
 
         // Now open the signup email and spend its token; the banner goes.
         cy.demoEmailTo('slow.reader@example.com').then(({ token }) => {
