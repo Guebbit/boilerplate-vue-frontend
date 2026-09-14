@@ -189,6 +189,7 @@
             "page-title": "Signing you in…",
             "error-access_denied": "Sign-in was cancelled.",
             "error-email_unverified": "That email isn't verified with this provider yet. Try logging in with your password instead, or verify the address with the provider first.",
+            "error-account_unverified": "An account already uses this email address, but it has never been confirmed. Reset its password from the link we email you — that proves the address is yours, and you can connect this provider afterwards.",
             "error-provider_error": "Something went wrong signing you in. Please try again.",
             "link-back-to-login": "Back to login"
         }

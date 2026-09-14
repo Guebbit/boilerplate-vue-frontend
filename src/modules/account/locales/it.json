@@ -189,6 +189,7 @@
             "page-title": "Accesso in corso…",
             "error-access_denied": "Accesso annullato.",
             "error-email_unverified": "Questa email non è ancora verificata con questo provider. Prova ad accedere con la password, oppure verifica prima l'indirizzo presso il provider.",
+            "error-account_unverified": "Un account usa già questo indirizzo email, ma non è mai stato confermato. Reimposta la sua password dal link che ti invieremo — così dimostri che l'indirizzo è tuo e potrai collegare il provider dopo.",
             "error-provider_error": "Si è verificato un problema durante l'accesso. Riprova.",
             "link-back-to-login": "Torna al login"
         }

@@ -37,7 +37,12 @@ const router = useRouter();
  * The closed set of codes the backend redirects with. Anything else — a future code this build
  * predates — falls back to the generic `provider_error` copy rather than showing a raw string.
  */
-const KNOWN_ERROR_CODES = ['access_denied', 'email_unverified', 'provider_error'] as const;
+const KNOWN_ERROR_CODES = [
+    'access_denied',
+    'email_unverified',
+    'account_unverified',
+    'provider_error'
+] as const;
 
 /**
  * The translated failure reason, or `undefined` when the login actually succeeded.
