@@ -117,4 +117,37 @@ describe('Social login (OAuth)', () => {
         cy.url().should('not.include', '/login');
         cy.get('#home-page').should('exist');
     });
+
+    /*
+     * 1b: a factor armed on the password path applies to a linked provider too. Before this fix
+     * the callback minted a session directly, so the provider alone stood in for the second
+     * factor the owner deliberately turned on.
+     */
+    it('challenges a linked provider login when the account has 2FA armed', () => {
+        cy.skipUnlessDemo();
+
+        // ── The provider creates the account; arm email as a second factor on it ───────────
+        cy.visit('/en/login');
+        cy.get('[data-test=oauth-fake]').should('exist').click();
+        cy.get('#home-page').should('exist');
+        cy.enrollEmailTwoFactor('oauth.demo@example.com');
+        cy.logout();
+
+        // ── The SAME identity, now gated: a challenge, not a session ────────────────────────
+        cy.visit('/en/login');
+        cy.get('[data-test=oauth-fake]').should('exist').click();
+        cy.get('#two-factor-challenge-page').should('exist');
+        cy.url().should('include', '/login/2fa');
+        cy.get('#home-page').should('not.exist');
+
+        // ── Answering it completes the login, exactly like the password path does ──────────
+        cy.get('[data-test=two-factor-challenge-send]').click();
+        cy.typeMailedTwoFactorCode(
+            'oauth.demo@example.com',
+            '[data-test=two-factor-challenge-code]'
+        );
+        cy.get('[data-test=two-factor-challenge-submit]').click();
+        cy.url().should('not.include', '/login');
+        cy.get('#home-page').should('exist');
+    });
 });

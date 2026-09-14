@@ -42,13 +42,17 @@ import type { LoginOutcome } from './auth.ts';
  * "remember me" choice the visitor made on the form it came from — an `MfaChallenge` response
  * carries no `remember` field, so the form's own choice has to survive the hop across the two
  * steps for {@link submitLoginCode} to apply it.
+ *
+ * `challenge` and `remember` are both absent for an OAuth-originated one — see
+ * {@link beginOAuthChallenge}: the token itself never reaches this client at all, it travels in
+ * an httpOnly cookie the backend reads instead, and OAuth has no "remember me" checkbox to carry.
  */
 interface LoginChallenge {
-    challenge: string;
+    challenge?: string;
     expiresAt: string;
     methods: TwoFactorMethodSummary[];
     defaultMethod?: string;
-    remember: boolean;
+    remember?: boolean;
 }
 
 /**
@@ -322,6 +326,23 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     };
 
     /**
+     * Opens the login-time challenge for an OAuth-originated login — `OAuthCallback.vue`'s
+     * `?mfaRequired=1` branch. No token: the backend never hands this client one, only what it
+     * needs to RENDER the step, so {@link sendLoginCode}/{@link submitLoginCode} submit with none
+     * and the backend reads it off the httpOnly cookie the callback set instead.
+     *
+     * @param parsed - `expiresAt`/`methods`/`defaultMethod`, read off the callback redirect's own
+     *  query string — see `OAuthCallback.vue`.
+     */
+    const beginOAuthChallenge = (parsed: {
+        expiresAt: string;
+        methods: TwoFactorMethodSummary[];
+        defaultMethod?: string;
+    }) => {
+        challenge.value = { ...parsed };
+    };
+
+    /**
      * Drops the live login challenge — spent, expired, or the visitor navigated away.
      */
     const clearChallenge = () => {
@@ -396,6 +417,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         clearSetup,
 
         beginLoginChallenge,
+        beginOAuthChallenge,
         clearChallenge,
         sendLoginCode,
         submitLoginCode

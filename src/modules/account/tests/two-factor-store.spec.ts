@@ -381,6 +381,60 @@ describe('the login-time challenge', () => {
     });
 });
 
+describe('the OAuth-originated login-time challenge (1b)', () => {
+    const OAUTH_CHALLENGE = {
+        expiresAt: '2026-01-01T00:05:00.000Z',
+        methods: [{ method: 'totp', delivers: false }],
+        defaultMethod: 'totp'
+    };
+
+    it('beginOAuthChallenge opens a challenge with no token of its own', () => {
+        const store = useTwoFactorStore();
+        store.beginOAuthChallenge(OAUTH_CHALLENGE);
+        expect(store.challenge).toEqual({ ...OAUTH_CHALLENGE, challenge: undefined });
+    });
+
+    it('submitLoginCode omits `challenge` from the body — the backend reads it off its own cookie', () => {
+        const store = useTwoFactorStore();
+        store.beginOAuthChallenge(OAUTH_CHALLENGE);
+        responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
+        responses['GET /account'] = orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        });
+
+        return store.submitLoginCode('123456').then(() => {
+            const last = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(
+                    (call) => (call[0] as { url: string }).url === '/account/login/2fa'
+                )![0] as { data: Record<string, unknown> };
+            expect(last.data).toEqual({ code: '123456' });
+            expect(useSessionStore().accessToken).toBe('stepped-up-jwt');
+        });
+    });
+
+    it('sendLoginCode omits `challenge` from the body too', () => {
+        const store = useTwoFactorStore();
+        store.beginOAuthChallenge(OAUTH_CHALLENGE);
+        responses['POST /account/login/2fa/send'] = orvalEnvelope({
+            method: 'email',
+            sentTo: 'a***a@example.com',
+            resendAfter: 15,
+            expiresAt: '2026-01-01T00:05:00.000Z'
+        });
+
+        return store.sendLoginCode('email').then(() => {
+            const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
+                data: Record<string, unknown>;
+            };
+            expect(last.data).toEqual({ method: 'email' });
+        });
+    });
+});
+
 describe('per-action loading flags', () => {
     it('a send raises sendingCode alone', () => {
         responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({

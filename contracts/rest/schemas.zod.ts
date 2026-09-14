@@ -2975,7 +2975,12 @@ export const ExportAccountDataResponse = zod.strictObject({
  * @summary Complete a two-factor login
  */
 export const LoginTwoFactorBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    challenge: zod
+        .string()
+        .optional()
+        .describe(
+            'The challenge token from POST \/account\/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.'
+        ),
     code: zod
         .string()
         .describe(
@@ -2999,7 +3004,12 @@ export const LoginTwoFactorResponse = zod.strictObject({
  * @summary Send a login code
  */
 export const SendTwoFactorCodeBody = zod.strictObject({
-    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    challenge: zod
+        .string()
+        .optional()
+        .describe(
+            'The challenge token from POST \/account\/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.'
+        ),
     method: zod
         .string()
         .describe(
@@ -3339,7 +3349,7 @@ export const StartOAuthLoginParams = zod.strictObject({
 export const StartOAuthLoginResponse = zod.void();
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`.
  * @summary Complete an OAuth login
  */
 export const CompleteOAuthLoginParams = zod.strictObject({

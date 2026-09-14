@@ -1695,15 +1695,15 @@ export interface AccountExportEnvelope {
 }
 
 export interface LoginTwoFactorRequest {
-    /** The challenge token from POST /account/login. */
-    challenge: string;
+    /** The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead. */
+    challenge?: string;
     /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
     code: string;
 }
 
 export interface TwoFactorSendRequest {
-    /** The challenge token from POST /account/login. */
-    challenge: string;
+    /** The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge. */
+    challenge?: string;
     /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
     method: string;
 }
@@ -4505,7 +4505,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`.
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
