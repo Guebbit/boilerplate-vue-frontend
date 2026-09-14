@@ -37,6 +37,7 @@
  */
 import { spawn } from 'node:child_process';
 import { rm } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 /*
@@ -47,6 +48,20 @@ const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 /** Stryker's own scratch space: one copy of the project per run, removed only on a clean exit. */
 const SANDBOX_ROOT = path.join(REPO_ROOT, '.stryker-tmp');
+
+/**
+ * ESTIMATE, not a measurement — unlike the backend, no case study exists for this repo's own
+ * worker RSS (docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop
+ * documents why it hasn't needed one). Picked above `STRYKER_WORKER_HEAP_MB`'s own default
+ * (2048 MB): that number bounds only V8's old-space, while a worker's actual RSS also carries
+ * jsdom and Vitest's own overhead on top of it. Re-measure with
+ * `npx stryker run --mutate <one file> --concurrency 1` (watching RSS) if OOM restarts ever show
+ * up here, and replace this constant with the result.
+ */
+const STRYKER_WORKER_PEAK_MB_ESTIMATE = 2500;
+
+/** Headroom left unclaimed for the OS and an editor. */
+const OS_RESERVE_MB = 2048;
 
 /**
  * How many restarts, inside how long, count as the loop rather than bad luck.
@@ -71,14 +86,36 @@ const positiveInteger = (value: string | undefined): number | undefined => {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 };
 
-const concurrency = positiveInteger(process.env.STRYKER_CONCURRENCY);
+/**
+ * How many Stryker workers to run.
+ *
+ * `STRYKER_CONCURRENCY` always wins. Unset, the safe number is computed from this machine rather
+ * than left to `stryker.config.json`'s committed `concurrency: 6` — a number sized for whichever
+ * machine last edited that file, not necessarily this one.
+ *
+ * @returns `STRYKER_CONCURRENCY` when set, otherwise the lower of `logical CPUs - 1` and free RAM
+ *   divided by `STRYKER_WORKER_PEAK_MB_ESTIMATE`
+ */
+const resolveConcurrency = (): number => {
+    const configured = positiveInteger(process.env.STRYKER_CONCURRENCY);
+    if (configured) return configured;
+
+    const cpuCap = os.cpus().length - 1;
+    const ramCap = Math.floor(
+        (os.totalmem() / 1024 / 1024 - OS_RESERVE_MB) / STRYKER_WORKER_PEAK_MB_ESTIMATE
+    );
+    // At least one, or a single-core, low-memory machine would compute zero and run nothing.
+    return Math.max(1, Math.min(cpuCap, ramCap));
+};
+
+const concurrency = resolveConcurrency();
 const heapMb = positiveInteger(process.env.STRYKER_WORKER_HEAP_MB);
 
 const strykerArguments = [
     'run',
-    ...(concurrency && !passthrough.some((argument) => argument.startsWith('--concurrency'))
-        ? ['--concurrency', String(concurrency)]
-        : []),
+    ...(passthrough.some((argument) => argument.startsWith('--concurrency'))
+        ? []
+        : ['--concurrency', String(concurrency)]),
     ...passthrough
 ];
 
@@ -102,7 +139,7 @@ const main = async () => {
     await rm(SANDBOX_ROOT, { recursive: true, force: true });
 
     console.log(
-        `[mutation] concurrency=${concurrency ?? 'stryker.config.json'} ` +
+        `[mutation] concurrency=${concurrency} ` +
             `heap=${heapMb ? `${heapMb} MB` : 'node default (derived from total RAM)'}`
     );
 
