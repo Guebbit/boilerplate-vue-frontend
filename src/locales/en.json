@@ -41,6 +41,7 @@
     "verification-banner": {
         "message": "Your email address is not verified yet. Check your inbox, or resend the link.",
         "button-resend": "Resend",
+        "button-resend-wait": "Resend in {seconds}s",
         "sent": "Verification email sent, check your inbox."
     },
     "navigation": {

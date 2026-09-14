@@ -11,6 +11,7 @@ export default {
  * checkout refuses an unproved address (`EMAIL_NOT_VERIFIED`), and a warning a visitor only meets
  * at the till is a warning that arrived too late.
  */
+import { onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -44,13 +45,50 @@ const { can } = sessionStore;
 const { requestEmailVerification } = useProfileStore();
 
 /**
+ * Seconds left on the server's own resend cooldown, counted down to re-enable the button. Zero
+ * means it may be pressed.
+ */
+const cooldown = ref(0);
+
+/**
+ * The interval driving `cooldown`, kept so it can be cleared — on reaching zero, and on unmount,
+ * since a banner that rides every page outlives any one of them.
+ */
+let ticker: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * Starts the countdown the server just handed back.
+ *
+ * @param seconds - the cooldown from `resendAfter`; 0 or less leaves the button enabled
+ */
+const startCooldown = (seconds: number) => {
+    if (seconds <= 0) return;
+    cooldown.value = seconds;
+    clearInterval(ticker);
+    ticker = setInterval(() => {
+        cooldown.value -= 1;
+        if (cooldown.value <= 0) clearInterval(ticker);
+    }, 1000);
+};
+
+onUnmounted(() => {
+    clearInterval(ticker);
+});
+
+/**
  * Re-sends the verification email — the banner's one action.
+ *
+ * The cooldown comes from the response, never from a number chosen here: the endpoint answers 429
+ * inside its own window, so a client that invents its own would eventually disagree with it.
  *
  * @returns Nothing; a toast reports the send (or the 409 for an already verified account).
  */
 const handleResendVerification = () => {
     requestEmailVerification()
-        .then(() => addMessage(t('verification-banner.sent')))
+        .then((resendAfter) => {
+            startCooldown(resendAfter);
+            addMessage(t('verification-banner.sent'));
+        })
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
@@ -70,9 +108,14 @@ const handleResendVerification = () => {
                 variant="text"
                 size="small"
                 data-test="verify-resend"
+                :disabled="cooldown > 0"
                 @click="handleResendVerification"
             >
-                {{ t('verification-banner.button-resend') }}
+                {{
+                    cooldown > 0
+                        ? t('verification-banner.button-resend-wait', { seconds: cooldown })
+                        : t('verification-banner.button-resend')
+                }}
             </v-btn>
         </template>
     </v-alert>

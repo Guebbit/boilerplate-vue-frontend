@@ -11,7 +11,7 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User, AccountExportResponse } from '@types';
+import type { User, AccountExportResponse, EmailVerificationRequested } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -257,9 +257,16 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * Re-sends the email-verification link — for the mail that never arrived. Signup already
      * sends the first one.
      *
-     * @returns A promise resolving once the request is accepted (409 when already verified).
+     * @returns The server's own cooldown in seconds. A caller that counts this down never sees
+     *  the 429 the endpoint answers inside it — the number is the server's, never the client's,
+     *  so the two cannot disagree.
      */
-    const requestEmailVerification = () => fetchAny(() => apiRequestEmailVerification());
+    const requestEmailVerification = (): Promise<number> =>
+        fetchAny(() =>
+            apiRequestEmailVerification().then(
+                (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
+            )
+        ).then((seconds) => seconds ?? 0);
 
     /**
      * Spends the emailed verification token. Public — the visitor following the link is not

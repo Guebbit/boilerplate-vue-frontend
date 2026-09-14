@@ -41,6 +41,7 @@
     "verification-banner": {
         "message": "Il tuo indirizzo email non è ancora verificato. Controlla la posta o invia di nuovo il link.",
         "button-resend": "Invia di nuovo",
+        "button-resend-wait": "Riprova tra {seconds}s",
         "sent": "Email di verifica inviata, controlla la posta."
     },
     "navigation": {
