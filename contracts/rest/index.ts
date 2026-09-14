@@ -1412,6 +1412,18 @@ export interface UpdateAddressRequest {
     default?: boolean;
 }
 
+export interface EmailVerificationRequested {
+    /** Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server. */
+    resendAfter: number;
+}
+
+export interface EmailVerificationRequestedEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: EmailVerificationRequested;
+}
+
 export interface VerifyEmailConfirmRequest {
     /** One-time email verification token (NOT a JWT). */
     token: string;
@@ -4110,13 +4122,13 @@ export const removeAddress = (
 };
 
 /**
- * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
+ * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
 export const requestEmailVerification = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<EmailVerificationRequestedEnvelope>(
         { url: `/account/verify-request`, method: 'POST' },
         options
     );
@@ -4199,7 +4211,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+ * Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
  * @summary Signup
  */
 export const signup = (
@@ -4218,7 +4230,7 @@ export const signup = (
 };
 
 /**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+ * Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
  * @summary Signup
  */
 export const signupWithMultipart = (

@@ -1223,17 +1223,23 @@ paths:
       tags:
         - Auth
       summary: Request email verification
-      description: Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
+      description: Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
       operationId: requestEmailVerification
       security:
         - bearerAuth: []
       responses:
         '200':
-          $ref: '#/components/responses/Success'
+          description: A verification email is on its way
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerificationRequestedEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
   /account/verify-confirm:
@@ -1331,7 +1337,7 @@ paths:
       tags:
         - Auth
       summary: Signup
-      description: Registers a new user account with optional image upload. Returns the newly created user profile on success.
+      description: Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
       operationId: signup
       security: []
       parameters:
@@ -6563,6 +6569,32 @@ components:
           type: string
         default:
           type: boolean
+    EmailVerificationRequested:
+      type: object
+      additionalProperties: false
+      required:
+        - resendAfter
+      properties:
+        resendAfter:
+          type: integer
+          description: Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
+    EmailVerificationRequestedEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/EmailVerificationRequested'
     VerifyEmailConfirmRequest:
       type: object
       additionalProperties: false
