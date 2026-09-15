@@ -67,17 +67,23 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      * hand via `editRecord`, and the full response (secret included) is returned to the caller so
      * the create view can still show the one-time reveal modal.
      *
+     * The scrub-and-cache sits INSIDE the call handed to `fetchAny`, where the response is known
+     * to exist, rather than in a `.then` on its result — `fetchAny` widens its return to
+     * `| undefined` for the cached path, and this call site passes no `lastUpdateKey`, so that
+     * half of the union is unreachable here.
+     *
      * @param data - name, permissions and an optional expiry for the new credential
      * @returns The full response, including the plaintext `secret` — the caller must not persist
      *  it anywhere beyond the reveal modal
      */
     const mintCredential = (data: MintApiKeyRequest) =>
-        fetchAny(() => mintApiKey(data).then((response) => response.data)).then((created) => {
-            if (!created) return created;
-            const { secret: _secret, ...record } = created;
-            editApiKeyRecord(record, record.id);
-            return created;
-        });
+        fetchAny(() =>
+            mintApiKey(data).then(({ data: created }) => {
+                const { secret: _secret, ...record } = created;
+                editApiKeyRecord(record, record.id);
+                return created;
+            })
+        );
 
     /**
      * Revokes a credential. `RevokeApiKeyResponse` is a bare success envelope with no updated

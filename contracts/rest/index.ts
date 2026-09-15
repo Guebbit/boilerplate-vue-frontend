@@ -3843,7 +3843,7 @@ export const getObservabilityAuditLogs = (
  * Newest first. `meta.totalItems` counts every entry matching the filters, not just
  * the page.
  *
- * Requires `audit.read` — held by `manager`, `support` and `moderator` in the demo.
+ * Requires `audit.any.read` — held by `manager`, `support` and `moderator` in the demo.
  * @summary The shop's own action history
  */
 export const listAuditEntries = (

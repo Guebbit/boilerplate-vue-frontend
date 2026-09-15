@@ -148,18 +148,22 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * `editRecord`, and the full response (secret included) is returned to the caller so the
      * create view can still show the one-time reveal modal.
      *
+     * The scrub-and-cache sits INSIDE the call handed to `fetchAny`, where the response is known
+     * to exist, rather than in a `.then` on its result — `fetchAny` widens its return to
+     * `| undefined` for the cached path, and this call site passes no `lastUpdateKey`, so that
+     * half of the union is unreachable here.
+     *
      * @param data - url, description and event types for the new subscription
      * @returns The full response, including the plaintext `secret` — the caller must not persist
      *  it anywhere beyond the reveal modal
      */
     const createSubscription = (data: CreateWebhookSubscriptionRequest) =>
-        fetchAnySubscriptions(() => createWebhookSubscription(data).then((r) => r.data)).then(
-            (created) => {
-                if (!created) return created;
+        fetchAnySubscriptions(() =>
+            createWebhookSubscription(data).then(({ data: created }) => {
                 const { secret: _secret, newSecret: _newSecret, ...record } = created;
                 editSubscriptionRecord(record, record.id);
                 return created;
-            }
+            })
         );
 
     /**
@@ -167,20 +171,20 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * already on it — the ring carries both until {@link removeSecret} drops the old one.
      *
      * Same hand-written shape as {@link createSubscription} and for the same reason: `newSecret`
-     * is a one-time plaintext reveal, never something this store's cache should hold.
+     * is a one-time plaintext reveal, never something this store's cache should hold — including
+     * the scrub-and-cache living inside the call, not in a `.then` on `fetchAny`'s result.
      *
      * @param id - the subscription to rotate
      * @returns The full response, including the plaintext `newSecret`
      */
     const rotateSecret = (id: string) =>
         fetchAnySubscriptions(() =>
-            updateWebhookSubscription(id, { rotateSecret: true }).then((r) => r.data)
-        ).then((updated) => {
-            if (!updated) return updated;
-            const { secret: _secret, newSecret: _newSecret, ...record } = updated;
-            editSubscriptionRecord(record, id);
-            return updated;
-        });
+            updateWebhookSubscription(id, { rotateSecret: true }).then(({ data: updated }) => {
+                const { secret: _secret, newSecret: _newSecret, ...record } = updated;
+                editSubscriptionRecord(record, id);
+                return updated;
+            })
+        );
 
     /**
      * Drops one secret from a subscription's ring — the other half of a rotation, once every

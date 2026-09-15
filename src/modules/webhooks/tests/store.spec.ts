@@ -14,6 +14,7 @@
 import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { nextTick, ref } from 'vue';
 
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { orvalMutator } from '@/infrastructure/http';
@@ -99,6 +100,15 @@ const respondOnceWith = (data: unknown) =>
         .mockImplementationOnce((config: { url?: string; method?: string }) =>
             Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope(data)))
         );
+
+/**
+ * Drains microtasks AND the timer queue, then lets Vue flush.
+ *
+ * `watchSubscription` fires its backfill with `void`, so a test has no promise to chain onto and
+ * has to wait the fetch out instead. `nextTick` alone is not enough — the cache write happens
+ * behind the query layer, several turns past the request itself.
+ */
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0)).then(() => nextTick());
 
 describe('useWebhooksStore', () => {
     beforeEach(() => {
@@ -265,6 +275,70 @@ describe('useWebhooksStore', () => {
         });
     });
 
+    describe('watchSubscription', () => {
+        it('selects a cached id without any network call', () => {
+            const store = useWebhooksStore();
+            // Seeded by hand rather than via a list call: the store's own cache, pre-populated
+            // the way a prior list load would leave it.
+            store.subscriptions[SUBSCRIPTION.id] = { ...SUBSCRIPTION };
+
+            const stop = store.watchSubscription(() => SUBSCRIPTION.id);
+
+            expect(store.selectedSubscriptionId).toBe(SUBSCRIPTION.id);
+            expect(store.currentSubscription).toMatchObject({ id: SUBSCRIPTION.id });
+            expect(orvalMutator).not.toHaveBeenCalled();
+            stop();
+        });
+
+        it('backfills the whole cache for an id it does not hold', () => {
+            respondWithItems([SUBSCRIPTION]);
+            const store = useWebhooksStore();
+
+            const stop = store.watchSubscription(() => SUBSCRIPTION.id);
+
+            return flush().then(() => {
+                expect(lastRequest()).toMatchObject({
+                    url: '/webhooks/subscriptions',
+                    method: 'GET'
+                });
+                expect(lastParameters()).toMatchObject({ pageSize: 100 });
+                expect(store.currentSubscription).toMatchObject({ id: SUBSCRIPTION.id });
+                stop();
+            });
+        });
+
+        it('clears the selection for an undefined id, without backfilling', () => {
+            const store = useWebhooksStore();
+
+            const stop = store.watchSubscription(() => undefined);
+
+            expect(store.selectedSubscriptionId).toBeUndefined();
+            expect(store.currentSubscription).toBeUndefined();
+            expect(orvalMutator).not.toHaveBeenCalled();
+            stop();
+        });
+
+        it('re-hydrates when the id source changes', () => {
+            respondWithItems([SUBSCRIPTION]);
+            const store = useWebhooksStore();
+            const id = ref<string | undefined>(undefined);
+
+            const stop = store.watchSubscription(() => id.value);
+            expect(orvalMutator).not.toHaveBeenCalled();
+
+            id.value = SUBSCRIPTION.id;
+
+            return flush().then(() => {
+                expect(store.selectedSubscriptionId).toBe(SUBSCRIPTION.id);
+                expect(lastRequest()).toMatchObject({
+                    url: '/webhooks/subscriptions',
+                    method: 'GET'
+                });
+                stop();
+            });
+        });
+    });
+
     describe('read paths', () => {
         it('fetchAllSubscriptions requests the full page size', () => {
             respondWithItems([SUBSCRIPTION]);
@@ -316,6 +390,10 @@ describe('useWebhooksStore', () => {
                         status: 'failed'
                     });
                 });
+        });
+
+        it('eventCatalogue is empty before the first successful load', () => {
+            expect(useWebhooksStore().eventCatalogue).toEqual([]);
         });
 
         it('fetchEventCatalogue requests the event catalogue', () => {
