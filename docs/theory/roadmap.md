@@ -80,3 +80,6 @@ Genuinely undecided, listed so the idea is not lost.
   feed of what is happening right now. Genuinely unbuilt, not a duplicate of anything the admin
   panel already calls: worth a view once there's an admin surface wanting a live tail rather than a
   refresh button.
+- EPC QR / GiroCode on `TransferInstructionsPanel`, so the customer's own banking app fills in the
+  transfer instead of them retyping the IBAN and RF reference by hand. Needs a QR library — left
+  undecided rather than picked now, since the panel it renders into may still change shape.

@@ -105,5 +105,17 @@ keeping moved into cross-cutting specs.
   forgotten. It gains a case that FOLLOWS a saved item's link instead of assembling the product URL
   itself: the previous spec reached the product page by an id it looked up from the title, which is
   exactly how a link built from the title survived unnoticed.
+- `GET /payments/order-by-reference` registered in `src/modules/payments/response-schemas.ts` and
+  the `ROUTES` table of `tests/unit/infrastructure/http/response-schema-map.spec.ts`, wrapped by the
+  new `useOrderByReference` composable and published from `payments`' barrel. `OrdersList.vue` gains
+  a "find by bank transfer reference" box: paste the RF code (or a legacy raw order id) off the
+  bank's own statement line and land straight on that order's `OrderEdit.vue`, where the existing
+  "record a payment by hand" form settles it — no second "show the order, mark it paid" screen was
+  built for this. A 404 (malformed and unmatched answer alike) renders "No order matches this
+  reference." inline; any other failure is the usual toast.
+- `TransferInstructionsPanel`'s reference is now shown large, grouped into 4-character blocks
+  (`RF13 2EY8 H44V JAVZ KX80 JRL`) in its own highlighted block, with a stronger instruction to write
+  it in the transfer's description exactly as shown. The copy button still copies the raw,
+  ungrouped value.
 
 [3.0.0]: https://github.com/Guebbit/boilerplate-vue-frontend/releases/tag/v3.0.0

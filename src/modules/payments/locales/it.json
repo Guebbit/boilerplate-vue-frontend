@@ -40,7 +40,7 @@
         "label-reference": "Riferimento",
         "button-copy-iban": "Copia IBAN",
         "button-copy-reference": "Copia riferimento",
-        "hint-reference": "Includi il riferimento nella causale del bonifico, così potremo abbinare il tuo pagamento a questo ordine."
+        "hint-reference": "Scrivi questo riferimento nella causale del bonifico esattamente come mostrato, così potremo abbinare il tuo pagamento a questo ordine."
     },
     "record-offline-payment-form": {
         "label-method": "Come è arrivato",

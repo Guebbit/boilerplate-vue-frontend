@@ -9,15 +9,20 @@ export default {
  * @module
  * Orders list/search page. Wires the store's paginated search to a filter
  * form and a `DataTable`, with per-row view/edit/delete/hard-delete actions
- * gated on the signed-in role.
+ * gated on the signed-in role. Also owns the "find by reference" lookup: paste the RF reference (or
+ * a legacy raw id) off a bank transfer's own statement line and land straight on that order's edit
+ * page — `OrderEdit.vue` is already "show the order, mark it paid", so this never builds a second
+ * one.
  */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrderByReference } from '@/modules/payments';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
@@ -70,6 +75,29 @@ const session = useSessionStore();
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
+
+/**
+ * Programmatic navigation, used once a pasted reference resolves to an order.
+ */
+const router = useRouter();
+
+/**
+ * The reference-lookup call — `payments`' own step before `recordOfflinePayment` — and the state
+ * it mirrors the answer into.
+ */
+const {
+    order: referenceOrder,
+    notFound: referenceNotFound,
+    loading: referenceLoading,
+    findByReference,
+    reset: resetReferenceLookup
+} = useOrderByReference();
+
+/**
+ * The pasted reference, live-bound to its own field — separate from `filters`, since this is a
+ * one-shot lookup rather than a filter the table search applies.
+ */
+const referenceInput = ref('');
 
 /**
  * Selectable page sizes for the orders table.
@@ -159,6 +187,36 @@ const handleReset = () => {
 };
 
 /**
+ * Looks the pasted reference up and, once it resolves, jumps straight to that order's edit page —
+ * where the operator records the payment exactly as they would for any other order. A 404 answers
+ * inline instead ({@link referenceNotFound}); anything else is the caller's toast.
+ *
+ * @returns A promise resolving once the lookup and, if it found something, the navigation have
+ *  settled.
+ */
+const searchByReference = () => {
+    const reference = referenceInput.value.trim();
+    if (!reference) return Promise.resolve();
+
+    return findByReference(reference)
+        .then(() => {
+            if (!referenceOrder.value) return;
+            referenceInput.value = '';
+            return router.push(
+                routerLinkI18n({ name: 'OrderEdit', params: { id: referenceOrder.value.id } })
+            );
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Clears a stale "not found" message once the operator starts typing a different reference.
+ */
+const clearReferenceNotFound = () => {
+    if (referenceNotFound.value) resetReferenceLookup();
+};
+
+/**
  * Deletes an order after an explicit confirmation.
  *
  * @param orderId - Identifier of the order to delete.
@@ -196,6 +254,46 @@ const handleHardDelete = (orderId: string) =>
 
 <template>
     <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
+        <v-card
+            v-if="session.can('update', 'Order')"
+            class="mb-6 p-5"
+            data-test="reference-lookup-card"
+        >
+            <form
+                novalidate
+                class="flex flex-wrap items-end gap-3"
+                data-test="reference-lookup-form"
+                @submit.prevent="searchByReference"
+            >
+                <v-text-field
+                    v-model="referenceInput"
+                    :label="t('orders-list-page.label-reference-lookup')"
+                    :hint="t('orders-list-page.hint-reference-lookup')"
+                    persistent-hint
+                    data-test="reference-lookup-input"
+                    class="min-w-72 grow"
+                    hide-details="auto"
+                    @update:model-value="clearReferenceNotFound"
+                />
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    :disabled="referenceLoading || !referenceInput.trim()"
+                    data-test="reference-lookup-submit"
+                >
+                    <Search :size="16" class="mr-1" aria-hidden="true" />
+                    {{ t('orders-list-page.button-find-reference') }}
+                </v-btn>
+            </form>
+            <v-alert
+                v-if="referenceNotFound"
+                type="warning"
+                class="mt-3"
+                :text="t('orders-list-page.error-reference-not-found')"
+                data-test="reference-lookup-not-found"
+            />
+        </v-card>
+
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
