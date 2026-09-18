@@ -292,7 +292,9 @@ usePollInvoiceStatus(currentOrder, () => id, fetchOrder);
                     <ShipmentPanel
                         v-if="currentOrder"
                         :order-id="currentOrder.id"
-                        @advanced="fetchOrder(currentOrder.id, { forced: true })"
+                        :order-status="currentOrder.status"
+                        :shipping-method-id="currentOrder.shippingMethod"
+                        @moved="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"

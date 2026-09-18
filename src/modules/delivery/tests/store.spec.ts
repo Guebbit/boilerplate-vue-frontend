@@ -20,11 +20,11 @@ import {
 wireModulesIntoCore();
 
 /**
- * Fixture methods: one with a free-above threshold, one flat-rate.
+ * Fixture methods: one with a free-above threshold and no tracking, one flat-rate and tracked.
  */
 const METHODS = [
-    { id: 'standard', price: 5, freeAbove: 100 },
-    { id: 'express', price: 15 }
+    { id: 'standard', price: 5, freeAbove: 100, tracked: false },
+    { id: 'express', price: 15, tracked: true }
 ];
 
 /**
@@ -60,7 +60,18 @@ beforeEach(() => {
             trackingCode: 'TRK-1',
             status: 'shipped'
         }),
-        'POST /delivery/advance': orvalEnvelope({ advanced: 2 })
+        'POST /delivery/order/order-2/ship': orvalEnvelope({
+            id: 's2',
+            orderId: 'order-2',
+            trackingCode: 'TRK-2',
+            status: 'shipped'
+        }),
+        'POST /delivery/order/order-1/deliver': orvalEnvelope({
+            id: 's1',
+            orderId: 'order-1',
+            trackingCode: 'TRK-1',
+            status: 'delivered'
+        })
     };
 });
 
@@ -113,11 +124,22 @@ describe('fetchShipmentForOrder', () => {
     });
 });
 
-describe('advance', () => {
-    it('answers how many parcels arrived', () => {
+describe('ship', () => {
+    it('records the handover and stores the shipment', () => {
         const store = useDeliveryStore();
-        return store.advance().then((advanced) => {
-            expect(advanced).toBe(2);
+        return store.ship('order-2', 'TRK-2').then((shipment) => {
+            expect(shipment?.status).toBe('shipped');
+            expect(store.shipment?.trackingCode).toBe('TRK-2');
+        });
+    });
+});
+
+describe('deliver', () => {
+    it('records the arrival and stores the shipment', () => {
+        const store = useDeliveryStore();
+        return store.deliver('order-1').then((shipment) => {
+            expect(shipment?.status).toBe('delivered');
+            expect(store.shipment?.status).toBe('delivered');
         });
     });
 });

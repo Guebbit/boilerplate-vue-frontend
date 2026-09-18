@@ -3669,26 +3669,80 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalError'
-  /delivery/advance:
+  /delivery/order/{orderId}/ship:
     post:
       tags:
         - Delivery
-      summary: Advance the fake courier
-      description: Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
-      operationId: advanceCourier
+      summary: Record a parcel's handover to the carrier
+      description: Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+      operationId: shipOrder
       security:
         - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+          description: The order to ship
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipOrderRequest'
       responses:
         '200':
-          description: How many parcels arrived
+          description: The shipment
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CourierAdvanceResponseEnvelope'
+                $ref: '#/components/schemas/ShipmentEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /delivery/order/{orderId}/deliver:
+    post:
+      tags:
+        - Delivery
+      summary: Record a parcel's arrival
+      description: Stamps the shipment delivered and reports the fact to `orders` — the order moves `shipped → delivered`. Refuses an order that is not `shipped` with a named 409.
+      operationId: deliverOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+          description: The order that arrived
+      responses:
+        '200':
+          description: The shipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalError'
   /inventory/levels:
@@ -8790,6 +8844,7 @@ components:
       required:
         - id
         - price
+        - tracked
       properties:
         id:
           type: string
@@ -8804,6 +8859,14 @@ components:
           format: double
           minimum: 0
           description: Items total at which this method becomes free. Absent — it never does.
+        tracked:
+          type: boolean
+          description: Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires.
+        maxInsuredValue:
+          type: number
+          format: double
+          minimum: 0
+          description: The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
     ShippingMethodsResponse:
       type: object
       additionalProperties: false
@@ -8837,7 +8900,6 @@ components:
       required:
         - id
         - orderId
-        - trackingCode
         - status
       properties:
         id:
@@ -8846,7 +8908,7 @@ components:
           $ref: '#/components/schemas/Id'
         trackingCode:
           type: string
-          description: The courier's handle on the parcel.
+          description: The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false).
         status:
           type: string
           enum:
@@ -8879,33 +8941,13 @@ components:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
           $ref: '#/components/schemas/Shipment'
-    CourierAdvanceResponse:
+    ShipOrderRequest:
       type: object
       additionalProperties: false
-      required:
-        - advanced
       properties:
-        advanced:
-          type: integer
-          minimum: 0
-          description: How many parcels arrived on this tick.
-    CourierAdvanceResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: '#/components/schemas/EnvelopeSuccess'
-        status:
-          $ref: '#/components/schemas/EnvelopeStatus'
-        message:
-          $ref: '#/components/schemas/EnvelopeMessage'
-        data:
-          $ref: '#/components/schemas/CourierAdvanceResponse'
+        trackingCode:
+          type: string
+          description: The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
     InventoryLevel:
       type: object
       additionalProperties: false

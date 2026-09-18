@@ -2622,6 +2622,13 @@ export interface ShippingMethod {
      * @minimum 0
      */
     freeAbove?: number;
+    /** Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires. */
+    tracked: boolean;
+    /**
+     * The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
+     * @minimum 0
+     */
+    maxInsuredValue?: number;
 }
 
 export interface ShippingMethodsResponse {
@@ -2648,8 +2655,8 @@ export const ShipmentStatus = {
 export interface Shipment {
     id: Id;
     orderId: Id;
-    /** The courier's handle on the parcel. */
-    trackingCode: string;
+    /** The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    trackingCode?: string;
     /** The tail of the order's lifecycle, as the courier sees it. */
     status: ShipmentStatus;
     deliveredAt?: string;
@@ -2664,19 +2671,9 @@ export interface ShipmentEnvelope {
     data: Shipment;
 }
 
-export interface CourierAdvanceResponse {
-    /**
-     * How many parcels arrived on this tick.
-     * @minimum 0
-     */
-    advanced: number;
-}
-
-export interface CourierAdvanceResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CourierAdvanceResponse;
+export interface ShipOrderRequest {
+    /** The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise. */
+    trackingCode?: string;
 }
 
 export interface InventoryLevel {
@@ -5824,14 +5821,35 @@ export const getShipmentByOrder = (
 };
 
 /**
- * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
- * @summary Advance the fake courier
+ * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+ * @summary Record a parcel's handover to the carrier
  */
-export const advanceCourier = (
-    options?: SecondParameter<typeof orvalMutator<CourierAdvanceResponseEnvelope>>
+export const shipOrder = (
+    orderId: Id,
+    shipOrderRequest?: ShipOrderRequest,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
-    return orvalMutator<CourierAdvanceResponseEnvelope>(
-        { url: `/delivery/advance`, method: 'POST' },
+    return orvalMutator<ShipmentEnvelope>(
+        {
+            url: `/delivery/order/${orderId}/ship`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: shipOrderRequest
+        },
+        options
+    );
+};
+
+/**
+ * Stamps the shipment delivered and reports the fact to `orders` — the order moves `shipped → delivered`. Refuses an order that is not `shipped` with a named 409.
+ * @summary Record a parcel's arrival
+ */
+export const deliverOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/order/${orderId}/deliver`, method: 'POST' },
         options
     );
 };
@@ -6307,7 +6325,8 @@ export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>
 >;
 export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
-export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>;
+export type ShipOrderResult = NonNullable<Awaited<ReturnType<typeof shipOrder>>>;
+export type DeliverOrderResult = NonNullable<Awaited<ReturnType<typeof deliverOrder>>>;
 export type ListInventoryLevelsResult = NonNullable<
     Awaited<ReturnType<typeof listInventoryLevels>>
 >;

@@ -10,7 +10,12 @@
         "title": "Spedizione",
         "status-shipped": "Spedito",
         "status-delivered": "Consegnato",
-        "button-advance": "Avanza corriere (demo)",
-        "advanced": "Il corriere è avanzato — pacchi consegnati."
+        "not-shipped-yet": "Non ancora spedito.",
+        "label-tracking-code": "Codice di tracciamento",
+        "tracking-code-required": "Richiesto per questo metodo di spedizione",
+        "button-ship": "Segna come spedito",
+        "button-deliver": "Segna come consegnato",
+        "shipped": "Segnato come spedito.",
+        "delivered": "Segnato come consegnato."
     }
 }

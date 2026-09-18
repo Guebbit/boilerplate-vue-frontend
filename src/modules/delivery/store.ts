@@ -8,7 +8,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { listShippingMethods, getShipmentByOrder, advanceCourier } from '@api';
+import { listShippingMethods, getShipmentByOrder, shipOrder, deliverOrder } from '@api';
 import type { ShippingMethod, Shipment } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
@@ -91,12 +91,33 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
-     * The fake courier's tick (admin): every shipped parcel arrives.
+     * Record a parcel's handover to the carrier (admin): the order moves `processing → shipped`.
      *
-     * @returns A promise resolving with how many did.
+     * @param orderId - The order being shipped.
+     * @param trackingCode - Required when the order's shipping method is `tracked`.
+     * @returns A promise resolving with the shipment.
      */
-    const advance = () =>
-        fetchAny(() => advanceCourier().then((response) => response.data.advanced));
+    const ship = (orderId: string, trackingCode?: string) =>
+        fetchAny(() =>
+            shipOrder(orderId, trackingCode ? { trackingCode } : {}).then((response) => {
+                shipment.value = response.data;
+                return shipment.value;
+            })
+        );
+
+    /**
+     * Record a parcel's arrival (admin): the order moves `shipped → delivered`.
+     *
+     * @param orderId - The order that arrived.
+     * @returns A promise resolving with the shipment.
+     */
+    const deliver = (orderId: string) =>
+        fetchAny(() =>
+            deliverOrder(orderId).then((response) => {
+                shipment.value = response.data;
+                return shipment.value;
+            })
+        );
 
     return {
         loading,
@@ -105,6 +126,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchMethods,
         effectivePrice,
         fetchShipmentForOrder,
-        advance
+        ship,
+        deliver
     };
 });

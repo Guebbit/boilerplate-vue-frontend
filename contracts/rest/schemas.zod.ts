@@ -8728,6 +8728,8 @@ export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
 
+export const listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin = 0;
+
 export const ListShippingMethodsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8750,6 +8752,18 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .optional()
                     .describe(
                         'Items total at which this method becomes free. Absent — it never does.'
+                    ),
+                tracked: zod
+                    .boolean()
+                    .describe(
+                        "Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires."
+                    ),
+                maxInsuredValue: zod
+                    .number()
+                    .min(listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin)
+                    .optional()
+                    .describe(
+                        "The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total."
                     )
             })
         )
@@ -8771,7 +8785,12 @@ export const GetShipmentByOrderResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         orderId: zod.string().describe('Resource identifier'),
-        trackingCode: zod.string().describe("The courier's handle on the parcel."),
+        trackingCode: zod
+            .string()
+            .optional()
+            .describe(
+                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+            ),
         status: zod
             .enum(['shipped', 'delivered'])
             .describe("The tail of the order's lifecycle, as the courier sees it."),
@@ -8782,20 +8801,71 @@ export const GetShipmentByOrderResponse = zod.strictObject({
 });
 
 /**
- * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
- * @summary Advance the fake courier
+ * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+ * @summary Record a parcel's handover to the carrier
  */
-export const advanceCourierResponseDataAdvancedMin = 0;
+export const ShipOrderParams = zod.strictObject({
+    orderId: zod.string().describe('The order to ship')
+});
 
-export const AdvanceCourierResponse = zod.strictObject({
+export const ShipOrderBody = zod.strictObject({
+    trackingCode: zod
+        .string()
+        .optional()
+        .describe(
+            "The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise."
+        )
+});
+
+export const ShipOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        advanced: zod
-            .number()
-            .min(advanceCourierResponseDataAdvancedMin)
-            .describe('How many parcels arrived on this tick.')
+        id: zod.string().describe('Resource identifier'),
+        orderId: zod.string().describe('Resource identifier'),
+        trackingCode: zod
+            .string()
+            .optional()
+            .describe(
+                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+            ),
+        status: zod
+            .enum(['shipped', 'delivered'])
+            .describe("The tail of the order's lifecycle, as the courier sees it."),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Stamps the shipment delivered and reports the fact to `orders` — the order moves `shipped → delivered`. Refuses an order that is not `shipped` with a named 409.
+ * @summary Record a parcel's arrival
+ */
+export const DeliverOrderParams = zod.strictObject({
+    orderId: zod.string().describe('The order that arrived')
+});
+
+export const DeliverOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        orderId: zod.string().describe('Resource identifier'),
+        trackingCode: zod
+            .string()
+            .optional()
+            .describe(
+                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+            ),
+        status: zod
+            .enum(['shipped', 'delivered'])
+            .describe("The tail of the order's lifecycle, as the courier sees it."),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 

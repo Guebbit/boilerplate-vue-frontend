@@ -62,10 +62,10 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 
 ## `delivery`
 
-| Term                | What it means here                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| **Shipping method** | A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.     |
-| **Shipment**        | The parcel panel on an order that has shipped. Read-only here — the courier is faked server-side. |
+| Term                | What it means here                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Shipping method** | A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.                         |
+| **Shipment**        | The parcel panel on an order — read-only once shipped; staff records the handover and arrival through it before that. |
 
 ## `demo`
 

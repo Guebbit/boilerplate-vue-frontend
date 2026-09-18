@@ -10,7 +10,12 @@
         "title": "Shipping",
         "status-shipped": "Shipped",
         "status-delivered": "Delivered",
-        "button-advance": "Advance courier (demo)",
-        "advanced": "The courier advanced — parcels delivered."
+        "not-shipped-yet": "Not shipped yet.",
+        "label-tracking-code": "Tracking code",
+        "tracking-code-required": "Required for this shipping method",
+        "button-ship": "Mark shipped",
+        "button-deliver": "Mark delivered",
+        "shipped": "Marked shipped.",
+        "delivered": "Marked delivered."
     }
 }

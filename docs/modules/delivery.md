@@ -12,7 +12,7 @@
 | **Screens**             | _none_ — this module routes to nothing                                         |
 | **Store**               | `delivery`                                                                     |
 | **Menu entries**        | _none_                                                                         |
-| **API calls**           | 3                                                                              |
+| **API calls**           | 4                                                                              |
 | **Depends on**          | _nothing_                                                                      |
 | **Depended on by**      | [`cart`](./cart.md) · [`orders`](./orders.md)                                  |
 | **Languages**           | `en` · `it`                                                                    |
@@ -53,8 +53,8 @@ Neither learns what a shipping rate or a tracking code is: the components render
 and fetch their own data.
 
 ::: tip What deleting this module costs, precisely
-The selector, the panels and the mock courier go. **Checkouts simply stop carrying shipping** — the
-state the shop was in before this module existed.
+The selector and the panels go. **Checkouts simply stop carrying shipping** — the state the shop
+was in before this module existed.
 
 That is the test [Adding & Removing a Module](../theory/module-lifecycle.md) describes, and this is
 one of the two modules where it is cleanest, because nothing here is anyone else's state.
@@ -68,11 +68,11 @@ concerns, and between them they cover four of the client's nine context edges.
 
 Store `delivery`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                 | What it is                                                       |
-| ----------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `methods` · `shipment`                                                  | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                               | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchMethods` · `effectivePrice` · `fetchShipmentForOrder` · `advance` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                          | What it is                                                       |
+| ----------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `methods` · `shipment`                                                           | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                        | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchMethods` · `effectivePrice` · `fetchShipmentForOrder` · `ship` · `deliver` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -82,11 +82,12 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-| Call                       | Response envelope             |
-| -------------------------- | ----------------------------- |
-| `POST /delivery/advance`   | `AdvanceCourierResponse`      |
-| `GET /delivery/methods`    | `ListShippingMethodsResponse` |
-| `GET /delivery/order/{id}` | `GetShipmentByOrderResponse`  |
+| Call                                | Response envelope             |
+| ----------------------------------- | ----------------------------- |
+| `POST /delivery/order/{id}/ship`    | `ShipOrderResponse`           |
+| `POST /delivery/order/{id}/deliver` | `DeliverOrderResponse`        |
+| `GET /delivery/methods`             | `ListShippingMethodsResponse` |
+| `GET /delivery/order/{id}`          | `GetShipmentByOrderResponse`  |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
