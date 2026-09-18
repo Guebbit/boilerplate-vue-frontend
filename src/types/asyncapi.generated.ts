@@ -25,27 +25,63 @@ export interface AnonymousSchema8 {
 export interface AnonymousSchema11 {
   'sseClients': number;
 }
+export interface OrderCreatedEnvelope {
+  'type': AnonymousSchema16;
+  'timestamp': string;
+  'data': OrderIdPayload;
+}
+export type AnonymousSchema16 = "order.created";
 export interface OrderIdPayload {
   'orderId': string;
 }
+export interface OrderPaidEnvelope {
+  'type': AnonymousSchema19;
+  'timestamp': string;
+  'data': OrderIdPayload;
+}
+export type AnonymousSchema19 = "order.paid";
+export interface OrderShippedEnvelope {
+  'type': AnonymousSchema21;
+  'timestamp': string;
+  'data': OrderIdPayload;
+}
+export type AnonymousSchema21 = "order.shipped";
+export interface OrderCancelledEnvelope {
+  'type': AnonymousSchema23;
+  'timestamp': string;
+  'data': OrderCancelledPayload;
+}
+export type AnonymousSchema23 = "order.cancelled";
 export interface OrderCancelledPayload {
   'orderId': string;
   'refund': boolean;
 }
+export interface PaymentSucceededEnvelope {
+  'type': AnonymousSchema27;
+  'timestamp': string;
+  'data': PaymentEventPayload;
+}
+export type AnonymousSchema27 = "payment.succeeded";
 export interface PaymentEventPayload {
   'paymentId': string;
   'orderId': string;
 }
+export interface PaymentFailedEnvelope {
+  'type': AnonymousSchema31;
+  'timestamp': string;
+  'data': PaymentEventPayload;
+}
+export type AnonymousSchema31 = "payment.failed";
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
 export type HeartbeatEvent = ObservabilityMetricsPayload;
-export type OrderCreatedEvent = OrderIdPayload;
-export type OrderPaidEvent = OrderIdPayload;
-export type OrderShippedEvent = OrderIdPayload;
-export type OrderCancelledEvent = OrderCancelledPayload;
-export type PaymentSucceededEvent = PaymentEventPayload;
-export type PaymentFailedEvent = PaymentEventPayload;
+export type OrderCreatedEvent = OrderCreatedEnvelope;
+export type OrderPaidEvent = OrderPaidEnvelope;
+export type OrderShippedEvent = OrderShippedEnvelope;
+export type OrderCancelledEvent = OrderCancelledEnvelope;
+export type PaymentSucceededEvent = PaymentSucceededEnvelope;
+export type PaymentFailedEvent = PaymentFailedEnvelope;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
