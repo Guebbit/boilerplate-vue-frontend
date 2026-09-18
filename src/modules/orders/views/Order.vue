@@ -363,6 +363,50 @@ usePollInvoiceStatus(currentOrder, () => id, fetchOrder);
                         </div>
                         <p v-else class="m-0 mt-2 opacity-75">{{ t('generic.no-data') }}</p>
                     </div>
+
+                    <!--
+                        Absent on a pre-VAT order — `taxSummary` is only present once every line
+                        carries a frozen rate. One row per distinct rate, goods and shipping's own
+                        apportioned share folded together (`shared/contracts/openapi.root.yaml`'s
+                        own description of `Order.taxSummary`) — the full per-line/per-rate/
+                        shipping breakdown lives on the downloadable invoice PDF instead.
+                    -->
+                    <div v-if="currentOrder?.taxSummary?.length" data-test="order-tax-summary">
+                        <h3 class="m-0 text-base font-semibold">
+                            {{ t('order-target-page.label-vat-summary') }}
+                        </h3>
+                        <div class="mt-3 grid gap-2">
+                            <div
+                                v-for="row in currentOrder.taxSummary"
+                                :key="'tax-rate-' + row.rate"
+                                class="flex items-center justify-between gap-3 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
+                            >
+                                <v-chip size="small" variant="tonal" color="tertiary">
+                                    {{ Math.round(row.rate * 100) }}%
+                                </v-chip>
+                                <span class="opacity-75">{{
+                                    t('order-target-page.label-vat-net')
+                                }}</span>
+                                <strong>{{ formatCurrency(row.netAmount) }}</strong>
+                                <span class="opacity-75">{{
+                                    t('order-target-page.label-vat-tax')
+                                }}</span>
+                                <strong>{{ formatCurrency(row.taxAmount) }}</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-1 text-sm">
+                                <span class="opacity-75">{{
+                                    t('order-target-page.label-net-total')
+                                }}</span>
+                                <strong>{{ formatCurrency(currentOrder.netTotal) }}</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-1 text-sm">
+                                <span class="opacity-75">{{
+                                    t('order-target-page.label-tax-total')
+                                }}</span>
+                                <strong>{{ formatCurrency(currentOrder.taxTotal) }}</strong>
+                            </div>
+                        </div>
+                    </div>
                 </CardDetail>
             </template>
 

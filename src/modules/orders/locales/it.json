@@ -59,7 +59,13 @@
         "success-cancel": "Ordine annullato.",
         "button-reorder": "Acquista di nuovo",
         "success-reorder": "Ordine aggiunto al carrello.",
-        "label-shipping": "Spedizione"
+        "label-shipping": "Spedizione",
+        "label-vat-summary": "Riepilogo IVA",
+        "label-vat-rate": "Aliquota",
+        "label-vat-net": "Imponibile",
+        "label-vat-tax": "IVA",
+        "label-net-total": "Totale imponibile",
+        "label-tax-total": "Totale IVA"
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

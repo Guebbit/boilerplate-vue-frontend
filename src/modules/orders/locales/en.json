@@ -59,7 +59,13 @@
         "success-cancel": "Order cancelled.",
         "button-reorder": "Buy again",
         "success-reorder": "Order added to cart.",
-        "label-shipping": "Shipping"
+        "label-shipping": "Shipping",
+        "label-vat-summary": "VAT summary",
+        "label-vat-rate": "Rate",
+        "label-vat-net": "Net",
+        "label-vat-tax": "VAT",
+        "label-net-total": "Net total",
+        "label-tax-total": "VAT total"
     },
     "order-edit-page": {
         "page-title": "Edit order",

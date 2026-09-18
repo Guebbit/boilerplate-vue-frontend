@@ -134,6 +134,30 @@ describe('the invoice download button', () => {
     });
 });
 
+describe('the VAT summary', () => {
+    it('is absent on a pre-VAT order — no taxSummary at all', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-tax-summary]').exists()).toBe(false);
+    });
+
+    it('shows one row per rate, and the net/tax totals, once taxSummary is present', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            netTotal: 8.18,
+            taxTotal: 1.81,
+            taxSummary: [{ rate: 0.22, netAmount: 8.18, taxAmount: 1.81, grossAmount: 9.99 }],
+            items: [lineWith(null)]
+        });
+
+        const summary = wrapper.get('[data-test=order-tax-summary]');
+        expect(summary.text()).toContain('22%');
+        expect(summary.text()).toContain('VAT summary');
+
+        wrapper.unmount();
+    });
+});
+
 describe('an order line’s picture', () => {
     it('renders the live imageUrl when the product still has one', () => {
         const wrapper = mountOrder({
