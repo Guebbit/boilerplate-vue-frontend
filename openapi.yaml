@@ -3266,6 +3266,42 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalError'
+  /orders/{id}/status-override:
+    post:
+      tags:
+        - Orders
+      summary: Force-correct an order's status by hand
+      description: Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands — never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+      operationId: overrideOrderStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusOverrideRequest'
+      responses:
+        '200':
+          description: The order, moved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /orders/{id}/invoice:
     get:
       tags:
@@ -3726,6 +3762,12 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
           description: The order that arrived
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliverOrderRequest'
       responses:
         '200':
           description: The shipment
@@ -8585,6 +8627,21 @@ components:
           type: boolean
           default: true
           description: '`false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`.'
+    StatusOverrideRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - to
+        - reason
+      properties:
+        to:
+          allOf:
+            - $ref: '#/components/schemas/OrderStatus'
+          description: Must be `processing`, `shipped` or `delivered`, and forward of the order's current status — every other value is a 409.
+        reason:
+          type: string
+          minLength: 1
+          description: Why the normal door didn't apply. Recorded on the order's override history, never optional.
     OrderInvoicePending:
       type: object
       additionalProperties: false
@@ -8948,6 +9005,24 @@ components:
         trackingCode:
           type: string
           description: The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
+        forced:
+          type: boolean
+          description: Skip the normal `processing`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still creates the parcel record and sends the shipped email; still refuses a tracked method with no `trackingCode`.
+        reason:
+          type: string
+          minLength: 1
+          description: Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
+    DeliverOrderRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        forced:
+          type: boolean
+          description: Skip the normal `shipped`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still stamps the shipment delivered and reports the fact.
+        reason:
+          type: string
+          minLength: 1
+          description: Required exactly when `forced` is `true`.
     InventoryLevel:
       type: object
       additionalProperties: false
