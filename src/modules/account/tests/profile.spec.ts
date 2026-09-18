@@ -85,6 +85,7 @@ beforeEach(() => {
         'POST /account/export': orvalEnvelope({
             exportedAt: '2026-09-07T00:00:00.000Z',
             profile: USER,
+            roles: [],
             addresses: [],
             orders: [],
             payments: [],
@@ -92,7 +93,8 @@ beforeEach(() => {
             cart: [],
             wishlist: [],
             sessions: [],
-            auditLog: []
+            auditLog: [],
+            apiKeys: []
         })
     };
 });
