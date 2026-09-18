@@ -128,6 +128,7 @@ const loadAdminProduct = (productId: string) => {
 interface ProductEditForm {
     price?: number;
     active?: boolean;
+    weight?: number;
     translations: ProductTranslationsWrite;
     imageUpload?: File;
 }
@@ -190,6 +191,7 @@ activateAutoHydrate(
             ? {
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
+                  weight: adminProduct.value.weight,
                   // Spread into a fresh object: the admin record's own `translations` must not be
                   // mutated by a later tab edit — `resetForm()` (the "Reset changes" button) needs
                   // it intact to hydrate from again.
@@ -330,10 +332,10 @@ const heroDescription = computed(() => formatText(adminProduct.value?.descriptio
  */
 const submitForm = () =>
     handleSubmit(() => {
-        const { price, active, translations, imageUpload } = form.value;
+        const { price, active, weight, translations, imageUpload } = form.value;
         if (!id || price === undefined) return;
         return trackUpload(imageUpload, (options) =>
-            updateProduct(id, { price, active, translations, imageUpload }, options)
+            updateProduct(id, { price, active, weight, translations, imageUpload }, options)
         ).then(() => {
             // The API has answered with the stored `imageUrl` and the merged translations; the
             // admin record is the only place both live, so it is reloaded rather than patched by
@@ -467,6 +469,21 @@ const submitForm = () =>
                         control-variant="stacked"
                         :error-messages="showFormErrors ? formErrors.price : []"
                         data-test="product-price-field"
+                    />
+                    <v-number-input
+                        v-model="form.weight"
+                        :label="t('product-edit-page.label-weight')"
+                        :min="0"
+                        :step="1"
+                        :precision="0"
+                        control-variant="stacked"
+                        :hint="
+                            form.weight === undefined || form.weight === null
+                                ? t('product-edit-page.hint-weight-missing')
+                                : undefined
+                        "
+                        persistent-hint
+                        data-test="product-weight-field"
                     />
                     <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
                     <FormImageUpload

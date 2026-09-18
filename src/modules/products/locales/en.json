@@ -61,6 +61,8 @@
         "label-price": "Price",
         "label-description": "Description",
         "label-active": "Active",
+        "label-weight": "Weight (grams)",
+        "hint-weight-missing": "No weight set — this product counts as weightless for shipping-method eligibility.",
         "button-submit": "Create product",
         "button-go-to-list": "Back to products list",
         "success-create": "Product created successfully"
@@ -71,6 +73,8 @@
         "label-price": "Price",
         "label-description": "Description",
         "label-active": "Active",
+        "label-weight": "Weight (grams)",
+        "hint-weight-missing": "No weight set — this product counts as weightless for shipping-method eligibility.",
         "button-submit": "Save changes",
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to product details",

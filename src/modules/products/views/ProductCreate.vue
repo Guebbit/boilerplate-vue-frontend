@@ -78,6 +78,7 @@ void fetchActiveLocales();
 interface ProductCreateForm {
     price?: number;
     active?: boolean;
+    weight?: number;
     translations: ProductTranslationsWrite;
     imageUpload?: File;
 }
@@ -227,6 +228,7 @@ const submitForm = () =>
                 {
                     price: form.value.price!,
                     active: form.value.active,
+                    weight: form.value.weight,
                     translations: form.value.translations,
                     imageUpload: form.value.imageUpload
                 },
@@ -324,6 +326,22 @@ const submitForm = () =>
                 :error-messages="showErrors ? formErrors.price : []"
                 data-test="product-price-field"
                 class="mb-2 mt-4"
+            />
+            <v-number-input
+                v-model="form.weight"
+                :label="t('product-create-page.label-weight')"
+                :min="0"
+                :step="1"
+                :precision="0"
+                control-variant="stacked"
+                :hint="
+                    form.weight === undefined
+                        ? t('product-create-page.hint-weight-missing')
+                        : undefined
+                "
+                persistent-hint
+                data-test="product-weight-field"
+                class="mb-2"
             />
             <FormImageUpload
                 v-model="form.imageUpload"

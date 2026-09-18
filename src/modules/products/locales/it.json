@@ -61,6 +61,8 @@
         "label-price": "Prezzo",
         "label-description": "Descrizione",
         "label-active": "Attivo",
+        "label-weight": "Peso (grammi)",
+        "hint-weight-missing": "Nessun peso impostato — questo prodotto viene considerato senza peso per l'idoneità dei metodi di spedizione.",
         "button-submit": "Crea prodotto",
         "button-go-to-list": "Torna alla lista prodotti",
         "success-create": "Prodotto creato con successo"
@@ -71,6 +73,8 @@
         "label-price": "Prezzo",
         "label-description": "Descrizione",
         "label-active": "Attivo",
+        "label-weight": "Peso (grammi)",
+        "hint-weight-missing": "Nessun peso impostato — questo prodotto viene considerato senza peso per l'idoneità dei metodi di spedizione.",
         "button-submit": "Salva modifiche",
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli prodotto",
