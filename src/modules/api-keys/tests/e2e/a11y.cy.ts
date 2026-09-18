@@ -1,7 +1,7 @@
 /**
  * @module
  * Cypress a11y sweep route list for the api-keys module, run through the shared `sweepA11y`
- * helper as the admin — the only preset role holding `apikeys.*` (through `all.manage`).
+ * helper as the admin — the only preset role holding `apikeys.*`.
  *
  * Co-located so deleting the module deletes its a11y coverage with it —
  * `tests/cross-cutting/a11y-coverage.spec.ts` asserts every routed module has one of these, so
