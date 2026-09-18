@@ -3289,6 +3289,12 @@ paths:
               schema:
                 type: string
                 format: binary
+        '202':
+          description: The invoice is still being generated (`Order.invoicePdfStatus` is `pending`) — a client polls the order and retries once it reads `ready`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderInvoicePendingEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -3379,6 +3385,47 @@ paths:
                 $ref: '#/components/schemas/PaymentEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /payments/order-by-reference:
+    get:
+      tags:
+        - Payments
+      summary: Find the order behind an RF reference
+      description: 'The admin''s own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank''s own website (or, for an order that predates the field, its raw id) and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.'
+      operationId: getOrderByReference
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ref
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          description: The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL` — or a raw 24-character order id for an order that predates this field.
+      responses:
+        '200':
+          description: The order this reference pays
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderByReferenceResponseEnvelope'
+          links:
+            RecordOfflinePayment:
+              operationId: recordOfflinePayment
+              parameters:
+                orderId: $response.body#/data/id
+              description: The order this reference names is what the admin then marks paid.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '422':
@@ -4770,7 +4817,7 @@ components:
           description: Absent when the deployment has not configured one.
         reference:
           type: string
-          description: The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order.
+          description: The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.
     OrderLineProduct:
       type: object
       additionalProperties: false
@@ -4972,6 +5019,12 @@ components:
           type: string
           readOnly: true
           example: 2026-000041
+        invoicePdfStatus:
+          type: string
+          enum:
+            - pending
+            - ready
+          readOnly: true
         transferInstructions:
           $ref: '#/components/schemas/OrderTransferInstructions'
         status:
@@ -8421,6 +8474,33 @@ components:
           type: boolean
           default: true
           description: '`false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`.'
+    OrderInvoicePending:
+      type: object
+      additionalProperties: false
+      required:
+        - invoicePdfStatus
+      properties:
+        invoicePdfStatus:
+          type: string
+          enum:
+            - pending
+    OrderInvoicePendingEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/OrderInvoicePending'
     PaymentMethodOption:
       type: object
       additionalProperties: false
@@ -8571,6 +8651,23 @@ components:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
           $ref: '#/components/schemas/Payment'
+    OrderByReferenceResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/Order'
     RecordOfflinePaymentRequest:
       type: object
       additionalProperties: false

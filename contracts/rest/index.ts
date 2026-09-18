@@ -302,7 +302,7 @@ export interface OrderTransferInstructions {
     iban: string;
     /** Absent when the deployment has not configured one. */
     bic?: string;
-    /** The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order. */
+    /** The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts. */
     reference: string;
 }
 
@@ -390,6 +390,14 @@ export interface OrderActions {
     pay: boolean;
 }
 
+export type OrderInvoicePdfStatus =
+    (typeof OrderInvoicePdfStatus)[keyof typeof OrderInvoicePdfStatus];
+
+export const OrderInvoicePdfStatus = {
+    pending: 'pending',
+    ready: 'ready'
+} as const;
+
 export interface Order {
     id: Id;
     userId?: Id;
@@ -433,6 +441,7 @@ export interface Order {
     paymentMethod?: PaymentMethodId;
     payBy?: string;
     readonly invoiceNumber?: string;
+    readonly invoicePdfStatus?: OrderInvoicePdfStatus;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     actions?: OrderActions;
@@ -2380,6 +2389,24 @@ export interface CancelOrderRequest {
     refund?: boolean;
 }
 
+export type OrderInvoicePendingInvoicePdfStatus =
+    (typeof OrderInvoicePendingInvoicePdfStatus)[keyof typeof OrderInvoicePendingInvoicePdfStatus];
+
+export const OrderInvoicePendingInvoicePdfStatus = {
+    pending: 'pending'
+} as const;
+
+export interface OrderInvoicePending {
+    invoicePdfStatus: OrderInvoicePendingInvoicePdfStatus;
+}
+
+export interface OrderInvoicePendingEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OrderInvoicePending;
+}
+
 export interface PaymentMethodOption {
     id: PaymentMethodId;
     /**
@@ -2480,6 +2507,13 @@ export interface PaymentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Payment;
+}
+
+export interface OrderByReferenceResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
 }
 
 /**
@@ -3310,6 +3344,15 @@ export type DeleteOrderByIdParams = {
      * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
+};
+
+export type GetOrderByReferenceParams = {
+    /**
+     * The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL` — or a raw 24-character order id for an order that predates this field.
+     * @minLength 1
+     * @maxLength 64
+     */
+    ref: string;
 };
 
 export type ListInventoryLevelsParams = {
@@ -5587,9 +5630,9 @@ export const cancelOrderById = (
  */
 export const getOrderInvoice = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Blob>>
+    options?: SecondParameter<typeof orvalMutator<Blob | OrderInvoicePendingEnvelope>>
 ) => {
-    return orvalMutator<Blob>(
+    return orvalMutator<Blob | OrderInvoicePendingEnvelope>(
         { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
         options
     );
@@ -5637,6 +5680,20 @@ export const getPaymentByOrder = (
 ) => {
     return orvalMutator<PaymentEnvelope>(
         { url: `/payments/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website (or, for an order that predates the field, its raw id) and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Find the order behind an RF reference
+ */
+export const getOrderByReference = (
+    params: GetOrderByReferenceParams,
+    options?: SecondParameter<typeof orvalMutator<OrderByReferenceResponseEnvelope>>
+) => {
+    return orvalMutator<OrderByReferenceResponseEnvelope>(
+        { url: `/payments/order-by-reference`, method: 'GET', params },
         options
     );
 };
@@ -6219,6 +6276,9 @@ export type CreatePaymentIntentResult = NonNullable<
     Awaited<ReturnType<typeof createPaymentIntent>>
 >;
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
+export type GetOrderByReferenceResult = NonNullable<
+    Awaited<ReturnType<typeof getOrderByReference>>
+>;
 export type RefundPaymentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof refundPaymentByOrder>>
 >;

@@ -2813,6 +2813,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
+                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -2824,7 +2825,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                         reference: zod
                             .string()
                             .describe(
-                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                                'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                             )
                     })
                     .optional(),
@@ -5525,6 +5526,7 @@ export const CheckoutResponse = zod.strictObject({
                 ),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             invoiceNumber: zod.string().optional(),
+            invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
             transferInstructions: zod
                 .strictObject({
                     beneficiary: zod.string(),
@@ -5536,7 +5538,7 @@ export const CheckoutResponse = zod.strictObject({
                     reference: zod
                         .string()
                         .describe(
-                            "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                            'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                         )
                 })
                 .optional(),
@@ -5936,6 +5938,7 @@ export const ListOrdersResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
+                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -5947,7 +5950,7 @@ export const ListOrdersResponse = zod.strictObject({
                         reference: zod
                             .string()
                             .describe(
-                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                                'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                             )
                     })
                     .optional(),
@@ -6216,6 +6219,7 @@ export const CreateOrderResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6227,7 +6231,7 @@ export const CreateOrderResponse = zod.strictObject({
                 reference: zod
                     .string()
                     .describe(
-                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                     )
             })
             .optional(),
@@ -6465,6 +6469,7 @@ export const UpdateOrderResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6476,7 +6481,7 @@ export const UpdateOrderResponse = zod.strictObject({
                 reference: zod
                     .string()
                     .describe(
-                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                     )
             })
             .optional(),
@@ -6783,6 +6788,7 @@ export const SearchOrdersResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
+                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -6794,7 +6800,7 @@ export const SearchOrdersResponse = zod.strictObject({
                         reference: zod
                             .string()
                             .describe(
-                                "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                                'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                             )
                     })
                     .optional(),
@@ -7036,6 +7042,7 @@ export const GetOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7047,7 +7054,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 reference: zod
                     .string()
                     .describe(
-                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                     )
             })
             .optional(),
@@ -7289,6 +7296,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7300,7 +7308,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 reference: zod
                     .string()
                     .describe(
-                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                     )
             })
             .optional(),
@@ -7582,6 +7590,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7593,7 +7602,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 reference: zod
                     .string()
                     .describe(
-                        "The order's own id — what the customer writes in the transfer's description, so an incoming payment can be matched back to this order."
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
                     )
             })
             .optional(),
@@ -7900,6 +7909,250 @@ export const GetPaymentByOrderResponse = zod.strictObject({
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website (or, for an order that predates the field, its raw id) and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Find the order behind an RF reference
+ */
+export const getOrderByReferenceQueryRefMax = 64;
+
+export const GetOrderByReferenceQueryParams = zod.strictObject({
+    ref: zod
+        .string()
+        .min(1)
+        .max(getOrderByReferenceQueryRefMax)
+        .describe(
+            'The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL` — or a raw 24-character order id for an order that predates this field.'
+        )
+});
+
+export const getOrderByReferenceResponseDataItemsItemProductPriceMin = 0;
+
+export const getOrderByReferenceResponseDataItemsItemProductRequiresShippingDefault = true;
+export const getOrderByReferenceResponseDataItemsItemProductTaxRateMin = 0;
+export const getOrderByReferenceResponseDataItemsItemProductTaxRateMax = 1;
+
+export const getOrderByReferenceResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const getOrderByReferenceResponseDataItemsItemTaxAmountMin = 0;
+
+export const getOrderByReferenceResponseDataItemsItemNetAmountMin = 0;
+
+export const getOrderByReferenceResponseDataTotalItemsMin = 0;
+
+export const getOrderByReferenceResponseDataTotalQuantityMin = 0;
+
+export const getOrderByReferenceResponseDataTotalPriceMin = 0;
+
+export const getOrderByReferenceResponseDataNetTotalMin = 0;
+
+export const getOrderByReferenceResponseDataTaxTotalMin = 0;
+
+export const getOrderByReferenceResponseDataShippingCostMin = 0;
+
+export const GetOrderByReferenceResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    title: zod.string(),
+                    price: zod
+                        .number()
+                        .min(getOrderByReferenceResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            getOrderByReferenceResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(getOrderByReferenceResponseDataItemsItemProductTaxRateMin)
+                        .max(getOrderByReferenceResponseDataItemsItemProductTaxRateMax)
+                        .optional()
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                        )
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(getOrderByReferenceResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(getOrderByReferenceResponseDataItemsItemTaxAmountMin)
+                    .optional()
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(getOrderByReferenceResponseDataItemsItemNetAmountMin)
+                    .optional()
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
+                    )
+            })
+        ),
+        totalItems: zod
+            .number()
+            .min(getOrderByReferenceResponseDataTotalItemsMin)
+            .describe(
+                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+            ),
+        totalQuantity: zod
+            .number()
+            .min(getOrderByReferenceResponseDataTotalQuantityMin)
+            .describe('Sum of `quantity` across every line item.'),
+        totalPrice: zod
+            .number()
+            .min(getOrderByReferenceResponseDataTotalPriceMin)
+            .describe(
+                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(getOrderByReferenceResponseDataNetTotalMin)
+            .optional()
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT. Absent on a pre-VAT order."
+            ),
+        taxTotal: zod
+            .number()
+            .min(getOrderByReferenceResponseDataTaxTotalMin)
+            .optional()
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+            ),
+        notes: zod.string().optional().describe('Optional order notes'),
+        shippingMethod: zod
+            .string()
+            .optional()
+            .describe(
+                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+            ),
+        shippingCost: zod
+            .number()
+            .min(getOrderByReferenceResponseDataShippingCostMin)
+            .optional()
+            .describe(
+                'What that method cost at checkout time — a later rate change cannot re-price history.'
+            ),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
+        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
+                    )
+            })
+            .optional(),
+        status: zod
+            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            .describe(
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+            ),
+        actions: zod
+            .strictObject({
+                transitions: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                    ),
+                cancel: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                    ),
+                pay: zod
+                    .boolean()
+                    .describe(
+                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
