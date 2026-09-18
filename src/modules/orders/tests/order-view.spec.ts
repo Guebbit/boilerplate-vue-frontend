@@ -89,6 +89,51 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/orders/o1').then(() => router.isReady()));
 });
 
+describe('the invoice download button', () => {
+    it('is enabled, with its normal label, for an order that predates the async pipeline', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        const button = wrapper.get('[data-test=order-download-invoice]');
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.text()).toContain('Download invoice');
+
+        wrapper.unmount();
+    });
+
+    it('is enabled, with its normal label, once the invoice is ready', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            invoicePdfStatus: 'ready',
+            items: [lineWith(null)]
+        });
+
+        const button = wrapper.get('[data-test=order-download-invoice]');
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.text()).toContain('Download invoice');
+
+        wrapper.unmount();
+    });
+
+    /**
+     * `disabled` AND `:loading` — the loading spinner alone still leaves a button a screen reader
+     * and a fast clicker both treat as pressable.
+     */
+    it('is disabled with a loading state and a different label while the PDF is still generating', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            invoicePdfStatus: 'pending',
+            items: [lineWith(null)]
+        });
+
+        const button = wrapper.get('[data-test=order-download-invoice]');
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.text()).toContain('Generating invoice');
+        expect(button.text()).not.toContain('Download invoice');
+
+        wrapper.unmount();
+    });
+});
+
 describe('an order line’s picture', () => {
     it('renders the live imageUrl when the product still has one', () => {
         const wrapper = mountOrder({

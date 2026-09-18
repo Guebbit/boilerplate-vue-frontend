@@ -183,10 +183,18 @@ export const useOrdersStore = defineStore('orders', () => {
     /**
      * Downloads an order's invoice.
      *
+     * `getOrderInvoice` types its answer `Blob | OrderInvoicePendingEnvelope` because the
+     * `202`-pending response the contract declares carries a JSON envelope — but the request is
+     * made with `responseType: 'blob'`, so axios wraps whatever bytes come back into a `Blob`
+     * regardless of `Content-Type`; the runtime value is always a `Blob`. The cast below narrows
+     * to what actually arrives. The JSON case is unreachable from here in the first place: the
+     * order page disables this call's button while `invoicePdfStatus` reads `pending`.
+     *
      * @param orderId - Identifier of the order to invoice.
      * @returns A promise resolving with the PDF `Blob`.
      */
-    const downloadInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
+    const downloadInvoice = (orderId: string) =>
+        fetchAny(() => getOrderInvoice(orderId).then((body) => body as Blob));
 
     return {
         orders,

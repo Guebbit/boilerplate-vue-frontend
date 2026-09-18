@@ -52,6 +52,7 @@
         "button-go-to-list": "Vai alla lista ordini",
         "button-go-to-edit": "Modifica ordine",
         "button-download-invoice": "Scarica fattura",
+        "button-invoice-pending": "Generazione fattura…",
         "label-updated-at": "Aggiornato il",
         "button-cancel": "Annulla ordine",
         "confirm-cancel": "Annullare questo ordine? Le quantità tornano disponibili.",

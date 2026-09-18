@@ -52,6 +52,7 @@
         "button-go-to-list": "Go to orders list",
         "button-go-to-edit": "Edit order",
         "button-download-invoice": "Download invoice",
+        "button-invoice-pending": "Generating invoice…",
         "label-updated-at": "Updated at",
         "button-cancel": "Cancel order",
         "confirm-cancel": "Cancel this order? The stock goes back on the shelf.",
