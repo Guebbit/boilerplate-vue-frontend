@@ -232,7 +232,7 @@ describe('loadViewer', () => {
      */
     it('loads the rules that go with the viewer, not just the projection', () => {
         getAccountMock.mockResolvedValue({
-            data: { id: '1', email: 'a@b.c', role: 'owner' }
+            data: { id: '1', email: 'a@b.c', role: 'admin' }
         });
         getMyAbilitiesMock.mockResolvedValue({
             data: { platform: [], tenant: [['delete', 'Product']], version: 1 }
@@ -271,7 +271,7 @@ describe('loadViewer', () => {
      * quietly matching no rule — see `can`'s own docblock for why it warns instead of throwing.
      */
     it('carries the published subject set alongside the rules', () => {
-        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'owner' } });
+        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'admin' } });
         getMyAbilitiesMock.mockResolvedValue({
             data: { platform: [], tenant: [], version: 1, subjects: ['Order', 'Product'] }
         });
@@ -285,7 +285,7 @@ describe('loadViewer', () => {
 
     /** A response that omits `subjects` altogether must not wipe out a set already known. */
     it('leaves a previously published subject set alone when a response omits it', () => {
-        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'owner' } });
+        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'admin' } });
         const store = useSessionStore();
         store.setAbilities({ tenant: [], platform: [], subjects: ['Order'] });
 

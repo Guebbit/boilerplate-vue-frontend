@@ -1,6 +1,6 @@
 /**
  * @module
- * End-to-end coverage of the generic translation door's own screen: an editor (here, the owner
+ * End-to-end coverage of the generic translation door's own screen: an editor (here, the admin
  * account, which holds the same `translations.manage` key) edits a product's translation, and the
  * storefront reflects it. The full invalidation path, not a store-level assertion: the write
  * clears the API's own cache tag, so what proves the path end to end is a fresh page load
@@ -11,7 +11,7 @@ describe('Entity translations — the generic admin door', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        cy.loginAs('owner');
+        cy.loginAs('admin');
     });
 
     it('an edited translation reaches the storefront', () => {

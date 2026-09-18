@@ -45,5 +45,5 @@ sweepA11y(
         ['order detail', orderDetail],
         ['order edit', orderEdit]
     ],
-    'owner'
+    'admin'
 );

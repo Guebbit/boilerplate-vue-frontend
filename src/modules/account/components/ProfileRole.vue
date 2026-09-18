@@ -48,7 +48,7 @@ const { profile } = storeToRefs(useProfileStore());
  * Named here rather than typed inline because the strings are the contract: the server validates
  * them against `shared/authorization-roles.yaml`, and a typo would be a role nothing declares.
  */
-const UNRESTRICTED_ROLE = 'owner';
+const UNRESTRICTED_ROLE = 'admin';
 const STANDARD_ROLE = 'customer';
 
 /**

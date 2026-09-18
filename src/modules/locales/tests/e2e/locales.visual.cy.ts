@@ -36,5 +36,5 @@ sweepVisual(
             }
         }
     ],
-    'owner'
+    'admin'
 );

@@ -9,7 +9,7 @@ export default {
  * @module
  * User detail (read-only) page. Loads one user by route id and renders its
  * fields, role and status, plus the audited, no-proof-required 2FA recovery
- * button for an owner who lost both their authenticator and their backup
+ * button for an admin who lost both their authenticator and their backup
  * codes.
  */
 import { computed } from 'vue';

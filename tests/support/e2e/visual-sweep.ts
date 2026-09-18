@@ -63,7 +63,7 @@ const toCase = (entry: VisualSweepEntry): VisualSweepCase =>
 export const sweepVisual = (
     label: string,
     screens: readonly VisualSweepEntry[],
-    role?: 'user' | 'owner'
+    role?: 'user' | 'admin'
 ): void => {
     describe(`visual regression — ${label}`, () => {
         beforeEach(() => {

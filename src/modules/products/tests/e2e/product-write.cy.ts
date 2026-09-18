@@ -12,7 +12,7 @@ describe('Product write surface', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        cy.loginAs('owner');
+        cy.loginAs('admin');
     });
 
     describe('create — two languages in one submit', () => {

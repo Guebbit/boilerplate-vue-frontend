@@ -30,7 +30,7 @@ import {
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
-import { ownerApi } from './tests/support/e2e/owner-api-task';
+import { adminApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 
 /*
@@ -94,11 +94,11 @@ export default defineConfig({
                  */
                 /**
                  * One authenticated admin call, made from Node — see
-                 * `tests/support/e2e/owner-api-task.ts`. The e2e fixtures provision their own
+                 * `tests/support/e2e/admin-api-task.ts`. The e2e fixtures provision their own
                  * subjects through this rather than through `cy.request`, so the page's own
                  * session and refresh cookie are left exactly as the spec found them.
                  */
-                ownerApi: (request: Parameters<typeof ownerApi>[0]) => ownerApi(request),
+                adminApi: (request: Parameters<typeof adminApi>[0]) => adminApi(request),
                 createSession: ({ apiUrl, email, password }: Record<string, string>) =>
                     fetch(`${apiUrl}/account/login`, {
                         method: 'POST',

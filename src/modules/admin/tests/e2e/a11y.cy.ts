@@ -29,5 +29,5 @@ sweepA11y(
             }
         }
     ],
-    'owner'
+    'admin'
 );

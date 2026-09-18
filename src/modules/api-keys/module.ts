@@ -13,7 +13,7 @@ import { apiKeysResponseSchemas } from './response-schemas';
  * Machine-to-machine credential management: minting and revoking `sk_...` keys a caller uses in
  * place of a session.
  *
- * Depends on nothing. Only `owner` holds `apikeys.*` today (through `all.manage`), so the nav
+ * Depends on nothing. Only `admin` holds `apikeys.*` today (through `all.manage`), so the nav
  * entry and both routes disappear for anyone else — `meta.can` is evaluated against the server's
  * published rules, not a role name.
  */

@@ -147,10 +147,10 @@ describe('login', () => {
             }));
 
     it('answers each rule an unrestricted caller was published, so their screens resolve', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
         /*
          * The RULES, not the role name. `can` asks what the server said this person may do — a
-         * name is who they are, and only the rules say what that lets them do. An owner's rules
+         * name is who they are, and only the rules say what that lets them do. An admin's rules
          * are the concrete ones the server expands its wildcard into; no `manage` rule is ever
          * published, so a fixture that used one would test a shape the server cannot send.
          */
@@ -180,7 +180,7 @@ describe('login', () => {
     });
 
     it('drops the rules when the session ends, so nothing stays unlocked', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'owner' });
+        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
         responses['GET /account/abilities'] = orvalEnvelope({
             platform: [],
             tenant: [['delete', 'Product']],

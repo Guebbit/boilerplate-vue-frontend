@@ -52,7 +52,7 @@ describe('Storefront', () => {
 
     describe('order actions', () => {
         it('cancels a pending order and buying again refills the cart', () => {
-            cy.loginAs('owner');
+            cy.loginAs('admin');
             // Any order the cancel gate is still open on — the page hides the button for every
             // other status, so the guarantee IS the precondition this case needs. The owner's
             // seeded cart already carries lines of its own, so "at least one cart item" would pass

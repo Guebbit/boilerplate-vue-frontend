@@ -151,7 +151,7 @@ export const useUsersStore = defineStore('users', () => {
 
     /**
      * Strips a user's second factor with no code required — the admin-assisted recovery path for
-     * an owner who lost both their authenticator and their backup codes. Unlike every self-service
+     * an admin who lost both their authenticator and their backup codes. Unlike every self-service
      * 2FA mutation, no proof of the factor is asked for; every call is audited server-side, which
      * is what makes skipping that proof safe to expose here at all.
      *

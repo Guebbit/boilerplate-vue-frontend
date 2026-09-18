@@ -11,7 +11,7 @@ describe('Orders', () => {
 
     describe('Orders list', () => {
         beforeEach(() => {
-            cy.loginAs('owner');
+            cy.loginAs('admin');
             cy.visit('/en/orders');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });

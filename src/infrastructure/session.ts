@@ -52,11 +52,11 @@ export interface SessionViewer {
     email: string;
     /**
      * The role they hold inside the shop, by name — `customer`, `manager`, `warehouse`,
-     * `support`, `owner`, or one a deployment added.
+     * `support`, `admin`, or one a deployment added.
      *
      * Read by the route guards, so it is the one field here that decides what is RENDERED rather
      * than describing a person. It decides nothing else: the server re-evaluates every request,
-     * and a client that believed itself an owner would still be refused.
+     * and a client that believed itself an admin would still be refused.
      */
     role: string;
     /**

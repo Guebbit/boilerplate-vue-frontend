@@ -249,7 +249,7 @@ Cypress.Commands.add('subjectProduct', (name: string) =>
  */
 const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<string, unknown>) =>
     cy.env(['apiUrl']).then(({ apiUrl }) =>
-        cy.task<T>('ownerApi', {
+        cy.task<T>('adminApi', {
             apiUrl: String(apiUrl),
             path,
             method,
@@ -259,8 +259,8 @@ const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<str
     );
 
 /** The overwhelmingly common case: provisioning needs the account that holds every key. */
-const ownerApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
-    apiAs<T>('owner', path, method, body);
+const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
+    apiAs<T>('admin', path, method, body);
 
 /**
  * The deployment's source language for product content — `NODE_FALLBACK_LOCALE` on the paired
@@ -277,7 +277,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
     // flat `title`, which is folded into the fallback locale's entry below — the shape most
     // specs actually want to write.
     const { title, translations, ...rest } = overrides;
-    return ownerApi<ProductLike>('/products', 'POST', {
+    return adminApi<ProductLike>('/products', 'POST', {
         price: 10,
         ...rest,
         translations: translations ?? {
@@ -292,7 +292,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
 });
 
 Cypress.Commands.add('softDeleteProduct', (id: string) =>
-    ownerApi<null>(`/products/${id}`, 'DELETE')
+    adminApi<null>(`/products/${id}`, 'DELETE')
 );
 
 /*
@@ -300,11 +300,11 @@ Cypress.Commands.add('softDeleteProduct', (id: string) =>
  * else — including every language — exactly as it was.
  */
 Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
-    ownerApi<null>(`/products/${product.id}`, 'PATCH', { active: false })
+    adminApi<null>(`/products/${product.id}`, 'PATCH', { active: false })
 );
 
 Cypress.Commands.add('subjectOrder', (name: string) =>
-    cy.subjectId(name).then((id) => ownerApi<OrderLike>(`/orders/${id}`, 'GET'))
+    cy.subjectId(name).then((id) => adminApi<OrderLike>(`/orders/${id}`, 'GET'))
 );
 
 Cypress.Commands.add('accountInRole', (role: E2ERole) =>
@@ -318,7 +318,7 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
 );
 
 Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unknown> = {}) =>
-    ownerApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
+    adminApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
         // Unique per test, so two specs creating one in the same run never collide on the SSRF
         // guard's DNS resolution for the same host.
         url: `https://example.com/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
@@ -328,7 +328,7 @@ Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unk
 );
 
 Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
-    ownerApi<ApiKeyLike>('/api-keys', 'POST', {
+    adminApi<ApiKeyLike>('/api-keys', 'POST', {
         // Unique per test; `products.read` is a real declared tenant key the e2e owner
         // (`all.manage`) holds — an invented string is a 422, mint's own floor.
         name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,

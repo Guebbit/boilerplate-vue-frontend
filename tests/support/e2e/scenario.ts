@@ -36,7 +36,7 @@ export interface ScenarioDescription {
 }
 
 /** Which seeded account a command means. Every backend that can pair with this repo seeds all four. */
-export type E2ERole = 'owner' | 'user' | 'editor' | 'moderator';
+export type E2ERole = 'admin' | 'user' | 'editor' | 'moderator';
 
 /** What a profile with nothing to say about itself answers — see {@link seedAccount}'s throw. */
 const NOTHING_DESCRIBED: ScenarioDescription = { scenario: null, accounts: {}, subjects: {} };

@@ -87,7 +87,7 @@ describe('Products', () => {
         it('offers the Create product button to admins only', () => {
             cy.get('[data-test=create-product]').should('not.exist');
 
-            cy.loginAs('owner');
+            cy.loginAs('admin');
             cy.visit('/en/products');
             cy.get('[data-test=create-product]').should('exist').click();
 
@@ -106,7 +106,7 @@ describe('Products', () => {
         });
 
         it('shows View, Edit, Delete and Hard delete actions per row for admin users', () => {
-            cy.loginAs('owner');
+            cy.loginAs('admin');
             cy.visit('/en/products');
             cy.get('[data-test=list-row]').should('have.length.at.least', 1);
             cy.get('[data-test=list-row]')
@@ -126,7 +126,7 @@ describe('Products', () => {
                     cy.softDeleteProduct(softDeleted.id);
                     cy.deactivateProduct(inactive);
 
-                    cy.loginAs('owner');
+                    cy.loginAs('admin');
                     cy.visit('/en/products');
                     cy.contains('[data-test=list-row]', softDeleted.title).should('exist');
                     cy.contains('[data-test=list-row]', inactive.title).should('exist');

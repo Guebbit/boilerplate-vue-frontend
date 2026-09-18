@@ -68,5 +68,5 @@ sweepA11y(
         ['delivery log', '/en/webhooks/deliveries'],
         { name: 'delivery log, filtered by subscription', route: webhookDeliveriesFiltered }
     ],
-    'owner'
+    'admin'
 );
