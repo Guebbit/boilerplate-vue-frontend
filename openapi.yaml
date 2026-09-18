@@ -1813,10 +1813,6 @@ paths:
           in: query
           schema:
             type: boolean
-        - name: role
-          in: query
-          schema:
-            type: string
       responses:
         '200':
           description: Users list page
@@ -7660,8 +7656,6 @@ components:
           type: string
         active:
           type: boolean
-        role:
-          type: string
     CreateFeedbackRequest:
       type: object
       additionalProperties: false
