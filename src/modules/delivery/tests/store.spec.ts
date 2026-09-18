@@ -132,6 +132,32 @@ describe('ship', () => {
             expect(store.shipment?.trackingCode).toBe('TRK-2');
         });
     });
+
+    it('omits forced/reason when not forcing', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        return store.ship('order-2', 'TRK-2').then(() => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
+            expect(call?.[0].data).toEqual({ trackingCode: 'TRK-2' });
+        });
+    });
+
+    it('carries forced/reason when overriding', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        return store.ship('order-2', 'TRK-2', true, 'warehouse system was down').then(() => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
+            expect(call?.[0].data).toEqual({
+                trackingCode: 'TRK-2',
+                forced: true,
+                reason: 'warehouse system was down'
+            });
+        });
+    });
 });
 
 describe('deliver', () => {
@@ -140,6 +166,17 @@ describe('deliver', () => {
         return store.deliver('order-1').then((shipment) => {
             expect(shipment?.status).toBe('delivered');
             expect(store.shipment?.status).toBe('delivered');
+        });
+    });
+
+    it('carries forced/reason when overriding', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        return store.deliver('order-1', true, 'customer disputed delivery').then(() => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(([config]) => config.url === '/delivery/order/order-1/deliver');
+            expect(call?.[0].data).toEqual({ forced: true, reason: 'customer disputed delivery' });
         });
     });
 });

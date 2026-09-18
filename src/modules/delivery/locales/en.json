@@ -16,6 +16,8 @@
         "button-ship": "Mark shipped",
         "button-deliver": "Mark delivered",
         "shipped": "Marked shipped.",
-        "delivered": "Marked delivered."
+        "delivered": "Marked delivered.",
+        "label-force": "Force (override)",
+        "label-force-reason": "Reason for override"
     }
 }

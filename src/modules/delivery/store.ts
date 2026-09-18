@@ -95,11 +95,17 @@ export const useDeliveryStore = defineStore('delivery', () => {
      *
      * @param orderId - The order being shipped.
      * @param trackingCode - Required when the order's shipping method is `tracked`.
+     * @param forced - Bypasses the `processing`-only gate for an `orders.any.override` holder.
+     *  `reason` is then required by the API.
+     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
      * @returns A promise resolving with the shipment.
      */
-    const ship = (orderId: string, trackingCode?: string) =>
+    const ship = (orderId: string, trackingCode?: string, forced?: boolean, reason?: string) =>
         fetchAny(() =>
-            shipOrder(orderId, trackingCode ? { trackingCode } : {}).then((response) => {
+            shipOrder(orderId, {
+                ...(trackingCode ? { trackingCode } : {}),
+                ...(forced ? { forced, reason } : {})
+            }).then((response) => {
                 shipment.value = response.data;
                 return shipment.value;
             })
@@ -109,11 +115,14 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * Record a parcel's arrival (admin): the order moves `shipped → delivered`.
      *
      * @param orderId - The order that arrived.
+     * @param forced - Bypasses the `shipped`-only gate for an `orders.any.override` holder.
+     *  `reason` is then required by the API.
+     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
      * @returns A promise resolving with the shipment.
      */
-    const deliver = (orderId: string) =>
+    const deliver = (orderId: string, forced?: boolean, reason?: string) =>
         fetchAny(() =>
-            deliverOrder(orderId).then((response) => {
+            deliverOrder(orderId, forced ? { forced, reason } : {}).then((response) => {
                 shipment.value = response.data;
                 return shipment.value;
             })

@@ -94,16 +94,40 @@ const trackingRequired = computed(
 const canWrite = computed(() => session.can('update', 'Shipment'));
 
 /**
+ * May this session force a move through `orders.any.override` — skipping the ordinary
+ * `processing`/`shipped` gate. Same key `StatusOverrideDialog`-equivalent flows in `orders` ask
+ * for; declared here as `'Order'` because the permission is `orders.any.override`, not a delivery
+ * one, even though this panel is where the forced ship/deliver actually happens.
+ */
+const canOverride = computed(() => session.can('override', 'Order'));
+
+/**
+ * Force toggle, visible only to an override holder. Bypasses the status gate on the next
+ * ship/deliver call and requires `forceReason` to be filled in.
+ */
+const force = ref(false);
+
+/**
+ * Why the normal door didn't apply — required by the API exactly when `force` is checked, cleared
+ * after every submit alongside it.
+ */
+const forceReason = ref('');
+
+/**
  * Records the handover, then re-reads the order.
  *
  * @returns A promise resolving once the panel has refreshed.
  */
 const markShipped = () =>
-    deliveryStore.ship(orderId, trackingCode.value || undefined).then(() => {
-        trackingCode.value = '';
-        addMessage(t('shipment-panel.shipped'));
-        emit('moved');
-    });
+    deliveryStore
+        .ship(orderId, trackingCode.value || undefined, force.value, forceReason.value || undefined)
+        .then(() => {
+            trackingCode.value = '';
+            force.value = false;
+            forceReason.value = '';
+            addMessage(t('shipment-panel.shipped'));
+            emit('moved');
+        });
 
 /**
  * Records the arrival, then re-reads the order.
@@ -111,7 +135,9 @@ const markShipped = () =>
  * @returns A promise resolving once the panel has refreshed.
  */
 const markDelivered = () =>
-    deliveryStore.deliver(orderId).then(() => {
+    deliveryStore.deliver(orderId, force.value, forceReason.value || undefined).then(() => {
+        force.value = false;
+        forceReason.value = '';
         addMessage(t('shipment-panel.delivered'));
         emit('moved');
     });
@@ -139,20 +165,38 @@ onMounted(() => {
                     {{ shipment.trackingCode }}
                 </span>
             </div>
+            <template v-if="canOverride && shipment.status !== 'delivered'">
+                <v-checkbox
+                    v-model="force"
+                    :label="t('shipment-panel.label-force')"
+                    density="compact"
+                    hide-details
+                    data-test="force-deliver-toggle"
+                />
+                <v-textarea
+                    v-if="force"
+                    v-model="forceReason"
+                    :label="t('shipment-panel.label-force-reason')"
+                    rows="2"
+                    density="compact"
+                    data-test="force-deliver-reason"
+                />
+            </template>
             <v-btn
-                v-if="canWrite && shipment.status === 'shipped'"
+                v-if="canWrite && (shipment.status === 'shipped' || (canOverride && force))"
                 class="mt-3"
                 color="secondary"
                 variant="tonal"
                 size="small"
                 data-test="mark-delivered"
+                :disabled="force && !forceReason"
                 @click="markDelivered"
             >
                 {{ t('shipment-panel.button-deliver') }}
             </v-btn>
         </template>
 
-        <template v-else-if="canWrite && orderStatus === 'processing'">
+        <template v-else-if="canWrite && (orderStatus === 'processing' || canOverride)">
             <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.not-shipped-yet') }}</p>
             <v-text-field
                 v-model="trackingCode"
@@ -162,13 +206,34 @@ onMounted(() => {
                 density="compact"
                 data-test="tracking-code-input"
             />
+            <template v-if="canOverride && orderStatus !== 'processing'">
+                <v-checkbox
+                    v-model="force"
+                    :label="t('shipment-panel.label-force')"
+                    density="compact"
+                    hide-details
+                    data-test="force-ship-toggle"
+                />
+                <v-textarea
+                    v-if="force"
+                    v-model="forceReason"
+                    :label="t('shipment-panel.label-force-reason')"
+                    rows="2"
+                    density="compact"
+                    data-test="force-ship-reason"
+                />
+            </template>
             <v-btn
                 class="mt-3"
                 color="primary"
                 variant="tonal"
                 size="small"
                 data-test="mark-shipped"
-                :disabled="trackingRequired && !trackingCode"
+                :disabled="
+                    (trackingRequired && !trackingCode) ||
+                    (orderStatus !== 'processing' && (!force || !forceReason)) ||
+                    (force && !forceReason)
+                "
                 @click="markShipped"
             >
                 {{ t('shipment-panel.button-ship') }}

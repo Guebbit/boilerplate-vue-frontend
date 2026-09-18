@@ -22,6 +22,7 @@ import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -61,7 +62,49 @@ const { id } = defineProps<{
 /**
  * Orders store APIs and references.
  */
-const { watchOrder, fetchOrder, updateOrder, cancelOrder } = useOrdersStore();
+const { watchOrder, fetchOrder, updateOrder, cancelOrder, overrideStatus } = useOrdersStore();
+
+/**
+ * `orders.any.override` gate — the only correction door once `PUT /orders/:id` stopped accepting
+ * `shipped`/`delivered` from anyone.
+ */
+const session = useSessionStore();
+const canOverride = computed(() => session.can('override', 'Order'));
+
+/**
+ * The three destinations `POST /orders/{id}/status-override` accepts. Not filtered to "forward of
+ * the order's current status" here — same reasoning `statusOptions` above already states: that
+ * rule lives in the API, and a copy here is how the two come to disagree. An illegal pick surfaces
+ * as the server's own 409 toast.
+ */
+const overrideStatusOptions = [
+    OrderStatus.processing,
+    OrderStatus.shipped,
+    OrderStatus.delivered
+].map((value) => ({ value, label: t(`orders-form.status-${value}`) }));
+
+/**
+ * Correct-status form state, cleared after every submit.
+ */
+const overrideTo = ref<OrderStatus>();
+const overrideReason = ref('');
+
+/**
+ * Submits the correction, then reloads the order for its new status/actions.
+ *
+ * @returns A promise resolving once the panel has refreshed. A missing route id or target status
+ *  is a no-op — the submit button is disabled until both are set.
+ */
+const runOverride = () => {
+    if (!id || !overrideTo.value) return Promise.resolve();
+    return overrideStatus(id, overrideTo.value, overrideReason.value)
+        .then(() => {
+            overrideTo.value = undefined;
+            overrideReason.value = '';
+            addMessage(t('order-edit-page.override-done'));
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+};
 
 /**
  * The order being displayed, and whether it is in flight.
@@ -390,6 +433,41 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             {{ t('order-edit-page.button-cancel-and-refund') }}
                         </v-btn>
                     </div>
+                </div>
+
+                <!--
+                    The admin-only correction door: PUT /orders/:id no longer accepts
+                    shipped/delivered from anyone, this is what replaced it. Gated on the
+                    `orders.any.override` permission, not on any order-state flag, since the
+                    whole point is bypassing the ordinary rule.
+                -->
+                <div v-if="canOverride" class="mt-6 border-t pt-5">
+                    <h3 class="text-lg font-semibold">{{ t('order-edit-page.override-title') }}</h3>
+                    <p class="mt-1 mb-3 opacity-75">{{ t('order-edit-page.override-hint') }}</p>
+
+                    <v-select
+                        v-model="overrideTo"
+                        data-test="override-status-select"
+                        :label="t('order-edit-page.label-status')"
+                        :items="overrideStatusOptions"
+                        item-title="label"
+                        item-value="value"
+                    />
+                    <v-textarea
+                        v-model="overrideReason"
+                        data-test="override-reason"
+                        :label="t('order-edit-page.label-override-reason')"
+                        rows="2"
+                    />
+                    <v-btn
+                        color="warning"
+                        variant="flat"
+                        data-test="button-override"
+                        :disabled="!overrideTo || !overrideReason || loading"
+                        @click="runOverride"
+                    >
+                        {{ t('order-edit-page.button-override') }}
+                    </v-btn>
                 </div>
             </CardDetail>
 

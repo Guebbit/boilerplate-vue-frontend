@@ -14,10 +14,11 @@
  * would wire in `useRecordOfflinePayment` and a live payments store this suite never seeds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { ref, nextTick } from 'vue';
+import { createMongoAbility } from '@casl/ability';
 import OrderEdit from '@/modules/orders/views/OrderEdit.vue';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -166,6 +167,76 @@ describe('a list-cache arrival gains actions', () => {
                 expect(
                     wrapper.get('[data-test=button-cancel-and-refund]').attributes('disabled')
                 ).not.toBe(undefined);
+            });
+    });
+});
+
+describe('the correct-status door', () => {
+    it('stays hidden without the override permission', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.shipped,
+            actions: { transitions: [OrderStatus.delivered], cancel: true, pay: false }
+        });
+
+        const wrapper = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=button-override]').exists()).toBe(false);
+            });
+    });
+
+    it('submits the picked status and reason once an override holder confirms', () => {
+        signInAsAdmin();
+        const session = useSessionStore();
+        session.tenantAbility = createMongoAbility([{ action: 'override', subject: 'Order' }]);
+        const detail = anOrder({
+            status: OrderStatus.shipped,
+            actions: { transitions: [OrderStatus.delivered], cancel: true, pay: false }
+        });
+        // Spied BEFORE mounting: the component destructures `overrideStatus` off the store at
+        // setup time, so a spy attached after mount would replace the store's own method while
+        // the component keeps holding the original, unspied reference.
+        const overrideStatus = vi
+            .spyOn(useOrdersStore(), 'overrideStatus')
+            .mockResolvedValue({ ...detail, status: OrderStatus.delivered });
+        const wrapper = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=button-override]').exists()).toBe(true);
+                // The select/textarea are Vuetify components, not native inputs — emitting
+                // `update:modelValue` on the component instance is how a v-model bind is driven
+                // in a mounted test, the same as the status-select test above reads through the
+                // component's own props rather than simulating a click-driven menu.
+                //
+                // `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` —
+                // the selector's own uniqueness (one match, a Vue SFC, not a DOM-only node) is
+                // what the object-selector overload would otherwise prove for us.
+                (
+                    wrapper.getComponent('[data-test="override-status-select"]') as VueWrapper
+                ).vm.$emit('update:modelValue', OrderStatus.delivered);
+                return nextTick();
+            })
+            .then(() => {
+                (wrapper.getComponent('[data-test="override-reason"]') as VueWrapper).vm.$emit(
+                    'update:modelValue',
+                    'carrier scan never arrived'
+                );
+                return nextTick();
+            })
+            .then(() => nextTick())
+            .then(() => wrapper.get('[data-test=button-override]').trigger('click'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(overrideStatus).toHaveBeenCalledWith(
+                    'o1',
+                    OrderStatus.delivered,
+                    'carrier scan never arrived'
+                );
             });
     });
 });

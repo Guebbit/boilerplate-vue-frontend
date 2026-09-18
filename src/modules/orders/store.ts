@@ -16,13 +16,15 @@ import {
     deleteOrderById,
     hardDeleteOrderById,
     cancelOrderById,
-    getOrderInvoice
+    getOrderInvoice,
+    overrideOrderStatus
 } from '@api';
 import type {
     Order,
     CreateOrderRequest,
     UpdateOrderByIdRequest,
-    SearchOrdersRequest
+    SearchOrdersRequest,
+    OrderStatus
 } from '@types';
 
 /**
@@ -181,6 +183,26 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
+     * Forces a move to `processing`, `shipped` or `delivered` with a reason, bypassing the
+     * ordinary transition rule — `orders.any.override` only. No parcel record and no shipped
+     * email fire; this is a manual correction, not the shipping flow (`useDeliveryStore`'s
+     * `ship`/`deliver` are that door, with their own `forced` option). The returned record
+     * replaces the cached one, same reasoning as {@link cancelOrder}.
+     *
+     * @param orderId - Which order.
+     * @param to - The corrected status. Must be forward of the order's current one.
+     * @param reason - Why the normal door didn't apply. Recorded on the order's override history.
+     * @returns A promise resolving with the corrected order.
+     */
+    const overrideStatus = (orderId: string, to: OrderStatus, reason: string) =>
+        fetchAny(() =>
+            overrideOrderStatus(orderId, { to, reason }).then((response) => {
+                addOrder(response.data);
+                return response.data;
+            })
+        );
+
+    /**
      * Downloads an order's invoice.
      *
      * `getOrderInvoice` types its answer `Blob | OrderInvoicePendingEnvelope` because the
@@ -219,6 +241,7 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOrder,
         deleteOrder,
         cancelOrder,
+        overrideStatus,
         hardDeleteOrder,
         downloadInvoice,
         /**

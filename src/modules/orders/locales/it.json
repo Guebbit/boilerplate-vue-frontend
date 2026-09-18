@@ -79,7 +79,12 @@
         "button-cancel-and-refund": "Annulla e rimborsa",
         "cancel-done": "Ordine annullato. Il pagamento è rimasto invariato.",
         "cancel-refund-done": "Ordine annullato e pagamento rimborsato.",
-        "refund-done": "Pagamento rimborsato. Lo stato dell'ordine non è cambiato."
+        "refund-done": "Pagamento rimborsato. Lo stato dell'ordine non è cambiato.",
+        "override-title": "Correggi stato",
+        "override-hint": "Forza uno spostamento oltre la regola ordinaria, con un motivo registrato sull'ordine. Non viene creata alcuna spedizione né inviata l'email di spedizione.",
+        "label-override-reason": "Motivo",
+        "button-override": "Correggi stato",
+        "override-done": "Stato dell'ordine corretto."
     },
     "navigation": {
         "label-orders": "Ordini"

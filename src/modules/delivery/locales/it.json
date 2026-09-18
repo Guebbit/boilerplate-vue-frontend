@@ -16,6 +16,8 @@
         "button-ship": "Segna come spedito",
         "button-deliver": "Segna come consegnato",
         "shipped": "Segnato come spedito.",
-        "delivered": "Segnato come consegnato."
+        "delivered": "Segnato come consegnato.",
+        "label-force": "Forza (override)",
+        "label-force-reason": "Motivo dell'override"
     }
 }

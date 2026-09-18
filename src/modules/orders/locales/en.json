@@ -79,7 +79,12 @@
         "button-cancel-and-refund": "Cancel and refund",
         "cancel-done": "Order cancelled. The payment was left as it stands.",
         "cancel-refund-done": "Order cancelled and the payment refunded.",
-        "refund-done": "Payment refunded. The order status is unchanged."
+        "refund-done": "Payment refunded. The order status is unchanged.",
+        "override-title": "Correct status",
+        "override-hint": "Force a move past the ordinary rule, with a reason recorded on the order. No parcel record and no shipped email fire.",
+        "label-override-reason": "Reason",
+        "button-override": "Correct status",
+        "override-done": "Order status corrected."
     },
     "navigation": {
         "label-orders": "Orders"

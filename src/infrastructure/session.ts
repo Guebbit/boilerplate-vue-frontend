@@ -32,7 +32,7 @@ import type { Abilities } from '@types';
  * key into the concrete actions its module declares and never publishes a `manage` RULE, so
  * asking for one always answers no. A screen asks for the action it actually performs.
  */
-export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'checkout';
+export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'checkout' | 'override';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
