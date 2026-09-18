@@ -1779,6 +1779,7 @@ export const exportAccountDataResponseDataOrdersItemTaxTotalMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
 
+
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
 
 
@@ -1884,6 +1885,17 @@ export const ExportAccountDataResponse = zod.strictObject({
   "createdAt": zod.iso.datetime({"offset":true}).optional(),
   "updatedAt": zod.iso.datetime({"offset":true}).optional(),
   "deletedAt": zod.iso.datetime({"offset":true}).optional()
+})),
+  "apiKeys": zod.array(zod.strictObject({
+  "id": zod.string().describe('Resource identifier'),
+  "name": zod.string(),
+  "publicPrefix": zod.string().describe('The credential\'s non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.'),
+  "permissions": zod.array(zod.string()).min(1).describe('The permission keys this credential was minted with. Re-floored against the minter\'s CURRENT permissions on every request; this is the snapshot taken at mint time.'),
+  "lastUsedAt": zod.iso.datetime({"offset":true}).optional(),
+  "expiresAt": zod.iso.datetime({"offset":true}).optional(),
+  "revokedAt": zod.iso.datetime({"offset":true}).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}),
+  "updatedAt": zod.iso.datetime({"offset":true})
 })),
   "payments": zod.array(zod.strictObject({
   "id": zod.string().describe('Resource identifier'),

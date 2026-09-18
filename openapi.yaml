@@ -5056,6 +5056,7 @@ components:
         - wishlist
         - sessions
         - auditLog
+        - apiKeys
       properties:
         exportedAt:
           type: string
@@ -5070,6 +5071,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Order'
+        apiKeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiKey'
         payments:
           type: array
           items:
@@ -6962,6 +6967,45 @@ components:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
           $ref: '#/components/schemas/RefreshTokenResponse'
+    ApiKey:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - publicPrefix
+        - permissions
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+        publicPrefix:
+          type: string
+          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
+        permissions:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     ExportPayment:
       type: object
       additionalProperties: false
@@ -9366,45 +9410,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WebhookEventCatalogueEntry'
-    ApiKey:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - name
-        - publicPrefix
-        - permissions
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        name:
-          type: string
-        publicPrefix:
-          type: string
-          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
-        permissions:
-          type: array
-          items:
-            type: string
-          minItems: 1
-          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-        lastUsedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     ApiKeysResponse:
       type: object
       additionalProperties: false

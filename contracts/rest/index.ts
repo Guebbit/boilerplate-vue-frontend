@@ -470,6 +470,23 @@ export interface Address {
   default: boolean;
 }
 
+export interface ApiKey {
+  id: Id;
+  name: string;
+  /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+  publicPrefix: string;
+  /**
+     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * @minItems 1
+     */
+  permissions: string[];
+  lastUsedAt?: string;
+  expiresAt?: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type ExportPaymentStatus = typeof ExportPaymentStatus[keyof typeof ExportPaymentStatus];
 
 
@@ -602,6 +619,7 @@ export interface AccountExportResponse {
   profile: User;
   addresses: Address[];
   orders: Order[];
+  apiKeys: ApiKey[];
   payments: ExportPayment[];
   shipments: ExportShipment[];
   cart: CartItem[];
@@ -2908,23 +2926,6 @@ export interface WebhookEventCatalogueResponseEnvelope {
   status: EnvelopeStatus;
   message: EnvelopeMessage;
   data: WebhookEventCatalogueEntry[];
-}
-
-export interface ApiKey {
-  id: Id;
-  name: string;
-  /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
-  publicPrefix: string;
-  /**
-     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-     * @minItems 1
-     */
-  permissions: string[];
-  lastUsedAt?: string;
-  expiresAt?: string;
-  revokedAt?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ApiKeysResponse {
