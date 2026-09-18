@@ -5044,6 +5044,7 @@ components:
       required:
         - exportedAt
         - profile
+        - roles
         - addresses
         - orders
         - payments
@@ -5059,6 +5060,22 @@ components:
           format: date-time
         profile:
           $ref: '#/components/schemas/User'
+        roles:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - role
+              - scope
+            properties:
+              role:
+                type: string
+              scope:
+                type: string
+                enum:
+                  - tenant
+                  - platform
         addresses:
           type: array
           items:

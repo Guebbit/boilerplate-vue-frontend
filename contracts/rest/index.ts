@@ -450,6 +450,19 @@ export interface Order {
     deletedAt?: string;
 }
 
+export type AccountExportResponseRolesItemScope =
+    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
+
+export const AccountExportResponseRolesItemScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+export type AccountExportResponseRolesItem = {
+    role: string;
+    scope: AccountExportResponseRolesItemScope;
+};
+
 export type AccountExportResponseWishlistItem = {
     productId: Id;
 };
@@ -611,6 +624,7 @@ export interface ExportFeedbackTicket {
 export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
+    roles: AccountExportResponseRolesItem[];
     addresses: Address[];
     orders: Order[];
     apiKeys: ApiKey[];

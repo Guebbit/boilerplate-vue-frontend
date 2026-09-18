@@ -2651,6 +2651,12 @@ export const ExportAccountDataResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional()
         }),
+        roles: zod.array(
+            zod.strictObject({
+                role: zod.string(),
+                scope: zod.enum(['tenant', 'platform'])
+            })
+        ),
         addresses: zod.array(
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
