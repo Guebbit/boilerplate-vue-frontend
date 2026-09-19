@@ -54,6 +54,7 @@
         "button-download-invoice": "Download invoice",
         "button-invoice-pending": "Generating invoice…",
         "button-invoice-gave-up": "Still generating — check back later",
+        "label-invoice-number": "Invoice {number}",
         "label-updated-at": "Updated at",
         "button-cancel": "Cancel order",
         "confirm-cancel": "Cancel this order? The stock goes back on the shelf.",

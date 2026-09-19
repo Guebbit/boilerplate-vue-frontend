@@ -102,6 +102,31 @@ const canWrite = computed(() => session.can('update', 'Shipment'));
 const canOverride = computed(() => session.can('override', 'Order'));
 
 /**
+ * The forward sequence an override may move an order along — mirrors the backend's own
+ * `OVERRIDABLE_SEQUENCE` in `orders/domain/lifecycle.ts` exactly: never `cancelled` (not in the
+ * sequence at all — a cancelled order accepts no override) and never backward. A small, closed,
+ * rarely-changing set, unlike the ordinary transitions list the server computes per caller — worth
+ * mirroring here so this panel doesn't offer a force action the server can only ever refuse.
+ */
+const OVERRIDABLE_SEQUENCE: readonly string[] = [
+    'pending',
+    'paid',
+    'processing',
+    'shipped',
+    'delivered'
+];
+
+/**
+ * Whether an override holder may force this order toward `to` from its current status.
+ *
+ * @param to - The forced destination being considered (`shipped` or `delivered`).
+ */
+const canOverrideTo = (to: string) => {
+    const fromIndex = OVERRIDABLE_SEQUENCE.indexOf(orderStatus ?? '');
+    return fromIndex !== -1 && OVERRIDABLE_SEQUENCE.indexOf(to) > fromIndex;
+};
+
+/**
  * Force toggle, visible only to an override holder. Bypasses the status gate on the next
  * ship/deliver call and requires `forceReason` to be filled in.
  */
@@ -196,7 +221,12 @@ onMounted(() => {
             </v-btn>
         </template>
 
-        <template v-else-if="canWrite && (orderStatus === 'processing' || canOverride)">
+        <template
+            v-else-if="
+                canWrite &&
+                (orderStatus === 'processing' || (canOverride && canOverrideTo('shipped')))
+            "
+        >
             <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.not-shipped-yet') }}</p>
             <v-text-field
                 v-model="trackingCode"

@@ -13,6 +13,7 @@ import {
     formatDate,
     formatDateTime,
     formatCurrency,
+    formatPercent,
     formatFlag,
     formatMegabytes,
     formatTime,
@@ -104,6 +105,32 @@ describe('formatCurrency', () => {
 
     it('formats zero rather than treating it as missing', () => {
         expect(formatCurrency(0)).not.toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatPercent', () => {
+    it('formats a whole-number rate with no decimal point', () => {
+        expect(formatPercent(0.22)).toContain('22');
+        expect(formatPercent(0.22)).toContain('%');
+    });
+
+    /**
+     * The bug this function exists to fix: `Math.round(rate * 100)` showed 5.5% as "6%", losing
+     * the digit that tells it apart from an actual 6% rate.
+     */
+    it('rounds a fractional rate instead of dropping the fraction', () => {
+        // Locale-tolerant on the decimal separator, same reasoning as formatCurrency's own tests.
+        expect(formatPercent(0.055)).toMatch(/5[,.]5\s?%/);
+        expect(formatPercent(0.055)).not.toMatch(/^6\s?%$/);
+    });
+
+    it('falls back for anything that is not a number', () => {
+        expect(formatPercent()).toBe(EMPTY_VALUE);
+        expect(formatPercent(null)).toBe(EMPTY_VALUE);
+    });
+
+    it('formats zero rather than treating it as missing', () => {
+        expect(formatPercent(0)).not.toBe(EMPTY_VALUE);
     });
 });
 

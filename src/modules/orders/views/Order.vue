@@ -35,7 +35,8 @@ import {
     EMPTY_VALUE,
     formatText,
     formatDateTime,
-    formatCurrency
+    formatCurrency,
+    formatPercent
 } from '@/infrastructure/utils/formatters.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
@@ -389,7 +390,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                 class="flex items-center justify-between gap-3 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
                             >
                                 <v-chip size="small" variant="tonal" color="tertiary">
-                                    {{ Math.round(row.rate * 100) }}%
+                                    {{ formatPercent(row.rate) }}
                                 </v-chip>
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-vat-net')
@@ -464,6 +465,17 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                               : t('order-target-page.button-download-invoice')
                     }}
                 </v-btn>
+                <span
+                    v-if="currentOrder?.invoiceNumber"
+                    class="self-center text-sm opacity-75"
+                    data-test="order-invoice-number"
+                >
+                    {{
+                        t('order-target-page.label-invoice-number', {
+                            number: currentOrder.invoiceNumber
+                        })
+                    }}
+                </span>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'OrdersList' })">
                     {{ t('order-target-page.button-go-to-list') }}
                 </v-btn>

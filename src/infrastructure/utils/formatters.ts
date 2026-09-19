@@ -83,6 +83,23 @@ export const formatCurrency = (
 ) => formatCurrencyBase(value, { currency, format, locale: getLocale(), empty: EMPTY_VALUE });
 
 /**
+ * Formats a fraction (`0.055`) as a locale-aware percentage (`5.5%`), rounding instead of
+ * truncating to whole points — `Math.round(rate * 100)` would show 5.5% as "6%", losing the digit
+ * that actually distinguishes it from a 6% rate.
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat
+ *
+ * @param rate - The fraction to format; non-numbers yield the fallback glyph.
+ * @returns The formatted percentage, or {@link EMPTY_VALUE} when `rate` is not a number.
+ */
+export const formatPercent = (rate?: number | null) =>
+    typeof rate === 'number'
+        ? new Intl.NumberFormat(getLocale(), { style: 'percent', maximumFractionDigits: 2 }).format(
+              rate
+          )
+        : EMPTY_VALUE;
+
+/**
  * The time of day, in the active locale — the time-only counterpart of {@link formatDateTime}.
  *
  * @param value - ISO 8601 date/datetime string, possibly nullish.

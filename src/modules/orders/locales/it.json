@@ -54,6 +54,7 @@
         "button-download-invoice": "Scarica fattura",
         "button-invoice-pending": "Generazione fattura…",
         "button-invoice-gave-up": "Ancora in generazione — riprova più tardi",
+        "label-invoice-number": "Fattura {number}",
         "label-updated-at": "Aggiornato il",
         "button-cancel": "Annulla ordine",
         "confirm-cancel": "Annullare questo ordine? Le quantità tornano disponibili.",

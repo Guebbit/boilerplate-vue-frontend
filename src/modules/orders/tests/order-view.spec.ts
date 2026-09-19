@@ -167,6 +167,28 @@ describe('the invoice download button', () => {
     });
 });
 
+describe('the invoice number', () => {
+    it('is absent when the order carries none', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-invoice-number]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('shows next to the invoice button once the order has one', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            invoiceNumber: '2026-000041',
+            items: [lineWith(null)]
+        });
+
+        expect(wrapper.get('[data-test=order-invoice-number]').text()).toContain('2026-000041');
+
+        wrapper.unmount();
+    });
+});
+
 describe('the VAT summary', () => {
     it('is absent on a pre-VAT order — no taxSummary at all', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
