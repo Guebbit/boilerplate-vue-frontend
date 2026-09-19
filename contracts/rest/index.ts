@@ -1170,6 +1170,16 @@ export interface ObservabilityHealthJob {
 }
 
 /**
+ * One worker queue's current dead-letter depth, read live off the broker (`src/infrastructure/adapters/queue.ts#parkedCounts`) — the CURRENT count, unlike `queue_jobs_dead_lettered_total`'s Prometheus counter, which only ever grows. Absent entirely, not zero-filled, when the queue is disabled or unreachable: the broker is what would answer, and there is nothing to read a count off.
+ */
+export interface ObservabilityHealthQueue {
+    /** The queue this dead-letter count belongs to. */
+    name: string;
+    /** @minimum 0 */
+    parked: number;
+}
+
+/**
  * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
  * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
@@ -1199,6 +1209,8 @@ export interface ObservabilityHealth {
     system?: ObservabilityHealthSystem;
     /** Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`. */
     jobs?: ObservabilityHealthJob[];
+    /** Every worker queue's current dead-letter depth. Empty when the queue is disabled or unreachable, never zero-filled — see `ObservabilityHealthQueue`. */
+    queues?: ObservabilityHealthQueue[];
     timestamp: string;
 }
 

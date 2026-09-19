@@ -1147,6 +1147,8 @@ export const getObservabilityHealthResponseDataMemoryHeapTotalMin = 0;
 
 export const getObservabilityHealthResponseDataMemoryExternalMin = 0;
 
+export const getObservabilityHealthResponseDataQueuesItemParkedMin = 0;
+
 export const GetObservabilityHealthResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -1244,6 +1246,23 @@ export const GetObservabilityHealthResponse = zod.strictObject({
             .optional()
             .describe(
                 'Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`.'
+            ),
+        queues: zod
+            .array(
+                zod
+                    .strictObject({
+                        name: zod.string().describe('The queue this dead-letter count belongs to.'),
+                        parked: zod
+                            .number()
+                            .min(getObservabilityHealthResponseDataQueuesItemParkedMin)
+                    })
+                    .describe(
+                        "One worker queue's current dead-letter depth, read live off the broker (`src\/infrastructure\/adapters\/queue.ts#parkedCounts`) — the CURRENT count, unlike `queue_jobs_dead_lettered_total`'s Prometheus counter, which only ever grows. Absent entirely, not zero-filled, when the queue is disabled or unreachable: the broker is what would answer, and there is nothing to read a count off."
+                    )
+            )
+            .optional()
+            .describe(
+                "Every worker queue's current dead-letter depth. Empty when the queue is disabled or unreachable, never zero-filled — see `ObservabilityHealthQueue`."
             ),
         timestamp: zod.iso.datetime({ offset: true })
     })

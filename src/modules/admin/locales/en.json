@@ -25,6 +25,7 @@
         "section-auth": "Auth Events",
         "section-business": "Business Events",
         "section-system": "System Info",
+        "section-queues": "Parked Jobs",
         "label-login-success": "Login success",
         "label-login-failure": "Login failures",
         "label-signup-success": "Signups",

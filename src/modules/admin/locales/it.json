@@ -25,6 +25,7 @@
         "section-auth": "Autenticazione",
         "section-business": "Metriche business",
         "section-system": "Sistema",
+        "section-queues": "Job in coda",
         "label-login-success": "Login riusciti",
         "label-login-failure": "Login falliti",
         "label-signup-success": "Registrazioni",

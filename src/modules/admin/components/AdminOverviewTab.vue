@@ -334,6 +334,28 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
             </dl>
         </v-card>
 
+        <!--
+            One row per worker queue's current dead-letter depth — absent entirely, not
+            zero-filled, for a queue ObservabilityHealthQueue could not reach (broker disabled or
+            unreachable), so an empty array here hides the whole section rather than claiming
+            every queue is clean.
+        -->
+        <v-card v-if="props.health?.queues?.length" class="p-5" variant="flat" border>
+            <h2 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-queues') }}</h2>
+            <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+                <DefinitionRow
+                    v-for="queue in props.health.queues"
+                    :key="queue.name"
+                    :label="queue.name"
+                    data-test="parked-queue-row"
+                >
+                    <span :class="queue.parked > 0 ? 'text-warning' : undefined">{{
+                        queue.parked
+                    }}</span>
+                </DefinitionRow>
+            </dl>
+        </v-card>
+
         <v-empty-state
             v-if="!props.loading && !props.health && !props.metrics"
             :title="t('generic.no-data')"
