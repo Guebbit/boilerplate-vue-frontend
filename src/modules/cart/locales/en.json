@@ -17,6 +17,7 @@
         "shortfall-line": "{title}: requested {requested}, only {available} left",
         "error-address-not-found": "We couldn't find the shipping address for this order — check your saved addresses and try again.",
         "error-shipping-method-weight": "Your basket is too heavy for the chosen shipping method — pick another one.",
+        "error-product-unavailable": "Some products in your cart are no longer available — remove them to check out.",
         "button-decrease": "Decrease quantity",
         "button-increase": "Increase quantity",
         "button-decrease-named": "Decrease quantity of product {id}",

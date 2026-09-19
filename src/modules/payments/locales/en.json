@@ -10,6 +10,7 @@
         "button-pay": "Pay now",
         "button-finish": "I have finished at my bank",
         "success": "Payment received — the order is paid.",
+        "error-product-unavailable": "This order can't be paid — some products in it are no longer available.",
         "status-requires_confirmation": "Awaiting confirmation",
         "status-requires_action": "Awaiting your bank",
         "status-processing": "Processing",

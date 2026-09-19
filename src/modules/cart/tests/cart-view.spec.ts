@@ -1,7 +1,7 @@
 /**
  * @module
  * Mounts the real cart page against a real, memory-history router, proving the checkout screen
- * answers `docs/modules/cart-checkout.md`'s four documented refusals differently rather than
+ * answers `docs/modules/cart-checkout.md`'s six documented refusals differently rather than
  * folding every one into the same generic toast. Same template as `product-view.spec.ts`: a real
  * router over `collectModuleRoutes(enabledModules)`, the store's own fetch stubbed, the cart
  * seeded directly into the store.
@@ -155,6 +155,26 @@ describe('the checkout refusals', () => {
             .then(flushAsync)
             .then(() => {
                 expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+            });
+    });
+
+    it('names every line CART_PRODUCT_UNAVAILABLE lists, falling back to the id with no title', () => {
+        const { wrapper, checkoutSpy } = mountCart();
+        checkoutSpy.mockRejectedValueOnce(
+            checkoutRejection(404, 'CART_PRODUCT_UNAVAILABLE', {
+                lines: [{ productId: 'p1', title: 'Widget' }, { productId: 'p2' }]
+            })
+        );
+
+        return wrapper
+            .get('[data-test=cart-checkout]')
+            .trigger('click')
+            .then(flushAsync)
+            .then(() => {
+                const lines = wrapper.findAll('[data-test=checkout-unavailable-line]');
+                expect(lines).toHaveLength(2);
+                expect(lines[0]?.text()).toBe('Widget');
+                expect(lines[1]?.text()).toBe('p2');
             });
     });
 

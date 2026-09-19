@@ -10,6 +10,7 @@
         "button-pay": "Paga ora",
         "button-finish": "Ho completato la verifica in banca",
         "success": "Pagamento ricevuto — l'ordine è pagato.",
+        "error-product-unavailable": "Questo ordine non può essere pagato — alcuni prodotti non sono più disponibili.",
         "status-requires_confirmation": "In attesa di conferma",
         "status-requires_action": "In attesa della tua banca",
         "status-processing": "In elaborazione",

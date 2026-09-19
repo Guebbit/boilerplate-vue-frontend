@@ -17,6 +17,8 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { usePaymentsStore } from '../store.ts';
+import { classifyPaymentError } from '@/modules/payments/domain';
+import type { UnavailableOrderLine } from '@/modules/payments/domain';
 
 /**
  * The order page's payment corner: a method picker while the order is payable, the payment's fate
@@ -119,15 +121,32 @@ const announceIfSettled = () => {
 };
 
 /**
+ * The lines an `ORDER_PRODUCT_UNAVAILABLE` refusal named — a product removed or deactivated
+ * since the order was placed, caught fresh at payment start rather than trusting the order's own
+ * frozen snapshot. Empty whenever the last attempt did not end in this refusal.
+ */
+const unavailableLines = ref<UnavailableOrderLine[]>([]);
+
+/**
  * Pays the order with the chosen method, notifies the result, and tells the parent to re-read the
  * order once it actually settles. A decline rejects; an in-flight answer does not, and leaves the
  * panel showing the next step.
  */
-const submitPayment = () =>
-    paymentsStore
+const submitPayment = () => {
+    unavailableLines.value = [];
+    return paymentsStore
         .payForOrder(orderId, paymentMethodRef.value)
         .then(announceIfSettled)
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => {
+            const verdict = classifyPaymentError(error);
+            if (verdict.kind === 'product-unavailable') {
+                unavailableLines.value = verdict.lines;
+                addMessage(t('payments-panel.error-product-unavailable'));
+                return;
+            }
+            notifyErrorMessages(addMessage, error);
+        });
+};
 
 /**
  * Reports back that the browser has finished at the provider — a challenge answered, or simply a
@@ -156,6 +175,28 @@ onMounted(() => {
             rather than sitting beside it as a paragraph a reader never connects to the input.
         -->
         <form v-if="payable" novalidate @submit.prevent="submitPayment">
+            <!--
+                ORDER_PRODUCT_UNAVAILABLE names every line whose product left the catalogue since
+                the order was placed — the same one-pass-fix reasoning as the cart's own
+                CART_PRODUCT_UNAVAILABLE alert, not a generic toast.
+            -->
+            <v-alert
+                v-if="unavailableLines.length > 0"
+                type="warning"
+                variant="tonal"
+                class="mb-3"
+                data-test="payment-unavailable"
+            >
+                <ul class="flex flex-col gap-1">
+                    <li
+                        v-for="line in unavailableLines"
+                        :key="line.productId"
+                        data-test="payment-unavailable-line"
+                    >
+                        {{ line.title }}
+                    </li>
+                </ul>
+            </v-alert>
             <v-select
                 v-model="paymentMethodRef"
                 :items="

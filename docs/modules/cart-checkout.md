@@ -6,7 +6,7 @@ shipping have to agree at once.
 ::: tip At a glance
 **Mounts** — `ShippingSelector`, from [`delivery`](./delivery.md), and learns nothing from it.
 **Decides** — nothing. Every total, every refusal and every price comes back from the server.
-**Breaks if you change** — the error handling. Four of the five failure modes are the server's, not the client's.
+**Breaks if you change** — the error handling. Five of the six failure modes are the server's, not the client's.
 :::
 
 ## What this client actually does
@@ -31,6 +31,7 @@ flowchart TD
     D -.->|"409 · someone else<br/>checked out first"| G["refetch and say so"]
     D -.->|"409 · lines short<br/>on stock"| H["name the short lines"]
     D -.->|"409 · method can't<br/>carry the weight"| K["clear the method<br/>and say why"]
+    D -.->|"404 · a line's product<br/>left the catalogue"| L["name the lines"]
     D -.->|"404 · address or<br/>method gone"| I["reopen that step"]
     D -.->|"transport failed"| J["CHECKOUT_REQUEST_FAILED"]
 
@@ -39,7 +40,7 @@ flowchart TD
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#111827;
     class A,B,C,E,F ui;
     class D call;
-    class G,H,I,J,K bad;
+    class G,H,I,J,K,L bad;
 ```
 
 ## The mounted selector
@@ -57,19 +58,22 @@ Delete [`delivery`](./delivery.md) and this screen loses a step; it does not bre
 the boundary — two numbers this screen already owns for its own totals — not domain state.
 :::
 
-## The five refusals, and why they are shaped differently
+## The six refusals, and why they are shaped differently
 
 | Answer    | What happened                                                                           | What the screen does                                                                                                                         |
 | --------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `409`     | Another checkout won the race — the cart's lines are on someone else's order            | Refetch the cart and say it has changed. **Not a retry** — re-sending would find an empty cart.                                              |
 | `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)                        | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass. |
 | `409`     | The chosen method cannot carry the basket's real weight (`CART_SHIPPING_METHOD_WEIGHT`) | Clear the chosen method and say why — the client's own weight is advisory; this is the server's enforced check.                              |
+| `404`     | One or more lines' products left the catalogue (`CART_PRODUCT_UNAVAILABLE`)             | Name the lines — `title` absent for a hard-deleted product, since there is nothing left to read one off.                                     |
 | `404`     | The address or the shipping method named no longer exists                               | Reopen that step rather than failing the whole flow.                                                                                         |
 | transport | The request never reached the API                                                       | The one thing the server cannot report, so this client reports it.                                                                           |
 
-::: warning The stock refusal is a list, and rendering it as one message throws away the useful half
-`errors[0].details.lines` carries `productId`, `title`, `requested` and `available` per short line.
-Collapsing that into "some items are unavailable" turns a one-pass fix into a guessing game.
+::: warning Two of these are lists, and rendering either as one message throws away the useful half
+`CART_INSUFFICIENT_STOCK`'s `errors[0].details.lines` carries `productId`, `title`, `requested` and
+`available` per short line. `CART_PRODUCT_UNAVAILABLE`'s carries `productId` and an optional
+`title`. Collapsing either into "some items are unavailable" turns a one-pass fix into a guessing
+game.
 :::
 
 ## The one analytics event this module owns

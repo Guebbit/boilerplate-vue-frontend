@@ -75,6 +75,57 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'insufficient-stock', lines: [] });
     });
 
+    it('reads every unavailable line off CART_PRODUCT_UNAVAILABLE, title included', () => {
+        const verdict = classifyCheckoutError({
+            status: 404,
+            errors: [
+                {
+                    code: 'CART_PRODUCT_UNAVAILABLE',
+                    message: 'x',
+                    details: { lines: [{ productId: 'p1', title: 'Widget' }] }
+                }
+            ]
+        });
+
+        expect(verdict).toEqual({
+            kind: 'product-unavailable',
+            lines: [{ productId: 'p1', title: 'Widget' }]
+        });
+    });
+
+    it('keeps an unavailable line with no title — a hard-deleted product has none', () => {
+        const verdict = classifyCheckoutError({
+            status: 404,
+            errors: [
+                {
+                    code: 'CART_PRODUCT_UNAVAILABLE',
+                    message: 'x',
+                    details: { lines: [{ productId: 'p1' }] }
+                }
+            ]
+        });
+
+        expect(verdict).toEqual({
+            kind: 'product-unavailable',
+            lines: [{ productId: 'p1', title: undefined }]
+        });
+    });
+
+    it('drops an unavailable line missing even a productId rather than throwing', () => {
+        const verdict = classifyCheckoutError({
+            status: 404,
+            errors: [
+                {
+                    code: 'CART_PRODUCT_UNAVAILABLE',
+                    message: 'x',
+                    details: { lines: [{ title: 'Widget' }] }
+                }
+            ]
+        });
+
+        expect(verdict).toEqual({ kind: 'product-unavailable', lines: [] });
+    });
+
     it('falls back to "other" for a refusal with no dedicated response — CART_EMPTY', () => {
         expect(
             classifyCheckoutError({ status: 409, errors: [{ code: 'CART_EMPTY', message: 'x' }] })

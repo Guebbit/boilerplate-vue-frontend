@@ -10,4 +10,8 @@ export { classifyCheckoutError } from './checkout-errors';
 /**
  * The checkout-error vocabulary, re-exported so callers import from the domain barrel.
  */
-export type { CheckoutErrorVerdict, CheckoutShortfallLine } from './checkout-errors';
+export type {
+    CheckoutErrorVerdict,
+    CheckoutShortfallLine,
+    UnavailableCartLine
+} from './checkout-errors';

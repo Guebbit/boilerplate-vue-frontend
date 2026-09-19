@@ -21,7 +21,7 @@ import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
 import { MIN_LINE_QUANTITY, classifyCheckoutError } from '@/modules/cart/domain';
-import type { CheckoutShortfallLine } from '@/modules/cart/domain';
+import type { CheckoutShortfallLine, UnavailableCartLine } from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -83,6 +83,12 @@ const paymentMethodId = ref<PaymentMethodId | undefined>();
 const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
 
 /**
+ * The lines a `CART_PRODUCT_UNAVAILABLE` refusal named — a product removed or deactivated since
+ * the basket was built. Empty whenever the last checkout did not end in this refusal.
+ */
+const unavailableLines = ref<UnavailableCartLine[]>([]);
+
+/**
  * Places an order from the current cart.
  *
  * The store empties the local cart on success, so this only has to say so and move on — no
@@ -99,6 +105,7 @@ const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
  */
 const checkout = () => {
     insufficientStockLines.value = [];
+    unavailableLines.value = [];
     return placeOrder({
         ...(shippingMethodId.value === undefined
             ? {}
@@ -131,6 +138,11 @@ const checkout = () => {
                 // that actually knows the chosen method cannot carry it.
                 shippingMethodId.value = undefined;
                 addMessage(t('cart-page.error-shipping-method-weight'));
+                return;
+            }
+            if (verdict.kind === 'product-unavailable') {
+                unavailableLines.value = verdict.lines;
+                addMessage(t('cart-page.error-product-unavailable'));
                 return;
             }
             notifyErrorMessages(addMessage, error);
@@ -217,6 +229,29 @@ onMounted(() =>
                                 available: line.available
                             })
                         }}
+                    </li>
+                </ul>
+            </v-alert>
+
+            <!--
+                CART_PRODUCT_UNAVAILABLE names every line whose product left the catalogue since
+                the basket was built — the same one-pass-fix reasoning as the shortfall alert
+                above, not a generic "some items are unavailable" toast.
+            -->
+            <v-alert
+                v-if="unavailableLines.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="checkout-unavailable"
+                class="lg:col-span-2"
+            >
+                <ul class="flex flex-col gap-1">
+                    <li
+                        v-for="line in unavailableLines"
+                        :key="line.productId"
+                        data-test="checkout-unavailable-line"
+                    >
+                        {{ line.title ?? line.productId }}
                     </li>
                 </ul>
             </v-alert>

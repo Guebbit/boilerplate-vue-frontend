@@ -19,17 +19,28 @@ export interface CheckoutShortfallLine {
 }
 
 /**
+ * One line the checkout refused for having no sellable product behind it, as
+ * `CART_PRODUCT_UNAVAILABLE`'s `details.lines` carries it. `title` is absent for a hard-deleted
+ * product — there is nothing left to read one off.
+ */
+export interface UnavailableCartLine {
+    productId: string;
+    title?: string;
+}
+
+/**
  * What a checkout rejection means for the view, narrowed from the wire error code.
  *
  * `other` covers every refusal without a dedicated UI response (`CART_EMPTY`,
- * `CART_PRODUCT_UNAVAILABLE`, `CART_SHIPPING_METHOD_NOT_FOUND`, a transport failure) — the
- * generic toast is already the documented right answer for those.
+ * `CART_SHIPPING_METHOD_NOT_FOUND`, a transport failure) — the generic toast is already the
+ * documented right answer for those.
  */
 export type CheckoutErrorVerdict =
     | { kind: 'cart-changed' }
     | { kind: 'insufficient-stock'; lines: CheckoutShortfallLine[] }
     | { kind: 'address-not-found' }
     | { kind: 'shipping-method-weight' }
+    | { kind: 'product-unavailable'; lines: UnavailableCartLine[] }
     | { kind: 'other' };
 
 /**
@@ -50,6 +61,21 @@ const asShortfallLine = (value: unknown): CheckoutShortfallLine | undefined => {
     )
         return undefined;
     return { productId, title, requested, available };
+};
+
+/**
+ * Narrows an unknown value to an `UnavailableCartLine` — `title` is optional on the wire (a
+ * hard-deleted product has none), unlike every field of `CheckoutShortfallLine`.
+ *
+ * @param value - One entry of `details.lines`, still unknown.
+ * @returns The line, or `undefined` when the shape does not match.
+ */
+const asUnavailableLine = (value: unknown): UnavailableCartLine | undefined => {
+    if (typeof value !== 'object' || value === null) return undefined;
+    const { productId, title } = value as Record<string, unknown>;
+    if (typeof productId !== 'string') return undefined;
+    if (title !== undefined && typeof title !== 'string') return undefined;
+    return { productId, title };
 };
 
 /**
@@ -84,6 +110,13 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
             ? rawLines.map((line) => asShortfallLine(line)).filter((line) => line !== undefined)
             : [];
         return { kind: 'insufficient-stock', lines };
+    }
+    if (item?.code === 'CART_PRODUCT_UNAVAILABLE') {
+        const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
+        const lines = Array.isArray(rawLines)
+            ? rawLines.map((line) => asUnavailableLine(line)).filter((line) => line !== undefined)
+            : [];
+        return { kind: 'product-unavailable', lines };
     }
     return { kind: 'other' };
 };
