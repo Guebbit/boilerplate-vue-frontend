@@ -62,5 +62,4 @@ coverage
 # deleted when it lands.
 /*.md
 !/README.md
-!/CHANGELOG.md
 !/CLAUDE.md
