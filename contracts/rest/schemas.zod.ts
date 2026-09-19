@@ -8791,7 +8791,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
 });
 
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website (or, for an order that predates the field, its raw id) and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An order placed before this field existed has no reference at all and is not reachable here — find it by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReferenceQueryRefMax = 64;
@@ -8802,7 +8802,7 @@ export const GetOrderByReferenceQueryParams = zod.strictObject({
         .min(1)
         .max(getOrderByReferenceQueryRefMax)
         .describe(
-            'The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL` — or a raw 24-character order id for an order that predates this field.'
+            'The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL`.'
         )
 });
 
@@ -9726,11 +9726,11 @@ export const GetShipmentByOrderResponse = zod.strictObject({
             .string()
             .optional()
             .describe(
-                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+                "The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
             ),
         status: zod
             .enum(['shipped', 'delivered'])
-            .describe("The tail of the order's lifecycle, as the courier sees it."),
+            .describe("The tail of the order's lifecycle, as the carrier sees it."),
         deliveredAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -9778,11 +9778,11 @@ export const ShipOrderResponse = zod.strictObject({
             .string()
             .optional()
             .describe(
-                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+                "The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
             ),
         status: zod
             .enum(['shipped', 'delivered'])
-            .describe("The tail of the order's lifecycle, as the courier sees it."),
+            .describe("The tail of the order's lifecycle, as the carrier sees it."),
         deliveredAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -9818,11 +9818,11 @@ export const DeliverOrderResponse = zod.strictObject({
             .string()
             .optional()
             .describe(
-                "The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
+                "The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false)."
             ),
         status: zod
             .enum(['shipped', 'delivered'])
-            .describe("The tail of the order's lifecycle, as the courier sees it."),
+            .describe("The tail of the order's lifecycle, as the carrier sees it."),
         deliveredAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10085,7 +10085,7 @@ export const AdjustStockResponse = zod.strictObject({
 /**
  * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
  *
- * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator — the same arrangement as `POST /delivery/advance`. Idempotent; running it twice releases nothing the first run already released.
+ * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator. Idempotent; running it twice releases nothing the first run already released.
  * @summary Expire stale reservations
  */
 export const sweepReservationsResponseDataExpiredMin = 0;
@@ -10349,7 +10349,7 @@ export const ListWebhookDeliveriesQueryParams = zod.strictObject({
         .max(listWebhookDeliveriesQueryPageSizeMax)
         .default(listWebhookDeliveriesQueryPageSizeDefault),
     subscriptionId: zod.string().optional(),
-    status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']).optional()
+    status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']).optional()
 });
 
 export const listWebhookDeliveriesResponseDataMetaPageDefault = 1;
@@ -10374,7 +10374,7 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 eventId: zod.string(),
                 eventType: zod.string(),
                 attempt: zod.number().min(1),
-                status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']),
+                status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
                 responseCode: zod.number().optional(),
                 durationMs: zod.number().optional(),
                 error: zod.string().optional(),
@@ -10427,7 +10427,7 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         eventId: zod.string(),
         eventType: zod.string(),
         attempt: zod.number().min(1),
-        status: zod.enum(['pending', 'in-flight', 'succeeded', 'failed', 'exhausted']),
+        status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
         responseCode: zod.number().optional(),
         durationMs: zod.number().optional(),
         error: zod.string().optional(),

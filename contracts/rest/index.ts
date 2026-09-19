@@ -2721,7 +2721,7 @@ export interface ShippingMethodsResponseEnvelope {
 }
 
 /**
- * The tail of the order's lifecycle, as the courier sees it.
+ * The tail of the order's lifecycle, as the carrier sees it.
  */
 export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
 
@@ -2733,9 +2733,9 @@ export const ShipmentStatus = {
 export interface Shipment {
     id: Id;
     orderId: Id;
-    /** The courier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
     trackingCode?: string;
-    /** The tail of the order's lifecycle, as the courier sees it. */
+    /** The tail of the order's lifecycle, as the carrier sees it. */
     status: ShipmentStatus;
     deliveredAt?: string;
     createdAt?: string;
@@ -2967,7 +2967,6 @@ export const WebhookDeliveryStatus = {
     pending: 'pending',
     'in-flight': 'in-flight',
     succeeded: 'succeeded',
-    failed: 'failed',
     exhausted: 'exhausted'
 } as const;
 
@@ -3453,7 +3452,7 @@ export type DeleteOrderByIdParams = {
 
 export type GetOrderByReferenceParams = {
     /**
-     * The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL` — or a raw 24-character order id for an order that predates this field.
+     * The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL`.
      * @minLength 1
      * @maxLength 64
      */
@@ -5824,7 +5823,7 @@ export const getPaymentByOrder = (
 };
 
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website (or, for an order that predates the field, its raw id) and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An order placed before this field existed has no reference at all and is not reachable here — find it by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReference = (
@@ -6059,7 +6058,7 @@ export const adjustStock = (
 /**
  * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
  *
- * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator — the same arrangement as `POST /delivery/advance`. Idempotent; running it twice releases nothing the first run already released.
+ * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator. Idempotent; running it twice releases nothing the first run already released.
  * @summary Expire stale reservations
  */
 export const sweepReservations = (

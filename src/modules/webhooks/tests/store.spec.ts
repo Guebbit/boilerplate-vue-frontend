@@ -375,7 +375,7 @@ describe('useWebhooksStore', () => {
         it('watchDeliveriesSearch sends the subscription and status filters', () => {
             respondWithItems([]);
             const store = useWebhooksStore();
-            store.deliveryFilters = { subscriptionId: 'sub1', status: 'failed' };
+            store.deliveryFilters = { subscriptionId: 'sub1', status: 'exhausted' };
 
             return store
                 .watchDeliveriesSearch()
@@ -387,7 +387,7 @@ describe('useWebhooksStore', () => {
                     });
                     expect(lastParameters()).toMatchObject({
                         subscriptionId: 'sub1',
-                        status: 'failed'
+                        status: 'exhausted'
                     });
                 });
         });

@@ -93,7 +93,6 @@
         "status-pending": "Pending",
         "status-in-flight": "In flight",
         "status-succeeded": "Succeeded",
-        "status-failed": "Failed",
         "status-exhausted": "Exhausted",
         "column-created-at": "Created at",
         "column-subscription": "Subscription",

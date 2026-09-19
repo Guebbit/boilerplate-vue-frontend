@@ -93,7 +93,6 @@
         "status-pending": "In attesa",
         "status-in-flight": "In corso",
         "status-succeeded": "Riuscita",
-        "status-failed": "Fallita",
         "status-exhausted": "Esaurita",
         "column-created-at": "Creata il",
         "column-subscription": "Sottoscrizione",

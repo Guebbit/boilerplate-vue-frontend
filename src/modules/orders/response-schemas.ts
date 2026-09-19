@@ -37,5 +37,10 @@ export const ordersResponseSchemas: ResponseSchemaRoute[] = [
         method: 'POST',
         pattern: /^\/orders\/[^/]+\/cancel$/,
         schema: schemas.CancelOrderByIdResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/orders\/[^/]+\/status-override$/,
+        schema: schemas.OverrideOrderStatusResponse
     }
 ];

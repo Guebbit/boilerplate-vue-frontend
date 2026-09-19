@@ -87,7 +87,6 @@ const statusOptions = computed(() => [
     { value: 'pending', label: t('webhook-deliveries-page.status-pending') },
     { value: 'in-flight', label: t('webhook-deliveries-page.status-in-flight') },
     { value: 'succeeded', label: t('webhook-deliveries-page.status-succeeded') },
-    { value: 'failed', label: t('webhook-deliveries-page.status-failed') },
     { value: 'exhausted', label: t('webhook-deliveries-page.status-exhausted') }
 ]);
 
@@ -135,7 +134,7 @@ const statusLabel = (status: WebhookDeliveryStatus) =>
  */
 const statusColor = (status: WebhookDeliveryStatus) => {
     if (status === 'succeeded') return 'success';
-    if (status === 'failed' || status === 'exhausted') return 'error';
+    if (status === 'exhausted') return 'error';
     return 'secondary';
 };
 
