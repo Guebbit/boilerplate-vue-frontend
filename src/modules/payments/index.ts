@@ -1,8 +1,8 @@
 /**
  * @module
- * Payments — public barrel. Four components: the panel and the transfer-instructions card the
- * order page mounts, the method choice the cart's checkout mounts, and the form the operator's
- * order-edit page mounts.
+ * Payments — public barrel. Five components: the panel and the transfer-instructions card the
+ * order page mounts, the method choice the cart's checkout mounts, the form the operator's
+ * order-edit page mounts, and the RF-reference lookup the orders list mounts.
  *
  * The store stays inside, and so does `useRecordOfflinePayment`: only the form above uses it, and
  * that form lives in this same module, so there is no sibling for it to be published to.
@@ -15,4 +15,5 @@ export { default as PaymentPanel } from './components/PaymentPanel.vue';
 export { default as PaymentMethodSelector } from './components/PaymentMethodSelector.vue';
 export { default as TransferInstructionsPanel } from './components/TransferInstructionsPanel.vue';
 export { default as RecordOfflinePaymentForm } from './components/RecordOfflinePaymentForm.vue';
+export { default as OrderReferenceSearch } from './components/OrderReferenceSearch.vue';
 export { useOrderRefund } from './composables/use-order-refund';

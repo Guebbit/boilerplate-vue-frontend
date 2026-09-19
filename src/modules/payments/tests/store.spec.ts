@@ -254,3 +254,43 @@ describe('recordOfflinePayment', () => {
         });
     });
 });
+
+describe('findOrderByReference', () => {
+    it('resolves the order behind the reference', () => {
+        responses['GET /payments/order-by-reference'] = orvalEnvelope({
+            id: 'order-1',
+            userId: 'user-1',
+            email: 'shopper@example.com',
+            items: [],
+            totalItems: 0,
+            totalQuantity: 0,
+            totalPrice: 0,
+            status: 'pending'
+        });
+        const store = usePaymentsStore();
+
+        return store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((order) => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.map((entry) => entry[0] as { url: string; params?: unknown })
+                .find(({ url }) => url.endsWith('/order-by-reference'));
+
+            expect(call?.params).toEqual({ ref: 'RF13 2EY8 H44V JAVZ KX80 JRL' });
+            expect(order).toMatchObject({ id: 'order-1' });
+        });
+    });
+
+    /**
+     * A malformed or an unmatched reference both answer 404, indistinguishably (the API's own
+     * choice, so a wrong-but-close code confirms nothing) — this store rejects rather than
+     * absorbing it, unlike `fetchPaymentForOrder`'s 404, since there is no sensible "found
+     * nothing" default for a lookup the caller is about to navigate on.
+     */
+    it('lets a 404 through rather than resolving undefined', () => {
+        const store = usePaymentsStore();
+
+        return expect(store.findOrderByReference('not-a-real-reference')).rejects.toMatchObject({
+            status: 404
+        });
+    });
+});

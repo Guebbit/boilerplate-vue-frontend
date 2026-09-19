@@ -12,11 +12,12 @@ import {
     confirmPayment,
     syncPayment,
     getPaymentByOrder,
+    getOrderByReference,
     refundPaymentByOrder,
     recordOfflinePayment as recordOfflinePaymentRequest,
     listPaymentMethods
 } from '@api';
-import type { Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
+import type { Order, Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
 /**
@@ -173,6 +174,19 @@ export const usePaymentsStore = defineStore('payments', () => {
             })
         );
 
+    /**
+     * Finds the order behind an RF creditor reference — the admin's own step before recording an
+     * offline payment, when a bank statement line is all they have. Admin-only at the API, and
+     * step-up gated the same way {@link refundForOrder} is; a 404 (malformed or unmatched
+     * reference) is the caller's to show, not swallowed here, since there is no "absent" default
+     * that would make sense for a lookup.
+     *
+     * @param ref - The RF reference, as typed — the API tolerates spaces and case.
+     * @returns A promise resolving with the order this reference pays.
+     */
+    const findOrderByReference = (ref: string): Promise<Order | undefined> =>
+        fetchAny(() => getOrderByReference({ ref }).then((response) => response.data));
+
     return {
         loading,
         payment,
@@ -182,6 +196,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         payForOrder,
         finishAtProvider,
         refundForOrder,
-        recordOfflinePayment
+        recordOfflinePayment,
+        findOrderByReference
     };
 });

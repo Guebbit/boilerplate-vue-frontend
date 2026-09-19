@@ -42,6 +42,11 @@
         "button-copy-reference": "Copia riferimento",
         "hint-reference": "Includi il riferimento nella causale del bonifico, così potremo abbinare il tuo pagamento a questo ordine."
     },
+    "order-reference-search": {
+        "label-reference": "Riferimento RF",
+        "hint-reference": "Incolla il codice RF da una riga dell'estratto conto per trovare l'ordine a cui si riferisce.",
+        "button-search": "Trova ordine"
+    },
     "record-offline-payment-form": {
         "label-method": "Come è arrivato",
         "method-bank_transfer": "Bonifico bancario",

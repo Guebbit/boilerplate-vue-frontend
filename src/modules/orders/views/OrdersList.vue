@@ -19,6 +19,7 @@ import { Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { OrderReferenceSearch } from '@/modules/payments';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
@@ -196,6 +197,7 @@ const handleHardDelete = (orderId: string) =>
 
 <template>
     <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
+        <OrderReferenceSearch v-if="session.can('create', 'Payment')" />
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">

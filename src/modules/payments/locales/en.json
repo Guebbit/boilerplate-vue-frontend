@@ -42,6 +42,11 @@
         "button-copy-reference": "Copy reference",
         "hint-reference": "Include the reference in your transfer's description, so we can match your payment to this order."
     },
+    "order-reference-search": {
+        "label-reference": "RF reference",
+        "hint-reference": "Paste the RF code from a bank statement line to find the order it pays.",
+        "button-search": "Find order"
+    },
     "record-offline-payment-form": {
         "label-method": "How it arrived",
         "method-bank_transfer": "Bank transfer",
