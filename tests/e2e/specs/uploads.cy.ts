@@ -9,16 +9,21 @@
  */
 
 /**
- * The path the API hands back for an uploaded file. One shape for both profiles now: the demo
- * profile IS the real API, so the write is a real multipart write everywhere — a field arriving
- * as a string is a 422 in every run of this suite, not only the live one.
+ * The path the API hands back for an uploaded file: `<owner>-<24-hex-content-hash>.<ext>` — see
+ * the backend's `image.worker.ts#contentStem`. The owner segment's LENGTH differs by profile
+ * rather than its presence: the demo profile digests inline, before a document exists to own the
+ * file, so it salts with the 32-hex quarantine key; the live profile's queued worker runs after
+ * the document is persisted, so it salts with the document's own 24-hex id. Both are still one
+ * shape here — hex, variable length, a dash, then the hash — which is what a field arriving as a
+ * string being a 422 in every run of this suite actually buys: it proves the write was multipart
+ * on both profiles, not that the two profiles' owner segments are the same length.
  *
  * The origin is optional because the API's answer is a path relative to the API — `/images/…` —
  * and `resolveImageUrl` prefixes it with the API host before it reaches `src`, since a bare path
  * would otherwise be resolved against THIS app's origin and 404. Optional rather than required so
  * the pattern still holds for a single-origin deployment, where there is no prefix to add.
  */
-const UPLOAD_PATH = /^(?:https?:\/\/[^/]+)?\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
+const UPLOAD_PATH = /^(?:https?:\/\/[^/]+)?\/images\/[\da-f]+-[\da-f]{24}\.(png|jpg|jpeg|webp)$/;
 
 /** The thumbnail sibling of {@link UPLOAD_PATH} — same optional API-host prefix, own segment. */
 const THUMBNAIL_PATH = /^(?:https?:\/\/[^/]+)?\/images\/thumbs\/v1\/[\w.-]+\.webp$/;
