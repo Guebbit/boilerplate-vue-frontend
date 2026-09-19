@@ -25,12 +25,13 @@ import type { Abilities } from '@types';
 
 /**
  * The concrete actions a screen may ask about — CASL's own vocabulary, as
- * `shared/authorization-keys.yaml` declares it, minus the wildcard. `checkout` is the one
- * addition beyond CRUD, `cart.checkout`'s action and nowhere else.
+ * `shared/authorization-keys.yaml` declares it. `checkout` is the one addition beyond CRUD,
+ * `cart.checkout`'s action and nowhere else.
  *
- * `manage` is deliberately absent from what a CLIENT may ask for: the server expands a `manage`
- * key into the concrete actions its module declares and never publishes a `manage` RULE, so
- * asking for one always answers no. A screen asks for the action it actually performs.
+ * `manage` is deliberately absent from what a CLIENT may ask for: no key in the shared file
+ * declares that action, and there is no wildcard of any kind to expand into one — every key
+ * spells out its own concrete action, so asking for `manage` always answers no. A screen asks for
+ * the action it actually performs.
  */
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'checkout' | 'override';
 

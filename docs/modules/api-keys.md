@@ -30,10 +30,10 @@ Two screens over three endpoints — smaller than webhooks, because there is no 
 credential's name, permissions and expiry are fixed at mint time, so there is nothing to edit and
 no detail page either, since the nine flat fields all fit a list row.
 
-**Only `owner` holds `apikeys.*` today**, through `all.manage` — no preset role names an
-`apikeys` key outright. `meta.can` gates both routes on the rule, the same way every other screen
-in this app does, so the nav entry and both routes simply disappear for anyone else; nothing here
-hardcodes a role name.
+**Only `admin` holds `apikeys.*` today**, through its declared superset of every tenant key — no
+preset role names an `apikeys` key outright, and there is no wildcard of any kind. `meta.can`
+gates both routes on the rule, the same way every other screen in this app does, so the nav entry
+and both routes simply disappear for anyone else; nothing here hardcodes a role name.
 
 **The permissions field is free text, not a picker.** `GET /account/abilities` publishes CASL
 packed rules (`[action, subject]`, wildcards expanded) plus, as of this build, the full declared

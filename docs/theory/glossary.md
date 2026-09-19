@@ -31,7 +31,7 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Rule**           | An `[action, subject]` pair as CASL evaluates it: `['update', 'Product']`. What `meta.can` declares and what `session.can()` answers.                                                        |
 | **Action**         | One of `read`, `create`, `update`, `delete`. `manage` exists on the API's keys and is never published as a rule, so no screen may ask for it.                                                |
 | **Subject**        | The type a rule is about — `Product`, `Order`, `User`, `ObservabilitySnapshot`. Singular, and NOT the key's plural first segment.                                                            |
-| **Role**           | A named bundle of keys — `customer`, `manager`, `warehouse`, `support`, `editor`, `moderator`, `owner`, `operator`. Data the deployment may edit, so nothing here branches on the name.      |
+| **Role**           | A named bundle of keys — `customer`, `manager`, `warehouse`, `support`, `editor`, `moderator`, `admin`, `operator`. Data the deployment may edit, so nothing here branches on the name.      |
 | **Scope**          | `tenant` (this shop) or `platform` (the installation). Two abilities, never merged; neither can satisfy the other's keys.                                                                    |
 | **Ability**        | The compiled rule set this client asks. Fetched, never derived — a client that computed its own would keep a duplicate that drifts.                                                          |
 

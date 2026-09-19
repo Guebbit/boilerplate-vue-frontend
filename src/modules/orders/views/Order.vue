@@ -166,14 +166,27 @@ const orderStatus = computed(() => {
 const invoicePdfPending = computed(() => currentOrder.value?.invoicePdfStatus === 'pending');
 
 /**
+ * Clears {@link invoicePdfPending} on its own once the async worker finishes, instead of leaving
+ * the button disabled until a manual reload. `true` once the poll gave up without that ever
+ * happening — the button stops spinning and says so instead of waiting forever.
+ */
+const invoicePdfGaveUp = usePollInvoiceStatus(currentOrder, () => id, fetchOrder);
+
+/**
+ * Whether the button should show its spinning, disabled state — pending, but only until the poll
+ * gives up. Past that point a stuck spinner is a worse signal than a clickable retry.
+ */
+const invoicePdfSpinning = computed(() => invoicePdfPending.value && !invoicePdfGaveUp.value);
+
+/**
  * Downloads the server-generated invoice as a PDF file.
  *
  * @returns A promise resolving once the download has been triggered; a missing
- *  route id, a still-pending PDF, or an empty response is a no-op, and failures
- *  surface as a toast.
+ *  route id, a still-pending PDF (unless the poll already gave up on it), or an
+ *  empty response is a no-op, and failures surface as a toast.
  */
 const downloadInvoice = () => {
-    if (!id || invoicePdfPending.value) return;
+    if (!id || invoicePdfSpinning.value) return;
     return fetchInvoice(id)
         .then((blob) => {
             if (!blob) return;
@@ -199,12 +212,6 @@ watchOrder(() => id);
  * own docs for why a second forced fetch must not race it.
  */
 useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
-
-/**
- * Clears {@link invoicePdfPending} on its own once the async worker finishes, instead of leaving
- * the button disabled until a manual reload.
- */
-usePollInvoiceStatus(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
@@ -444,15 +451,17 @@ usePollInvoiceStatus(currentOrder, () => id, fetchOrder);
                     variant="tonal"
                     color="tertiary"
                     data-test="order-download-invoice"
-                    :disabled="loading || invoicePdfPending"
-                    :loading="invoicePdfPending"
+                    :disabled="loading || invoicePdfSpinning"
+                    :loading="invoicePdfSpinning"
                     @click="downloadInvoice"
                 >
                     <Download :size="16" class="mr-1" aria-hidden="true" />
                     {{
-                        invoicePdfPending
-                            ? t('order-target-page.button-invoice-pending')
-                            : t('order-target-page.button-download-invoice')
+                        invoicePdfGaveUp
+                            ? t('order-target-page.button-invoice-gave-up')
+                            : invoicePdfPending
+                              ? t('order-target-page.button-invoice-pending')
+                              : t('order-target-page.button-download-invoice')
                     }}
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'OrdersList' })">

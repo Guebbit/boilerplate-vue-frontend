@@ -150,9 +150,10 @@ describe('login', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
         /*
          * The RULES, not the role name. `can` asks what the server said this person may do — a
-         * name is who they are, and only the rules say what that lets them do. An admin's rules
-         * are the concrete ones the server expands its wildcard into; no `manage` rule is ever
-         * published, so a fixture that used one would test a shape the server cannot send.
+         * name is who they are, and only the rules say what that lets them do. There is no
+         * wildcard: admin's rules are the concrete keys the role's declared superset actually
+         * holds, so a fixture that published a `manage` rule would test a shape the server
+         * cannot send.
          */
         responses['GET /account/abilities'] = orvalEnvelope({
             platform: [],
@@ -174,7 +175,7 @@ describe('login', () => {
                 expect(session.can('delete', 'Product')).toBe(true);
                 expect(session.can('update', 'Product')).toBe(true);
                 // Nothing published it, so it is refused — an unrestricted TENANT role is not a
-                // platform operator, and the wildcard stops at the scope boundary.
+                // platform operator, and admin's superset stops at the scope boundary.
                 expect(session.can('read', 'ObservabilitySnapshot')).toBe(false);
             });
     });

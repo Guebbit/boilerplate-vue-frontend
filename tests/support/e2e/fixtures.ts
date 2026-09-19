@@ -329,10 +329,10 @@ Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unk
 
 Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
     adminApi<ApiKeyLike>('/api-keys', 'POST', {
-        // Unique per test; `products.read` is a real declared tenant key the e2e owner
-        // (`all.manage`) holds — an invented string is a 422, mint's own floor.
+        // Unique per test; `products.any.read` is a real declared tenant key — an invented
+        // string, or the ungranted `products.read`, is a 422, mint's own floor.
         name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
-        permissions: ['products.read'],
+        permissions: ['products.any.read'],
         ...overrides
     })
 );

@@ -5,6 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EffectScope, nextTick, ref } from 'vue';
+import type { Ref } from 'vue';
 import { usePollInvoiceStatus } from '@/modules/orders/composables/use-poll-invoice-status.ts';
 import type { Order } from '@types';
 
@@ -14,10 +15,14 @@ const order = (id: string, invoicePdfStatus?: Order['invoicePdfStatus']): Order 
 
 const POLL_INTERVAL_MS = 5000;
 
+/** 2 minutes at {@link POLL_INTERVAL_MS} — the composable's own give-up point. */
+const MAX_POLL_ATTEMPTS = 24;
+
 /**
  * Mounts the composable over a settable record, inside a real effect scope — the same context it
  * always runs in from a component's `setup()` — so its `onScopeDispose` cleanup has something to
- * attach to. Hands back the ref, the fetch spy, and the scope itself for the disposal case.
+ * attach to. Hands back the ref, the give-up ref, the fetch spy, and the scope itself for the
+ * disposal case.
  */
 const watchOrder = (initial: Order | undefined, targetId = 'o1') => {
     const currentOrder = ref<Order | undefined>(initial);
@@ -25,8 +30,11 @@ const watchOrder = (initial: Order | undefined, targetId = 'o1') => {
         Promise.resolve(undefined)
     );
     const scope = new EffectScope();
-    scope.run(() => usePollInvoiceStatus(currentOrder, () => targetId, fetchOrder));
-    return { currentOrder, fetchOrder, scope };
+    let gaveUp!: Ref<boolean>;
+    scope.run(() => {
+        gaveUp = usePollInvoiceStatus(currentOrder, () => targetId, fetchOrder);
+    });
+    return { currentOrder, fetchOrder, gaveUp, scope };
 };
 
 describe('usePollInvoiceStatus', () => {
@@ -136,6 +144,37 @@ describe('usePollInvoiceStatus', () => {
         await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
         expect(fetchOrder).toHaveBeenCalledWith('o2', { forced: true });
+    });
+
+    /**
+     * The cap: a job stuck `pending` forever must not poll, or spin the caller's button, forever.
+     */
+    it('gives up after the attempt cap, and stops polling', async () => {
+        const { fetchOrder, gaveUp } = watchOrder(order('o1', 'pending'));
+
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * (MAX_POLL_ATTEMPTS - 1));
+        expect(gaveUp.value).toBe(false);
+        expect(fetchOrder).toHaveBeenCalledTimes(MAX_POLL_ATTEMPTS - 1);
+
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+        expect(gaveUp.value).toBe(true);
+        // The cap tick itself stops the poll rather than firing one more fetch.
+        expect(fetchOrder).toHaveBeenCalledTimes(MAX_POLL_ATTEMPTS - 1);
+
+        fetchOrder.mockClear();
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3);
+        expect(fetchOrder).not.toHaveBeenCalled();
+    });
+
+    it('clears a previous give-up once the record moves off pending', async () => {
+        const { currentOrder, gaveUp } = watchOrder(order('o1', 'pending'));
+
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * MAX_POLL_ATTEMPTS);
+        expect(gaveUp.value).toBe(true);
+
+        currentOrder.value = order('o1', 'ready');
+        await nextTick();
+        expect(gaveUp.value).toBe(false);
     });
 
     it('stops polling on scope disposal', async () => {

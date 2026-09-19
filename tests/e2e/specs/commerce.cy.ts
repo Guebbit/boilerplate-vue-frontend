@@ -2,9 +2,9 @@
  * The money and the logistics, walked honestly: the customer chooses shipping and watches its
  * cost freeze onto the order, pays with the declined card first (the API's demo provider refuses
  * a magic number), retries with a good one, and keeps the cancel that a PAID order deserves. The
- * admin ships an order and the parcel appears with its tracking
- * email, the courier button delivers it, and the inventory ledger tells the whole story with
- * reasons attached.
+ * admin moves a paid order to processing, ships it through the shipment panel and the parcel
+ * appears with its tracking email, the same panel marks it delivered, and the inventory ledger
+ * tells the whole story with reasons attached.
  *
  * Two sessions on purpose: each `it` builds its own state and never reloads mid-arc, so nothing
  * it wrote depends on a store surviving a page load — the same discipline as journey.cy.ts.
@@ -20,9 +20,9 @@
  * @param text - what the select should show once it is picked
  */
 const moveOrderTo = (label: RegExp, text: string) => {
-    cy.get('#order-edit-page .v-select').click();
+    cy.get('#order-edit-page [data-test=status-select]').click();
     cy.get('.v-overlay__content .v-list-item').contains(label).click();
-    cy.get('#order-edit-page .v-select').should('contain.text', text);
+    cy.get('#order-edit-page [data-test=status-select]').should('contain.text', text);
     cy.get('#order-edit-page button[type=submit]').click();
     cy.contains('Order updated successfully').should('exist');
 };
@@ -86,7 +86,7 @@ describe('Commerce', () => {
         cy.get('[data-test=order-cancel]').should('not.exist');
     });
 
-    it('the admin ships, the courier delivers, and the ledger remembers why', () => {
+    it('the admin ships via the shipment panel, marks it delivered, and the ledger remembers why', () => {
         /*
          * Ship an order that has EARNED shipping. The state machine allows a pending order only
          * one move — cancelled — because shipping an unpaid order would be giving stock away;
@@ -123,12 +123,19 @@ describe('Commerce', () => {
         cy.get('#order-edit-page').should('exist');
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
+        // `paid → processing` is the ordinary admin move; `processing → shipped` is not — only the
+        // shipment panel's own `POST /delivery/order/{id}/ship` can make it, since the API
+        // restricts that transition to the system actor.
         moveOrderTo(/processing/i, 'Processing');
-        moveOrderTo(/shipped/i, 'Shipped');
 
-        // ── The parcel exists: tracking on the order page, the email in the outbox ──
+        // ── Ship it: the shipment panel is the one door for the move ────────────────
         cy.contains('a', 'Back to order details').click();
         cy.get('[data-test=shipment-panel]').should('exist');
+        cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-0001');
+        cy.get('[data-test=mark-shipped]').click();
+        cy.contains('Marked shipped.').should('exist');
+
+        // ── The parcel exists: tracking on the order page, the email in the outbox ──
         cy.get('[data-test=shipment-tracking]').invoke('text').should('match', /TRK-/);
         cy.get('[data-test=shipment-status]').should('contain.text', 'Shipped');
         // By template, not recipient: whichever seeded customer's order the admin shipped,
@@ -138,7 +145,7 @@ describe('Commerce', () => {
         // `NODE_DEMO=true` — so live, the email leaves for real and there is nothing to read.
         // Guarded here rather than with `cy.skipUnlessDemo()` at the top of the test, because
         // everything around it is exactly what the live profile exists to prove: the shipment
-        // panel above, and the courier and the ledger below. Same shape as `journey.cy.ts`.
+        // panel above, and the delivery mark and the ledger below. Same shape as `journey.cy.ts`.
         cy.env(['apiUrl', 'liveProfile']).then(({ apiUrl, liveProfile }) => {
             if (liveProfile === true) return;
             cy.request(`${String(apiUrl)}/__test/emails`).then((response) => {
@@ -155,11 +162,11 @@ describe('Commerce', () => {
             });
         });
 
-        // ── The courier is a button, and it works exactly once ──────────────────────
-        cy.get('[data-test=courier-advance]').click();
-        cy.contains('The courier advanced').should('exist');
+        // ── Delivered: the panel's own button, and it works exactly once ────────────
+        cy.get('[data-test=mark-delivered]').click();
+        cy.contains('Marked delivered.').should('exist');
         cy.get('[data-test=shipment-status]').should('contain.text', 'Delivered');
-        cy.get('[data-test=courier-advance]').should('not.exist');
+        cy.get('[data-test=mark-delivered]').should('not.exist');
 
         // ── The ledger: receive a delivery and read the story back ──────────────────
         cy.navigateViaMenu('admin', '/en/inventory');

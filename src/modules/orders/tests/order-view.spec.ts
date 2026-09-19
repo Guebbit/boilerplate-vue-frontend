@@ -6,7 +6,7 @@
  * see SECURITY_HOLES_7_STORAGE_QUOTA (decision 2). `watchOrder` is stubbed so the store's own
  * fetch never runs; the order is seeded directly into the dictionary instead.
  */
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -89,6 +89,10 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/orders/o1').then(() => router.isReady()));
 });
 
+// Real timers even if a fake-timer test's assertion throws before its own cleanup runs —
+// otherwise every test after it would inherit a paused clock.
+afterEach(() => vi.useRealTimers());
+
 describe('the invoice download button', () => {
     it('is enabled, with its normal label, for an order that predates the async pipeline', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
@@ -129,6 +133,35 @@ describe('the invoice download button', () => {
         expect(button.attributes('disabled')).toBeDefined();
         expect(button.text()).toContain('Generating invoice');
         expect(button.text()).not.toContain('Download invoice');
+
+        wrapper.unmount();
+    });
+
+    /**
+     * The cap in `use-poll-invoice-status.ts`: a job stuck `pending` forever must stop spinning
+     * and say so, rather than leave the button disabled with no way out.
+     */
+    it('re-enables with a check-back-later label once the poll gives up', async () => {
+        vi.useFakeTimers();
+
+        // Mocked BEFORE mount: `Order.vue` destructures `fetchOrder` from the store at setup
+        // time, so a spy installed afterwards would never replace the reference the running
+        // poll already captured, and the real action would hit the network instead.
+        vi.spyOn(useOrdersStore(), 'fetchOrder').mockResolvedValue(undefined);
+
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            invoicePdfStatus: 'pending',
+            items: [lineWith(null)]
+        });
+
+        // 2 minutes at the composable's own 5s poll interval — see MAX_POLL_ATTEMPTS.
+        await vi.advanceTimersByTimeAsync(5000 * 24);
+        await wrapper.vm.$nextTick();
+
+        const button = wrapper.get('[data-test=order-download-invoice]');
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.text()).toContain('Still generating');
 
         wrapper.unmount();
     });
