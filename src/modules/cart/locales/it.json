@@ -16,6 +16,7 @@
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",
         "shortfall-line": "{title}: richiesti {requested}, disponibili solo {available}",
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",
+        "error-shipping-method-weight": "Il tuo carrello è troppo pesante per il metodo di spedizione scelto — scegline un altro.",
         "button-decrease": "Diminuisci quantità",
         "button-increase": "Aumenta quantità",
         "button-decrease-named": "Diminuisci quantità del prodotto {id}",

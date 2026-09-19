@@ -47,11 +47,14 @@ export const useDeliveryStore = defineStore('delivery', () => {
     /**
      * Loads the shipping methods.
      *
+     * @param weight - The basket's total weight in grams, when known — filters out methods that
+     *  cannot carry it. Omitted lists every method regardless of weight range, the same as the
+     *  API's own default.
      * @returns A promise resolving with the methods.
      */
-    const fetchMethods = () =>
+    const fetchMethods = (weight?: number) =>
         fetchAny(() =>
-            listShippingMethods().then((response) => {
+            listShippingMethods(weight === undefined ? undefined : { weight }).then((response) => {
                 methods.value = response.data.methods;
                 return methods.value;
             })

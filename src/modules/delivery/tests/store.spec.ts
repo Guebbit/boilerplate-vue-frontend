@@ -82,6 +82,28 @@ describe('fetchMethods', () => {
             expect(store.methods.map(({ id }) => id)).toEqual(['standard', 'express']);
         });
     });
+
+    it('omits the weight param when not given one', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        return store.fetchMethods().then(() => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(([config]) => config.url === '/delivery/methods');
+            expect(call?.[0].params).toBeUndefined();
+        });
+    });
+
+    it('forwards a given weight as the query param', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        return store.fetchMethods(1500).then(() => {
+            const call = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(([config]) => config.url === '/delivery/methods');
+            expect(call?.[0].params).toEqual({ weight: 1500 });
+        });
+    });
 });
 
 describe('effectivePrice', () => {

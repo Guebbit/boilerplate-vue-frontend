@@ -230,6 +230,16 @@ export const useCartStore = defineStore('cart', () => {
     const productTitles = ref<Record<string, string>>({});
 
     /**
+     * The weight/shipping half of the same per-product read `productTitles` needs — cached
+     * alongside it rather than fetched again, since `resolveTitles` already pulls the whole
+     * `Product` down to read `.title` off it. Keyed the same way, absent for the same reason: a
+     * product `resolveTitles` has not (yet, or ever) resolved.
+     */
+    const productShipping = ref<Record<string, { weight?: number; requiresShipping?: boolean }>>(
+        {}
+    );
+
+    /**
      * The title of one product, or its id while unknown.
      *
      * @param productId - The product.
@@ -238,7 +248,8 @@ export const useCartStore = defineStore('cart', () => {
     const titleOf = (productId: string) => productTitles.value[productId] ?? productId;
 
     /**
-     * Resolves the titles not yet known, one request each, failures ignored.
+     * Resolves the titles not yet known, one request each, failures ignored. Also fills
+     * {@link productShipping} for the same ids, off the same response.
      *
      * @param productIds - The lines' products.
      * @returns A promise settling when every lookup has answered one way or the other.
@@ -250,9 +261,39 @@ export const useCartStore = defineStore('cart', () => {
                 .map((productId) =>
                     getProductById(productId).then(({ data }) => {
                         productTitles.value = { ...productTitles.value, [productId]: data.title };
+                        productShipping.value = {
+                            ...productShipping.value,
+                            [productId]: {
+                                weight: data.weight,
+                                requiresShipping: data.requiresShipping
+                            }
+                        };
                     })
                 )
         ).then(() => productTitles.value);
+
+    /**
+     * The basket's total weight in grams — every SHIPPED line's product weight (absent counts as
+     * 0) times its quantity, summed. Mirrors the backend's own `basketWeight`
+     * (`cart/domain/rules.ts`) exactly: a digital good (`requiresShipping: false`) contributes
+     * nothing, and `requiresShipping` absent counts as shipped. Lines whose product has not been
+     * resolved yet (see {@link resolveTitles}) count as weightless rather than blocking the
+     * number entirely — the server re-checks the real weight at checkout regardless, so this is
+     * advisory, the same as the methods list it feeds.
+     */
+    const basketWeight = computed(() => {
+        let total = 0;
+        for (const { productId, quantity } of cartItems.value) {
+            // `Record`'s index signature claims every key is present; a line's product may not
+            // be — `resolveTitles` fills this cache asynchronously, one request per id, and a
+            // line the cart just loaded has not necessarily been resolved yet.
+            const product = productShipping.value[productId] as
+                { weight?: number; requiresShipping?: boolean } | undefined;
+            if (product?.requiresShipping === false) continue;
+            total += (product?.weight ?? 0) * quantity;
+        }
+        return total;
+    });
 
     /**
      * Drops every resolved title, so the next `resolveTitles` call re-fetches instead of
@@ -281,6 +322,7 @@ export const useCartStore = defineStore('cart', () => {
         titleOf,
         resolveTitles,
         resetProductTitles,
+        basketWeight,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,

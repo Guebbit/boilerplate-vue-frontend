@@ -29,6 +29,7 @@ export type CheckoutErrorVerdict =
     | { kind: 'cart-changed' }
     | { kind: 'insufficient-stock'; lines: CheckoutShortfallLine[] }
     | { kind: 'address-not-found' }
+    | { kind: 'shipping-method-weight' }
     | { kind: 'other' };
 
 /**
@@ -76,6 +77,7 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
     const item = firstErrorItem(error);
     if (item?.code === 'CART_CHANGED') return { kind: 'cart-changed' };
     if (item?.code === 'CART_ADDRESS_NOT_FOUND') return { kind: 'address-not-found' };
+    if (item?.code === 'CART_SHIPPING_METHOD_WEIGHT') return { kind: 'shipping-method-weight' };
     if (item?.code === 'CART_INSUFFICIENT_STOCK') {
         const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
         const lines = Array.isArray(rawLines)

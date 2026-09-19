@@ -12,7 +12,7 @@ export default {
  * delegated to the store so the template only formats and displays it.
  */
 
-import { onMounted, useId } from 'vue';
+import { onMounted, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -23,11 +23,17 @@ import { useDeliveryStore } from '../store.ts';
  * the free-above rule is visible while it is being earned. Selecting nothing is allowed —
  * shipping is not required to buy, and the checkout sends no method for `undefined`.
  */
-const { itemsTotal } = defineProps<{
+const { itemsTotal, weight } = defineProps<{
     /**
      * The cart's lines total, the number free-above thresholds compare against.
      */
     itemsTotal: number;
+    /**
+     * The basket's total weight in grams, when the caller has resolved it — filters out methods
+     * that cannot carry it, mirroring `POST /cart/checkout`'s own enforced check. `undefined`
+     * lists every method, the same as omitting the query param entirely.
+     */
+    weight?: number;
 }>();
 
 /**
@@ -56,8 +62,20 @@ const deliveryStore = useDeliveryStore();
 const { methods } = storeToRefs(deliveryStore);
 
 onMounted(() => {
-    if (methods.value.length === 0) void deliveryStore.fetchMethods();
+    if (methods.value.length === 0) void deliveryStore.fetchMethods(weight);
 });
+
+/*
+ * Re-fetches once the caller resolves a weight it did not have yet — the cart's own product
+ * lookups (`resolveTitles`) settle after this component's first mount, not before it, so the
+ * initial fetch above routinely runs with `weight` still `undefined`.
+ */
+watch(
+    () => weight,
+    (current, previous) => {
+        if (current !== previous) void deliveryStore.fetchMethods(current);
+    }
+);
 </script>
 
 <template>

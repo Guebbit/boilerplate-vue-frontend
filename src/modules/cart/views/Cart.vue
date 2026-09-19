@@ -63,7 +63,7 @@ const {
 /**
  * Cart store state, reactive.
  */
-const { cartItems, cartSummary } = storeToRefs(useCartStore());
+const { cartItems, cartSummary, basketWeight } = storeToRefs(useCartStore());
 
 /**
  * The chosen shipping method — optional, exactly as the API treats it.
@@ -123,6 +123,14 @@ const checkout = () => {
             }
             if (verdict.kind === 'address-not-found') {
                 addMessage(t('cart-page.error-address-not-found'));
+                return;
+            }
+            if (verdict.kind === 'shipping-method-weight') {
+                // Reopens the picker rather than leaving the refused choice selected — the basket
+                // this client weighed is advisory, so the server's own enforced check is the one
+                // that actually knows the chosen method cannot carry it.
+                shippingMethodId.value = undefined;
+                addMessage(t('cart-page.error-shipping-method-weight'));
                 return;
             }
             notifyErrorMessages(addMessage, error);
@@ -282,7 +290,11 @@ onMounted(() =>
                         <dd class="text-right font-medium">{{ cartSummary.totalQuantity }}</dd>
                     </dl>
                     <v-divider class="my-3" />
-                    <ShippingSelector v-model="shippingMethodId" :items-total="cartSummary.total" />
+                    <ShippingSelector
+                        v-model="shippingMethodId"
+                        :items-total="cartSummary.total"
+                        :weight="basketWeight"
+                    />
                     <PaymentMethodSelector v-model="paymentMethodId" />
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">

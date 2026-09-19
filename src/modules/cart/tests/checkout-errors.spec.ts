@@ -25,6 +25,15 @@ describe('classifyCheckoutError', () => {
         ).toEqual({ kind: 'address-not-found' });
     });
 
+    it('names CART_SHIPPING_METHOD_WEIGHT', () => {
+        expect(
+            classifyCheckoutError({
+                status: 409,
+                errors: [{ code: 'CART_SHIPPING_METHOD_WEIGHT', message: 'x' }]
+            })
+        ).toEqual({ kind: 'shipping-method-weight' });
+    });
+
     it('reads every shortfall line off CART_INSUFFICIENT_STOCK', () => {
         const verdict = classifyCheckoutError({
             status: 409,

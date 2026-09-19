@@ -30,6 +30,7 @@ flowchart TD
 
     D -.->|"409 · someone else<br/>checked out first"| G["refetch and say so"]
     D -.->|"409 · lines short<br/>on stock"| H["name the short lines"]
+    D -.->|"409 · method can't<br/>carry the weight"| K["clear the method<br/>and say why"]
     D -.->|"404 · address or<br/>method gone"| I["reopen that step"]
     D -.->|"transport failed"| J["CHECKOUT_REQUEST_FAILED"]
 
@@ -38,31 +39,33 @@ flowchart TD
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#111827;
     class A,B,C,E,F ui;
     class D call;
-    class G,H,I,J bad;
+    class G,H,I,J,K bad;
 ```
 
 ## The mounted selector
 
-`ShippingSelector` comes from [`delivery`](./delivery.md) through its barrel. This module passes it
-nothing but a binding for the chosen method id, and reads nothing back but that id.
+`ShippingSelector` comes from [`delivery`](./delivery.md) through its barrel. This module hands it
+two derived NUMBERS — the lines total and the basket's weight — plus a binding for the chosen
+method id, and reads nothing back but that id.
 
-::: tip Why that is the strongest edge on the map
+::: tip Why that is still the strongest edge on the map
 This module never learns what a shipping rate is, how many methods exist, or how one is priced. The
-component fetches its own methods and renders its own copy. Delete
-[`delivery`](./delivery.md) and this screen loses a step; it does not break.
+component fetches its own methods, filtered by the weight it was handed, and renders its own copy.
+Delete [`delivery`](./delivery.md) and this screen loses a step; it does not break.
 
 `published-language` is the label, and this is what it looks like in practice: vocabulary crossing
-the boundary, not state.
+the boundary — two numbers this screen already owns for its own totals — not domain state.
 :::
 
-## The four refusals, and why they are shaped differently
+## The five refusals, and why they are shaped differently
 
-| Answer    | What happened                                                                | What the screen does                                                                                                                         |
-| --------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `409`     | Another checkout won the race — the cart's lines are on someone else's order | Refetch the cart and say it has changed. **Not a retry** — re-sending would find an empty cart.                                              |
-| `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)             | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass. |
-| `404`     | The address or the shipping method named no longer exists                    | Reopen that step rather than failing the whole flow.                                                                                         |
-| transport | The request never reached the API                                            | The one thing the server cannot report, so this client reports it.                                                                           |
+| Answer    | What happened                                                                           | What the screen does                                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `409`     | Another checkout won the race — the cart's lines are on someone else's order            | Refetch the cart and say it has changed. **Not a retry** — re-sending would find an empty cart.                                              |
+| `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)                        | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass. |
+| `409`     | The chosen method cannot carry the basket's real weight (`CART_SHIPPING_METHOD_WEIGHT`) | Clear the chosen method and say why — the client's own weight is advisory; this is the server's enforced check.                              |
+| `404`     | The address or the shipping method named no longer exists                               | Reopen that step rather than failing the whole flow.                                                                                         |
+| transport | The request never reached the API                                                       | The one thing the server cannot report, so this client reports it.                                                                           |
 
 ::: warning The stock refusal is a list, and rendering it as one message throws away the useful half
 `errors[0].details.lines` carries `productId`, `title`, `requested` and `available` per short line.

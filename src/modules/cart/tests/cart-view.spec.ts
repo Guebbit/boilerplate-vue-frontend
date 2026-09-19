@@ -7,7 +7,7 @@
  * seeded directly into the store.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
@@ -171,6 +171,58 @@ describe('the checkout refusals', () => {
                 // this refusal is the message (asserted at the domain layer's own test), not a
                 // banner; this proves it is not silently rendered as an insufficient-stock case.
                 expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+            });
+    });
+
+    /**
+     * `mountCart`'s stub renders no radios, so the picked method is driven through the same
+     * `v-model` event Cart.vue binds — this case's own stub answers it, rather than reaching for
+     * a real `ShippingSelector` that would need a delivery-store methods list this suite never
+     * seeds.
+     */
+    it('clears the chosen shipping method on CART_SHIPPING_METHOD_WEIGHT, unlike every other refusal', () => {
+        const cart = useCartStore();
+        cart.cart = A_CART;
+        vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
+        vi.spyOn(cart, 'resolveTitles').mockResolvedValue({});
+        const checkoutSpy = vi.spyOn(cart, 'checkout');
+        checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_SHIPPING_METHOD_WEIGHT'));
+
+        const wrapper = mount(Cart, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    LayoutDefault: { template: '<div><slot /></div>' },
+                    ShippingSelector: {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template:
+                            '<div data-test="shipping-selector-stub" :data-selected="modelValue" />'
+                    },
+                    PaymentMethodSelector: { template: '<div />' }
+                }
+            }
+        });
+
+        // `getComponent` with a CSS selector types as `WrapperLike`, which omits `.vm` — the
+        // selector's own uniqueness (one match) is what the object-selector overload would
+        // otherwise prove for us, same reasoning `order-edit-view.spec.ts` documents.
+        const selector = wrapper.getComponent('[data-test=shipping-selector-stub]') as VueWrapper;
+        selector.vm.$emit('update:modelValue', 'express');
+
+        return wrapper.vm
+            .$nextTick()
+            .then(() => {
+                expect(
+                    wrapper.get('[data-test=shipping-selector-stub]').attributes('data-selected')
+                ).toBe('express');
+                return wrapper.get('[data-test=cart-checkout]').trigger('click');
+            })
+            .then(flushAsync)
+            .then(() => {
+                expect(
+                    wrapper.get('[data-test=shipping-selector-stub]').attributes('data-selected')
+                ).toBeUndefined();
             });
     });
 });

@@ -27,7 +27,8 @@ import {
     removeCartItem,
     clearCart,
     checkout as apiCheckout,
-    reorder as apiReorder
+    reorder as apiReorder,
+    getProductById
 } from '@api';
 const CART = {
     items: [{ productId: 'p1', quantity: 2 }],
@@ -58,7 +59,12 @@ vi.mock('@api', () => ({
     removeCartItem: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
     clearCart: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
     checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } })),
-    reorder: vi.fn(() => Promise.resolve({ data: CART }))
+    reorder: vi.fn(() => Promise.resolve({ data: CART })),
+    getProductById: vi.fn((id: string) =>
+        Promise.resolve({
+            data: { id, title: `Product ${id}`, price: 9.99, weight: 500, requiresShipping: true }
+        })
+    )
 }));
 
 describe('useCartStore', () => {
@@ -276,5 +282,50 @@ describe('useCartStore', () => {
      */
     it('is registered under the "cart" id', () => {
         expect(useCartStore().$id).toBe('cart');
+    });
+
+    /**
+     * `basketWeight` mirrors the backend's own `cart/domain/rules.ts#basketWeight` exactly: a
+     * digital good contributes nothing, and an unresolved product (no `resolveTitles` call yet)
+     * counts as weightless rather than blocking the number.
+     */
+    describe('basketWeight', () => {
+        it('is zero before any product has been resolved', () => {
+            const store = useCartStore();
+            return store.fetchCart().then(() => {
+                expect(store.basketWeight).toBe(0);
+            });
+        });
+
+        it('sums weight × quantity once resolveTitles has fetched the product', () => {
+            const store = useCartStore();
+            return store
+                .fetchCart()
+                .then(() => store.resolveTitles(['p1']))
+                .then(() => {
+                    // CART's one line: quantity 2, the mocked product's weight 500 → 1000g.
+                    expect(store.basketWeight).toBe(1000);
+                });
+        });
+
+        it('excludes a line whose product does not require shipping', () => {
+            vi.mocked(getProductById).mockResolvedValueOnce({
+                data: {
+                    id: 'p1',
+                    title: 'Ebook',
+                    price: 9.99,
+                    weight: 500,
+                    requiresShipping: false
+                }
+            } as never);
+            const store = useCartStore();
+
+            return store
+                .fetchCart()
+                .then(() => store.resolveTitles(['p1']))
+                .then(() => {
+                    expect(store.basketWeight).toBe(0);
+                });
+        });
     });
 });
