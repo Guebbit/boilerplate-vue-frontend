@@ -3321,12 +3321,6 @@ paths:
               schema:
                 type: string
                 format: binary
-        '202':
-          description: The invoice is still being generated (`Order.invoicePdfStatus` is `pending`) — a client polls the order and retries once it reads `ready`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrderInvoicePendingEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -5172,12 +5166,6 @@ components:
           type: string
           readOnly: true
           example: 2026-000041
-        invoicePdfStatus:
-          type: string
-          enum:
-            - pending
-            - ready
-          readOnly: true
         transferInstructions:
           $ref: '#/components/schemas/OrderTransferInstructions'
         status:
@@ -8740,33 +8728,6 @@ components:
           type: string
           minLength: 1
           description: Why the normal door didn't apply. Recorded on the order's override history, never optional.
-    OrderInvoicePending:
-      type: object
-      additionalProperties: false
-      required:
-        - invoicePdfStatus
-      properties:
-        invoicePdfStatus:
-          type: string
-          enum:
-            - pending
-    OrderInvoicePendingEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: '#/components/schemas/EnvelopeSuccess'
-        status:
-          $ref: '#/components/schemas/EnvelopeStatus'
-        message:
-          $ref: '#/components/schemas/EnvelopeMessage'
-        data:
-          $ref: '#/components/schemas/OrderInvoicePending'
     PaymentMethodOption:
       type: object
       additionalProperties: false

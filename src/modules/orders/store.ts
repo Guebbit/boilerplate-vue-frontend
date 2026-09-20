@@ -1,7 +1,7 @@
 /**
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
- * search, plus two hand-written actions (`cancelOrder`, `downloadInvoice`)
+ * search, plus two hand-written actions (`cancelOrder`, `fetchInvoice`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { defineStore } from 'pinia';
@@ -203,32 +203,13 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Downloads an order's invoice.
-     *
-     * `getOrderInvoice` types its answer `Blob | OrderInvoicePendingEnvelope` because the
-     * `202`-pending response the contract declares carries a JSON envelope — but the request is
-     * made with `responseType: 'blob'`, so axios wraps whatever bytes come back into a `Blob`
-     * regardless of `Content-Type`; the runtime value is always a `Blob`, and its own `type` is
-     * the only way left to tell a PDF from the JSON envelope at runtime.
-     *
-     * The order page disables this call's button while `invoicePdfStatus` reads `pending` —
-     * unless `usePollInvoiceStatus` already gave up waiting, in which case a click can land here
-     * with the PDF still not ready. Flips the cached order back to `pending` rather than handing
-     * the caller a `.pdf` file that is actually JSON bytes, so the poller picks the wait back up.
+     * Fetches an order's invoice, rendered by the server on every request — there is no pending
+     * state to wait out any more.
      *
      * @param orderId - Identifier of the order to invoice.
-     * @returns A promise resolving with the PDF `Blob`, or `undefined` while it is still pending.
+     * @returns A promise resolving with the PDF bytes.
      */
-    const downloadInvoice = (orderId: string) =>
-        fetchAny(() =>
-            getOrderInvoice(orderId).then((body) => {
-                const blob = body as Blob;
-                if (blob.type === 'application/pdf') return blob;
-
-                addOrder({ ...orders.value[orderId], invoicePdfStatus: 'pending' });
-                return undefined;
-            })
-        );
+    const fetchInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
 
     return {
         orders,
@@ -255,7 +236,7 @@ export const useOrdersStore = defineStore('orders', () => {
         cancelOrder,
         overrideStatus,
         hardDeleteOrder,
-        downloadInvoice,
+        fetchInvoice,
         /**
          * Forget everything a language switch invalidated: the cached orders AND the cached
          * RESPONSES behind them.

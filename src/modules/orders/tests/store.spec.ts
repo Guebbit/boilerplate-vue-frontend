@@ -3,7 +3,7 @@
  * Unit tests for the orders store, mocking the `@api` client module directly and exercising the
  * store's actions against canned responses.
  *
- * One thing here is this repo's own logic rather than the toolkit's: `downloadInvoice`, the one
+ * One thing here is this repo's own logic rather than the toolkit's: `fetchInvoice`, the one
  * call whose payload is a binary Blob rather than a JSON envelope.
  *
  * Checkout is not tested here because it is not here: `POST /cart/checkout` empties the cart, so
@@ -13,7 +13,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useOrdersStore } from '@/modules/orders/store';
-import type { Order } from '@types';
 import {
     listOrders,
     searchOrders,
@@ -152,36 +151,14 @@ describe('useOrdersStore', () => {
                 }));
     });
 
-    describe('downloadInvoice', () => {
-        it('returns the binary payload as-is, without unwrapping an envelope', () =>
+    describe('fetchInvoice', () => {
+        it('returns the binary payload as-is', () =>
             useOrdersStore()
-                .downloadInvoice('o1')
+                .fetchInvoice('o1')
                 .then((result) => {
                     expect(getOrderInvoice).toHaveBeenCalledWith('o1');
                     expect(result).toBe(INVOICE);
                 }));
-
-        /**
-         * `responseType: 'blob'` wraps EVERY response in a `Blob`, PDF or not — so a still-
-         * pending order's JSON envelope arrives as a Blob too, and only its `type` gives it away.
-         * Reachable once `usePollInvoiceStatus` gives up and re-enables the button while the PDF
-         * is still generating.
-         */
-        it('flips the cached order back to pending instead of handing back a JSON blob', () => {
-            const pendingEnvelope = new Blob(['{"data":{"invoicePdfStatus":"pending"}}'], {
-                type: 'application/json'
-            });
-            vi.mocked(getOrderInvoice).mockResolvedValueOnce(pendingEnvelope);
-            const store = useOrdersStore();
-            // ORDER is a loose fixture (its `status` is a bare `string`); `addOrder` wants the
-            // real `Order` shape, which the mocked `@api` responses elsewhere never had to satisfy.
-            store.addOrder({ ...ORDER, invoicePdfStatus: 'ready' } as Order);
-
-            return store.downloadInvoice('o1').then((result) => {
-                expect(result).toBeUndefined();
-                expect(store.orders.o1?.invoicePdfStatus).toBe('pending');
-            });
-        });
     });
 
     describe('fetchOrder', () => {

@@ -411,14 +411,6 @@ export interface OrderTaxSummaryRow {
     grossAmount: number;
 }
 
-export type OrderInvoicePdfStatus =
-    (typeof OrderInvoicePdfStatus)[keyof typeof OrderInvoicePdfStatus];
-
-export const OrderInvoicePdfStatus = {
-    pending: 'pending',
-    ready: 'ready'
-} as const;
-
 export interface Order {
     id: Id;
     userId?: Id;
@@ -474,7 +466,6 @@ export interface Order {
     paymentMethod?: PaymentMethodId;
     payBy?: string;
     readonly invoiceNumber?: string;
-    readonly invoicePdfStatus?: OrderInvoicePdfStatus;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     actions?: OrderActions;
@@ -2498,24 +2489,6 @@ export interface StatusOverrideRequest {
      * @minLength 1
      */
     reason: string;
-}
-
-export type OrderInvoicePendingInvoicePdfStatus =
-    (typeof OrderInvoicePendingInvoicePdfStatus)[keyof typeof OrderInvoicePendingInvoicePdfStatus];
-
-export const OrderInvoicePendingInvoicePdfStatus = {
-    pending: 'pending'
-} as const;
-
-export interface OrderInvoicePending {
-    invoicePdfStatus: OrderInvoicePendingInvoicePdfStatus;
-}
-
-export interface OrderInvoicePendingEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OrderInvoicePending;
 }
 
 export interface PaymentMethodOption {
@@ -5780,9 +5753,9 @@ export const overrideOrderStatus = (
  */
 export const getOrderInvoice = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Blob | OrderInvoicePendingEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Blob>>
 ) => {
-    return orvalMutator<Blob | OrderInvoicePendingEnvelope>(
+    return orvalMutator<Blob>(
         { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
         options
     );

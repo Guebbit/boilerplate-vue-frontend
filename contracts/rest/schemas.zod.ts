@@ -2903,7 +2903,6 @@ export const ExportAccountDataResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
-                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -5726,7 +5725,6 @@ export const CheckoutResponse = zod.strictObject({
                 ),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             invoiceNumber: zod.string().optional(),
-            invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
             transferInstructions: zod
                 .strictObject({
                     beneficiary: zod.string(),
@@ -6195,7 +6193,6 @@ export const ListOrdersResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
-                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -6529,7 +6526,6 @@ export const CreateOrderResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6832,7 +6828,6 @@ export const UpdateOrderResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7208,7 +7203,6 @@ export const SearchOrdersResponse = zod.strictObject({
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 invoiceNumber: zod.string().optional(),
-                invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -7515,7 +7509,6 @@ export const GetOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7826,7 +7819,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -8177,7 +8169,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -8487,7 +8478,6 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9048,7 +9038,6 @@ export const GetOrderByReferenceResponse = zod.strictObject({
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         invoiceNumber: zod.string().optional(),
-        invoicePdfStatus: zod.enum(['pending', 'ready']).optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),

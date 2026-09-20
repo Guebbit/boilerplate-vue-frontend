@@ -43,8 +43,7 @@ describe('ShippingSelector', () => {
     });
 
     /**
-     * The case `use-poll-invoice-status.ts`'s own doc calls out for the sibling composable: the
-     * cart's `resolveTitles` settles AFTER this component mounts, not before it, so the first
+     * The cart's `resolveTitles` settles AFTER this component mounts, not before it, so the first
      * fetch routinely runs with `weight` still `undefined` — a re-fetch once it resolves is the
      * only way the methods list ever reflects the real basket weight.
      */
