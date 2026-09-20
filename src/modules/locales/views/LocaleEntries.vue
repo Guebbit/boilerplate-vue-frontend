@@ -97,9 +97,35 @@ const rowActionSize = useTouchFriendlySize();
 const entryFormOpen = ref(false);
 
 /**
+ * The add-entry dialog's own blocked state — the form already validated clean, so anything here
+ * is a save failure the dialog stays open for, rendered through its `error` slot.
+ */
+const { message: addError, report: reportAddError, clear: clearAddError } = useBlockingError();
+
+// A stale failure from a cancelled attempt must not greet the next open.
+watch(entryFormOpen, (open) => {
+    if (open) clearAddError();
+});
+
+/**
  * Whether the import dialog is open.
  */
 const importOpen = ref(false);
+
+/**
+ * The import dialog's own blocked state — the JSON already parsed clean, so anything here is a
+ * save failure the dialog stays open for, rendered through its `error` slot.
+ */
+const {
+    message: importError,
+    report: reportImportError,
+    clear: clearImportError
+} = useBlockingError();
+
+// A stale failure from a cancelled attempt must not greet the next open.
+watch(importOpen, (open) => {
+    if (open) clearImportError();
+});
 
 /**
  * Local draft per row id, so a blur can tell "changed" from "clicked through".
@@ -185,16 +211,22 @@ const applyLiveOverrides = () =>
 
 /**
  * Adds one entry from the "add entry" dialog, then refreshes the page and the running app.
+ *
+ * @param fields - The dialog's own validated fields.
+ * @returns A promise resolving once the write settles; a failure blocks the dialog in place
+ *  ({@link addError}) rather than closing it.
  */
-const handleAdd = (fields: { tenant: string; key: string; value: string }) =>
-    localesStore
+const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
+    clearAddError();
+    return localesStore
         .addEntry(tag.value, fields)
         .then(() => {
             entryFormOpen.value = false;
             addMessage(t('locale-entries-page.success-add'));
             return Promise.all([search(true), applyLiveOverrides()]);
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportAddError(error));
+};
 
 /**
  * Columns of the entries table.
@@ -274,13 +306,18 @@ const handleDelete = (entry: LocaleEntry) => {
 
 /**
  * Runs the import dialog's batch, then refreshes the page, the manifest and the running app.
+ *
+ * @param payload - The dialog's own confirmed mode, destination tenant and parsed rows.
+ * @returns A promise resolving once the write settles; a failure blocks the dialog in place
+ *  ({@link importError}) rather than closing it.
  */
 const handleImport = (payload: {
     mode: 'merge' | 'replace';
     tenant: string;
     entries: LocaleEntryInput[];
-}) =>
-    localesStore
+}) => {
+    clearImportError();
+    return localesStore
         .importEntries(tag.value, payload.mode, payload.tenant, payload.entries)
         .then((result) => {
             importOpen.value = false;
@@ -293,7 +330,8 @@ const handleImport = (payload: {
                 addMessage(t('locale-entries-page.error-merge-removed'));
             return Promise.all([search(true), localesStore.fetchLanguages(), applyLiveOverrides()]);
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportImportError(error));
+};
 
 /**
  * The export button's own blocked state — one dedicated control, so a failure blocks it in place
@@ -514,12 +552,20 @@ const handleExport = () => {
             :tenants="tenants"
             :initial-tenant="filters.tenant"
             @save="handleAdd"
-        />
+        >
+            <template #error>
+                <InlineErrorAlert :message="addError" test-id="entry-form-error" />
+            </template>
+        </EntryFormDialog>
         <EntriesImportDialog
             v-model="importOpen"
             :tenants="tenants"
             :initial-tenant="filters.tenant"
             @import="handleImport"
-        />
+        >
+            <template #error>
+                <InlineErrorAlert :message="importError" test-id="entries-import-error" />
+            </template>
+        </EntriesImportDialog>
     </LayoutDefault>
 </template>

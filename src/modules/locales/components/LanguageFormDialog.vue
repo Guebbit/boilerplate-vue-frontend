@@ -3,7 +3,13 @@
  * @module
  * Dialog component: a schema-validated form (via `useStructureFormValidation`) that swaps between a create and an
  * edit schema depending on whether a `language` prop was passed, resets on every open, and emits
- * the saved fields upward.
+ * the saved fields upward — no error handling of its own.
+ *
+ * Slots: `error` — the parent's own save can fail after this form already validated clean (a
+ * duplicate tag, a transport failure); the parent renders its `InlineErrorAlert` here, above the
+ * buttons, since this dialog has no opinion of its own on what a blocked save looks like. Shared
+ * by two different parents (`LocalesList.vue`'s own row edit, `LocalesDictionary.vue`'s add), each
+ * filling it with its own state.
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -172,6 +178,9 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
                     color="primary"
                     data-test="language-active"
                 />
+
+                <slot name="error" />
+
                 <div class="mt-2 flex justify-end gap-2">
                     <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('locale-form.button-cancel') }}

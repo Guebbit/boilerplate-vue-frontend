@@ -2,7 +2,11 @@
 /**
  * @module
  * Dialog component: a schema-validated form (via `useStructureFormValidation`) that resets its fields on every
- * open and emits the saved fields upward — no store access of its own.
+ * open and emits the saved fields upward — no store access, and no error handling, of its own.
+ *
+ * Slots: `error` — the parent's own save can fail after this form already validated clean (a
+ * duplicate key, a transport failure); the parent renders its `InlineErrorAlert` here, above the
+ * buttons, since this dialog has no opinion of its own on what a blocked save looks like.
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -132,6 +136,8 @@ const handleSave = () =>
                     auto-grow
                     data-test="entry-value"
                 />
+                <slot name="error" />
+
                 <div class="mt-2 flex justify-end gap-2">
                     <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('entry-form.button-cancel') }}

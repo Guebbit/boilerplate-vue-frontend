@@ -19,7 +19,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -77,6 +76,12 @@ const formOpen = ref(false);
 const editing = ref<LocaleCapability | undefined>();
 
 /**
+ * The create/edit dialog's own blocked state — the form already validated clean, so anything here
+ * is a save failure the dialog stays open for, rendered through its `error` slot.
+ */
+const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+
+/**
  * Columns of the languages board.
  */
 const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
@@ -99,6 +104,7 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
 const openCreate = () => {
     editing.value = undefined;
     formOpen.value = true;
+    clearSaveError();
 };
 
 /**
@@ -107,13 +113,15 @@ const openCreate = () => {
 const openEdit = (language: LocaleCapability) => {
     editing.value = language;
     formOpen.value = true;
+    clearSaveError();
 };
 
 /**
  * Saves the dialog: a create when nothing was being edited, an edit otherwise.
  *
  * @param fields - What the form holds; `tag` only matters on create.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise resolving once the write settles; a failure blocks the dialog in place
+ *  ({@link saveError}) rather than closing it.
  */
 const handleSave = (fields: {
     tag: string;
@@ -138,7 +146,7 @@ const handleSave = (fields: {
         .then(() => {
             formOpen.value = false;
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportSaveError(error));
 };
 
 /**
@@ -353,6 +361,10 @@ onMounted(() => {
             </template>
         </DataTable>
 
-        <LanguageFormDialog v-model="formOpen" :language="editing" @save="handleSave" />
+        <LanguageFormDialog v-model="formOpen" :language="editing" @save="handleSave">
+            <template #error>
+                <InlineErrorAlert :message="saveError" test-id="language-form-error" />
+            </template>
+        </LanguageFormDialog>
     </LayoutDefault>
 </template>

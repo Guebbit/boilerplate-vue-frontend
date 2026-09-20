@@ -160,6 +160,18 @@ to see it":
   time the request answers, so every write action on that page shares ONE `useBlockingError()`,
   rendered as one `InlineErrorAlert` above the table — the same slot `AdminAuditTab.vue` already
   used for its own load error, repurposed here for a write.
+- **Blocking, hosted in a child** — the failure and the `useBlockingError()` instance still belong
+  to the parent (it owns the store call), but the control the visitor is looking at is a dialog
+  component the parent doesn't render the markup of. `locales`' three form dialogs
+  (`EntryFormDialog.vue`, `EntriesImportDialog.vue`, `LanguageFormDialog.vue`) are the worked
+  example: each exposes a named `error` slot right above its own button row, and the parent fills
+  it with its own `InlineErrorAlert` — the same instantiation any other shape uses, just placed
+  inside a `<template #error>` rather than directly in the parent's template. The dialog never
+  imports `InlineErrorAlert` or learns that an error exists; it only leaves the slot, the same way
+  `FormCard.vue` leaves its default slot for whatever the parent's fields are. This is what a
+  dialog reused by more than one parent (`LanguageFormDialog.vue`, shared by `LocalesList.vue` and
+  `LocalesDictionary.vue`) needs — each caller fills the slot with its own state, and the dialog
+  stays ignorant of both.
 - **Ambient** — a list's own search/refresh, a background poll, and a badge or count fetch. None
   of these stopped something the visitor just asked for in this view; the view keeps working
   either way, so `notifyErrorMessages`'s toast is where the failure belongs.

@@ -3,6 +3,11 @@
  * @module
  * Dialog component: local form state plus a pure computed parse of the pasted/uploaded JSON,
  * emitting the flattened rows upward on submit rather than writing anything itself.
+ *
+ * Slots: `error` — the parent's own import can still fail once the JSON parsed clean (the batch
+ * itself is rejected, or a transport failure); the parent renders its `InlineErrorAlert` here,
+ * above the buttons, since this dialog has no opinion of its own on what a blocked import looks
+ * like.
  */
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -246,6 +251,8 @@ const handleImport = () => {
                 <p v-if="parsedEntries" class="text-sm text-success" data-test="import-preview">
                     {{ t('entries-import.preview-count', { count: parsedEntries.length }) }}
                 </p>
+
+                <slot name="error" />
 
                 <div class="mt-2 flex justify-end gap-2">
                     <v-btn variant="tonal" @click="isOpen = false">

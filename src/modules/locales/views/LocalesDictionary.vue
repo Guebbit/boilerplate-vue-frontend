@@ -21,9 +21,10 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useDictionaryAggregation } from '@/modules/locales/composables/use-dictionary-aggregation.ts';
 import { useDictionaryCellEditor } from '@/modules/locales/composables/use-dictionary-cell-editor.ts';
@@ -161,6 +162,21 @@ const newKey = ref('');
 const languageFormOpen = ref(false);
 
 /**
+ * The create-language dialog's own blocked state — the form already validated clean, so anything
+ * here is a save failure the dialog stays open for, rendered through its `error` slot.
+ */
+const {
+    message: createLanguageError,
+    report: reportCreateLanguageError,
+    clear: clearCreateLanguageError
+} = useBlockingError();
+
+// A stale failure from a cancelled attempt must not greet the next open.
+watch(languageFormOpen, (open) => {
+    if (open) clearCreateLanguageError();
+});
+
+/**
  * The keys matching the filters: text across key and values, and the incomplete-only toggle.
  */
 const filteredKeys = computed(() => {
@@ -279,6 +295,10 @@ const handleAddKey = () => {
 
 /**
  * Creates a language from the dialog, then loads its column onto the board.
+ *
+ * @param fields - The dialog's own validated fields.
+ * @returns A promise resolving once the write settles; a failure blocks the dialog in place
+ *  ({@link createLanguageError}) rather than closing it.
  */
 const handleCreateLanguage = (fields: {
     tag: string;
@@ -286,15 +306,17 @@ const handleCreateLanguage = (fields: {
     nativeName: string;
     direction: LocaleCapability['direction'];
     active: boolean;
-}) =>
-    localesStore
+}) => {
+    clearCreateLanguageError();
+    return localesStore
         .createLanguage(fields)
         .then(() => {
             languageFormOpen.value = false;
             addMessage(t('locales-dictionary-page.success-language'));
             return loadLanguage(fields.tag);
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportCreateLanguageError(error));
+};
 
 // A tenant switch is a different board: different keys, different page count, stale drafts.
 watch(tenant, () => {
@@ -538,7 +560,11 @@ onMounted(() => {
             :aria-label="t('locales-dictionary-page.pagination-label')"
         />
 
-        <LanguageFormDialog v-model="languageFormOpen" @save="handleCreateLanguage" />
+        <LanguageFormDialog v-model="languageFormOpen" @save="handleCreateLanguage">
+            <template #error>
+                <InlineErrorAlert :message="createLanguageError" test-id="language-form-error" />
+            </template>
+        </LanguageFormDialog>
     </LayoutDefault>
 </template>
 
