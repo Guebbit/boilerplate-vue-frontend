@@ -31,11 +31,10 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
@@ -158,6 +157,17 @@ const trackUpload = <T,>(
 const { signup } = useAuthStore();
 
 /**
+ * This submit's own blocked state — an API failure that names no field lands here instead of a
+ * toast, so it stays next to the button the visitor just pressed.
+ */
+const {
+    message: signupError,
+    type: signupErrorType,
+    report: reportSignupError,
+    clear: clearSignupError
+} = useBlockingError();
+
+/**
  * Validates the form and registers the account.
  *
  * Signup DOES log the user in — `POST /account/signup` sets the session cookies, so the router's
@@ -167,10 +177,12 @@ const { signup } = useAuthStore();
  *
  * @returns A promise resolving once the flow settles. Invalid input is revealed, announced and
  *  focused by the toolkit before the handler runs; API failures land on the field the server
- *  named (a taken email, most often) or as a toast when it named none.
+ *  named (a taken email, most often) or block the form in place ({@link signupError}) when it
+ *  named none.
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearSignupError();
+    return handleSubmit(() =>
         // No username field on this form: the store defaults it to the email address.
         trackUpload(form.value.imageUpload, (options) =>
             signup(
@@ -190,8 +202,9 @@ const submitForm = () =>
             .then(() => redirectAfterLogin())
             .then(() => addMessage(t('signup-page.success-email-code-sent')))
     ).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportSignupError(error);
     });
+};
 </script>
 
 <template>
@@ -276,6 +289,12 @@ const submitForm = () =>
                 >
                     {{ t('signup-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="signupError"
+                    :type="signupErrorType"
+                    class="mt-4"
+                    test-id="signup-error"
+                />
             </form>
             <template v-if="oauthProviders.length > 0">
                 <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-70">

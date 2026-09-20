@@ -56,10 +56,19 @@ vi.mock('vue-i18n', () => ({
     useI18n: () => ({ t: (key: string) => key })
 }));
 
-vi.mock('@/infrastructure/utils/errors.ts', () => ({
-    notifyErrorMessages: (addMessage: (message: string) => unknown, error: unknown) => {
-        addMessage(`notified:${String(error)}`);
-    }
+/** Every error `useBlockingError().report()` was called with, during a test. */
+let reportedErrors: unknown[] = [];
+
+vi.mock('@/infrastructure/utils/use-blocking-error.ts', () => ({
+    useBlockingError: () => ({
+        message: ref<string>(),
+        type: ref<'error' | 'warning'>('error'),
+        report: (error: unknown) => {
+            reportedErrors.push(error);
+        },
+        warn: () => {},
+        clear: () => {}
+    })
 }));
 
 /** One stored entry, as the board's lookup returns it. */
@@ -97,6 +106,7 @@ beforeEach(() => {
     vi.useRealTimers();
     confirmAnswer = true;
     messages = [];
+    reportedErrors = [];
 });
 
 describe('handleCellBlur', () => {
@@ -184,7 +194,7 @@ describe('handleCellBlur', () => {
         });
     });
 
-    it('leaves the error on the cell and raises a toast when the write fails', () => {
+    it('leaves the error on the cell, not a toast, when the write fails', () => {
         editEntry.mockRejectedValueOnce(new Error('nope'));
         const { editor, afterWrite } = editorWith({ greeting: entry('greeting', 'Hello') });
         const id = editor.cellId('en', 'greeting');
@@ -192,9 +202,20 @@ describe('handleCellBlur', () => {
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
             expect(editor.cellErrors.value[id]).toBe('locales-dictionary-page.error-save');
-            expect(messages).toContain('notified:Error: nope');
+            expect(messages).toEqual([]);
             // The column is not reloaded after a failure: nothing changed to reload.
             expect(afterWrite).not.toHaveBeenCalled();
+        });
+    });
+
+    it('still reports the failure to Faro, just not as a toast', () => {
+        const error = new Error('nope');
+        editEntry.mockRejectedValueOnce(error);
+        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
+
+        return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
+            expect(reportedErrors).toContain(error);
         });
     });
 });

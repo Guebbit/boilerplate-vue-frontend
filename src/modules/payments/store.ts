@@ -177,15 +177,25 @@ export const usePaymentsStore = defineStore('payments', () => {
     /**
      * Finds the order behind an RF creditor reference — the admin's own step before recording an
      * offline payment, when a bank statement line is all they have. Admin-only at the API, and
-     * step-up gated the same way {@link refundForOrder} is; a 404 (malformed or unmatched
-     * reference) is the caller's to show, not swallowed here, since there is no "absent" default
-     * that would make sense for a lookup.
+     * step-up gated the same way {@link refundForOrder} is.
+     *
+     * A 404 is an answer, not a failure: the API cannot tell a malformed reference from one that
+     * matches no order, so both mean "no such order" and resolve `undefined`. Every other status
+     * still rejects.
      *
      * @param ref - The RF reference, as typed — the API tolerates spaces and case.
-     * @returns A promise resolving with the order this reference pays.
+     * @returns A promise resolving with the order this reference pays, or `undefined` when none does.
      */
     const findOrderByReference = (ref: string): Promise<Order | undefined> =>
-        fetchAny(() => getOrderByReference({ ref }).then((response) => response.data));
+        fetchAny(() =>
+            getOrderByReference({ ref })
+                .then((response) => response.data)
+                .catch((error: unknown) => {
+                    // 404 only: a wrong reference is a search result, not an incident to report.
+                    rethrowUnlessAbsent(error, 404);
+                    return undefined;
+                })
+        );
 
     return {
         loading,

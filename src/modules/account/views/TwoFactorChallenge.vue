@@ -20,7 +20,8 @@ import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
 import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
@@ -105,31 +106,57 @@ onMounted(() => {
 });
 
 /**
+ * The resend button's own blocked state — its own dedicated control, separate from the code
+ * form below, so it gets its own instance rather than sharing the submit's.
+ */
+const {
+    message: sendError,
+    type: sendErrorType,
+    report: reportSendError,
+    clear: clearSendError
+} = useBlockingError();
+
+/**
+ * The code form's own blocked state — a wrong or expired code names no field, so it lands here
+ * instead of a toast, next to the submit button.
+ */
+const {
+    message: submitError,
+    type: submitErrorType,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Sends a fresh code through the selected delivered method.
  *
- * @returns Nothing; the outcome is reported as a toast, and the resend cooldown starts.
+ * @returns Nothing; success is a toast and starts the resend cooldown, a failure blocks the
+ *  button in place ({@link sendError}).
  */
 const handleSend = () => {
     if (!selectedMethod.value) return;
+    clearSendError();
     return twoFactor
         .sendLoginCode(selectedMethod.value)
         .then(() => addMessage(t('two-factor.code-sent')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportSendError(error));
 };
 
 /**
  * Submits the code against the live challenge; on success, hands off to the same redirect a plain
  * login takes.
  *
- * @returns Nothing; a wrong or expired code is reported as a toast rather than a field error —
- *  there is no form field the server names one against.
+ * @returns Nothing; a wrong or expired code blocks the form in place ({@link submitError})
+ *  rather than a field error — there is no form field the server names one against.
  */
-const handleSubmit = () =>
-    twoFactor
+const handleSubmit = () => {
+    clearSubmitError();
+    return twoFactor
         .submitLoginCode(code.value)
         .then(() => redirectAfterLogin())
         .then(() => undefined)
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportSubmitError(error));
+};
 
 // A spent or abandoned challenge must not survive to the next visit to this route.
 onUnmounted(twoFactor.clearChallenge);
@@ -180,6 +207,12 @@ onUnmounted(twoFactor.clearChallenge);
                 <p v-if="delivery" role="status" class="mb-4 text-sm opacity-80">
                     {{ t('two-factor.sent-to', { target: delivery.sentTo }) }}
                 </p>
+                <InlineErrorAlert
+                    :message="sendError"
+                    :type="sendErrorType"
+                    class="mb-4"
+                    test-id="two-factor-challenge-send-error"
+                />
             </template>
 
             <form novalidate @submit.prevent="handleSubmit">
@@ -219,6 +252,12 @@ onUnmounted(twoFactor.clearChallenge);
                 >
                     {{ t('two-factor-challenge-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="submitError"
+                    :type="submitErrorType"
+                    class="mt-4"
+                    test-id="two-factor-challenge-submit-error"
+                />
             </form>
 
             <div class="mt-4 flex justify-center">

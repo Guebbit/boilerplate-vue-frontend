@@ -1,8 +1,12 @@
 /**
  * @module
  * Shared error-handling leaves: the app's fallback wording bound to the toolkit's message
- * extractor, transport-vs-answered failure classification, and the toast+Faro reporting pair
- * every catch block calls.
+ * extractor, transport-vs-answered failure classification, and `notifyErrorMessages` — the
+ * toast+Faro pair an AMBIENT failure (a list refresh, a background poll) calls. `getErrorMessage`
+ * is exported for the other pairing, `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`), which a BLOCKED
+ * workflow (a save, delete, refund or lookup) calls instead: same wording, same Faro report, kept
+ * local and rendered through `InlineErrorAlert` rather than toasted. See
+ * docs/theory/request-flow.md for which one a given call site should use.
  */
 
 import { extractErrorMessage } from '@guebbit/js-toolkit';
@@ -16,10 +20,13 @@ import { translate } from '@/infrastructure/i18n';
  * what to say in that case is a decision about tone and language, so it belongs here rather than
  * in a package that does not know which languages this app speaks.
  *
+ * Exported for `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`) — the one other place a caught error
+ * becomes this same wording, just kept local instead of toasted.
+ *
  * @param error - Unknown value caught in a `catch` block or promise rejection.
  * @returns The best message found, otherwise the generic translated "something went wrong".
  */
-const getErrorMessage = (error: unknown): string =>
+export const getErrorMessage = (error: unknown): string =>
     extractErrorMessage(error, translate('api-errors.unknown'));
 
 /**

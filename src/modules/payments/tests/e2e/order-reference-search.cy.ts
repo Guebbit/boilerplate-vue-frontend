@@ -50,7 +50,7 @@ describe('Order reference search', () => {
             });
     });
 
-    it('shows a toast and stays put for a reference nothing matches', () => {
+    it('blocks the search in place, not with a toast, for a reference nothing matches', () => {
         cy.loginAs('admin');
         cy.visit('/en/orders');
 
@@ -61,6 +61,9 @@ describe('Order reference search', () => {
 
         cy.url().should('include', '/orders');
         cy.url().should('not.match', /\/edit$/);
-        cy.contains(/not found/i).should('exist');
+        cy.get('[data-test=order-reference-search-error]').should(
+            'contain.text',
+            'No order matches this reference.'
+        );
     });
 });

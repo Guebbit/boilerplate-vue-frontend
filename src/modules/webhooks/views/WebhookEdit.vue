@@ -26,11 +26,10 @@ import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -126,22 +125,30 @@ const heroTitle = computed(
 const heroDescription = computed(() => formatText(currentSubscription.value?.description));
 
 /**
+ * This form's own blocked state — a failed save blocks this specific form, separate from the
+ * secret-ring and delete actions on the detail page.
+ */
+const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+
+/**
  * Validates the form and persists the subscription changes.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the revealed
- *  validation errors when the input is invalid. API failures surface as a toast. A missing route
- *  id is a no-op.
+ *  validation errors when the input is invalid. An API failure blocks the form in place
+ *  ({@link formError}). A missing route id is a no-op.
  */
-const submitForm = () =>
-    handleSubmit(() => {
+const submitForm = () => {
+    clearFormError();
+    return handleSubmit(() => {
         if (!id) return;
         const { url, description, eventTypes, enabled } = form.value;
         return updateSubscription(id, { url, description, eventTypes, enabled }).then(() => {
             addMessage(t('webhook-edit-page.success-update'));
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportFormError(error);
     });
+};
 
 /**
  * Selects and hydrates the subscription whenever the route id changes.
@@ -210,6 +217,8 @@ watchSubscription(() => id);
                             {{ t('webhook-edit-page.reset-form') }}
                         </v-btn>
                     </div>
+
+                    <InlineErrorAlert :message="formError" test-id="webhook-edit-form-error" />
                 </form>
             </CardDetail>
 

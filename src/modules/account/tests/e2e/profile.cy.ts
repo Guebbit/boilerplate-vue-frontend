@@ -172,9 +172,13 @@ describe('Profile self-service', () => {
                 .type('BrandNew_Secret1!');
             cy.get('[data-test=submit-password-change]').click();
 
-            // The toast shows the envelope's status message (the app's convention for API
-            // failures); the session survives — the page is still the profile.
-            cy.contains('Unprocessable Entity').should('exist');
+            // The alert shows the envelope's status message (the app's convention for API
+            // failures), inline next to the form rather than a toast; the session survives — the
+            // page is still the profile.
+            cy.get('[data-test=password-change-error]').should(
+                'contain.text',
+                'Unprocessable Entity'
+            );
             cy.get('#profile-page').should('exist');
         });
     });

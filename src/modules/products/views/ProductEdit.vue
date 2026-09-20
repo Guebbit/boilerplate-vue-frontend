@@ -47,10 +47,9 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import type { ProductTranslationsWrite } from '@types';
@@ -323,15 +322,28 @@ const heroTitle = computed(
 const heroDescription = computed(() => formatText(adminProduct.value?.description));
 
 /**
+ * This form's own blocked state — a save that failed blocks the visitor from proceeding past this
+ * one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a toast
+ * — see docs/theory/request-flow.md.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and persists the product changes.
  *
  * @returns A promise resolving once the flow settles: a success toast and a fresh admin-record
  *  fetch (so a removed language's tab, and any server-resolved change, is reflected), or the
- *  revealed validation errors when the input is invalid. API failures surface as a toast, with a
- *  per-language 422 also landing on the tab it names. A missing route id or price is a no-op.
+ *  revealed validation errors when the input is invalid. API failures block the form in place
+ *  ({@link submitError}), with a per-language 422 also landing on the tab it names. A missing
+ *  route id or price is a no-op.
  */
-const submitForm = () =>
-    handleSubmit(() => {
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() => {
         const { price, active, weight, translations, imageUpload } = form.value;
         if (!id || price === undefined) return;
         return trackUpload(imageUpload, (options) =>
@@ -351,8 +363,9 @@ const submitForm = () =>
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportSubmitError(error);
     });
+};
 </script>
 
 <template>
@@ -493,6 +506,8 @@ const submitForm = () =>
                         :progress="uploadProgress"
                         :disabled="isSubmitting"
                     />
+
+                    <InlineErrorAlert :message="submitError" test-id="product-edit-submit-error" />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn

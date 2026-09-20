@@ -28,8 +28,10 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Translation, UpsertTranslationsRequest } from '@types';
 import { TranslationOrigin } from '@types';
 
@@ -182,13 +184,20 @@ const handleRemoveLocale = (tag: string) => {
 };
 
 /**
+ * The save button's own blocked state — one dedicated control the visitor cannot proceed past
+ * until it succeeds, so a failure blocks it in place rather than joining the toast queue. The
+ * page's own load stays a toast (ambient) — see docs/theory/request-flow.md.
+ */
+const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+
+/**
  * Saves every open and removed locale in one merging write. A blank field is dropped from its
  * locale's body rather than blocking the save — an empty string is a 422 on the API's own door
  * (never a delete, that is `null`), and `barebones`-shaped rows mean some field is routinely
  * blank on a screen offering every registry field regardless of what a row already has.
  *
- * @returns A promise resolving once the write lands and the screen has reloaded from it; a toast
- *  either way.
+ * @returns A promise resolving once the write lands and the screen has reloaded from it; a
+ *  failure blocks the button in place ({@link saveError}).
  */
 const handleSave = () => {
     const body: UpsertTranslationsRequest = {};
@@ -204,13 +213,14 @@ const handleSave = () => {
     }
 
     saving.value = true;
+    clearSaveError();
     return localesStore
         .saveEntityTranslations(entityType.value, entityId.value, body)
         .then(() => {
             addMessage(t('entity-translations-page.success-save'));
             return load();
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+        .catch((error: unknown) => reportSaveError(error))
         .finally(() => {
             saving.value = false;
         });
@@ -289,6 +299,12 @@ const handleSave = () => {
             >
                 {{ t('entity-translations-page.button-save') }}
             </v-btn>
+
+            <InlineErrorAlert
+                :message="saveError"
+                class="mt-3"
+                test-id="entity-translations-save-error"
+            />
         </v-card>
     </LayoutDefault>
 </template>

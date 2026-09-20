@@ -14,8 +14,9 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { usePaymentsStore } from '../store.ts';
 import { classifyPaymentError } from '@/modules/payments/domain';
 import type { UnavailableOrderLine } from '@/modules/payments/domain';
@@ -128,12 +129,25 @@ const announceIfSettled = () => {
 const unavailableLines = ref<UnavailableOrderLine[]>([]);
 
 /**
+ * This panel's own blocked state — paying and finishing at the provider are two steps of the same
+ * one workflow, never shown at once, so both share the one instance rendered next to whichever
+ * step is current. `ORDER_PRODUCT_UNAVAILABLE` stays its own toast/list above, since it already has
+ * a more specific answer than a generic blocking message.
+ */
+const {
+    message: paymentError,
+    report: reportPaymentError,
+    clear: clearPaymentError
+} = useBlockingError();
+
+/**
  * Pays the order with the chosen method, notifies the result, and tells the parent to re-read the
  * order once it actually settles. A decline rejects; an in-flight answer does not, and leaves the
  * panel showing the next step.
  */
 const submitPayment = () => {
     unavailableLines.value = [];
+    clearPaymentError();
     return paymentsStore
         .payForOrder(orderId, paymentMethodRef.value)
         .then(announceIfSettled)
@@ -144,7 +158,7 @@ const submitPayment = () => {
                 addMessage(t('payments-panel.error-product-unavailable'));
                 return;
             }
-            notifyErrorMessages(addMessage, error);
+            reportPaymentError(error);
         });
 };
 
@@ -155,10 +169,11 @@ const submitPayment = () => {
  */
 const finishAtProvider = () => {
     if (!payment.value) return Promise.resolve();
+    clearPaymentError();
     return paymentsStore
         .finishAtProvider(payment.value.id)
         .then(announceIfSettled)
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportPaymentError(error));
 };
 
 onMounted(() => {
@@ -169,6 +184,8 @@ onMounted(() => {
 <template>
     <v-card class="p-4" data-test="payment-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('payments-panel.title') }}</h3>
+
+        <InlineErrorAlert :message="paymentError" class="mb-3" test-id="payment-panel-error" />
 
         <!--
             The picker's hint is the field's own `hint`, so it is wired as the field's description

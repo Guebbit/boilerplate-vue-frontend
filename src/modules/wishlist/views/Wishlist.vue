@@ -18,9 +18,10 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { useCartStore } from '@/modules/cart';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The saved products, rendered from their ids exactly as the cart page renders its lines — the
@@ -49,27 +50,40 @@ const { items } = storeToRefs(useWishlistStore());
 const { titleOf, resolveTitles } = useCartStore();
 
 /**
+ * The saved lines' own blocked state — moving a line to the cart or removing it has no per-line
+ * slot for an alert, and the list keeps working regardless, so both actions share ONE instance
+ * rendered above the lines, the same reasoning `ProductsList.vue`'s row actions use.
+ */
+const {
+    message: lineActionError,
+    report: reportLineActionError,
+    clear: clearLineActionError
+} = useBlockingError();
+
+/**
  * Moves one saved product into the cart.
  *
  * @param productId - The saved product.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the line actions in place ({@link lineActionError}).
  */
 const handleMoveToCart = (productId: string) => {
+    clearLineActionError();
     moveToCart(productId)
         .then(() => addMessage(t('wishlist-page.success-moved')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportLineActionError(error));
 };
 
 /**
  * Removes one saved product.
  *
  * @param productId - The saved product.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the line actions in place ({@link lineActionError}).
  */
 const handleRemove = (productId: string) => {
+    clearLineActionError();
     removeFromWishlist(productId)
         .then(() => addMessage(t('wishlist-page.success-removed')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportLineActionError(error));
 };
 
 /**
@@ -95,6 +109,8 @@ onMounted(() =>
         </v-empty-state>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <InlineErrorAlert :message="lineActionError" test-id="wishlist-line-action-error" />
+
             <v-card
                 v-for="item in items"
                 :key="'wishlist-item-' + item.productId"

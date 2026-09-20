@@ -89,14 +89,9 @@ describe('OrderReferenceSearch', () => {
             });
     });
 
-    it('stays put and shows a toast when nothing matches', () => {
+    it('stays put and says so inline when nothing matches', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockRejectedValue({
-            success: false,
-            status: 404,
-            message: 'Not found',
-            errors: [{ code: 'NOT_FOUND', message: 'Not found' }]
-        });
+        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(undefined);
         const wrapper = mountSearch();
 
         return wrapper
@@ -106,6 +101,58 @@ describe('OrderReferenceSearch', () => {
             .then(() => flush())
             .then(() => {
                 expect(router.currentRoute.value.fullPath).toBe('/en/orders');
+                expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
+                    true
+                );
+                expect(
+                    wrapper.find('[data-test=order-reference-search-error]').classes()
+                ).toContain('text-warning');
+            });
+    });
+
+    it('clears the inline message once the operator starts typing again', () => {
+        const payments = usePaymentsStore();
+        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(undefined);
+        const wrapper = mountSearch();
+
+        return wrapper
+            .get('[data-test=order-reference-search-input] input')
+            .setValue('garbage')
+            .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
+            .then(() => flush())
+            .then(() =>
+                wrapper.get('[data-test=order-reference-search-input] input').setValue('garbage2')
+            )
+            .then(() => {
+                expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
+                    false
+                );
+            });
+    });
+
+    it('blocks inline, not with a toast, on a real failure', () => {
+        const payments = usePaymentsStore();
+        vi.spyOn(payments, 'findOrderByReference').mockRejectedValue({
+            success: false,
+            status: 500,
+            message: 'Server error',
+            errors: [{ code: 'INTERNAL', message: 'Server error' }]
+        });
+        const wrapper = mountSearch();
+
+        return wrapper
+            .get('[data-test=order-reference-search-input] input')
+            .setValue('RF13 2EY8 H44V JAVZ KX80 JRL')
+            .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
+            .then(() => flush())
+            .then(() => {
+                expect(router.currentRoute.value.fullPath).toBe('/en/orders');
+                expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
+                    true
+                );
+                expect(
+                    wrapper.find('[data-test=order-reference-search-error]').classes()
+                ).toContain('text-error');
             });
     });
 

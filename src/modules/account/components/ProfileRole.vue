@@ -10,6 +10,9 @@ export default {
  * Self-service role switch, visible only to an admin viewing their own profile. A `watch` on the
  * profile record re-seeds the select whenever it changes, and `roleIsDirty`/`handleRoleChange`
  * confirm only the one direction that cannot be undone by the visitor alone: demoting themselves.
+ *
+ * A failed change blocks this widget in place (`useBlockingError`), next to the select it
+ * restores, rather than a toast — see docs/theory/request-flow.md.
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -17,8 +20,9 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The role-change widget — an admin viewing their OWN profile can move their own role between
@@ -91,6 +95,12 @@ const roleOptions = computed(() => [
 const roleIsDirty = computed(() => selectedRole.value !== (profile.value?.role ?? STANDARD_ROLE));
 
 /**
+ * This widget's own blocked state — a failed change restores the select, so the message stays
+ * next to it rather than joining the toast queue.
+ */
+const { message: roleError, report: reportRoleError, clear: clearRoleError } = useBlockingError();
+
+/**
  * Applies the chosen role, confirming first when it gives administrator rights away.
  *
  * Only that direction asks. Demoting yourself is the one change on this page nobody can undo for
@@ -100,7 +110,8 @@ const roleIsDirty = computed(() => selectedRole.value !== (profile.value?.role ?
  * The select is put back on refusal and on failure, so it never shows a role the record does not
  * hold.
  *
- * @returns A promise resolving once the change settles, reported as a toast.
+ * @returns A promise resolving once the change settles; success is toasted, a failure blocks in
+ *  place ({@link roleError}).
  */
 const handleRoleChange = () => {
     if (!roleIsDirty.value) return Promise.resolve();
@@ -121,11 +132,12 @@ const handleRoleChange = () => {
             restore();
             return;
         }
+        clearRoleError();
         return updateOwnRole(wanted)
             .then(() => addMessage(t('profile-page.success-role-change')))
             .catch((error) => {
                 restore();
-                notifyErrorMessages(addMessage, error);
+                reportRoleError(error);
             });
     });
 };
@@ -159,6 +171,8 @@ const handleRoleChange = () => {
             >
                 {{ t('profile-page.button-submit-role') }}
             </v-btn>
+
+            <InlineErrorAlert :message="roleError" class="mt-2" test-id="profile-role-error" />
         </section>
     </template>
 </template>

@@ -19,10 +19,9 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { RecordOfflinePaymentRequestMethod } from '@types';
 import { usePaymentsStore } from '../store.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The order this form pays. Only rendered by the caller while the order is still payable, so this
@@ -103,14 +102,26 @@ const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValid
 );
 
 /**
+ * This form's own blocked state — the order is no longer payable, or a card charge is still
+ * reachable at the provider, both arriving as the server's own message and blocking the one submit
+ * button until the operator retries.
+ */
+const {
+    message: recordError,
+    report: reportRecordError,
+    clear: clearRecordError
+} = useBlockingError();
+
+/**
  * Validates and sends the record, then clears the form and tells the parent to reload the order.
  *
  * The interesting failures — the order is no longer payable, or a card charge is still reachable
  * at the provider — arrive as the server's own message, carried through verbatim.
  */
 const submitForm = () =>
-    handleSubmit(({ method, reference, receivedAt }) =>
-        recordOfflinePayment({
+    handleSubmit(({ method, reference, receivedAt }) => {
+        clearRecordError();
+        return recordOfflinePayment({
             method,
             reference: reference || undefined,
             receivedAt: receivedAt ? new Date(`${receivedAt}T00:00`).toISOString() : undefined
@@ -121,8 +132,8 @@ const submitForm = () =>
                 form.value.receivedAt = '';
                 emit('recorded');
             })
-            .catch((error: unknown) => notifyErrorMessages(addMessage, error))
-    );
+            .catch((error: unknown) => reportRecordError(error));
+    });
 </script>
 
 <template>
@@ -167,5 +178,10 @@ const submitForm = () =>
         <v-btn type="submit" color="primary" data-test="record-offline-submit" :disabled="loading">
             {{ t('record-offline-payment-form.button-submit') }}
         </v-btn>
+        <InlineErrorAlert
+            :message="recordError"
+            class="w-full"
+            test-id="record-offline-payment-error"
+        />
     </form>
 </template>

@@ -23,12 +23,13 @@ import { useCartStore } from '@/modules/cart/store.ts';
 import { MIN_LINE_QUANTITY, classifyCheckoutError } from '@/modules/cart/domain';
 import type { CheckoutShortfallLine, UnavailableCartLine } from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
 import type { CartItem, PaymentMethodId } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
 
@@ -89,6 +90,17 @@ const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
 const unavailableLines = ref<UnavailableCartLine[]>([]);
 
 /**
+ * The checkout button's own blocked state — the one dedicated control this page cannot proceed
+ * past until it succeeds. Every refusal `classifyCheckoutError` names more specifically keeps its
+ * own toast/inline handling above; only the generic fallback renders here.
+ */
+const {
+    message: checkoutError,
+    report: reportCheckoutError,
+    clear: clearCheckoutError
+} = useBlockingError();
+
+/**
  * Places an order from the current cart.
  *
  * The store empties the local cart on success, so this only has to say so and move on — no
@@ -106,6 +118,7 @@ const unavailableLines = ref<UnavailableCartLine[]>([]);
 const checkout = () => {
     insufficientStockLines.value = [];
     unavailableLines.value = [];
+    clearCheckoutError();
     return placeOrder({
         ...(shippingMethodId.value === undefined
             ? {}
@@ -145,9 +158,20 @@ const checkout = () => {
                 addMessage(t('cart-page.error-product-unavailable'));
                 return;
             }
-            notifyErrorMessages(addMessage, error);
+            reportCheckoutError(error);
         });
 };
+
+/**
+ * The cart lines' own blocked state — stepping a quantity or removing a line has no per-line slot
+ * for an alert, and the list keeps working regardless, so every line action shares ONE instance
+ * rendered above the lines, the same reasoning `ProductsList.vue`'s row actions use.
+ */
+const {
+    message: lineActionError,
+    report: reportLineActionError,
+    clear: clearLineActionError
+} = useBlockingError();
 
 /**
  * Stepping a line's quantity, debounced per product so three quick clicks are one request for the
@@ -156,7 +180,7 @@ const checkout = () => {
  */
 const { quantityOf, stepQuantity, forget, flushPending } = useLineQuantity(
     updateCartItem,
-    (error: unknown) => notifyErrorMessages(addMessage, error)
+    (error: unknown) => reportLineActionError(error)
 );
 
 /**
@@ -171,13 +195,13 @@ const lineQuantity = (item: CartItem) => quantityOf(item.productId, item.quantit
  * that no longer exists would fire after the removal and put the line back.
  *
  * @param productId - The line to remove.
- * @returns A promise resolving once the removal settles; failure is reported as a toast.
+ * @returns A promise resolving once the removal settles; a failure blocks the line actions in
+ *  place ({@link lineActionError}).
  */
 const removeLine = (productId: string) => {
     forget(productId);
-    return removeCartItem(productId).catch((error: unknown) =>
-        notifyErrorMessages(addMessage, error)
-    );
+    clearLineActionError();
+    return removeCartItem(productId).catch((error: unknown) => reportLineActionError(error));
 };
 
 onBeforeUnmount(flushPending);
@@ -255,6 +279,12 @@ onMounted(() =>
                     </li>
                 </ul>
             </v-alert>
+
+            <InlineErrorAlert
+                :message="lineActionError"
+                class="lg:col-span-2"
+                test-id="cart-line-action-error"
+            />
 
             <div class="flex flex-col gap-4">
                 <v-card
@@ -348,6 +378,11 @@ onMounted(() =>
                     >
                         {{ t('cart-page.button-checkout') }}
                     </v-btn>
+                    <InlineErrorAlert
+                        :message="checkoutError"
+                        class="mt-2"
+                        test-id="cart-checkout-error"
+                    />
                     <v-btn
                         variant="text"
                         block

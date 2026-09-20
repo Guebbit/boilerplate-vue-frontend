@@ -11,6 +11,12 @@ export default {
  * code plus manual-entry secret for a device method, a "code sent to…" plus resend for a
  * delivered one — and a code field either way. Method-agnostic throughout: nothing here branches
  * on which method string it was called with, only on `delivers`.
+ *
+ * Resend and confirm each block this card in place (`useBlockingError`, shared between the two —
+ * both act on the same code field) instead of toasting, since neither closes the dialog on
+ * failure. The initial `setup` on mount stays a toast: a failure there closes the dialog before
+ * the card can show anything, so there is nowhere for an inline alert to stay put. See
+ * docs/theory/request-flow.md.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -19,7 +25,9 @@ import QRCode from 'qrcode';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Which second factor is being armed.
@@ -70,6 +78,8 @@ const closeAndClear = () => {
 };
 
 onMounted(() => {
+    // Stays a toast: a failure here closes the dialog immediately (nothing to render without a
+    // setup answer), so an inline alert would have nowhere to stay visible.
     void twoFactor.setupMethod(method).catch((error) => {
         notifyErrorMessages(addMessage, error);
         closeAndClear();
@@ -107,24 +117,34 @@ const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(
 const code = ref('');
 
 /**
+ * This card's own blocked state — resend and confirm share one instance, since both act on the
+ * same code field and neither closes the dialog on failure.
+ */
+const { message: codeError, report: reportCodeError, clear: clearCodeError } = useBlockingError();
+
+/**
  * Re-sends a delivered method's code — calling `setup` again, exactly as the initial send did;
  * the contract makes no distinction between "send" and "resend" for enrollment.
  */
-const handleResend = () =>
-    twoFactor.setupMethod(method).catch((error) => notifyErrorMessages(addMessage, error));
+const handleResend = () => {
+    clearCodeError();
+    return twoFactor.setupMethod(method).catch((error) => reportCodeError(error));
+};
 
 /**
  * Proves the code and arms the method.
  *
  * @returns Nothing; on success the parent's watcher on `confirmed` takes over (the backup-codes
- *  screen, when this was the first factor). A wrong code is reported as a toast — there is no
- *  form field to attach it to.
+ *  screen, when this was the first factor). A wrong code blocks this card in place
+ *  ({@link codeError}) — there is no form field of its own to attach it to.
  */
-const handleConfirm = () =>
-    twoFactor
+const handleConfirm = () => {
+    clearCodeError();
+    return twoFactor
         .confirmMethod(method, code.value)
         .then(() => emit('close'))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportCodeError(error));
+};
 </script>
 
 <template>
@@ -180,8 +200,11 @@ const handleConfirm = () =>
                     inputmode="numeric"
                     :label="t('two-factor.label-code')"
                     data-test="two-factor-enroll-code"
+                    @update:model-value="clearCodeError"
                 />
             </form>
+
+            <InlineErrorAlert :message="codeError" test-id="two-factor-enroll-error" />
         </v-card-text>
         <v-card-actions>
             <v-spacer />

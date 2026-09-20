@@ -17,10 +17,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -87,14 +86,27 @@ const {
 );
 
 /**
+ * This submit's own blocked state — a spent or unknown token names no field, so it lands here
+ * instead of a toast, next to the button the visitor just pressed.
+ */
+const {
+    message: confirmError,
+    type: confirmErrorType,
+    report: reportConfirmError,
+    clear: clearConfirmError
+} = useBlockingError();
+
+/**
  * Validates the token and deletes the account for good.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
  *  shown and the user is sent `Home`. Invalid input is revealed, announced and focused by the
- *  toolkit before the handler runs; API failures land on the field the server named, or as a toast.
+ *  toolkit before the handler runs; API failures land on the field the server named, or block the
+ *  form in place ({@link confirmError}).
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearConfirmError();
+    return handleSubmit(() =>
         confirmAccountDelete(form.value.token!)
             .then(() => {
                 addMessage(t('account-delete-confirm-page.success'));
@@ -105,8 +117,9 @@ const submitForm = () =>
             // the router's own `onError` to report rather than this form's.
             .then(() => undefined)
     ).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportConfirmError(error);
     });
+};
 </script>
 
 <template>
@@ -135,6 +148,12 @@ const submitForm = () =>
                 >
                     {{ t('account-delete-confirm-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="confirmError"
+                    :type="confirmErrorType"
+                    class="mt-4"
+                    test-id="account-delete-confirm-error"
+                />
             </form>
 
             <div class="mt-4 flex justify-center">

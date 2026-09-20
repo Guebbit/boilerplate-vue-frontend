@@ -19,12 +19,14 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { User } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -125,20 +127,34 @@ const handleReset = () => {
 };
 
 /**
+ * The row actions' own blocked state — delete and hard-delete share one instance, since both
+ * are write actions behind a confirm dialog rather than a form with its own field to block: the
+ * table keeps working either way, so one alert above it is where a failure belongs. A search
+ * failure is a different kind of thing (ambient, the table just hasn't refreshed) and keeps
+ * toasting through {@link notifyErrorMessages} above — see docs/theory/request-flow.md.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Deletes a user after an explicit confirmation.
  *
  * @param userId - Identifier of the user to delete.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
- *  delete has finished; the outcome is reported as a toast.
+ *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (userId: string) =>
     useDialogStore()
         .confirm({ message: t('users-list-page.confirm-delete'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return deleteUser(userId)
                 .then(() => addMessage(t('users-list-page.success-delete')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 
 /**
@@ -147,16 +163,17 @@ const handleDelete = (userId: string) =>
  *
  * @param userId - Identifier of the user to hard-delete.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
- *  hard-delete has finished; the outcome is reported as a toast.
+ *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleHardDelete = (userId: string) =>
     useDialogStore()
         .confirm({ message: t('users-list-page.confirm-hard-delete'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return hardDeleteUser(userId)
                 .then(() => addMessage(t('users-list-page.success-hard-delete')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 </script>
 
@@ -216,6 +233,12 @@ const handleHardDelete = (userId: string) =>
                 </div>
             </form>
         </v-card>
+
+        <InlineErrorAlert
+            :message="rowActionError"
+            class="mb-4"
+            test-id="users-list-row-action-error"
+        />
 
         <DataTable
             v-model="selectedUserId"

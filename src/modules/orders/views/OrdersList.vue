@@ -22,6 +22,7 @@ import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { OrderReferenceSearch } from '@/modules/payments';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
 import { OrderStatus } from '@types';
@@ -29,6 +30,7 @@ import { OrderStatus } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -161,20 +163,34 @@ const handleReset = () => {
 };
 
 /**
+ * The row actions' own blocked state — delete and hard-delete share one instance, since both
+ * are write actions behind a confirm dialog rather than a form with its own field to block: the
+ * table keeps working either way, so one alert above it is where a failure belongs. A search
+ * failure is a different kind of thing (ambient, the table just hasn't refreshed) and keeps
+ * toasting through {@link notifyErrorMessages} above — see docs/theory/request-flow.md.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Deletes an order after an explicit confirmation.
  *
  * @param orderId - Identifier of the order to delete.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
- *  delete has finished; the outcome is reported as a toast.
+ *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (orderId: string) =>
     useDialogStore()
         .confirm({ message: t('orders-list-page.confirm-delete'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return deleteOrder(orderId)
                 .then(() => addMessage(t('orders-list-page.success-delete')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 
 /**
@@ -183,16 +199,17 @@ const handleDelete = (orderId: string) =>
  *
  * @param orderId - Identifier of the order to hard-delete.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
- *  hard-delete has finished; the outcome is reported as a toast.
+ *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleHardDelete = (orderId: string) =>
     useDialogStore()
         .confirm({ message: t('orders-list-page.confirm-hard-delete'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return hardDeleteOrder(orderId)
                 .then(() => addMessage(t('orders-list-page.success-hard-delete')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 </script>
 
@@ -248,6 +265,12 @@ const handleHardDelete = (orderId: string) =>
                 </div>
             </form>
         </v-card>
+
+        <InlineErrorAlert
+            :message="rowActionError"
+            class="mb-4"
+            test-id="orders-list-row-action-error"
+        />
 
         <v-empty-state v-if="ordersList.length === 0" :title="t('orders-list-page.empty-orders')">
             <template #actions>

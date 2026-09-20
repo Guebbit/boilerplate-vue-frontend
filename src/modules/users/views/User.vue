@@ -19,10 +19,11 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
@@ -105,12 +106,23 @@ const { addMessage } = useNotificationsStore();
 const { adminDisableTwoFactor } = useUsersStore();
 
 /**
+ * This button's own blocked state — the only write action on this page, so a failure renders
+ * through {@link InlineErrorAlert} next to it rather than a toast — see
+ * docs/theory/request-flow.md.
+ */
+const {
+    message: disableTwoFactorError,
+    report: reportDisableTwoFactorError,
+    clear: clearDisableTwoFactorError
+} = useBlockingError();
+
+/**
  * Strips this user's second factor after an explicit confirmation — the one deliberate exception
  * to "prove the factor to remove it", for an owner who has lost both their authenticator and
  * their backup codes. No code is asked for, which is exactly why the confirmation has to say so:
  * every call is audited server-side, but nothing here re-proves it is really them.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the button in place ({@link disableTwoFactorError}).
  */
 const handleDisableTwoFactor = () => {
     if (!id) return;
@@ -118,9 +130,10 @@ const handleDisableTwoFactor = () => {
         .confirm({ message: t('user-target-page.confirm-disable-two-factor'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearDisableTwoFactorError();
             return adminDisableTwoFactor(id)
                 .then(() => addMessage(t('user-target-page.success-disable-two-factor')))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportDisableTwoFactorError(error));
         });
 };
 </script>
@@ -225,15 +238,20 @@ const handleDisableTwoFactor = () => {
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
                     {{ t('user-target-page.button-go-to-list') }}
                 </v-btn>
-                <v-btn
-                    v-if="currentUser"
-                    variant="text"
-                    color="error"
-                    data-test="user-disable-two-factor"
-                    @click="handleDisableTwoFactor"
-                >
-                    {{ t('user-target-page.button-disable-two-factor') }}
-                </v-btn>
+                <div v-if="currentUser" class="flex flex-col gap-2">
+                    <v-btn
+                        variant="text"
+                        color="error"
+                        data-test="user-disable-two-factor"
+                        @click="handleDisableTwoFactor"
+                    >
+                        {{ t('user-target-page.button-disable-two-factor') }}
+                    </v-btn>
+                    <InlineErrorAlert
+                        :message="disableTwoFactorError"
+                        test-id="user-disable-two-factor-error"
+                    />
+                </div>
             </template>
         </ItemDetailLayout>
     </LayoutDefault>

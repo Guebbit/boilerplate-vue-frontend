@@ -29,10 +29,9 @@ import {
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
 
@@ -121,16 +120,28 @@ const {
 );
 
 /**
+ * This submit's own blocked state — a 401 that names no field lands here instead of a toast, so
+ * it stays next to the button the visitor just pressed rather than fading with the toast queue.
+ */
+const {
+    message: loginError,
+    type: loginErrorType,
+    report: reportLoginError,
+    clear: clearLoginError
+} = useBlockingError();
+
+/**
  * Validates the form and authenticates the user.
  *
  * @returns A promise resolving once the outcome settles: a plain session redirects (see
  *  `usePostLoginRedirect`); an account with 2FA armed hands the challenge to the two-factor store
  *  and pushes `TwoFactorChallenge` instead. Invalid input is revealed, announced and focused by
  *  the toolkit before the handler is ever reached; API failures are attached to the field the
- *  server named, or reported as a toast when it named none.
+ *  server named, or blocked in place ({@link loginError}) when it named none.
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearLoginError();
+    return handleSubmit(() =>
         useAuthStore()
             .login(form.value.email, form.value.password, form.value.remember)
             .then((outcome) => {
@@ -145,9 +156,10 @@ const submitForm = () =>
             // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
             .then(() => undefined)
     ).catch((error) => {
-        // A 401 names no field, so it stays a toast. A 422 that names `email` lands under it.
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        // A 401 names no field, so it blocks the form. A 422 that names `email` lands under it.
+        if (!applyServerErrors(error)) reportLoginError(error);
     });
+};
 </script>
 
 <template>
@@ -199,6 +211,12 @@ const submitForm = () =>
                 <v-btn type="submit" color="primary" size="large" block class="mt-4">
                     {{ t('login-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="loginError"
+                    :type="loginErrorType"
+                    class="mt-4"
+                    test-id="login-error"
+                />
             </form>
             <template v-if="oauthProviders.length > 0">
                 <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-70">

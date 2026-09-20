@@ -18,10 +18,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -87,13 +86,26 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
     );
 
 /**
+ * This submit's own blocked state — a spent or unknown token names no field, so it lands here
+ * instead of a toast, next to the button the visitor just pressed.
+ */
+const {
+    message: confirmError,
+    type: confirmErrorType,
+    report: reportConfirmError,
+    clear: clearConfirmError
+} = useBlockingError();
+
+/**
  * Spends the token; success lands on the profile (a live session shows the banner gone) or the
  * login when there is none.
  *
- * @returns A promise resolving once the confirmation settles, reported as a toast.
+ * @returns A promise resolving once the confirmation settles: success is a toast, a failure
+ *  blocks the form in place ({@link confirmError}).
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearConfirmError();
+    return handleSubmit(() =>
         confirmEmailVerification(form.value.token ?? '')
             .then(() => {
                 addMessage(t('verify-email-confirm-page.success'));
@@ -102,7 +114,8 @@ const submitForm = () =>
             // Swallows `router.push`'s resolved value — a failed navigation is the router's own
             // `onError` to report, not this form's. Same note as the reset confirm.
             .then(() => undefined)
-    ).catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => reportConfirmError(error));
+};
 </script>
 
 <template>
@@ -130,6 +143,12 @@ const submitForm = () =>
                 >
                     {{ t('verify-email-confirm-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="confirmError"
+                    :type="confirmErrorType"
+                    class="mt-4"
+                    test-id="verify-email-confirm-error"
+                />
             </form>
         </v-card>
     </LayoutDefault>

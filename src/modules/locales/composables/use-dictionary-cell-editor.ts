@@ -10,7 +10,7 @@ import { omit } from 'lodash-es';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { LocaleCapability, LocaleEntry } from '@types';
 
 /**
@@ -45,6 +45,13 @@ export function useDictionaryCellEditor(
     const { addMessage } = useNotificationsStore();
     const dialogStore = useDialogStore();
     const localesStore = useLocalesStore();
+
+    /**
+     * Only its Faro-reporting half is used here — `cellErrors` below is this composable's own
+     * per-cell inline mechanism, one message per cell rather than the single slot
+     * `useBlockingError` otherwise manages, so its `message`/`type`/`warn`/`clear` go unused.
+     */
+    const { report: reportCellFailure } = useBlockingError();
 
     /**
      * Local draft per cell, so a blur can tell "changed" from "clicked through".
@@ -106,12 +113,13 @@ export function useDictionaryCellEditor(
                 return afterWrite(language.tag);
             })
             .catch((error: unknown) => {
-                // On the cell as well as the toast: the toast is gone in seconds, the cell is not.
+                // On the cell, not a toast: the toast is gone in seconds, the cell is not — Faro
+                // still hears about it, through the same call every other blocked write uses.
                 cellErrors.value = {
                     ...cellErrors.value,
                     [id]: t('locales-dictionary-page.error-save')
                 };
-                notifyErrorMessages(addMessage, error);
+                reportCellFailure(error);
             });
 
     /**

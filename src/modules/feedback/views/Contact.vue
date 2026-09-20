@@ -16,10 +16,9 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
@@ -82,13 +81,25 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm 
     );
 
 /**
+ * This form's own blocked state — the one dedicated submit button the visitor cannot proceed past
+ * until it succeeds.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Submits the form; success empties it for the next message.
  *
- * @returns A promise resolving once the flow settles, reported as a toast.
+ * @returns A promise resolving once the flow settles; a failure blocks the form in place
+ *  ({@link submitError}).
  */
 const submitForm = () =>
-    handleSubmit(() =>
-        submitContact({
+    handleSubmit(() => {
+        clearSubmitError();
+        return submitContact({
             name: form.value.name || undefined,
             email: form.value.email ?? '',
             subject: form.value.subject ?? '',
@@ -97,8 +108,8 @@ const submitForm = () =>
         }).then(() => {
             addMessage(t('contact-page.success'));
             resetForm();
-        })
-    ).catch((error) => notifyErrorMessages(addMessage, error));
+        });
+    }).catch((error) => reportSubmitError(error));
 </script>
 
 <template>
@@ -166,6 +177,11 @@ const submitForm = () =>
                 >
                     {{ t('contact-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="submitError"
+                    class="mt-2"
+                    test-id="contact-submit-error"
+                />
             </form>
         </v-card>
     </LayoutDefault>

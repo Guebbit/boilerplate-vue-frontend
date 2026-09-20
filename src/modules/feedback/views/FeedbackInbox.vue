@@ -20,7 +20,9 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { FeedbackRequestStatus } from '@types';
 import type {
     FeedbackRequestStatus as TFeedbackRequestStatus,
@@ -100,16 +102,30 @@ const handleReset = () => {
 };
 
 /**
+ * The row actions' own blocked state — a status move and a delete share one instance, since
+ * neither has a per-row slot for an alert and the list keeps working either way, the same
+ * reasoning `ProductsList.vue`'s row actions use. A search/reset failure is a different kind of
+ * thing (ambient, the list just hasn't refreshed) and keeps toasting through
+ * {@link notifyErrorMessages} above.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Moves one ticket to a new status.
  *
  * @param requestId - Which ticket.
  * @param status - Its next status.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
+    clearRowActionError();
     updateStatus(requestId, status)
         .then(() => addMessage(t('feedback-inbox-page.success-status')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportRowActionError(error));
 };
 
 /**
@@ -119,16 +135,17 @@ const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
  * @param requestId - Which ticket.
  * @param subject - Named in the confirmation, so declining or accepting is about a specific
  * ticket rather than "the one I last clicked".
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (requestId: string, subject: string) => {
     return useDialogStore()
         .confirm({ message: t('feedback-inbox-page.confirm-delete', { subject }), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return deleteRequest(requestId)
                 .then(() => addMessage(t('feedback-inbox-page.success-delete')))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportRowActionError(error));
         });
 };
 
@@ -185,6 +202,8 @@ onMounted(fetchRequests);
         </v-empty-state>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <InlineErrorAlert :message="rowActionError" test-id="feedback-row-action-error" />
+
             <v-card
                 v-for="request in requests"
                 :key="'feedback-' + request.id"

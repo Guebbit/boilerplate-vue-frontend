@@ -33,10 +33,9 @@ import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import type { ProductTranslationsWrite } from '@types';
@@ -214,15 +213,27 @@ const trackUpload = <T,>(
 ) => track(send, { enabled: !!file });
 
 /**
+ * This form's own blocked state — a create that failed blocks the visitor from proceeding past
+ * this one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a
+ * toast — see docs/theory/request-flow.md.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and creates the product.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
  *  shown and the new product's detail page is opened; on invalid input the errors
- *  are revealed; API failures are reported as toasts, with a per-language 422 also
- *  landing on the tab it names.
+ *  are revealed; API failures block the form in place ({@link submitError}), with a
+ *  per-language 422 also landing on the tab it names.
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() =>
         trackUpload(form.value.imageUpload, (options) =>
             createProduct(
                 {
@@ -246,8 +257,9 @@ const submitForm = () =>
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportSubmitError(error);
     });
+};
 </script>
 
 <template>
@@ -351,6 +363,8 @@ const submitForm = () =>
                 class="mt-2"
             />
             <v-switch v-model="form.active" :label="t('product-create-page.label-active')" />
+
+            <InlineErrorAlert :message="submitError" test-id="product-create-submit-error" />
         </FormCard>
     </LayoutDefault>
 </template>

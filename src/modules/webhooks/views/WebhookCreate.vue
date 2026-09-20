@@ -23,10 +23,9 @@ import { webhookCreateSchema } from '@/modules/webhooks/schemas.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
  * Generics
@@ -91,14 +90,26 @@ const createdSubscriptionId = ref<string>();
 const revealedSecret = ref<string>();
 
 /**
+ * This form's own blocked state — a single dedicated submit, so a failed create blocks it in
+ * place rather than joining a toast queue the visitor may have looked away from.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and creates the subscription. On success the secret-reveal modal takes over
  * the page; the visitor is only sent to the new subscription's detail page once they dismiss it.
  *
  * @returns A promise resolving once the flow settles: on success the reveal modal is shown; on
- *  invalid input the errors are revealed; API failures are reported as toasts.
+ *  invalid input the errors are revealed; an API failure blocks the form in place
+ *  ({@link submitError}).
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() =>
         createSubscription({
             url: form.value.url!,
             description: form.value.description,
@@ -108,7 +119,8 @@ const submitForm = () =>
             createdSubscriptionId.value = created.id;
             revealedSecret.value = created.secret;
         })
-    ).catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => reportSubmitError(error));
+};
 
 /**
  * Leaves the reveal modal and opens the new subscription's detail page.
@@ -169,6 +181,8 @@ const handleSecretDone = () => {
                 :label="t('webhook-create-page.label-event-types')"
                 :error-messages="showErrors ? formErrors.eventTypes : []"
             />
+
+            <InlineErrorAlert :message="submitError" test-id="webhook-create-error" />
         </FormCard>
     </LayoutDefault>
 </template>

@@ -10,6 +10,10 @@ export default {
  * The profile picture panel: a picker that uploads on selection (no separate save step — the
  * picture is not part of the details form below it) and a remove button. Mirrors
  * `modules/users/store.ts`'s `{ imageUpload, ...rest }` split, one call site further.
+ *
+ * Upload and remove both act on the same single picture, so a failure from either one blocks the
+ * same spot: one shared `useBlockingError()`, rendered next to the picker. See
+ * docs/theory/request-flow.md.
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -21,8 +25,9 @@ import {
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
@@ -80,6 +85,16 @@ const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosReques
 const busy = computed(() => uploadingAvatar.value || removingAvatar.value);
 
 /**
+ * This picture's own blocked state — upload and remove share one instance, since both work on
+ * the same single field and there is only one place next to it to show a failure.
+ */
+const {
+    message: avatarError,
+    report: reportAvatarError,
+    clear: clearAvatarError
+} = useBlockingError();
+
+/**
  * Uploads the freshly picked file, validating it first — client-side, for the message rather than
  * the security; the backend's own upload limiter and image pipeline are the real gate.
  *
@@ -87,6 +102,7 @@ const busy = computed(() => uploadingAvatar.value || removingAvatar.value);
  */
 watch(pickedFile, (file) => {
     errorMessage.value = undefined;
+    clearAvatarError();
     if (!file) return;
 
     const parsed = imageUploadSchema.safeParse(file);
@@ -98,7 +114,7 @@ watch(pickedFile, (file) => {
 
     track((options) => updateProfile({ imageUpload: file }, options), { enabled: true })
         .then(() => addMessage(t('profile-page.avatar-success-update')))
-        .catch((error) => notifyErrorMessages(addMessage, error))
+        .catch((error) => reportAvatarError(error))
         .finally(() => {
             pickedFile.value = undefined;
         });
@@ -108,16 +124,17 @@ watch(pickedFile, (file) => {
  * Clears the record's picture after confirmation — `imageUrl: ''` is what the API reads as
  * "remove it"; `undefined` means "not sent", which would leave the stored one alone.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is toasted, a failure blocks the panel in place ({@link avatarError}).
  */
 const handleRemove = () =>
     useDialogStore()
         .confirm({ message: t('profile-page.avatar-confirm-remove'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearAvatarError();
             return updateProfile({ imageUrl: '' })
                 .then(() => addMessage(t('profile-page.avatar-success-remove')))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportAvatarError(error));
         });
 </script>
 
@@ -147,5 +164,7 @@ const handleRemove = () =>
         >
             {{ t('profile-page.avatar-button-remove') }}
         </v-btn>
+
+        <InlineErrorAlert :message="avatarError" class="mt-2" test-id="profile-avatar-error" />
     </div>
 </template>

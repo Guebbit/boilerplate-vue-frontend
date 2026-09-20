@@ -20,8 +20,10 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -140,13 +142,25 @@ const handleSave = (fields: {
 };
 
 /**
+ * The row delete's own blocked state — a single write action behind a confirm dialog, with
+ * nowhere per-row to host an alert; the board keeps working either way, so one alert above it is
+ * where a failure belongs. The dialog's own save stays a toast — see docs/theory/request-flow.md.
+ */
+const {
+    message: deleteError,
+    report: reportDeleteError,
+    clear: clearDeleteError
+} = useBlockingError();
+
+/**
  * Deletes a language and everything translated into it, after a confirmation that names the cost.
  *
  * An ACTIVE row is deactivated first, because the API refuses to delete one — its guard rail;
  * the confirmation here is this page's half. An already-inactive row goes straight out.
  *
  * @param language - The row being destroyed.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
+ *  has finished; a failure blocks the board in place ({@link deleteError}).
  */
 const handleDelete = (language: LocaleCapability) => {
     return useDialogStore()
@@ -159,6 +173,7 @@ const handleDelete = (language: LocaleCapability) => {
         })
         .then((accepted) => {
             if (!accepted) return;
+            clearDeleteError();
             // The API refuses to delete an active language — its guard rail; the confirm above
             // is this page's half — so an active row is deactivated first and an inactive one
             // goes straight out.
@@ -168,7 +183,7 @@ const handleDelete = (language: LocaleCapability) => {
             return deactivated
                 .then(() => localesStore.removeLanguage(language.tag))
                 .then(() => addMessage(t('locales-list-page.success-delete')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportDeleteError(error));
         });
 };
 
@@ -202,6 +217,8 @@ onMounted(() => {
                 {{ t('locales-list-page.button-create') }}
             </v-btn>
         </div>
+
+        <InlineErrorAlert :message="deleteError" class="mb-4" test-id="locales-list-delete-error" />
 
         <v-empty-state
             v-if="!loading && capabilities.length === 0"

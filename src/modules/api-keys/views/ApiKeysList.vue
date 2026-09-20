@@ -27,9 +27,11 @@ import type { ApiKey } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
  * Translation function.
@@ -119,20 +121,34 @@ const statusColor = {
 } as const;
 
 /**
+ * The row action's own blocked state — revoke is the table's only write action, behind a confirm
+ * dialog that has already closed by the time the request answers, so its own row button has
+ * nowhere to host an alert; one lives above the table instead. A search failure is a different
+ * kind of thing (ambient, the table just hasn't refreshed) and keeps toasting through
+ * {@link notifyErrorMessages} above — see docs/theory/request-flow.md.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Revokes a credential after an explicit confirmation.
  *
  * @param apiKey - The credential to revoke.
  * @returns A promise settling once the viewer has answered and, if they accepted, the revoke has
- *  finished; the outcome is reported as a toast.
+ *  finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleRevoke = (apiKey: ApiKey) =>
     useDialogStore()
         .confirm({ message: t('api-keys-list-page.confirm-revoke'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return revokeCredential(apiKey.id)
                 .then(() => addMessage(t('api-keys-list-page.success-revoke')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 </script>
 
@@ -158,6 +174,12 @@ const handleRevoke = (apiKey: ApiKey) =>
                 {{ t('api-keys-list-page.button-create') }}
             </v-btn>
         </div>
+
+        <InlineErrorAlert
+            :message="rowActionError"
+            class="mb-4"
+            test-id="api-keys-list-row-action-error"
+        />
 
         <DataTable
             :headers="tableHeaders"

@@ -10,6 +10,11 @@ export default {
  * Device-sessions panel: lists live refresh tokens as sessions and revokes them one at a time,
  * plus the logout-everywhere button. Revoking the CURRENT session navigates home afterwards,
  * since the API treats that revoke as a logout.
+ *
+ * Revoking one row and logging out everywhere are both write actions on this list with no
+ * dedicated control of their own to host an alert, so they share one `useBlockingError()`
+ * rendered above the list — same split as `products`' `ProductsList.vue`. The list's own load
+ * (`fetchSessions`) stays ambient. See docs/theory/request-flow.md.
  */
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -19,10 +24,11 @@ import { MonitorSmartphone } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The devices panel: every live refresh token as a session, the current one flagged, each
@@ -69,20 +75,33 @@ const { logoutEverywhere } = useAuthStore();
 const revokingId = ref<string>();
 
 /**
+ * The row actions' own blocked state — revoking one session and logging out everywhere share one
+ * instance, since neither has a dedicated control of its own: the list keeps working either way,
+ * so one alert above it is where a failure belongs.
+ */
+const {
+    message: sessionsActionError,
+    report: reportSessionsActionError,
+    clear: clearSessionsActionError
+} = useBlockingError();
+
+/**
  * Revokes one session; leaving through the front door when it was this one.
  *
  * @param sessionId - Handle from the listing.
  * @param current - Whether the caller just logged themselves out.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is toasted, a failure blocks the list in place
+ *  ({@link sessionsActionError}).
  */
 const handleRevoke = (sessionId: string, current: boolean) => {
     revokingId.value = sessionId;
+    clearSessionsActionError();
     return revokeSession(sessionId)
         .then(() => {
             addMessage(t('profile-page.sessions-revoked'));
             if (current) return router.push(routerLinkI18n({ name: 'Logout' }));
         })
-        .catch((error) => notifyErrorMessages(addMessage, error))
+        .catch((error) => reportSessionsActionError(error))
         .finally(() => {
             revokingId.value = undefined;
         });
@@ -91,16 +110,18 @@ const handleRevoke = (sessionId: string, current: boolean) => {
 /**
  * Ends every session after an explicit confirmation, then leaves.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the list in place ({@link sessionsActionError}) — success
+ *  navigates away, so there is nothing left here to toast.
  */
 const handleLogoutEverywhere = () =>
     useDialogStore()
         .confirm({ message: t('profile-page.sessions-confirm-logout-everywhere'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearSessionsActionError();
             return logoutEverywhere()
                 .then(() => router.push(routerLinkI18n({ name: 'Home' })))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportSessionsActionError(error));
         });
 
 onMounted(fetchSessions);
@@ -114,6 +135,12 @@ onMounted(fetchSessions);
         </div>
 
         <p class="mb-4 opacity-80">{{ t('profile-page.sessions-intro') }}</p>
+
+        <InlineErrorAlert
+            :message="sessionsActionError"
+            class="mb-4"
+            test-id="sessions-action-error"
+        />
 
         <v-list v-if="sessions.length > 0" density="compact" data-test="sessions-list">
             <v-list-item

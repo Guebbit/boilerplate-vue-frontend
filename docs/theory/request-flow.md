@@ -115,6 +115,59 @@ All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Ev
 
 `track()` calls are fire-and-forget. Never `await` them. They are no-ops if Umami is not configured.
 
+### Blocked vs ambient failures
+
+A caught error reaches the visitor one of two ways, chosen by what failed, not by the status code:
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 70}}}%%
+flowchart TB
+    Catch(["error caught\nin a .catch()"])
+    Q{"Did this stop a workflow\nthe visitor is doing\nright now? (save, delete,\nrefund, lookup)"}
+    Blocking["useBlockingError()\n-> InlineErrorAlert,\nnext to what it blocked"]
+    Ambient["notifyErrorMessages()\n-> toast"]
+    Faro[("Grafana Faro\ncaptureException")]
+
+    Catch --> Q
+    Q -->|yes| Blocking
+    Q -->|no — a list's own\nsearch/refresh, a\nbackground poll,\na badge or count fetch| Ambient
+    Blocking -->|report\(\), a real failure| Faro
+    Ambient --> Faro
+
+    classDef q fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef out fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef faro fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    class Q q;
+    class Blocking,Ambient out;
+    class Faro faro;
+```
+
+Both pairings report a real failure to Faro alike — `useBlockingError().report()`
+(`src/infrastructure/utils/use-blocking-error.ts`) mirrors `notifyErrorMessages`'s observability
+half exactly. The question is never "is this worth reporting", it is "where does the visitor need
+to see it":
+
+- **Blocking, one control** — a form submit, a save, a payment, a refund, or a lookup with one
+  dedicated button/field (`payments`' `OrderReferenceSearch.vue` is the worked example). The error
+  renders through `InlineErrorAlert` (`src/ui/molecules/InlineErrorAlert.vue`) right next to that
+  control, because a toast can fade before the visitor looks back at what they were doing.
+  `useBlockingError` holds the message; call `report(error)` for a real failure (reaches Faro) or
+  `warn(text)` for an expected absence like a lookup that matched nothing (does not — there is
+  nothing there for an error monitor to see).
+- **Blocking, one shared control** — a list's row actions (delete, hard-delete, resend) behind a
+  confirm dialog (`products`' `ProductsList.vue` is the worked example). Each row's own button has
+  nowhere to host an alert, and the dialog that confirmed the action has already closed by the
+  time the request answers, so every write action on that page shares ONE `useBlockingError()`,
+  rendered as one `InlineErrorAlert` above the table — the same slot `AdminAuditTab.vue` already
+  used for its own load error, repurposed here for a write.
+- **Ambient** — a list's own search/refresh, a background poll, and a badge or count fetch. None
+  of these stopped something the visitor just asked for in this view; the view keeps working
+  either way, so `notifyErrorMessages`'s toast is where the failure belongs.
+
+The status code decides nothing here: a 404 lookup miss and a 500 on the same save both block the
+same workflow, so both are inline (just `warn` vs `report`); a 500 on a background poll still only
+toasts.
+
 ## Why the flow matters
 
 When you change behavior, ask:

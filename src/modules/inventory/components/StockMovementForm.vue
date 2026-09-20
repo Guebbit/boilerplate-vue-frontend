@@ -19,10 +19,9 @@ import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The domain's two counter writes, one form: a RECEIPT (strictly positive — a delivery that
@@ -118,18 +117,31 @@ const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValid
 );
 
 /**
+ * This form's own blocked state — the interesting failure for an adjustment is the 409 (the
+ * correction would leave fewer units than are already reserved), and the server's message already
+ * names the fix, so it renders next to the one submit button rather than joining the toast queue.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates and sends the write, reporting the counters it answered with.
  *
  * The interesting failure for an adjustment is the 409 — the correction would leave fewer units
- * than are already reserved — and the server's message says so; `notifyErrorMessages` carries it
- * through verbatim, because "cancel orders, don't make availability negative" is the fix and the
+ * than are already reserved — and the server's message says so; {@link reportSubmitError} carries
+ * it through verbatim, because "cancel orders, don't make availability negative" is the fix and the
  * copy already names it.
  */
 const submitForm = () =>
-    handleSubmit(({ productId, amount, note }) =>
-        (isReceipt.value
-            ? inventoryStore.receive(productId, amount, note || undefined)
-            : inventoryStore.adjust(productId, amount, note || undefined)
+    handleSubmit(({ productId, amount, note }) => {
+        clearSubmitError();
+        return (
+            isReceipt.value
+                ? inventoryStore.receive(productId, amount, note || undefined)
+                : inventoryStore.adjust(productId, amount, note || undefined)
         )
             .then((level) => {
                 addMessage(
@@ -145,8 +157,8 @@ const submitForm = () =>
                 return productsStore.fetchProducts();
             })
             .then(() => undefined)
-            .catch((error: unknown) => notifyErrorMessages(addMessage, error))
-    );
+            .catch((error: unknown) => reportSubmitError(error));
+    });
 </script>
 
 <template>
@@ -202,6 +214,11 @@ const submitForm = () =>
                     t(isReceipt ? 'inventory-page.button-receipt' : 'inventory-page.button-adjust')
                 }}
             </v-btn>
+            <InlineErrorAlert
+                :message="submitError"
+                class="w-full"
+                :test-id="isReceipt ? 'receipt-error' : 'adjust-error'"
+            />
         </form>
     </v-card>
 </template>

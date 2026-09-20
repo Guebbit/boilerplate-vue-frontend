@@ -12,6 +12,10 @@ export default {
  * factor — collected through one shared dialog, `openCodePrompt` below — on top of the fresh-auth
  * the route already demands, which `ReauthDialog.vue` handles before any of these calls are ever
  * reached.
+ *
+ * A wrong code, or any other failure, blocks that shared dialog in place (`useBlockingError`)
+ * rather than toasting — the dialog itself never closes on failure, so the message stays where
+ * the visitor is looking. See docs/theory/request-flow.md.
  */
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -20,9 +24,10 @@ import { useI18n } from 'vue-i18n';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import TwoFactorEnroll from '@/modules/account/components/TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from '@/modules/account/components/TwoFactorBackupCodes.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Translation function.
@@ -102,6 +107,16 @@ const codePrompt = ref<CodePromptRequest>();
 const codeInput = ref('');
 
 /**
+ * The code prompt's own blocked state — a wrong code, or any other failure, stays in the dialog
+ * for another try rather than joining the toast queue, since the dialog never closes on failure.
+ */
+const {
+    message: codePromptError,
+    report: reportCodePromptError,
+    clear: clearCodePromptError
+} = useBlockingError();
+
+/**
  * Confirms the destructive intent, then opens the code prompt for it.
  *
  * @param request - What is being confirmed and, on accept, what {@link codePrompt} becomes.
@@ -111,6 +126,7 @@ const openCodePrompt = (request: { message: string; next: CodePromptRequest }) =
         .confirm({ message: request.message, color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearCodePromptError();
             codePrompt.value = request.next;
             codeInput.value = '';
         });
@@ -169,19 +185,20 @@ const runCodePromptMutation = (
 /**
  * Submits the code prompt's pending mutation.
  *
- * @returns Nothing; the outcome is reported as a toast (when there is one) and the prompt closes
- *  on success. A wrong code stays open for another try — the confirmation already happened, no
- *  reason to lose it.
+ * @returns Nothing; success is toasted (when there is one) and the prompt closes. A wrong code,
+ *  or any other failure, blocks the dialog in place ({@link codePromptError}) and stays open for
+ *  another try — the confirmation already happened, no reason to lose it.
  */
 const submitCode = () => {
     if (!codePrompt.value || !codeInput.value) return;
     const request = codePrompt.value;
+    clearCodePromptError();
     return runCodePromptMutation(request, codeInput.value)
         .then((toastMessage) => {
             if (toastMessage) addMessage(toastMessage);
             codePrompt.value = undefined;
         })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportCodePromptError(error));
 };
 
 /**
@@ -341,8 +358,13 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                             autocomplete="one-time-code"
                             :label="t('two-factor.label-code')"
                             data-test="two-factor-code-prompt-input"
+                            @update:model-value="clearCodePromptError"
                         />
                     </form>
+                    <InlineErrorAlert
+                        :message="codePromptError"
+                        test-id="two-factor-code-prompt-error"
+                    />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />

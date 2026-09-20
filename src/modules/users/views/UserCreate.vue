@@ -26,10 +26,9 @@ import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
@@ -118,14 +117,26 @@ const trackUpload = <T,>(
 ) => track(send, { enabled: !!file });
 
 /**
+ * This form's own blocked state — a create that failed blocks the visitor from proceeding past
+ * this one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a
+ * toast — see docs/theory/request-flow.md.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and creates the user.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
  *  shown and the new user's detail page is opened; on invalid input the errors
- *  are revealed; API failures are reported as toasts.
+ *  are revealed; API failures block the form in place ({@link submitError}).
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() =>
         trackUpload(form.value.imageUpload, (options) =>
             createUser(
                 {
@@ -144,7 +155,8 @@ const submitForm = () =>
             // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
         })
-    ).catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => reportSubmitError(error));
+};
 </script>
 
 <template>
@@ -191,6 +203,8 @@ const submitForm = () =>
                 <v-text-field v-model="form.role" :label="t('user-create-page.label-role')" />
                 <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
             </div>
+
+            <InlineErrorAlert :message="submitError" test-id="user-create-submit-error" />
         </FormCard>
     </LayoutDefault>
 </template>

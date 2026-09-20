@@ -21,11 +21,10 @@ import { apiKeyCreateSchema } from '@/modules/api-keys/schemas.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { getFirstApiError } from '@/infrastructure/http/envelope.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { MintApiKeyRequest } from '@types';
 
 /**
@@ -93,14 +92,25 @@ const permissionsRefused = (error: unknown): string[] => {
 };
 
 /**
+ * This form's own blocked state — a single dedicated submit, so a failed mint blocks it in place
+ * rather than joining a toast queue the visitor may have looked away from.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and mints the credential. On success the secret-reveal modal takes over the
  * page; a refusal naming specific permission keys lands on the combobox, anything else falls
- * through to `applyServerErrors` and then a toast.
+ * through to `applyServerErrors` and then blocks the form in place ({@link submitError}).
  *
  * @returns A promise resolving once the flow settles.
  */
-const submitForm = () =>
-    handleSubmit(() => {
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() => {
         const data: MintApiKeyRequest = {
             name: form.value.name!,
             permissions: form.value.permissions!,
@@ -125,8 +135,9 @@ const submitForm = () =>
             showFormErrors.value = true;
             return;
         }
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportSubmitError(error);
     });
+};
 
 /**
  * Leaves the reveal modal and returns to the credentials list.
@@ -185,6 +196,8 @@ const handleSecretDone = () => {
                 persistent-hint
                 :error-messages="showFormErrors ? formErrors.expiresAt : []"
             />
+
+            <InlineErrorAlert :message="submitError" test-id="api-key-create-error" />
         </FormCard>
     </LayoutDefault>
 </template>

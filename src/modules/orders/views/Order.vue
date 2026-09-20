@@ -37,11 +37,12 @@ import {
     formatCurrency,
     formatPercent
 } from '@/infrastructure/utils/formatters.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel, TransferInstructionsPanel } from '@/modules/payments';
 import { ShipmentPanel } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Generic translation and notification accessors.
@@ -93,9 +94,20 @@ const router = useRouter();
 const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
 
 /**
+ * The cancel button's own blocked state — its own dedicated control, so a failure blocks it in
+ * place rather than joining the toast queue.
+ */
+const {
+    message: cancelError,
+    report: reportCancelError,
+    clear: clearCancelError
+} = useBlockingError();
+
+/**
  * Cancels this order after an explicit confirmation.
  *
- * @returns Nothing; the outcome is reported as a toast and the page re-renders the new status.
+ * @returns Nothing; success is reported as a toast, a failure blocks the button in place
+ *  ({@link cancelError}), and the page re-renders the new status either way.
  */
 const handleCancel = () => {
     const order = currentOrder.value;
@@ -104,26 +116,38 @@ const handleCancel = () => {
         .confirm({ message: t('order-target-page.confirm-cancel'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearCancelError();
             return cancelOrder(order.id)
                 .then(() => addMessage(t('order-target-page.success-cancel')))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportCancelError(error));
         });
 };
+
+/**
+ * The reorder button's own blocked state — its own dedicated control, separate from cancel.
+ */
+const {
+    message: reorderError,
+    report: reportReorderError,
+    clear: clearReorderError
+} = useBlockingError();
 
 /**
  * Copies this order's lines back into the cart and goes there — products that have since left
  * the catalogue are skipped server-side, and the cart page shows what actually landed.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is reported as a toast and navigates to the cart, a failure blocks
+ *  the button in place ({@link reorderError}).
  */
 const handleReorder = () => {
     if (!currentOrder.value) return;
+    clearReorderError();
     reorder(currentOrder.value.id)
         .then(() => {
             addMessage(t('order-target-page.success-reorder'));
             return router.push(routerLinkI18n({ name: 'Cart' }));
         })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportReorderError(error));
 };
 
 /**
@@ -162,21 +186,33 @@ const orderStatus = computed(() => {
 const invoiceLoading = ref(false);
 
 /**
+ * The invoice actions' own blocked state — download and view are the same {@link withInvoice}
+ * call rendering the PDF two different ways, so one blocked state covers both buttons.
+ */
+const {
+    message: invoiceError,
+    report: reportInvoiceError,
+    clear: clearInvoiceError
+} = useBlockingError();
+
+/**
  * Renders the invoice once and hands the bytes to `action` — the one request either button below
  * makes.
  *
  * @param action - What to do with the fetched PDF.
  * @returns A promise resolving once `action` ran; a missing route id or an empty response (the
- *  toolkit's `fetchAny` declining to run) is a no-op, and a render failure surfaces as a toast.
+ *  toolkit's `fetchAny` declining to run) is a no-op, and a render failure blocks both invoice
+ *  buttons in place ({@link invoiceError}).
  */
 const withInvoice = (action: (blob: Blob) => void) => {
     if (!id) return;
     invoiceLoading.value = true;
+    clearInvoiceError();
     return fetchInvoice(id)
         .then((blob) => {
             if (blob) action(blob);
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+        .catch((error: unknown) => reportInvoiceError(error))
         .finally(() => {
             invoiceLoading.value = false;
         });
@@ -437,6 +473,11 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ShoppingCart :size="16" class="mr-1" aria-hidden="true" />
                     {{ t('order-target-page.button-reorder') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="reorderError"
+                    class="w-full"
+                    test-id="order-reorder-error"
+                />
                 <v-btn
                     v-if="cancellable"
                     color="error"
@@ -447,6 +488,11 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 >
                     {{ t('order-target-page.button-cancel') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="cancelError"
+                    class="w-full"
+                    test-id="order-cancel-error"
+                />
                 <v-btn
                     v-if="currentOrder"
                     color="secondary"
@@ -478,6 +524,11 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <Eye :size="16" class="mr-1" aria-hidden="true" />
                     {{ t('order-target-page.button-view-invoice') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="invoiceError"
+                    class="w-full"
+                    test-id="order-invoice-error"
+                />
                 <span
                     v-if="currentOrder?.invoiceNumber"
                     class="self-center text-sm opacity-75"

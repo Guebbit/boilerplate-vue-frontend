@@ -28,9 +28,11 @@ import { useLocalesStore } from '@/modules/locales/store.ts';
 import { expandEntries } from '@/modules/locales/dictionaries.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import EntryFormDialog from '@/modules/locales/components/EntryFormDialog.vue';
 import EntriesImportDialog from '@/modules/locales/components/EntriesImportDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleEntry, LocaleEntryInput } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -209,14 +211,28 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
 ]);
 
 /**
+ * The row writes' own blocked state — an inline value edit and a confirmed delete alike, since
+ * both are writes with no per-row slot of their own to host an alert; the table keeps working
+ * either way, so one alert above it is where a failure belongs. The list's own search stays a
+ * toast (ambient) — see docs/theory/request-flow.md.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Saves one row's value on blur — if it actually changed.
  *
  * @param entry - The row as the store knows it.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success shows on the row, a failure blocks the list in place
+ *  ({@link rowActionError}).
  */
 const handleValueBlur = (entry: LocaleEntry) => {
     const draft = drafts.value[entry.id] as string | undefined;
     if (draft === undefined || draft === entry.value) return;
+    clearRowActionError();
     return localesStore
         .editEntry(tag.value, entry.id, draft)
         .then(() => {
@@ -227,11 +243,15 @@ const handleValueBlur = (entry: LocaleEntry) => {
             }, 1500);
             return applyLiveOverrides();
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportRowActionError(error));
 };
 
 /**
  * Confirms, then removes one entry and refreshes the page and the running app.
+ *
+ * @param entry - The row to remove.
+ * @returns A promise settling once the viewer has answered and, if they accepted, the removal
+ *  has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (entry: LocaleEntry) => {
     return useDialogStore()
@@ -241,13 +261,14 @@ const handleDelete = (entry: LocaleEntry) => {
         })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return localesStore
                 .removeEntry(tag.value, entry.id)
                 .then(() => {
                     addMessage(t('locale-entries-page.success-delete'));
                     return Promise.all([search(true), applyLiveOverrides()]);
                 })
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 };
 
@@ -275,13 +296,26 @@ const handleImport = (payload: {
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
 /**
+ * The export button's own blocked state — one dedicated control, so a failure blocks it in place
+ * rather than joining the toast queue.
+ */
+const {
+    message: exportError,
+    report: reportExportError,
+    clear: clearExportError
+} = useBlockingError();
+
+/**
  * Downloads the whole language as nested JSON — every tenant, paged to completion.
  *
  * Reads the entries collection rather than the messages route, which is `app`-only and invisible
  * for an inactive language; an export carries what is STORED.
+ *
+ * @returns Nothing; a failure blocks the button in place ({@link exportError}).
  */
-const handleExport = () =>
-    localesStore
+const handleExport = () => {
+    clearExportError();
+    return localesStore
         .fetchAllEntries(tag.value)
         .then((allEntries) => {
             const dictionary = expandEntries(allEntries ?? []);
@@ -292,7 +326,8 @@ const handleExport = () =>
                 `${tag.value}.json`
             );
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportExportError(error));
+};
 </script>
 
 <template>
@@ -337,6 +372,8 @@ const handleExport = () =>
             </v-btn>
         </div>
 
+        <InlineErrorAlert :message="exportError" class="mb-4" test-id="entries-export-error" />
+
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="flex flex-wrap items-center gap-3">
@@ -362,6 +399,12 @@ const handleExport = () =>
                 </div>
             </form>
         </v-card>
+
+        <InlineErrorAlert
+            :message="rowActionError"
+            class="mb-4"
+            test-id="entries-row-action-error"
+        />
 
         <v-empty-state
             v-if="!loading && pageItemList.length === 0"

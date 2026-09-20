@@ -38,10 +38,9 @@ import {
     formatDateTime,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
@@ -187,14 +186,26 @@ const userStatus = computed(() =>
 );
 
 /**
+ * This form's own blocked state — a save that failed blocks the visitor from proceeding past this
+ * one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a toast
+ * — see docs/theory/request-flow.md.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
  * Validates the form and persists the user changes.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the
- *  revealed validation errors when the input is invalid. API failures surface as
- *  a toast. A missing route id is a no-op.
+ *  revealed validation errors when the input is invalid. API failures block the form in place
+ *  ({@link submitError}). A missing route id is a no-op.
  */
-const submitForm = () =>
-    handleSubmit(() => {
+const submitForm = () => {
+    clearSubmitError();
+    return handleSubmit(() => {
         if (!id) return;
         const { email, password, imageUpload } = form.value;
         return trackUpload(imageUpload, (options) =>
@@ -207,8 +218,9 @@ const submitForm = () =>
             addMessage(t('user-edit-page.success-update'));
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportSubmitError(error);
     });
+};
 
 /**
  * Selects and (re)fetches the user whenever the route id changes.
@@ -274,6 +286,8 @@ watchUser(() => id);
                         :progress="uploadProgress"
                         :disabled="isSubmitting"
                     />
+
+                    <InlineErrorAlert :message="submitError" test-id="user-edit-submit-error" />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">

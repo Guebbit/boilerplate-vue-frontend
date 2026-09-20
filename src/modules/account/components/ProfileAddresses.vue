@@ -10,6 +10,11 @@ export default {
  * Address-book panel. Every write chains through the store's fetch-after-write actions and
  * re-renders from the whole list the API answers with, since the fact worth showing after any of
  * them — exactly one default — is a property of the list rather than of the entry that changed.
+ *
+ * The dialog's own save blocks the dialog it happened in (`saveError`); promoting a default and
+ * removing an entry have no dedicated control of their own, so they share one blocked state
+ * (`rowActionError`) above the list instead — same split as `products`' `ProductsList.vue`. See
+ * docs/theory/request-flow.md.
  */
 import { onMounted, ref, useId } from 'vue';
 import { z } from 'zod';
@@ -19,12 +24,11 @@ import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Address, AddressInput } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The address book panel. Every write re-renders from the whole list the API answers with,
@@ -122,11 +126,29 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm } =
     });
 
 /**
+ * The add/edit dialog's own blocked state — a save failure stays inside the dialog it happened
+ * in, since the dialog stays open for another attempt rather than closing on failure.
+ */
+const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+
+/**
+ * The row actions' own blocked state — promoting a default and removing an entry share one
+ * instance, since neither has a dedicated control of its own on the page: the list keeps working
+ * either way, so one alert above it is where a failure belongs.
+ */
+const {
+    message: rowActionError,
+    report: reportRowActionError,
+    clear: clearRowActionError
+} = useBlockingError();
+
+/**
  * Opens the dialog empty, for a new entry.
  */
 const openAdd = () => {
     editingId.value = undefined;
     setForm(emptyForm());
+    clearSaveError();
     dialogOpen.value = true;
 };
 
@@ -146,6 +168,7 @@ const openEdit = (address: Address) => {
         country: address.country,
         phone: address.phone ?? ''
     });
+    clearSaveError();
     dialogOpen.value = true;
 };
 
@@ -153,7 +176,8 @@ const openEdit = (address: Address) => {
  * Saves the dialog: an update when an entry is being edited, an add otherwise. Empty optional
  * fields are dropped rather than sent as empty strings.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is toasted and closes the dialog, a failure blocks it in place
+ *  ({@link saveError}).
  */
 const handleSave = () =>
     handleSubmit((fields) => {
@@ -170,35 +194,36 @@ const handleSave = () =>
                 addMessage(t('profile-page.addresses-saved'));
                 dialogOpen.value = false;
             })
-            .catch((error) => notifyErrorMessages(addMessage, error));
+            .catch((error) => reportSaveError(error));
     });
 
 /**
  * Claims the default slot for one entry.
  *
  * @param address - The entry to promote.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleMakeDefault = (address: Address) => {
-    updateAddress(address.id, { default: true }).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
+    clearRowActionError();
+    updateAddress(address.id, { default: true }).catch((error) => reportRowActionError(error));
 };
 
 /**
  * Removes one entry after an explicit confirmation.
  *
  * @param address - The entry to remove.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is toasted, a failure blocks the list in place
+ *  ({@link rowActionError}).
  */
 const handleRemove = (address: Address) =>
     useDialogStore()
         .confirm({ message: t('profile-page.addresses-confirm-remove'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRowActionError();
             return removeAddress(address.id)
                 .then(() => addMessage(t('profile-page.addresses-removed')))
-                .catch((error) => notifyErrorMessages(addMessage, error));
+                .catch((error) => reportRowActionError(error));
         });
 
 onMounted(fetchAddresses);
@@ -222,6 +247,12 @@ onMounted(fetchAddresses);
                 {{ t('profile-page.addresses-add') }}
             </v-btn>
         </div>
+
+        <InlineErrorAlert
+            :message="rowActionError"
+            class="mb-4"
+            test-id="address-row-action-error"
+        />
 
         <p v-if="addresses.length === 0" class="opacity-70" data-test="addresses-empty">
             {{ t('profile-page.addresses-empty') }}
@@ -364,6 +395,11 @@ onMounted(fetchAddresses);
                         :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
                         autocomplete="tel"
                         type="tel"
+                    />
+                    <InlineErrorAlert
+                        :message="saveError"
+                        class="mb-2"
+                        test-id="address-save-error"
                     />
                     <div class="mt-4 flex justify-end gap-2">
                         <v-btn variant="text" @click="dialogOpen = false">

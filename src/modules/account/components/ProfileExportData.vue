@@ -12,22 +12,20 @@ export default {
  * session and the step-up interceptor prompts for it transparently. The result downloads as a
  * timestamped JSON file rather than rendering anywhere, since a raw personal-data export has no
  * UI worth building for it.
+ *
+ * The button's own blocked state, next to it, replaces the toast on failure — see
+ * docs/theory/request-flow.md.
  */
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
- * Generic translation and notification accessors, plus the store action doing the fetch.
+ * Generic translation accessor, plus the store action doing the fetch.
  */
 const { t } = useI18n();
-
-/**
- * Toast dispatcher, used to report every outcome to the visitor.
- */
-const { addMessage } = useNotificationsStore();
 
 /**
  * Requests the visitor's own data export.
@@ -35,13 +33,23 @@ const { addMessage } = useNotificationsStore();
 const { exportAccountData } = useProfileStore();
 
 /**
+ * This action's own blocked state, next to the button that triggered it.
+ */
+const {
+    message: exportError,
+    report: reportExportError,
+    clear: clearExportError
+} = useBlockingError();
+
+/**
  * Requests the export and saves it as a local JSON file, named by the day the API assembled it.
  *
- * @returns A promise resolving once the download has been triggered; a failed request surfaces
- *  as a toast instead.
+ * @returns A promise resolving once the download has been triggered; a failure blocks in place
+ *  ({@link exportError}).
  */
-const handleExport = () =>
-    exportAccountData()
+const handleExport = () => {
+    clearExportError();
+    return exportAccountData()
         .then((data) => {
             if (!data) return;
             downloadBlob(
@@ -50,7 +58,8 @@ const handleExport = () =>
                 'application/json'
             );
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportExportError(error));
+};
 </script>
 
 <template>
@@ -58,5 +67,7 @@ const handleExport = () =>
         <v-btn variant="tonal" block @click="handleExport">
             {{ t('profile-page.button-export-data') }}
         </v-btn>
+
+        <InlineErrorAlert :message="exportError" class="mt-2" test-id="profile-export-data-error" />
     </v-card>
 </template>

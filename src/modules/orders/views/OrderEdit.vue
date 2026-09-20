@@ -37,10 +37,9 @@ import {
     formatDateTime,
     formatCurrency
 } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Generic utility hooks.
@@ -90,6 +89,16 @@ const overrideTo = ref<OrderStatus>();
 const overrideReason = ref('');
 
 /**
+ * The override door's own blocked state — its own dedicated select/textarea/button, so it
+ * blocks in place rather than joining a toast queue the operator may have looked away from.
+ */
+const {
+    message: overrideError,
+    report: reportOverrideError,
+    clear: clearOverrideError
+} = useBlockingError();
+
+/**
  * Submits the correction, then reloads the order for its new status/actions.
  *
  * @returns A promise resolving once the panel has refreshed. A missing route id or target status
@@ -97,13 +106,14 @@ const overrideReason = ref('');
  */
 const runOverride = () => {
     if (!id || !overrideTo.value) return Promise.resolve();
+    clearOverrideError();
     return overrideStatus(id, overrideTo.value, overrideReason.value)
         .then(() => {
             overrideTo.value = undefined;
             overrideReason.value = '';
             addMessage(t('order-edit-page.override-done'));
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportOverrideError(error));
 };
 
 /**
@@ -168,6 +178,17 @@ const onOfflinePaymentRecorded = () => {
 };
 
 /**
+ * The three money-action buttons' own blocked state — cancel-only and cancel-and-refund are the
+ * same {@link runCancel} call with a different flag, and refund-only sits in the same "actions"
+ * section right beside them, so one blocked state covers all three rather than one per button.
+ */
+const {
+    message: actionsError,
+    report: reportActionsError,
+    clear: clearActionsError
+} = useBlockingError();
+
+/**
  * Cancels the order, with or without returning the money.
  *
  * @param withRefund - Whether the money goes back with the cancellation.
@@ -175,13 +196,14 @@ const onOfflinePaymentRecorded = () => {
  */
 const runCancel = (withRefund: boolean) => {
     if (!id) return Promise.resolve();
+    clearActionsError();
     return cancelOrder(id, withRefund)
         .then(() =>
             addMessage(
                 t(withRefund ? 'order-edit-page.cancel-refund-done' : 'order-edit-page.cancel-done')
             )
         )
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportActionsError(error));
 };
 
 /**
@@ -189,10 +211,12 @@ const runCancel = (withRefund: boolean) => {
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
-const runRefund = () =>
-    refund()
+const runRefund = () => {
+    clearActionsError();
+    return refund()
         .then(() => addMessage(t('order-edit-page.refund-done')))
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => reportActionsError(error));
+};
 
 /**
  * Order edit form model.
@@ -281,14 +305,21 @@ const orderStatus = computed(() => {
 });
 
 /**
+ * The edit form's own blocked state — a failed save blocks this specific form, separate from
+ * the operator's action buttons below it.
+ */
+const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+
+/**
  * Validates the form and persists the order changes.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the
- *  revealed validation errors when the input is invalid. API failures surface as
- *  a toast. A missing route id is a no-op.
+ *  revealed validation errors when the input is invalid. An API failure blocks the form in
+ *  place ({@link formError}). A missing route id is a no-op.
  */
-const submitForm = () =>
-    handleSubmit(() => {
+const submitForm = () => {
+    clearFormError();
+    return handleSubmit(() => {
         if (!id) return;
         return updateOrder(id, {
             status: form.value.status,
@@ -297,8 +328,9 @@ const submitForm = () =>
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportFormError(error);
     });
+};
 
 /**
  * Selects and (re)fetches the order whenever the route id changes. `useOrderRefund` reads the
@@ -377,6 +409,8 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             {{ t('order-edit-page.reset-form') }}
                         </v-btn>
                     </div>
+
+                    <InlineErrorAlert :message="formError" test-id="order-edit-form-error" />
                 </form>
 
                 <!--
@@ -433,6 +467,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             {{ t('order-edit-page.button-cancel-and-refund') }}
                         </v-btn>
                     </div>
+
+                    <InlineErrorAlert
+                        :message="actionsError"
+                        class="mt-3"
+                        test-id="order-edit-actions-error"
+                    />
                 </div>
 
                 <!--
@@ -468,6 +508,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     >
                         {{ t('order-edit-page.button-override') }}
                     </v-btn>
+
+                    <InlineErrorAlert
+                        :message="overrideError"
+                        class="mt-3"
+                        test-id="order-edit-override-error"
+                    />
                 </div>
             </CardDetail>
 

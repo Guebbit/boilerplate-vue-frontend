@@ -20,7 +20,8 @@ import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Heart, Package, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -144,28 +145,51 @@ const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlis
 const outOfStock = computed(() => currentProduct.value?.available === 0);
 
 /**
+ * The add-to-cart button's own blocked state — a failure stops that one action from doing
+ * anything, so it renders through {@link InlineErrorAlert} next to the button rather than a toast
+ * — see docs/theory/request-flow.md.
+ */
+const {
+    message: addToCartError,
+    report: reportAddToCartError,
+    clear: clearAddToCartError
+} = useBlockingError();
+
+/**
+ * The wishlist toggle's own blocked state, independent of {@link addToCartError}: a failed toggle
+ * blocks only that button, not the add-to-cart one beside it.
+ */
+const {
+    message: wishlistError,
+    report: reportWishlistError,
+    clear: clearWishlistError
+} = useBlockingError();
+
+/**
  * Puts one unit in the cart.
  *
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; a failure blocks the button in place ({@link addToCartError}).
  */
 const handleAddToCart = () => {
     if (!currentProduct.value) return;
+    clearAddToCartError();
     upsertCartItem(currentProduct.value.id, 1)
         .then(() => addMessage(t('product-target-page.success-add-to-cart')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportAddToCartError(error));
 };
 
 /**
  * Toggles the heart: saved products leave the wishlist, everything else joins it.
  *
- * @returns Nothing; the outcome is reported as a toast on failure only — the heart itself is
- *  the success feedback.
+ * @returns Nothing; a failure blocks the button in place ({@link wishlistError}) — the heart
+ *  itself is the success feedback.
  */
 const handleToggleWishlist = () => {
     if (!currentProduct.value) return;
     const productId = currentProduct.value.id;
+    clearWishlistError();
     (isSaved(productId) ? removeFromWishlist(productId) : addToWishlist(productId)).catch((error) =>
-        notifyErrorMessages(addMessage, error)
+        reportWishlistError(error)
     );
 };
 
@@ -224,44 +248,49 @@ onMounted(() => {
                 />
             </template>
 
-            <v-card v-if="currentProduct" class="flex flex-wrap items-center gap-2 p-5">
-                <v-btn
-                    color="primary"
-                    data-test="add-to-cart"
-                    :disabled="!isAuth || outOfStock"
-                    @click="handleAddToCart"
-                >
-                    <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
-                    {{
-                        outOfStock
-                            ? t('product-target-page.out-of-stock')
-                            : t('product-target-page.button-add-to-cart')
-                    }}
-                </v-btn>
-                <v-btn
-                    v-if="isAuth"
-                    variant="tonal"
-                    :color="isSaved(currentProduct.id) ? 'secondary' : undefined"
-                    data-test="wishlist-toggle"
-                    :aria-label="
-                        isSaved(currentProduct.id)
-                            ? t('product-target-page.button-unsave-wishlist')
-                            : t('product-target-page.button-save-wishlist')
-                    "
-                    @click="handleToggleWishlist"
-                >
-                    <Heart
-                        :size="18"
-                        class="mr-1"
-                        :fill="isSaved(currentProduct.id) ? 'currentColor' : 'none'"
-                        aria-hidden="true"
-                    />
-                    {{
-                        isSaved(currentProduct.id)
-                            ? t('product-target-page.button-unsave-wishlist')
-                            : t('product-target-page.button-save-wishlist')
-                    }}
-                </v-btn>
+            <v-card v-if="currentProduct" class="flex flex-wrap items-start gap-4 p-5">
+                <div class="flex flex-col gap-2">
+                    <v-btn
+                        color="primary"
+                        data-test="add-to-cart"
+                        :disabled="!isAuth || outOfStock"
+                        @click="handleAddToCart"
+                    >
+                        <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
+                        {{
+                            outOfStock
+                                ? t('product-target-page.out-of-stock')
+                                : t('product-target-page.button-add-to-cart')
+                        }}
+                    </v-btn>
+                    <InlineErrorAlert :message="addToCartError" test-id="add-to-cart-error" />
+                </div>
+                <div v-if="isAuth" class="flex flex-col gap-2">
+                    <v-btn
+                        variant="tonal"
+                        :color="isSaved(currentProduct.id) ? 'secondary' : undefined"
+                        data-test="wishlist-toggle"
+                        :aria-label="
+                            isSaved(currentProduct.id)
+                                ? t('product-target-page.button-unsave-wishlist')
+                                : t('product-target-page.button-save-wishlist')
+                        "
+                        @click="handleToggleWishlist"
+                    >
+                        <Heart
+                            :size="18"
+                            class="mr-1"
+                            :fill="isSaved(currentProduct.id) ? 'currentColor' : 'none'"
+                            aria-hidden="true"
+                        />
+                        {{
+                            isSaved(currentProduct.id)
+                                ? t('product-target-page.button-unsave-wishlist')
+                                : t('product-target-page.button-save-wishlist')
+                        }}
+                    </v-btn>
+                    <InlineErrorAlert :message="wishlistError" test-id="wishlist-toggle-error" />
+                </div>
                 <p v-if="!isAuth" class="text-sm opacity-70">
                     {{ t('product-target-page.login-to-buy') }}
                 </p>

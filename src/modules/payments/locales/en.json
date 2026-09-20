@@ -46,7 +46,8 @@
     "order-reference-search": {
         "label-reference": "RF reference",
         "hint-reference": "Paste the RF code from a bank statement line to find the order it pays.",
-        "button-search": "Find order"
+        "button-search": "Find order",
+        "error-not-found": "No order matches this reference."
     },
     "record-offline-payment-form": {
         "label-method": "How it arrived",

@@ -46,7 +46,8 @@
     "order-reference-search": {
         "label-reference": "Riferimento RF",
         "hint-reference": "Incolla il codice RF da una riga dell'estratto conto per trovare l'ordine a cui si riferisce.",
-        "button-search": "Trova ordine"
+        "button-search": "Trova ordine",
+        "error-not-found": "Nessun ordine corrisponde a questo riferimento."
     },
     "record-offline-payment-form": {
         "label-method": "Come è arrivato",

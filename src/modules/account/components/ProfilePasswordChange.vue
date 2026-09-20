@@ -10,6 +10,9 @@ export default {
  * Collapsible live-password-change form: a zod schema built once (with a `superRefine` for the
  * confirm-match check) feeds `useStructureFormValidation`, and the toggle keeps the profile page from opening
  * with three forms visible at once.
+ *
+ * A rejected submit (e.g. a wrong current password) blocks the form in place
+ * (`useBlockingError`) instead of toasting — see docs/theory/request-flow.md.
  */
 import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -17,10 +20,9 @@ import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersPasswordSchema } from '@/modules/users';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The live password change: proves the current password, no email round-trip — unlike the reset
@@ -96,16 +98,28 @@ const {
 );
 
 /**
+ * This form's own blocked state — a wrong current password or any other failure stays on the
+ * form instead of joining the toast queue.
+ */
+const {
+    message: passwordChangeError,
+    report: reportPasswordChangeError,
+    clear: clearPasswordChangeError
+} = useBlockingError();
+
+/**
  * Submits the password change — the current password is the proof, so a wrong one comes back
  * as a validation error from the API rather than a silent success.
  *
- * @returns A promise resolving once the change settles, reported as a toast.
+ * @returns A promise resolving once the change settles; success is toasted, a failure blocks the
+ *  form in place ({@link passwordChangeError}).
  */
 const submitPasswordChange = () =>
     // `handleSubmit` is the gate: an invalid form shows its messages and focuses the first one
     // rather than sitting behind a button that cannot be pressed.
-    handlePasswordSubmit(({ currentPassword, password, passwordConfirm }) =>
-        changePassword(currentPassword, password, passwordConfirm)
+    handlePasswordSubmit(({ currentPassword, password, passwordConfirm }) => {
+        clearPasswordChangeError();
+        return changePassword(currentPassword, password, passwordConfirm)
             .then(() => {
                 addMessage(t('profile-page.success-password-change'));
                 passwordForm.value.currentPassword = '';
@@ -113,8 +127,8 @@ const submitPasswordChange = () =>
                 passwordForm.value.passwordConfirm = '';
                 showChangePassword.value = false;
             })
-            .catch((error) => notifyErrorMessages(addMessage, error))
-    );
+            .catch((error) => reportPasswordChangeError(error));
+    });
 </script>
 
 <template>
@@ -169,6 +183,12 @@ const submitPasswordChange = () =>
             <v-btn type="submit" color="primary" class="mt-2" data-test="submit-password-change">
                 {{ t('profile-page.button-submit-password') }}
             </v-btn>
+
+            <InlineErrorAlert
+                :message="passwordChangeError"
+                class="mt-2"
+                test-id="password-change-error"
+            />
         </form>
     </v-expand-transition>
 </template>

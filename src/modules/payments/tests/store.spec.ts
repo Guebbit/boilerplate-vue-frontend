@@ -282,15 +282,29 @@ describe('findOrderByReference', () => {
 
     /**
      * A malformed or an unmatched reference both answer 404, indistinguishably (the API's own
-     * choice, so a wrong-but-close code confirms nothing) — this store rejects rather than
-     * absorbing it, unlike `fetchPaymentForOrder`'s 404, since there is no sensible "found
-     * nothing" default for a lookup the caller is about to navigate on.
+     * choice, so a wrong-but-close code confirms nothing) — read the same way
+     * `fetchPaymentForOrder` reads its own 404, as an answer rather than a failure.
      */
-    it('lets a 404 through rather than resolving undefined', () => {
+    it('reads a 404 as "no such order", not as a crash', () => {
         const store = usePaymentsStore();
 
-        return expect(store.findOrderByReference('not-a-real-reference')).rejects.toMatchObject({
-            status: 404
+        return store.findOrderByReference('not-a-real-reference').then((order) => {
+            expect(order).toBeUndefined();
+        });
+    });
+
+    /**
+     * The other half of "absence is an answer": only 404 is. A 500 must reach the caller, or a
+     * transient outage renders as "no order matches this reference" instead of the real failure.
+     */
+    it('lets any other failure through instead of calling it "no such order"', () => {
+        responses['GET /payments/order-by-reference'] = new Error('Internal Server Error');
+        const store = usePaymentsStore();
+
+        return expect(
+            store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
+        ).rejects.toMatchObject({
+            status: 500
         });
     });
 });

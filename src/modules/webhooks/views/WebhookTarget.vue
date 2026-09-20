@@ -19,9 +19,10 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { Webhook } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -118,20 +119,42 @@ const revealedSecret = ref<string>();
 const busy = ref(false);
 
 /**
+ * The rotate-secret button's own blocked state — its own dedicated control, so a failure blocks
+ * it in place rather than joining a toast queue the visitor may have looked away from.
+ */
+const {
+    message: rotateSecretError,
+    report: reportRotateSecretError,
+    clear: clearRotateSecretError
+} = useBlockingError();
+
+/**
  * Mints a new secret onto this subscription's ring and opens the reveal modal.
  */
 const handleRotateSecret = () => {
     if (!id) return;
+    clearRotateSecretError();
     busy.value = true;
     return rotateSecret(id)
         .then((updated) => {
             if (updated?.newSecret) revealedSecret.value = updated.newSecret;
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+        .catch((error: unknown) => reportRotateSecretError(error))
         .finally(() => {
             busy.value = false;
         });
 };
+
+/**
+ * The secrets table's own blocked state — each row's own remove button has nowhere to host an
+ * alert, and the confirm dialog has already closed by the time the request answers, so every
+ * removal shares one instance rendered above the table.
+ */
+const {
+    message: removeSecretError,
+    report: reportRemoveSecretError,
+    clear: clearRemoveSecretError
+} = useBlockingError();
 
 /**
  * Drops one secret from the ring after an explicit confirmation.
@@ -144,15 +167,26 @@ const handleRemoveSecret = (secretId: string) => {
         .confirm({ message: t('webhook-target-page.confirm-remove-secret'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearRemoveSecretError();
             busy.value = true;
             return removeSecret(id, secretId)
                 .then(() => addMessage(t('webhook-target-page.success-remove-secret')))
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+                .catch((error: unknown) => reportRemoveSecretError(error))
                 .finally(() => {
                     busy.value = false;
                 });
         });
 };
+
+/**
+ * The page-level delete button's own blocked state — its own dedicated control, distinct from
+ * the secret-ring actions above.
+ */
+const {
+    message: deleteError,
+    report: reportDeleteError,
+    clear: clearDeleteError
+} = useBlockingError();
 
 /**
  * Deletes this subscription after an explicit confirmation, then returns to the list — there is
@@ -164,12 +198,13 @@ const handleDelete = () => {
         .confirm({ message: t('webhook-target-page.confirm-delete'), color: 'error' })
         .then((accepted) => {
             if (!accepted) return;
+            clearDeleteError();
             return deleteSubscription(id)
                 .then(() => {
                     addMessage(t('webhook-target-page.success-delete'));
                     void router.push(routerLinkI18n({ name: 'WebhooksList' }));
                 })
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportDeleteError(error));
         });
 };
 </script>
@@ -263,6 +298,12 @@ const handleDelete = () => {
                     </h3>
                     <p class="mt-1 mb-4 opacity-75">{{ t('webhook-target-page.secrets-intro') }}</p>
 
+                    <InlineErrorAlert
+                        :message="removeSecretError"
+                        class="mb-3"
+                        test-id="webhook-target-remove-secret-error"
+                    />
+
                     <v-table density="comfortable">
                         <thead>
                             <tr>
@@ -303,6 +344,12 @@ const handleDelete = () => {
                     >
                         {{ t('webhook-target-page.button-rotate-secret') }}
                     </v-btn>
+
+                    <InlineErrorAlert
+                        :message="rotateSecretError"
+                        class="mt-3"
+                        test-id="webhook-target-rotate-secret-error"
+                    />
                 </div>
             </CardDetail>
 
@@ -353,6 +400,11 @@ const handleDelete = () => {
                 >
                     {{ t('webhook-target-page.button-delete') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="deleteError"
+                    class="w-full"
+                    test-id="webhook-target-delete-error"
+                />
             </template>
         </ItemDetailLayout>
     </LayoutDefault>

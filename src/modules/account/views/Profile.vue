@@ -32,10 +32,9 @@ import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAcco
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Translation function, and the currently active locale code.
@@ -180,11 +179,23 @@ const applyLanguagePreference = (saved?: string | null) =>
         : Promise.resolve();
 
 /**
+ * This save's own blocked state — a failed `PUT /account` lands here instead of a toast, next to
+ * the button the visitor just pressed.
+ */
+const {
+    message: saveError,
+    type: saveErrorType,
+    report: reportSaveError,
+    clear: clearSaveError
+} = useBlockingError();
+
+/**
  * Validates and saves the profile changes — the fields a user owns. Role and account state
  * belong to the admin endpoints, and the password to its own flow below.
  *
- * @returns A promise resolving once the update settles, reported as a toast; on
- *  invalid input it returns early and reveals the validation errors.
+ * @returns A promise resolving once the update settles: success is a toast, a failure blocks the
+ *  form in place ({@link saveError}); on invalid input it returns early and reveals the
+ *  validation errors.
  */
 const submitForm = () => {
     // `revealErrors` is the whole of it: show the messages, focus the first bad field, say so.
@@ -192,6 +203,7 @@ const submitForm = () => {
     // Valid but unchanged. There is nothing to save and nothing to complain about — the button
     // is disabled in this state, so only a keyboard submit reaches here.
     if (!isDirty.value) return;
+    clearSaveError();
     return updateProfile({
         email: form.value.email,
         username: form.value.username,
@@ -210,7 +222,7 @@ const submitForm = () => {
             // preference the server actually accepted.
             return applyLanguagePreference(profile.value?.locale);
         })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => reportSaveError(error));
 };
 </script>
 
@@ -269,6 +281,12 @@ const submitForm = () => {
                         {{ t('profile-page.reset-form') }}
                     </v-btn>
                 </div>
+                <InlineErrorAlert
+                    :message="saveError"
+                    :type="saveErrorType"
+                    class="mt-4"
+                    test-id="profile-form-error"
+                />
             </form>
 
             <ProfileRole />

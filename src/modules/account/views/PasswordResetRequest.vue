@@ -17,10 +17,9 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { usersSchema } from '@/modules/users';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -64,20 +63,34 @@ const {
 });
 
 /**
+ * This submit's own blocked state — an API failure that names no field lands here instead of a
+ * toast, so it stays next to the button the visitor just pressed.
+ */
+const {
+    message: requestError,
+    type: requestErrorType,
+    report: reportRequestError,
+    clear: clearRequestError
+} = useBlockingError();
+
+/**
  * Validates the email and asks the backend for a reset token.
  *
  * @returns A promise resolving once the flow settles: on success a toast
  *  confirms the email was sent. Invalid input is revealed, announced and focused by the toolkit
- *  before the handler runs; API failures land on the field the server named, or as a toast.
+ *  before the handler runs; API failures land on the field the server named, or block the form in
+ *  place ({@link requestError}).
  */
-const submitForm = () =>
-    handleSubmit(() =>
+const submitForm = () => {
+    clearRequestError();
+    return handleSubmit(() =>
         requestPasswordReset(form.value.email!).then(() => {
             addMessage(t('password-reset-request-page.success'));
         })
     ).catch((error) => {
-        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+        if (!applyServerErrors(error)) reportRequestError(error);
     });
+};
 </script>
 
 <template>
@@ -104,6 +117,12 @@ const submitForm = () =>
                 >
                     {{ t('password-reset-request-page.button-submit') }}
                 </v-btn>
+                <InlineErrorAlert
+                    :message="requestError"
+                    :type="requestErrorType"
+                    class="mt-4"
+                    test-id="password-reset-request-error"
+                />
             </form>
             <div class="mt-4 flex justify-center">
                 <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">

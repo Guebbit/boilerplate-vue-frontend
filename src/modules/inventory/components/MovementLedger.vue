@@ -22,11 +22,12 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { StockMovementReason } from '@types';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * Every movement newest first, with its why. The sweep is here too: releasing stale holds is a
@@ -164,6 +165,18 @@ const focusProduct = (productId: string) => {
 defineExpose({ focusProduct });
 
 /**
+ * The sweep's own blocked state — the confirm dialog that gates it has already closed by the time
+ * the request answers, and this table's own read keeps working regardless, so the failure renders
+ * as one alert above it rather than a toast — the same reasoning `ProductsList.vue`'s row actions
+ * use for a write behind a confirm.
+ */
+const {
+    message: sweepError,
+    report: reportSweepError,
+    clear: clearSweepError
+} = useBlockingError();
+
+/**
  * Expires every stale hold. Idempotent server-side, so the confirm is about intent, not danger —
  * the orders behind the released holds get cancelled, and that is worth a deliberate click.
  */
@@ -172,12 +185,13 @@ const handleSweep = () =>
         .confirm({ message: t('inventory-page.confirm-sweep'), color: 'warning' })
         .then((accepted) => {
             if (!accepted) return;
+            clearSweepError();
             return inventoryStore
                 .sweep()
                 .then((expired) =>
                     addMessage(t('inventory-page.success-sweep', { expired: expired ?? 0 }))
                 )
-                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+                .catch((error: unknown) => reportSweepError(error));
         });
 
 onMounted(() => {
@@ -226,6 +240,8 @@ onMounted(() => {
             {{ t('inventory-page.button-sweep') }}
         </v-btn>
     </div>
+
+    <InlineErrorAlert :message="sweepError" class="mb-4" test-id="sweep-error" />
 
     <v-empty-state v-if="movements.length === 0" :title="t('inventory-page.empty')">
         <template #media>
