@@ -41,7 +41,7 @@
         "label-reference": "Reference",
         "button-copy-iban": "Copy IBAN",
         "button-copy-reference": "Copy reference",
-        "hint-reference": "Include the reference in your transfer's description, so we can match your payment to this order."
+        "hint-reference": "Write this reference in your transfer's description exactly as shown, so we can match your payment to this order."
     },
     "order-reference-search": {
         "label-reference": "RF reference",

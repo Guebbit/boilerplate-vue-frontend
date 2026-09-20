@@ -53,11 +53,11 @@ const reference = ref('');
  * @returns A promise resolving once the search has settled, one way or another.
  */
 const search = () => {
-    const ref = reference.value.trim();
-    if (!ref || paymentsStore.loading) return Promise.resolve();
+    const typed = reference.value.trim();
+    if (!typed || paymentsStore.loading) return Promise.resolve();
 
     return paymentsStore
-        .findOrderByReference(ref)
+        .findOrderByReference(typed)
         .then((order) => {
             if (!order) return;
             reference.value = '';

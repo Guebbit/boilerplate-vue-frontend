@@ -9,7 +9,8 @@ export default {
  * @module
  * Orders list/search page. Wires the store's paginated search to a filter
  * form and a `DataTable`, with per-row view/edit/delete/hard-delete actions
- * gated on the signed-in role.
+ * gated on the signed-in role. The RF-reference lookup beside it is `payments`' own
+ * `OrderReferenceSearch`, mounted here rather than reimplemented: the page stays a list.
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -198,6 +199,7 @@ const handleHardDelete = (orderId: string) =>
 <template>
     <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
         <OrderReferenceSearch v-if="session.can('create', 'Payment')" />
+
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">

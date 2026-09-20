@@ -28,6 +28,8 @@ describe('Order reference search', () => {
         cy.get('[data-test=row-view]').first().click();
 
         // ── The order page shows the reference the checkout froze ───────────────────
+        // Read as displayed, i.e. grouped in 4s — the API tolerates those spaces, so this walks
+        // the same paste a customer would make rather than an exact-value round-trip.
         cy.get('[data-test=transfer-instructions-panel]').should('exist');
         cy.get('[data-test=transfer-reference]')
             .invoke('text')

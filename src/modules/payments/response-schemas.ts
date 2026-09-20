@@ -31,8 +31,8 @@ export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetPaymentByOrderResponse
     },
     {
-        // A literal segment, not `/payments/order/{id}` — no `[^/]+` wildcard sits between
-        // `order` and `by-reference`, so the two patterns cannot collide regardless of order.
+        // `order-by-reference` is one literal path segment, not `order/{id}` — the `[^/]+` row
+        // above needs a slash after `order` that this URL never has, so the two cannot collide.
         method: 'GET',
         pattern: /^\/payments\/order-by-reference$/,
         schema: schemas.GetOrderByReferenceResponse

@@ -18,7 +18,10 @@ import { useOrdersStore } from './store';
  * creates an order), but a module's imports are what it depends on, and the import here is
  * order-page → cart store. Two more edges are `published-language`, the cheapest kind: it mounts
  * `ShipmentPanel` and `PaymentPanel`, self-contained components that render a parcel and a payment
- * without this module ever touching a shipment or a provider.
+ * without this module ever touching a shipment or a provider. `OrderEdit.vue` mounts
+ * `RecordOfflinePaymentForm` and `OrdersList.vue` mounts `OrderReferenceSearch` on the same terms:
+ * the RF-reference lookup and the 404 it has to read are the component's own business, on
+ * `payments`' side of the barrel, so this module gains no edge to that endpoint.
  *
  * The customer’s history and the admin status screens. Where the shop’s outcome becomes
  * visible — but the invariants that decide a status live behind the API, not here.
