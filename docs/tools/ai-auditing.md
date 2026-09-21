@@ -50,19 +50,38 @@ Two consequences, both non-negotiable:
 | `tests/audit/accessibility-manual.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
 
 The first three take one argument — a module (`orders`), a path, or `--diff` for whatever the
-working tree touched — and are the only part of this kept byte-identical with the sibling repo
-(`boilerplate-node-backend`): they are repo-agnostic by design, so a change worth making to one is
-worth copying to the other. Nothing enforces it: they are not in `SHARED_FILES`, whose rule is that
-a shared file must be owned by one side, and these are co-authored. Copy by hand, and check with
-`diff` when in doubt.
+working tree touched. `accessibility-manual.md` takes the same shape but defaults an empty scope to
+the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
+still a gap.
 
-`accessibility-manual.md` takes the same argument shape but defaults an empty scope to the **whole
-repo**, not the touched modules — an accessibility gap in an untouched component is still a gap.
-It is deliberately **not** part of the byte-identical set: it audits UI/UX judgement calls that
-have no backend equivalent, so copying it there would be dead weight.
+### Each repo keeps the prompts its own stack needs
 
-This page is the opposite: deliberately per-repo. It names this repo's own tools, its own `docs/`
-count and its own findings, so the two copies are _expected_ to differ and must not be reconciled.
+The two repos do **not** hold one set, and no longer try to. `accessibility-manual.md` audits UI/UX
+judgement calls with no backend equivalent; the backend's own
+`boilerplate-node-backend/tests/audit/reachability.md` and
+`boilerplate-node-backend/tests/audit/rate-limit-keys.md` reason about a mounted Express request
+path and have no counterpart here.
+
+Only `spec-drift.md`, `spec-gaps.md` and `suite-bloat.md` exist on both sides, because what they
+ask — does the test agree with the spec, is anything uncovered, is anything redundant — is about
+specs and suites rather than about a runtime.
+
+Nothing keeps even those three in step, and nothing should try. None is in `SHARED_FILES`, whose
+rule is that a shared file must be owned by one side and regenerated. Improve one where you find
+it; carry the improvement across when it applies, and expect the two to drift in between. Reading
+an audit prompt as a spec for its sibling is the mistake to avoid — it is a prompt, and the copy in
+the other repo has its own history.
+
+**There is deliberately no compliance prompt here.** The registry
+(`boilerplate-node-backend/tests/audit/compliance-rules.yaml`) and both prompts that read it live
+in the backend, once — `boilerplate-node-backend/tests/audit/compliance-backend.md` audits that
+repo, and `boilerplate-node-backend/tests/audit/compliance-frontend.md` runs from there against
+**this** checkout. So a rule spanning both repos, like the mandatory signup-consent checkbox, has
+exactly one home and no second copy to drift from. To audit this repo's compliance half, run
+`/audit:compliance-frontend` from the backend.
+
+This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
+its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
 
 ### Naming the scope
 
