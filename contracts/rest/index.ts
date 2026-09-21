@@ -2310,7 +2310,11 @@ export interface CartResponseEnvelope {
 
 export interface UpsertCartItemRequest {
     productId: Id;
-    /** @minimum 1 */
+    /**
+     * Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
+     * @minimum 1
+     * @maximum 999
+     */
     quantity: number;
 }
 
@@ -2320,7 +2324,11 @@ export interface RemoveCartItemRequest {
 
 export interface UpdateCartItemByIdRequest {
     productId?: Id;
-    /** @minimum 1 */
+    /**
+     * Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
+     * @minimum 1
+     * @maximum 999
+     */
     quantity: number;
 }
 
@@ -3081,6 +3089,16 @@ export type NotFoundResponse = ErrorResponse;
  * The request conflicts with the current state of the resource
  */
 export type ConflictResponse = ErrorResponse;
+
+/**
+ * The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
+ */
+export type PayloadTooLargeResponse = ErrorResponse;
+
+/**
+ * The request body declares a character set or a content encoding the body parser cannot read. Refused before any route runs, like `413` above — a body whose content-type simply matches no parser is NOT this: it reaches the route, which answers whatever it says about a request missing every field.
+ */
+export type UnsupportedMediaTypeResponse = ErrorResponse;
 
 /**
  * The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.

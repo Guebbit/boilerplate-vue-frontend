@@ -5220,10 +5220,17 @@ export const GetCartResponse = zod.strictObject({
  * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
  * @summary Add/Edit cart item
  */
+export const upsertCartItemBodyQuantityMax = 999;
 
 export const UpsertCartItemBody = zod.strictObject({
     productId: zod.string().describe('Resource identifier'),
-    quantity: zod.number().min(1)
+    quantity: zod
+        .number()
+        .min(1)
+        .max(upsertCartItemBodyQuantityMax)
+        .describe(
+            'Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.'
+        )
 });
 
 export const upsertCartItemResponseDataSummaryItemsCountMin = 0;
@@ -5352,9 +5359,17 @@ export const UpdateCartItemByIdParams = zod.strictObject({
     productId: zod.string().describe('Product identifier')
 });
 
+export const updateCartItemByIdBodyQuantityMax = 999;
+
 export const UpdateCartItemByIdBody = zod.strictObject({
     productId: zod.string().optional().describe('Resource identifier'),
-    quantity: zod.number().min(1)
+    quantity: zod
+        .number()
+        .min(1)
+        .max(updateCartItemByIdBodyQuantityMax)
+        .describe(
+            'Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.'
+        )
 });
 
 export const updateCartItemByIdResponseDataSummaryItemsCountMin = 0;
