@@ -21,6 +21,7 @@ import {
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
+    confirmEmailChange as apiConfirmEmailChange,
     updateUserById as apiUpdateUserById,
     exportAccountData as apiExportAccountData
 } from '@api';
@@ -284,6 +285,22 @@ export const useProfileStore = defineStore('accountProfile', () => {
         );
 
     /**
+     * Spends the emailed email-change token — the other half of `updateProfile`'s `pendingEmail`
+     * flow, proving the NEW address rather than the account's original one. Public, like
+     * {@link confirmEmailVerification}: the link arrives by email and the visitor following it is
+     * not necessarily signed into the session that requested the change.
+     *
+     * @param token - One-time token from the email-change link.
+     * @returns A promise resolving once the address has swapped in.
+     */
+    const confirmEmailChange = (token: string) =>
+        fetchAny(() =>
+            apiConfirmEmailChange({ token }).then(() =>
+                session.isAuth ? fetchProfile(true).then(() => undefined) : undefined
+            )
+        );
+
+    /**
      * Drops the cached record and the session it belongs to. Used once the account itself is
      * gone — a cache that survived would let a stale profile flash before the guard redirects.
      */
@@ -357,6 +374,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         changePassword,
         requestEmailVerification,
         confirmEmailVerification,
+        confirmEmailChange,
         requestAccountDelete,
         confirmAccountDelete,
         exportAccountData

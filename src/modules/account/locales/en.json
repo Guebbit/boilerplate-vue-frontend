@@ -182,6 +182,14 @@
         "button-submit": "Verify my email",
         "success": "Email address verified."
     },
+    "email-change-confirm-page": {
+        "page-title": "Confirm email change",
+        "intro": "Confirm your new email address by spending the one-time link from your inbox.",
+        "label-token": "Confirmation token",
+        "token-required": "The confirmation token is required",
+        "button-submit": "Confirm my new email",
+        "success": "Email address changed."
+    },
     "oauth": {
         "divider": "or",
         "continue-with": "Continue with {provider}",

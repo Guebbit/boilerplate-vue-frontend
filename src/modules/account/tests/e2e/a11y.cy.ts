@@ -11,7 +11,7 @@ import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
 /*
- * The three confirm pages take a one-time token from the email link. A token the demo outbox
+ * The four confirm pages take a one-time token from the email link. A token the demo outbox
  * issued is spent by the flow specs and cannot be minted from a sweep, so these are audited with
  * a token nobody issued: the page renders its form (token prefilled from the query, the rest of
  * the fields empty) exactly as it does for a real link, and only the submit would differ. That
@@ -27,6 +27,7 @@ sweepA11y('account — guest', [
     ['password reset confirm', `/en/password-reset/confirm?token=${UNISSUED_TOKEN}`],
     ['account delete confirm', `/en/account-delete/confirm?token=${UNISSUED_TOKEN}`],
     ['verify email confirm', `/en/verify-email/confirm?token=${UNISSUED_TOKEN}`],
+    ['email change confirm', `/en/email-change/confirm?token=${UNISSUED_TOKEN}`],
     // The success path redirects immediately and renders nothing of its own, same as `Logout` —
     // only the error state (a card plus a link back to login) is a page worth auditing.
     ['oauth callback, error', '/en/oauth/callback?error=access_denied'],

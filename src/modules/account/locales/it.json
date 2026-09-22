@@ -182,6 +182,14 @@
         "button-submit": "Verifica la mia email",
         "success": "Indirizzo email verificato."
     },
+    "email-change-confirm-page": {
+        "page-title": "Conferma cambio email",
+        "intro": "Conferma il tuo nuovo indirizzo email utilizzando il link monouso ricevuto via email.",
+        "label-token": "Token di conferma",
+        "token-required": "Il token di conferma è obbligatorio",
+        "button-submit": "Conferma la mia nuova email",
+        "success": "Indirizzo email modificato."
+    },
     "oauth": {
         "divider": "oppure",
         "continue-with": "Continua con {provider}",

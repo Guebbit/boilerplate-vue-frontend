@@ -80,6 +80,7 @@ beforeEach(() => {
         // Carries the server's resend cooldown, which the banner counts down — see `resendAfter`.
         'POST /account/verify-request': orvalEnvelope({ resendAfter: 60 }),
         'POST /account/verify-confirm': orvalEnvelope(),
+        'POST /account/email-change-confirm': orvalEnvelope(),
         // Every collection is an array the fixture is free to leave empty; only `exportedAt` and
         // `profile` are required scalars on `AccountExportResponse`.
         'POST /account/export': orvalEnvelope({
@@ -364,6 +365,27 @@ describe('the self-service actions', () => {
                 // Sorted: the rules are fetched without being awaited — a shell that blocked on
                 // learning what to hide would be worse than one that hides too much for a moment
                 // — so which of the two lands first is not a fact worth pinning.
+                expect(requestedUrls().slice(-2).toSorted()).toEqual([
+                    '/account',
+                    '/account/abilities'
+                ]);
+            });
+    });
+
+    it('confirmEmailChange refetches the profile only for a live session', () => {
+        const profile = useProfileStore();
+        // Guest first: spend a token with no session — no profile call may follow. Same shape as
+        // confirmEmailVerification above — the two prove different tokens, never each other's.
+        return profile
+            .confirmEmailChange('a-token')
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/account/email-change-confirm']);
+            })
+            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => profile.confirmEmailChange('a-token'))
+            .then(() => {
+                // Authenticated: the freshly swapped-in address is pulled back in, and the rules
+                // that go with it follow — same sorted-tail reasoning as the verification case.
                 expect(requestedUrls().slice(-2).toSorted()).toEqual([
                     '/account',
                     '/account/abilities'

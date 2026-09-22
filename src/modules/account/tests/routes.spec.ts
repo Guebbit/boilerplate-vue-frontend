@@ -27,6 +27,7 @@ describe('account route access', () => {
         ['PasswordResetConfirm', 'guest'],
         ['AccountDeleteConfirm', undefined],
         ['VerifyEmailConfirm', undefined],
+        ['EmailChangeConfirm', undefined],
         ['OAuthCallback', undefined],
         ['Profile', 'auth'],
         ['Logout', undefined]
@@ -46,6 +47,7 @@ describe('account route access', () => {
                 'PasswordResetConfirm',
                 'AccountDeleteConfirm',
                 'VerifyEmailConfirm',
+                'EmailChangeConfirm',
                 'OAuthCallback',
                 'Profile',
                 'Logout'

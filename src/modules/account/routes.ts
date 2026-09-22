@@ -8,8 +8,8 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Every route this module contributes: the login/signup/reset/verify/delete flows, the
- * authenticated profile page, and the routeless `Logout` entry.
+ * Every route this module contributes: the login/signup/reset/verify/delete/email-change flows,
+ * the authenticated profile page, and the routeless `Logout` entry.
  */
 export default [
     {
@@ -58,6 +58,13 @@ export default [
         name: 'VerifyEmailConfirm',
         meta: { title: 'verify-email-confirm-page.page-title' },
         component: () => import('@/modules/account/views/VerifyEmailConfirm.vue')
+    },
+    {
+        // Public, same reasoning: the emailed token proves the new address, not a live session.
+        path: 'email-change/confirm',
+        name: 'EmailChangeConfirm',
+        meta: { title: 'email-change-confirm-page.page-title' },
+        component: () => import('@/modules/account/views/EmailChangeConfirm.vue')
     },
     {
         // Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
