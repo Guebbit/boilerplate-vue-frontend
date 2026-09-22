@@ -3,22 +3,24 @@
  * Zod validation schemas for the webhook subscription form, with i18n-thunked error messages
  * resolved at parse time rather than at schema-definition time.
  *
- * `url`'s `https://` requirement and `eventTypes`' minimum are enforced here as plain rules, not
- * imported from `@api/schemas` like `users`' contract-declared minimums are — the generated
- * `CreateWebhookSubscriptionBody`/`UpdateWebhookSubscriptionBody` schemas have no bound constants
- * for either (`zod.url()` alone, `.min(1)` inline), so there is nothing to import.
+ * `url`'s `https://` requirement is imported from `@api/schemas`, like `users`' contract-declared
+ * minimums are — the contract itself carries the scheme restriction as a `pattern` now, so there
+ * is a bound regex to reuse instead of a hand-rolled `.refine()`. `eventTypes`' minimum stays a
+ * plain rule: the generated bodies have no bound constant for it (`.min(1)` inline).
  */
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
+import { createWebhookSubscriptionBodyUrlRegExp } from '@api/schemas';
 
 /**
  * Validation schema for a subscription's target URL: syntactically valid, and `https://`
  * specifically — the backend re-validates this against the resolved IP on every delivery, but a
- * scheme typo is worth catching before the round trip.
+ * scheme typo is worth catching before the round trip. `create` and `update` share one regex on
+ * the contract, so reusing the create-named export for both draws no distinction that isn't there.
  */
 const webhookUrlSchema = z
     .url({ error: () => translate('webhooks-form.url-invalid') })
-    .refine((url) => url.startsWith('https://'), {
+    .regex(createWebhookSubscriptionBodyUrlRegExp, {
         error: () => translate('webhooks-form.url-must-be-https')
     });
 

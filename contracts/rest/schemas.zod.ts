@@ -4126,13 +4126,19 @@ export const CreateFeedbackRequestHeader = zod.strictObject({
         )
 });
 
+export const createFeedbackRequestBodyNameMax = 120;
+
+export const createFeedbackRequestBodySubjectMax = 200;
+
+export const createFeedbackRequestBodyMessageMax = 5000;
+
 export const createFeedbackRequestBodyWebsiteMax = 200;
 
 export const CreateFeedbackRequestBody = zod.strictObject({
-    name: zod.string().optional(),
+    name: zod.string().max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email(),
-    subject: zod.string(),
-    message: zod.string(),
+    subject: zod.string().max(createFeedbackRequestBodySubjectMax),
+    message: zod.string().max(createFeedbackRequestBodyMessageMax),
     website: zod
         .string()
         .max(createFeedbackRequestBodyWebsiteMax)
@@ -5229,7 +5235,7 @@ export const UpsertCartItemBody = zod.strictObject({
         .min(1)
         .max(upsertCartItemBodyQuantityMax)
         .describe(
-            'Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.'
+            "Bounded at both ends, and this bound is on the STORED line, not only the request: `POST \/cart` and `PUT \/cart\/{productId}` set a line to exactly this value, which already fits; a caller that instead adds to an existing line (the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over."
         )
 });
 
@@ -5368,7 +5374,7 @@ export const UpdateCartItemByIdBody = zod.strictObject({
         .min(1)
         .max(updateCartItemByIdBodyQuantityMax)
         .describe(
-            'Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.'
+            "Bounded at both ends, and this bound is on the STORED line, not only the request: `POST \/cart` and `PUT \/cart\/{productId}` set a line to exactly this value, which already fits; a caller that instead adds to an existing line (the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over."
         )
 });
 
@@ -5482,13 +5488,12 @@ export const GetCartSummaryResponse = zod.strictObject({
 });
 
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkoutBodyPaymentMethodDefault = `card`;
 
 export const CheckoutBody = zod.strictObject({
-    email: zod.email().optional(),
     notes: zod.string().optional().describe('Optional order notes'),
     addressId: zod
         .string()
@@ -5804,7 +5809,7 @@ export const CheckoutResponse = zod.strictObject({
 });
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass 999 is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Admins are scoped to their own orders too — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const ReorderParams = zod.strictObject({
@@ -10154,6 +10159,8 @@ export const ListWebhookSubscriptionsQueryParams = zod.strictObject({
         .describe('Filter by whether the subscription is currently active.')
 });
 
+export const listWebhookSubscriptionsResponseDataItemsItemUrlRegExp = new RegExp('(?:^https://)');
+
 export const listWebhookSubscriptionsResponseDataItemsItemConsecutiveFailuresMin = 0;
 
 export const listWebhookSubscriptionsResponseDataMetaPageDefault = 1;
@@ -10174,7 +10181,7 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
         items: zod.array(
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
-                url: zod.url(),
+                url: zod.url().regex(listWebhookSubscriptionsResponseDataItemsItemUrlRegExp),
                 description: zod.string().optional(),
                 eventTypes: zod
                     .array(zod.string())
@@ -10223,16 +10230,20 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
  * since a subscription's DNS can change after it is created.
  * @summary Create a webhook subscription
  */
+export const createWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 
 export const CreateWebhookSubscriptionBody = zod.strictObject({
     url: zod
         .url()
+        .regex(createWebhookSubscriptionBodyUrlRegExp)
         .describe(
             'Must be `https:\/\/`. Validated again, against the resolved IP, on every delivery.'
         ),
     description: zod.string().optional(),
     eventTypes: zod.array(zod.string()).min(1)
 });
+
+export const createWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
 
 export const createWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
 
@@ -10242,7 +10253,7 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        url: zod.url(),
+        url: zod.url().regex(createWebhookSubscriptionResponseDataUrlRegExp),
         description: zod.string().optional(),
         eventTypes: zod.array(zod.string()).min(1),
         enabled: zod.boolean(),
@@ -10279,8 +10290,14 @@ export const UpdateWebhookSubscriptionParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
+export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
+
 export const UpdateWebhookSubscriptionBody = zod.strictObject({
-    url: zod.url().optional(),
+    url: zod
+        .url()
+        .regex(updateWebhookSubscriptionBodyUrlRegExp)
+        .optional()
+        .describe('Must be `https:\/\/` — same rule `CreateWebhookSubscriptionRequest` states.'),
     description: zod.string().optional(),
     eventTypes: zod.array(zod.string()).min(1).optional(),
     enabled: zod
@@ -10301,6 +10318,8 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
         )
 });
 
+export const updateWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
+
 export const updateWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
 
 export const UpdateWebhookSubscriptionResponse = zod.strictObject({
@@ -10309,7 +10328,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        url: zod.url(),
+        url: zod.url().regex(updateWebhookSubscriptionResponseDataUrlRegExp),
         description: zod.string().optional(),
         eventTypes: zod.array(zod.string()).min(1),
         enabled: zod.boolean(),

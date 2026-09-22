@@ -2004,9 +2004,12 @@ export interface SearchUsersRequest {
 }
 
 export interface CreateFeedbackRequest {
+    /** @maxLength 120 */
     name?: string;
     email: Email;
+    /** @maxLength 200 */
     subject: string;
+    /** @maxLength 5000 */
     message: string;
     /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
@@ -2308,14 +2311,16 @@ export interface CartResponseEnvelope {
     data: CartResponse;
 }
 
+/**
+ * Bounded at both ends, and this bound is on the STORED line, not only the request: `POST /cart` and `PUT /cart/{productId}` set a line to exactly this value, which already fits; a caller that instead adds to an existing line (the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
+ * @minimum 1
+ * @maximum 999
+ */
+export type CartQuantity = number;
+
 export interface UpsertCartItemRequest {
     productId: Id;
-    /**
-     * Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
-     * @minimum 1
-     * @maximum 999
-     */
-    quantity: number;
+    quantity: CartQuantity;
 }
 
 export interface RemoveCartItemRequest {
@@ -2324,12 +2329,7 @@ export interface RemoveCartItemRequest {
 
 export interface UpdateCartItemByIdRequest {
     productId?: Id;
-    /**
-     * Bounded at both ends. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
-     * @minimum 1
-     * @maximum 999
-     */
-    quantity: number;
+    quantity: CartQuantity;
 }
 
 export interface CartSummaryResponseEnvelope {
@@ -2340,7 +2340,6 @@ export interface CartSummaryResponseEnvelope {
 }
 
 export interface CheckoutRequest {
-    email?: Email;
     /** Optional order notes */
     notes?: string;
     /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
@@ -2876,6 +2875,7 @@ export interface ReservationSweepEnvelope {
 
 export interface WebhookSubscription {
     id: Id;
+    /** @pattern (?:^https://) */
     url: string;
     description?: string;
     /**
@@ -2907,7 +2907,10 @@ export interface WebhookSubscriptionsResponseEnvelope {
 }
 
 export interface CreateWebhookSubscriptionRequest {
-    /** Must be `https://`. Validated again, against the resolved IP, on every delivery. */
+    /**
+     * Must be `https://`. Validated again, against the resolved IP, on every delivery.
+     * @pattern (?:^https://)
+     */
     url: string;
     description?: string;
     /** @minItems 1 */
@@ -2916,6 +2919,7 @@ export interface CreateWebhookSubscriptionRequest {
 
 export interface WebhookSubscriptionCreated {
     id: Id;
+    /** @pattern (?:^https://) */
     url: string;
     description?: string;
     /** @minItems 1 */
@@ -2941,6 +2945,10 @@ export interface WebhookSubscriptionCreatedEnvelope {
 }
 
 export interface UpdateWebhookSubscriptionRequest {
+    /**
+     * Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
+     * @pattern (?:^https://)
+     */
     url?: string;
     description?: string;
     /** @minItems 1 */
@@ -5481,7 +5489,7 @@ export const getCartSummary = (
 };
 
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkout = (
@@ -5500,7 +5508,7 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass 999 is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Admins are scoped to their own orders too — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
