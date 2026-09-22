@@ -459,6 +459,27 @@ Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: stri
     });
 });
 
+/** The prefix the demo outbox spells a mailed confirmation link with, in its `lines` array. */
+const LINK_URL_PREFIX = 'linkUrl: ';
+
+/**
+ * The link a demo-outbox email actually carries, exactly as mailed — pulled out of its `lines`
+ * array rather than reconstructed from a bare token, so a spec visiting it proves the real,
+ * mailed link works (locale, path and `?token=` all included) rather than a URL the test
+ * assembled itself. `NODE_FRONTEND_URL` is `cypress.config.ts`'s own `baseUrl` for every e2e run
+ * (`scripts/demo/run-backend.ts`), so the result is always same-origin and a plain `cy.visit()`
+ * is enough — no `cy.origin()` needed.
+ *
+ * @param email - an email `demoEmailTo` returned
+ */
+export const mailedLinkUrl = (email: DemoOutboxEmail): string => {
+    const linkLine = email.lines?.find((line) => line.startsWith(LINK_URL_PREFIX));
+    // Asserted rather than asserted-away: without the line there is no link to visit, and a
+    // silent `undefined` here would fail later as an unrelated 404.
+    expect(linkLine, 'a `linkUrl:` line in the mailed variables').to.be.a('string');
+    return String(linkLine).slice(LINK_URL_PREFIX.length);
+};
+
 Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
     cy.visit('/en/profile');
     cy.get('[data-test=two-factor-add-email]').click();

@@ -9,6 +9,7 @@
  * are the backend's to test.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
+import { mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
 
 /**
  * Fills the address dialog's six required inputs and saves.
@@ -274,5 +275,51 @@ describe('Profile self-service', () => {
          * owns it end to end — "an unverified account shows the banner until the emailed token
          * is spent" — from the signup that actually creates that state.
          */
+
+        it('confirming the mailed link swaps the pending address into the live one', () => {
+            cy.get('#profile-page [type=email]').should('have.value', 'customer@example.com');
+            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
+            cy.get('#profile-page [type=email]')
+                .should('not.be.disabled')
+                .type('new-address@example.com');
+            cy.get('#profile-page form button[type=submit]').first().click();
+
+            // Same template as signup verification — only the link's kind differs — so the
+            // outbox is read the same way `registration.cy.ts` reads its own.
+            cy.demoEmailTo('new-address@example.com').then((email) => {
+                expect(email.template).to.equal('account.verify-request');
+                cy.visit(mailedLinkUrl(email));
+            });
+            cy.get('[data-test=email-change-submit]').click();
+            cy.contains('Email address changed').should('exist');
+
+            // The live session's own record picked up the swap, not just a toast.
+            cy.visit('/en/profile');
+            cy.get('#profile-page [type=email]').should('have.value', 'new-address@example.com');
+        });
+    });
+
+    describe('account deletion', () => {
+        it('the emailed link permanently deletes the account', () => {
+            cy.get('[data-test=profile-delete-account] button').click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+            cy.contains('We sent a confirmation email').should('exist');
+
+            cy.demoEmailTo(seedAccount('user').email).then((email) => {
+                expect(email.template).to.equal('account.delete-request');
+                cy.visit(mailedLinkUrl(email));
+            });
+            cy.get('#account-delete-confirm-page button[type=submit]').click();
+            cy.contains('Your account has been deleted').should('exist');
+            cy.get('#home-page').should('exist');
+
+            // The account is really gone: the very credentials just used no longer sign in.
+            cy.visit('/en/login');
+            cy.get('[type=email]').should('not.be.disabled').type(seedAccount('user').email);
+            cy.get('[type=password]').should('not.be.disabled').type(seedAccount('user').password);
+            cy.get('form').submit();
+            cy.get('#login-page').should('exist');
+            cy.url().should('include', '/login');
+        });
     });
 });

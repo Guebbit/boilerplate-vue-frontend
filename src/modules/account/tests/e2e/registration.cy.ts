@@ -5,11 +5,14 @@
  * refused, right one accepted).
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
- * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__test/emails`), a fresh
- * page load, so the account has to genuinely exist server-side for the second half to work. The
- * logout in the middle is what makes the token-spending half a GUEST's — the link is opened from
- * a mailbox, which may not be on the device that signed up.
+ * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__test/emails`, and
+ * `mailedLinkUrl` pulls the actual mailed URL out of it), a fresh page load, so the account has to
+ * genuinely exist server-side for the second half to work. The logout in the middle is what makes
+ * the token-spending half a GUEST's — the link is opened from a mailbox, which may not be on the
+ * device that signed up.
  */
+import { mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
+
 describe('Registration', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -42,9 +45,8 @@ describe('Registration', () => {
         // ── The verification email ──────────────────────────────────────────────────
         cy.demoEmailTo('new.customer@example.com').then((email) => {
             expect(email.template).to.equal('account.verify-request');
-            expect(email.token, 'the emailed verification token').to.be.a('string');
             // Following the link is a fresh page load, as a guest — the token is the credential.
-            cy.visit(`/en/verify-email/confirm?token=${email.token}`);
+            cy.visit(mailedLinkUrl(email));
         });
         cy.get('[data-test=verify-submit]').click();
         cy.contains('Email address verified').should('exist');
@@ -97,8 +99,8 @@ describe('Registration', () => {
         cy.get('[data-test=verify-resend]').should('be.disabled');
 
         // Now open the signup email and spend its token; the banner goes.
-        cy.demoEmailTo('slow.reader@example.com').then(({ token }) => {
-            cy.visit(`/en/verify-email/confirm?token=${token}`);
+        cy.demoEmailTo('slow.reader@example.com').then((email) => {
+            cy.visit(mailedLinkUrl(email));
         });
         cy.get('[data-test=verify-submit]').click();
         cy.get('#home-page').should('exist');
