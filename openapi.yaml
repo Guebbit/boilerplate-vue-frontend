@@ -2089,6 +2089,11 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: deleted
+          in: query
+          description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
+          schema:
+            type: boolean
       responses:
         "200":
           description: Users list page
@@ -2191,7 +2196,7 @@ paths:
       tags:
         - Users
       summary: Delete user
-      description: Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+      description: Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
       operationId: deleteUser
       x-alias-of: deleteUserById
       security:
@@ -2303,7 +2308,7 @@ paths:
       tags:
         - Users
       summary: Delete user
-      description: Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
+      description: Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
       operationId: deleteUserById
       security:
         - bearerAuth: []
@@ -2331,6 +2336,38 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /users/{id}/restore:
+    post:
+      tags:
+        - Users
+      summary: Restore user
+      description: Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+      operationId: restoreUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: Restored user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -2659,6 +2696,11 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: deleted
+          in: query
+          description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
+          schema:
+            type: boolean
       responses:
         "200":
           description: Products page
@@ -2716,7 +2758,7 @@ paths:
       tags:
         - Products
       summary: Delete product
-      description: Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+      description: Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
       operationId: deleteProduct
       x-alias-of: deleteProductById
       security:
@@ -2856,7 +2898,7 @@ paths:
       tags:
         - Products
       summary: Delete product
-      description: Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
+      description: Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`. Functionally equivalent to `DELETE /products`.
       operationId: deleteProductById
       security:
         - bearerAuth: []
@@ -2914,6 +2956,38 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /products/{id}/restore:
+    post:
+      tags:
+        - Products
+      summary: Restore product
+      description: Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+      operationId: restoreProductById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: Restored product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -3424,6 +3498,11 @@ paths:
           in: query
           schema:
             type: string
+        - name: deleted
+          in: query
+          description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
+          schema:
+            type: boolean
       responses:
         "200":
           description: Orders page
@@ -3539,7 +3618,7 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`.
       operationId: deleteOrder
       x-alias-of: deleteOrderById
       security:
@@ -3691,7 +3770,7 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
+      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
       operationId: deleteOrderById
       security:
         - bearerAuth: []
@@ -3719,6 +3798,38 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /orders/{id}/restore:
+    post:
+      tags:
+        - Orders
+      summary: Restore order
+      description: Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+      operationId: restoreOrderById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: Restored order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -8527,6 +8638,8 @@ components:
           type: string
         active:
           type: boolean
+        deleted:
+          type: boolean
     CreateFeedbackRequest:
       type: object
       additionalProperties: false
@@ -9054,6 +9167,8 @@ components:
           type: string
         active:
           type: boolean
+        deleted:
+          type: boolean
     CartSummaryResponse:
       type: object
       additionalProperties: false
@@ -9377,6 +9492,8 @@ components:
           $ref: "#/components/schemas/PaymentMethodId"
         notes:
           type: string
+        deleted:
+          type: boolean
     UpdateOrderByIdRequest:
       type: object
       additionalProperties: false

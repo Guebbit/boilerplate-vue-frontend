@@ -3505,7 +3505,13 @@ export const ListUsersQueryParams = zod.strictObject({
         .optional(),
     email: zod.email().optional(),
     username: zod.string().optional(),
-    active: zod.boolean().optional()
+    active: zod.boolean().optional(),
+    deleted: zod
+        .boolean()
+        .optional()
+        .describe(
+            '`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.'
+        )
 });
 
 export const listUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -3756,7 +3762,7 @@ export const UpdateUserResponse = zod.strictObject({
 });
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
  * @summary Delete user
  */
 export const DeleteUserQueryParams = zod.strictObject({
@@ -3923,7 +3929,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
 });
 
 /**
- * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
+ * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
  * @summary Delete user
  */
 export const DeleteUserByIdParams = zod.strictObject({
@@ -3949,6 +3955,58 @@ export const DeleteUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore user
+ */
+export const RestoreUserByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const restoreUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const RestoreUserByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        email: zod.email(),
+        username: zod.string(),
+        role: zod.string().optional(),
+        active: zod.boolean().optional(),
+        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        pendingEmail: zod.email().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        locale: zod
+            .string()
+            .regex(restoreUserByIdResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+            ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
 });
 
 /**
@@ -4014,7 +4072,8 @@ export const SearchUsersBody = zod.strictObject({
         .optional(),
     email: zod.email().optional(),
     username: zod.string().optional(),
-    active: zod.boolean().optional()
+    active: zod.boolean().optional(),
+    deleted: zod.boolean().optional()
 });
 
 export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp(
@@ -4401,7 +4460,13 @@ export const ListProductsQueryParams = zod.strictObject({
     minPrice: zod.number().min(listProductsQueryMinPriceMin).optional(),
     maxPrice: zod.number().min(listProductsQueryMaxPriceMin).optional(),
     title: zod.string().optional(),
-    active: zod.boolean().optional()
+    active: zod.boolean().optional(),
+    deleted: zod
+        .boolean()
+        .optional()
+        .describe(
+            '`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.'
+        )
 });
 
 export const listProductsResponseDataItemsItemPriceMin = 0;
@@ -4634,7 +4699,7 @@ export const CreateProductResponse = zod.strictObject({
 });
 
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
  * @summary Delete product
  */
 export const DeleteProductQueryParams = zod.strictObject({
@@ -4902,7 +4967,7 @@ export const UpdateProductByIdResponse = zod.strictObject({
 });
 
 /**
- * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
+ * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`. Functionally equivalent to `DELETE /products`.
  * @summary Delete product
  */
 export const DeleteProductByIdParams = zod.strictObject({
@@ -5013,6 +5078,85 @@ export const GetProductAdminResponse = zod.strictObject({
 });
 
 /**
+ * Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore product
+ */
+export const RestoreProductByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const restoreProductByIdResponseDataPriceMin = 0;
+
+export const restoreProductByIdResponseDataOnHandMin = 0;
+
+export const restoreProductByIdResponseDataReservedMin = 0;
+
+export const restoreProductByIdResponseDataAvailableMin = 0;
+
+export const restoreProductByIdResponseDataRequiresShippingDefault = true;
+export const restoreProductByIdResponseDataWeightMin = 0;
+
+export const RestoreProductByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        title: zod.string(),
+        price: zod
+            .number()
+            .min(restoreProductByIdResponseDataPriceMin)
+            .describe(
+                'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        taxClass: zod
+            .enum(['reduced', 'zero'])
+            .optional()
+            .describe(
+                "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        onHand: zod
+            .number()
+            .min(restoreProductByIdResponseDataOnHandMin)
+            .optional()
+            .describe('Units physically present, whether or not they are spoken for.'),
+        reserved: zod
+            .number()
+            .min(restoreProductByIdResponseDataReservedMin)
+            .optional()
+            .describe('Units held by an open order — present, but not for sale.'),
+        available: zod
+            .number()
+            .min(restoreProductByIdResponseDataAvailableMin)
+            .optional()
+            .describe('What a customer may actually buy. Derived from the two counters above.'),
+        description: zod.string().optional(),
+        active: zod.boolean().optional(),
+        requiresShipping: zod
+            .boolean()
+            .default(restoreProductByIdResponseDataRequiresShippingDefault),
+        weight: zod.number().min(restoreProductByIdResponseDataWeightMin).optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        categories: zod.array(zod.string()).optional(),
+        tags: zod.array(zod.string()).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
  * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
  * @summary Permanently delete product
  */
@@ -5068,7 +5212,8 @@ export const SearchProductsBody = zod.strictObject({
     category: zod.string().optional(),
     tag: zod.string().optional(),
     title: zod.string().optional(),
-    active: zod.boolean().optional()
+    active: zod.boolean().optional(),
+    deleted: zod.boolean().optional()
 });
 
 export const searchProductsResponseDataItemsItemPriceMin = 0;
@@ -5959,7 +6104,13 @@ export const ListOrdersQueryParams = zod.strictObject({
         .describe(
             'Filter to orders placed with this method — the admin \"awaiting transfer\" view combines this with `status=pending`.'
         ),
-    notes: zod.string().optional()
+    notes: zod.string().optional(),
+    deleted: zod
+        .boolean()
+        .optional()
+        .describe(
+            '`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.'
+        )
 });
 
 export const listOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
@@ -6872,7 +7023,7 @@ export const UpdateOrderResponse = zod.strictObject({
 });
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const DeleteOrderQueryParams = zod.strictObject({
@@ -6945,7 +7096,8 @@ export const SearchOrdersBody = zod.strictObject({
         .describe(
             'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
         ),
-    notes: zod.string().optional()
+    notes: zod.string().optional(),
+    deleted: zod.boolean().optional()
 });
 
 export const searchOrdersResponseDataItemsItemItemsItemProductPriceMin = 0;
@@ -7839,7 +7991,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
 });
 
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const DeleteOrderByIdParams = zod.strictObject({
@@ -7865,6 +8017,290 @@ export const DeleteOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore order
+ */
+export const RestoreOrderByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const restoreOrderByIdResponseDataItemsItemProductPriceMin = 0;
+
+export const restoreOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const restoreOrderByIdResponseDataItemsItemProductWeightMin = 0;
+
+export const restoreOrderByIdResponseDataItemsItemProductTaxRateMin = 0;
+export const restoreOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
+
+export const restoreOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const restoreOrderByIdResponseDataItemsItemTaxAmountMin = 0;
+
+export const restoreOrderByIdResponseDataItemsItemNetAmountMin = 0;
+
+export const restoreOrderByIdResponseDataTotalItemsMin = 0;
+
+export const restoreOrderByIdResponseDataTotalQuantityMin = 0;
+
+export const restoreOrderByIdResponseDataTotalPriceMin = 0;
+
+export const restoreOrderByIdResponseDataNetTotalMin = 0;
+
+export const restoreOrderByIdResponseDataTaxTotalMin = 0;
+
+export const restoreOrderByIdResponseDataShippingNetAmountMin = 0;
+
+export const restoreOrderByIdResponseDataShippingTaxAmountMin = 0;
+
+export const restoreOrderByIdResponseDataTaxSummaryItemRateMin = 0;
+
+export const restoreOrderByIdResponseDataTaxSummaryItemNetAmountMin = 0;
+
+export const restoreOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
+
+export const restoreOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
+
+export const restoreOrderByIdResponseDataShippingCostMin = 0;
+
+export const RestoreOrderByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    title: zod.string(),
+                    price: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            restoreOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    weight: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataItemsItemProductTaxRateMin)
+                        .max(restoreOrderByIdResponseDataItemsItemProductTaxRateMax)
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        )
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(restoreOrderByIdResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(restoreOrderByIdResponseDataItemsItemTaxAmountMin)
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(restoreOrderByIdResponseDataItemsItemNetAmountMin)
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
+                    )
+            })
+        ),
+        totalItems: zod
+            .number()
+            .min(restoreOrderByIdResponseDataTotalItemsMin)
+            .describe(
+                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+            ),
+        totalQuantity: zod
+            .number()
+            .min(restoreOrderByIdResponseDataTotalQuantityMin)
+            .describe('Sum of `quantity` across every line item.'),
+        totalPrice: zod
+            .number()
+            .min(restoreOrderByIdResponseDataTotalPriceMin)
+            .describe(
+                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(restoreOrderByIdResponseDataNetTotalMin)
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
+            ),
+        taxTotal: zod
+            .number()
+            .min(restoreOrderByIdResponseDataTaxTotalMin)
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+            ),
+        shippingNetAmount: zod
+            .number()
+            .min(restoreOrderByIdResponseDataShippingNetAmountMin)
+            .describe(
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
+            ),
+        shippingTaxAmount: zod
+            .number()
+            .min(restoreOrderByIdResponseDataShippingTaxAmountMin)
+            .describe(
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
+            ),
+        taxSummary: zod
+            .array(
+                zod.strictObject({
+                    rate: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataTaxSummaryItemRateMin)
+                        .describe(
+                            'The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.'
+                        ),
+                    netAmount: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataTaxSummaryItemNetAmountMin),
+                    taxAmount: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataTaxSummaryItemTaxAmountMin),
+                    grossAmount: zod
+                        .number()
+                        .min(restoreOrderByIdResponseDataTaxSummaryItemGrossAmountMin)
+                        .describe('`netAmount + taxAmount`, not re-derived from a price.')
+                })
+            )
+            .describe(
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
+            ),
+        notes: zod.string().optional().describe('Optional order notes'),
+        shippingMethod: zod
+            .string()
+            .optional()
+            .describe(
+                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+            ),
+        shippingCost: zod
+            .number()
+            .min(restoreOrderByIdResponseDataShippingCostMin)
+            .optional()
+            .describe(
+                'What that method cost at checkout time — a later rate change cannot re-price history.'
+            ),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
+                    )
+            })
+            .optional(),
+        status: zod
+            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            .describe(
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+            ),
+        actions: zod
+            .strictObject({
+                transitions: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                    ),
+                cancel: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                    ),
+                pay: zod
+                    .boolean()
+                    .describe(
+                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
 });
 
 /**

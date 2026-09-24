@@ -2008,6 +2008,7 @@ export interface SearchUsersRequest {
     email?: Email;
     username?: string;
     active?: boolean;
+    deleted?: boolean;
 }
 
 export interface CreateFeedbackRequest {
@@ -2284,6 +2285,7 @@ export interface SearchProductsRequest {
     tag?: string;
     title?: string;
     active?: boolean;
+    deleted?: boolean;
 }
 
 export interface CartSummaryResponse {
@@ -2461,6 +2463,7 @@ export interface SearchOrdersRequest {
     status?: OrderStatus;
     paymentMethod?: PaymentMethodId;
     notes?: string;
+    deleted?: boolean;
 }
 
 /**
@@ -3330,6 +3333,10 @@ export type ListUsersParams = {
     email?: Email;
     username?: string;
     active?: boolean;
+    /**
+     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+     */
+    deleted?: boolean;
 };
 
 export type DeleteUserParams = {
@@ -3403,6 +3410,10 @@ export type ListProductsParams = {
     maxPrice?: number;
     title?: string;
     active?: boolean;
+    /**
+     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+     */
+    deleted?: boolean;
 };
 
 export type DeleteProductParams = {
@@ -3452,6 +3463,10 @@ export type ListOrdersParams = {
      */
     paymentMethod?: PaymentMethodId;
     notes?: string;
+    /**
+     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+     */
+    deleted?: boolean;
 };
 
 export type DeleteOrderParams = {
@@ -4847,7 +4862,7 @@ export const updateUserWithMultipart = (
 };
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
  * @summary Delete user
  */
 export const deleteUser = (
@@ -4948,7 +4963,7 @@ export const updateUserByIdWithMultipart = (
 };
 
 /**
- * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
+ * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
  * @summary Delete user
  */
 export const deleteUserById = (
@@ -4967,6 +4982,17 @@ export const deleteUserById = (
         },
         options
     );
+};
+
+/**
+ * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore user
+ */
+export const restoreUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}/restore`, method: 'POST' }, options);
 };
 
 /**
@@ -5179,7 +5205,7 @@ export const createProductWithMultipart = (
 };
 
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
  * @summary Delete product
  */
 export const deleteProduct = (
@@ -5326,7 +5352,7 @@ export const updateProductByIdWithMultipart = (
 };
 
 /**
- * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
+ * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`. Functionally equivalent to `DELETE /products`.
  * @summary Delete product
  */
 export const deleteProductById = (
@@ -5357,6 +5383,20 @@ export const getProductAdmin = (
 ) => {
     return orvalMutator<ProductAdminEnvelope>(
         { url: `/products/${id}/admin`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore product
+ */
+export const restoreProductById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        { url: `/products/${id}/restore`, method: 'POST' },
         options
     );
 };
@@ -5636,7 +5676,7 @@ export const updateOrder = (
 };
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const deleteOrder = (
@@ -5708,7 +5748,7 @@ export const updateOrderById = (
 };
 
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderById = (
@@ -5727,6 +5767,17 @@ export const deleteOrderById = (
         },
         options
     );
+};
+
+/**
+ * Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * @summary Restore order
+ */
+export const restoreOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}/restore`, method: 'POST' }, options);
 };
 
 /**
@@ -6387,6 +6438,7 @@ export type UpdateUserByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
 >;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
+export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type AdminDisableUserTwoFactorResult = NonNullable<
     Awaited<ReturnType<typeof adminDisableUserTwoFactor>>
@@ -6421,6 +6473,7 @@ export type UpdateProductByIdWithMultipartResult = NonNullable<
 >;
 export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
 export type GetProductAdminResult = NonNullable<Awaited<ReturnType<typeof getProductAdmin>>>;
+export type RestoreProductByIdResult = NonNullable<Awaited<ReturnType<typeof restoreProductById>>>;
 export type HardDeleteProductByIdResult = NonNullable<
     Awaited<ReturnType<typeof hardDeleteProductById>>
 >;
@@ -6450,6 +6503,7 @@ export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrd
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
 export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
 export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
+export type RestoreOrderByIdResult = NonNullable<Awaited<ReturnType<typeof restoreOrderById>>>;
 export type HardDeleteOrderByIdResult = NonNullable<
     Awaited<ReturnType<typeof hardDeleteOrderById>>
 >;
