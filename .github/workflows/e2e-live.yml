@@ -18,7 +18,8 @@ name: E2E (live backend)
 #      forked, so nothing below it is trustworthy;
 #   2. anything else — a real disagreement between this frontend and that backend. A spec whose
 #      expected rows no longer exist is seed drift, and the backend's
-#      `tests/unit/db/migration-demo-data.test.ts` says whether its migrations caused it.
+#      `tests/integration/scenarios/shop.test.ts` says whether its seeded scenario still offers
+#      every row the modules promise.
 
 on:
     # Called by ci.yml as a required job — see that file's `test-e2e-live`.
