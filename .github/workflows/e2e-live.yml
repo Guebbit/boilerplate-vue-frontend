@@ -160,6 +160,8 @@ jobs:
                   NODE_MONGODB_HOST: localhost
                   NODE_REDIS_URL: ''
                   NODE_REDIS_HOST: localhost
+                  # The seed writes address-book PII, encrypted at rest; without a key it cannot.
+                  NODE_PII_ENCRYPTION_KEY: ci-not-a-secret-pii-key
               run: npm run host -- db:bootstrap
 
             # Umami seeds a fixed admin account on first boot but offers no env var for its
@@ -199,6 +201,10 @@ jobs:
                   NODE_TOKEN_REFRESH: ci-not-a-secret-refresh-token
                   NODE_TOTP_ENCRYPTION_KEY: ci-not-a-secret-totp-key
                   NODE_WEBHOOK_SECRET_ENCRYPTION_KEY: ci-not-a-secret-webhook-key
+                  NODE_PII_ENCRYPTION_KEY: ci-not-a-secret-pii-key
+                  # The e2e preview serves the app on 8085; the backend's CORS default names only
+                  # the dev server, and a refused preflight fails every spec before any assertion.
+                  NODE_CORS_ORIGIN: http://localhost:8085
                   # The server-side half of the analytics pair. Unset, the backend logs "events
                   # are being discarded" and carries on — Umami would be up, the browser tracker
                   # would still write, and `analytics.cy.ts` would read one row where it expects
