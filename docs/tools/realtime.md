@@ -71,6 +71,20 @@ Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `src/types/asyn
 
 All three carry the same payload shape (timestamp, uptime, memory, HTTP counters, `realtime.sseClients`); the store keeps them apart so the feed can label each kind.
 
+### Frames are checked against the contract
+
+The types above are a compile-time promise; a frame off the wire is only a string. With
+`VITE_VALIDATE_RESPONSES` on — the same switch that makes `orvalMutator` parse every REST
+response, and on in the e2e build — `createSseClient` parses each frame's payload against the
+schema `asyncapi.yaml` declares for its event. The generator emits those schemas as
+`SSE_EVENT_PAYLOAD_SCHEMAS` (JSON Schema, every `$ref` inlined), and Zod's own `fromJSONSchema`
+turns each into a validator on first use — nothing hand-written. A frame that fails is logged
+with the fields that broke and dropped, never forwarded to the store.
+
+**Where the stream is opened:** the e2e shard runner's runtime `__E2E_API_URL`, when set, wins
+over the build-time `VITE_API_SSE` — the same precedence every REST call already has — so one
+built bundle can stream from whichever shard's backend served the page.
+
 ## AsyncAPI workflow
 
 Regenerate types after editing `asyncapi.yaml`:
@@ -84,7 +98,7 @@ npm run gen:asyncapi
 ## Dev strategy
 
 - HTTP goes to the same demo backend as everything else.
-- SSE connects to a real URL (`VITE_API_SSE`) — a running backend is required to test it, or a lightweight fake `EventSource` in unit tests.
+- SSE connects to a real URL (`VITE_API_SSE`) — a running backend is required to test it, or a lightweight fake `EventSource` in unit tests. `src/modules/realtime/tests/e2e/realtime.cy.ts` drives the real stream in the demo profile.
 - Keep realtime logic in stores; keep the `RealtimePlayground` view thin.
 
 ## External references

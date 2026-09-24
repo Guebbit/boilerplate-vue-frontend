@@ -8,8 +8,10 @@
  * frontend from the public subset, so only the backend's output carries the queue payloads.
  *
  * From whichever document it is given it emits the payload interfaces, the message aliases, the
- * per-namespace channel constants and unions, and the SSE event name/payload maps. An export a
- * repo happens not to use is harmless — tree-shaken there, type-only here.
+ * per-namespace channel constants and unions, the SSE event name/payload maps, and each SSE
+ * payload's JSON Schema with every `$ref` inlined — what `create-sse-client.ts` hands to Zod's own
+ * `fromJSONSchema` to validate a frame. An export a repo happens not to use is harmless —
+ * tree-shaken there, type-only here.
  *
  * `--check` writes nothing and exits 1 on a mismatch: the gate that stops a repo shipping types
  * for a contract it no longer has.
@@ -50,6 +52,7 @@ interface AsyncApiDocument {
     channels?: Record<string, AsyncApiChannel>;
     components?: {
         messages?: Record<string, AsyncApiMessage>;
+        schemas?: Record<string, JsonSchema>;
     };
 }
 
@@ -156,6 +159,56 @@ const collectChannelMessageEntries = (
             };
         })
         .toSorted((a, b) => a.channelName.localeCompare(b.channelName));
+
+/*
+ * A schema with every `#/components/schemas/...` reference replaced by its target, recursively —
+ * the self-contained form a JSON Schema consumer needs once it no longer has the document.
+ *
+ * @param schema The schema to inline.
+ * @param schemas The document's `components.schemas`.
+ * @returns A copy carrying no `$ref`.
+ */
+const inlineReferences = (schema: unknown, schemas: Record<string, JsonSchema>): unknown => {
+    if (Array.isArray(schema)) return schema.map((item) => inlineReferences(item, schemas));
+    if (typeof schema !== 'object' || schema === null) return schema;
+
+    const reference = (schema as JsonSchema).$ref;
+    if (reference) {
+        const name = reference.split('/').pop() ?? '';
+        return Object.hasOwn(schemas, name) ? inlineReferences(schemas[name], schemas) : {};
+    }
+    return Object.fromEntries(
+        Object.entries(schema).map(([key, value]) => [key, inlineReferences(value, schemas)])
+    );
+};
+
+/*
+ * Renders the event-name to inlined-payload-schema constant.
+ *
+ * @param exportName Exported constant name.
+ * @param entries Event names and the message each channel carries.
+ * @param messageDefinitions The document's `components.messages`.
+ * @param schemas The document's `components.schemas`.
+ * @returns TypeScript source for the schema map.
+ */
+const renderPayloadSchemas = (
+    exportName: string,
+    entries: { channelName: string; messageName: string }[],
+    messageDefinitions: Record<string, AsyncApiMessage>,
+    schemas: Record<string, JsonSchema>
+): string => {
+    const rows = entries
+        .map(({ channelName, messageName }) => {
+            const payload = Object.hasOwn(messageDefinitions, messageName)
+                ? messageDefinitions[messageName].payload
+                : undefined;
+            return `    ${JSON.stringify(channelName)}: ${JSON.stringify(inlineReferences(payload ?? {}, schemas))},`;
+        })
+        .join('\n');
+    // Typed loosely on purpose: `as const` would make every array `readonly`, which no JSON
+    // Schema consumer's parameter type accepts. The event-name keys stay exact.
+    return `export const ${exportName}: Record<SseEventName, Record<string, unknown>> = {\n${rows}\n};`;
+};
 
 /*
  * Renders a readonly literal string array declaration.
@@ -268,6 +321,21 @@ const messages = document.components?.messages ?? {};
 
 const sseEntries = collectChannelMessageEntries(channels, messages, 'observability.');
 
+/*
+ * The message each SSE channel carries, by name — what {@link renderPayloadSchemas} reads the
+ * payload schema off.
+ */
+const sseMessageNames = Object.entries(channels)
+    .filter(([channelName]) => channelName.startsWith('observability.'))
+    .map(([channelName, channel]) => ({
+        channelName,
+        messageName:
+            Object.values(channel.messages ?? {})[0]
+                ?.$ref?.split('/')
+                .pop() ?? ''
+    }))
+    .toSorted((a, b) => a.channelName.localeCompare(b.channelName));
+
 const channelNamespaceBlocks = [...groupChannelsByNamespace(Object.keys(channels))].map(
     ([namespace, channelNames]) => renderChannelNamespace(namespace, channelNames)
 );
@@ -311,6 +379,12 @@ const buildOutput = (modelBlocks: string[]): string => {
         'export type SseEventName = (typeof REALTIME_SSE_EVENT_NAMES)[number];',
         renderPayloadMap('SseEventPayloadMap', sseEntries),
         'export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];',
+        renderPayloadSchemas(
+            'SSE_EVENT_PAYLOAD_SCHEMAS',
+            sseMessageNames,
+            messages,
+            document.components?.schemas ?? {}
+        ),
         ''
     ];
 

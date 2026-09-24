@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Reusable EventSource mock that captures all registered listeners
 class EventSourceMock {
@@ -149,4 +149,56 @@ describe('createSseClient', () => {
             );
             expect(onEvent).toHaveBeenNthCalledWith(3, 'observability.heartbeat', heartbeatPayload);
         }));
+
+    /**
+     * With the contract gate on — `VITE_VALIDATE_RESPONSES=true`, what the e2e build sets — a frame
+     * is held to the AsyncAPI payload its event declares, the SSE twin of `orvalMutator`'s check.
+     */
+    describe('with contract validation on', () => {
+        /** A metrics payload exactly as `asyncapi.yaml` declares it. */
+        const VALID_METRICS = {
+            timestamp: '2026-01-01T00:00:00.000Z',
+            uptimeSeconds: 12,
+            memory: { rss: 1, heapUsed: 1, heapTotal: 2, external: 0 },
+            http: { totalRequests: 3, totalErrors: 0 },
+            realtime: { sseClients: 1 }
+        };
+
+        beforeEach(() => {
+            vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        });
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('forwards a frame that matches its event contract', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                const onEvent = vi.fn();
+                createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
+
+                source.emit('observability.heartbeat', {
+                    data: JSON.stringify(VALID_METRICS)
+                } as MessageEvent);
+
+                expect(onEvent).toHaveBeenCalledWith('observability.heartbeat', VALID_METRICS);
+            }));
+
+        it('drops a frame that breaks it, and says which field', () =>
+            Promise.all([
+                import('@/infrastructure/create-sse-client'),
+                import('@/infrastructure/utils/logger.ts')
+            ]).then(([{ createSseClient }, { logger }]) => {
+                const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+                const onEvent = vi.fn();
+                createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
+
+                source.emit('observability.heartbeat', {
+                    data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
+                } as MessageEvent);
+
+                expect(onEvent).not.toHaveBeenCalled();
+                expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
+            }));
+    });
 });

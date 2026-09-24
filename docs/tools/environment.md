@@ -51,13 +51,13 @@ Which languages the app offers is not configured here. `src/locales/*.json` is t
 
 ## API and realtime
 
-| Variable                  | Purpose                                                                                                                                              |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_URL`            | Backend API base URL                                                                                                                                 |
-| `VITE_API_SSE`            | SSE URL for the realtime observability stream                                                                                                        |
-| `VITE_AXIOS_TIMEOUT`      | Axios timeout in ms                                                                                                                                  |
-| `VITE_MAX_UPLOAD_BYTES`   | Client-side upload ceiling. A UX affordance only — the server re-checks                                                                              |
-| `VITE_VALIDATE_RESPONSES` | Validate every response against its Zod envelope schema. Costs main-thread CPU per request; a development and live-E2E instrument, off in production |
+| Variable                  | Purpose                                                                                                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`            | Backend API base URL                                                                                                                                                             |
+| `VITE_API_SSE`            | SSE URL for the realtime observability stream                                                                                                                                    |
+| `VITE_AXIOS_TIMEOUT`      | Axios timeout in ms                                                                                                                                                              |
+| `VITE_MAX_UPLOAD_BYTES`   | Client-side upload ceiling. A UX affordance only — the server re-checks                                                                                                          |
+| `VITE_VALIDATE_RESPONSES` | Validate every REST response and SSE frame against its generated contract schema. Unset means ON, production included (`false` turns it off); only the unit tests default to off |
 
 ## Logging
 
