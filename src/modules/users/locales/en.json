@@ -31,7 +31,10 @@
         "button-delete-named": "Delete {name}",
         "button-hard-delete-named": "Permanently delete {name}",
         "column-image": "Picture",
-        "image-alt": "Profile picture of {name}"
+        "image-alt": "Profile picture of {name}",
+        "button-restore": "Restore",
+        "button-restore-named": "Restore {name}",
+        "success-restore": "User restored"
     },
     "users-form": {
         "email-invalid": "Check your email address for typos or a missing domain",

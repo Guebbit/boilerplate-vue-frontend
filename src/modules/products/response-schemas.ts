@@ -45,5 +45,10 @@ export const productsResponseSchemas: ResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/products\/[^/]+\/hard$/,
         schema: schemas.HardDeleteProductByIdResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/products\/[^/]+\/restore$/,
+        schema: schemas.RestoreProductByIdResponse
     }
 ];

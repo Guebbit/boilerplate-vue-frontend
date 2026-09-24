@@ -29,7 +29,10 @@
         "button-delete-named": "Elimina {name}",
         "button-hard-delete-named": "Elimina definitivamente {name}",
         "column-image": "Immagine",
-        "image-alt": "Foto di {name}"
+        "image-alt": "Foto di {name}",
+        "button-restore": "Ripristina",
+        "button-restore-named": "Ripristina {name}",
+        "success-restore": "Prodotto ripristinato"
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",

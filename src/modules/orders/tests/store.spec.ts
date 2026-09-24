@@ -21,6 +21,7 @@ import {
     updateOrderById,
     deleteOrderById,
     hardDeleteOrderById,
+    restoreOrderById,
     getOrderInvoice
 } from '@api';
 
@@ -56,6 +57,7 @@ vi.mock('@api', () => ({
     updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     deleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
     hardDeleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
+    restoreOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE))
 }));
 
@@ -127,10 +129,22 @@ describe('useOrdersStore', () => {
                 }));
     });
 
+    describe('restoreOrder', () => {
+        // Its own endpoint: DELETE is one-way on the API, so a second delete never restores.
+        it('calls the restore endpoint and caches the restored order', () =>
+            useOrdersStore()
+                .restoreOrder('o1')
+                .then((restored) => {
+                    expect(restoreOrderById).toHaveBeenCalledWith('o1');
+                    expect(restored).toMatchObject({ id: 'o1' });
+                    expect(useOrdersStore().orders.o1).toMatchObject({ id: 'o1' });
+                }));
+    });
+
     describe('hardDeleteOrder', () => {
         /*
          * A separate method rather than a flag on `deleteOrder`: the soft form sets `deletedAt` and
-         * an admin can toggle it back, this one is irreversible. Distinct names mean the destructive
+         * an admin can restore it, this one is irreversible. Distinct names mean the destructive
          * path cannot be reached by passing the wrong boolean, so the assertion worth making is that
          * each reaches its OWN client function and not the other's.
          */

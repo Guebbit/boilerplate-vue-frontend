@@ -25,7 +25,10 @@
         "button-view-named": "Visualizza ordine {id}",
         "button-edit-named": "Modifica ordine {id}",
         "button-delete-named": "Elimina ordine {id}",
-        "button-hard-delete-named": "Elimina definitivamente ordine {id}"
+        "button-hard-delete-named": "Elimina definitivamente ordine {id}",
+        "button-restore": "Ripristina",
+        "button-restore-named": "Ripristina {id}",
+        "success-restore": "Ordine ripristinato"
     },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",

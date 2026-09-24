@@ -29,7 +29,12 @@
         "secret-reveal-button-copy": "Copy to clipboard",
         "secret-reveal-copied": "Copied to clipboard",
         "secret-reveal-confirm-saved": "I have saved this secret",
-        "secret-reveal-button-continue": "Continue"
+        "secret-reveal-button-continue": "Continue",
+        "filter-deleted": "Deleted",
+        "filter-deleted-any": "All",
+        "filter-deleted-live": "Not deleted",
+        "filter-deleted-only": "Deleted only",
+        "deleted": "Deleted"
     },
     "reauth-dialog": {
         "title": "Confirm it's you",

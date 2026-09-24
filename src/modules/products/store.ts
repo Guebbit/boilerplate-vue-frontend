@@ -21,7 +21,8 @@ import {
     updateProductById,
     updateProductByIdWithMultipart,
     deleteProductById,
-    hardDeleteProductById
+    hardDeleteProductById,
+    restoreProductById
 } from '@api';
 import type {
     Product,
@@ -122,7 +123,8 @@ export const useProductsStore = defineStore('products', () => {
                     minPrice: filters.minPrice,
                     maxPrice: filters.maxPrice,
                     category: filters.category,
-                    tag: filters.tag
+                    tag: filters.tag,
+                    deleted: filters.deleted
                 }).then((response) => {
                     captureTotal(response.data.meta.totalPages);
                     return response.data.items;
@@ -215,7 +217,7 @@ export const useProductsStore = defineStore('products', () => {
      * Permanently deletes a product, bypassing the soft delete.
      *
      * `deleteOne` leaves the record in place with `deletedAt` set, which an admin can still see
-     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * and restore; this removes it outright and cannot be undone. Distinct methods rather than a
      * flag, so the irreversible one is never reached by passing the wrong boolean.
      *
      * Written against `deleteTarget` rather than declared as an operation because a resource has
@@ -226,6 +228,21 @@ export const useProductsStore = defineStore('products', () => {
      */
     const hardDeleteProduct = (productId: string) =>
         deleteTarget(() => hardDeleteProductById(productId), productId);
+
+    /**
+     * Undoes a soft delete — `POST /products/{id}/restore`. A second `deleteProduct` never does:
+     * DELETE is one-way on the API, and safe to retry. The restored record replaces the cached one.
+     *
+     * @param productId - Identifier of the product to restore.
+     * @returns A promise resolving with the restored product.
+     */
+    const restoreProduct = (productId: string) =>
+        fetchAny(() =>
+            restoreProductById(productId).then((response) => {
+                addProduct(response.data);
+                return response.data;
+            })
+        );
 
     /**
      * The admin record for one product: every language it has a row for, not just the caller's
@@ -290,6 +307,7 @@ export const useProductsStore = defineStore('products', () => {
         updateProduct,
         deleteProduct,
         hardDeleteProduct,
+        restoreProduct,
         /**
          * Forget everything a language switch invalidated: the cached records AND the cached
          * RESPONSES behind them.

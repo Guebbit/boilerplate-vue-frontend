@@ -29,7 +29,12 @@
         "secret-reveal-button-copy": "Copia negli appunti",
         "secret-reveal-copied": "Copiato negli appunti",
         "secret-reveal-confirm-saved": "Ho salvato questo segreto",
-        "secret-reveal-button-continue": "Continua"
+        "secret-reveal-button-continue": "Continua",
+        "filter-deleted": "Eliminati",
+        "filter-deleted-any": "Tutti",
+        "filter-deleted-live": "Non eliminati",
+        "filter-deleted-only": "Solo eliminati",
+        "deleted": "Eliminato"
     },
     "reauth-dialog": {
         "title": "Confermaci che sei tu",

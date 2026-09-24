@@ -30,6 +30,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
  * Translation function.
@@ -44,7 +45,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Users store actions.
  */
-const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
+const { watchSearchUsers, deleteUser, hardDeleteUser, restoreUser } = useUsersStore();
 
 /**
  * Users store reactive state — filters, the current page window and the pagination counters.
@@ -57,6 +58,11 @@ const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal,
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
+
+/**
+ * Options of the "Deleted" filter select.
+ */
+const deletedOptions = useDeletedFilterOptions();
 
 /**
  * Options of the "active" filter select.
@@ -158,6 +164,22 @@ const handleDelete = (userId: string) =>
         });
 
 /**
+ * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
+ * delete away. The list is reloaded afterwards, since the active filter may no longer match.
+ *
+ * @param userId - Identifier of the user to restore.
+ * @returns A promise settling once the restore and the reload have finished; a failure blocks the
+ *  list in place ({@link rowActionError}).
+ */
+const handleRestore = (userId: string) => {
+    clearRowActionError();
+    return restoreUser(userId)
+        .then(() => addMessage(t('users-list-page.success-restore')))
+        .then(() => search(true))
+        .catch((error: unknown) => reportRowActionError(error));
+};
+
+/**
  * Permanently deletes a user after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
@@ -208,6 +230,15 @@ const handleHardDelete = (userId: string) =>
                         :items="activeOptions"
                         item-title="label"
                         item-value="value"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="filters.deleted"
+                        :label="t('generic.filter-deleted')"
+                        :items="deletedOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-deleted"
                         hide-details
                     />
                     <v-select
@@ -270,6 +301,16 @@ const handleHardDelete = (userId: string) =>
                 <v-chip size="small" variant="tonal" :color="item.active ? 'success' : 'error'">
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
                 </v-chip>
+                <v-chip
+                    v-if="item.deletedAt"
+                    size="small"
+                    variant="tonal"
+                    color="warning"
+                    class="ml-1"
+                    data-test="row-deleted"
+                >
+                    {{ t('generic.deleted') }}
+                </v-chip>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -302,6 +343,21 @@ const handleHardDelete = (userId: string) =>
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
+                        v-if="item.deletedAt"
+                        :size="rowActionSize"
+                        variant="tonal"
+                        color="success"
+                        data-test="row-restore"
+                        :aria-label="
+                            t('users-list-page.button-restore-named', { name: item.username })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleRestore(item.id!)"
+                    >
+                        {{ t('users-list-page.button-restore') }}
+                    </v-btn>
+                    <v-btn
+                        v-else
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

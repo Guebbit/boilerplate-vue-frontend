@@ -34,6 +34,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
  * Generic translation and notification accessors.
@@ -48,7 +49,12 @@ const { addMessage } = useNotificationsStore();
 /**
  * Orders store actions and reactive list/pagination state.
  */
-const { watchSearchOrders, deleteOrder, hardDeleteOrder } = useOrdersStore();
+const { watchSearchOrders, deleteOrder, hardDeleteOrder, restoreOrder } = useOrdersStore();
+
+/**
+ * Options of the staff-only "Deleted" filter.
+ */
+const deletedOptions = useDeletedFilterOptions();
 
 /**
  * Orders store reactive state — filters, the current page window and the pagination counters.
@@ -194,6 +200,22 @@ const handleDelete = (orderId: string) =>
         });
 
 /**
+ * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
+ * delete away. The list is reloaded afterwards, since the active filter may no longer match.
+ *
+ * @param orderId - Identifier of the order to restore.
+ * @returns A promise settling once the restore and the reload have finished; a failure blocks the
+ *  list in place ({@link rowActionError}).
+ */
+const handleRestore = (orderId: string) => {
+    clearRowActionError();
+    return restoreOrder(orderId)
+        .then(() => addMessage(t('orders-list-page.success-restore')))
+        .then(() => search(true))
+        .catch((error: unknown) => reportRowActionError(error));
+};
+
+/**
  * Permanently deletes an order after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
@@ -219,7 +241,7 @@ const handleHardDelete = (orderId: string) =>
 
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
-                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                     <v-text-field
                         v-model="filters.id"
                         :label="t('orders-list-page.filter-id')"
@@ -238,6 +260,16 @@ const handleHardDelete = (orderId: string) =>
                     <v-text-field
                         v-model="filters.email"
                         :label="t('orders-list-page.filter-email')"
+                        hide-details
+                    />
+                    <v-select
+                        v-if="session.can('delete', 'Order')"
+                        v-model="filters.deleted"
+                        :label="t('generic.filter-deleted')"
+                        :items="deletedOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-deleted"
                         hide-details
                     />
                     <v-select
@@ -293,6 +325,16 @@ const handleHardDelete = (orderId: string) =>
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
                     {{ t(`orders-form.status-${item.status}`) }}
                 </v-chip>
+                <v-chip
+                    v-if="item.deletedAt"
+                    size="small"
+                    variant="tonal"
+                    color="warning"
+                    class="ml-1"
+                    data-test="row-deleted"
+                >
+                    {{ t('generic.deleted') }}
+                </v-chip>
             </template>
 
             <template v-slot:[`item.totalPrice`]="{ item }">
@@ -326,7 +368,19 @@ const handleHardDelete = (orderId: string) =>
                         {{ t('orders-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Order')"
+                        v-if="session.can('delete', 'Order') && item.deletedAt"
+                        :size="rowActionSize"
+                        variant="tonal"
+                        color="success"
+                        data-test="row-restore"
+                        :aria-label="t('orders-list-page.button-restore-named', { id: item.id })"
+                        :disabled="loading"
+                        @click.stop="handleRestore(item.id)"
+                    >
+                        {{ t('orders-list-page.button-restore') }}
+                    </v-btn>
+                    <v-btn
+                        v-else-if="session.can('delete', 'Order')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

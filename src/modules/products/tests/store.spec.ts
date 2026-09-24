@@ -376,10 +376,25 @@ describe('useProductsStore', () => {
                 }));
     });
 
+    describe('restoreProduct', () => {
+        // Its own endpoint: DELETE is one-way on the API, so a second delete never restores.
+        it('posts to the restore endpoint and resolves with the restored product', () =>
+            useProductsStore()
+                .restoreProduct('p1')
+                .then((restored) => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/products/p1/restore',
+                        method: 'POST'
+                    });
+                    expect(restored).toMatchObject({ id: 'p1' });
+                    expect(useProductsStore().products.p1).toMatchObject({ id: 'p1' });
+                }));
+    });
+
     describe('hardDeleteProduct', () => {
         /*
          * A separate method rather than a flag on `deleteProduct`, because the two are not the same
-         * operation: the soft form sets `deletedAt` and an admin can toggle it back, this one is
+         * operation: the soft form sets `deletedAt` and an admin can restore it, this one is
          * irreversible. Distinct names mean the destructive path cannot be reached by passing the
          * wrong boolean — so what is worth pinning is that it hits the `/hard` URL and nothing else.
          */
@@ -517,7 +532,7 @@ describe('useProductsStore', () => {
             it('posts the store filters to /products/search, id included', () => {
                 respondWithItems([]);
                 const store = useProductsStore();
-                store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50 };
+                store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50, deleted: true };
 
                 return store
                     .watchSearchProducts()
@@ -536,7 +551,8 @@ describe('useProductsStore', () => {
                             // The filter box searches for one id; the API reads a batch.
                             id: ['p1'],
                             minPrice: 5,
-                            maxPrice: 50
+                            maxPrice: 50,
+                            deleted: true
                         });
                         expect(parameters.productId).toBeUndefined();
                     });

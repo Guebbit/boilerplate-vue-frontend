@@ -29,6 +29,11 @@ export const usersResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.HardDeleteUserByIdResponse
     },
     {
+        method: 'POST',
+        pattern: /^\/users\/[^/]+\/restore$/,
+        schema: schemas.RestoreUserByIdResponse
+    },
+    {
         method: 'DELETE',
         pattern: /^\/users\/[^/]+\/2fa$/,
         schema: schemas.AdminDisableUserTwoFactorResponse

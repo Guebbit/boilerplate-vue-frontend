@@ -226,10 +226,23 @@ describe('useUsersStore', () => {
                 }));
     });
 
+    describe('restoreUser', () => {
+        // Its own endpoint: DELETE is one-way on the API, so a second delete never restores.
+        it('posts to the restore endpoint', () =>
+            useUsersStore()
+                .restoreUser('u1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users/u1/restore',
+                        method: 'POST'
+                    });
+                }));
+    });
+
     describe('hardDeleteUser', () => {
         /*
          * A separate method rather than a flag on `deleteUser`, because the two are not the same
-         * operation: the soft form sets `deletedAt` and an admin can toggle it back, this one is
+         * operation: the soft form sets `deletedAt` and an admin can restore it, this one is
          * irreversible. Distinct names mean the destructive path cannot be reached by passing the
          * wrong boolean — so what is worth pinning is the URL, and that it differs from the soft one.
          */

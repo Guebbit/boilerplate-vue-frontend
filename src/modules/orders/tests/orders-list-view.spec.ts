@@ -11,7 +11,8 @@
  * real HTTP call its setup would otherwise fire.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
+import { searchOrders } from '@api';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import OrdersList from '@/modules/orders/views/OrdersList.vue';
@@ -25,6 +26,15 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { asStub } from '../../../../tests/support/stub.ts';
 
 wireModulesIntoCore();
+
+/*
+ * The one client call the soft-deleted-row suite needs answered for real; every other suite here
+ * stubs the page's search outright and never reaches it.
+ */
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@api')>()),
+    searchOrders: vi.fn()
+}));
 
 /**
  * The real app router, scoped to the modules this test suite enables.
@@ -90,5 +100,62 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         const wrapper = mountList();
 
         expect(wrapper.findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(true);
+    });
+});
+
+/** Grants the delete key the row actions are gated on. */
+const signInAsOrderDeleter = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'operator@example.com', role: 'owner' };
+    session.setAbilities({ tenant: [['delete', 'Order']], platform: [] });
+};
+
+/** An order as the list reads it — enough for every column it renders. */
+const order = (id: string, deletedAt?: string) => ({
+    id,
+    userId: 'u1',
+    email: 'ada@example.com',
+    items: [],
+    totalItems: 1,
+    totalQuantity: 1,
+    totalPrice: 10,
+    status: 'pending' as const,
+    createdAt: '2026-01-01T00:00:00Z',
+    ...(deletedAt && { deletedAt })
+});
+
+/**
+ * A soft-deleted order is restored with its own action, never deleted a second time: DELETE is
+ * one-way on the API.
+ */
+describe('OrdersList — a soft-deleted row', () => {
+    it('offers Restore in place of Delete, and restores through the store', async () => {
+        signInAsOrderDeleter();
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>({
+                data: {
+                    items: [order('live'), order('gone', '2026-02-01T00:00:00Z')],
+                    meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
+                }
+            })
+        );
+        const orders = useOrdersStore();
+        const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(undefined);
+
+        const wrapper = mount(OrdersList, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            }
+        });
+        await flushPromises();
+
+        expect(wrapper.findAll('[data-test="row-restore"]')).toHaveLength(1);
+        expect(wrapper.findAll('[data-test="row-delete"]')).toHaveLength(1);
+
+        await wrapper.get('[data-test="row-restore"]').trigger('click');
+
+        expect(restore).toHaveBeenCalledWith('gone');
     });
 });

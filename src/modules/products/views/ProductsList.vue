@@ -8,7 +8,7 @@ export default {
 /**
  * @module
  * Public products list: search/filter form, facet chips, and the paginated table with
- * admin-only row actions (edit, soft delete, hard delete).
+ * admin-only row actions (edit, soft delete or restore, hard delete).
  */
 import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -31,6 +31,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
  * Localized dictionary helper.
@@ -45,7 +46,8 @@ const { addMessage } = useNotificationsStore();
 /**
  * Products store actions.
  */
-const { watchSearchProducts, deleteProduct, hardDeleteProduct, fetchFacets } = useProductsStore();
+const { watchSearchProducts, deleteProduct, hardDeleteProduct, restoreProduct, fetchFacets } =
+    useProductsStore();
 
 /**
  * Products store reactive state — filters, current page window and the facets list.
@@ -71,6 +73,11 @@ const session = useSessionStore();
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
+
+/**
+ * Options of the admin-only "Deleted" filter.
+ */
+const deletedOptions = useDeletedFilterOptions();
 
 /**
  * Selectable page sizes for the products table.
@@ -186,6 +193,22 @@ const handleDelete = (productId: string) =>
         });
 
 /**
+ * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
+ * delete away. The list is reloaded afterwards, since the active filter may no longer match.
+ *
+ * @param productId - Identifier of the product to restore.
+ * @returns A promise settling once the restore and the reload have finished; a failure blocks the
+ *  list in place ({@link rowActionError}).
+ */
+const handleRestore = (productId: string) => {
+    clearRowActionError();
+    return restoreProduct(productId)
+        .then(() => addMessage(t('products-list-page.success-restore')))
+        .then(() => search(true))
+        .catch((error: unknown) => reportRowActionError(error));
+};
+
+/**
  * Permanently deletes a product after an explicit confirmation. Unlike {@link handleDelete}, this
  * bypasses the soft-delete and cannot be undone.
  *
@@ -253,7 +276,7 @@ const handleHardDelete = (productId: string) =>
 
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
-                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                     <v-text-field
                         v-model="filters.text"
                         :label="t('products-list-page.filter-text')"
@@ -277,6 +300,16 @@ const handleHardDelete = (productId: string) =>
                         :label="t('products-list-page.filter-max-price')"
                         :min="0"
                         control-variant="hidden"
+                        hide-details
+                    />
+                    <v-select
+                        v-if="session.can('delete', 'Product')"
+                        v-model="filters.deleted"
+                        :label="t('generic.filter-deleted')"
+                        :items="deletedOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-deleted"
                         hide-details
                     />
                     <v-select
@@ -340,6 +373,16 @@ const handleHardDelete = (productId: string) =>
                 <v-chip size="small" variant="tonal" :color="item.active ? 'success' : 'error'">
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
                 </v-chip>
+                <v-chip
+                    v-if="item.deletedAt"
+                    size="small"
+                    variant="tonal"
+                    color="warning"
+                    class="ml-1"
+                    data-test="row-deleted"
+                >
+                    {{ t('generic.deleted') }}
+                </v-chip>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -373,7 +416,21 @@ const handleHardDelete = (productId: string) =>
                         {{ t('products-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Product')"
+                        v-if="session.can('delete', 'Product') && item.deletedAt"
+                        :size="rowActionSize"
+                        variant="tonal"
+                        color="success"
+                        data-test="row-restore"
+                        :aria-label="
+                            t('products-list-page.button-restore-named', { name: item.title })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleRestore(item.id)"
+                    >
+                        {{ t('products-list-page.button-restore') }}
+                    </v-btn>
+                    <v-btn
+                        v-else-if="session.can('delete', 'Product')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

@@ -19,6 +19,7 @@ import {
     updateUserByIdWithMultipart,
     deleteUserById,
     hardDeleteUserById,
+    restoreUserById,
     adminDisableUserTwoFactor as apiAdminDisableUserTwoFactor
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
@@ -102,7 +103,8 @@ export const useUsersStore = defineStore('users', () => {
                     id: filters.id ? [filters.id] : undefined,
                     email: filters.email,
                     username: filters.username,
-                    active: filters.active
+                    active: filters.active,
+                    deleted: filters.deleted
                 }).then((response) => {
                     captureTotal(response.data.meta.totalPages);
                     return response.data.items;
@@ -140,7 +142,7 @@ export const useUsersStore = defineStore('users', () => {
      * Permanently deletes a user, bypassing the soft delete.
      *
      * `deleteOne` leaves the record in place with `deletedAt` set, which an admin can still see
-     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * and restore; this removes it outright and cannot be undone. Distinct methods rather than a
      * flag, so the irreversible one is never reached by passing the wrong boolean.
      *
      * @param userId - Identifier of the user to destroy.
@@ -148,6 +150,21 @@ export const useUsersStore = defineStore('users', () => {
      */
     const hardDeleteUser = (userId: string) =>
         deleteTarget(() => hardDeleteUserById(userId), userId);
+
+    /**
+     * Undoes a soft delete — `POST /users/{id}/restore`. A second `deleteUser` never does:
+     * DELETE is one-way on the API, and safe to retry. The restored record replaces the cached one.
+     *
+     * @param userId - Identifier of the user to restore.
+     * @returns A promise resolving with the restored user.
+     */
+    const restoreUser = (userId: string) =>
+        fetchAny(() =>
+            restoreUserById(userId).then((response) => {
+                addUser(response.data);
+                return response.data;
+            })
+        );
 
     /**
      * Strips a user's second factor with no code required — the admin-assisted recovery path for
@@ -189,6 +206,7 @@ export const useUsersStore = defineStore('users', () => {
         updateUser,
         deleteUser,
         hardDeleteUser,
+        restoreUser,
         adminDisableTwoFactor
     };
 });

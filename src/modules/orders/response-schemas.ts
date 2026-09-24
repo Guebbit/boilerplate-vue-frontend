@@ -35,6 +35,11 @@ export const ordersResponseSchemas: ResponseSchemaRoute[] = [
     },
     {
         method: 'POST',
+        pattern: /^\/orders\/[^/]+\/restore$/,
+        schema: schemas.RestoreOrderByIdResponse
+    },
+    {
+        method: 'POST',
         pattern: /^\/orders\/[^/]+\/cancel$/,
         schema: schemas.CancelOrderByIdResponse
     },

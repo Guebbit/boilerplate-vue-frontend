@@ -15,6 +15,7 @@ import {
     updateOrderById,
     deleteOrderById,
     hardDeleteOrderById,
+    restoreOrderById,
     cancelOrderById,
     getOrderInvoice,
     overrideOrderStatus
@@ -103,7 +104,8 @@ export const useOrdersStore = defineStore('orders', () => {
                     id: filters.id ? [filters.id] : undefined,
                     userId: filters.userId,
                     productId: filters.productId,
-                    email: filters.email
+                    email: filters.email,
+                    deleted: filters.deleted
                 }).then((response) => {
                     captureTotal(response.data.meta.totalPages);
                     return response.data.items;
@@ -151,7 +153,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * Permanently deletes an order, bypassing the soft delete.
      *
      * `deleteOne` leaves the record in place with `deletedAt` set, which an admin can still see
-     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * and restore; this removes it outright and cannot be undone. Distinct methods rather than a
      * flag, so the irreversible one is never reached by passing the wrong boolean.
      *
      * @param orderId - Identifier of the order to destroy.
@@ -159,6 +161,21 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const hardDeleteOrder = (orderId: string) =>
         deleteTarget(() => hardDeleteOrderById(orderId), orderId);
+
+    /**
+     * Undoes a soft delete — `POST /orders/{id}/restore`. A second `deleteOrder` never does:
+     * DELETE is one-way on the API, and safe to retry. The restored record replaces the cached one.
+     *
+     * @param orderId - Identifier of the order to restore.
+     * @returns A promise resolving with the restored order.
+     */
+    const restoreOrder = (orderId: string) =>
+        fetchAny(() =>
+            restoreOrderById(orderId).then((response) => {
+                addOrder(response.data);
+                return response.data;
+            })
+        );
 
     /**
      * Cancels one order. Which statuses allow it is the server's `actions.cancel`, and its
@@ -236,6 +253,7 @@ export const useOrdersStore = defineStore('orders', () => {
         cancelOrder,
         overrideStatus,
         hardDeleteOrder,
+        restoreOrder,
         fetchInvoice,
         /**
          * Forget everything a language switch invalidated: the cached orders AND the cached
