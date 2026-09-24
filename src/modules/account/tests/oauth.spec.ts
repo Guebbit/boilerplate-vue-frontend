@@ -3,7 +3,7 @@
  * Unit tests for the OAuth provider store and its two pure helpers — mocking only the transport
  * and keying answers by request URL, same pattern as `sessions.spec.ts`.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import {
     useOAuthProvidersStore,
@@ -11,6 +11,7 @@ import {
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     orvalEnvelope,
@@ -54,9 +55,28 @@ describe('providerLabel', () => {
 });
 
 describe('oauthStartUrl', () => {
+    /**
+     * The instance's own prefix, restored after each case so the pinned value never leaks.
+     * Pinned rather than read from `VITE_API_URL`: a runner with no `.env` has no value to read.
+     */
+    let originalBaseUrl: string | undefined;
+
+    beforeEach(() => {
+        originalBaseUrl = instance.defaults.baseURL;
+        instance.defaults.baseURL = 'https://api.example.test';
+    });
+
+    afterEach(() => {
+        instance.defaults.baseURL = originalBaseUrl;
+    });
+
     it('points at the backend start-login route for that provider', () => {
-        const apiUrl = import.meta.env.VITE_API_URL as string;
-        expect(oauthStartUrl('google')).toBe(`${apiUrl}/account/oauth/google`);
+        expect(oauthStartUrl('google')).toBe('https://api.example.test/account/oauth/google');
+    });
+
+    it('falls back to a same-origin path when the instance has no prefix', () => {
+        instance.defaults.baseURL = undefined;
+        expect(oauthStartUrl('github')).toBe('/account/oauth/github');
     });
 });
 
