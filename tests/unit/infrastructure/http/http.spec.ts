@@ -47,6 +47,36 @@ describe('onResponseReject', () => {
         });
     });
 
+    it('lifts a validation item`s details.field to where the forms read it', () => {
+        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+            const error = makeAxiosError(422, {
+                success: false,
+                message: 'Unprocessable Entity',
+                errors: [
+                    {
+                        code: 'VALIDATION_ERROR',
+                        message: 'Not a valid email',
+                        details: { field: 'email' }
+                    },
+                    { code: 'SOMETHING_ELSE', message: 'no field named' }
+                ]
+            });
+            return expect(onResponseReject(error as never)).rejects.toEqual({
+                success: false,
+                message: 'Unprocessable Entity',
+                errors: [
+                    {
+                        code: 'VALIDATION_ERROR',
+                        message: 'Not a valid email',
+                        details: { field: 'email' },
+                        field: 'email'
+                    },
+                    { code: 'SOMETHING_ELSE', message: 'no field named' }
+                ]
+            });
+        });
+    });
+
     it('enriches a reject envelope with x-request-id and x-trace-id headers', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(

@@ -71,11 +71,34 @@ export const onRequestReject = (error: AxiosError) => {
  */
 
 /**
+ * One error item with its field lifted to where forms look for it.
+ *
+ * The contract names the offending field under `details.field`; the form toolkit's
+ * `applyServerErrors` reads a top-level `field` (or `name`/`param`/`path`). Without this every
+ * server-side field refusal — an address the API rejects, a username already taken — fell through
+ * to a banner instead of landing under the field it names. An item that already has a `field`,
+ * or names none, is left as it is.
+ *
+ * @param item - One entry of the envelope's `errors`.
+ * @returns The same entry, plus `field` when `details.field` carries one.
+ */
+const withFieldLifted = (item: unknown): unknown => {
+    if (typeof item !== 'object' || item === null || 'field' in item) return item;
+    const { details } = item as { details?: unknown };
+    const field =
+        typeof details === 'object' && details !== null
+            ? (details as { field?: unknown }).field
+            : undefined;
+    return typeof field === 'string' && field ? { ...item, field } : item;
+};
+
+/**
  * Response error normalizer: every rejection reaches a call site in the same envelope.
  *
  * A response that already carries the standard `errors` field passes through, enriched with the
- * backend correlation headers (`x-request-id` → requestId, `x-trace-id` → traceId); anything
- * else — transport failure, bare proxy error — is mapped onto the same shape.
+ * backend correlation headers (`x-request-id` → requestId, `x-trace-id` → traceId) and each item's
+ * field lifted for the forms ({@link withFieldLifted}); anything else — transport failure, bare
+ * proxy error — is mapped onto the same shape.
  *
  * @param error - Axios error, with or without a response.
  * @returns A promise that never resolves; it always rejects with an
@@ -88,9 +111,11 @@ export const onResponseReject = (
     const traceId = error.response?.headers['x-trace-id'] as string | undefined;
 
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
+        const { errors } = error.response.data;
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
         return Promise.reject({
             ...error.response.data,
+            ...(Array.isArray(errors) && { errors: errors.map((item) => withFieldLifted(item)) }),
             ...(requestId && { requestId }),
             ...(traceId && { traceId })
         });
