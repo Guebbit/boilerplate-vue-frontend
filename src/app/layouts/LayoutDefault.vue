@@ -181,9 +181,6 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
 
         <AppHealthBanner />
 
-        <!-- Rides every page on purpose: the checkout is too late to learn the address is unproved -->
-        <AppVerificationBanner />
-
         <AppNavigation>
             <slot name="navigation" />
         </AppNavigation>
@@ -198,6 +195,14 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
             nothing on most pages.
         -->
         <v-main v-bind="$attrs" tabindex="-1" data-main-content>
+            <!--
+                Rides every page on purpose: the checkout is too late to learn the address is
+                unproved. Inside `<v-main>`, not beside the app bar: a plain alert is not part of
+                Vuetify's layout, so up there it sat underneath the fixed bar, unseen and
+                unclickable.
+            -->
+            <AppVerificationBanner />
+
             <!-- Page hero: every view gets a consistent, accessible title area -->
             <header v-if="slots.header || title" class="page-hero py-8 lg:py-10">
                 <div class="mx-auto w-full max-w-[1280px] px-4">
