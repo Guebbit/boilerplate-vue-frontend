@@ -17,6 +17,20 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 let activeClient: ReturnType<typeof createSseClient> | undefined;
 
 /**
+ * Where the stream is opened. The e2e shard runner's runtime `__E2E_API_URL` wins, the same
+ * precedence `infrastructure/http/client.ts` gives it for every REST call — one built bundle
+ * serves a different backend per shard, and a build-time `VITE_API_SSE` cannot know which.
+ * Otherwise `VITE_API_SSE`, and the local dev server when that is unset.
+ *
+ * @returns The absolute SSE endpoint URL.
+ */
+const sseEndpoint = (): string => {
+    const override = (globalThis as { __E2E_API_URL?: string }).__E2E_API_URL;
+    if (override) return `${override}/observability/events`;
+    return import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
+};
+
+/**
  * Manages the SSE connection feeding the observability dashboard.
  *
  * Uses a module-level `activeClient` singleton so re-mounting the component does
@@ -41,50 +55,45 @@ export const useRealtimeObservability = () => {
         activeClient?.close();
         store.setStatus('connecting');
 
-        // Wire each metric event type to its store action; the endpoint falls back to the local
-        // dev server when `VITE_API_SSE` is unset.
-        activeClient = createSseClient(
-            import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events',
-            REALTIME_SSE_EVENT_NAMES,
-            {
-                onOpen: () => store.setStatus('open'),
-                onError: () => {
-                    store.setStatus('error');
-                    store.setError('SSE connection error');
-                },
-                onEvent: (eventName, payload) => {
-                    if (eventName === 'observability.metrics.snapshot') {
-                        store.setSnapshot(payload);
-                        store.addEntry({
-                            id: `snapshot-${payload.timestamp}`,
-                            kind: 'snapshot',
-                            timestamp: payload.timestamp,
-                            payload
-                        });
-                        return;
-                    }
-
-                    if (eventName === 'observability.metrics.updated') {
-                        store.setUpdate(payload);
-                        store.addEntry({
-                            id: `update-${payload.timestamp}`,
-                            kind: 'update',
-                            timestamp: payload.timestamp,
-                            payload
-                        });
-                        return;
-                    }
-
-                    store.setHeartbeat(payload);
+        // Wire each metric event type to its store action.
+        activeClient = createSseClient(sseEndpoint(), REALTIME_SSE_EVENT_NAMES, {
+            onOpen: () => store.setStatus('open'),
+            onError: () => {
+                store.setStatus('error');
+                store.setError('SSE connection error');
+            },
+            onEvent: (eventName, payload) => {
+                if (eventName === 'observability.metrics.snapshot') {
+                    store.setSnapshot(payload);
                     store.addEntry({
-                        id: `heartbeat-${payload.timestamp}`,
-                        kind: 'heartbeat',
+                        id: `snapshot-${payload.timestamp}`,
+                        kind: 'snapshot',
                         timestamp: payload.timestamp,
                         payload
                     });
+                    return;
                 }
+
+                if (eventName === 'observability.metrics.updated') {
+                    store.setUpdate(payload);
+                    store.addEntry({
+                        id: `update-${payload.timestamp}`,
+                        kind: 'update',
+                        timestamp: payload.timestamp,
+                        payload
+                    });
+                    return;
+                }
+
+                store.setHeartbeat(payload);
+                store.addEntry({
+                    id: `heartbeat-${payload.timestamp}`,
+                    kind: 'heartbeat',
+                    timestamp: payload.timestamp,
+                    payload
+                });
             }
-        );
+        });
     };
 
     /**

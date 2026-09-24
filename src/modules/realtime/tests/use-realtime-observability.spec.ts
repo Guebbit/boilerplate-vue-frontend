@@ -107,6 +107,20 @@ describe('useRealtimeObservability', () => {
             });
         });
 
+        it('follows the e2e runtime API override over the build-time VITE_API_SSE', () => {
+            vi.stubEnv('VITE_API_SSE', 'https://api.example.com/observability/events');
+            vi.stubGlobal('__E2E_API_URL', 'http://localhost:3102');
+            return loadComposable()
+                .then(({ useRealtimeObservability }) => {
+                    useRealtimeObservability().connect();
+
+                    expect(createSseClient.mock.calls[0]?.[0]).toBe(
+                        'http://localhost:3102/observability/events'
+                    );
+                })
+                .finally(() => vi.unstubAllGlobals());
+        });
+
         it('reports connecting before the transport answers', () =>
             loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
                 const store = useRealtimeObservabilityStore();
