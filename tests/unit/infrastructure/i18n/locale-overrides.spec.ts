@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as schemas from '@api/schemas';
+import { contractResponse } from '../http/orval-fixture-schema.ts';
 
 /**
  * Runtime locale discovery and the override tier — `src/infrastructure/i18n/locale-overrides.ts`.
@@ -48,17 +50,30 @@ const capability = (tag: string, tenants: string[] = ['demo-be', 'demo-fe']) => 
     name: tag,
     nativeName: tag,
     direction: 'ltr',
+    active: true,
     tenants,
-    source: 'both'
+    source: 'both',
+    entryCount: 0,
+    revision: 1
 });
 
 beforeEach(() => {
     vi.clearAllMocks();
     snapshot = [...supportedLanguages];
-    getLocalesMock.mockResolvedValue({
-        data: { locales: [capability('en'), capability('it')], default: 'en', fallback: 'en' }
-    });
-    getLocaleMessagesMock.mockResolvedValue({ data: { messages: { greeting: 'Ciao' } } });
+    getLocalesMock.mockResolvedValue(
+        contractResponse(schemas.GetLocalesResponse, {
+            locales: [capability('en'), capability('it')],
+            default: 'en',
+            fallback: 'en'
+        })
+    );
+    getLocaleMessagesMock.mockResolvedValue(
+        contractResponse(schemas.GetLocaleMessagesResponse, {
+            locale: 'it',
+            revision: 1,
+            messages: { greeting: 'Ciao' }
+        })
+    );
 });
 
 afterEach(() => {
@@ -81,13 +96,28 @@ describe('fetchRemoteLocales', () => {
         ['answerable only', ['demo-be']],
         ['both', ['demo-be', 'demo-fe']]
     ])('keeps a language that is %s', (_label, tenants) => {
-        getLocalesMock.mockResolvedValue({ data: { locales: [capability('es', tenants)] } });
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [capability('es', tenants)],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
         return expect(fetchRemoteLocales()).resolves.toEqual(['es']);
     });
 
     it('drops a language that claims no tenant at all', () => {
+        // Off-contract on purpose (`tenants` has `minItems: 1`), so not run through the schema:
+        // this is the defence against a counterpart that breaks that rule.
         getLocalesMock.mockResolvedValue({
-            data: { locales: [capability('en'), { ...capability('es'), tenants: [] }] }
+            success: true,
+            status: 200,
+            message: 'OK',
+            data: {
+                locales: [capability('en'), { ...capability('es'), tenants: [] }],
+                default: 'en',
+                fallback: 'en'
+            }
         });
         return expect(fetchRemoteLocales()).resolves.toEqual(['en']);
     });
@@ -134,9 +164,13 @@ describe('fetchLocaleOverrides', () => {
 
 describe('mergeRemoteLocales', () => {
     it('adds a language the API offers and this build does not bundle', () => {
-        getLocalesMock.mockResolvedValue({
-            data: { locales: [capability('en'), capability('es')] }
-        });
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [capability('en'), capability('es')],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
 
         return mergeRemoteLocales().then((added) => {
             expect(added).toEqual(['es']);
@@ -145,7 +179,13 @@ describe('mergeRemoteLocales', () => {
     });
 
     it('adds nothing twice, however often it runs', () => {
-        getLocalesMock.mockResolvedValue({ data: { locales: [capability('es')] } });
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [capability('es')],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
 
         return mergeRemoteLocales()
             .then(() => mergeRemoteLocales())
@@ -166,9 +206,13 @@ describe('mergeRemoteLocales', () => {
 
 describe('withLocaleOverrides', () => {
     it('layers what has been edited over what was bundled', () => {
-        getLocaleMessagesMock.mockResolvedValue({
-            data: { messages: { greeting: 'Ciao dal database' } }
-        });
+        getLocaleMessagesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocaleMessagesResponse, {
+                locale: 'it',
+                revision: 1,
+                messages: { greeting: 'Ciao dal database' }
+            })
+        );
 
         return withLocaleOverrides('it', { greeting: 'Ciao', farewell: 'Addio' }).then((merged) => {
             expect(merged).toEqual({ greeting: 'Ciao dal database', farewell: 'Addio' });
@@ -180,9 +224,13 @@ describe('withLocaleOverrides', () => {
      * they do not carry is left for `fallbackLocale` to answer key by key.
      */
     it('is the whole dictionary for a language the bundle does not have', () => {
-        getLocaleMessagesMock.mockResolvedValue({
-            data: { messages: { navigation: { home: 'Inicio' } } }
-        });
+        getLocaleMessagesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocaleMessagesResponse, {
+                locale: 'it',
+                revision: 1,
+                messages: { navigation: { home: 'Inicio' } }
+            })
+        );
 
         return withLocaleOverrides('es', {}).then((merged) => {
             expect(merged).toEqual({ navigation: { home: 'Inicio' } });

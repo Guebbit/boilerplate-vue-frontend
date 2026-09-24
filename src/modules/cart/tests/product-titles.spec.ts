@@ -9,13 +9,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { getProductById } from '@api';
+import * as schemas from '@api/schemas';
 import { useCartStore } from '@/modules/cart/store.ts';
+import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 vi.mock('@api', () => ({
     getProductById: vi.fn((id: string) =>
         id === 'broken'
             ? Promise.reject(new Error('404'))
-            : Promise.resolve({ data: { id, title: `Title of ${id}` } })
+            : Promise.resolve(
+                  contractResponse(schemas.GetProductByIdResponse, {
+                      id,
+                      title: `Title of ${id}`,
+                      price: 1
+                  })
+              )
     )
 }));
 

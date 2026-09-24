@@ -21,6 +21,8 @@
  */
 
 import { asStub } from '../../../support/stub';
+import * as schemas from '@api/schemas';
+import { contractResponse } from '../../infrastructure/http/orval-fixture-schema.ts';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';
@@ -61,10 +63,19 @@ vi.mock('@/infrastructure/i18n', async (importOriginal) => ({
  * `withLocaleOverrides`, so the merge itself — bundled dictionary first, edited overrides on top,
  * per key — is exercised by the assertions below instead of being replaced by them.
  */
-const getLocalesMock = vi.fn(() => Promise.resolve({ data: { locales: [] } }));
-const getLocaleMessagesMock = vi.fn(
-    (_locale: string): Promise<{ data?: { messages?: Record<string, unknown> } }> =>
-        Promise.resolve({ data: { messages: { greeting: 'from-the-database' } } })
+const getLocalesMock = vi.fn(() =>
+    Promise.resolve(
+        contractResponse(schemas.GetLocalesResponse, { locales: [], default: 'en', fallback: 'en' })
+    )
+);
+const getLocaleMessagesMock = vi.fn((_locale: string) =>
+    Promise.resolve(
+        contractResponse(schemas.GetLocaleMessagesResponse, {
+            locale: 'it',
+            revision: 1,
+            messages: { greeting: 'from-the-database' }
+        })
+    )
 );
 
 vi.mock('@api', async (importOriginal) => ({
@@ -145,9 +156,13 @@ describe('fetchLanguageApi', () => {
         // `navigation` is deliberately a namespace the SHARED dictionary owns and fills. Editing
         // ONE of its keys must not cost the others, which is the difference between a deep merge
         // and an assign — and the failure would surface on an unrelated screen.
-        getLocaleMessagesMock.mockResolvedValueOnce({
-            data: { messages: { navigation: { ['error-already-logged']: 'EDITED' } } }
-        });
+        getLocaleMessagesMock.mockResolvedValueOnce(
+            contractResponse(schemas.GetLocaleMessagesResponse, {
+                locale: 'it',
+                revision: 1,
+                messages: { navigation: { ['error-already-logged']: 'EDITED' } }
+            })
+        );
         return fetchLanguageApi('it').then(([, dictionary]) => {
             const navigation = dictionary.navigation as Record<string, string>;
 

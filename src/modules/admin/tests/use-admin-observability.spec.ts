@@ -18,11 +18,46 @@ import {
     getObservabilityAuditLogs,
     deleteExpiredTokens
 } from '@api';
-import type { AuditEventItem } from '@api';
+import type { AuditEventItem, ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
+import * as schemas from '@api/schemas';
 import { useAdminObservability } from '@/modules/admin/composables/use-admin-observability';
+import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
-const HEALTH = { status: 'ok', uptimeSeconds: 120 };
-const METRICS = { totalRequests: 42, totalErrors: 1 };
+/**
+ * A readiness report as `GET /observability/health` declares it — typed, so a required field the
+ * contract adds is a compile error here rather than a fixture the endpoint could never return.
+ */
+const HEALTH: ObservabilityHealth = {
+    status: 'ok',
+    environment: 'test',
+    service: 'api',
+    runtimeVersion: 'v22.0.0',
+    uptimeSeconds: 120,
+    dependencies: {
+        database: { status: 'ready' },
+        cache: { status: 'disabled' },
+        queue: { status: 'disabled' }
+    },
+    timestamp: '2026-01-01T00:00:00.000Z'
+};
+
+/**
+ * A metrics overview as `GET /observability/metrics/overview` declares it.
+ */
+const METRICS: ObservabilityMetricsSummary = {
+    http: {
+        totalRequests: 42,
+        totalErrors: 1,
+        errorRate: 1 / 42,
+        inFlight: 0,
+        latencyMs: { p50: 5, p95: 20 }
+    },
+    auth: {},
+    business: {},
+    database: {},
+    process: {},
+    timestamp: '2026-01-01T00:00:00.000Z'
+};
 
 /**
  * A page's worth of meta, as `PaginationMeta` declares it.
@@ -50,13 +85,27 @@ const AUDIT_ITEM: AuditEventItem = {
     level: 'info'
 };
 
+/**
+ * An audit-log page, proven against the endpoint's generated response schema.
+ *
+ * @param items - the rows on this page
+ * @param pageMeta - the page's `PaginationMeta`
+ * @returns the success envelope the client resolves with
+ */
+const auditPage = (items: AuditEventItem[], pageMeta: ReturnType<typeof meta>) =>
+    contractResponse(schemas.GetObservabilityAuditLogsResponse, { items, meta: pageMeta });
+
 vi.mock('@api', () => ({
-    getObservabilityHealth: vi.fn(() => Promise.resolve({ data: HEALTH })),
-    getObservabilityMetricsOverview: vi.fn(() => Promise.resolve({ data: METRICS })),
-    getObservabilityAuditLogs: vi.fn(() =>
-        Promise.resolve({ data: { items: [AUDIT_ITEM], meta: meta(1) } })
+    getObservabilityHealth: vi.fn(() =>
+        Promise.resolve(contractResponse(schemas.GetObservabilityHealthResponse, HEALTH))
     ),
-    deleteExpiredTokens: vi.fn(() => Promise.resolve({ data: undefined }))
+    getObservabilityMetricsOverview: vi.fn(() =>
+        Promise.resolve(contractResponse(schemas.GetObservabilityMetricsOverviewResponse, METRICS))
+    ),
+    getObservabilityAuditLogs: vi.fn(() => Promise.resolve(auditPage([AUDIT_ITEM], meta(1)))),
+    deleteExpiredTokens: vi.fn(() =>
+        Promise.resolve(contractResponse(schemas.DeleteExpiredTokensResponse))
+    )
 }));
 
 /**
@@ -175,9 +224,9 @@ describe('useAdminObservability', () => {
         it('reports a total larger than the page, and the pages that reach the rest', () => {
             // The number the dashboard renders as "50 of 3,412" — and, unlike the capped read it
             // replaces, a page count that can actually get to the 3,412nd.
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
-                data: { items: [AUDIT_ITEM], meta: meta(3412, 69) }
-            } as never);
+            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
+                auditPage([AUDIT_ITEM], meta(3412, 69)) as never
+            );
             const { auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
 
             return fetchAuditLogs().then(() => {
@@ -224,9 +273,9 @@ describe('useAdminObservability', () => {
         });
 
         it('reads an empty page as no events and a zero total', () => {
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
-                data: { items: [], meta: meta(0, 0) }
-            } as never);
+            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
+                auditPage([], meta(0, 0)) as never
+            );
             const { auditEvents, auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
 
             return fetchAuditLogs().then(() => {
@@ -254,9 +303,9 @@ describe('useAdminObservability', () => {
         });
 
         it('replaces the previous page rather than appending to it', () => {
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
-                data: { items: [AUDIT_ITEM, AUDIT_ITEM], meta: meta(2) }
-            } as never);
+            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
+                auditPage([AUDIT_ITEM, AUDIT_ITEM], meta(2)) as never
+            );
             const { auditEvents, auditTotal, fetchAuditLogs } = useAdminObservability();
 
             return fetchAuditLogs()

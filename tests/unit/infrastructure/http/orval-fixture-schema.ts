@@ -9,6 +9,7 @@
  * it. Parsing the fixture through this before it resolves closes that gap without touching the
  * mock's dispatch logic.
  */
+import type { ZodType } from 'zod';
 import { resolveResponseSchema } from '@/infrastructure/http/response-schema-map';
 
 /**
@@ -63,4 +64,24 @@ export const parseOrvalFixture = (
     const result = schema.safeParse(data);
     if (!result.success) throw result.error;
     return data;
+};
+
+/**
+ * The same proof for a spec that mocks a generated `@api` function rather than `orvalMutator`:
+ * there is no URL to look a schema up by, so the caller names the operation's own
+ * `<Operation>Response` schema from `@api/schemas` instead.
+ *
+ * Returns the envelope unparsed, for the same reason {@link parseOrvalFixture} does — a `.default()`
+ * the schema would fill in is not something the real backend sent.
+ *
+ * @param schema - the operation's response schema, e.g. `schemas.GetCartResponse`
+ * @param data - the payload a store reads off `data`; omit for a response with no body
+ * @returns the full success envelope, once it has been proven against `schema`
+ * @throws {import('zod').ZodError} When the envelope does not match `schema`
+ */
+export const contractResponse = (schema: ZodType, data?: unknown): Record<string, unknown> => {
+    const envelope = orvalEnvelope(data);
+    const result = schema.safeParse(envelope);
+    if (!result.success) throw result.error;
+    return envelope;
 };

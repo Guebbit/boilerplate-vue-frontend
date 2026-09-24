@@ -24,6 +24,9 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -111,19 +114,17 @@ const signInAsOrderDeleter = () => {
     session.setAbilities({ tenant: [['delete', 'Order']], platform: [] });
 };
 
-/** An order as the list reads it — enough for every column it renders. */
-const order = (id: string, deletedAt?: string) => ({
-    id,
-    userId: 'u1',
-    email: 'ada@example.com',
-    items: [],
-    totalItems: 1,
-    totalQuantity: 1,
-    totalPrice: 10,
-    status: 'pending' as const,
-    createdAt: '2026-01-01T00:00:00Z',
-    ...(deletedAt && { deletedAt })
-});
+/** An order as the list reads it — a whole contract `Order`, so every column has its field. */
+const order = (id: string, deletedAt?: string) =>
+    anOrder({
+        id,
+        totalItems: 1,
+        totalQuantity: 1,
+        totalPrice: 10,
+        netTotal: 10,
+        createdAt: '2026-01-01T00:00:00Z',
+        ...(deletedAt && { deletedAt })
+    });
 
 /**
  * A soft-deleted order is restored with its own action, never deleted a second time: DELETE is
@@ -133,12 +134,12 @@ describe('OrdersList — a soft-deleted row', () => {
     it('offers Restore in place of Delete, and restores through the store', async () => {
         signInAsOrderDeleter();
         vi.mocked(searchOrders).mockResolvedValue(
-            asStub<Awaited<ReturnType<typeof searchOrders>>>({
-                data: {
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
                     items: [order('live'), order('gone', '2026-02-01T00:00:00Z')],
                     meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
-                }
-            })
+                })
+            )
         );
         const orders = useOrdersStore();
         const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(undefined);

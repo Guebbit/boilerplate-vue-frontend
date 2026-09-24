@@ -24,20 +24,14 @@ import {
     restoreOrderById,
     getOrderInvoice
 } from '@api';
+import * as schemas from '@api/schemas';
+import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 /**
  * Fixture order returned by the mocked `@api` client.
  */
-const ORDER = {
-    id: 'o1',
-    userId: 'u1',
-    email: 'ada@example.com',
-    items: [],
-    totalItems: 1,
-    totalQuantity: 2,
-    totalPrice: 19.98,
-    status: 'pending'
-};
+const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netTotal: 19.98 });
 
 /**
  * Fixture PDF blob returned by the mocked invoice endpoint.
@@ -49,15 +43,30 @@ const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 // response.
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 } };
 
+/**
+ * Every JSON answer, each proven against its operation's generated response schema once, here.
+ * The invoice is a Blob, not an envelope, so it has no schema to answer to.
+ */
+const RESPONSES = {
+    listed: contractResponse(schemas.ListOrdersResponse, EMPTY_PAGE),
+    searched: contractResponse(schemas.SearchOrdersResponse, EMPTY_PAGE),
+    fetched: contractResponse(schemas.GetOrderByIdResponse, ORDER),
+    created: contractResponse(schemas.CreateOrderResponse, ORDER),
+    updated: contractResponse(schemas.UpdateOrderByIdResponse, ORDER),
+    deleted: contractResponse(schemas.DeleteOrderByIdResponse),
+    hardDeleted: contractResponse(schemas.HardDeleteOrderByIdResponse),
+    restored: contractResponse(schemas.RestoreOrderByIdResponse, ORDER)
+};
+
 vi.mock('@api', () => ({
-    listOrders: vi.fn(() => Promise.resolve({ data: EMPTY_PAGE })),
-    searchOrders: vi.fn(() => Promise.resolve({ data: EMPTY_PAGE })),
-    getOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
-    createOrder: vi.fn(() => Promise.resolve({ data: ORDER })),
-    updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
-    deleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
-    hardDeleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
-    restoreOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
+    listOrders: vi.fn(() => Promise.resolve(RESPONSES.listed)),
+    searchOrders: vi.fn(() => Promise.resolve(RESPONSES.searched)),
+    getOrderById: vi.fn(() => Promise.resolve(RESPONSES.fetched)),
+    createOrder: vi.fn(() => Promise.resolve(RESPONSES.created)),
+    updateOrderById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
+    deleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.deleted)),
+    hardDeleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.hardDeleted)),
+    restoreOrderById: vi.fn(() => Promise.resolve(RESPONSES.restored)),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE))
 }));
 
@@ -69,11 +78,19 @@ describe('useOrdersStore', () => {
 
     describe('fetchOrders', () => {
         it('reads the item list out of the paginated envelope', () => {
+            // A page with a row in it: an empty one cannot tell "read the items" from "read nothing".
+            vi.mocked(listOrders).mockResolvedValueOnce(
+                contractResponse(schemas.ListOrdersResponse, {
+                    ...EMPTY_PAGE,
+                    items: [ORDER],
+                    meta: { ...EMPTY_PAGE.meta, totalItems: 1 }
+                }) as never
+            );
             const store = useOrdersStore();
 
             return store.fetchOrders().then(() => {
-                expect(listOrders).toHaveBeenCalled();
-                expect(store.ordersList).toEqual([]);
+                expect(listOrders).toHaveBeenCalledTimes(1);
+                expect(store.ordersList).toEqual([ORDER]);
             });
         });
     });

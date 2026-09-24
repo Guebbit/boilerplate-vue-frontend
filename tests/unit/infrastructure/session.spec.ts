@@ -10,6 +10,9 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import * as schemas from '@api/schemas';
+import { contractResponse } from './http/orval-fixture-schema.ts';
+import { aUser } from '../../support/unit/fixtures.ts';
 
 const updateAccountMock = vi.fn();
 const getAccountMock = vi.fn();
@@ -37,8 +40,15 @@ const signedIn = () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    updateAccountMock.mockResolvedValue({ data: {} });
-    getMyAbilitiesMock.mockResolvedValue({ data: { platform: [], tenant: [], version: 1 } });
+    updateAccountMock.mockResolvedValue(contractResponse(schemas.UpdateAccountResponse, aUser()));
+    getMyAbilitiesMock.mockResolvedValue(
+        contractResponse(schemas.GetMyAbilitiesResponse, {
+            platform: [],
+            tenant: [],
+            version: 1,
+            subjects: []
+        })
+    );
 });
 
 describe('persistLocalePreference', () => {
@@ -197,15 +207,16 @@ describe('loadViewer', () => {
      * silently fall back to loading the full image for every navigation-bar avatar.
      */
     it('carries thumbnailUrl into the viewer projection', () => {
-        getAccountMock.mockResolvedValue({
-            data: {
-                id: '1',
-                email: 'a@b.c',
-                role: 'customer',
-                imageUrl: '/images/abc.png',
-                thumbnailUrl: '/images/thumbs/v1/abc.webp'
-            }
-        });
+        getAccountMock.mockResolvedValue(
+            contractResponse(
+                schemas.GetAccountResponse,
+                aUser({
+                    role: 'customer',
+                    imageUrl: '/images/abc.png',
+                    thumbnailUrl: '/images/thumbs/v1/abc.webp'
+                })
+            )
+        );
         const store = useSessionStore();
 
         return store.loadViewer().then(() => {
@@ -215,9 +226,12 @@ describe('loadViewer', () => {
     });
 
     it('leaves thumbnailUrl undefined for an account with none', () => {
-        getAccountMock.mockResolvedValue({
-            data: { id: '1', email: 'a@b.c', role: 'customer', imageUrl: '/images/abc.png' }
-        });
+        getAccountMock.mockResolvedValue(
+            contractResponse(
+                schemas.GetAccountResponse,
+                aUser({ role: 'customer', imageUrl: '/images/abc.png' })
+            )
+        );
         const store = useSessionStore();
 
         return store.loadViewer().then(() => {
@@ -231,12 +245,17 @@ describe('loadViewer', () => {
      * never arrived is a screen that hides every control its visitor is entitled to.
      */
     it('loads the rules that go with the viewer, not just the projection', () => {
-        getAccountMock.mockResolvedValue({
-            data: { id: '1', email: 'a@b.c', role: 'admin' }
-        });
-        getMyAbilitiesMock.mockResolvedValue({
-            data: { platform: [], tenant: [['delete', 'Product']], version: 1 }
-        });
+        getAccountMock.mockResolvedValue(
+            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+        );
+        getMyAbilitiesMock.mockResolvedValue(
+            contractResponse(schemas.GetMyAbilitiesResponse, {
+                platform: [],
+                tenant: [['delete', 'Product']],
+                version: 1,
+                subjects: ['Product']
+            })
+        );
         const store = useSessionStore();
         store.setAccessToken('token');
 
@@ -254,10 +273,17 @@ describe('loadViewer', () => {
      * nowhere else, see `PermissionAction`'s own docblock.
      */
     it('answers a checkout ability the same way it answers a CRUD one', () => {
-        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'customer' } });
-        getMyAbilitiesMock.mockResolvedValue({
-            data: { platform: [], tenant: [['checkout', 'Cart']], version: 1 }
-        });
+        getAccountMock.mockResolvedValue(
+            contractResponse(schemas.GetAccountResponse, aUser({ role: 'customer' }))
+        );
+        getMyAbilitiesMock.mockResolvedValue(
+            contractResponse(schemas.GetMyAbilitiesResponse, {
+                platform: [],
+                tenant: [['checkout', 'Cart']],
+                version: 1,
+                subjects: ['Cart']
+            })
+        );
         const store = useSessionStore();
         store.setAccessToken('token');
 
@@ -271,10 +297,17 @@ describe('loadViewer', () => {
      * quietly matching no rule — see `can`'s own docblock for why it warns instead of throwing.
      */
     it('carries the published subject set alongside the rules', () => {
-        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'admin' } });
-        getMyAbilitiesMock.mockResolvedValue({
-            data: { platform: [], tenant: [], version: 1, subjects: ['Order', 'Product'] }
-        });
+        getAccountMock.mockResolvedValue(
+            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+        );
+        getMyAbilitiesMock.mockResolvedValue(
+            contractResponse(schemas.GetMyAbilitiesResponse, {
+                platform: [],
+                tenant: [],
+                version: 1,
+                subjects: ['Order', 'Product']
+            })
+        );
         const store = useSessionStore();
         store.setAccessToken('token');
 
@@ -285,7 +318,9 @@ describe('loadViewer', () => {
 
     /** A response that omits `subjects` altogether must not wipe out a set already known. */
     it('leaves a previously published subject set alone when a response omits it', () => {
-        getAccountMock.mockResolvedValue({ data: { id: '1', email: 'a@b.c', role: 'admin' } });
+        getAccountMock.mockResolvedValue(
+            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+        );
         const store = useSessionStore();
         store.setAbilities({ tenant: [], platform: [], subjects: ['Order'] });
 

@@ -30,14 +30,59 @@ import {
     reorder as apiReorder,
     getProductById
 } from '@api';
+import * as schemas from '@api/schemas';
+import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+
+/**
+ * The cart every read answers with: one line of two units.
+ */
 const CART = {
     items: [{ productId: 'p1', quantity: 2 }],
     summary: { itemsCount: 1, totalQuantity: 2, total: 19.98 }
 };
 
+/**
+ * The cart after its last line is removed.
+ */
 const EMPTY_CART = { items: [], summary: { itemsCount: 0, totalQuantity: 0, total: 0 } };
 
-const ORDER = { id: 'o1', totalPrice: 19.98 };
+/**
+ * The order checkout creates from {@link CART}.
+ */
+const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netTotal: 19.98 });
+
+/**
+ * A catalogue product as `GET /products/{id}` answers it, weighed so `basketWeight` has a number.
+ *
+ * @param id - the product id
+ * @param requiresShipping - false for a digital good
+ * @returns the product payload
+ */
+const aProduct = (id: string, requiresShipping = true) => ({
+    id,
+    title: `Product ${id}`,
+    price: 9.99,
+    weight: 500,
+    requiresShipping
+});
+
+/**
+ * Every canned answer, each proven against its operation's generated response schema once, here —
+ * so a fixture that drifts from the contract fails the whole file instead of passing forever.
+ */
+const RESPONSES = {
+    cart: contractResponse(schemas.GetCartResponse, CART),
+    summary: contractResponse(schemas.GetCartSummaryResponse, CART.summary),
+    upserted: contractResponse(schemas.UpsertCartItemResponse, CART),
+    updated: contractResponse(schemas.UpdateCartItemByIdResponse, CART),
+    removed: contractResponse(schemas.RemoveCartItemResponse, EMPTY_CART),
+    cleared: contractResponse(schemas.ClearCartResponse, EMPTY_CART),
+    checkedOut: contractResponse(schemas.CheckoutResponse, { order: ORDER }),
+    reordered: contractResponse(schemas.ReorderResponse, CART),
+    product: (id: string, requiresShipping = true) =>
+        contractResponse(schemas.GetProductByIdResponse, aProduct(id, requiresShipping))
+};
 
 /**
  * The reject envelope `onResponseReject` builds — never an `Error`, which is the whole point.
@@ -52,19 +97,15 @@ const apiFailure = (status: number) =>
     }) as never;
 
 vi.mock('@api', () => ({
-    getCart: vi.fn(() => Promise.resolve({ data: CART })),
-    getCartSummary: vi.fn(() => Promise.resolve({ data: CART.summary })),
-    upsertCartItem: vi.fn(() => Promise.resolve({ data: CART })),
-    updateCartItemById: vi.fn(() => Promise.resolve({ data: CART })),
-    removeCartItem: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
-    clearCart: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
-    checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } })),
-    reorder: vi.fn(() => Promise.resolve({ data: CART })),
-    getProductById: vi.fn((id: string) =>
-        Promise.resolve({
-            data: { id, title: `Product ${id}`, price: 9.99, weight: 500, requiresShipping: true }
-        })
-    )
+    getCart: vi.fn(() => Promise.resolve(RESPONSES.cart)),
+    getCartSummary: vi.fn(() => Promise.resolve(RESPONSES.summary)),
+    upsertCartItem: vi.fn(() => Promise.resolve(RESPONSES.upserted)),
+    updateCartItemById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
+    removeCartItem: vi.fn(() => Promise.resolve(RESPONSES.removed)),
+    clearCart: vi.fn(() => Promise.resolve(RESPONSES.cleared)),
+    checkout: vi.fn(() => Promise.resolve(RESPONSES.checkedOut)),
+    reorder: vi.fn(() => Promise.resolve(RESPONSES.reordered)),
+    getProductById: vi.fn((id: string) => Promise.resolve(RESPONSES.product(id)))
 }));
 
 describe('useCartStore', () => {
@@ -309,15 +350,9 @@ describe('useCartStore', () => {
         });
 
         it('excludes a line whose product does not require shipping', () => {
-            vi.mocked(getProductById).mockResolvedValueOnce({
-                data: {
-                    id: 'p1',
-                    title: 'Ebook',
-                    price: 9.99,
-                    weight: 500,
-                    requiresShipping: false
-                }
-            } as never);
+            vi.mocked(getProductById).mockResolvedValueOnce(
+                RESPONSES.product('p1', false) as never
+            );
             const store = useCartStore();
 
             return store
