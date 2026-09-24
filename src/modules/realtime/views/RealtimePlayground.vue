@@ -75,6 +75,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                         color="secondary"
                         class="mt-1"
                         role="status"
+                        data-test="realtime-status"
                         :aria-label="
                             t('realtime-playground-page.connection-status', {
                                 status: observabilityStatus
@@ -85,7 +86,12 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                     </v-chip>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <v-btn color="primary" variant="tonal" @click="connectObservability">
+                    <v-btn
+                        color="primary"
+                        variant="tonal"
+                        data-test="realtime-connect"
+                        @click="connectObservability"
+                    >
                         {{ t('realtime-playground-page.button-connect') }}
                     </v-btn>
                     <v-btn variant="tonal" @click="disconnectObservability">
@@ -116,6 +122,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                             accent="secondary"
                         />
                         <CardMaterialStat
+                            data-test="realtime-requests"
                             :title="t('realtime-playground-page.stat-requests')"
                             :value="latestEntry.payload.http.totalRequests"
                             :subtitle="`${latestEntry.payload.http.totalErrors} ${t('realtime-playground-page.stat-errors-suffix')}`"
@@ -138,7 +145,12 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                         every card again on every event. The feed itself is a log a reader can
                         scroll into — focusable, since a scroll box without focus is keyboard-dead.
                     -->
-                    <p class="m-0 text-xs opacity-70" role="status" aria-live="polite">
+                    <p
+                        class="m-0 text-xs opacity-70"
+                        role="status"
+                        aria-live="polite"
+                        data-test="realtime-feed-summary"
+                    >
                         {{
                             latestEntry
                                 ? t('realtime-playground-page.feed-summary', {
