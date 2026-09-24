@@ -68,10 +68,12 @@ const mountOrder = (order: OrderType) => {
 
 /** One line, everything but `current` fixed — only what each case asserts on changes. */
 const lineWith = (current: OrderType['items'][number]['current']): OrderType['items'][number] => ({
-    product: { id: 'p1', title: 'Gadget', price: 9.99 },
+    product: { id: 'p1', title: 'Gadget', price: 9.99, taxRate: 0 },
     quantity: 1,
     locale: 'en',
-    current
+    current,
+    taxAmount: 0,
+    netAmount: 9.99
 });
 
 const BASE_ORDER: Omit<OrderType, 'items'> = {
@@ -81,6 +83,11 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     totalItems: 1,
     totalQuantity: 1,
     totalPrice: 9.99,
+    netTotal: 9.99,
+    taxTotal: 0,
+    shippingNetAmount: 0,
+    shippingTaxAmount: 0,
+    taxSummary: [],
     actions: { transitions: [], cancel: false, pay: false }
 };
 

@@ -76,6 +76,11 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     totalItems: 0,
     totalQuantity: 0,
     totalPrice: 0,
+    netTotal: 0,
+    taxTotal: 0,
+    shippingNetAmount: 0,
+    shippingTaxAmount: 0,
+    taxSummary: [],
     status: OrderStatus.pending,
     ...overrides
 });

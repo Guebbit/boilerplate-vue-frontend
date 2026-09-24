@@ -245,15 +245,22 @@ describe('localeChoice — locale-sensitive store resets', () => {
         email: 'buyer@example.com',
         items: [
             {
-                product: { id: 'p1', title: 'Gadget', price: 9.99 },
+                product: { id: 'p1', title: 'Gadget', price: 9.99, taxRate: 0 },
                 quantity: 1,
                 locale: 'en',
-                current: null
+                current: null,
+                taxAmount: 0,
+                netAmount: 9.99
             }
         ],
         totalItems: 1,
         totalQuantity: 1,
         totalPrice: 9.99,
+        netTotal: 9.99,
+        taxTotal: 0,
+        shippingNetAmount: 0,
+        shippingTaxAmount: 0,
+        taxSummary: [],
         status: 'pending'
     };
 
