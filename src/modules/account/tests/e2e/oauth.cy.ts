@@ -90,9 +90,11 @@ describe('Social login (OAuth)', () => {
         cy.emailTo('oauth.demo@example.com').then(({ token }) => {
             cy.visit(`/en/verify-email/confirm?token=${token}`);
         });
+        // Spent as a guest: `signUpUnverified` already signed out, as someone opening the link
+        // from a mailbox on another device would be.
         cy.get('[data-test=verify-submit]').click();
         cy.get('#home-page').should('exist');
-        cy.logout();
+        cy.get('[data-test=user-menu]').should('not.exist');
 
         // ── Now the provider may link onto it ─────────────────────────────────────────
         cy.visit('/en/login');

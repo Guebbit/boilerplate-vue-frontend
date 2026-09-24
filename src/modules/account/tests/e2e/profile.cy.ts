@@ -293,7 +293,15 @@ describe('Profile self-service', () => {
             cy.get('[data-test=email-change-submit]').click();
             cy.contains('Email address changed').should('exist');
 
-            // The live session's own record picked up the swap, not just a toast.
+            // A changed address ends every session — the backend revokes them all, the same
+            // treatment a changed password gets — so the proof is a fresh sign-in with the NEW
+            // address and the unchanged password, and the profile showing it.
+            cy.visit('/en/login');
+            cy.get('[type=email]').should('not.be.disabled').clear();
+            cy.get('[type=email]').should('not.be.disabled').type('new-address@example.com');
+            cy.get('[type=password]').should('not.be.disabled').type(seedAccount('user').password);
+            cy.get('form').submit();
+            cy.url().should('not.include', '/login');
             cy.visit('/en/profile');
             cy.get('#profile-page [type=email]').should('have.value', 'new-address@example.com');
         });
