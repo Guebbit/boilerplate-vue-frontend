@@ -101,6 +101,22 @@ describe('fetchRequests', () => {
             expect(store.requests.map(({ id }) => id)).toEqual(['f1']);
         });
     });
+
+    /*
+     * Through the unfiltered search, never `GET /feedback` with a cache-busting param: the
+     * contract declares no such param, and the API answers an undeclared one with 422 — the
+     * inbox then rendered empty for every admin.
+     */
+    it('reads the whole inbox through the search, with no filters and no query string', () =>
+        useFeedbackStore()
+            .fetchRequests()
+            .then(() => {
+                const [request] = vi.mocked(orvalMutator).mock.calls[0] as [
+                    { url: string; data?: unknown; params?: unknown }
+                ];
+                expect(request).toMatchObject({ url: '/feedback/search', data: {} });
+                expect(request.params).toBeUndefined();
+            }));
 });
 
 describe('searchRequests', () => {
@@ -121,7 +137,11 @@ describe('updateStatus', () => {
             .then(() => store.updateStatus('f1', 'resolved'))
             .then(() => {
                 // The reload is the point: the row worth rendering is the API's.
-                expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
+                expect(requestedUrls()).toEqual([
+                    '/feedback/search',
+                    '/feedback/f1',
+                    '/feedback/search'
+                ]);
             });
     });
 
@@ -148,7 +168,11 @@ describe('deleteRequest', () => {
             .then(() => store.deleteRequest('f1'))
             .then(() => {
                 // Same reload rule as updateStatus, for the same reason.
-                expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
+                expect(requestedUrls()).toEqual([
+                    '/feedback/search',
+                    '/feedback/f1',
+                    '/feedback/search'
+                ]);
             });
     });
 

@@ -10,11 +10,10 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
     createFeedbackRequest,
     deleteFeedbackRequest,
-    listFeedbackRequests,
     searchFeedbackRequests,
     updateFeedbackRequestStatus
 } from '@api';
-import type { ListFeedbackRequestsParams, SearchFeedbackRequestsRequest } from '@api';
+import type { SearchFeedbackRequestsRequest } from '@api';
 import type {
     CreateFeedbackRequest,
     FeedbackRequest,
@@ -72,12 +71,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
      *
      * @returns A promise resolving with the reloaded rows.
      */
-    const reload = () =>
-        activeFilters.value
-            ? searchFeedbackRequests(activeFilters.value).then(applyRequests)
-            : listFeedbackRequests({ _: Date.now() } as ListFeedbackRequestsParams).then(
-                  applyRequests
-              );
+    const reload = () => searchFeedbackRequests(activeFilters.value ?? {}).then(applyRequests);
 
     /**
      * Submits the public contact form.
@@ -89,35 +83,24 @@ export const useFeedbackStore = defineStore('feedback', () => {
         fetchAny(() => createFeedbackRequest(message));
 
     /**
-     * Loads the inbox (admin).
+     * Loads the whole inbox (admin), through `POST /feedback/search` with no filters.
      *
-     * `_` is a cache-busting query param, not a documented filter — this endpoint answers with
-     * `Cache-Control: private, max-age=30` (see `searchCache` on the BE), so a plain re-request
-     * inside that window is a BROWSER HTTP CACHE HIT: no network call at all, invisible to the
-     * server's own cache invalidation, and indistinguishable from a real answer. `updateStatus`
-     * and `deleteRequest` both reload right after a write that changes this very list, which is
-     * exactly the case that window bites — a delete answering `200` and a reload immediately
-     * handing back the row it just removed. A `Cache-Control: no-cache` REQUEST header would say
-     * the same thing without touching the URL, but it is not one of the `cors` package's allowed
-     * request headers, so it 500s on the CORS PREFLIGHT and drops the request before it leaves
-     * the browser — one more reason a query param, not a header, is what forces this.
+     * Not `GET /feedback`: that answers `Cache-Control: private, max-age=30` (see `searchCache` on
+     * the BE), so a re-request inside the window is a BROWSER cache hit — no network call, and a
+     * delete answering `200` followed by a reload handing back the row it just removed. A POST is
+     * never browser-cached, and it needs no cache-busting query param the contract does not declare
+     * (the API refuses one with 422).
      *
      * @returns A promise resolving with the tickets.
      */
     const fetchRequests = () => {
         activeFilters.value = undefined;
-        return fetchAny(() =>
-            listFeedbackRequests({ _: Date.now() } as ListFeedbackRequestsParams).then(
-                applyRequests
-            )
-        );
+        return fetchAny(reload);
     };
 
     /**
      * Searches the inbox by any combination of status, text and email, through
-     * `POST /feedback/search` — the DTO spelling of the same query `fetchRequests` runs, for
-     * filters too broad to trust to a URL. A POST body is never browser-HTTP-cached, so this
-     * needs none of {@link fetchRequests}'s cache-busting `_` param.
+     * `POST /feedback/search` — the same endpoint {@link fetchRequests} uses, with filters.
      *
      * @param filters - Any combination of `page`, `pageSize`, `text`, `status`, `email`.
      * @returns A promise resolving with the matching tickets.

@@ -68,13 +68,10 @@ describe('Feedback', () => {
         cy.navigateViaMenu('admin', '/en/feedback');
         cy.get('[data-test=feedback-item]').should('have.length', 1);
 
-        // GET /feedback answers `Cache-Control: private, max-age=30` (see `searchCache` on the
-        // BE), so the reload this triggers is a real network round trip only because
-        // `fetchRequests` busts the browser cache with a `_` query param — see its own comment.
-        // The trailing `*` matches that param as well as the bare path. Waited on explicitly
-        // rather than left to `.should()`'s implicit retry, so a regression here fails on THIS
-        // line instead of timing out on the assertion below with nothing pointing at the cause.
-        cy.intercept('GET', '**/feedback*').as('reload');
+        // The reload after a delete is a POST /feedback/search — never browser-cached, unlike
+        // GET /feedback. Waited on explicitly rather than left to `.should()`'s implicit retry, so
+        // a regression here fails on THIS line instead of timing out on the assertion below.
+        cy.intercept('POST', '**/feedback/search').as('reload');
 
         cy.get('[data-test=feedback-delete]').click();
         cy.get('[data-test=app-dialog-confirm]').click();
