@@ -18,6 +18,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 
 /**
  * Translator for the banner's own copy.
@@ -89,7 +90,12 @@ const handleResendVerification = () => {
             startCooldown(resendAfter);
             addMessage(t('verification-banner.sent'));
         })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => {
+            // Signup already sent the first link, so the first press can land inside the
+            // server's cooldown: count down ITS number rather than leave the button pressable.
+            startCooldown(getRetryAfter(error, 'EMAIL_VERIFY_RESEND_TOO_SOON') ?? 0);
+            notifyErrorMessages(addMessage, error);
+        });
 };
 </script>
 

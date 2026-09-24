@@ -20,8 +20,8 @@ import {
     loginTwoFactor as apiLoginTwoFactor
 } from '@api';
 import {
-    getFirstApiError,
     getPayloadFromResponse,
+    getRetryAfter,
     getTokenFromResponse
 } from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -54,20 +54,6 @@ interface LoginChallenge {
     defaultMethod?: string;
     remember?: boolean;
 }
-
-/**
- * Reads `details.retryAfter` off a `TWO_FACTOR_RESEND_TOO_SOON` rejection. Module-level rather
- * than inside the store: it captures no store state, only the error it is handed.
- *
- * @param error - Whatever a `.catch` caught, still unknown at this boundary.
- * @returns The seconds to wait, or `undefined` when this is not that rejection.
- */
-const resendRetryAfter = (error: unknown): number | undefined => {
-    const { code, details } = getFirstApiError(error) ?? {};
-    if (code !== 'TWO_FACTOR_RESEND_TOO_SOON') return undefined;
-    const retryAfter = (details as { retryAfter?: unknown } | undefined)?.retryAfter;
-    return typeof retryAfter === 'number' ? retryAfter : undefined;
-};
 
 /**
  * Account-wide 2FA: status, enrollment, and the login-time challenge.
@@ -159,7 +145,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const applyResendCooldown = <T>(promise: Promise<T>): Promise<T> =>
         promise.catch((error: unknown) => {
-            const retryAfter = resendRetryAfter(error);
+            const retryAfter = getRetryAfter(error, 'TWO_FACTOR_RESEND_TOO_SOON');
             if (retryAfter !== undefined) resendAvailableAt.value = Date.now() + retryAfter * 1000;
             throw error;
         });

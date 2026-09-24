@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     getFirstApiError,
+    getRetryAfter,
     getPayloadFromResponse,
     getTokenFromResponse
 } from '@/infrastructure/http/envelope.ts';
@@ -88,5 +89,36 @@ describe('getFirstApiError', () => {
         expect(getFirstApiError(undefined)).toBeUndefined();
         expect(getFirstApiError('boom')).toBeUndefined();
         expect(getFirstApiError(null)).toBeUndefined();
+    });
+});
+
+/** A cooldown refusal as `onResponseReject` hands it on. */
+const tooSoon = (code: string, retryAfter: unknown) => ({
+    success: false,
+    status: 429,
+    errors: [{ code, message: 'Too soon', details: { retryAfter } }]
+});
+
+describe('getRetryAfter', () => {
+    it('reads the server`s seconds off the refusal it names', () => {
+        expect(
+            getRetryAfter(
+                tooSoon('EMAIL_VERIFY_RESEND_TOO_SOON', 42),
+                'EMAIL_VERIFY_RESEND_TOO_SOON'
+            )
+        ).toBe(42);
+    });
+
+    it('ignores another refusal`s number, and a number that is not one', () => {
+        expect(
+            getRetryAfter(tooSoon('RATE_LIMITED', 42), 'EMAIL_VERIFY_RESEND_TOO_SOON')
+        ).toBeUndefined();
+        expect(
+            getRetryAfter(
+                tooSoon('EMAIL_VERIFY_RESEND_TOO_SOON', '42'),
+                'EMAIL_VERIFY_RESEND_TOO_SOON'
+            )
+        ).toBeUndefined();
+        expect(getRetryAfter(new Error('network'), 'EMAIL_VERIFY_RESEND_TOO_SOON')).toBeUndefined();
     });
 });

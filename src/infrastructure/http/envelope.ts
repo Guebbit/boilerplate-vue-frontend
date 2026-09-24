@@ -72,3 +72,17 @@ export const getFirstApiError = (value: unknown): ApiErrorItem | undefined => {
     const [item] = items as unknown[];
     return isObjectRecord(item) ? item : undefined;
 };
+
+/**
+ * Reads `details.retryAfter` off a cooldown refusal with the given code — the server's own
+ * seconds-to-wait, so a button can count down the number the server will actually enforce.
+ *
+ * @param value - Whatever a `.catch` caught, still unknown at this boundary.
+ * @param code - The refusal's stable code, e.g. `EMAIL_VERIFY_RESEND_TOO_SOON`.
+ * @returns The seconds to wait, or `undefined` when this is not that refusal.
+ */
+export const getRetryAfter = (value: unknown, code: string): number | undefined => {
+    const { code: actual, details } = getFirstApiError(value) ?? {};
+    if (actual !== code || !isObjectRecord(details)) return undefined;
+    return typeof details.retryAfter === 'number' ? details.retryAfter : undefined;
+};
