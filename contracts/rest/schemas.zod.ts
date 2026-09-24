@@ -1957,11 +1957,13 @@ export const ChangePasswordResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
+    data: zod
+        .strictObject({
+            token: zod.string().describe('Access JWT'),
+            refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
+            expiresIn: zod.number().optional().describe('Access token expiry in seconds')
+        })
+        .optional()
 });
 
 /**
@@ -2750,9 +2752,8 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .max(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMax
                                 )
-                                .optional()
                                 .describe(
-                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -2783,14 +2784,12 @@ export const ExportAccountDataResponse = zod.strictObject({
                         taxAmount: zod
                             .number()
                             .min(exportAccountDataResponseDataOrdersItemItemsItemTaxAmountMin)
-                            .optional()
                             .describe(
                                 "VAT included in this line's total, at its own frozen `taxRate`."
                             ),
                         netAmount: zod
                             .number()
                             .min(exportAccountDataResponseDataOrdersItemItemsItemNetAmountMin)
-                            .optional()
                             .describe(
                                 "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
@@ -2815,30 +2814,26 @@ export const ExportAccountDataResponse = zod.strictObject({
                 netTotal: zod
                     .number()
                     .min(exportAccountDataResponseDataOrdersItemNetTotalMin)
-                    .optional()
                     .describe(
-                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
                     ),
                 taxTotal: zod
                     .number()
                     .min(exportAccountDataResponseDataOrdersItemTaxTotalMin)
-                    .optional()
                     .describe(
-                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
                     ),
                 shippingNetAmount: zod
                     .number()
                     .min(exportAccountDataResponseDataOrdersItemShippingNetAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
                     ),
                 shippingTaxAmount: zod
                     .number()
                     .min(exportAccountDataResponseDataOrdersItemShippingTaxAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
                     ),
                 taxSummary: zod
                     .array(
@@ -2867,9 +2862,8 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .describe('`netAmount + taxAmount`, not re-derived from a price.')
                         })
                     )
-                    .optional()
                     .describe(
-                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -5598,9 +5592,8 @@ export const CheckoutResponse = zod.strictObject({
                             .number()
                             .min(checkoutResponseDataOrderItemsItemProductTaxRateMin)
                             .max(checkoutResponseDataOrderItemsItemProductTaxRateMax)
-                            .optional()
                             .describe(
-                                'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                             )
                     }),
                     quantity: zod.number().min(1),
@@ -5631,14 +5624,12 @@ export const CheckoutResponse = zod.strictObject({
                     taxAmount: zod
                         .number()
                         .min(checkoutResponseDataOrderItemsItemTaxAmountMin)
-                        .optional()
                         .describe(
                             "VAT included in this line's total, at its own frozen `taxRate`."
                         ),
                     netAmount: zod
                         .number()
                         .min(checkoutResponseDataOrderItemsItemNetAmountMin)
-                        .optional()
                         .describe(
                             "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                         )
@@ -5663,30 +5654,26 @@ export const CheckoutResponse = zod.strictObject({
             netTotal: zod
                 .number()
                 .min(checkoutResponseDataOrderNetTotalMin)
-                .optional()
                 .describe(
-                    "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                    "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
                 ),
             taxTotal: zod
                 .number()
                 .min(checkoutResponseDataOrderTaxTotalMin)
-                .optional()
                 .describe(
-                    "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                    "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
                 ),
             shippingNetAmount: zod
                 .number()
                 .min(checkoutResponseDataOrderShippingNetAmountMin)
-                .optional()
                 .describe(
-                    "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                    "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
                 ),
             shippingTaxAmount: zod
                 .number()
                 .min(checkoutResponseDataOrderShippingTaxAmountMin)
-                .optional()
                 .describe(
-                    "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                    "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
                 ),
             taxSummary: zod
                 .array(
@@ -5709,9 +5696,8 @@ export const CheckoutResponse = zod.strictObject({
                             .describe('`netAmount + taxAmount`, not re-derived from a price.')
                     })
                 )
-                .optional()
                 .describe(
-                    'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                    'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
                 ),
             notes: zod.string().optional().describe('Optional order notes'),
             shippingMethod: zod
@@ -6066,9 +6052,8 @@ export const ListOrdersResponse = zod.strictObject({
                                 .number()
                                 .min(listOrdersResponseDataItemsItemItemsItemProductTaxRateMin)
                                 .max(listOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
-                                .optional()
                                 .describe(
-                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -6099,14 +6084,12 @@ export const ListOrdersResponse = zod.strictObject({
                         taxAmount: zod
                             .number()
                             .min(listOrdersResponseDataItemsItemItemsItemTaxAmountMin)
-                            .optional()
                             .describe(
                                 "VAT included in this line's total, at its own frozen `taxRate`."
                             ),
                         netAmount: zod
                             .number()
                             .min(listOrdersResponseDataItemsItemItemsItemNetAmountMin)
-                            .optional()
                             .describe(
                                 "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
@@ -6131,30 +6114,26 @@ export const ListOrdersResponse = zod.strictObject({
                 netTotal: zod
                     .number()
                     .min(listOrdersResponseDataItemsItemNetTotalMin)
-                    .optional()
                     .describe(
-                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
                     ),
                 taxTotal: zod
                     .number()
                     .min(listOrdersResponseDataItemsItemTaxTotalMin)
-                    .optional()
                     .describe(
-                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
                     ),
                 shippingNetAmount: zod
                     .number()
                     .min(listOrdersResponseDataItemsItemShippingNetAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
                     ),
                 shippingTaxAmount: zod
                     .number()
                     .min(listOrdersResponseDataItemsItemShippingTaxAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
                     ),
                 taxSummary: zod
                     .array(
@@ -6177,9 +6156,8 @@ export const ListOrdersResponse = zod.strictObject({
                                 .describe('`netAmount + taxAmount`, not re-derived from a price.')
                         })
                     )
-                    .optional()
                     .describe(
-                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -6405,9 +6383,8 @@ export const CreateOrderResponse = zod.strictObject({
                         .number()
                         .min(createOrderResponseDataItemsItemProductTaxRateMin)
                         .max(createOrderResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -6438,12 +6415,10 @@ export const CreateOrderResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(createOrderResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(createOrderResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -6468,30 +6443,26 @@ export const CreateOrderResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(createOrderResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(createOrderResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(createOrderResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(createOrderResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -6510,9 +6481,8 @@ export const CreateOrderResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -6707,9 +6677,8 @@ export const UpdateOrderResponse = zod.strictObject({
                         .number()
                         .min(updateOrderResponseDataItemsItemProductTaxRateMin)
                         .max(updateOrderResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -6740,12 +6709,10 @@ export const UpdateOrderResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(updateOrderResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(updateOrderResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -6770,30 +6737,26 @@ export const UpdateOrderResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(updateOrderResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(updateOrderResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(updateOrderResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(updateOrderResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -6812,9 +6775,8 @@ export const UpdateOrderResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -7076,9 +7038,8 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .number()
                                 .min(searchOrdersResponseDataItemsItemItemsItemProductTaxRateMin)
                                 .max(searchOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
-                                .optional()
                                 .describe(
-                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                                    'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -7109,14 +7070,12 @@ export const SearchOrdersResponse = zod.strictObject({
                         taxAmount: zod
                             .number()
                             .min(searchOrdersResponseDataItemsItemItemsItemTaxAmountMin)
-                            .optional()
                             .describe(
                                 "VAT included in this line's total, at its own frozen `taxRate`."
                             ),
                         netAmount: zod
                             .number()
                             .min(searchOrdersResponseDataItemsItemItemsItemNetAmountMin)
-                            .optional()
                             .describe(
                                 "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                             )
@@ -7141,30 +7100,26 @@ export const SearchOrdersResponse = zod.strictObject({
                 netTotal: zod
                     .number()
                     .min(searchOrdersResponseDataItemsItemNetTotalMin)
-                    .optional()
                     .describe(
-                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                        "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
                     ),
                 taxTotal: zod
                     .number()
                     .min(searchOrdersResponseDataItemsItemTaxTotalMin)
-                    .optional()
                     .describe(
-                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                        "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
                     ),
                 shippingNetAmount: zod
                     .number()
                     .min(searchOrdersResponseDataItemsItemShippingNetAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                        "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
                     ),
                 shippingTaxAmount: zod
                     .number()
                     .min(searchOrdersResponseDataItemsItemShippingTaxAmountMin)
-                    .optional()
                     .describe(
-                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                        "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
                     ),
                 taxSummary: zod
                     .array(
@@ -7187,9 +7142,8 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .describe('`netAmount + taxAmount`, not re-derived from a price.')
                         })
                     )
-                    .optional()
                     .describe(
-                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                        'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
                     ),
                 notes: zod.string().optional().describe('Optional order notes'),
                 shippingMethod: zod
@@ -7388,9 +7342,8 @@ export const GetOrderByIdResponse = zod.strictObject({
                         .number()
                         .min(getOrderByIdResponseDataItemsItemProductTaxRateMin)
                         .max(getOrderByIdResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -7421,12 +7374,10 @@ export const GetOrderByIdResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(getOrderByIdResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(getOrderByIdResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -7451,30 +7402,26 @@ export const GetOrderByIdResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(getOrderByIdResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(getOrderByIdResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(getOrderByIdResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(getOrderByIdResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -7493,9 +7440,8 @@ export const GetOrderByIdResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -7694,9 +7640,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .number()
                         .min(updateOrderByIdResponseDataItemsItemProductTaxRateMin)
                         .max(updateOrderByIdResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -7727,12 +7672,10 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(updateOrderByIdResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(updateOrderByIdResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -7757,30 +7700,26 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(updateOrderByIdResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(updateOrderByIdResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(updateOrderByIdResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(updateOrderByIdResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -7803,9 +7742,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -8044,9 +7982,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .number()
                         .min(cancelOrderByIdResponseDataItemsItemProductTaxRateMin)
                         .max(cancelOrderByIdResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -8077,12 +8014,10 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(cancelOrderByIdResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(cancelOrderByIdResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -8107,30 +8042,26 @@ export const CancelOrderByIdResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(cancelOrderByIdResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(cancelOrderByIdResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(cancelOrderByIdResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(cancelOrderByIdResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -8153,9 +8084,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -8353,9 +8283,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .number()
                         .min(overrideOrderStatusResponseDataItemsItemProductTaxRateMin)
                         .max(overrideOrderStatusResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -8386,12 +8315,10 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(overrideOrderStatusResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(overrideOrderStatusResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -8416,30 +8343,26 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(overrideOrderStatusResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(overrideOrderStatusResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(overrideOrderStatusResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(overrideOrderStatusResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -8462,9 +8385,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod
@@ -8913,9 +8835,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .number()
                         .min(getOrderByReferenceResponseDataItemsItemProductTaxRateMin)
                         .max(getOrderByReferenceResponseDataItemsItemProductTaxRateMax)
-                        .optional()
                         .describe(
-                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.'
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -8946,12 +8867,10 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 taxAmount: zod
                     .number()
                     .min(getOrderByReferenceResponseDataItemsItemTaxAmountMin)
-                    .optional()
                     .describe("VAT included in this line's total, at its own frozen `taxRate`."),
                 netAmount: zod
                     .number()
                     .min(getOrderByReferenceResponseDataItemsItemNetAmountMin)
-                    .optional()
                     .describe(
                         "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
                     )
@@ -8976,30 +8895,26 @@ export const GetOrderByReferenceResponse = zod.strictObject({
         netTotal: zod
             .number()
             .min(getOrderByReferenceResponseDataNetTotalMin)
-            .optional()
             .describe(
-                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order."
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
             ),
         taxTotal: zod
             .number()
             .min(getOrderByReferenceResponseDataTaxTotalMin)
-            .optional()
             .describe(
-                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
             ),
         shippingNetAmount: zod
             .number()
             .min(getOrderByReferenceResponseDataShippingNetAmountMin)
-            .optional()
             .describe(
-                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order."
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
             ),
         shippingTaxAmount: zod
             .number()
             .min(getOrderByReferenceResponseDataShippingTaxAmountMin)
-            .optional()
             .describe(
-                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order."
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
             ),
         taxSummary: zod
             .array(
@@ -9022,9 +8937,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .describe('`netAmount + taxAmount`, not re-derived from a price.')
                 })
             )
-            .optional()
             .describe(
-                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order.'
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
             ),
         notes: zod.string().optional().describe('Optional order notes'),
         shippingMethod: zod

@@ -1082,11 +1082,15 @@ paths:
               $ref: "#/components/schemas/ChangePasswordRequest"
       responses:
         "200":
-          description: Password changed; a fresh access token for this session
+          description: |
+            Password changed. `data` normally carries a fresh access token for this
+            session, but is ABSENT on the rare degraded success where the re-mint
+            itself fails after the password write already committed — see B23 on
+            `ChangePasswordResponseEnvelope`.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTokensEnvelope"
+                $ref: "#/components/schemas/ChangePasswordResponseEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5588,6 +5592,7 @@ components:
         - id
         - title
         - price
+        - taxRate
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -5630,7 +5635,7 @@ components:
           format: double
           minimum: 0
           maximum: 1
-          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.
+          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
     OrderLineCurrent:
       type: object
       additionalProperties: false
@@ -5649,6 +5654,8 @@ components:
         - quantity
         - locale
         - current
+        - taxAmount
+        - netAmount
       properties:
         product:
           $ref: "#/components/schemas/OrderLineProduct"
@@ -5751,6 +5758,11 @@ components:
         - totalQuantity
         - totalPrice
         - status
+        - netTotal
+        - taxTotal
+        - shippingNetAmount
+        - shippingTaxAmount
+        - taxSummary
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -5783,31 +5795,31 @@ components:
           format: double
           minimum: 0
           readOnly: true
-          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order.
+          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
         taxTotal:
           type: number
           format: double
           minimum: 0
           readOnly: true
-          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order."
+          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
         shippingNetAmount:
           type: number
           format: double
           minimum: 0
           readOnly: true
-          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order.
+          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
         shippingTaxAmount:
           type: number
           format: double
           minimum: 0
           readOnly: true
-          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order.
+          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
         taxSummary:
           type: array
           readOnly: true
           items:
             $ref: "#/components/schemas/OrderTaxSummaryRow"
-          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order."
+          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
         notes:
           type: string
           description: Optional order notes
@@ -7327,14 +7339,13 @@ components:
         expiresIn:
           type: integer
           description: Access token expiry in seconds
-    AuthTokensEnvelope:
+    ChangePasswordResponseEnvelope:
       type: object
       additionalProperties: false
       required:
         - success
         - status
         - message
-        - data
       properties:
         success:
           $ref: "#/components/schemas/EnvelopeSuccess"
@@ -7392,6 +7403,23 @@ components:
       properties:
         password:
           $ref: "#/components/schemas/Password"
+    AuthTokensEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/AuthTokens"
     Session:
       type: object
       additionalProperties: false

@@ -327,11 +327,11 @@ export interface OrderLineProduct {
     updatedAt?: string;
     deletedAt?: string;
     /**
-     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`. Absent on an order placed before VAT existed.
+     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
      * @minimum 0
      * @maximum 1
      */
-    taxRate?: number;
+    taxRate: number;
 }
 
 export interface OrderLineCurrent {
@@ -350,12 +350,12 @@ export interface OrderItem {
      * VAT included in this line's total, at its own frozen `taxRate`.
      * @minimum 0
      */
-    readonly taxAmount?: number;
+    readonly taxAmount: number;
     /**
      * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
      * @minimum 0
      */
-    readonly netAmount?: number;
+    readonly netAmount: number;
 }
 
 /**
@@ -432,27 +432,27 @@ export interface Order {
      */
     totalPrice: number;
     /**
-     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. Absent on a pre-VAT order.
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
      * @minimum 0
      */
-    readonly netTotal?: number;
+    readonly netTotal: number;
     /**
-     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. Absent on a pre-VAT order.
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
      * @minimum 0
      */
-    readonly taxTotal?: number;
+    readonly taxTotal: number;
     /**
-     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Absent on a pre-VAT order.
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
      * @minimum 0
      */
-    readonly shippingNetAmount?: number;
+    readonly shippingNetAmount: number;
     /**
-     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Absent on a pre-VAT order.
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
      * @minimum 0
      */
-    readonly shippingTaxAmount?: number;
-    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Absent on a pre-VAT order. */
-    readonly taxSummary?: readonly OrderTaxSummaryRow[];
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
     /** Optional order notes */
     notes?: string;
     /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
@@ -1539,11 +1539,11 @@ export interface AuthTokens {
     expiresIn?: number;
 }
 
-export interface AuthTokensEnvelope {
+export interface ChangePasswordResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: AuthTokens;
+    data?: AuthTokens;
 }
 
 export interface PasswordCheckRequest {
@@ -1573,6 +1573,13 @@ export interface PasswordCheckEnvelope {
 
 export interface ReauthRequest {
     password: Password;
+}
+
+export interface AuthTokensEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuthTokens;
 }
 
 export interface Session {
@@ -4160,9 +4167,9 @@ export const getMyAbilities = (
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ChangePasswordResponseEnvelope>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<ChangePasswordResponseEnvelope>(
         {
             url: `/account/password`,
             method: 'POST',
