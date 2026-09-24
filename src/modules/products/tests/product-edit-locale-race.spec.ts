@@ -13,7 +13,7 @@
  * `orvalMutator` mock — here driven by hand so each endpoint answers on its own schedule.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductEdit from '@/modules/products/views/ProductEdit.vue';
@@ -87,13 +87,6 @@ const deferred = <T>() => {
     return { promise, resolve };
 };
 
-/**
- * Waits past every microtask queued so far, including Vue's own render flush — a `nextTick()` or
- * two does not reliably drain a chain this deep. Same helper as `cart-view.spec.ts`'s
- * `flushAsync`.
- */
-const flushAsync = () => new Promise<void>((resolve) => setTimeout(resolve, 20));
-
 beforeEach(() => {
     setActivePinia(createPinia());
     return loadLocale('en').then(() =>
@@ -128,7 +121,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
         // GET /locales answers first — the race condition's trigger.
         locales.resolve(parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE)));
 
-        return flushAsync()
+        return flushPromises()
             .then(() => {
                 expect(renderErrors).toHaveLength(0);
                 // The fallback tag is known, but nothing is open yet: `form.translations` has no
@@ -139,7 +132,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
                 admin.resolve(
                     parseOrvalFixture('GET', '/products/p1/admin', orvalEnvelope(ADMIN_RESPONSE))
                 );
-                return flushAsync();
+                return flushPromises();
             })
             .then(() => {
                 expect(renderErrors).toHaveLength(0);

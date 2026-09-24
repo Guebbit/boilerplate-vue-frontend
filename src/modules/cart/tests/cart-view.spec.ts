@@ -7,7 +7,7 @@
  * seeded directly into the store.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
@@ -82,13 +82,6 @@ const mountCart = () => {
     return { wrapper, checkoutSpy, cart };
 };
 
-/**
- * Waits past every microtask queued so far — the click handler's own `.then().catch()` chain
- * runs deeper than one or two `nextTick()`s reliably drain, since each `.then` in a rejected
- * chain is its own microtask turn. A macrotask boundary drains all of them regardless of depth.
- */
-const flushAsync = () => new Promise<void>((resolve) => setTimeout(resolve, 20));
-
 beforeEach(() => {
     setActivePinia(createPinia());
     return loadLocale('en').then(() => router.push('/en/cart').then(() => router.isReady()));
@@ -102,7 +95,7 @@ describe('the checkout refusals', () => {
         return wrapper
             .get('[data-test=cart-checkout]')
             .trigger('click')
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 // Once from `onMounted`, once more from the refusal handler — the second is
                 // what this case exists to prove.
@@ -124,7 +117,7 @@ describe('the checkout refusals', () => {
         return wrapper
             .get('[data-test=cart-checkout]')
             .trigger('click')
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
                 expect(lines).toHaveLength(2);
@@ -146,13 +139,13 @@ describe('the checkout refusals', () => {
         return wrapper
             .get('[data-test=cart-checkout]')
             .trigger('click')
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(1);
                 checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
                 return wrapper.get('[data-test=cart-checkout]').trigger('click');
             })
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
             });
@@ -169,7 +162,7 @@ describe('the checkout refusals', () => {
         return wrapper
             .get('[data-test=cart-checkout]')
             .trigger('click')
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 const lines = wrapper.findAll('[data-test=checkout-unavailable-line]');
                 expect(lines).toHaveLength(2);
@@ -185,7 +178,7 @@ describe('the checkout refusals', () => {
         return wrapper
             .get('[data-test=cart-checkout]')
             .trigger('click')
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 // Nothing on-screen names a specific line — the distinguishing behaviour for
                 // this refusal is the message (asserted at the domain layer's own test), not a
@@ -238,7 +231,7 @@ describe('the checkout refusals', () => {
                 ).toBe('express');
                 return wrapper.get('[data-test=cart-checkout]').trigger('click');
             })
-            .then(flushAsync)
+            .then(flushPromises)
             .then(() => {
                 expect(
                     wrapper.get('[data-test=shipping-selector-stub]').attributes('data-selected')

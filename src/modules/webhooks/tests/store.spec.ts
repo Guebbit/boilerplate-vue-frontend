@@ -15,6 +15,7 @@ import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, ref } from 'vue';
+import { flushPromises } from '@vue/test-utils';
 
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { orvalMutator } from '@/infrastructure/http';
@@ -102,13 +103,13 @@ const respondOnceWith = (data: unknown) =>
         );
 
 /**
- * Drains microtasks AND the timer queue, then lets Vue flush.
+ * Drains microtasks AND one macrotask turn (`flushPromises`), then lets Vue flush.
  *
  * `watchSubscription` fires its backfill with `void`, so a test has no promise to chain onto and
  * has to wait the fetch out instead. `nextTick` alone is not enough — the cache write happens
  * behind the query layer, several turns past the request itself.
  */
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0)).then(() => nextTick());
+const flush = () => flushPromises().then(() => nextTick());
 
 describe('useWebhooksStore', () => {
     beforeEach(() => {

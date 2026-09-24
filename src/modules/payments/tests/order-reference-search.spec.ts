@@ -52,10 +52,15 @@ const mountSearch = () =>
     });
 
 /**
- * A brief real flush for the "nothing changed" case below — there is no eventual condition to
- * poll FOR, only the absence of one, so `vi.waitFor` (used for the success case) does not fit.
+ * Waits until the inline message renders — the eventual condition every refusal case has — rather
+ * than sleeping a fixed time. Any navigation the handler wrongly made would have happened by then,
+ * since both follow the same settled lookup.
+ *
+ * @param wrapper - The mounted search.
+ * @returns Resolves once the message is in the DOM.
  */
-const flush = () => new Promise((resolve) => setTimeout(resolve, 50));
+const inlineMessage = (wrapper: ReturnType<typeof mountSearch>) =>
+    vi.waitFor(() => wrapper.get('[data-test=order-reference-search-error]'));
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -103,7 +108,7 @@ describe('OrderReferenceSearch', () => {
             .get('[data-test=order-reference-search-input] input')
             .setValue('garbage')
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
-            .then(() => flush())
+            .then(() => inlineMessage(wrapper))
             .then(() => {
                 expect(router.currentRoute.value.fullPath).toBe('/en/orders');
                 expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
@@ -124,7 +129,7 @@ describe('OrderReferenceSearch', () => {
             .get('[data-test=order-reference-search-input] input')
             .setValue('garbage')
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
-            .then(() => flush())
+            .then(() => inlineMessage(wrapper))
             .then(() =>
                 wrapper.get('[data-test=order-reference-search-input] input').setValue('garbage2')
             )
@@ -149,7 +154,7 @@ describe('OrderReferenceSearch', () => {
             .get('[data-test=order-reference-search-input] input')
             .setValue('RF13 2EY8 H44V JAVZ KX80 JRL')
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
-            .then(() => flush())
+            .then(() => inlineMessage(wrapper))
             .then(() => {
                 expect(router.currentRoute.value.fullPath).toBe('/en/orders');
                 expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
