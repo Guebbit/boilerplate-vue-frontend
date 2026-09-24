@@ -8,6 +8,7 @@
  * The one deliberate reload is the login (nothing has been written yet, so nothing is lost);
  * from there to the end the page never reloads.
  */
+import { expectMailTemplate } from '../../support/e2e/commands';
 describe('The customer journey', () => {
     /**
      * The shelf's count as the guest first saw it — the value the cancel has to restore.
@@ -77,10 +78,10 @@ describe('The customer journey', () => {
         // (Only the demo profile has a readable outbox; live, the email leaves for real.)
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             if (liveProfile === true) return;
-            cy.demoEmailTo('customer@example.com').then((email) => {
+            cy.emailTo('customer@example.com').then((email) => {
                 // The outbox records template variables; the line items are structured data the
                 // orders page below asserts far more precisely than a variable dump could.
-                expect(email.template).to.equal('orders.order-confirm');
+                expectMailTemplate(email, 'orders.order-confirm');
             });
         });
 

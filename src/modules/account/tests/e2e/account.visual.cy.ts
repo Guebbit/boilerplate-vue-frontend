@@ -26,7 +26,7 @@ sweepVisual(
             route: '/en/profile',
             readySelector: '#profile-page',
             prepare: () => {
-                cy.skipUnlessDemo();
+                cy.skipUnlessMailbox();
                 cy.get('[data-test=two-factor-add-email]').click();
                 cy.get('[data-test=two-factor-enroll]').should('be.visible');
                 cy.typeMailedTwoFactorCode(
@@ -53,7 +53,7 @@ sweepVisual(
             route: '/en/login',
             readySelector: '#login-page',
             prepare: () => {
-                cy.skipUnlessDemo();
+                cy.skipUnlessMailbox();
                 cy.loginAs('user');
                 cy.enrollEmailTwoFactor(seedAccount('user').email);
                 cy.logout();

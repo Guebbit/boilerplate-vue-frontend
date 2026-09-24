@@ -2,6 +2,7 @@
 
 import { loadScenario, seedAccount, type E2ERole } from './scenario';
 import { asStub } from '../stub';
+import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
@@ -118,12 +119,22 @@ declare global {
             skipUnlessDemo(): Chainable<void>;
 
             /**
-             * The newest email the demo backend "sent" to an address, from the `/__test/emails`
-             * outbox. Fails the test when there is none — an empty inbox is an answer too.
+             * Skips the current test when no mailbox can be read: the live profile with no
+             * Mailpit configured (`MAILPIT_URL`). The demo profile always has its outbox.
+             *
+             * For the flows that read a mailed code or link — they run in BOTH profiles when a
+             * mailbox exists, which is what makes the live run prove real SMTP delivery.
+             */
+            skipUnlessMailbox(): Chainable<void>;
+
+            /**
+             * The newest email sent to an address: from the demo backend's `/__test/emails` outbox,
+             * or — live — from Mailpit's HTTP API, read back into the same shape. Fails the test
+             * when there is none; an empty inbox is an answer too.
              *
              * @param address - the recipient to look for
              */
-            demoEmailTo(address: string): Chainable<DemoOutboxEmail>;
+            emailTo(address: string): Chainable<MailedEmail>;
 
             /**
              * Follows a main-navigation entry from the desktop bar, by the path it links to.
@@ -162,12 +173,11 @@ declare global {
             payWith(label: string): Chainable<void>;
 
             /**
-             * Types the 2FA code the demo backend just mailed into the field a selector names.
+             * Types the 2FA code the backend just mailed into the field a selector names.
              *
-             * The code is read back out of the demo outbox rather than assumed — every 2FA
-             * surface that collects a mailed code goes through here, so none of them re-derives
-             * how the `code:` line is spelled. Demo-profile only; open the caller's own `it()`
-             * with `cy.skipUnlessDemo()`.
+             * The code is read back out of the mailbox rather than assumed — every 2FA surface
+             * that collects a mailed code goes through here, so none of them re-derives how the
+             * `code:` line is spelled. Open the caller's own `it()` with `cy.skipUnlessMailbox()`.
              *
              * @param address - the account the code was mailed to
              * @param selector - the code field to type into, e.g. `[data-test=...]`
@@ -176,9 +186,9 @@ declare global {
 
             /**
              * Arms email as a second factor on the SIGNED-IN account, through the real profile UI
-             * — visits `/en/profile`, adds the method, reads the mailed code from the demo outbox,
-             * confirms, and clears the one-time backup-codes screen. Demo-profile only, since the
-             * code comes from `demoEmailTo`; open the caller's own `it()` with `cy.skipUnlessDemo()`.
+             * — visits `/en/profile`, adds the method, reads the mailed code from the mailbox,
+             * confirms, and clears the one-time backup-codes screen. Open the caller's own `it()`
+             * with `cy.skipUnlessMailbox()`.
              *
              * @param email - the signed-in account's own address, to look the code up by
              */
@@ -239,8 +249,8 @@ Cypress.Commands.add(
     'restore',
     asStub<Cypress.CommandFn<'restore'>>((scenario?: string) =>
         cy
-            .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
-            .then(({ liveProfile, liveResetCommand, apiUrl }) => {
+            .env(['liveProfile', 'liveResetCommand', 'apiUrl', 'mailpitUrl'])
+            .then(({ liveProfile, liveResetCommand, apiUrl, mailpitUrl }) => {
                 if (liveProfile !== true)
                     // The demo backend restores itself in-process; a plain request is all it
                     // takes, and a non-2xx already fails the test. No `scenario` in the body
@@ -257,6 +267,11 @@ Cypress.Commands.add(
                 // elsewhere.
                 if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
                     return cy.log('restore: LIVE_RESET_COMMAND is unset — not restoring');
+                // The live mailbox is emptied with the database, as the demo outbox is: a spec
+                // must never read the previous spec's mail to the same seed address.
+                // https://mailpit.axllent.org/docs/api-v1/view.html#delete-/api/v1/messages
+                if (mailpitUrl)
+                    cy.request({ method: 'DELETE', url: `${String(mailpitUrl)}/api/v1/messages` });
                 return resetLiveDatabase(liveResetCommand);
             })
             // Re-read rather than kept: a different scenario promises different rows, and
@@ -394,17 +409,74 @@ Cypress.Commands.add(
     })
 );
 
-// A plain request: the outbox lives in the demo backend's process, not in the page.
-Cypress.Commands.add('demoEmailTo', (address: string) =>
+// Same shape and seam as `skipUnlessDemo`: a regular `function`, so `this.skip()` works.
+Cypress.Commands.add(
+    'skipUnlessMailbox',
+    asStub<Cypress.CommandFn<'skipUnlessMailbox'>>(function skipUnlessMailbox(this: Mocha.Context) {
+        return cy.env(['liveProfile', 'mailpitUrl']).then(({ liveProfile, mailpitUrl }) => {
+            if (liveProfile === true && !mailpitUrl) this.skip();
+        });
+    })
+);
+
+/** A plain request: the outbox lives in the demo backend's process, not in the page. */
+const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
-        .then((response) => {
+        .then((response): MailedEmail => {
             const { emails } = response.body as { emails: DemoOutboxEmail[] };
             const email = emails.find(({ to }) => to === address);
             expect(email, `an email to ${address} in the demo outbox`).to.not.equal(undefined);
+            // Proven present by the assertion above, which the compiler cannot follow.
             return email!;
-        })
+        });
+
+/** How long a live send may take to reach Mailpit — SMTP is asynchronous, the outbox is not. */
+const MAILPIT_ATTEMPTS = 20;
+
+/**
+ * The newest Mailpit message to an address, polled: the send leaves the backend and arrives in
+ * Mailpit a moment later, and nothing tells the browser when. Mailpit's search answers newest
+ * first. https://mailpit.axllent.org/docs/api-v1/
+ *
+ * @param mailpitUrl - Mailpit's HTTP root, e.g. `http://localhost:8025`
+ * @param address - the recipient
+ * @param attempt - how many polls came before this one
+ */
+const mailpitEmailTo = (
+    mailpitUrl: string,
+    address: string,
+    attempt = 0
+): Cypress.Chainable<MailedEmail> =>
+    cy
+        .request(`${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`)
+        .then((response): Cypress.Chainable<MailedEmail> => {
+            const [newest] = (response.body as { messages: { ID: string }[] }).messages;
+            if (newest)
+                return cy
+                    .request(`${mailpitUrl}/api/v1/message/${newest.ID}`)
+                    .then((message) =>
+                        parseMailpitMessage(
+                            address,
+                            message.body as Parameters<typeof parseMailpitMessage>[1]
+                        )
+                    );
+            expect(attempt, `an email to ${address} in Mailpit`).to.be.lessThan(MAILPIT_ATTEMPTS);
+            // A poll interval, not a sleep standing in for a condition: the condition is polled.
+            // eslint-disable-next-line cypress/no-unnecessary-waiting -- SMTP delivery has no event the browser can wait on
+            return cy.wait(500).then(() => mailpitEmailTo(mailpitUrl, address, attempt + 1));
+        });
+
+// Profile-aware: the demo outbox, or the live stack's Mailpit — see the declaration above.
+Cypress.Commands.add('emailTo', (address: string) =>
+    cy
+        .env(['liveProfile', 'mailpitUrl'])
+        .then(({ liveProfile, mailpitUrl }) =>
+            liveProfile === true
+                ? mailpitEmailTo(String(mailpitUrl), address)
+                : demoOutboxEmailTo(address)
+        )
 );
 
 /**
@@ -450,7 +522,7 @@ Cypress.Commands.add('logout', () => {
 const TWO_FACTOR_CODE_PREFIX = 'code: ';
 
 Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: string) => {
-    cy.demoEmailTo(address).then((sent) => {
+    cy.emailTo(address).then((sent) => {
         const codeLine = sent.lines?.find((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX));
         // Asserted rather than asserted-away: without the line there is no code to type, and a
         // silent `undefined` here would fail later as an unrelated "wrong code".
@@ -458,6 +530,19 @@ Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: stri
         cy.get(selector).type(String(codeLine).slice(TWO_FACTOR_CODE_PREFIX.length));
     });
 });
+
+/**
+ * Asserts which template an email was rendered from — where that is knowable. The demo outbox
+ * records the name; an SMTP inbox receives only the rendered message, so against the live
+ * profile the check falls to the one thing every mail must have, a subject.
+ *
+ * @param email - an email `emailTo` returned
+ * @param template - the outbox template name the flow sends, e.g. `account.reset-request`
+ */
+export const expectMailTemplate = (email: MailedEmail, template: string): void => {
+    if (email.template === undefined) expect(email.subject, 'a subject').to.not.equal('');
+    else expect(email.template).to.equal(template);
+};
 
 /** The prefix the demo outbox spells a mailed confirmation link with, in its `lines` array. */
 const LINK_URL_PREFIX = 'linkUrl: ';
@@ -470,9 +555,9 @@ const LINK_URL_PREFIX = 'linkUrl: ';
  * (`scripts/demo/run-backend.ts`), so the result is always same-origin and a plain `cy.visit()`
  * is enough — no `cy.origin()` needed.
  *
- * @param email - an email `demoEmailTo` returned
+ * @param email - an email `emailTo` returned
  */
-export const mailedLinkUrl = (email: DemoOutboxEmail): string => {
+export const mailedLinkUrl = (email: MailedEmail): string => {
     const linkLine = email.lines?.find((line) => line.startsWith(LINK_URL_PREFIX));
     // Asserted rather than asserted-away: without the line there is no link to visit, and a
     // silent `undefined` here would fail later as an unrelated 404.

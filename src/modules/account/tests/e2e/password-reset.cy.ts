@@ -4,11 +4,11 @@
  * rather than assumed, so the test proves the actual mailed link is the one that works.
  *
  * Both halves of the outcome are proven at the login form — the old password stops working AND
- * the new one starts. `cy.demoEmailTo` reads the demo backend's `/__test/emails` outbox, so these
- * specs only mean something against the demo profile.
+ * the new one starts. `cy.emailTo` reads the demo outbox or, live, the Mailpit inbox — the live
+ * run is what proves a real SMTP delivery carries a working link.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
-import { mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
+import { expectMailTemplate, mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
 describe('Password reset', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -17,7 +17,7 @@ describe('Password reset', () => {
     });
 
     it('the emailed link replaces the forgotten password', function () {
-        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
 
         // ── Ask for the link ────────────────────────────────────────────────────────
         cy.visit('/en/password-reset');
@@ -29,8 +29,8 @@ describe('Password reset', () => {
         cy.contains('If the account exists').should('exist');
 
         // ── Open the email, follow the link ─────────────────────────────────────────
-        cy.demoEmailTo('customer@example.com').then((email) => {
-            expect(email.template).to.equal('account.reset-request');
+        cy.emailTo('customer@example.com').then((email) => {
+            expectMailTemplate(email, 'account.reset-request');
             cy.visit(mailedLinkUrl(email));
         });
         cy.get('#password-reset-confirm-page [type=password]')
@@ -61,9 +61,7 @@ describe('Password reset', () => {
         cy.get('#home-page').should('exist');
     });
 
-    it('a token nobody was sent changes nothing', function () {
-        cy.skipUnlessDemo();
-
+    it('a token nobody was sent changes nothing', () => {
         cy.visit('/en/password-reset/confirm?token=a-token-nobody-issued');
         cy.get('#password-reset-confirm-page [type=password]')
             .eq(0)

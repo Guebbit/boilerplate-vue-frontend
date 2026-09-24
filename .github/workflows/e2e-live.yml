@@ -97,6 +97,21 @@ jobs:
                     --health-interval 10s
                     --health-timeout 5s
                     --health-retries 10
+            # The SMTP catcher the live backend mails into, so the flows that hinge on a mailed
+            # code or link — 2FA, password reset, verification — run here instead of skipping.
+            # CI and test only: a deployment configures its own provider (`NODE_SMTP_*`); nothing
+            # in either repo names one. `cy.emailTo()` reads it over the HTTP API on 8025.
+            # https://mailpit.axllent.org/docs/
+            mailpit:
+                image: axllent/mailpit:v1.31.2
+                ports:
+                    - 1025:1025
+                    - 8025:8025
+                env:
+                    # The backend always authenticates (its SMTP settings are all-or-nothing), and
+                    # Mailpit offers AUTH only when told to accept any credentials, over plain SMTP.
+                    MP_SMTP_AUTH_ACCEPT_ANY: 'true'
+                    MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
             umami:
                 image: ghcr.io/umami-software/umami:postgresql-v2.14.0
                 ports:
@@ -205,6 +220,16 @@ jobs:
                   # The e2e preview serves the app on 8085; the backend's CORS default names only
                   # the dev server, and a refused preflight fails every spec before any assertion.
                   NODE_CORS_ORIGIN: http://localhost:8085
+                  # Where mailed links point — the preview, so a spec can open the link it read.
+                  NODE_FRONTEND_URL: http://localhost:8085
+                  # Mail goes to the Mailpit service above: plain SMTP on 1025 (the backend only
+                  # negotiates TLS on 465/587), throwaway credentials Mailpit accepts.
+                  NODE_MAIL_TRANSPORT: smtp
+                  NODE_SMTP_HOST: localhost
+                  NODE_SMTP_PORT: '1025'
+                  NODE_SMTP_USER: ci
+                  NODE_SMTP_PASS: ci-not-a-secret
+                  NODE_SMTP_SENDER: 'CI <noreply@example.com>'
                   # The server-side half of the analytics pair. Unset, the backend logs "events
                   # are being discarded" and carries on — Umami would be up, the browser tracker
                   # would still write, and `analytics.cy.ts` would read one row where it expects
@@ -249,6 +274,8 @@ jobs:
             # arrangement the spec exists to police.
             - name: Run e2e tests against the live backend
               env:
+                  # `cy.emailTo()` reads the Mailpit service; `cy.restore()` empties it.
+                  MAILPIT_URL: http://localhost:8025
                   VITE_UMAMI_SRC: http://localhost:3080/script.js
                   VITE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
               run: npm run test:e2e:live

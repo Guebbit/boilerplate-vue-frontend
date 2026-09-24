@@ -87,7 +87,7 @@ describe('Social login (OAuth)', () => {
         signUpUnverified('Original_Pass1!');
 
         // ── Prove the address the ordinary way, from the signup mail ───────────────────
-        cy.demoEmailTo('oauth.demo@example.com').then(({ token }) => {
+        cy.emailTo('oauth.demo@example.com').then(({ token }) => {
             cy.visit(`/en/verify-email/confirm?token=${token}`);
         });
         cy.get('[data-test=verify-submit]').click();

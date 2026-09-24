@@ -52,7 +52,7 @@ sweepA11y('account — guest', [
         name: 'login, 2FA challenge',
         route: '/en/login',
         prepare: () => {
-            cy.skipUnlessDemo();
+            cy.skipUnlessMailbox();
             cy.loginAs('user');
             cy.enrollEmailTwoFactor(seedAccount('user').email);
             cy.logout();

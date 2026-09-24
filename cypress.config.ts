@@ -261,6 +261,12 @@ export default defineConfig({
              * up. Overridable for a Umami that was not started from that compose file.
              */
             umamiUrl: process.env.UMAMI_URL ?? 'http://localhost:3080',
+            /*
+             * Only used by the live profile: the SMTP catcher the live backend mails into, read
+             * over its HTTP API by `cy.emailTo()`. Empty when unset — a live run with no Mailpit
+             * skips the mail-driven specs (`cy.skipUnlessMailbox()`) instead of failing them.
+             */
+            mailpitUrl: process.env.MAILPIT_URL ?? '',
             umamiWebsiteId: process.env.UMAMI_WEBSITE_ID ?? '00000000-0000-4000-8000-000000000001',
             umamiUser: process.env.UMAMI_ADMIN_USER ?? 'admin',
             umamiPassword: process.env.UMAMI_ADMIN_PASSWORD ?? 'umami',

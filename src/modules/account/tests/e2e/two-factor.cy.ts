@@ -1,11 +1,12 @@
 /**
  * @module
  * End-to-end 2FA login flow: enroll email as a second factor, sign out, sign back in with a code
- * read from the demo backend's email outbox, then remove the factor. `cy.demoEmailTo` and
- * `cy.enrollEmailTwoFactor` only mean something against the demo profile, so every case here opens
- * with `cy.skipUnlessDemo()`, same as `password-reset.cy.ts`.
+ * read from the mailbox, then remove the factor. `cy.emailTo` reads the demo outbox or, live, the
+ * Mailpit inbox; every case opens with `cy.skipUnlessMailbox()`, which skips only a live run that
+ * has no Mailpit to read.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
+import { expectMailTemplate } from '../../../../../tests/support/e2e/commands';
 
 describe('Two-factor authentication', () => {
     beforeEach(() => {
@@ -15,7 +16,7 @@ describe('Two-factor authentication', () => {
     });
 
     it('enrolls email, challenges the next login, and accepts the mailed code', function () {
-        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
 
         // ── Arm email as a second factor ────────────────────────────────────────────
         cy.loginAs('user');
@@ -36,8 +37,8 @@ describe('Two-factor authentication', () => {
         cy.get('[data-test=two-factor-challenge-send]').click();
         // The template is asserted here and only here: it is what pins the login-challenge mail
         // to the right backend template, not something every code read needs to restate.
-        cy.demoEmailTo(seedAccount('user').email).then((email) => {
-            expect(email.template).to.equal('account.two-factor-code');
+        cy.emailTo(seedAccount('user').email).then((email) => {
+            expectMailTemplate(email, 'account.two-factor-code');
         });
         cy.typeMailedTwoFactorCode(
             seedAccount('user').email,
@@ -53,7 +54,7 @@ describe('Two-factor authentication', () => {
     });
 
     it('a wrong code is refused, and the session never establishes', function () {
-        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
 
         cy.loginAs('user');
         cy.enrollEmailTwoFactor(seedAccount('user').email);
@@ -74,7 +75,7 @@ describe('Two-factor authentication', () => {
     });
 
     it('regenerating backup codes discards the old set and shows a fresh one once', function () {
-        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
 
         // ── Enroll by hand: this case needs one of the backup codes to prove the mutation,
         //    and the shared command dismisses that screen without exposing them. ──────────────
@@ -112,7 +113,7 @@ describe('Two-factor authentication', () => {
     });
 
     it('removing the last factor turns 2FA off — the next login goes straight through', function () {
-        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
 
         // ── Enroll by hand, rather than through `cy.enrollEmailTwoFactor()`: this case needs
         //    one of the backup codes, shown once, and the shared command dismisses that screen

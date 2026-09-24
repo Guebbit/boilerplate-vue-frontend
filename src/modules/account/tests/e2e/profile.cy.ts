@@ -9,7 +9,7 @@
  * are the backend's to test.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
-import { mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
+import { expectMailTemplate, mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
 
 /**
  * Fills the address dialog's six required inputs and saves.
@@ -286,8 +286,8 @@ describe('Profile self-service', () => {
 
             // Same template as signup verification — only the link's kind differs — so the
             // outbox is read the same way `registration.cy.ts` reads its own.
-            cy.demoEmailTo('new-address@example.com').then((email) => {
-                expect(email.template).to.equal('account.verify-request');
+            cy.emailTo('new-address@example.com').then((email) => {
+                expectMailTemplate(email, 'account.verify-request');
                 cy.visit(mailedLinkUrl(email));
             });
             cy.get('[data-test=email-change-submit]').click();
@@ -305,8 +305,8 @@ describe('Profile self-service', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.contains('We sent a confirmation email').should('exist');
 
-            cy.demoEmailTo(seedAccount('user').email).then((email) => {
-                expect(email.template).to.equal('account.delete-request');
+            cy.emailTo(seedAccount('user').email).then((email) => {
+                expectMailTemplate(email, 'account.delete-request');
                 cy.visit(mailedLinkUrl(email));
             });
             cy.get('#account-delete-confirm-page button[type=submit]').click();

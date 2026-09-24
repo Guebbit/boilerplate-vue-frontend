@@ -117,6 +117,31 @@ Boot the backend first. Nothing here waits for it: with no backend listening on 
 
 Run `npm run check:spec-identity` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
 
+### Point the backend at Mailpit, or the mail-driven specs skip
+
+The flows that hinge on a mailed code or link — 2FA, password reset, email verification — read the
+mail back with `cy.emailTo()`. Against the demo profile that is the in-process outbox; against a
+live backend it is [Mailpit](https://mailpit.axllent.org/), an SMTP catcher with an HTTP API.
+`cy.restore()` empties it along with the database, so a spec never reads the previous spec's mail.
+
+```bash
+# the catcher: SMTP on 1025, HTTP API on 8025
+podman run -d --name mailpit -p 1025:1025 -p 8025:8025 \
+  -e MP_SMTP_AUTH_ACCEPT_ANY=true -e MP_SMTP_AUTH_ALLOW_INSECURE=true axllent/mailpit
+
+# terminal 1 — backend: mail into it, and link back to the preview
+NODE_MAIL_TRANSPORT=smtp NODE_SMTP_HOST=localhost NODE_SMTP_PORT=1025 \
+NODE_SMTP_USER=dev NODE_SMTP_PASS=dev NODE_SMTP_SENDER='Dev <noreply@example.com>' \
+NODE_FRONTEND_URL=http://localhost:8085 npm run dev
+
+# terminal 2 — frontend
+MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
+```
+
+With no `MAILPIT_URL`, those specs report as skipped (`cy.skipUnlessMailbox()`) rather than
+failing. Mailpit belongs to test environments only: a deployment configures its own provider
+through `NODE_SMTP_*`, and neither repo names one. `e2e-live.yml` runs it as a service.
+
 ## `BACKEND_PATH`
 
 `cy.restore()` shells out to the backend checkout for `host -- scenario:apply:reset` (under the demo profile it POSTs the backend's in-process `/__test/restore` instead — see `tests/support/e2e/commands.ts`). The live command also carries `--describe-to={describeTo}`: a live deployment mounts no `/__test/scenario`, so the reset writes the accounts and subject ids to a file that `tests/support/e2e/scenario.ts` reads back. Without `LIVE_RESET_COMMAND` there is no reset and no description, and a spec asking for either says so. Which checkout that is comes from `scripts/pairing/paired-backend-path.ts`, which `cypress.config.ts` reads:
@@ -153,15 +178,16 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 ## File map
 
-| Path                                             | Contents                                                           |
-| ------------------------------------------------ | ------------------------------------------------------------------ |
-| `scripts/pairing/paired-backend-path.ts`         | `resolveBackendPath()`, read by `cypress.config.ts`                |
-| `src/infrastructure/http/index.ts`               | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate                     |
-| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against          |
-| `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs)  |
-| `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`                |
-| `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file |
-| `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                 |
+| Path                                             | Contents                                                            |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| `scripts/pairing/paired-backend-path.ts`         | `resolveBackendPath()`, read by `cypress.config.ts`                 |
+| `src/infrastructure/http/index.ts`               | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate                      |
+| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against           |
+| `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs)   |
+| `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`, `cy.emailTo()` |
+| `scripts/e2e/mail-message.ts`                    | A Mailpit message read back into the outbox's shape                 |
+| `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file  |
+| `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                  |
 
 ## Related pages
 
