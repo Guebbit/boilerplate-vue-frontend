@@ -335,13 +335,29 @@ jobs:
 
     test-unit:
         # Vitest: components, stores, composables and the http layer, in jsdom.
+        #
+        # The paired backend is checked out too: `spec-identity.spec.ts` compares the real pair
+        # when the sibling is present and FAILS under CI when it is not, so a runner without it
+        # would be red for an infrastructure reason rather than a code one.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
             contents: read
+        env:
+            # Where the sibling lands, and what scripts/pairing/paired-backend-path.ts resolves.
+            BACKEND_PATH: .backend
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+
+            - name: Checkout paired backend
+              uses: actions/checkout@v4
+              with:
+                  # Override with a repository variable when the pair lives elsewhere.
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  path: .backend
+                  # Only needed when the sibling is private; falls back to this repo's token.
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
 
             - name: Setup Node
               uses: actions/setup-node@v4
@@ -372,10 +388,9 @@ jobs:
                   if-no-files-found: ignore
 
             - name: Upload coverage report
-              # Visibility only, not a gate: with no established baseline yet, a hard
-              # threshold would either block unrelated PRs or get set so low it's
-              # meaningless. Publish the report so trends are visible; revisit once
-              # we know a realistic number (ideally as a patch-coverage check).
+              # The gate is the step above: `vitest.config.ts` sets per-file thresholds, and a
+              # file under its floor fails `test:unit:coverage`. This upload is the detail behind
+              # that verdict — which lines are missed — and runs on failure for exactly that.
               if: always()
               uses: actions/upload-artifact@v4
               with:
@@ -593,6 +608,7 @@ jobs:
             - lint-openapi
             - lint-asyncapi
             - asyncapi-types-freshness
+            - docs-references
             - audit
             - api-freshness
             - typecheck
