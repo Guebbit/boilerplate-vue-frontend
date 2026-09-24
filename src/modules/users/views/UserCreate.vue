@@ -172,6 +172,7 @@ const submitForm = () => {
             <v-text-field
                 v-model="form.email"
                 type="email"
+                data-test="user-email"
                 :label="t('user-create-page.label-email')"
                 :error-messages="showErrors ? formErrors.email : []"
                 class="mb-2"
@@ -179,6 +180,7 @@ const submitForm = () => {
             <v-text-field
                 v-model="form.username"
                 type="text"
+                data-test="user-username"
                 :label="t('user-create-page.label-username')"
                 :error-messages="showErrors ? formErrors.username : []"
                 class="mb-2"
@@ -186,6 +188,7 @@ const submitForm = () => {
             <v-text-field
                 v-model="form.password"
                 type="password"
+                data-test="user-password"
                 autocomplete="new-password"
                 :label="t('user-create-page.label-password')"
                 :error-messages="showErrors ? formErrors.password : []"

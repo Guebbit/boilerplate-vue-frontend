@@ -104,6 +104,7 @@ const submitForm = () => {
                     v-model="form.email"
                     type="email"
                     autocomplete="email"
+                    data-test="password-reset-email"
                     :label="t('password-reset-request-page.label-email')"
                     :error-messages="showErrors ? formErrors.email : []"
                 />

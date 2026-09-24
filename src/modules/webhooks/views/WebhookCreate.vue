@@ -157,6 +157,7 @@ const handleSecretDone = () => {
             <v-text-field
                 v-model="form.url"
                 type="url"
+                data-test="webhook-url"
                 :label="t('webhook-create-page.label-url')"
                 :hint="t('webhook-create-page.hint-url')"
                 persistent-hint
@@ -166,12 +167,14 @@ const handleSecretDone = () => {
             <v-text-field
                 v-model="form.description"
                 type="text"
+                data-test="webhook-description"
                 :label="t('webhook-create-page.label-description')"
                 :error-messages="showErrors ? formErrors.description : []"
                 class="mb-2"
             />
             <v-select
                 v-model="form.eventTypes"
+                data-test="webhook-event-types"
                 multiple
                 chips
                 :items="eventCatalogue"
