@@ -119,12 +119,21 @@ describe('the checkout refusals', () => {
             .trigger('click')
             .then(flushPromises)
             .then(() => {
+                // Rendered through the real message, so a swapped `requested`/`available` —
+                // the mistake a bare "contains 5" cannot see — fails here.
                 const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
-                expect(lines).toHaveLength(2);
-                expect(lines[0]?.text()).toContain('Widget');
-                expect(lines[0]?.text()).toContain('5');
-                expect(lines[0]?.text()).toContain('2');
-                expect(lines[1]?.text()).toContain('Gadget');
+                expect(lines.map((line) => line.text())).toEqual([
+                    i18n.global.t('cart-page.shortfall-line', {
+                        title: 'Widget',
+                        requested: 5,
+                        available: 2
+                    }),
+                    i18n.global.t('cart-page.shortfall-line', {
+                        title: 'Gadget',
+                        requested: 3,
+                        available: 0
+                    })
+                ]);
             });
     });
 

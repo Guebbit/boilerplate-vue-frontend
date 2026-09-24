@@ -229,10 +229,6 @@ describe('Navigation', () => {
         document.body.innerHTML = '';
     });
 
-    it('renders properly', () => {
-        expect(mountNav().wrapper).toBeTruthy();
-    });
-
     it('shows a guest only the public entries', () => {
         const { text } = mountNav();
 
