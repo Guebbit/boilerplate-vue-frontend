@@ -204,17 +204,55 @@ for (const f of fs.readdirSync('src/modules/<name>/tests/e2e/__snapshots__').fil
 
 ## Running it in CI
 
-This suite is **not** wired into the pull-request workflow, and that is a deliberate limitation rather than an oversight.
+Screenshots are machine-sensitive. Font rasterisation, subpixel hinting and the exact browser build
+all differ between a developer's machine and a CI runner, by more than the 0.2% budget on
+text-heavy pages. So the suite runs in **one pinned image**, and the baselines are recorded there
+too — never on a host:
 
-Screenshots are machine-sensitive. Font rasterisation, subpixel hinting and the exact browser build all differ between a developer's machine and a CI runner, and those differences are large enough to blow past a 0.2% budget on text-heavy pages. Baselines recorded locally and compared on a runner would fail on the first push, every push — which is precisely how a suite gets ignored.
+| What                   | Where                                                                 |
+| ---------------------- | --------------------------------------------------------------------- |
+| The image              | `cypress/included:<version>@sha256:<digest>` — pinned in `visual.yml` |
+| The nightly comparison | `.github/workflows/visual.yml`, 02:30 UTC and on demand               |
+| The diff images        | uploaded as the `visual-diff` artefact on every run                   |
+| The baselines          | recorded in that same image, committed beside each spec               |
 
-Moving it into CI means making the two environments the same, not loosening the budget:
+It stays a nightly rather than a merge gate: a red run means "go and look at the picture", and the
+artefact is that picture.
 
-1. Record and compare inside the **same pinned container** — the official `cypress/included:<version>` image — so the font stack and browser build are identical everywhere.
-2. Regenerate the committed baselines once from that container, and never from a host machine again.
-3. Add a job that runs `npm run test:e2e:visual` in that image, and uploads `reports/visual-diff/` as an artefact so a reviewer can see the picture without reproducing the run.
+### Re-recording the baselines
 
-Until that is done, treat it as a local gate: run it before opening a pull request, and review the baseline images in the diff.
+Only after looking at the diff, and only inside the pinned image. Copy both checkouts into a
+container (never mount them read-write: the image's Node would rebuild the host's
+`node_modules`), install, and run the update — `--network host` so the preview (8085) and the demo
+backend (3000) reach each other:
+
+```bash
+IMAGE=cypress/included:15.18.1   # the tag pinned in visual.yml
+docker run -d --name visual --network host \
+  -v "$PWD:/src/frontend:ro" -v "$PWD/../boilerplate-node-backend:/src/backend:ro" \
+  --entrypoint sleep "$IMAGE" infinity
+docker exec visual bash -c '
+  mkdir -p /work/frontend /work/backend
+  tar -C /src/frontend --exclude=./node_modules --exclude=./.env --exclude=./.git -cf - . | tar -C /work/frontend -xf -
+  tar -C /src/backend  --exclude=./node_modules --exclude=./.env --exclude=./.git -cf - . | tar -C /work/backend -xf -
+  cd /work/backend && npm ci && cd /work/frontend && CYPRESS_INSTALL_BINARY=0 npm ci'
+docker exec -w /work/frontend -e BACKEND_PATH=/work/backend \
+  -e 'BACKEND_DEMO_COMMAND=npm --prefix {backend} run demo' visual npm run test:e2e:visual:update
+docker exec -w /work/frontend visual bash -c \
+  'find . -path ./node_modules -prune -o -name "*.png" -path "*__snapshots__*" -print | tar -cf - -T -' \
+  | tar -xf - -C .
+docker rm -f visual
+```
+
+`.env` is left behind on purpose: CI has none, and a host `.env` can name paths that do not exist
+inside the image. Then review the changed PNGs in the diff, as always.
+
+### What varies between two runs of an unchanged app
+
+A screen that shows a value minted per run — an id created at boot, a date relative to today, a
+freshly random backup code — cannot be compared as it stands. `sweepVisual`'s `redact` option
+replaces those elements' text with one fixed placeholder before the photograph. Replaced, not
+hidden: a hidden table cell still sizes its column by the text inside it.
 
 ## Why hand-rolled rather than a plugin
 
@@ -243,7 +281,7 @@ Note the directory split: the visual spec lives under `tests/e2e/visual/` rather
 
 ## Where it sits, and where it does not
 
-This is a **gate**: it is deterministic, it is fast, and it blocks a pull request. It is not a hunter — it will never tell you something you did not already have a baseline for.
+It is deterministic inside its pinned image, and it runs nightly rather than on each pull request — see [Running it in CI](#running-it-in-ci). It is not a hunter: it will never tell you something you did not already have a baseline for.
 
 It also does not replace accessibility testing. A screenshot cannot tell you that grey-on-grey text fails a contrast ratio; it will happily record it as the baseline and defend it forever. Contrast is [axe's](./accessibility-testing.md) job, and the two layers found different halves of the same theme problems.
 

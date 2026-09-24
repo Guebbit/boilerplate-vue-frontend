@@ -1,0 +1,75 @@
+name: Visual regression (nightly)
+
+# Pixel comparison of one screen per module against the committed baselines — see
+# docs/tools/visual-regression.md.
+#
+# Inside ONE pinned image, because screenshots are machine-sensitive: font rasterisation and the
+# browser build differ between hosts by more than the 0.2% budget. The committed baselines were
+# recorded in this same image, so both sides of every comparison share a font stack and a Chrome.
+# Re-record them there too, never on a host — the page above says how.
+#
+# Nightly and advisory rather than a merge gate: a red run means "go and look at the picture",
+# which is why the diff images are uploaded whatever the outcome.
+
+on:
+    schedule:
+        # 02:30 UTC — before the other nightlies (03:00 onwards), so they do not compete.
+        - cron: '30 2 * * *'
+    workflow_dispatch:
+
+concurrency:
+    group: visual-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    visual:
+        runs-on: ubuntu-latest
+        timeout-minutes: 40
+        permissions:
+            contents: read
+        container:
+            # Pinned by tag AND digest: the tag says which Cypress, the digest guarantees the same
+            # fonts and Chrome build the baselines were recorded with. Bump both together, and
+            # re-record the baselines in the new image in the same change.
+            image: cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047
+        env:
+            # GitHub points HOME at /github/home in a container job; the image cached its Cypress
+            # binary under /root. Without this, Cypress looks in the wrong place and re-downloads.
+            CYPRESS_CACHE_FOLDER: /root/.cache/Cypress
+            # Where the paired backend lands, and how `npm run backend:demo` boots it.
+            BACKEND_PATH: ${{ github.workspace }}/.backend
+            BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Checkout paired backend
+              uses: actions/checkout@v4
+              with:
+                  # Override with a repository variable when the pair lives elsewhere.
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  path: .backend
+                  # Only needed when the sibling is private; falls back to this repo's token.
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+
+            - name: Install backend dependencies
+              working-directory: .backend
+              run: npm ci
+
+            # The image already holds the matching Cypress binary, so none is downloaded.
+            - name: Install dependencies
+              run: CYPRESS_INSTALL_BINARY=0 npm ci
+
+            - name: Compare every screen against its baseline
+              run: npm run test:e2e:visual
+
+            - name: Upload the diff images
+              # `always()`: a failed comparison is exactly when the pictures are needed, and a pass
+              # leaves the folder empty, which `if-no-files-found: ignore` tolerates.
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: visual-diff
+                  path: reports/visual-diff/
+                  retention-days: 14
+                  if-no-files-found: ignore
