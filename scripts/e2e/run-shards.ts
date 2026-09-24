@@ -47,6 +47,7 @@ import {
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/scratch-directory';
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
+import { printFlakyReport, resetFlakyReport } from './flaky-report';
 
 /*
  * Two levels: this file is `scripts/e2e/run-shards.ts`, so one `..` reaches `scripts/`, where
@@ -289,7 +290,10 @@ const runShard = (files: string[], index: number) =>
                     ...process.env,
                     // This shard's own backend — see `bootDemoBackends` below.
                     // eslint-disable-next-line @typescript-eslint/naming-convention -- the CYPRESS_ prefix is Cypress' env-mapping contract, and the suffix names Cypress.env('apiUrl')
-                    CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`
+                    CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`,
+                    // Tells `cypress.config.ts` not to reset the shared flaky report: `main`
+                    // already did, once, and a shard resetting it would erase the others'.
+                    E2E_SHARDED: 'true'
                 }
             });
 
@@ -308,6 +312,7 @@ const runShard = (files: string[], index: number) =>
 
 const main = async () => {
     const startedAt = Date.now();
+    resetFlakyReport();
     const killBackends = await bootDemoBackends(active.length);
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
     killBackends();
@@ -332,6 +337,9 @@ const main = async () => {
         console.error(output);
         console.error(`[e2e-shard] the above is also at ${path.relative(REPO_ROOT, logFile)}\n`);
     }
+
+    // Retry-passes: printed (and annotated in CI) whatever the verdict, never counted against it.
+    printFlakyReport();
 
     const failed = results.filter(({ code }) => code !== 0).length;
     const elapsed = Math.round((Date.now() - startedAt) / 1000);

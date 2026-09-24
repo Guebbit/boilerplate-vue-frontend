@@ -74,6 +74,8 @@ If PR-line annotations are ever wanted, that is the moment to add a JUnit report
 
 A failing e2e shard additionally writes its whole Cypress output to `reports/e2e/shard-<n>.log`. That exists because stderr is the one copy that can be lost — piped through `tail`, truncated by a log limit — and when it is lost the failure is undiagnosable. It has already earned its keep.
 
+A test that fails and then passes on Cypress' one retry is **flaky, not green**, and is reported as such. Cypress' `after:spec` hook appends each one to `reports/e2e/flaky.jsonl`; `run-shards.ts` (and `scripts/e2e/report-flaky.ts`, for the live run) prints the list at the end — as a GitHub warning annotation per test in CI. It never fails the run: the retry exists so contention does not, and failing on a retry-pass would undo it. What it prevents is a test that needs its retry every night without anyone noticing.
+
 ## Where test data comes from
 
 Three things in the backend can hand you an entity, and each answers a question the others cannot. This repo holds a copy of none of them.

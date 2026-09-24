@@ -247,6 +247,12 @@ jobs:
                   VITE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
               run: npm run test:e2e:live
 
+            # Tests that passed only on Cypress' one retry, as warning annotations — flaky rather
+            # than green, and never failing the job. The sharded demo run prints its own.
+            - name: Report tests that passed only on a retry
+              if: always()
+              run: npx tsx scripts/e2e/report-flaky.ts
+
             # `always()` so a failed run does not leave the process holding the port for whatever
             # the runner does next.
             - name: Stop the backend

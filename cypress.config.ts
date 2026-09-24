@@ -32,6 +32,7 @@ import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
+import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
@@ -67,6 +68,9 @@ export default defineConfig({
      * rather than durations — so a test that fails once and passes on retry is contention, not
      * a bug, and one retry is what separates the two. None when open: a developer watching a
      * test wants to see the first failure, not a green that hid it.
+     *
+     * A retry-pass is still reported — see the `after:spec` hook below and
+     * `scripts/e2e/flaky-report.ts` — so contention that becomes a pattern is visible, not hidden.
      */
     retries: { runMode: 1, openMode: 0 },
     // `test:e2e:live` runs all specs in ONE Cypress process against one shared backend — it
@@ -85,6 +89,22 @@ export default defineConfig({
          * committed baseline files. See `tests/support/e2e/visual-task.ts`.
          */
         setupNodeEvents(on) {
+            /*
+             * Retry-passes, recorded rather than lost to `retries` — see
+             * `scripts/e2e/flaky-report.ts`. A sharded run resets the report once, before its
+             * shards start (`E2E_SHARDED`); any other run resets it here, for itself.
+             * https://docs.cypress.io/api/node-events/before-run-api
+             * https://docs.cypress.io/api/node-events/after-spec-api
+             */
+            on('before:run', () => {
+                if (process.env.E2E_SHARDED !== 'true') resetFlakyReport();
+            });
+            on('after:spec', (spec, results) => {
+                // `results` is undefined when the spec never ran — nothing to record then.
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Cypress types it as always present, but documents it as absent for a skipped spec
+                if (results) recordFlakyTests(flakyTestsIn(spec.relative, results.tests));
+            });
+
             on('task', {
                 /**
                  * Opens a second session for the demo user, server-side: a plain Node fetch
