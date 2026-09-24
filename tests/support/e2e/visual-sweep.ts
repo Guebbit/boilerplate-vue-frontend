@@ -37,7 +37,17 @@ export interface VisualSweepCase {
      * order. Absent, the screen is photographed at its first paint, same as before this existed.
      */
     prepare?: () => void;
+    /**
+     * Selectors whose text differs between two runs of an unchanged app — ids minted at boot,
+     * dates relative to today, freshly random codes — replaced by one fixed placeholder before the
+     * photograph. Replaced rather than hidden: a hidden cell still sizes its column by the text
+     * it holds, so the layout would still move with it.
+     */
+    redact?: readonly string[];
 }
+
+/** What a redacted element shows instead — see {@link VisualSweepCase.redact}. */
+const REDACTED = 'redacted';
 
 /** The terse spelling for the common case — a route, loaded, photographed. */
 type VisualSweepEntry =
@@ -80,7 +90,9 @@ export const sweepVisual = (
             if (role) cy.loginAs(role);
         });
 
-        for (const { name, route, readySelector, prepare } of screens.map((entry) => toCase(entry)))
+        for (const { name, route, readySelector, prepare, redact } of screens.map((entry) =>
+            toCase(entry)
+        ))
             it(`${name} matches its baseline`, () => {
                 // Before the visit, so the page's very first fetch is counted — see the command.
                 cy.trackNetwork();
@@ -102,6 +114,8 @@ export const sweepVisual = (
                 cy.settleNetwork();
 
                 prepare?.();
+
+                for (const selector of redact ?? []) cy.get(selector).invoke('text', REDACTED);
 
                 cy.freezeForVisual();
                 cy.compareSnapshot(name);

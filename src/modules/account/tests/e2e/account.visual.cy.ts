@@ -35,7 +35,9 @@ sweepVisual(
                 );
                 cy.get('[data-test=two-factor-enroll-confirm]').click();
                 cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
-            }
+            },
+            // Freshly random on every enrollment — the layout is what this screen pins.
+            redact: ['[data-test=backup-codes-list] li']
         }
     ],
     'user'

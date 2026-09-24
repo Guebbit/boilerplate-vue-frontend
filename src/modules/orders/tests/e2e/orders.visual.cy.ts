@@ -8,4 +8,19 @@
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
-sweepVisual('orders', [['orders-list', '/en/orders', '#orders-list-page']], 'user');
+sweepVisual(
+    'orders',
+    [
+        {
+            name: 'orders-list',
+            route: '/en/orders',
+            readySelector: '#orders-list-page',
+            // The demo's orders are produced at boot: fresh ids, and dates relative to today.
+            redact: [
+                '#orders-list-page tbody td:nth-child(1)',
+                '#orders-list-page tbody td:nth-child(4)'
+            ]
+        }
+    ],
+    'user'
+);
