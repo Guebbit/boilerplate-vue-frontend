@@ -71,9 +71,16 @@ const mountSignupPage = () =>
     mount(Signup, {
         global: {
             plugins: [router, vuetify, i18n],
-            // `RouterLink` targets app-level static-page routes this test's module-only router
-            // never registers — irrelevant to the breach hint under test.
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' }, RouterLink: true }
+            stubs: {
+                LayoutDefault: { template: '<div><slot /></div>' },
+                // `RouterLink` targets app-level static-page routes this test's module-only
+                // router never registers — irrelevant to the breach hint under test.
+                RouterLink: true,
+                // Antibot's own config fetch and branching are `human-check.spec.ts`'s job; a
+                // real mount here would need `GET /antibot/config` mocked for no reason this
+                // suite cares about.
+                HumanCheck: true
+            }
         }
     });
 

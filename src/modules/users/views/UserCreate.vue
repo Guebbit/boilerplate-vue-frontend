@@ -24,7 +24,7 @@ import {
 } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
-import { userRoleOptions } from '@/modules/users/roles.ts';
+import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages, translate } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -259,7 +259,7 @@ const submitForm = () => {
                 class="mt-2 mb-2"
             />
             <div class="flex flex-wrap gap-x-8">
-                <!-- One list, not a free-text field: `roles.ts` is the single place every role
+                <!-- One list, not a free-text field: `domain/roles.ts` is the single place every role
                      select in this module reads from, so it cannot drift into a second copy. -->
                 <v-select
                     v-model="form.role"

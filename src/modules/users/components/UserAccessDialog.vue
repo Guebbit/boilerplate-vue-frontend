@@ -16,7 +16,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { userRoleOptions } from '@/modules/users/roles.ts';
+import { userRoleOptions } from '@/modules/users/domain';
 import type {
     UserAccessDialogRequestOptions,
     UserAccessDialogResult,

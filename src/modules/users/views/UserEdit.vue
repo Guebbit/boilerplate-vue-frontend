@@ -27,7 +27,7 @@ import {
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
-import { userRoleOptions } from '@/modules/users/roles.ts';
+import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -403,7 +403,7 @@ watchUser(() => id);
                         :label="t('user-edit-page.label-locale')"
                     />
                     <div class="flex flex-wrap gap-x-8">
-                        <!-- One list, not a free-text field: `roles.ts` is the single place every
+                        <!-- One list, not a free-text field: `domain/roles.ts` is the single place every
                              role select in this module reads from. -->
                         <v-select
                             v-model="form.role"

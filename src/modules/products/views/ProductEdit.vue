@@ -352,13 +352,30 @@ const {
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        const { price, active, requiresShipping, weight, categories, tags, translations, imageUpload } =
-            form.value;
+        const {
+            price,
+            active,
+            requiresShipping,
+            weight,
+            categories,
+            tags,
+            translations,
+            imageUpload
+        } = form.value;
         if (!id || price === undefined) return;
         return trackUpload(imageUpload, (options) =>
             updateProduct(
                 id,
-                { price, active, requiresShipping, weight, categories, tags, translations, imageUpload },
+                {
+                    price,
+                    active,
+                    requiresShipping,
+                    weight,
+                    categories,
+                    tags,
+                    translations,
+                    imageUpload
+                },
                 options
             )
         ).then(() => {

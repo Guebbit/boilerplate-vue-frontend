@@ -65,7 +65,7 @@ describe('ShippingSelector', () => {
      */
     it('fetches on mount even when the shared methods list is already populated', () => {
         const store = useDeliveryStore();
-        store.methods = [{ id: 'standard', price: 500, tracked: false }];
+        store.methods = [{ id: 'standard', price: 500, tracked: false, requiresAddress: true }];
         vi.spyOn(store, 'fetchMethods').mockResolvedValue([]);
 
         mount(ShippingSelector, {
