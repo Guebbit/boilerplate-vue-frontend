@@ -7629,17 +7629,7 @@ export const UpdateOrderByIdBody = zod.strictObject({
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
         .optional()
         .describe('Updated order status'),
-    userId: zod.string().optional().describe('Resource identifier'),
-    email: zod.email().optional(),
-    items: zod
-        .array(
-            zod.strictObject({
-                productId: zod.string().describe('Resource identifier'),
-                quantity: zod.number().min(1)
-            })
-        )
-        .min(1)
-        .optional()
+    email: zod.email().optional()
 });
 
 export const updateOrderByIdResponseDataItemsItemProductPriceMin = 0;
