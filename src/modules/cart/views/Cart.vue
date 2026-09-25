@@ -90,6 +90,12 @@ const addressId = ref<string | undefined>();
 const paymentMethodId = ref<PaymentMethodId | undefined>();
 
 /**
+ * Free-text notes left at checkout — optional, trimmed to `undefined` when blank so an empty
+ * textarea does not send an empty string the contract would rather see omitted.
+ */
+const notes = ref('');
+
+/**
  * Whether checkout may run yet: a physical basket needs a method, and — only when that method
  * demands it — an address, mirroring the backend's own `evaluateShippingRequirement`
  * (`cart/domain/rules.ts` in the API repo). A digital-only basket needs neither.
@@ -148,7 +154,8 @@ const checkout = () => {
             ? {}
             : { shippingMethodId: shippingMethodId.value }),
         ...(addressId.value === undefined ? {} : { addressId: addressId.value }),
-        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value })
+        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
+        ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
@@ -396,6 +403,14 @@ onMounted(() =>
                         class="mt-3"
                     />
                     <PaymentMethodSelector v-model="paymentMethodId" />
+                    <v-textarea
+                        v-model="notes"
+                        :label="t('cart-page.label-notes')"
+                        rows="2"
+                        auto-grow
+                        class="mt-3"
+                        data-test="cart-notes"
+                    />
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
