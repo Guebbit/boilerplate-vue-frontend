@@ -532,7 +532,14 @@ describe('useProductsStore', () => {
             it('posts the store filters to /products/search, id included', () => {
                 respondWithItems([]);
                 const store = useProductsStore();
-                store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50, deleted: true };
+                store.filters = {
+                    text: 'gad',
+                    id: 'p1',
+                    minPrice: 5,
+                    maxPrice: 50,
+                    active: false,
+                    deleted: true
+                };
 
                 return store
                     .watchSearchProducts()
@@ -552,6 +559,9 @@ describe('useProductsStore', () => {
                             id: ['p1'],
                             minPrice: 5,
                             maxPrice: 50,
+                            // FE_PARITY_0924 P4 — the admin-only "Active" filter, previously
+                            // dropped before the request went out.
+                            active: false,
                             deleted: true
                         });
                         expect(parameters.productId).toBeUndefined();

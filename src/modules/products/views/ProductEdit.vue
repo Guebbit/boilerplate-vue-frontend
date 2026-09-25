@@ -127,7 +127,10 @@ const loadAdminProduct = (productId: string) => {
 interface ProductEditForm {
     price?: number;
     active?: boolean;
+    requiresShipping?: boolean;
     weight?: number;
+    categories?: string[];
+    tags?: string[];
     translations: ProductTranslationsWrite;
     imageUpload?: File;
 }
@@ -190,7 +193,12 @@ activateAutoHydrate(
             ? {
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
+                  requiresShipping: adminProduct.value.requiresShipping ?? true,
                   weight: adminProduct.value.weight,
+                  // Fresh arrays too, same reason as `translations` below: a chip added then
+                  // discarded via "Reset changes" must not have mutated the fetched record.
+                  categories: [...(adminProduct.value.categories ?? [])],
+                  tags: [...(adminProduct.value.tags ?? [])],
                   // Spread into a fresh object: the admin record's own `translations` must not be
                   // mutated by a later tab edit — `resetForm()` (the "Reset changes" button) needs
                   // it intact to hydrate from again.
@@ -344,10 +352,15 @@ const {
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        const { price, active, weight, translations, imageUpload } = form.value;
+        const { price, active, requiresShipping, weight, categories, tags, translations, imageUpload } =
+            form.value;
         if (!id || price === undefined) return;
         return trackUpload(imageUpload, (options) =>
-            updateProduct(id, { price, active, weight, translations, imageUpload }, options)
+            updateProduct(
+                id,
+                { price, active, requiresShipping, weight, categories, tags, translations, imageUpload },
+                options
+            )
         ).then(() => {
             // The API has answered with the stored `imageUrl` and the merged translations; the
             // admin record is the only place both live, so it is reloaded rather than patched by
@@ -498,7 +511,28 @@ const submitForm = () => {
                         persistent-hint
                         data-test="product-weight-field"
                     />
+                    <v-combobox
+                        v-model="form.categories"
+                        multiple
+                        chips
+                        closable-chips
+                        :label="t('product-edit-page.label-categories')"
+                        data-test="product-categories-field"
+                    />
+                    <v-combobox
+                        v-model="form.tags"
+                        multiple
+                        chips
+                        closable-chips
+                        :label="t('product-edit-page.label-tags')"
+                        data-test="product-tags-field"
+                    />
                     <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
+                    <v-switch
+                        v-model="form.requiresShipping"
+                        :label="t('product-edit-page.label-requires-shipping')"
+                        data-test="product-requires-shipping-field"
+                    />
                     <FormImageUpload
                         v-model="form.imageUpload"
                         :current-image-url="adminProduct?.imageUrl"

@@ -4777,7 +4777,7 @@ export const ListProductsResponse = zod.strictObject({
  */
 export const createProductBodyPriceMin = 0;
 
-export const createProductBodyOnHandDefault = 100;
+export const createProductBodyOnHandDefault = 0;
 export const createProductBodyOnHandMin = 0;
 
 export const createProductBodyActiveDefault = true;

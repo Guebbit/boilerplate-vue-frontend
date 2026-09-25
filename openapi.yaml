@@ -9101,7 +9101,7 @@ components:
         onHand:
           type: integer
           minimum: 0
-          default: 100
+          default: 0
         active:
           type: boolean
           default: true
@@ -9142,7 +9142,7 @@ components:
         onHand:
           type: integer
           minimum: 0
-          default: 100
+          default: 0
         active:
           type: boolean
           default: true

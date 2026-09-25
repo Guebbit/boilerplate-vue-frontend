@@ -19,6 +19,10 @@ import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
+import {
+    useProductPicker,
+    useProductPickerPin
+} from '@/modules/inventory/composables/use-product-picker.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -55,14 +59,10 @@ const { addMessage } = useNotificationsStore();
 const inventoryStore = useInventoryStore();
 
 /**
- * Source of the product select's options.
+ * Refreshes the catalogue's own copy of the stock counters after a successful write — the
+ * product picker itself is search-as-you-type now (see below), not this store's cache.
  */
 const productsStore = useProductsStore();
-
-/**
- * The catalogue, kept in sync via `fetchProducts` after every write.
- */
-const { productsList } = storeToRefs(productsStore);
 
 /**
  * True while the pending write is in flight; binds to the submit button.
@@ -70,11 +70,10 @@ const { productsList } = storeToRefs(productsStore);
 const { loading } = storeToRefs(inventoryStore);
 
 /**
- * One select item per known product, so the form talks titles while the API talks ids.
+ * The product select's search box and options — `POST /products/search`, not the products store's
+ * unpaged `listProducts()`, which only ever holds the first page (FE_PARITY_0924 B2).
  */
-const productOptions = computed(() =>
-    productsList.value.map((product) => ({ value: product.id, title: product.title }))
-);
+const { query: productQuery, options: productOptions, pin: pinProduct } = useProductPicker();
 
 /**
  * The `<form>` element, handed to `useStructureFormValidation` for its native-validity wiring.
@@ -115,6 +114,12 @@ const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValid
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
+
+/**
+ * Keeps the currently chosen product resolvable in `productOptions` even once a later search
+ * would otherwise have dropped it — see `use-product-picker.ts`.
+ */
+useProductPickerPin(() => form.value.productId, pinProduct);
 
 /**
  * This form's own blocked state — the interesting failure for an adjustment is the 409 (the
@@ -172,9 +177,19 @@ const submitForm = () =>
             class="flex flex-wrap items-start gap-3"
             @submit.prevent="submitForm"
         >
-            <v-select
+            <!--
+                Vuetify v-autocomplete: `search` is the typed text (bound to the picker's own
+                query, which drives the server search), `no-filter` turns off Vuetify's own
+                client-side filtering of `:items` since the server already filtered them.
+                https://vuetifyjs.com/en/api/v-autocomplete/
+            -->
+            <v-autocomplete
                 v-model="form.productId"
+                v-model:search="productQuery"
                 :items="productOptions"
+                item-title="title"
+                item-value="value"
+                no-filter
                 :label="t('inventory-page.label-product')"
                 :error-messages="showFormErrors ? (formErrors.productId ?? []) : []"
                 :data-test="isReceipt ? 'receipt-product' : 'adjust-product'"
