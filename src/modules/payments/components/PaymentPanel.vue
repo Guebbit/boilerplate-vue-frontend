@@ -17,6 +17,8 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import HumanCheck from '@/ui/organisms/HumanCheck.vue';
+import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { usePaymentsStore } from '../store.ts';
 import { classifyPaymentError } from '@/modules/payments/domain';
 import type { UnavailableOrderLine } from '@/modules/payments/domain';
@@ -141,17 +143,39 @@ const {
 } = useBlockingError();
 
 /**
+ * The human-challenge widget, shown only once rung 3 has actually engaged — `paymentDeclineChallengeGate`
+ * only mounts `humanChallengeGate` once this account already has a prior decline on this order,
+ * never on a first attempt. Read for its solved token on the retry below.
+ */
+const humanCheck = ref<InstanceType<typeof HumanCheck>>();
+
+/**
+ * Whether the last confirm was refused for a missing/invalid challenge token — the signal to show
+ * {@link humanCheck} inline instead of the generic blocked-panel message.
+ */
+const requiresHumanCheck = ref(false);
+
+/**
  * Pays the order with the chosen method, notifies the result, and tells the parent to re-read the
  * order once it actually settles. A decline rejects; an in-flight answer does not, and leaves the
- * panel showing the next step.
+ * panel showing the next step. An `ANTIBOT_VERIFICATION_FAILED` refusal instead reveals
+ * {@link humanCheck}, so the visitor solves it and presses "pay" again with the same method.
  */
 const submitPayment = () => {
     unavailableLines.value = [];
     clearPaymentError();
     return paymentsStore
-        .payForOrder(orderId, paymentMethodRef.value)
-        .then(announceIfSettled)
+        .payForOrder(orderId, paymentMethodRef.value, withAntibotToken(humanCheck.value?.token))
+        .then(() => {
+            requiresHumanCheck.value = false;
+            announceIfSettled();
+        })
         .catch((error: unknown) => {
+            if (isAntibotVerificationFailed(error)) {
+                requiresHumanCheck.value = true;
+                reportPaymentError(error);
+                return;
+            }
             const verdict = classifyPaymentError(error);
             if (verdict.kind === 'product-unavailable') {
                 unavailableLines.value = verdict.lines;
@@ -226,6 +250,7 @@ onMounted(() => {
                 :disabled="loading"
                 class="mb-3"
             />
+            <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mb-3" />
             <v-btn type="submit" color="primary" data-test="payment-submit" :disabled="loading">
                 {{ t('payments-panel.button-pay') }}
             </v-btn>

@@ -37,7 +37,16 @@ export default defineConfig(({ mode }) => ({
         }
     },
     plugins: [
-        vue(),
+        vue({
+            template: {
+                compilerOptions: {
+                    // <altcha-widget> is a real custom element from the `altcha` package, not a
+                    // component this app defines — without this Vue tries to resolve it and warns
+                    // "failed to resolve component" on every page HumanCheck.vue mounts it on.
+                    isCustomElement: (tag) => tag === 'altcha-widget'
+                }
+            }
+        }),
         // auto-imports Vuetify components/directives on use (tree-shaken)
         vuetify({ autoImport: true }),
         tailwindcss(),

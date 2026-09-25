@@ -84,18 +84,29 @@ export const useAuthStore = defineStore('accountAuth', () => {
      *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the refresh cookie
      *  the API sets lives only as long as an access token. Dropped by the backend on the 2FA path
      *  regardless of this value — see `TwoFactorChallenge.vue`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` — `Login.vue` attaches
+     *  a solved `HumanCheck` token through it on the retry after an `ANTIBOT_VERIFICATION_FAILED`
+     *  refusal (rung 3 only engages once the per-identity failure budget is mostly spent).
      * @returns A promise resolving with the {@link LoginOutcome}.
      * @throws {Error} If `fetchAny` ever resolves without a value. It can't for this call — that
      *  only happens on its `lastUpdateKey` cache path, and this call passes none — but if it ever
      *  did, failing loudly beats a caller silently treating a missing outcome as `'session'`.
      */
-    const login = (email: string, password: string, remember = false): Promise<LoginOutcome> =>
+    const login = (
+        email: string,
+        password: string,
+        remember = false,
+        options?: AxiosRequestConfig
+    ): Promise<LoginOutcome> =>
         fetchAny<LoginOutcome>(() =>
-            apiLogin({
-                email,
-                password,
-                remember: remember ? LoginRequestRemember.medium : undefined
-            }).then((data) => {
+            apiLogin(
+                {
+                    email,
+                    password,
+                    remember: remember ? LoginRequestRemember.medium : undefined
+                },
+                options
+            ).then((data) => {
                 const payload = getPayloadFromResponse<ApiLoginOutcome>(data);
                 // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
                 // all, so the union needs a guard TS can narrow on rather than an optional access.
@@ -216,10 +227,13 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * Starts the password reset flow by sending a token to the provided email.
      *
      * @param email - Email of the account to reset.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
+     *  `PasswordResetRequest.vue` attaches a solved `HumanCheck` token through it: this route is
+     *  always guarded by `humanChallengeGate` once a provider is active.
      * @returns A promise resolving once the request has been accepted.
      */
-    const requestPasswordReset = (email: string) =>
-        fetchAny(() => apiRequestPasswordReset({ email }));
+    const requestPasswordReset = (email: string, options?: AxiosRequestConfig) =>
+        fetchAny(() => apiRequestPasswordReset({ email }, options));
 
     /**
      * Completes the password reset using the one-time token and a new password.

@@ -32,6 +32,8 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import HumanCheck from '@/ui/organisms/HumanCheck.vue';
+import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
 
@@ -131,20 +133,42 @@ const {
 } = useBlockingError();
 
 /**
+ * The human-challenge widget, shown only once rung 3 has actually engaged — `POST /account/login`
+ * only mounts `humanChallengeGate` behind `loginChallengeGate`, which delegates to it once the
+ * per-identity failure budget is mostly spent, never on an honest first attempt. Read for its
+ * solved token on the retry below.
+ */
+const humanCheck = ref<InstanceType<typeof HumanCheck>>();
+
+/**
+ * Whether the last attempt was refused for a missing/invalid challenge token — the signal to show
+ * {@link humanCheck} inline instead of the generic blocked-form message.
+ */
+const requiresHumanCheck = ref(false);
+
+/**
  * Validates the form and authenticates the user.
  *
  * @returns A promise resolving once the outcome settles: a plain session redirects (see
  *  `usePostLoginRedirect`); an account with 2FA armed hands the challenge to the two-factor store
  *  and pushes `TwoFactorChallenge` instead. Invalid input is revealed, announced and focused by
  *  the toolkit before the handler is ever reached; API failures are attached to the field the
- *  server named, or blocked in place ({@link loginError}) when it named none.
+ *  server named, or blocked in place ({@link loginError}) when it named none. An
+ *  `ANTIBOT_VERIFICATION_FAILED` refusal instead reveals {@link humanCheck} and leaves the form
+ *  filled in, so the visitor solves it and presses submit again.
  */
 const submitForm = () => {
     clearLoginError();
     return handleSubmit(() =>
         useAuthStore()
-            .login(form.value.email, form.value.password, form.value.remember)
+            .login(
+                form.value.email,
+                form.value.password,
+                form.value.remember,
+                withAntibotToken(humanCheck.value?.token)
+            )
             .then((outcome) => {
+                requiresHumanCheck.value = false;
                 if (outcome.kind === 'mfa') {
                     useTwoFactorStore().beginLoginChallenge(outcome, form.value.remember ?? false);
                     return router.push(
@@ -156,6 +180,11 @@ const submitForm = () => {
             // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
             .then(() => undefined)
     ).catch((error) => {
+        if (isAntibotVerificationFailed(error)) {
+            requiresHumanCheck.value = true;
+            reportLoginError(error);
+            return;
+        }
         // A 401 names no field, so it blocks the form. A 422 that names `email` lands under it.
         if (!applyServerErrors(error)) reportLoginError(error);
     });
@@ -208,6 +237,7 @@ const submitForm = () => {
                         {{ t('login-page.link-password-reset') }}
                     </RouterLink>
                 </div>
+                <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mt-2" />
                 <v-btn type="submit" color="primary" size="large" block class="mt-4">
                     {{ t('login-page.button-submit') }}
                 </v-btn>

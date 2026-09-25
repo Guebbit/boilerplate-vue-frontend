@@ -61,6 +61,7 @@
         "@guebbit/js-toolkit": "^2.2.0",
         "@guebbit/vue-toolkit": "^4.0.0",
         "@tanstack/query-core": "^5.101.4",
+        "altcha": "^3.2.3",
         "axios": "^1.13.6",
         "lodash-es": "^4.18.1",
         "lucide-vue-next": "^1.0.0",
