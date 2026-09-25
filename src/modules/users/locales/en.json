@@ -34,7 +34,10 @@
         "image-alt": "Profile picture of {name}",
         "button-restore": "Restore",
         "button-restore-named": "Restore {name}",
-        "success-restore": "User restored"
+        "success-restore": "User restored",
+        "button-access": "Manage access",
+        "button-access-named": "Manage access for {name}",
+        "success-access-update": "User access updated"
     },
     "users-form": {
         "email-invalid": "Check your email address for typos or a missing domain",
@@ -65,14 +68,20 @@
         "image-alt": "Profile picture of {name}",
         "button-disable-two-factor": "Strip two-factor authentication",
         "confirm-disable-two-factor": "Remove every second factor and backup code from this account, without proof from its owner? Every call is audited.",
-        "success-disable-two-factor": "Two-factor authentication removed from this account."
+        "success-disable-two-factor": "Two-factor authentication removed from this account.",
+        "button-manage-access": "Manage access",
+        "success-access-update": "User access updated"
     },
     "user-create-page": {
         "page-title": "Create user",
         "label-email": "Email",
         "label-username": "Username",
         "label-password": "Password",
+        "label-send-setup-email": "Send setup email instead",
+        "hint-send-setup-email": "The new user gets an email to set their own password; the password field above is not required.",
+        "password-or-setup-email-required": "Set a password, or check \"send setup email\" — a new account needs one or the other.",
         "label-role": "Role",
+        "label-locale": "Language",
         "label-active": "Active",
         "button-submit": "Create user",
         "button-go-to-list": "Back to users list",
@@ -81,12 +90,31 @@
     "user-edit-page": {
         "page-title": "Edit user",
         "label-email": "Email",
+        "label-username": "Username",
         "label-password": "New password (leave blank to keep unchanged)",
+        "label-phone": "Phone",
+        "label-website": "Website",
+        "label-locale": "Language",
+        "label-role": "Role",
+        "label-active": "Active",
         "button-submit": "Save changes",
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to user details",
         "button-go-to-list": "Back to users list",
         "success-update": "User updated successfully"
+    },
+    "user-access-dialog": {
+        "title-pick": "Manage access for {name}",
+        "title-confirm": "Confirm access change for {name}",
+        "label-role": "Role",
+        "label-active": "Active",
+        "hint-active": "Deactivating logs this user out of every session immediately.",
+        "button-continue": "Continue",
+        "button-back": "Back",
+        "summary-role": "{name}'s role will change to {role}.",
+        "summary-deactivate": "{name} will be deactivated and logged out of every session.",
+        "summary-reactivate": "{name} will be reactivated.",
+        "warning-self-deactivate": "This is your own account — you will be logged out immediately, and cannot undo this yourself once it happens."
     },
     "navigation": {
         "label-users-list": "@:generic.user @:generic.list"

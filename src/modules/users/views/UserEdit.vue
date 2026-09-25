@@ -7,9 +7,13 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * User-edit page. Loads one user by route id, exposes an email/password/avatar
- * form built on `useStructureFormValidation` — an empty password or avatar field means "leave
- * as is" — and submits multipart only when a new avatar is attached.
+ * User-edit page: the complete admin form — email, username, password, role, active, locale,
+ * phone, website and avatar — built on `useStructureFormValidation` (an empty password or avatar
+ * field means "leave as is"), submitting multipart only when a new avatar is attached.
+ *
+ * Role and active status get one more gate than the rest: `UserAccessDialog`'s confirm step,
+ * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
+ * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
  */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -21,7 +25,10 @@ import {
     useUploadProgress as useToolkitUploadProgress
 } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
+import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
+import { userRoleOptions } from '@/modules/users/roles.ts';
+import { supportedLanguages } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Pencil, User } from 'lucide-vue-next';
@@ -32,6 +39,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
+import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
 import {
     EMPTY_VALUE,
     formatText,
@@ -72,25 +80,41 @@ const { watchUser, updateUser } = useUsersStore();
 const { currentUser, loading } = storeToRefs(useUsersStore());
 
 /**
- * Edit form data model.
+ * Edit form data model — every editable field the record has, per FE_PARITY_0924: the row/detail
+ * `UserAccessDialog` shortcuts are conveniences on top of this form, never a replacement for it.
  */
 interface UserEditForm {
     email?: string;
+    username?: string;
     password?: string;
+    role?: string;
+    active?: boolean;
+    locale?: string;
+    phone?: string;
+    website?: string;
     imageUpload?: File;
 }
 
 /**
  * Validation schema of the edit form, where the password is an optional replacement (an empty
- * field means "leave it as it is") and so is the avatar.
+ * field means "leave it as it is") and so is the avatar. `username`/`phone`/`website` are picked
+ * from `usersSchema` rather than re-declared, so this form's rules cannot drift from the create
+ * form's; `role`/`active` are re-declared plain (`usersSchema`'s own are `nullish`, one shade
+ * looser than this form's `string | undefined` needs) and `locale` has no field rule to share (a
+ * closed set of codes, enforced by the select's own options, not by string validation).
  *
  * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
  * without being rebuilt — see `@/modules/users/schemas.ts`.
  */
-const editSchema = usersSchema.pick({ email: true }).extend({
-    password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional()),
-    imageUpload: imageUploadSchema
-});
+const editSchema = usersSchema
+    .pick({ email: true, username: true, phone: true, website: true })
+    .extend({
+        password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional()),
+        role: z.string().optional(),
+        active: z.boolean().optional(),
+        locale: z.string().optional(),
+        imageUpload: imageUploadSchema
+    });
 
 /**
  * Toolkit form bindings.
@@ -136,18 +160,50 @@ const trackUpload = <T,>(
 ) => track(send, { enabled: !!file });
 
 /**
- * Auto-hydrate the form from the fetched record once it resolves.
+ * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to
+ * `''`/`true` (the record's own least-privileged defaults) rather than `undefined`, so
+ * {@link roleChanged}/{@link activeChanged} in `submitForm` compare against a concrete baseline
+ * instead of two `undefined`s that would always look equal.
  */
 activateAutoHydrate(
     computed(() =>
         currentUser.value
             ? {
                   email: currentUser.value.email,
-                  password: ''
+                  username: currentUser.value.username,
+                  password: '',
+                  role: currentUser.value.role ?? '',
+                  active: currentUser.value.active ?? true,
+                  locale: currentUser.value.locale ?? '',
+                  phone: currentUser.value.phone ?? '',
+                  website: currentUser.value.website ?? ''
               }
             : undefined
     )
 );
+
+/**
+ * The locale select's options — same source as `Profile.vue`'s own language select and
+ * `UserCreate.vue`'s new one.
+ */
+const localeOptions = computed(() =>
+    supportedLanguages.map((code) => ({ value: code, title: t(`generic.${code}`) }))
+);
+
+/**
+ * `UserAccessDialog`'s open state and target, plus the promise-returning `request()` this page's
+ * Save button awaits when role or active actually changed — see `use-user-access-dialog.ts`. Every
+ * request here passes `skipPicker: true`: the values were already chosen in the form above, so the
+ * dialog only needs to run its confirm step.
+ */
+const {
+    isOpen: accessDialogOpen,
+    target: accessDialogTarget,
+    options: accessDialogOptions,
+    request: requestAccessConfirmation,
+    confirm: confirmAccessChange,
+    cancel: cancelAccessChange
+} = useUserAccessDialog();
 
 /**
  * Hero heading.
@@ -199,23 +255,61 @@ const {
 /**
  * Validates the form and persists the user changes.
  *
+ * A `role` or `active` that differs from the loaded record goes through `UserAccessDialog`'s
+ * confirm step first — cancelling it leaves the form exactly as it was, still editable, nothing
+ * sent. Confirmed or not, the `PATCH` body below only ever includes `role`/`active` when they
+ * actually changed: the backend's grant check (`assertCanGrant`) runs on any `PATCH` naming a
+ * role at all, so re-sending the loaded value would fail an editor with no admin-grant keys for a
+ * "change" that isn't one.
+ *
  * @returns A promise resolving once the flow settles: a success toast, or the
  *  revealed validation errors when the input is invalid. API failures block the form in place
- *  ({@link submitError}). A missing route id is a no-op.
+ *  ({@link submitError}). A missing route id or record is a no-op.
  */
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        if (!id) return;
-        const { email, password, imageUpload } = form.value;
-        return trackUpload(imageUpload, (options) =>
-            updateUser(id, { email, password: password || undefined, imageUpload }, options)
-        ).then(() => {
-            // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
-            // local File has done its job and holding it would only re-upload the same bytes on
-            // the next save.
-            form.value.imageUpload = undefined;
-            addMessage(t('user-edit-page.success-update'));
+        const target = currentUser.value;
+        if (!id || !target) return;
+        const { email, username, password, role, active, locale, phone, website, imageUpload } =
+            form.value;
+
+        const roleChanged = role !== (target.role ?? '');
+        const activeChanged = active !== (target.active ?? true);
+
+        const accepted =
+            !roleChanged && !activeChanged
+                ? Promise.resolve(true)
+                : requestAccessConfirmation(
+                      { id, name: target.username, role: target.role, active: target.active },
+                      { skipPicker: true, chosenRole: role, chosenActive: active }
+                  ).then((result) => !!result);
+
+        return accepted.then((wasAccepted) => {
+            if (!wasAccepted) return;
+            return trackUpload(imageUpload, (options) =>
+                updateUser(
+                    id,
+                    {
+                        email,
+                        username,
+                        password: password || undefined,
+                        role: roleChanged ? role : undefined,
+                        active: activeChanged ? active : undefined,
+                        locale,
+                        phone,
+                        website,
+                        imageUpload
+                    },
+                    options
+                )
+            ).then(() => {
+                // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
+                // local File has done its job and holding it would only re-upload the same bytes on
+                // the next save.
+                form.value.imageUpload = undefined;
+                addMessage(t('user-edit-page.success-update'));
+            });
         });
     }).catch((error) => {
         if (!applyServerErrors(error)) reportSubmitError(error);
@@ -273,12 +367,56 @@ watchUser(() => id);
                         :error-messages="showFormErrors ? formErrors.email : []"
                     />
                     <v-text-field
+                        v-model="form.username"
+                        type="text"
+                        data-test="user-edit-username"
+                        :label="t('user-edit-page.label-username')"
+                        :error-messages="showFormErrors ? formErrors.username : []"
+                    />
+                    <v-text-field
                         v-model="form.password"
                         type="password"
                         autocomplete="new-password"
                         :label="t('user-edit-page.label-password')"
                         :error-messages="showFormErrors ? formErrors.password : []"
                     />
+                    <v-text-field
+                        v-model="form.phone"
+                        type="tel"
+                        autocomplete="tel"
+                        data-test="user-edit-phone"
+                        :label="t('user-edit-page.label-phone')"
+                        :error-messages="showFormErrors ? formErrors.phone : []"
+                    />
+                    <v-text-field
+                        v-model="form.website"
+                        type="url"
+                        autocomplete="url"
+                        data-test="user-edit-website"
+                        :label="t('user-edit-page.label-website')"
+                        :error-messages="showFormErrors ? formErrors.website : []"
+                    />
+                    <v-select
+                        v-model="form.locale"
+                        :items="localeOptions"
+                        data-test="user-edit-locale"
+                        :label="t('user-edit-page.label-locale')"
+                    />
+                    <div class="flex flex-wrap gap-x-8">
+                        <!-- One list, not a free-text field: `roles.ts` is the single place every
+                             role select in this module reads from. -->
+                        <v-select
+                            v-model="form.role"
+                            :items="userRoleOptions"
+                            data-test="user-edit-role"
+                            :label="t('user-edit-page.label-role')"
+                        />
+                        <v-switch
+                            v-model="form.active"
+                            data-test="user-edit-active"
+                            :label="t('user-edit-page.label-active')"
+                        />
+                    </div>
                     <FormImageUpload
                         v-model="form.imageUpload"
                         :current-image-url="currentUser?.imageUrl"
@@ -336,5 +474,13 @@ watchUser(() => id);
                 </v-btn>
             </template>
         </ItemDetailLayout>
+
+        <UserAccessDialog
+            v-model="accessDialogOpen"
+            :target="accessDialogTarget"
+            :options="accessDialogOptions"
+            @confirm="confirmAccessChange"
+            @cancel="cancelAccessChange"
+        />
     </LayoutDefault>
 </template>

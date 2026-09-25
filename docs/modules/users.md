@@ -7,18 +7,18 @@
 **Breaks if you change** — `schemas.ts`. [`account`](./account.md) validates every one of its forms against it.
 :::
 
-| Fact                    | This module                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
-| **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`          |
-| **Store**               | `users`                                                             |
-| **Menu entries**        | `UsersList`                                                         |
-| **API calls**           | 10                                                                  |
-| **Depends on**          | _nothing_                                                           |
-| **Depended on by**      | [`account`](./account.md)                                           |
-| **Languages**           | `en` · `it`                                                         |
-| **Publishes**           | `usersPasswordSchema` · `usersSchema`                               |
-| **Backend counterpart** | `users` in `boilerplate-node-backend`                               |
+| Fact                    | This module                                                              |
+| ----------------------- | ------------------------------------------------------------------------ |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.      |
+| **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`               |
+| **Store**               | `users`                                                                  |
+| **Menu entries**        | `UsersList`                                                              |
+| **API calls**           | 10                                                                       |
+| **Depends on**          | _nothing_                                                                |
+| **Depended on by**      | [`account`](./account.md)                                                |
+| **Languages**           | `en` · `it`                                                              |
+| **Publishes**           | `usersPasswordSchema` · `usersSchema` · `USER_ROLES` · `userRoleOptions` |
+| **Backend counterpart** | `users` in `boilerplate-node-backend`                                    |
 
 ## The map
 
@@ -118,6 +118,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | File                                     | What it is                                                                                                                                                  | Explained in                          |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `index.ts`                               | The public barrel: the only surface a sibling module may import.                                                                                            | [read](../theory/strategic-ddd.md)    |
+| `roles.ts`                               | `USER_ROLES`/`userRoleOptions` — the one role list every select in this module reads from.                                                                  | [read](../theory/strategic-ddd.md)    |
+| `components/UserAccessDialog.vue`        | Shared role/active-status editor with a confirm step, opened from the list, the detail page and the edit form.                                              | [read](../theory/layers.md)           |
+| `composables/use-user-access-dialog.ts`  | Promise wrapper around `UserAccessDialog.vue`'s `v-model`, so a caller awaits its outcome like `useDialogStore().confirm()`.                                | [read](../theory/layers.md)           |
 | `locales/en.json`                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
 | `locales/it.json`                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
 | `module.ts`                              | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
@@ -132,6 +135,10 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `tests/schemas-i18n.spec.ts`             | Vitest suite — the `schemas-i18n` validation rules.                                                                                                         | [read](../tools/unit-testing.md)      |
 | `tests/schemas.spec.ts`                  | Vitest suite — the `schemas` validation rules.                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                    | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
+| `tests/user-access-dialog.spec.ts`       | Vitest suite — `UserAccessDialog.vue`'s picker/confirm flow, mounted directly.                                                                              | [read](../tools/unit-testing.md)      |
+| `tests/user-create-view.spec.ts`         | Vitest suite — `UserCreate.vue`, mounted against a real router.                                                                                             | [read](../tools/unit-testing.md)      |
+| `tests/user-edit-view.spec.ts`           | Vitest suite — `UserEdit.vue`, mounted against a real router.                                                                                               | [read](../tools/unit-testing.md)      |
+| `tests/user-target-view.spec.ts`         | Vitest suite — `User.vue`, mounted against a real router.                                                                                                   | [read](../tools/unit-testing.md)      |
 | `views/User.vue`                         | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/UserCreate.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/UserEdit.vue`                     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
@@ -141,7 +148,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 | Suite            | Files | Where                                        |
 | ---------------- | ----- | -------------------------------------------- |
-| Vitest           | 4     | `src/modules/users/tests/`                   |
+| Vitest           | 8     | `src/modules/users/tests/`                   |
 | Cypress          | 2     | `src/modules/users/tests/e2e/`               |
 | Visual baselines | 1     | `src/modules/users/tests/e2e/__snapshots__/` |
 

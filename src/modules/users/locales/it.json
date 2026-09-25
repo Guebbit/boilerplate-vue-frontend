@@ -34,7 +34,10 @@
         "image-alt": "Immagine del profilo di {name}",
         "button-restore": "Ripristina",
         "button-restore-named": "Ripristina {name}",
-        "success-restore": "Utente ripristinato"
+        "success-restore": "Utente ripristinato",
+        "button-access": "Gestisci accesso",
+        "button-access-named": "Gestisci accesso di {name}",
+        "success-access-update": "Accesso utente aggiornato"
     },
     "users-form": {
         "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
@@ -65,14 +68,20 @@
         "image-alt": "Immagine del profilo di {name}",
         "button-disable-two-factor": "Rimuovi autenticazione a due fattori",
         "confirm-disable-two-factor": "Rimuovere ogni secondo fattore e codice di backup da questo account, senza prova da parte del titolare? Ogni chiamata viene registrata.",
-        "success-disable-two-factor": "Autenticazione a due fattori rimossa da questo account."
+        "success-disable-two-factor": "Autenticazione a due fattori rimossa da questo account.",
+        "button-manage-access": "Gestisci accesso",
+        "success-access-update": "Accesso utente aggiornato"
     },
     "user-create-page": {
         "page-title": "Crea utente",
         "label-email": "Email",
         "label-username": "Nome utente",
         "label-password": "Password",
+        "label-send-setup-email": "Invia email di impostazione",
+        "hint-send-setup-email": "Il nuovo utente riceve un'email per impostare la propria password; il campo password sopra non è obbligatorio.",
+        "password-or-setup-email-required": "Imposta una password oppure seleziona \"invia email di impostazione\" — un nuovo account richiede almeno una delle due.",
         "label-role": "Ruolo",
+        "label-locale": "Lingua",
         "label-active": "Attivo",
         "button-submit": "Crea utente",
         "button-go-to-list": "Torna alla lista utenti",
@@ -81,12 +90,31 @@
     "user-edit-page": {
         "page-title": "Modifica utente",
         "label-email": "Email",
+        "label-username": "Nome utente",
         "label-password": "Nuova password (lascia vuoto per non modificarla)",
+        "label-phone": "Telefono",
+        "label-website": "Sito web",
+        "label-locale": "Lingua",
+        "label-role": "Ruolo",
+        "label-active": "Attivo",
         "button-submit": "Salva modifiche",
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli utente",
         "button-go-to-list": "Torna alla lista utenti",
         "success-update": "Utente aggiornato con successo"
+    },
+    "user-access-dialog": {
+        "title-pick": "Gestisci accesso di {name}",
+        "title-confirm": "Conferma modifica accesso di {name}",
+        "label-role": "Ruolo",
+        "label-active": "Attivo",
+        "hint-active": "Disattivare disconnette immediatamente questo utente da ogni sessione.",
+        "button-continue": "Continua",
+        "button-back": "Indietro",
+        "summary-role": "Il ruolo di {name} diventerà {role}.",
+        "summary-deactivate": "{name} verrà disattivato e disconnesso da ogni sessione.",
+        "summary-reactivate": "{name} verrà riattivato.",
+        "warning-self-deactivate": "Questo è il tuo account — verrai disconnesso immediatamente e non potrai annullare tu stesso questa operazione una volta eseguita."
     },
     "navigation": {
         "label-users-list": "@:generic.list @:generic.user"
