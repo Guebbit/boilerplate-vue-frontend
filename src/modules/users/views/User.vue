@@ -299,7 +299,13 @@ const handleDisableTwoFactor = () => {
                     </v-btn>
                     <InlineErrorAlert :message="accessError" test-id="user-manage-access-error" />
 
+                    <!--
+                        B9: a user with no second factor has nothing to strip — showing this
+                        unconditionally let an admin write a misleading "disabled 2FA" entry to an
+                        audit trail for someone who never had it enabled.
+                    -->
                     <v-btn
+                        v-if="currentUser.twoFactorEnabledAt"
                         variant="text"
                         color="error"
                         data-test="user-disable-two-factor"

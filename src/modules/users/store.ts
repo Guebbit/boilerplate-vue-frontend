@@ -197,12 +197,20 @@ export const useUsersStore = defineStore('users', () => {
      * factor on it — `deleteTarget` would evict the record from this store's cache as if the whole
      * user had been removed.
      *
+     * `fetchUser(userId, { forced: true })`, not a plain `fetchUser(userId)`: the toolkit's target
+     * cache holds a record for an hour (`TTL`), so a plain re-fetch right after this call would
+     * hand back the same cached, still-enabled record `User.vue` just loaded — `forced` evicts it
+     * first, which is what makes `currentUser.twoFactorEnabledAt` actually flip and the button
+     * gated on it (B9, `User.vue`) disappear without a full page reload.
+     *
      * @param userId - Identifier of the user whose 2FA is being stripped.
-     * @returns A promise resolving once the factor is gone and the record has been refetched, so
-     *  a cached `currentUser` never lags what the admin just did.
+     * @returns A promise resolving once the factor is gone and the record has been force-refetched,
+     *  so a cached `currentUser` never lags what the admin just did.
      */
     const adminDisableTwoFactor = (userId: string) =>
-        fetchAny(() => apiAdminDisableUserTwoFactor(userId).then(() => fetchUser(userId)));
+        fetchAny(() =>
+            apiAdminDisableUserTwoFactor(userId).then(() => fetchUser(userId, { forced: true }))
+        );
 
     return {
         users,

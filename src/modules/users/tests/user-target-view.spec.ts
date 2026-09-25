@@ -1,7 +1,8 @@
 /**
  * @module
- * Mounts the real admin user-detail page against a real, memory-history router: the "Manage
- * access" shortcut's confirm flow, driven through a stubbed `UserAccessDialog` — its own
+ * Mounts the real admin user-detail page against a real, memory-history router: B9's gate on the
+ * "strip 2FA" button (and the forced refetch that makes it disappear without a reload), plus the
+ * "Manage access" shortcut's confirm flow, driven through a stubbed `UserAccessDialog` — its own
  * picker/confirm behaviour is `user-access-dialog.spec.ts`'s job.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -26,6 +27,13 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn()
+}));
+
+// The 2FA-strip confirm goes through the global dialog queue, which needs `DialogHost.vue`
+// mounted to answer for real — this suite is not about that plumbing, so the confirm is stubbed
+// to always accept, same as `use-dictionary-cell-editor.spec.ts` does for its own delete confirm.
+vi.mock('@/ui/dialog.ts', () => ({
+    useDialogStore: () => ({ confirm: () => Promise.resolve(true) })
 }));
 
 /**
@@ -83,6 +91,36 @@ beforeEach(() => {
 });
 
 describe('User (detail page)', () => {
+    // B9: this button used to show for every user regardless of whether they had a second factor
+    // to strip, so clicking it for one who did not wrote a misleading "disabled 2FA" audit entry.
+    it('hides "strip two-factor" for a user with no second factor enabled', () => {
+        queueGetResponses(aUser({ id: 'u1' }));
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(false);
+        });
+    });
+
+    it('shows "strip two-factor" for a user with one enabled, and hides it again once stripped', () => {
+        queueGetResponses(
+            aUser({ id: 'u1', twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' }),
+            // The forced re-fetch `adminDisableTwoFactor` runs after the DELETE succeeds.
+            aUser({ id: 'u1' })
+        );
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => {
+                expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(true);
+                return wrapper.get('[data-test=user-disable-two-factor]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(false);
+            });
+    });
+
     it('opens the access dialog for the loaded user, and sends only what it confirms', () => {
         queueGetResponses(aUser({ id: 'u1', username: 'ada', role: 'customer', active: true }));
         const wrapper = mountPage();
