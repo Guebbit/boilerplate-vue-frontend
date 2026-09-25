@@ -20,8 +20,10 @@ describe('Order reference search', () => {
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
         cy.goToCart();
+        // `pickup` needs no address, so the checkout button enables on the method alone.
+        cy.get('[data-test=shipping-method-pickup]').click();
         cy.get('[data-test=payment-method-bank_transfer]').click();
-        cy.get('[data-test=cart-checkout]').click();
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 
         // ── Checkout lands on the orders list; open the new order (newest first) ────
         cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);

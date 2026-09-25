@@ -60,6 +60,11 @@ const checkoutRejection = (status: number, code: string, details?: Record<string
  * mount replaces the store's OWN property without touching the reference the component already
  * captured — every case has to configure the mock this returns, never re-spy the store.
  *
+ * The stub emits a method needing no address as soon as it mounts, the same as a shopper picking
+ * `pickup` — these cases are about the refusal handling below the checkout button, not about the
+ * button's own disabled state, which stays enabled throughout. Resolves only once that emit has
+ * flushed through to the button's `disabled` binding, so every case can click it right away.
+ *
  * @returns The mounted wrapper and the `checkout` spy each case configures.
  */
 const mountCart = () => {
@@ -74,12 +79,18 @@ const mountCart = () => {
             plugins: [router, vuetify, i18n],
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
-                ShippingSelector: { template: '<div />' },
+                ShippingSelector: {
+                    template: '<div />',
+                    mounted() {
+                        this.$emit('update:modelValue', 'pickup');
+                        this.$emit('update:requiresAddress', false);
+                    }
+                },
                 PaymentMethodSelector: { template: '<div />' }
             }
         }
     });
-    return { wrapper, checkoutSpy, cart };
+    return flushPromises().then(() => ({ wrapper, checkoutSpy, cart }));
 };
 
 beforeEach(() => {
@@ -88,113 +99,114 @@ beforeEach(() => {
 });
 
 describe('the checkout refusals', () => {
-    it('refetches the cart and names it as changed on CART_CHANGED', () => {
-        const { wrapper, checkoutSpy, cart } = mountCart();
-        checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
+    it('refetches the cart and names it as changed on CART_CHANGED', () =>
+        mountCart().then(({ wrapper, checkoutSpy, cart }) => {
+            checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
 
-        return wrapper
-            .get('[data-test=cart-checkout]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                // Once from `onMounted`, once more from the refusal handler — the second is
-                // what this case exists to prove.
-                expect(cart.fetchCart).toHaveBeenCalledTimes(2);
-            });
-    });
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // Once from `onMounted`, once more from the refusal handler — the second
+                    // is what this case exists to prove.
+                    expect(cart.fetchCart).toHaveBeenCalledTimes(2);
+                });
+        }));
 
-    it('names each short line, with its requested and available counts, on CART_INSUFFICIENT_STOCK', () => {
-        const { wrapper, checkoutSpy } = mountCart();
-        checkoutSpy.mockRejectedValueOnce(
-            checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
-                lines: [
-                    { productId: 'p1', title: 'Widget', requested: 5, available: 2 },
-                    { productId: 'p2', title: 'Gadget', requested: 3, available: 0 }
-                ]
-            })
-        );
+    it('names each short line, with its requested and available counts, on CART_INSUFFICIENT_STOCK', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
+                    lines: [
+                        { productId: 'p1', title: 'Widget', requested: 5, available: 2 },
+                        { productId: 'p2', title: 'Gadget', requested: 3, available: 0 }
+                    ]
+                })
+            );
 
-        return wrapper
-            .get('[data-test=cart-checkout]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                // Rendered through the real message, so a swapped `requested`/`available` —
-                // the mistake a bare "contains 5" cannot see — fails here.
-                const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
-                expect(lines.map((line) => line.text())).toEqual([
-                    i18n.global.t('cart-page.shortfall-line', {
-                        title: 'Widget',
-                        requested: 5,
-                        available: 2
-                    }),
-                    i18n.global.t('cart-page.shortfall-line', {
-                        title: 'Gadget',
-                        requested: 3,
-                        available: 0
-                    })
-                ]);
-            });
-    });
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // Rendered through the real message, so a swapped `requested`/`available` —
+                    // the mistake a bare "contains 5" cannot see — fails here.
+                    const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
+                    expect(lines.map((line) => line.text())).toEqual([
+                        i18n.global.t('cart-page.shortfall-line', {
+                            title: 'Widget',
+                            requested: 5,
+                            available: 2
+                        }),
+                        i18n.global.t('cart-page.shortfall-line', {
+                            title: 'Gadget',
+                            requested: 3,
+                            available: 0
+                        })
+                    ]);
+                });
+        }));
 
-    it('does not carry a stale shortfall banner into the next, unrelated refusal', () => {
-        const { wrapper, checkoutSpy } = mountCart();
-        checkoutSpy.mockRejectedValueOnce(
-            checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
-                lines: [{ productId: 'p1', title: 'Widget', requested: 5, available: 2 }]
-            })
-        );
+    it('does not carry a stale shortfall banner into the next, unrelated refusal', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
+                    lines: [{ productId: 'p1', title: 'Widget', requested: 5, available: 2 }]
+                })
+            );
 
-        return wrapper
-            .get('[data-test=cart-checkout]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(1);
-                checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
-                return wrapper.get('[data-test=cart-checkout]').trigger('click');
-            })
-            .then(flushPromises)
-            .then(() => {
-                expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
-            });
-    });
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(1);
+                    checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
+                    return wrapper.get('[data-test=cart-checkout]').trigger('click');
+                })
+                .then(flushPromises)
+                .then(() => {
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                });
+        }));
 
-    it('names every line CART_PRODUCT_UNAVAILABLE lists, falling back to the id with no title', () => {
-        const { wrapper, checkoutSpy } = mountCart();
-        checkoutSpy.mockRejectedValueOnce(
-            checkoutRejection(404, 'CART_PRODUCT_UNAVAILABLE', {
-                lines: [{ productId: 'p1', title: 'Widget' }, { productId: 'p2' }]
-            })
-        );
+    it('names every line CART_PRODUCT_UNAVAILABLE lists, falling back to the id with no title', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(404, 'CART_PRODUCT_UNAVAILABLE', {
+                    lines: [{ productId: 'p1', title: 'Widget' }, { productId: 'p2' }]
+                })
+            );
 
-        return wrapper
-            .get('[data-test=cart-checkout]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                const lines = wrapper.findAll('[data-test=checkout-unavailable-line]');
-                expect(lines).toHaveLength(2);
-                expect(lines[0]?.text()).toBe('Widget');
-                expect(lines[1]?.text()).toBe('p2');
-            });
-    });
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    const lines = wrapper.findAll('[data-test=checkout-unavailable-line]');
+                    expect(lines).toHaveLength(2);
+                    expect(lines[0]?.text()).toBe('Widget');
+                    expect(lines[1]?.text()).toBe('p2');
+                });
+        }));
 
-    it('answers CART_ADDRESS_NOT_FOUND with a message distinct from the generic fallback', () => {
-        const { wrapper, checkoutSpy } = mountCart();
-        checkoutSpy.mockRejectedValueOnce(checkoutRejection(404, 'CART_ADDRESS_NOT_FOUND'));
+    it('answers CART_ADDRESS_NOT_FOUND with a message distinct from the generic fallback', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(checkoutRejection(404, 'CART_ADDRESS_NOT_FOUND'));
 
-        return wrapper
-            .get('[data-test=cart-checkout]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                // Nothing on-screen names a specific line — the distinguishing behaviour for
-                // this refusal is the message (asserted at the domain layer's own test), not a
-                // banner; this proves it is not silently rendered as an insufficient-stock case.
-                expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
-            });
-    });
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // Nothing on-screen names a specific line — the distinguishing behaviour
+                    // for this refusal is the message (asserted at the domain layer's own
+                    // test), not a banner; this proves it is not silently rendered as an
+                    // insufficient-stock case.
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                });
+        }));
 
     /**
      * `mountCart`'s stub renders no radios, so the picked method is driven through the same

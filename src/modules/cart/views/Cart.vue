@@ -11,7 +11,7 @@ export default {
  * stepper (`useLineQuantity`) on top of the store's own quantity update so rapid
  * clicks collapse into one request per line.
  */
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -32,6 +32,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
+import { AddressPicker } from '@/modules/account';
 
 /**
  * Translation function.
@@ -64,7 +65,7 @@ const {
 /**
  * Cart store state, reactive.
  */
-const { cartItems, cartSummary, basketWeight } = storeToRefs(useCartStore());
+const { cartItems, cartSummary, basketWeight, needsShipping } = storeToRefs(useCartStore());
 
 /**
  * The chosen shipping method — optional, exactly as the API treats it.
@@ -72,9 +73,32 @@ const { cartItems, cartSummary, basketWeight } = storeToRefs(useCartStore());
 const shippingMethodId = ref<string | undefined>();
 
 /**
+ * Whether the chosen method needs an address — `undefined` while nothing is selected, mirrored
+ * out of `ShippingSelector` since `cart` may not reach `delivery`'s store directly.
+ */
+const shippingMethodRequiresAddress = ref<boolean>();
+
+/**
+ * The chosen shipping address's entry id — required only when
+ * {@link shippingMethodRequiresAddress} is true; omitted, checkout resolves the caller's default.
+ */
+const addressId = ref<string | undefined>();
+
+/**
  * The chosen payment method — optional; the API defaults an omitted choice to `card`.
  */
 const paymentMethodId = ref<PaymentMethodId | undefined>();
+
+/**
+ * Whether checkout may run yet: a physical basket needs a method, and — only when that method
+ * demands it — an address, mirroring the backend's own `evaluateShippingRequirement`
+ * (`cart/domain/rules.ts` in the API repo). A digital-only basket needs neither.
+ */
+const canCheckout = computed(() => {
+    if (!needsShipping.value) return true;
+    if (shippingMethodId.value === undefined) return false;
+    return !shippingMethodRequiresAddress.value || addressId.value !== undefined;
+});
 
 /**
  * The short lines a `CART_INSUFFICIENT_STOCK` refusal named, rendered inline so the customer
@@ -123,6 +147,7 @@ const checkout = () => {
         ...(shippingMethodId.value === undefined
             ? {}
             : { shippingMethodId: shippingMethodId.value }),
+        ...(addressId.value === undefined ? {} : { addressId: addressId.value }),
         ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value })
     })
         .then(() => {
@@ -357,8 +382,18 @@ onMounted(() =>
                     <v-divider class="my-3" />
                     <ShippingSelector
                         v-model="shippingMethodId"
+                        v-model:requires-address="shippingMethodRequiresAddress"
                         :items-total="cartSummary.total"
                         :weight="basketWeight"
+                    />
+                    <!--
+                        Only asked when the chosen method actually needs one — a digital-only
+                        basket, or `pickup`, never renders this at all.
+                    -->
+                    <AddressPicker
+                        v-if="shippingMethodRequiresAddress"
+                        v-model="addressId"
+                        class="mt-3"
                     />
                     <PaymentMethodSelector v-model="paymentMethodId" />
                     <v-divider class="my-3" />
@@ -374,6 +409,7 @@ onMounted(() =>
                         block
                         class="mt-4"
                         data-test="cart-checkout"
+                        :disabled="!canCheckout"
                         @click="checkout"
                     >
                         {{ t('cart-page.button-checkout') }}

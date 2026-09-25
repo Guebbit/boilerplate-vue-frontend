@@ -2809,6 +2809,8 @@ export interface ShippingMethod {
     freeAbove?: number;
     /** Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires. */
     tracked: boolean;
+    /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
+    requiresAddress: boolean;
     /**
      * The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
      * @minimum 0

@@ -120,7 +120,10 @@ describe('Cart', () => {
         });
 
         it('checks out and redirects to the orders list', () => {
-            cy.get('[data-test=cart-checkout]').click();
+            // `pickup` needs no address, so the checkout button enables on the method alone —
+            // the seeded cart holds physical goods, which now require one to check out at all.
+            cy.get('[data-test=shipping-method-pickup]').click();
+            cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
             cy.url().should('include', '/orders');
             cy.get('#orders-list-page').should('exist');
         });

@@ -42,6 +42,13 @@ const { itemsTotal, weight } = defineProps<{
 const methodId = defineModel<string | undefined>();
 
 /**
+ * Whether the chosen method needs a shipping address — `undefined` while nothing is selected.
+ * The caller (`Cart.vue`) reads this to decide whether to require one too, without reaching past
+ * this component into the delivery store, which this module does not publish.
+ */
+const requiresAddress = defineModel<boolean | undefined>('requiresAddress');
+
+/**
  * Translation function.
  */
 const { t } = useI18n();
@@ -75,6 +82,21 @@ watch(
     (current, previous) => {
         if (current !== previous) void deliveryStore.fetchMethods(current);
     }
+);
+
+/*
+ * Keeps `requiresAddress` in step with the chosen method, including a method that vanishes from
+ * the list (a re-fetch by weight can drop the one already picked) — `find` then answers
+ * `undefined`, the same "nothing chosen" state `methodId` itself would need clearing to reach.
+ */
+watch(
+    [methodId, methods],
+    () => {
+        requiresAddress.value = methods.value.find(
+            (method) => method.id === methodId.value
+        )?.requiresAddress;
+    },
+    { immediate: true }
 );
 </script>
 

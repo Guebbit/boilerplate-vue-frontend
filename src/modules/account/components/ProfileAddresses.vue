@@ -11,31 +11,30 @@ export default {
  * re-renders from the whole list the API answers with, since the fact worth showing after any of
  * them — exactly one default — is a property of the list rather than of the entry that changed.
  *
- * The dialog's own save blocks the dialog it happened in (`saveError`); promoting a default and
+ * The add/edit dialog is `AddressFormDialog.vue` — shared with `AddressPicker.vue`'s own
+ * empty-book affordance, so there is one form and one save path, not two. Promoting a default and
  * removing an entry have no dedicated control of their own, so they share one blocked state
  * (`rowActionError`) above the list instead — same split as `products`' `ProductsList.vue`. See
  * docs/theory/request-flow.md.
  */
-import { onMounted, ref, useId } from 'vue';
-import { z } from 'zod';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import type { Address, AddressInput } from '@types';
+import type { Address } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import AddressFormDialog from './AddressFormDialog.vue';
 
 /**
  * The address book panel. Every write re-renders from the whole list the API answers with,
  * because the fact worth showing after any of them — exactly one default — is a property of the
  * list, not of the entry that changed.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -43,47 +42,14 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The address book's four actions.
+ * The address book's remaining two actions — add/edit now live in `AddressFormDialog.vue`.
  */
-const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
+const { fetchAddresses, updateAddress, removeAddress } = useAddressesStore();
 
 /**
- * The visitor's saved addresses, and whether the list is in flight.
+ * The visitor's saved addresses.
  */
-const { addresses, loading } = storeToRefs(useAddressesStore());
-
-/**
- * Whether the viewport is phone-sized — the add/edit dialog goes `fullscreen` there instead of
- * floating at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow
- * screen.
- */
-const { mobile } = useDisplay();
-
-/**
- * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
- */
-interface AddressForm {
-    label: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: string;
-    phone: string;
-}
-
-/**
- * Blank form — also what "add another" resets to.
- */
-const emptyForm = (): AddressForm => ({
-    label: '',
-    fullName: '',
-    street: '',
-    city: '',
-    zip: '',
-    country: '',
-    phone: ''
-});
+const { addresses } = storeToRefs(useAddressesStore());
 
 /**
  * Whether the add/edit dialog is open.
@@ -93,43 +59,7 @@ const dialogOpen = ref(false);
 /**
  * The entry being edited, or `undefined` when the dialog is adding a new one.
  */
-const editingId = ref<string>();
-
-/**
- * The dialog heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const dialogTitleId = useId();
-
-/**
- * The contract's own rule — five non-empty strings — said in the visitor's language. Messages
- * are thunks so they resolve in the active locale, like every other schema here.
- */
-const addressSchema = z.object({
-    label: z.string(),
-    fullName: z.string().min(1, { error: () => t('profile-page.addresses-required-full-name') }),
-    street: z.string().min(1, { error: () => t('profile-page.addresses-required-street') }),
-    city: z.string().min(1, { error: () => t('profile-page.addresses-required-city') }),
-    zip: z.string().min(1, { error: () => t('profile-page.addresses-required-zip') }),
-    country: z.string().min(1, { error: () => t('profile-page.addresses-required-country') }),
-    phone: z.string()
-});
-
-/*
- * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state
- * change, not a focus move.
- */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } =
-    useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    });
-
-/**
- * The add/edit dialog's own blocked state — a save failure stays inside the dialog it happened
- * in, since the dialog stays open for another attempt rather than closing on failure.
- */
-const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+const editing = ref<Address>();
 
 /**
  * The row actions' own blocked state — promoting a default and removing an entry share one
@@ -146,9 +76,7 @@ const {
  * Opens the dialog empty, for a new entry.
  */
 const openAdd = () => {
-    editingId.value = undefined;
-    setForm(emptyForm());
-    clearSaveError();
+    editing.value = undefined;
     dialogOpen.value = true;
 };
 
@@ -158,44 +86,9 @@ const openAdd = () => {
  * @param address - The entry to edit.
  */
 const openEdit = (address: Address) => {
-    editingId.value = address.id;
-    setForm({
-        label: address.label ?? '',
-        fullName: address.fullName,
-        street: address.street,
-        city: address.city,
-        zip: address.zip,
-        country: address.country,
-        phone: address.phone ?? ''
-    });
-    clearSaveError();
+    editing.value = address;
     dialogOpen.value = true;
 };
-
-/**
- * Saves the dialog: an update when an entry is being edited, an add otherwise. Empty optional
- * fields are dropped rather than sent as empty strings.
- *
- * @returns Nothing; success is toasted and closes the dialog, a failure blocks it in place
- *  ({@link saveError}).
- */
-const handleSave = () =>
-    handleSubmit((fields) => {
-        const payload: AddressInput = {
-            ...fields,
-            label: fields.label || undefined,
-            phone: fields.phone || undefined
-        };
-        const save = editingId.value
-            ? updateAddress(editingId.value, payload)
-            : addAddress(payload);
-        return save
-            .then(() => {
-                addMessage(t('profile-page.addresses-saved'));
-                dialogOpen.value = false;
-            })
-            .catch((error) => reportSaveError(error));
-    });
 
 /**
  * Claims the default slot for one entry.
@@ -332,90 +225,6 @@ onMounted(fetchAddresses);
             </v-card>
         </div>
 
-        <v-dialog
-            v-model="dialogOpen"
-            max-width="480"
-            :fullscreen="mobile"
-            :aria-labelledby="dialogTitleId"
-        >
-            <v-card class="p-6" data-test="address-dialog">
-                <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
-                    {{
-                        editingId
-                            ? t('profile-page.addresses-edit')
-                            : t('profile-page.addresses-add')
-                    }}
-                </h2>
-                <form novalidate @submit.prevent="handleSave">
-                    <v-text-field
-                        v-model="form.label"
-                        :label="t('profile-page.addresses-label-label')"
-                        :error-messages="showFormErrors ? (formErrors.label ?? []) : []"
-                        class="mb-2"
-                    />
-                    <v-text-field
-                        v-model="form.fullName"
-                        :label="t('profile-page.addresses-label-full-name')"
-                        :error-messages="showFormErrors ? (formErrors.fullName ?? []) : []"
-                        autocomplete="name"
-                        class="mb-2"
-                    />
-                    <v-text-field
-                        v-model="form.street"
-                        :label="t('profile-page.addresses-label-street')"
-                        :error-messages="showFormErrors ? (formErrors.street ?? []) : []"
-                        autocomplete="street-address"
-                        class="mb-2"
-                    />
-                    <div class="grid grid-cols-2 gap-2">
-                        <v-text-field
-                            v-model="form.zip"
-                            :label="t('profile-page.addresses-label-zip')"
-                            :error-messages="showFormErrors ? (formErrors.zip ?? []) : []"
-                            autocomplete="postal-code"
-                        />
-                        <v-text-field
-                            v-model="form.city"
-                            :label="t('profile-page.addresses-label-city')"
-                            :error-messages="showFormErrors ? (formErrors.city ?? []) : []"
-                            autocomplete="address-level2"
-                        />
-                    </div>
-                    <!-- `country-name`: the field holds the name a person types, not an ISO code. -->
-                    <v-text-field
-                        v-model="form.country"
-                        :label="t('profile-page.addresses-label-country')"
-                        :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
-                        autocomplete="country-name"
-                        class="mb-2"
-                    />
-                    <v-text-field
-                        v-model="form.phone"
-                        :label="t('profile-page.addresses-label-phone')"
-                        :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
-                        autocomplete="tel"
-                        type="tel"
-                    />
-                    <InlineErrorAlert
-                        :message="saveError"
-                        class="mb-2"
-                        test-id="address-save-error"
-                    />
-                    <div class="mt-4 flex justify-end gap-2">
-                        <v-btn variant="text" @click="dialogOpen = false">
-                            {{ t('generic.cancel') }}
-                        </v-btn>
-                        <v-btn
-                            type="submit"
-                            color="primary"
-                            data-test="address-save"
-                            :loading="loading"
-                        >
-                            {{ t('profile-page.addresses-save') }}
-                        </v-btn>
-                    </div>
-                </form>
-            </v-card>
-        </v-dialog>
+        <AddressFormDialog v-model="dialogOpen" :editing="editing" />
     </v-card>
 </template>
