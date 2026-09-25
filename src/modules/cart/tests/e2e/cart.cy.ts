@@ -119,13 +119,13 @@ describe('Cart', () => {
             cy.contains('Your cart is empty').should('be.visible');
         });
 
-        it('checks out and redirects to the orders list', () => {
+        it('checks out and redirects to the new order', () => {
             // `pickup` needs no address, so the checkout button enables on the method alone —
             // the seeded cart holds physical goods, which now require one to check out at all.
             cy.get('[data-test=shipping-method-pickup]').click();
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-            cy.url().should('include', '/orders');
-            cy.get('#orders-list-page').should('exist');
+            cy.url().should('match', /\/orders\/[^/]+$/);
+            cy.get('#order-target').should('exist');
         });
     });
 });

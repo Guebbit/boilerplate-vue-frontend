@@ -25,9 +25,8 @@ describe('Order reference search', () => {
         cy.get('[data-test=payment-method-bank_transfer]').click();
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 
-        // ── Checkout lands on the orders list; open the new order (newest first) ────
-        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
-        cy.get('[data-test=row-view]').first().click();
+        // ── Checkout lands on the new order's own page directly ─────────────────────
+        cy.get('#order-target').should('exist');
 
         // ── The order page shows the reference the checkout froze ───────────────────
         // Read as displayed, i.e. grouped in 4s — the API tolerates those spaces, so this walks

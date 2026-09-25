@@ -40,7 +40,7 @@ import { AddressPicker } from '@/modules/account';
 const { t } = useI18n();
 
 /**
- * Router, for the post-checkout navigation to the orders list.
+ * Router, for the post-checkout navigation to the new order's own page.
  */
 const router = useRouter();
 
@@ -142,8 +142,8 @@ const {
  * `CART_ADDRESS_NOT_FOUND` means the address on the order no longer resolves. Every other refusal
  * — including a transport failure — has no more specific answer than the generic toast.
  *
- * @returns A promise resolving once the flow settles: a success toast and a navigation to the
- *  orders list, or the refusal-specific handling below.
+ * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
+ *  order's own page, or the refusal-specific handling below.
  */
 const checkout = () => {
     insufficientStockLines.value = [];
@@ -157,10 +157,17 @@ const checkout = () => {
         ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
         ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
-        .then(() => {
+        .then((result) => {
+            // `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
+            // actually takes that path (see `useCartStore.checkout`'s own docblock), but the
+            // guard is what lets `result.order.id` below type-check, and it is cheap insurance
+            // against a client-side navigation to `/orders/undefined` either way.
+            if (!result?.order.id) return;
             addMessage(t('cart-page.success-checkout'));
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
-            void router.push(routerLinkI18n({ name: 'OrdersList' }));
+            void router.push(
+                routerLinkI18n({ name: 'OrderTarget', params: { id: result.order.id } })
+            );
         })
         .catch((error: unknown) => {
             const verdict = classifyCheckoutError(error);
