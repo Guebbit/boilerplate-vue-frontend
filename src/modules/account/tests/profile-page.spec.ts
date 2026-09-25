@@ -149,3 +149,77 @@ describe('the GDPR analytics-consent switch', () => {
             });
     });
 });
+
+/**
+ * B5: an ordinary save must never carry the visitor's own unchanged address, because the backend
+ * reads any INCLUDED `email` as "cancel/redirect the pending change" — see D17d's own doc comment
+ * on `PATCH /account`. Both halves of the bug (A2's UI, B5's fix) are pinned in one file since
+ * they are the same mechanism proven from two ends.
+ */
+describe('the email field, and a pending change (A2 + B5)', () => {
+    it('omits email from the PATCH body on an ordinary save that leaves it untouched', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('input[type=tel]').setValue('+1 555 0100'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const patch = lastAccountPatch();
+                // Same "absent means untouched" proof as the consent switch above — this is the
+                // actual bug B5 fixes: a routine save silently cancelling a pending email change.
+                expect(JSON.stringify(patch?.data)).not.toContain('"email"');
+            });
+    });
+
+    it('sends the new address when the visitor actually edits the email field', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('input[type=email]').setValue('new@example.com'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const patch = lastAccountPatch();
+                expect(patch?.data).toMatchObject({ email: 'new@example.com' });
+            });
+    });
+
+    it('shows no pending-email notice when none is parked', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=pending-email-notice]').exists()).toBe(false);
+        });
+    });
+
+    it('shows the parked address, and resend sends PATCH /account with it — not the current one', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                const notice = wrapper.get('[data-test=pending-email-notice]');
+                expect(notice.text()).toContain('new@example.com');
+                return wrapper.get('[data-test=pending-email-resend]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => {
+                const patch = lastAccountPatch();
+                expect(patch?.data).toEqual({ email: 'new@example.com' });
+            });
+    });
+
+    it('cancel sends PATCH /account with the CURRENT address, the documented cancellation path', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=pending-email-cancel]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                const patch = lastAccountPatch();
+                expect(patch?.data).toEqual({ email: USER.email });
+            });
+    });
+});
