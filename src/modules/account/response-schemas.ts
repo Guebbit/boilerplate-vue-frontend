@@ -39,7 +39,7 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.DeleteExpiredTokensResponse
     },
     { method: 'PUT', pattern: /^\/account$/, schema: schemas.ReplaceAccountResponse },
-    { method: 'PATCH', pattern: /^\/account$/, schema: schemas.PatchAccountResponse },
+    { method: 'PATCH', pattern: /^\/account$/, schema: schemas.UpdateAccountResponse },
     { method: 'POST', pattern: /^\/account\/password$/, schema: schemas.ChangePasswordResponse },
     {
         method: 'POST',
@@ -76,6 +76,11 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'POST', pattern: /^\/account\/addresses$/, schema: schemas.AddAddressResponse },
     {
         method: 'PUT',
+        pattern: /^\/account\/addresses\/[^/]+$/,
+        schema: schemas.ReplaceAddressResponse
+    },
+    {
+        method: 'PATCH',
         pattern: /^\/account\/addresses\/[^/]+$/,
         schema: schemas.UpdateAddressResponse
     },

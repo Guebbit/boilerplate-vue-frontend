@@ -15,8 +15,8 @@ import {
     getUserById,
     createUser as apiCreateUser,
     createUserWithMultipart,
-    patchUserById,
-    patchUserByIdWithMultipart,
+    updateUserById,
+    updateUserByIdWithMultipart,
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
@@ -26,7 +26,7 @@ import type { AxiosRequestConfig } from 'axios';
 import type {
     User,
     CreateUserRequestMultipart,
-    PatchUserByIdRequestMultipart,
+    UpdateUserByIdRequestMultipart,
     SearchUsersRequest
 } from '@types';
 
@@ -88,7 +88,7 @@ export const useUsersStore = defineStore('users', () => {
         string,
         UsersFilters,
         CreateUserRequestMultipart,
-        PatchUserByIdRequestMultipart,
+        UpdateUserByIdRequestMultipart,
         AxiosRequestConfig
     >(
         {
@@ -123,8 +123,8 @@ export const useUsersStore = defineStore('users', () => {
             // be cleared instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
             update: (userId, { imageUpload, ...userData } = {}, options) =>
                 (imageUpload
-                    ? patchUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
-                    : patchUserById(userId, userData, options)
+                    ? updateUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
+                    : updateUserById(userId, userData, options)
                 ).then((response) => response.data),
 
             remove: (userId) => deleteUserById(userId),

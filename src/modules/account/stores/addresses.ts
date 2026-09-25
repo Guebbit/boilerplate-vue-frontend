@@ -80,7 +80,10 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAny(() => apiAddAddress(address).then((data) => readAddressesResponse(data)));
 
     /**
-     * Updates one entry. `default: true` claims the slot; absent leaves it alone.
+     * Updates one entry through PATCH (AUDIT_0924 D17d) — `default: true` claims the slot; absent
+     * leaves it alone. Both call sites in `ProfileAddresses.vue` send a change-set rather than a
+     * guaranteed-full one (`handleMakeDefault` sends `{ default: true }` alone), so this is never
+     * routed through PUT, which would clear every field the caller left out (RFC 9110 §9.3.4).
      *
      * @param addressId - Which entry.
      * @param changes - The fields to change.

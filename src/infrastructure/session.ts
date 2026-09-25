@@ -15,7 +15,7 @@ import {
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
-    patchAccount as apiPatchAccount
+    updateAccount as apiUpdateAccount
 } from '@api';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
@@ -364,7 +364,7 @@ export const useSessionStore = defineStore('session', () => {
         isAuth.value
             ? // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ locale }` alone, and a PUT's
               // every omitted field would be cleared instead (RFC 9110 §9.3.4).
-              apiPatchAccount({ locale })
+              apiUpdateAccount({ locale })
                   .then(() => undefined)
                   .catch(() => undefined)
             : Promise.resolve();

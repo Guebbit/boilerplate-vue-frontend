@@ -14,7 +14,7 @@ import * as schemas from '@api/schemas';
 import { contractResponse } from './http/orval-fixture-schema.ts';
 import { aUser } from '../../support/unit/fixtures.ts';
 
-const patchAccountMock = vi.fn();
+const updateAccountMock = vi.fn();
 const getAccountMock = vi.fn();
 const getMyAbilitiesMock = vi.fn();
 
@@ -24,7 +24,7 @@ vi.mock('@api', () => ({
     refreshToken: vi.fn(),
     logout: vi.fn(),
     logoutAll: vi.fn(),
-    patchAccount: (body: { locale: string }) => patchAccountMock(body)
+    updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
 const { useSessionStore } = await import('@/infrastructure/session.ts');
@@ -40,7 +40,7 @@ const signedIn = () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    patchAccountMock.mockResolvedValue(contractResponse(schemas.PatchAccountResponse, aUser()));
+    updateAccountMock.mockResolvedValue(contractResponse(schemas.UpdateAccountResponse, aUser()));
     getMyAbilitiesMock.mockResolvedValue(
         contractResponse(schemas.GetMyAbilitiesResponse, {
             platform: [],
@@ -56,7 +56,7 @@ describe('persistLocalePreference', () => {
         return signedIn()
             .persistLocalePreference('it')
             .then(() => {
-                expect(patchAccountMock).toHaveBeenCalledWith({ locale: 'it' });
+                expect(updateAccountMock).toHaveBeenCalledWith({ locale: 'it' });
             });
     });
 
@@ -69,7 +69,7 @@ describe('persistLocalePreference', () => {
         return useSessionStore()
             .persistLocalePreference('it')
             .then(() => {
-                expect(patchAccountMock).not.toHaveBeenCalled();
+                expect(updateAccountMock).not.toHaveBeenCalled();
             });
     });
 
@@ -78,12 +78,12 @@ describe('persistLocalePreference', () => {
         const store = useSessionStore();
         store.setAccessToken('token');
         return store.persistLocalePreference('it').then(() => {
-            expect(patchAccountMock).not.toHaveBeenCalled();
+            expect(updateAccountMock).not.toHaveBeenCalled();
         });
     });
 
     it('resolves rather than rejecting when the write fails', () => {
-        patchAccountMock.mockRejectedValue(new Error('account service down'));
+        updateAccountMock.mockRejectedValue(new Error('account service down'));
         return expect(signedIn().persistLocalePreference('it')).resolves.toBeUndefined();
     });
 

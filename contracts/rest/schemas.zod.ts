@@ -1827,16 +1827,16 @@ export const ReplaceAccountResponse = zod.strictObject({
  * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
-export const patchAccountBodyUsernameMin = 3;
+export const updateAccountBodyUsernameMin = 3;
 
-export const patchAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const PatchAccountBody = zod.strictObject({
+export const UpdateAccountBody = zod.strictObject({
     email: zod.email().optional(),
-    username: zod.string().min(patchAccountBodyUsernameMin).optional(),
+    username: zod.string().min(updateAccountBodyUsernameMin).optional(),
     locale: zod
         .string()
-        .regex(patchAccountBodyLocaleOneRegExp)
+        .regex(updateAccountBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
@@ -1853,9 +1853,9 @@ export const PatchAccountBody = zod.strictObject({
     analyticsConsent: zod.boolean().optional()
 });
 
-export const patchAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const PatchAccountResponse = zod.strictObject({
+export const UpdateAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -1882,7 +1882,7 @@ export const PatchAccountResponse = zod.strictObject({
             ),
         locale: zod
             .string()
-            .regex(patchAccountResponseDataLocaleRegExp)
+            .regex(updateAccountResponseDataLocaleRegExp)
             .optional()
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
@@ -2234,7 +2234,50 @@ export const AddAddressResponse = zod.strictObject({
 });
 
 /**
- * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * @summary Replace an address
+ */
+export const ReplaceAddressParams = zod.strictObject({
+    addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
+});
+
+export const ReplaceAddressBody = zod.strictObject({
+    label: zod.string().min(1).nullish(),
+    fullName: zod.string().min(1),
+    street: zod.string().min(1),
+    city: zod.string().min(1),
+    zip: zod.string().min(1),
+    country: zod.string().min(1),
+    phone: zod.string().min(1).nullish(),
+    default: zod.boolean().nullish()
+});
+
+export const ReplaceAddressResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        addresses: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                label: zod
+                    .string()
+                    .optional()
+                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional(),
+                default: zod.boolean()
+            })
+        )
+    })
+});
+
+/**
+ * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
  * @summary Update an address
  */
 export const UpdateAddressParams = zod.strictObject({
@@ -2249,7 +2292,7 @@ export const UpdateAddressBody = zod.strictObject({
     zip: zod.string().min(1).optional(),
     country: zod.string().min(1).optional(),
     phone: zod.string().min(1).nullish(),
-    default: zod.boolean().optional()
+    default: zod.boolean().nullish()
 });
 
 export const UpdateAddressResponse = zod.strictObject({
@@ -3942,24 +3985,24 @@ export const ReplaceUserByIdResponse = zod.strictObject({
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
  * @summary Edit user
  */
-export const PatchUserByIdParams = zod.strictObject({
+export const UpdateUserByIdParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
-export const patchUserByIdBodyPasswordMin = 8;
+export const updateUserByIdBodyPasswordMin = 8;
 
-export const patchUserByIdBodyPasswordRegExp = new RegExp(
+export const updateUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
 );
 
-export const patchUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const PatchUserByIdBody = zod.strictObject({
+export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
     password: zod
         .string()
-        .min(patchUserByIdBodyPasswordMin)
-        .regex(patchUserByIdBodyPasswordRegExp)
+        .min(updateUserByIdBodyPasswordMin)
+        .regex(updateUserByIdBodyPasswordRegExp)
         .optional()
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
@@ -3976,7 +4019,7 @@ export const PatchUserByIdBody = zod.strictObject({
         .nullish(),
     locale: zod
         .string()
-        .regex(patchUserByIdBodyLocaleOneRegExp)
+        .regex(updateUserByIdBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
@@ -3985,9 +4028,9 @@ export const PatchUserByIdBody = zod.strictObject({
     website: zod.string().min(1).nullish()
 });
 
-export const patchUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const PatchUserByIdResponse = zod.strictObject({
+export const UpdateUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -4014,7 +4057,7 @@ export const PatchUserByIdResponse = zod.strictObject({
             ),
         locale: zod
             .string()
-            .regex(patchUserByIdResponseDataLocaleRegExp)
+            .regex(updateUserByIdResponseDataLocaleRegExp)
             .optional()
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'

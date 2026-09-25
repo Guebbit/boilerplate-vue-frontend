@@ -1542,7 +1542,7 @@ export interface ReplaceAccountRequestMultipart {
     analyticsConsent?: boolean;
 }
 
-export interface PatchAccountRequest {
+export interface UpdateAccountRequest {
     email?: Email;
     /** @minLength 3 */
     username?: string;
@@ -1561,7 +1561,7 @@ export interface PatchAccountRequest {
     analyticsConsent?: boolean;
 }
 
-export interface PatchAccountRequestMultipart {
+export interface UpdateAccountRequestMultipart {
     email?: Email;
     /** @minLength 3 */
     username?: string;
@@ -1687,6 +1687,31 @@ export interface AddressInput {
     default?: boolean;
 }
 
+export interface ReplaceAddressRequest {
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    label?: string | null;
+    /** @minLength 1 */
+    fullName: string;
+    /** @minLength 1 */
+    street: string;
+    /** @minLength 1 */
+    city: string;
+    /** @minLength 1 */
+    zip: string;
+    /** @minLength 1 */
+    country: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /** @nullable */
+    default?: boolean | null;
+}
+
 export interface UpdateAddressRequest {
     /**
      * @minLength 1
@@ -1708,7 +1733,8 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     phone?: string | null;
-    default?: boolean;
+    /** @nullable */
+    default?: boolean | null;
 }
 
 export interface EmailVerificationRequested {
@@ -2052,7 +2078,7 @@ export interface ReplaceUserByIdRequestMultipart {
     website?: string | null;
 }
 
-export interface PatchUserByIdRequest {
+export interface UpdateUserByIdRequest {
     email?: Email;
     password?: PasswordNew;
     /** @minLength 1 */
@@ -2073,7 +2099,7 @@ export interface PatchUserByIdRequest {
     website?: string | null;
 }
 
-export interface PatchUserByIdRequestMultipart {
+export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: PasswordNew;
     /** @minLength 1 */
@@ -4236,8 +4262,8 @@ export const replaceAccountWithMultipart = (
  * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
-export const patchAccount = (
-    patchAccountRequest: PatchAccountRequest,
+export const updateAccount = (
+    updateAccountRequest: UpdateAccountRequest,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     return orvalMutator<UserEnvelope>(
@@ -4245,7 +4271,7 @@ export const patchAccount = (
             url: `/account`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: patchAccountRequest
+            data: updateAccountRequest
         },
         options
     );
@@ -4255,42 +4281,42 @@ export const patchAccount = (
  * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Update own profile
  */
-export const patchAccountWithMultipart = (
-    patchAccountRequestMultipart: PatchAccountRequestMultipart,
+export const updateAccountWithMultipart = (
+    updateAccountRequestMultipart: UpdateAccountRequestMultipart,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    if (patchAccountRequestMultipart.email !== undefined) {
-        formData.append(`email`, patchAccountRequestMultipart.email);
+    if (updateAccountRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateAccountRequestMultipart.email);
     }
-    if (patchAccountRequestMultipart.username !== undefined) {
-        formData.append(`username`, patchAccountRequestMultipart.username);
-    }
-    if (
-        patchAccountRequestMultipart.locale !== undefined &&
-        patchAccountRequestMultipart.locale !== null
-    ) {
-        formData.append(`locale`, patchAccountRequestMultipart.locale);
-    }
-    if (patchAccountRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, patchAccountRequestMultipart.imageUpload);
+    if (updateAccountRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateAccountRequestMultipart.username);
     }
     if (
-        patchAccountRequestMultipart.phone !== undefined &&
-        patchAccountRequestMultipart.phone !== null
+        updateAccountRequestMultipart.locale !== undefined &&
+        updateAccountRequestMultipart.locale !== null
     ) {
-        formData.append(`phone`, patchAccountRequestMultipart.phone);
+        formData.append(`locale`, updateAccountRequestMultipart.locale);
+    }
+    if (updateAccountRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
     }
     if (
-        patchAccountRequestMultipart.website !== undefined &&
-        patchAccountRequestMultipart.website !== null
+        updateAccountRequestMultipart.phone !== undefined &&
+        updateAccountRequestMultipart.phone !== null
     ) {
-        formData.append(`website`, patchAccountRequestMultipart.website);
+        formData.append(`phone`, updateAccountRequestMultipart.phone);
     }
-    if (patchAccountRequestMultipart.analyticsConsent !== undefined) {
+    if (
+        updateAccountRequestMultipart.website !== undefined &&
+        updateAccountRequestMultipart.website !== null
+    ) {
+        formData.append(`website`, updateAccountRequestMultipart.website);
+    }
+    if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
         formData.append(
             `analyticsConsent`,
-            patchAccountRequestMultipart.analyticsConsent.toString()
+            updateAccountRequestMultipart.analyticsConsent.toString()
         );
     }
 
@@ -4457,7 +4483,27 @@ export const addAddress = (
 };
 
 /**
- * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * @summary Replace an address
+ */
+export const replaceAddress = (
+    addressId: Id,
+    replaceAddressRequest: ReplaceAddressRequest,
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        {
+            url: `/account/addresses/${addressId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceAddressRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
  * @summary Update an address
  */
 export const updateAddress = (
@@ -4468,7 +4514,7 @@ export const updateAddress = (
     return orvalMutator<AddressesEnvelope>(
         {
             url: `/account/addresses/${addressId}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             data: updateAddressRequest
         },
@@ -5065,9 +5111,9 @@ export const replaceUserByIdWithMultipart = (
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
  * @summary Edit user
  */
-export const patchUserById = (
+export const updateUserById = (
     id: string,
-    patchUserByIdRequest: PatchUserByIdRequest,
+    updateUserByIdRequest: UpdateUserByIdRequest,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     return orvalMutator<UserEnvelope>(
@@ -5075,7 +5121,7 @@ export const patchUserById = (
             url: `/users/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: patchUserByIdRequest
+            data: updateUserByIdRequest
         },
         options
     );
@@ -5085,47 +5131,47 @@ export const patchUserById = (
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
  * @summary Edit user
  */
-export const patchUserByIdWithMultipart = (
+export const updateUserByIdWithMultipart = (
     id: string,
-    patchUserByIdRequestMultipart: PatchUserByIdRequestMultipart,
+    updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    if (patchUserByIdRequestMultipart.email !== undefined) {
-        formData.append(`email`, patchUserByIdRequestMultipart.email);
+    if (updateUserByIdRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateUserByIdRequestMultipart.email);
     }
-    if (patchUserByIdRequestMultipart.password !== undefined) {
-        formData.append(`password`, patchUserByIdRequestMultipart.password);
+    if (updateUserByIdRequestMultipart.password !== undefined) {
+        formData.append(`password`, updateUserByIdRequestMultipart.password);
     }
-    if (patchUserByIdRequestMultipart.username !== undefined) {
-        formData.append(`username`, patchUserByIdRequestMultipart.username);
+    if (updateUserByIdRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateUserByIdRequestMultipart.username);
     }
-    if (patchUserByIdRequestMultipart.role !== undefined) {
-        formData.append(`role`, patchUserByIdRequestMultipart.role);
+    if (updateUserByIdRequestMultipart.role !== undefined) {
+        formData.append(`role`, updateUserByIdRequestMultipart.role);
     }
-    if (patchUserByIdRequestMultipart.active !== undefined) {
-        formData.append(`active`, patchUserByIdRequestMultipart.active.toString());
+    if (updateUserByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
     }
-    if (patchUserByIdRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, patchUserByIdRequestMultipart.imageUpload);
-    }
-    if (
-        patchUserByIdRequestMultipart.locale !== undefined &&
-        patchUserByIdRequestMultipart.locale !== null
-    ) {
-        formData.append(`locale`, patchUserByIdRequestMultipart.locale);
+    if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
     if (
-        patchUserByIdRequestMultipart.phone !== undefined &&
-        patchUserByIdRequestMultipart.phone !== null
+        updateUserByIdRequestMultipart.locale !== undefined &&
+        updateUserByIdRequestMultipart.locale !== null
     ) {
-        formData.append(`phone`, patchUserByIdRequestMultipart.phone);
+        formData.append(`locale`, updateUserByIdRequestMultipart.locale);
     }
     if (
-        patchUserByIdRequestMultipart.website !== undefined &&
-        patchUserByIdRequestMultipart.website !== null
+        updateUserByIdRequestMultipart.phone !== undefined &&
+        updateUserByIdRequestMultipart.phone !== null
     ) {
-        formData.append(`website`, patchUserByIdRequestMultipart.website);
+        formData.append(`phone`, updateUserByIdRequestMultipart.phone);
+    }
+    if (
+        updateUserByIdRequestMultipart.website !== undefined &&
+        updateUserByIdRequestMultipart.website !== null
+    ) {
+        formData.append(`website`, updateUserByIdRequestMultipart.website);
     }
 
     return orvalMutator<UserEnvelope>(
@@ -6521,9 +6567,9 @@ export type ReplaceAccountResult = NonNullable<Awaited<ReturnType<typeof replace
 export type ReplaceAccountWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof replaceAccountWithMultipart>>
 >;
-export type PatchAccountResult = NonNullable<Awaited<ReturnType<typeof patchAccount>>>;
-export type PatchAccountWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof patchAccountWithMultipart>>
+export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
+export type UpdateAccountWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateAccountWithMultipart>>
 >;
 export type RequestAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountDelete>>
@@ -6539,6 +6585,7 @@ export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSession
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
 export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddresses>>>;
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
 export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>;
 export type RequestEmailVerificationResult = NonNullable<
@@ -6598,9 +6645,9 @@ export type ReplaceUserByIdResult = NonNullable<Awaited<ReturnType<typeof replac
 export type ReplaceUserByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof replaceUserByIdWithMultipart>>
 >;
-export type PatchUserByIdResult = NonNullable<Awaited<ReturnType<typeof patchUserById>>>;
-export type PatchUserByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof patchUserByIdWithMultipart>>
+export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
+export type UpdateUserByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
 >;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;

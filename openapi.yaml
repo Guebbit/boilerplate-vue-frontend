@@ -1019,7 +1019,7 @@ paths:
         - Account
       summary: Update own profile
       description: Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
-      operationId: patchAccount
+      operationId: updateAccount
       security:
         - bearerAuth: []
       requestBody:
@@ -1027,10 +1027,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchAccountRequest"
+              $ref: "#/components/schemas/UpdateAccountRequest"
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/PatchAccountRequestMultipart"
+              $ref: "#/components/schemas/UpdateAccountRequestMultipart"
       responses:
         "200":
           description: Updated profile
@@ -1341,8 +1341,52 @@ paths:
     put:
       tags:
         - Account
+      summary: Replace an address
+      description: Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+      operationId: replaceAddress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Address identifier from `GET /account/addresses`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceAddressRequest"
+      responses:
+        "200":
+          description: The updated address book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddressesEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - Account
       summary: Update an address
-      description: Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+      description: Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
       operationId: updateAddress
       security:
         - bearerAuth: []
@@ -2308,7 +2352,7 @@ paths:
         - Users
       summary: Edit user
       description: Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
-      operationId: patchUserById
+      operationId: updateUserById
       security:
         - bearerAuth: []
       parameters:
@@ -2318,10 +2362,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchUserByIdRequest"
+              $ref: "#/components/schemas/UpdateUserByIdRequest"
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/PatchUserByIdRequestMultipart"
+              $ref: "#/components/schemas/UpdateUserByIdRequestMultipart"
       responses:
         "200":
           description: Updated user
@@ -7446,7 +7490,7 @@ components:
           nullable: true
         analyticsConsent:
           type: boolean
-    PatchAccountRequest:
+    UpdateAccountRequest:
       type: object
       additionalProperties: false
       properties:
@@ -7473,7 +7517,7 @@ components:
           nullable: true
         analyticsConsent:
           type: boolean
-    PatchAccountRequestMultipart:
+    UpdateAccountRequestMultipart:
       type: object
       additionalProperties: false
       properties:
@@ -7746,6 +7790,42 @@ components:
           type: string
         default:
           type: boolean
+    ReplaceAddressRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - street
+        - city
+        - zip
+        - country
+      properties:
+        label:
+          type: string
+          minLength: 1
+          nullable: true
+        fullName:
+          type: string
+          minLength: 1
+        street:
+          type: string
+          minLength: 1
+        city:
+          type: string
+          minLength: 1
+        zip:
+          type: string
+          minLength: 1
+        country:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 1
+          nullable: true
+        default:
+          type: boolean
+          nullable: true
     UpdateAddressRequest:
       type: object
       additionalProperties: false
@@ -7775,6 +7855,7 @@ components:
           nullable: true
         default:
           type: boolean
+          nullable: true
     EmailVerificationRequested:
       type: object
       additionalProperties: false
@@ -8671,7 +8752,7 @@ components:
           type: string
           minLength: 1
           nullable: true
-    PatchUserByIdRequest:
+    UpdateUserByIdRequest:
       type: object
       additionalProperties: false
       properties:
@@ -8702,7 +8783,7 @@ components:
           type: string
           minLength: 1
           nullable: true
-    PatchUserByIdRequestMultipart:
+    UpdateUserByIdRequestMultipart:
       type: object
       additionalProperties: false
       properties:

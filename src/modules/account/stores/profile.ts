@@ -16,13 +16,13 @@ import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
     confirmAccountDelete as apiConfirmAccountDelete,
-    patchAccount as apiPatchAccount,
-    patchAccountWithMultipart as apiPatchAccountWithMultipart,
+    updateAccount as apiUpdateAccount,
+    updateAccountWithMultipart as apiUpdateAccountWithMultipart,
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
-    patchUserById as apiPatchUserById,
+    updateUserById as apiUpdateUserById,
     exportAccountData as apiExportAccountData
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
@@ -178,8 +178,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return updateTarget(
             () =>
                 (imageUpload
-                    ? apiPatchAccountWithMultipart({ ...fields, imageUpload }, options)
-                    : apiPatchAccount({ ...fields, imageUrl: userData.imageUrl }, options)
+                    ? apiUpdateAccountWithMultipart({ ...fields, imageUpload }, options)
+                    : apiUpdateAccount({ ...fields, imageUrl: userData.imageUrl }, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
 
@@ -217,7 +217,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * chosen trade-off, not an oversight: adding a dedicated endpoint is a backend contract change,
      * left for its own pass.
      *
-     * `patchUserById` is reached through `@api` rather than through the users module: `@api` is
+     * `updateUserById` is reached through `@api` rather than through the users module: `@api` is
      * infrastructure, not a sibling, so this is a contract call and not an `account → users` edge
      * — the same reasoning that lets the cart resolve product titles without depending on
      * products. The users barrel publishes vocabulary, and it stays that way.
@@ -234,7 +234,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         const userId = selectedIdentifier.value;
         // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ role }` alone, and a PUT's every
         // omitted field is cleared (RFC 9110 §9.3.4) — the wrong verb for a single-field change.
-        return fetchAny(() => apiPatchUserById(userId, { role }).then(() => fetchProfile(true)));
+        return fetchAny(() => apiUpdateUserById(userId, { role }).then(() => fetchProfile(true)));
     };
 
     /**

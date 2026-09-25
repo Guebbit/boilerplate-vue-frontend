@@ -104,14 +104,14 @@ describe('useAddressesStore', () => {
         });
     });
 
-    it('puts a change to one entry, addressed by id', () => {
+    it('patches a change to one entry, addressed by id', () => {
         respondWithBook([{ ...HOME, city: 'Ogdenville' }]);
         const store = useAddressesStore();
 
         return store.updateAddress('a1', { city: 'Ogdenville' }).then(() => {
             expect(lastRequest()).toMatchObject({
                 url: '/account/addresses/a1',
-                method: 'PUT'
+                method: 'PATCH'
             });
             expect(store.addresses).toEqual([{ ...HOME, city: 'Ogdenville' }]);
         });
