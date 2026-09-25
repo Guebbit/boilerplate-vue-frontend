@@ -15,8 +15,8 @@ import {
     getUserById,
     createUser as apiCreateUser,
     createUserWithMultipart,
-    updateUserById,
-    updateUserByIdWithMultipart,
+    patchUserById,
+    patchUserByIdWithMultipart,
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
@@ -26,7 +26,7 @@ import type { AxiosRequestConfig } from 'axios';
 import type {
     User,
     CreateUserRequestMultipart,
-    UpdateUserByIdRequestMultipart,
+    PatchUserByIdRequestMultipart,
     SearchUsersRequest
 } from '@types';
 
@@ -88,7 +88,7 @@ export const useUsersStore = defineStore('users', () => {
         string,
         UsersFilters,
         CreateUserRequestMultipart,
-        UpdateUserByIdRequestMultipart,
+        PatchUserByIdRequestMultipart,
         AxiosRequestConfig
     >(
         {
@@ -118,10 +118,13 @@ export const useUsersStore = defineStore('users', () => {
                     : apiCreateUser(userData, options)
                 ).then((response) => response.data),
 
+            // PATCH, not PUT (AUDIT_0924 D17d): `UserEdit.vue` sends only the fields its form
+            // actually holds (`email`, `password`, an upload) — a PUT's every omitted field would
+            // be cleared instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
             update: (userId, { imageUpload, ...userData } = {}, options) =>
                 (imageUpload
-                    ? updateUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
-                    : updateUserById(userId, userData, options)
+                    ? patchUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
+                    : patchUserById(userId, userData, options)
                 ).then((response) => response.data),
 
             remove: (userId) => deleteUserById(userId),

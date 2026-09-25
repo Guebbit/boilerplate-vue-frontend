@@ -3772,34 +3772,34 @@ export const GetUserByIdResponse = zod.strictObject({
 });
 
 /**
- * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
- * @summary Edit user
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * @summary Replace user
  */
-export const UpdateUserByIdParams = zod.strictObject({
+export const ReplaceUserByIdParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
-export const updateUserByIdBodyPasswordMin = 8;
+export const replaceUserByIdBodyPasswordMin = 8;
 
-export const updateUserByIdBodyPasswordRegExp = new RegExp(
+export const replaceUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
 );
 
-export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const UpdateUserByIdBody = zod.strictObject({
-    email: zod.email().optional(),
+export const ReplaceUserByIdBody = zod.strictObject({
+    email: zod.email(),
     password: zod
         .string()
-        .min(updateUserByIdBodyPasswordMin)
-        .regex(updateUserByIdBodyPasswordRegExp)
+        .min(replaceUserByIdBodyPasswordMin)
+        .regex(replaceUserByIdBodyPasswordRegExp)
         .optional()
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
         ),
-    username: zod.string().min(1).optional(),
-    role: zod.string().optional(),
-    active: zod.boolean().optional(),
+    username: zod.string().min(1),
+    role: zod.string(),
+    active: zod.boolean(),
     imageUrl: zod
         .string()
         .min(1)
@@ -3809,7 +3809,7 @@ export const UpdateUserByIdBody = zod.strictObject({
         .nullish(),
     locale: zod
         .string()
-        .regex(updateUserByIdBodyLocaleOneRegExp)
+        .regex(replaceUserByIdBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
@@ -3818,9 +3818,9 @@ export const UpdateUserByIdBody = zod.strictObject({
     website: zod.string().min(1).nullish()
 });
 
-export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const UpdateUserByIdResponse = zod.strictObject({
+export const ReplaceUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -3847,7 +3847,99 @@ export const UpdateUserByIdResponse = zod.strictObject({
             ),
         locale: zod
             .string()
-            .regex(updateUserByIdResponseDataLocaleRegExp)
+            .regex(replaceUserByIdResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+            ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const PatchUserByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const patchUserByIdBodyPasswordMin = 8;
+
+export const patchUserByIdBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
+
+export const patchUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const PatchUserByIdBody = zod.strictObject({
+    email: zod.email().optional(),
+    password: zod
+        .string()
+        .min(patchUserByIdBodyPasswordMin)
+        .regex(patchUserByIdBodyPasswordRegExp)
+        .optional()
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    username: zod.string().min(1).optional(),
+    role: zod.string().optional(),
+    active: zod.boolean().optional(),
+    imageUrl: zod
+        .string()
+        .min(1)
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+        )
+        .nullish(),
+    locale: zod
+        .string()
+        .regex(patchUserByIdBodyLocaleOneRegExp)
+        .describe(
+            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+        )
+        .nullish(),
+    phone: zod.string().min(1).nullish(),
+    website: zod.string().min(1).nullish()
+});
+
+export const patchUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const PatchUserByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        email: zod.email(),
+        username: zod.string(),
+        role: zod.string().optional(),
+        active: zod.boolean().optional(),
+        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        pendingEmail: zod.email().optional(),
+        imageUrl: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        locale: zod
+            .string()
+            .regex(patchUserByIdResponseDataLocaleRegExp)
             .optional()
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'

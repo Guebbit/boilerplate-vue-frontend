@@ -74,7 +74,8 @@ beforeEach(() => {
         'DELETE /account/delete-confirm': orvalEnvelope(),
         'PUT /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
-        'PUT /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
+        // PATCH, not PUT (AUDIT_0924 D17d) — this call sends `{ role }` alone.
+        'PATCH /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         // Carries the server's resend cooldown, which the banner counts down — see `resendAfter`.
@@ -216,7 +217,9 @@ describe('own role', () => {
             .fetchProfile(true)
             .then(() => store.updateOwnRole('admin'))
             .then(() => {
-                const put = vi
+                // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ role }` alone, and a PUT's
+                // every omitted field would be cleared instead (RFC 9110 §9.3.4).
+                const patch = vi
                     .mocked(orvalMutator)
                     .mock.calls.map(
                         (call) =>
@@ -226,12 +229,12 @@ describe('own role', () => {
                                 data?: { admin?: boolean };
                             }
                     )
-                    .find((call) => call.method?.toUpperCase() === 'PUT');
+                    .find((call) => call.method?.toUpperCase() === 'PATCH');
 
                 // `PUT /account` is deliberately roleless; `/users/{id}` is behind the admin
                 // guard, so the API decides whether this visitor may promote anyone.
-                expect(put?.url).toBe('/users/u1');
-                expect(put?.data).toEqual({ role: 'admin' });
+                expect(patch?.url).toBe('/users/u1');
+                expect(patch?.data).toEqual({ role: 'admin' });
             });
     });
 

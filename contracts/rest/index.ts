@@ -1970,7 +1970,50 @@ export interface DeleteUserRequest {
     hardDelete?: boolean;
 }
 
-export interface UpdateUserByIdRequest {
+export interface ReplaceUserByIdRequest {
+    email: Email;
+    password?: PasswordNew;
+    /** @minLength 1 */
+    username: string;
+    role: string;
+    active: boolean;
+    imageUrl?: ImageUrl | null;
+    locale?: Locale | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
+}
+
+export interface ReplaceUserByIdRequestMultipart {
+    email: Email;
+    password?: PasswordNew;
+    /** @minLength 1 */
+    username: string;
+    role: string;
+    active: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
+}
+
+export interface PatchUserByIdRequest {
     email?: Email;
     password?: PasswordNew;
     /** @minLength 1 */
@@ -1991,7 +2034,7 @@ export interface UpdateUserByIdRequest {
     website?: string | null;
 }
 
-export interface UpdateUserByIdRequestMultipart {
+export interface PatchUserByIdRequestMultipart {
     email?: Email;
     password?: PasswordNew;
     /** @minLength 1 */
@@ -4841,12 +4884,12 @@ export const getUserById = (
 };
 
 /**
- * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
- * @summary Edit user
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * @summary Replace user
  */
-export const updateUserById = (
+export const replaceUserById = (
     id: string,
-    updateUserByIdRequest: UpdateUserByIdRequest,
+    replaceUserByIdRequest: ReplaceUserByIdRequest,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     return orvalMutator<UserEnvelope>(
@@ -4854,63 +4897,133 @@ export const updateUserById = (
             url: `/users/${id}`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            data: updateUserByIdRequest
+            data: replaceUserByIdRequest
         },
         options
     );
 };
 
 /**
- * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
- * @summary Edit user
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * @summary Replace user
  */
-export const updateUserByIdWithMultipart = (
+export const replaceUserByIdWithMultipart = (
     id: string,
-    updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
+    replaceUserByIdRequestMultipart: ReplaceUserByIdRequestMultipart,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    if (updateUserByIdRequestMultipart.email !== undefined) {
-        formData.append(`email`, updateUserByIdRequestMultipart.email);
+    formData.append(`email`, replaceUserByIdRequestMultipart.email);
+    if (replaceUserByIdRequestMultipart.password !== undefined) {
+        formData.append(`password`, replaceUserByIdRequestMultipart.password);
     }
-    if (updateUserByIdRequestMultipart.password !== undefined) {
-        formData.append(`password`, updateUserByIdRequestMultipart.password);
-    }
-    if (updateUserByIdRequestMultipart.username !== undefined) {
-        formData.append(`username`, updateUserByIdRequestMultipart.username);
-    }
-    if (updateUserByIdRequestMultipart.role !== undefined) {
-        formData.append(`role`, updateUserByIdRequestMultipart.role);
-    }
-    if (updateUserByIdRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
-    }
-    if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+    formData.append(`username`, replaceUserByIdRequestMultipart.username);
+    formData.append(`role`, replaceUserByIdRequestMultipart.role);
+    formData.append(`active`, replaceUserByIdRequestMultipart.active.toString());
+    if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
     }
     if (
-        updateUserByIdRequestMultipart.locale !== undefined &&
-        updateUserByIdRequestMultipart.locale !== null
+        replaceUserByIdRequestMultipart.locale !== undefined &&
+        replaceUserByIdRequestMultipart.locale !== null
     ) {
-        formData.append(`locale`, updateUserByIdRequestMultipart.locale);
+        formData.append(`locale`, replaceUserByIdRequestMultipart.locale);
     }
     if (
-        updateUserByIdRequestMultipart.phone !== undefined &&
-        updateUserByIdRequestMultipart.phone !== null
+        replaceUserByIdRequestMultipart.phone !== undefined &&
+        replaceUserByIdRequestMultipart.phone !== null
     ) {
-        formData.append(`phone`, updateUserByIdRequestMultipart.phone);
+        formData.append(`phone`, replaceUserByIdRequestMultipart.phone);
     }
     if (
-        updateUserByIdRequestMultipart.website !== undefined &&
-        updateUserByIdRequestMultipart.website !== null
+        replaceUserByIdRequestMultipart.website !== undefined &&
+        replaceUserByIdRequestMultipart.website !== null
     ) {
-        formData.append(`website`, updateUserByIdRequestMultipart.website);
+        formData.append(`website`, replaceUserByIdRequestMultipart.website);
     }
 
     return orvalMutator<UserEnvelope>(
         {
             url: `/users/${id}`,
             method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const patchUserById = (
+    id: string,
+    patchUserByIdRequest: PatchUserByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: patchUserByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const patchUserByIdWithMultipart = (
+    id: string,
+    patchUserByIdRequestMultipart: PatchUserByIdRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (patchUserByIdRequestMultipart.email !== undefined) {
+        formData.append(`email`, patchUserByIdRequestMultipart.email);
+    }
+    if (patchUserByIdRequestMultipart.password !== undefined) {
+        formData.append(`password`, patchUserByIdRequestMultipart.password);
+    }
+    if (patchUserByIdRequestMultipart.username !== undefined) {
+        formData.append(`username`, patchUserByIdRequestMultipart.username);
+    }
+    if (patchUserByIdRequestMultipart.role !== undefined) {
+        formData.append(`role`, patchUserByIdRequestMultipart.role);
+    }
+    if (patchUserByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, patchUserByIdRequestMultipart.active.toString());
+    }
+    if (patchUserByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, patchUserByIdRequestMultipart.imageUpload);
+    }
+    if (
+        patchUserByIdRequestMultipart.locale !== undefined &&
+        patchUserByIdRequestMultipart.locale !== null
+    ) {
+        formData.append(`locale`, patchUserByIdRequestMultipart.locale);
+    }
+    if (
+        patchUserByIdRequestMultipart.phone !== undefined &&
+        patchUserByIdRequestMultipart.phone !== null
+    ) {
+        formData.append(`phone`, patchUserByIdRequestMultipart.phone);
+    }
+    if (
+        patchUserByIdRequestMultipart.website !== undefined &&
+        patchUserByIdRequestMultipart.website !== null
+    ) {
+        formData.append(`website`, patchUserByIdRequestMultipart.website);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PATCH',
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
         },
@@ -6369,9 +6482,13 @@ export type CreateUserWithMultipartResult = NonNullable<
 >;
 export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
 export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
-export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
-export type UpdateUserByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
+export type ReplaceUserByIdResult = NonNullable<Awaited<ReturnType<typeof replaceUserById>>>;
+export type ReplaceUserByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof replaceUserByIdWithMultipart>>
+>;
+export type PatchUserByIdResult = NonNullable<Awaited<ReturnType<typeof patchUserById>>>;
+export type PatchUserByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof patchUserByIdWithMultipart>>
 >;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;

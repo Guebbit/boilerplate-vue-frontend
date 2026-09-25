@@ -20,7 +20,8 @@ export const usersResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'DELETE', pattern: /^\/users$/, schema: schemas.DeleteUserResponse },
     { method: 'POST', pattern: /^\/users\/search$/, schema: schemas.SearchUsersResponse },
     { method: 'GET', pattern: /^\/users\/[^/]+$/, schema: schemas.GetUserByIdResponse },
-    { method: 'PUT', pattern: /^\/users\/[^/]+$/, schema: schemas.UpdateUserByIdResponse },
+    { method: 'PUT', pattern: /^\/users\/[^/]+$/, schema: schemas.ReplaceUserByIdResponse },
+    { method: 'PATCH', pattern: /^\/users\/[^/]+$/, schema: schemas.PatchUserByIdResponse },
     { method: 'DELETE', pattern: /^\/users\/[^/]+$/, schema: schemas.DeleteUserByIdResponse },
     {
         method: 'DELETE',

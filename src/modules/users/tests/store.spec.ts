@@ -155,21 +155,23 @@ describe('useUsersStore', () => {
     });
 
     describe('updateUser', () => {
-        it('puts JSON when no new avatar is attached', () =>
+        // AUDIT_0924 D17d: PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
+        // and a PUT would clear every field it omits (RFC 9110 §9.3.4).
+        it('patches JSON when no new avatar is attached', () =>
             useUsersStore()
                 .updateUser('u1', { username: 'ada2' })
                 .then(() => {
                     const request = lastRequest();
-                    expect(request).toMatchObject({ url: '/users/u1', method: 'PUT' });
+                    expect(request).toMatchObject({ url: '/users/u1', method: 'PATCH' });
                     expect(request.data).not.toBeInstanceOf(FormData);
                     expect(request.data).toMatchObject({ username: 'ada2' });
                 }));
 
-        it('puts multipart when an avatar is attached', () =>
+        it('patches multipart when an avatar is attached', () =>
             useUsersStore()
                 .updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) })
                 .then(() => {
-                    expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'PUT' });
+                    expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'PATCH' });
                     expect(lastFormData().get('username')).toBe('ada2');
                 }));
 

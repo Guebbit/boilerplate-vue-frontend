@@ -2222,9 +2222,9 @@ paths:
     put:
       tags:
         - Users
-      summary: Edit user
-      description: Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
-      operationId: updateUserById
+      summary: Replace user
+      description: Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+      operationId: replaceUserById
       security:
         - bearerAuth: []
       parameters:
@@ -2234,10 +2234,54 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateUserByIdRequest"
+              $ref: "#/components/schemas/ReplaceUserByIdRequest"
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UpdateUserByIdRequestMultipart"
+              $ref: "#/components/schemas/ReplaceUserByIdRequestMultipart"
+      responses:
+        "200":
+          description: Replaced user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - Users
+      summary: Edit user
+      description: Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
+      operationId: patchUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchUserByIdRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchUserByIdRequestMultipart"
       responses:
         "200":
           description: Updated user
@@ -8455,7 +8499,79 @@ components:
         hardDelete:
           type: boolean
           default: false
-    UpdateUserByIdRequest:
+    ReplaceUserByIdRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - username
+        - role
+        - active
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        password:
+          $ref: "#/components/schemas/PasswordNew"
+        username:
+          type: string
+          minLength: 1
+        role:
+          type: string
+        active:
+          type: boolean
+        imageUrl:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
+        locale:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+        phone:
+          type: string
+          minLength: 1
+          nullable: true
+        website:
+          type: string
+          minLength: 1
+          nullable: true
+    ReplaceUserByIdRequestMultipart:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - username
+        - role
+        - active
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        password:
+          $ref: "#/components/schemas/PasswordNew"
+        username:
+          type: string
+          minLength: 1
+        role:
+          type: string
+        active:
+          type: boolean
+        imageUpload:
+          type: string
+          format: binary
+          description: Optional user profile image
+        locale:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+        phone:
+          type: string
+          minLength: 1
+          nullable: true
+        website:
+          type: string
+          minLength: 1
+          nullable: true
+    PatchUserByIdRequest:
       type: object
       additionalProperties: false
       properties:
@@ -8486,7 +8602,7 @@ components:
           type: string
           minLength: 1
           nullable: true
-    UpdateUserByIdRequestMultipart:
+    PatchUserByIdRequestMultipart:
       type: object
       additionalProperties: false
       properties:
