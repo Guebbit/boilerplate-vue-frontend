@@ -9738,15 +9738,8 @@ components:
             - delivered
             - cancelled
           description: Updated order status
-        userId:
-          $ref: "#/components/schemas/Id"
         email:
           $ref: "#/components/schemas/Email"
-        items:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/CartItem"
     CancelOrderRequest:
       type: object
       additionalProperties: false

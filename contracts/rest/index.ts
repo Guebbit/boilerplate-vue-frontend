@@ -2599,10 +2599,7 @@ export const UpdateOrderByIdRequestStatus = {
 export interface UpdateOrderByIdRequest {
     /** Updated order status */
     status?: UpdateOrderByIdRequestStatus;
-    userId?: Id;
     email?: Email;
-    /** @minItems 1 */
-    items?: CartItem[];
 }
 
 /**
