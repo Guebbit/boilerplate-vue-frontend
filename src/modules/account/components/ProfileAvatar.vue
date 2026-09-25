@@ -80,7 +80,7 @@ const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosReques
 /**
  * Whether either avatar action is in flight — both the picker and the remove button are disabled
  * while this is true, so a pick mid-remove (or a second pick mid-upload) cannot fire a second
- * concurrent `PUT /account` racing the first one's response and refetch.
+ * concurrent `PATCH /account` racing the first one's response and refetch.
  */
 const busy = computed(() => uploadingAvatar.value || removingAvatar.value);
 

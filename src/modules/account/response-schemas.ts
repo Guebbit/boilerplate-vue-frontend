@@ -38,7 +38,8 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
         pattern: /^\/account\/tokens\/expired$/,
         schema: schemas.DeleteExpiredTokensResponse
     },
-    { method: 'PUT', pattern: /^\/account$/, schema: schemas.UpdateAccountResponse },
+    { method: 'PUT', pattern: /^\/account$/, schema: schemas.ReplaceAccountResponse },
+    { method: 'PATCH', pattern: /^\/account$/, schema: schemas.PatchAccountResponse },
     { method: 'POST', pattern: /^\/account\/password$/, schema: schemas.ChangePasswordResponse },
     {
         method: 'POST',
@@ -64,7 +65,7 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     },
     /*
      * A DIFFERENT token type from `verify-confirm` above: this one proves the address a
-     * `PUT /account` change asked for, never the one the account already has.
+     * `PUT/PATCH /account` change asked for, never the one the account already has.
      */
     {
         method: 'POST',

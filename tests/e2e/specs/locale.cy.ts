@@ -142,7 +142,7 @@ describe('switching the language in place', () => {
 
 /**
  * Where a language choice LIVES, by audience: a guest's in the tab and its URL, a registered
- * visitor's on their account — written on the switch (`PUT /account`), read back from the
+ * visitor's on their account — written on the switch (`PATCH /account`), read back from the
  * whoami and re-applied at the next login.
  */
 describe('the saved preference', () => {

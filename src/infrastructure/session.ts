@@ -15,7 +15,7 @@ import {
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
-    updateAccount as apiUpdateAccount
+    patchAccount as apiPatchAccount
 } from '@api';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
@@ -351,7 +351,7 @@ export const useSessionStore = defineStore('session', () => {
      *
      * The `isAuth` check is here rather than at the call site because it is a rule about the
      * preference, not about the button — a caller that forgot it would send an anonymous
-     * `PUT /account` and get a 401. It is also what keeps `AppLanguageSwitcher` out of this store.
+     * `PATCH /account` and get a 401. It is also what keeps `AppLanguageSwitcher` out of this store.
      *
      * Best-effort: callers fire it without awaiting, and a failed write is invisible, leaving the
      * stored preference stale until the next switch. A toast about a preference nobody asked to be
@@ -362,7 +362,9 @@ export const useSessionStore = defineStore('session', () => {
      */
     const persistLocalePreference = (locale: string): Promise<void> =>
         isAuth.value
-            ? apiUpdateAccount({ locale })
+            ? // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ locale }` alone, and a PUT's
+              // every omitted field would be cleared instead (RFC 9110 §9.3.4).
+              apiPatchAccount({ locale })
                   .then(() => undefined)
                   .catch(() => undefined)
             : Promise.resolve();

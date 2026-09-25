@@ -16,8 +16,8 @@ import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
     confirmAccountDelete as apiConfirmAccountDelete,
-    updateAccount as apiUpdateAccount,
-    updateAccountWithMultipart as apiUpdateAccountWithMultipart,
+    patchAccount as apiPatchAccount,
+    patchAccountWithMultipart as apiPatchAccountWithMultipart,
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
@@ -137,9 +137,11 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
-     * Updates the current user's own profile through `PUT /account`.
+     * Updates the current user's own profile through `PATCH /account` — this call only ever sends
+     * the fields the caller actually changed (AUDIT_0924 D17d: `PUT /account` would clear every
+     * field left out instead, RFC 9110 §9.3.4).
      *
-     * Its own endpoint, not `PUT /users/{id}`: the users writes sit behind the admin guard, and
+     * Its own endpoint, not `PATCH /users/{id}`: the users writes sit behind the admin guard, and
      * routing self-service through them answered every non-admin a 403 — the bug this store
      * shipped until the API grew the self-service route. The payload is deliberately what a user
      * owns: no `password` (that is {@link changePassword}, which proves the current one) and no
@@ -176,8 +178,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return updateTarget(
             () =>
                 (imageUpload
-                    ? apiUpdateAccountWithMultipart({ ...fields, imageUpload }, options)
-                    : apiUpdateAccount({ ...fields, imageUrl: userData.imageUrl }, options)
+                    ? apiPatchAccountWithMultipart({ ...fields, imageUpload }, options)
+                    : apiPatchAccount({ ...fields, imageUrl: userData.imageUrl }, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
 
@@ -203,10 +205,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * Changes the visitor's OWN role, through the endpoint that owns roles.
      *
-     * Deliberately not folded into {@link updateProfile}. `PUT /account` is the self-service
+     * Deliberately not folded into {@link updateProfile}. `PUT/PATCH /account` is the self-service
      * payload and carries no role by design — routing a role change through it would hand every
      * visitor the one field they must never set for themselves, which is the bug that endpoint
-     * exists to prevent. This goes to `PUT /users/{id}` instead: the admin route, behind the admin
+     * exists to prevent. This goes to `PATCH /users/{id}` instead: the admin route, behind the admin
      * guard, so the API authorises the change rather than a hidden form field doing it. A
      * non-admin calling this gets the 403 it deserves.
      *

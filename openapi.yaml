@@ -977,9 +977,9 @@ paths:
     put:
       tags:
         - Account
-      summary: Update own profile
-      description: Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
-      operationId: updateAccount
+      summary: Replace own profile
+      description: Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+      operationId: replaceAccount
       security:
         - bearerAuth: []
       requestBody:
@@ -987,10 +987,50 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateAccountRequest"
+              $ref: "#/components/schemas/ReplaceAccountRequest"
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UpdateAccountRequestMultipart"
+              $ref: "#/components/schemas/ReplaceAccountRequestMultipart"
+      responses:
+        "200":
+          description: Replaced profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - Account
+      summary: Update own profile
+      description: Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+      operationId: patchAccount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchAccountRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchAccountRequestMultipart"
       responses:
         "200":
           description: Updated profile
@@ -7346,7 +7386,67 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/AntibotChallenge"
-    UpdateAccountRequest:
+    ReplaceAccountRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - username
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        username:
+          type: string
+          minLength: 3
+        locale:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+        imageUrl:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
+        phone:
+          type: string
+          minLength: 1
+          nullable: true
+        website:
+          type: string
+          minLength: 1
+          nullable: true
+        analyticsConsent:
+          type: boolean
+    ReplaceAccountRequestMultipart:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - username
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        username:
+          type: string
+          minLength: 3
+        locale:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+        imageUpload:
+          type: string
+          format: binary
+          description: Optional user profile image
+        phone:
+          type: string
+          minLength: 1
+          nullable: true
+        website:
+          type: string
+          minLength: 1
+          nullable: true
+        analyticsConsent:
+          type: boolean
+    PatchAccountRequest:
       type: object
       additionalProperties: false
       properties:
@@ -7373,7 +7473,7 @@ components:
           nullable: true
         analyticsConsent:
           type: boolean
-    UpdateAccountRequestMultipart:
+    PatchAccountRequestMultipart:
       type: object
       additionalProperties: false
       properties:

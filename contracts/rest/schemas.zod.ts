@@ -1749,19 +1749,19 @@ export const GetAccountResponse = zod.strictObject({
 });
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
- * @summary Update own profile
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Replace own profile
  */
-export const updateAccountBodyUsernameMin = 3;
+export const replaceAccountBodyUsernameMin = 3;
 
-export const updateAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const UpdateAccountBody = zod.strictObject({
-    email: zod.email().optional(),
-    username: zod.string().min(updateAccountBodyUsernameMin).optional(),
+export const ReplaceAccountBody = zod.strictObject({
+    email: zod.email(),
+    username: zod.string().min(replaceAccountBodyUsernameMin),
     locale: zod
         .string()
-        .regex(updateAccountBodyLocaleOneRegExp)
+        .regex(replaceAccountBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
@@ -1778,9 +1778,9 @@ export const UpdateAccountBody = zod.strictObject({
     analyticsConsent: zod.boolean().optional()
 });
 
-export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
-export const UpdateAccountResponse = zod.strictObject({
+export const ReplaceAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -1807,7 +1807,82 @@ export const UpdateAccountResponse = zod.strictObject({
             ),
         locale: zod
             .string()
-            .regex(updateAccountResponseDataLocaleRegExp)
+            .regex(replaceAccountResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+            ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Update own profile
+ */
+export const patchAccountBodyUsernameMin = 3;
+
+export const patchAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const PatchAccountBody = zod.strictObject({
+    email: zod.email().optional(),
+    username: zod.string().min(patchAccountBodyUsernameMin).optional(),
+    locale: zod
+        .string()
+        .regex(patchAccountBodyLocaleOneRegExp)
+        .describe(
+            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+        )
+        .nullish(),
+    imageUrl: zod
+        .string()
+        .min(1)
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+        )
+        .nullish(),
+    phone: zod.string().min(1).nullish(),
+    website: zod.string().min(1).nullish(),
+    analyticsConsent: zod.boolean().optional()
+});
+
+export const patchAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const PatchAccountResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        email: zod.email(),
+        username: zod.string(),
+        role: zod.string().optional(),
+        active: zod.boolean().optional(),
+        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        pendingEmail: zod.email().optional(),
+        imageUrl: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        locale: zod
+            .string()
+            .regex(patchAccountResponseDataLocaleRegExp)
             .optional()
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'

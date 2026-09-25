@@ -72,7 +72,8 @@ beforeEach(() => {
         }),
         'DELETE /account': orvalEnvelope(),
         'DELETE /account/delete-confirm': orvalEnvelope(),
-        'PUT /account': orvalEnvelope({ ...USER, username: 'ada2' }),
+        // PATCH, not PUT (AUDIT_0924 D17d) — `updateProfile` sends only the fields it was given.
+        'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
         // PATCH, not PUT (AUDIT_0924 D17d) — this call sends `{ role }` alone.
         'PATCH /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
@@ -164,9 +165,9 @@ describe('updateProfile', () => {
                                 data: Record<string, unknown>;
                             }
                     )
-                    .find(({ method }) => method?.toUpperCase() === 'PUT')!;
+                    .find(({ method }) => method?.toUpperCase() === 'PATCH')!;
 
-                // PUT /account, never the admin write: routing self-service through
+                // PATCH /account, never the admin write: routing self-service through
                 // `/users/{id}` answers 403 for anyone who is not an admin — every visitor
                 // editing their own record.
                 expect(last.url).toBe('/account');
@@ -181,30 +182,30 @@ describe('updateProfile', () => {
 });
 
 describe('locale preference', () => {
-    it('persists the chosen language through PUT /account', () => {
+    it('persists the chosen language through PATCH /account', () => {
         const store = useProfileStore();
 
         return store
             .fetchProfile(true)
             .then(() => store.updateProfile({ locale: 'it' }))
             .then(() => {
-                const put = vi
+                const patch = vi
                     .mocked(orvalMutator)
                     .mock.calls.map(
                         (call) =>
                             call[0] as { method?: string; url: string; data?: { locale?: string } }
                     )
                     .find(
-                        (call) => call.method?.toUpperCase() === 'PUT' && call.url === '/account'
+                        (call) => call.method?.toUpperCase() === 'PATCH' && call.url === '/account'
                     );
                 // The record carries the language, so the next login can re-apply it.
-                expect(put?.data?.locale).toBe('it');
+                expect(patch?.data?.locale).toBe('it');
             });
     });
 });
 
 /**
- * The role change is the one profile edit that does NOT go to `PUT /account`, and that is the
+ * The role change is the one profile edit that does NOT go to `PATCH /account`, and that is the
  * whole point of it: the self-service payload carries no role, so a role change has to be made
  * where the API can authorise it. These pin the endpoint and the projection, because getting
  * either wrong is silent — the form would look like it worked.
@@ -231,7 +232,7 @@ describe('own role', () => {
                     )
                     .find((call) => call.method?.toUpperCase() === 'PATCH');
 
-                // `PUT /account` is deliberately roleless; `/users/{id}` is behind the admin
+                // `PATCH /account` is deliberately roleless; `/users/{id}` is behind the admin
                 // guard, so the API decides whether this visitor may promote anyone.
                 expect(patch?.url).toBe('/users/u1');
                 expect(patch?.data).toEqual({ role: 'admin' });

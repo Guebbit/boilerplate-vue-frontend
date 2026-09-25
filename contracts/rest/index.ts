@@ -1503,7 +1503,46 @@ export interface AntibotChallengeEnvelope {
     data: AntibotChallenge;
 }
 
-export interface UpdateAccountRequest {
+export interface ReplaceAccountRequest {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    locale?: Locale | null;
+    imageUrl?: ImageUrl | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
+    analyticsConsent?: boolean;
+}
+
+export interface ReplaceAccountRequestMultipart {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    locale?: Locale | null;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
+    analyticsConsent?: boolean;
+}
+
+export interface PatchAccountRequest {
     email?: Email;
     /** @minLength 3 */
     username?: string;
@@ -1522,7 +1561,7 @@ export interface UpdateAccountRequest {
     analyticsConsent?: boolean;
 }
 
-export interface UpdateAccountRequestMultipart {
+export interface PatchAccountRequestMultipart {
     email?: Email;
     /** @minLength 3 */
     username?: string;
@@ -4125,11 +4164,11 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
- * @summary Update own profile
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Replace own profile
  */
-export const updateAccount = (
-    updateAccountRequest: UpdateAccountRequest,
+export const replaceAccount = (
+    replaceAccountRequest: ReplaceAccountRequest,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     return orvalMutator<UserEnvelope>(
@@ -4137,52 +4176,48 @@ export const updateAccount = (
             url: `/account`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            data: updateAccountRequest
+            data: replaceAccountRequest
         },
         options
     );
 };
 
 /**
- * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
- * @summary Update own profile
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Replace own profile
  */
-export const updateAccountWithMultipart = (
-    updateAccountRequestMultipart: UpdateAccountRequestMultipart,
+export const replaceAccountWithMultipart = (
+    replaceAccountRequestMultipart: ReplaceAccountRequestMultipart,
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    if (updateAccountRequestMultipart.email !== undefined) {
-        formData.append(`email`, updateAccountRequestMultipart.email);
+    formData.append(`email`, replaceAccountRequestMultipart.email);
+    formData.append(`username`, replaceAccountRequestMultipart.username);
+    if (
+        replaceAccountRequestMultipart.locale !== undefined &&
+        replaceAccountRequestMultipart.locale !== null
+    ) {
+        formData.append(`locale`, replaceAccountRequestMultipart.locale);
     }
-    if (updateAccountRequestMultipart.username !== undefined) {
-        formData.append(`username`, updateAccountRequestMultipart.username);
+    if (replaceAccountRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, replaceAccountRequestMultipart.imageUpload);
     }
     if (
-        updateAccountRequestMultipart.locale !== undefined &&
-        updateAccountRequestMultipart.locale !== null
+        replaceAccountRequestMultipart.phone !== undefined &&
+        replaceAccountRequestMultipart.phone !== null
     ) {
-        formData.append(`locale`, updateAccountRequestMultipart.locale);
-    }
-    if (updateAccountRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
+        formData.append(`phone`, replaceAccountRequestMultipart.phone);
     }
     if (
-        updateAccountRequestMultipart.phone !== undefined &&
-        updateAccountRequestMultipart.phone !== null
+        replaceAccountRequestMultipart.website !== undefined &&
+        replaceAccountRequestMultipart.website !== null
     ) {
-        formData.append(`phone`, updateAccountRequestMultipart.phone);
+        formData.append(`website`, replaceAccountRequestMultipart.website);
     }
-    if (
-        updateAccountRequestMultipart.website !== undefined &&
-        updateAccountRequestMultipart.website !== null
-    ) {
-        formData.append(`website`, updateAccountRequestMultipart.website);
-    }
-    if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
+    if (replaceAccountRequestMultipart.analyticsConsent !== undefined) {
         formData.append(
             `analyticsConsent`,
-            updateAccountRequestMultipart.analyticsConsent.toString()
+            replaceAccountRequestMultipart.analyticsConsent.toString()
         );
     }
 
@@ -4190,6 +4225,79 @@ export const updateAccountWithMultipart = (
         {
             url: `/account`,
             method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Update own profile
+ */
+export const patchAccount = (
+    patchAccountRequest: PatchAccountRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: patchAccountRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * @summary Update own profile
+ */
+export const patchAccountWithMultipart = (
+    patchAccountRequestMultipart: PatchAccountRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (patchAccountRequestMultipart.email !== undefined) {
+        formData.append(`email`, patchAccountRequestMultipart.email);
+    }
+    if (patchAccountRequestMultipart.username !== undefined) {
+        formData.append(`username`, patchAccountRequestMultipart.username);
+    }
+    if (
+        patchAccountRequestMultipart.locale !== undefined &&
+        patchAccountRequestMultipart.locale !== null
+    ) {
+        formData.append(`locale`, patchAccountRequestMultipart.locale);
+    }
+    if (patchAccountRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, patchAccountRequestMultipart.imageUpload);
+    }
+    if (
+        patchAccountRequestMultipart.phone !== undefined &&
+        patchAccountRequestMultipart.phone !== null
+    ) {
+        formData.append(`phone`, patchAccountRequestMultipart.phone);
+    }
+    if (
+        patchAccountRequestMultipart.website !== undefined &&
+        patchAccountRequestMultipart.website !== null
+    ) {
+        formData.append(`website`, patchAccountRequestMultipart.website);
+    }
+    if (patchAccountRequestMultipart.analyticsConsent !== undefined) {
+        formData.append(
+            `analyticsConsent`,
+            patchAccountRequestMultipart.analyticsConsent.toString()
+        );
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PATCH',
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
         },
@@ -6409,9 +6517,13 @@ export type GetAntibotChallengeResult = NonNullable<
     Awaited<ReturnType<typeof getAntibotChallenge>>
 >;
 export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
-export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
-export type UpdateAccountWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateAccountWithMultipart>>
+export type ReplaceAccountResult = NonNullable<Awaited<ReturnType<typeof replaceAccount>>>;
+export type ReplaceAccountWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof replaceAccountWithMultipart>>
+>;
+export type PatchAccountResult = NonNullable<Awaited<ReturnType<typeof patchAccount>>>;
+export type PatchAccountWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof patchAccountWithMultipart>>
 >;
 export type RequestAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountDelete>>

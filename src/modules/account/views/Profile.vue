@@ -84,7 +84,7 @@ interface ProfileForm {
     username?: string;
     /**
      * Preferred language, a tag from {@link supportedLanguages}. Part of the record rather than a
-     * UI-only field: `PUT /account` accepts it, and `Login.vue` reads it back to open the next
+     * UI-only field: `PATCH /account` accepts it, and `Login.vue` reads it back to open the next
      * session in the language this visitor asked for.
      */
     locale?: string;
@@ -179,7 +179,7 @@ const applyLanguagePreference = (saved?: string | null) =>
         : Promise.resolve();
 
 /**
- * This save's own blocked state — a failed `PUT /account` lands here instead of a toast, next to
+ * This save's own blocked state — a failed `PATCH /account` lands here instead of a toast, next to
  * the button the visitor just pressed.
  */
 const {

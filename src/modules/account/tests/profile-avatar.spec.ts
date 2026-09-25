@@ -78,7 +78,8 @@ beforeEach(() => {
             version: 36,
             subjects: ['Order', 'Product']
         }),
-        'PUT /account': orvalEnvelope({ ...USER, imageUrl: undefined })
+        // PATCH, not PUT (AUDIT_0924 D17d) — `updateProfile` sends only the fields it was given.
+        'PATCH /account': orvalEnvelope({ ...USER, imageUrl: undefined })
     };
 });
 
@@ -91,11 +92,11 @@ describe('an imageUpload switches the call to multipart', () => {
             .fetchProfile(true)
             .then(() => store.updateProfile({ imageUpload: file }))
             .then(() => {
-                const put = calls().find(({ method }) => method?.toUpperCase() === 'PUT')!;
-                expect(put.headers?.['Content-Type']).toBe('multipart/form-data');
-                expect(put.data).toBeInstanceOf(FormData);
-                expect((put.data as FormData).get('imageUpload')).toBe(file);
-                expect((put.data as FormData).has('imageUrl')).toBe(false);
+                const patch = calls().find(({ method }) => method?.toUpperCase() === 'PATCH')!;
+                expect(patch.headers?.['Content-Type']).toBe('multipart/form-data');
+                expect(patch.data).toBeInstanceOf(FormData);
+                expect((patch.data as FormData).get('imageUpload')).toBe(file);
+                expect((patch.data as FormData).has('imageUrl')).toBe(false);
             });
     });
 
@@ -139,9 +140,9 @@ describe('removing the picture', () => {
             .fetchProfile(true)
             .then(() => store.updateProfile({ imageUrl: '' }))
             .then(() => {
-                const put = calls().find(({ method }) => method?.toUpperCase() === 'PUT')!;
-                expect(put.headers?.['Content-Type']).not.toBe('multipart/form-data');
-                expect(put.data).toMatchObject({ imageUrl: '' });
+                const patch = calls().find(({ method }) => method?.toUpperCase() === 'PATCH')!;
+                expect(patch.headers?.['Content-Type']).not.toBe('multipart/form-data');
+                expect(patch.data).toMatchObject({ imageUrl: '' });
             });
     });
 });
