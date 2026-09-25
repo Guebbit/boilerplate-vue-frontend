@@ -57,6 +57,25 @@ describe('ShippingSelector', () => {
         });
     });
 
+    /**
+     * B8: the order page's `ShipmentPanel` calls `fetchMethods()` UNWEIGHTED, populating the
+     * shared delivery store's `methods` before the cart ever mounts this component. A guard that
+     * skips the fetch whenever the list is already non-empty would leave the cart showing that
+     * stale, unfiltered list instead of one scoped to its own basket weight.
+     */
+    it('fetches on mount even when the shared methods list is already populated', () => {
+        const store = useDeliveryStore();
+        store.methods = [{ id: 'standard', price: 500, tracked: false }];
+        vi.spyOn(store, 'fetchMethods').mockResolvedValue([]);
+
+        mount(ShippingSelector, {
+            props: { itemsTotal: 20, weight: 1500 },
+            global: { plugins: [vuetify, i18n] }
+        });
+
+        expect(store.fetchMethods).toHaveBeenCalledWith(1500);
+    });
+
     it('does not re-fetch when the weight prop stays the same', () => {
         const { store, wrapper } = mountSelector(20, 1500);
         expect(store.fetchMethods).toHaveBeenCalledTimes(1);
