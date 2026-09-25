@@ -236,7 +236,9 @@ describe('useOrdersStore', () => {
                 id: 'o1',
                 userId: 'u1',
                 productId: 'p1',
-                email: 'ada@example.com'
+                email: 'ada@example.com',
+                status: 'pending',
+                paymentMethod: 'bank_transfer'
             };
 
             return store
@@ -249,7 +251,11 @@ describe('useOrdersStore', () => {
                             id: ['o1'],
                             userId: 'u1',
                             productId: 'p1',
-                            email: 'ada@example.com'
+                            email: 'ada@example.com',
+                            // The "awaiting transfer" checkbox and the status select both write
+                            // these two fields — regressed to being dropped here once before.
+                            status: 'pending',
+                            paymentMethod: 'bank_transfer'
                         })
                     );
                 });

@@ -105,6 +105,8 @@ export const useOrdersStore = defineStore('orders', () => {
                     userId: filters.userId,
                     productId: filters.productId,
                     email: filters.email,
+                    status: filters.status,
+                    paymentMethod: filters.paymentMethod,
                     deleted: filters.deleted
                 }).then((response) => {
                     captureTotal(response.data.meta.totalPages);

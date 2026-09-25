@@ -12,7 +12,7 @@ export default {
  * delegated to the store so the template only formats and displays it.
  */
 
-import { onMounted, watch, useId } from 'vue';
+import { watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -61,20 +61,22 @@ const deliveryStore = useDeliveryStore();
  */
 const { methods } = storeToRefs(deliveryStore);
 
-onMounted(() => {
-    if (methods.value.length === 0) void deliveryStore.fetchMethods(weight);
-});
-
 /*
- * Re-fetches once the caller resolves a weight it did not have yet — the cart's own product
- * lookups (`resolveTitles`) settle after this component's first mount, not before it, so the
- * initial fetch above routinely runs with `weight` still `undefined`.
+ * Fetches on mount, and again whenever the caller resolves — or changes — a weight: the cart's
+ * own product lookups (`resolveTitles`) settle after this component's first mount, not before
+ * it, so the initial fetch routinely runs with `weight` still `undefined`.
+ *
+ * Always runs, never guarded by "the list already has something": the delivery store's
+ * `methods` is shared app-wide, and another page can have populated it UNWEIGHTED already
+ * (the order page's `ShipmentPanel` calls `fetchMethods()` with no weight at all) — a guard
+ * would then skip the weighted reload this component actually needs.
  */
 watch(
     () => weight,
-    (current, previous) => {
-        if (current !== previous) void deliveryStore.fetchMethods(current);
-    }
+    (current) => {
+        void deliveryStore.fetchMethods(current);
+    },
+    { immediate: true }
 );
 </script>
 
