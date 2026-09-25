@@ -17,7 +17,6 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 export const usersResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/users$/, schema: schemas.ListUsersResponse },
     { method: 'POST', pattern: /^\/users$/, schema: schemas.CreateUserResponse },
-    { method: 'PUT', pattern: /^\/users$/, schema: schemas.UpdateUserResponse },
     { method: 'DELETE', pattern: /^\/users$/, schema: schemas.DeleteUserResponse },
     { method: 'POST', pattern: /^\/users\/search$/, schema: schemas.SearchUsersResponse },
     { method: 'GET', pattern: /^\/users\/[^/]+$/, schema: schemas.GetUserByIdResponse },

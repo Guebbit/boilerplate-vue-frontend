@@ -17,7 +17,6 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 export const ordersResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/orders$/, schema: schemas.ListOrdersResponse },
     { method: 'POST', pattern: /^\/orders$/, schema: schemas.CreateOrderResponse },
-    { method: 'PUT', pattern: /^\/orders$/, schema: schemas.UpdateOrderResponse },
     { method: 'DELETE', pattern: /^\/orders$/, schema: schemas.DeleteOrderResponse },
     { method: 'POST', pattern: /^\/orders\/search$/, schema: schemas.SearchOrdersResponse },
     {

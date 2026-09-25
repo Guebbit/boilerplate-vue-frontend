@@ -1917,33 +1917,6 @@ export interface UsersResponseEnvelope {
     data: UsersResponse;
 }
 
-export interface UpdateUserRequest {
-    id: Id;
-    email?: Email;
-    username?: string;
-    password?: PasswordNew;
-    role?: string;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-}
-
-export interface UpdateUserRequestMultipart {
-    id: Id;
-    email?: Email;
-    username?: string;
-    password?: PasswordNew;
-    role?: string;
-    active?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-}
-
 export interface CreateUserRequest {
     email: Email;
     username: string;
@@ -2404,38 +2377,6 @@ export interface OrdersResponseEnvelope {
 }
 
 /**
- * Updated order status
- */
-export type UpdateOrderRequestStatus =
-    (typeof UpdateOrderRequestStatus)[keyof typeof UpdateOrderRequestStatus];
-
-export const UpdateOrderRequestStatus = {
-    pending: 'pending',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    cancelled: 'cancelled'
-} as const;
-
-export interface UpdateOrderRequest {
-    id: Id;
-    /** Updated order status */
-    status?: UpdateOrderRequestStatus;
-    userId?: Id;
-    email?: Email;
-    /** @minItems 1 */
-    items?: CartItem[];
-}
-
-export interface OrderEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
-}
-
-/**
  * Create a new order.
  */
 export interface CreateOrderRequest {
@@ -2443,6 +2384,13 @@ export interface CreateOrderRequest {
     email: Email;
     /** @minItems 1 */
     items: CartItem[];
+}
+
+export interface OrderEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
 }
 
 export interface DeleteOrderRequest {
@@ -4799,74 +4747,6 @@ export const createUserWithMultipart = (
 };
 
 /**
- * Updates an existing user's email or password. Optional image can be uploaded.
- * @summary Edit user
- */
-export const updateUser = (
-    updateUserRequest: UpdateUserRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
-) => {
-    return orvalMutator<UserEnvelope>(
-        {
-            url: `/users`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateUserRequest
-        },
-        options
-    );
-};
-
-/**
- * Updates an existing user's email or password. Optional image can be uploaded.
- * @summary Edit user
- */
-export const updateUserWithMultipart = (
-    updateUserRequestMultipart: UpdateUserRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
-) => {
-    const formData = new FormData();
-    formData.append(`id`, updateUserRequestMultipart.id);
-    if (updateUserRequestMultipart.email !== undefined) {
-        formData.append(`email`, updateUserRequestMultipart.email);
-    }
-    if (updateUserRequestMultipart.username !== undefined) {
-        formData.append(`username`, updateUserRequestMultipart.username);
-    }
-    if (updateUserRequestMultipart.password !== undefined) {
-        formData.append(`password`, updateUserRequestMultipart.password);
-    }
-    if (updateUserRequestMultipart.role !== undefined) {
-        formData.append(`role`, updateUserRequestMultipart.role);
-    }
-    if (updateUserRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateUserRequestMultipart.active.toString());
-    }
-    if (updateUserRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
-    }
-    if (updateUserRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, updateUserRequestMultipart.locale);
-    }
-    if (updateUserRequestMultipart.phone !== undefined) {
-        formData.append(`phone`, updateUserRequestMultipart.phone);
-    }
-    if (updateUserRequestMultipart.website !== undefined) {
-        formData.append(`website`, updateUserRequestMultipart.website);
-    }
-
-    return orvalMutator<UserEnvelope>(
-        {
-            url: `/users`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
-
-/**
  * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
  * @summary Delete user
  */
@@ -5662,25 +5542,6 @@ export const createOrder = (
 };
 
 /**
- * Updates an existing order identified by id in the request body.
- * @summary Update order
- */
-export const updateOrder = (
-    updateOrderRequest: UpdateOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
-) => {
-    return orvalMutator<OrderEnvelope>(
-        {
-            url: `/orders`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateOrderRequest
-        },
-        options
-    );
-};
-
-/**
  * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
@@ -6432,10 +6293,6 @@ export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>
 export type CreateUserWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof createUserWithMultipart>>
 >;
-export type UpdateUserResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>;
-export type UpdateUserWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateUserWithMultipart>>
->;
 export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
 export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
@@ -6502,7 +6359,6 @@ export type MoveWishlistItemToCartResult = NonNullable<
 >;
 export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
 export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
-export type UpdateOrderResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>;
 export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>;
 export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
