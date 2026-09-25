@@ -48,7 +48,8 @@
         "password-number-required": "Password must contain at least one number",
         "password-special-required": "Password must contain at least one special character",
         "password-confirm-required": "Type password again",
-        "password-dont-match": "Passwords do not match"
+        "password-dont-match": "Passwords do not match",
+        "password-breached-warning": "This password has appeared in known data breaches. Consider choosing a different one."
     },
     "user-target-page": {
         "page-title": "User page",

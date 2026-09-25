@@ -9,9 +9,10 @@ export default {
  * @module
  * Public confirm page for a password reset: the emailed one-time token is the credential, and
  * the zod schema chains a `.refine` to check the two password fields match before the store is
- * called.
+ * called. The breach check (`usePasswordBreachCheck`) is advisory only — it never blocks this
+ * submit, and works unauthenticated same as this page itself.
  */
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -19,6 +20,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { usersPasswordSchema } from '@/modules/users';
+import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -104,6 +106,17 @@ const {
 );
 
 /**
+ * Advisory breach check for the new password field — never a submit gate, see `@module`.
+ */
+const { breached: passwordBreached, check: checkPasswordBreach } = usePasswordBreachCheck();
+
+// Debounced inside the composable — this fires on every keystroke, the check itself does not.
+watch(
+    () => form.value.password,
+    (password) => checkPasswordBreach(password ?? '')
+);
+
+/**
  * This submit's own blocked state — a spent or unknown token names no field, so it lands here
  * instead of a toast, next to the button the visitor just pressed.
  */
@@ -161,6 +174,18 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.password : []"
                     class="mb-2"
                 />
+                <!-- Advisory only, never a submit gate — the four password-SET paths remain the
+                     actual authority, checked again server-side regardless of this warning. -->
+                <v-alert
+                    v-if="passwordBreached"
+                    type="warning"
+                    density="compact"
+                    variant="tonal"
+                    class="mb-2"
+                    data-test="password-breach-warning"
+                >
+                    {{ t('users-form.password-breached-warning') }}
+                </v-alert>
                 <v-text-field
                     v-model="form.passwordConfirm"
                     type="password"

@@ -12,14 +12,16 @@ export default {
  * with three forms visible at once.
  *
  * A rejected submit (e.g. a wrong current password) blocks the form in place
- * (`useBlockingError`) instead of toasting — see docs/theory/request-flow.md.
+ * (`useBlockingError`) instead of toasting — see docs/theory/request-flow.md. The breach check
+ * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
-import { ref, useId } from 'vue';
+import { ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersPasswordSchema } from '@/modules/users';
+import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -98,6 +100,17 @@ const {
 );
 
 /**
+ * Advisory breach check for the NEW password field — never a submit gate, see `@module`.
+ */
+const { breached: passwordBreached, check: checkPasswordBreach } = usePasswordBreachCheck();
+
+// Debounced inside the composable — this fires on every keystroke, the check itself does not.
+watch(
+    () => passwordForm.value.password,
+    (password) => checkPasswordBreach(password)
+);
+
+/**
  * This form's own blocked state — a wrong current password or any other failure stays on the
  * form instead of joining the toast queue.
  */
@@ -172,6 +185,18 @@ const submitPasswordChange = () =>
                 :error-messages="showPasswordErrors ? (passwordErrors.password ?? []) : []"
                 class="mb-2"
             />
+            <!-- Advisory only, never a submit gate — the four password-SET paths remain the
+                 actual authority, checked again server-side regardless of this warning. -->
+            <v-alert
+                v-if="passwordBreached"
+                type="warning"
+                density="compact"
+                variant="tonal"
+                class="mb-2"
+                data-test="password-breach-warning"
+            >
+                {{ t('users-form.password-breached-warning') }}
+            </v-alert>
             <v-text-field
                 v-model="passwordForm.passwordConfirm"
                 type="password"
