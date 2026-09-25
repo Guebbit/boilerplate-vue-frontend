@@ -174,6 +174,7 @@ const handleDelete = (requestId: string, subject: string) => {
                     <v-text-field
                         v-model="filters.text"
                         :label="t('feedback-inbox-page.filter-text')"
+                        maxlength="200"
                         hide-details
                     />
                     <v-text-field

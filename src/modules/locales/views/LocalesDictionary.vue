@@ -363,6 +363,7 @@ onMounted(() => {
                     <v-text-field
                         v-model="filterText"
                         :label="t('locales-dictionary-page.filter-text')"
+                        maxlength="200"
                         hide-details
                         class="min-w-64"
                         data-test="dictionary-filter-text"

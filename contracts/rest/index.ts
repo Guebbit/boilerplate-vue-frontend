@@ -41,6 +41,7 @@ export type Id = string;
 /**
  * Free-text search string
  * @minLength 1
+ * @maxLength 200
  */
 export type Text = string;
 
@@ -3195,6 +3196,7 @@ export type ListLocaleEntriesParams = {
     /**
      * Free-text search string
      * @minLength 1
+     * @maxLength 200
      */
     text?: TextParamParameter;
     /**
@@ -3323,6 +3325,7 @@ export type ListUsersParams = {
     /**
      * Free-text search string
      * @minLength 1
+     * @maxLength 200
      */
     text?: TextParamParameter;
     /**
@@ -3369,6 +3372,7 @@ export type ListFeedbackRequestsParams = {
     /**
      * Free-text search string
      * @minLength 1
+     * @maxLength 200
      */
     text?: TextParamParameter;
     email?: Email;
@@ -3391,6 +3395,7 @@ export type ListProductsParams = {
     /**
      * Free-text search string
      * @minLength 1
+     * @maxLength 200
      */
     text?: TextParamParameter;
     /**

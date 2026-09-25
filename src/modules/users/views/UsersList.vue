@@ -207,6 +207,7 @@ const handleHardDelete = (userId: string) =>
                     <v-text-field
                         v-model="filters.text"
                         :label="t('users-list-page.filter-text')"
+                        maxlength="200"
                         hide-details
                     />
                     <v-text-field

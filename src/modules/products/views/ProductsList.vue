@@ -281,6 +281,7 @@ const handleHardDelete = (productId: string) =>
                         v-model="filters.text"
                         :label="t('products-list-page.filter-text')"
                         data-test="filter-text"
+                        maxlength="200"
                         hide-details
                     />
                     <v-text-field
