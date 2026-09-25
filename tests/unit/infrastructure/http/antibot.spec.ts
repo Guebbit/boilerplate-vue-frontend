@@ -1,12 +1,24 @@
 /**
  * @module
- * Unit tests for the two pure antibot helpers: `withAntibotToken` (the header merge every gated
- * form's submit goes through) and `isAntibotVerificationFailed` (the retry signal login/payment
- * read off a 401). `fetchAntibotConfig`/`fetchAntibotChallenge` are thin `@api` re-exports with no
- * logic of their own — exercised through `tests/unit/ui/human-check.spec.ts` instead.
+ * Unit tests for the antibot helpers: `withAntibotToken` (the header merge every gated form's
+ * submit goes through), `isAntibotVerificationFailed` (the retry signal login/payment read off a
+ * 401), and the two thin `@api` re-exports — `human-check.spec.ts` mocks both of those away
+ * entirely to test `HumanCheck.vue`'s own branching, so this file is the only place proving they
+ * actually delegate to the right generated call.
  */
-import { describe, expect, it } from 'vitest';
-import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
+import { describe, expect, it, vi } from 'vitest';
+import {
+    withAntibotToken,
+    isAntibotVerificationFailed,
+    fetchAntibotConfig,
+    fetchAntibotChallenge
+} from '@/infrastructure/http/antibot.ts';
+import { getAntibotConfig, getAntibotChallenge } from '@api';
+
+vi.mock('@api', () => ({
+    getAntibotConfig: vi.fn(),
+    getAntibotChallenge: vi.fn()
+}));
 
 /** A stand-in for a real per-call option, e.g. the one `signupWithMultipart` attaches. */
 const onUploadProgress = () => {};
@@ -56,5 +68,19 @@ describe('isAntibotVerificationFailed', () => {
     it('is false for a value with no structured error at all', () => {
         expect(isAntibotVerificationFailed(undefined)).toBe(false);
         expect(isAntibotVerificationFailed(new Error('network down'))).toBe(false);
+    });
+});
+
+describe('fetchAntibotConfig', () => {
+    it('delegates to GET /antibot/config', () => {
+        vi.mocked(getAntibotConfig).mockResolvedValue('config-response' as never);
+        return expect(fetchAntibotConfig()).resolves.toBe('config-response');
+    });
+});
+
+describe('fetchAntibotChallenge', () => {
+    it('delegates to GET /antibot/challenge', () => {
+        vi.mocked(getAntibotChallenge).mockResolvedValue('challenge-response' as never);
+        return expect(fetchAntibotChallenge()).resolves.toBe('challenge-response');
     });
 });
