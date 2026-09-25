@@ -20,6 +20,8 @@
         "filter-user-id": "User ID",
         "filter-product-id": "Product ID",
         "filter-email": "Email",
+        "filter-status": "Status",
+        "filter-status-any": "All",
         "filter-awaiting-transfer": "Awaiting bank transfer",
         "table-caption": "Orders",
         "button-view-named": "View order {id}",

@@ -134,6 +134,17 @@ const STATUS_COLORS = {
 const statusColor = (status?: OrderStatus) => (status ? STATUS_COLORS[status] : 'secondary');
 
 /**
+ * The status select's options: every `OrderStatus`, plus "any", re-translated on locale change.
+ */
+const statusOptions = computed(() => [
+    { value: undefined, label: t('orders-list-page.filter-status-any') },
+    ...Object.values(OrderStatus).map((status) => ({
+        value: status,
+        label: t(`orders-form.status-${status}`)
+    }))
+]);
+
+/**
  * The "awaiting transfer" filter: a `pending` order placed with `bank_transfer`, the two fields
  * an operator needs to find money still owed on a checkout choice rather than a card decline.
  * Modelled as one toggle over two filter fields, since neither is useful alone in this view.
@@ -260,6 +271,15 @@ const handleHardDelete = (orderId: string) =>
                     <v-text-field
                         v-model="filters.email"
                         :label="t('orders-list-page.filter-email')"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="filters.status"
+                        :label="t('orders-list-page.filter-status')"
+                        :items="statusOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-status"
                         hide-details
                     />
                     <v-select

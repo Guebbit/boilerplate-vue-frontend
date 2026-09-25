@@ -20,6 +20,8 @@
         "filter-user-id": "ID utente",
         "filter-product-id": "ID prodotto",
         "filter-email": "Email",
+        "filter-status": "Stato",
+        "filter-status-any": "Tutti",
         "filter-awaiting-transfer": "In attesa di bonifico",
         "table-caption": "Ordini",
         "button-view-named": "Visualizza ordine {id}",
