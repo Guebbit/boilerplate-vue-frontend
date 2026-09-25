@@ -22,7 +22,11 @@ import {
     useUploadProgress as useToolkitUploadProgress
 } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
-import { productsSchema } from '@/modules/products/schemas.ts';
+import {
+    productsSchema,
+    productsOnHandMin,
+    productsOnHandDefault
+} from '@/modules/products/schemas.ts';
 import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
 import {
     translationTabErrorCountsFromZodError,
@@ -77,7 +81,13 @@ void fetchActiveLocales();
 interface ProductCreateForm {
     price?: number;
     active?: boolean;
+    requiresShipping?: boolean;
     weight?: number;
+    // Create-only (FE_PARITY_0924 P3): the opening stock count. An edit never carries this field —
+    // every later change to stock goes through `/inventory`'s signed transitions instead.
+    onHand?: number;
+    categories?: string[];
+    tags?: string[];
     translations: ProductTranslationsWrite;
     imageUpload?: File;
 }
@@ -105,7 +115,13 @@ const {
     handleSubmit,
     applyServerErrors
 } = useStructureFormValidation<ProductCreateForm>(
-    { price: 0, active: true, translations: {} },
+    {
+        price: 0,
+        active: true,
+        requiresShipping: true,
+        onHand: productsOnHandDefault,
+        translations: {}
+    },
     createSchema,
     {
         // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
@@ -239,7 +255,11 @@ const submitForm = () => {
                 {
                     price: form.value.price!,
                     active: form.value.active,
+                    requiresShipping: form.value.requiresShipping,
                     weight: form.value.weight,
+                    onHand: form.value.onHand,
+                    categories: form.value.categories,
+                    tags: form.value.tags,
                     translations: form.value.translations,
                     imageUpload: form.value.imageUpload
                 },
@@ -355,6 +375,38 @@ const submitForm = () => {
                 data-test="product-weight-field"
                 class="mb-2"
             />
+            <!--
+                Create-only opening stock (FE_PARITY_0924 P3) — an edit never shows this field, since
+                every later stock change goes through /inventory's signed transitions instead.
+            -->
+            <v-number-input
+                v-model="form.onHand"
+                :label="t('product-create-page.label-on-hand')"
+                :min="productsOnHandMin"
+                :step="1"
+                :precision="0"
+                control-variant="stacked"
+                data-test="product-on-hand-field"
+                class="mb-2"
+            />
+            <v-combobox
+                v-model="form.categories"
+                multiple
+                chips
+                closable-chips
+                :label="t('product-create-page.label-categories')"
+                data-test="product-categories-field"
+                class="mb-2"
+            />
+            <v-combobox
+                v-model="form.tags"
+                multiple
+                chips
+                closable-chips
+                :label="t('product-create-page.label-tags')"
+                data-test="product-tags-field"
+                class="mb-2"
+            />
             <FormImageUpload
                 v-model="form.imageUpload"
                 :error-messages="showErrors ? formErrors.imageUpload : []"
@@ -363,6 +415,11 @@ const submitForm = () => {
                 class="mt-2"
             />
             <v-switch v-model="form.active" :label="t('product-create-page.label-active')" />
+            <v-switch
+                v-model="form.requiresShipping"
+                :label="t('product-create-page.label-requires-shipping')"
+                data-test="product-requires-shipping-field"
+            />
 
             <InlineErrorAlert :message="submitError" test-id="product-create-submit-error" />
         </FormCard>
