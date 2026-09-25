@@ -33,22 +33,17 @@ const { addMessage } = useNotificationsStore();
 const activeTab = ref<AdminTabKey>('overview');
 
 /**
- * Shared observability state and fetchers, handed down to both tabs.
+ * Shared observability state and fetchers, handed down to the overview tab — the audit tab reads
+ * and fetches for itself, see {@link AdminAuditTab}.
  */
 const {
     health,
     metrics,
-    auditEvents,
-    auditTotal,
-    auditPages,
     loadingHealth,
     loadingMetrics,
-    loadingAudit,
     errorHealth,
     errorMetrics,
-    errorAudit,
     fetchAll,
-    fetchAuditLogs,
     clearingExpiredTokens,
     clearExpiredTokens
 } = useAdminObservability();
@@ -117,14 +112,7 @@ const confirmClearExpiredTokens = () =>
                 />
             </v-tabs-window-item>
             <v-tabs-window-item value="audit">
-                <AdminAuditTab
-                    :audit-events="auditEvents"
-                    :total="auditTotal"
-                    :pages="auditPages"
-                    :loading="loadingAudit"
-                    :error="errorAudit"
-                    @search="fetchAuditLogs"
-                />
+                <AdminAuditTab endpoint="platform" />
             </v-tabs-window-item>
         </v-tabs-window>
     </LayoutDefault>

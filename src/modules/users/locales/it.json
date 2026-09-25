@@ -70,7 +70,8 @@
         "confirm-disable-two-factor": "Rimuovere ogni secondo fattore e codice di backup da questo account, senza prova da parte del titolare? Ogni chiamata viene registrata.",
         "success-disable-two-factor": "Autenticazione a due fattori rimossa da questo account.",
         "button-manage-access": "Gestisci accesso",
-        "success-access-update": "Accesso utente aggiornato"
+        "success-access-update": "Accesso utente aggiornato",
+        "button-history": "Cronologia"
     },
     "user-create-page": {
         "page-title": "Crea utente",

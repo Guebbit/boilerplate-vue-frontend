@@ -14,6 +14,8 @@
         "column-status": "Status",
         "column-last-used-at": "Last used",
         "column-created-at": "Created at",
+        "column-expires-at": "Expires at",
+        "column-revoked-at": "Revoked at",
         "column-actions": "Actions",
         "table-caption": "API keys",
         "status-active": "Active",

@@ -65,7 +65,12 @@
         "kpi-status-loading": "Stato: caricamento",
         "kpi-status-unknown": "Stato: sconosciuto"
     },
+    "audit-log-page": {
+        "page-title": "Registro di audit",
+        "page-title-target": "Cronologia di {target}"
+    },
     "navigation": {
-        "label-admin": "Admin"
+        "label-admin": "Admin",
+        "label-audit-log": "Registro di audit"
     }
 }

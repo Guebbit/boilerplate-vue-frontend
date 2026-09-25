@@ -17,6 +17,9 @@ sweepA11y(
     'admin',
     [
         ['admin dashboard', '/en/admin'],
+        // The shop's own audit trail — a different route and a different rule (`audit.any.read`)
+        // from the dashboard's platform-only tab above, see `AuditLog.vue`.
+        ['audit log', '/en/audit'],
         {
             // The audit tab's table, stacked into cards below `sm` — the layout the desktop
             // sweep never sees, and a tab the default sweep never opens.

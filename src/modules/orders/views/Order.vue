@@ -21,6 +21,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Download, Eye, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -65,6 +66,12 @@ const { id } = defineProps<{
  * Store API and reactive order references.
  */
 const { watchOrder, fetchOrder, fetchInvoice, cancelOrder } = useOrdersStore();
+
+/**
+ * The session, for the `meta.can` rule that gates the "History" link — a reader who cannot read
+ * the audit trail should not see a link that 403s.
+ */
+const session = useSessionStore();
 
 /**
  * The order being displayed, and whether it is in flight.
@@ -542,6 +549,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 </span>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'OrdersList' })">
                     {{ t('order-target-page.button-go-to-list') }}
+                </v-btn>
+                <v-btn
+                    v-if="currentOrder && session.can('read', 'AuditLog')"
+                    variant="tonal"
+                    data-test="order-history"
+                    :to="routerLinkI18n({ name: 'AuditLog', query: { target: currentOrder.id } })"
+                >
+                    {{ t('order-target-page.button-history') }}
                 </v-btn>
             </template>
         </ItemDetailLayout>

@@ -71,7 +71,8 @@
         "label-vat-net": "Net",
         "label-vat-tax": "VAT",
         "label-net-total": "Net total",
-        "label-tax-total": "VAT total"
+        "label-tax-total": "VAT total",
+        "button-history": "History"
     },
     "order-edit-page": {
         "page-title": "Edit order",

@@ -1,12 +1,13 @@
 /**
  * @module
- * Route table for the admin domain — one entry, gated by `meta.access`, lazy-loaded so the
- * dashboard bundle only loads when an admin actually navigates there.
+ * Route table for the admin domain, each entry gated by `meta.access`/`meta.can` and lazy-loaded
+ * so a bundle only loads once a visitor with the rule for it actually navigates there.
  */
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Admin routes: the single observability dashboard, access-gated to the `admin` role.
+ * Admin routes: the platform-`operator`-only observability dashboard, and the shop's own audit
+ * trail — held by a genuinely different, tenant-scoped rule, see `AuditLog.vue`.
  */
 export default [
     {
@@ -18,5 +19,15 @@ export default [
             title: 'admin-page.page-title'
         },
         component: () => import('@/modules/admin/views/Admin.vue')
+    },
+    {
+        path: 'audit',
+        name: 'AuditLog',
+        meta: {
+            access: 'auth',
+            can: ['read', 'AuditLog'],
+            title: 'audit-log-page.page-title'
+        },
+        component: () => import('@/modules/admin/views/AuditLog.vue')
     }
 ] satisfies RouteRecordRaw[];

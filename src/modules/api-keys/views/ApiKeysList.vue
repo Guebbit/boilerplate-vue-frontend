@@ -21,7 +21,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useApiKeysStore } from '@/modules/api-keys/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
+import { formatDate, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { ApiKey } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -87,6 +87,8 @@ const tableHeaders = computed<CoreDataTableHeader<ApiKey>[]>(() => [
     { title: t('api-keys-list-page.column-status'), key: 'status', synthetic: true },
     { title: t('api-keys-list-page.column-last-used-at'), key: 'lastUsedAt' },
     { title: t('api-keys-list-page.column-created-at'), key: 'createdAt' },
+    { title: t('api-keys-list-page.column-expires-at'), key: 'expiresAt' },
+    { title: t('api-keys-list-page.column-revoked-at'), key: 'revokedAt' },
     // Reads no field on the row: the cell is the `item.actions` slot below.
     { title: t('api-keys-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
@@ -226,6 +228,14 @@ const handleRevoke = (apiKey: ApiKey) =>
 
             <template v-slot:[`item.createdAt`]="{ item }">
                 {{ formatDate(item.createdAt) }}
+            </template>
+
+            <template v-slot:[`item.expiresAt`]="{ item }">
+                {{ item.expiresAt ? formatDateTime(item.expiresAt) : EMPTY_VALUE }}
+            </template>
+
+            <template v-slot:[`item.revokedAt`]="{ item }">
+                {{ item.revokedAt ? formatDateTime(item.revokedAt) : EMPTY_VALUE }}
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">

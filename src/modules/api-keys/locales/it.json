@@ -14,6 +14,8 @@
         "column-status": "Stato",
         "column-last-used-at": "Ultimo utilizzo",
         "column-created-at": "Creata il",
+        "column-expires-at": "Scade il",
+        "column-revoked-at": "Revocata il",
         "column-actions": "Azioni",
         "table-caption": "Chiavi API",
         "status-active": "Attiva",

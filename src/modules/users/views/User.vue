@@ -20,6 +20,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -50,6 +51,12 @@ const { id } = defineProps<{
  * User store API and state references.
  */
 const { watchUser } = useUsersStore();
+
+/**
+ * The session, for the `meta.can` rule that gates the "History" link — a reader who cannot read
+ * the audit trail should not see a link that 403s.
+ */
+const session = useSessionStore();
 
 /**
  * The user being displayed.
@@ -287,6 +294,14 @@ const handleDisableTwoFactor = () => {
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
                     {{ t('user-target-page.button-go-to-list') }}
+                </v-btn>
+                <v-btn
+                    v-if="currentUser && session.can('read', 'AuditLog')"
+                    variant="tonal"
+                    data-test="user-history"
+                    :to="routerLinkI18n({ name: 'AuditLog', query: { target: currentUser.id } })"
+                >
+                    {{ t('user-target-page.button-history') }}
                 </v-btn>
                 <div v-if="currentUser" class="flex flex-col gap-2">
                     <v-btn

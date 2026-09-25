@@ -4,14 +4,17 @@
  * `AppModule`: routes, nav entry, response-schema validation and locale loaders, assembled from
  * this module's own files and wired into the kernel's registry.
  */
-import { LayoutDashboard } from 'lucide-vue-next';
+import { LayoutDashboard, ScrollText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { adminResponseSchemas } from './response-schemas';
 
 /**
- * The admin observability console: service health, KPIs and the audit log.
+ * The admin observability console (service health, KPIs, the platform's own audit log) plus the
+ * shop's own audit trail — two different nav entries because they are two different rules: the
+ * console is platform-`operator`-only, the trail is `audit.any.read`
+ * (`manager`/`support`/`moderator`/`admin`), so `canAccess` shows each to a different audience.
  *
  * An ops console over endpoints the server already exposes, interchangeable with any
  * off-the-shelf dashboard.
@@ -31,6 +34,14 @@ export default {
             order: 40,
             section: 'admin',
             icon: LayoutDashboard
+        },
+        {
+            name: 'AuditLog',
+            label: 'navigation.label-audit-log',
+            plural: 1,
+            order: 41,
+            section: 'admin',
+            icon: ScrollText
         }
     ],
     responseSchemas: adminResponseSchemas,

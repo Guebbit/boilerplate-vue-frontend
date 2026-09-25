@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
  * @module
- * Audit-log tab of the admin dashboard. Owns the filter form's local state and turns it into
- * the parent's `search` emit; the table and pager render declaratively off the props the parent
- * feeds back in, so this component never fetches anything itself.
+ * Audit-log tab: filter form, table and pager over one audit trail. Self-fetching — `endpoint`
+ * (plus an optional fixed `target`) picks which of the two contract-backed reads
+ * {@link useAuditTrail} drives, so this one component covers the platform dashboard's audit tab,
+ * a record's own history and the shop-wide audit page without duplicating the fetch/pagination
+ * wiring three times.
  */
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -11,7 +13,11 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { Search } from 'lucide-vue-next';
-import type { AuditEventItem } from '@types';
+import {
+    useAuditTrail,
+    type AuditEndpoint,
+    type AuditTrailItem
+} from '@/modules/admin/composables/use-audit-trail.ts';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
@@ -21,26 +27,23 @@ import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.t
 const { t } = useI18n();
 
 /**
- * Audit events, pagination totals and the parent's load/error state.
+ * Which trail to read, and an optional fixed scope.
  */
 const props = defineProps<{
-    auditEvents: AuditEventItem[];
-    total: number;
-    pages: number;
-    loading: boolean;
-    error?: string;
+    endpoint: AuditEndpoint;
+    /** Fixed `target` filter (e.g. one record's id), merged into every request. See
+     * {@link useAuditTrail}. */
+    target?: string;
 }>();
 
 /**
- * Events this tab raises toward the parent view.
+ * Rows, pagination totals and load/error state for {@link props.endpoint} — fetched by this
+ * component itself rather than handed down, which is what lets every caller reuse it as-is.
  */
-const emit = defineEmits<{
-    /**
-     * The visitor asked for a filtered page. The parent owns the fetching — and owns the
-     * rejection with it, which a callback prop invoked here could only swallow.
-     */
-    search: [filters: AdminAuditFilters];
-}>();
+const { entries, total, pages, loading, error, fetchPage } = useAuditTrail(
+    props.endpoint,
+    props.target
+);
 
 /**
  * What the table asks for when nobody has chosen.
@@ -48,7 +51,7 @@ const emit = defineEmits<{
 const DEFAULT_PAGE_SIZE = 50;
 
 /**
- * Live audit filter form state, sent as-is to the parent's search callback.
+ * Live audit filter form state, sent as-is to {@link fetchPage}.
  */
 const filters = reactive<AdminAuditFilters>({
     actor: undefined,
@@ -81,7 +84,7 @@ const pageSizeOptions = [20, 50, 100];
  *
  * @returns The localized headers, keyed on the audit event fields.
  */
-const tableHeaders = computed<CoreDataTableHeader<AuditEventItem>[]>(() => [
+const tableHeaders = computed<CoreDataTableHeader<AuditTrailItem>[]>(() => [
     { title: t('admin-page.audit-col-timestamp'), key: 'timestamp' },
     { title: t('admin-page.audit-col-actor'), key: 'actor_user_id' },
     { title: t('admin-page.audit-col-role'), key: 'actor_role' },
@@ -94,11 +97,13 @@ const tableHeaders = computed<CoreDataTableHeader<AuditEventItem>[]>(() => [
 
 /**
  * Runs the search with the current filters.
+ *
+ * @returns The fetch promise, resolving once the page is loaded (or `error` is set).
  */
 const handleSearch = () => {
     // Back to the first page: the previous page number belongs to the previous result set.
     filters.page = 1;
-    emit('search', { ...filters });
+    return fetchPage({ ...filters });
 };
 
 /**
@@ -109,14 +114,17 @@ const handleSearch = () => {
  * different set of rows than the one the visitor was reading.
  *
  * @param page - The 1-based page the pager moved to.
+ * @returns The fetch promise, resolving once the page is loaded.
  */
 const handlePageChange = (page: number) => {
     filters.page = page;
-    emit('search', { ...filters });
+    return fetchPage({ ...filters });
 };
 
 /**
  * Clears every filter (keeping the default page size) and re-runs the search.
+ *
+ * @returns The fetch promise, resolving once the page is loaded.
  */
 const handleReset = () => {
     filters.actor = undefined;
@@ -125,7 +133,7 @@ const handleReset = () => {
     filters.since = undefined;
     filters.page = 1;
     filters.pageSize = DEFAULT_PAGE_SIZE;
-    emit('search', { ...filters });
+    return fetchPage({ ...filters });
 };
 
 /**
@@ -137,6 +145,9 @@ const handleReset = () => {
  */
 const truncateId = (value?: string, length = 8) =>
     value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
+
+// The initial load: the first page, unfiltered.
+void fetchPage({ ...filters });
 </script>
 
 <template>
@@ -179,7 +190,7 @@ const truncateId = (value?: string, length = 8) =>
                     />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" :disabled="props.loading">
+                    <v-btn type="submit" color="primary" :disabled="loading">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
@@ -191,20 +202,20 @@ const truncateId = (value?: string, length = 8) =>
         <p class="m-0 text-sm opacity-70" role="status">
             {{
                 t('admin-page.audit-showing', {
-                    shown: props.auditEvents.length,
-                    total: props.total
+                    shown: entries.length,
+                    total
                 })
             }}
         </p>
 
-        <v-alert v-if="props.error" type="error" :text="props.error" />
+        <v-alert v-if="error" type="error" :text="error" />
 
         <DataTable
             v-else
             :headers="tableHeaders"
-            :items="props.auditEvents"
+            :items="entries"
             :caption="t('admin-page.audit-table-caption')"
-            :loading="props.loading"
+            :loading="loading"
             :no-data-text="t('generic.no-data')"
         >
             <template v-slot:[`item.timestamp`]="{ item }">
@@ -258,7 +269,7 @@ const truncateId = (value?: string, length = 8) =>
 
         <ListPagination
             :model-value="filters.page"
-            :length="props.pages"
+            :length="pages"
             :aria-label="t('admin-page.audit-pagination')"
             @update:model-value="handlePageChange"
         />
