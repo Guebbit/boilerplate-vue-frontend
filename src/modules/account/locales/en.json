@@ -64,6 +64,7 @@
         "addresses-saved": "Address saved.",
         "addresses-default": "Default",
         "addresses-make-default": "Make default",
+        "addresses-set-default": "Set as default address",
         "addresses-empty": "No saved addresses yet.",
         "addresses-label-label": "Label (home, office…)",
         "addresses-label-full-name": "Full name",

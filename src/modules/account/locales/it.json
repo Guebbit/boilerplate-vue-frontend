@@ -64,6 +64,7 @@
         "addresses-saved": "Indirizzo salvato.",
         "addresses-default": "Predefinito",
         "addresses-make-default": "Rendi predefinito",
+        "addresses-set-default": "Imposta come indirizzo predefinito",
         "addresses-empty": "Nessun indirizzo salvato.",
         "addresses-label-label": "Etichetta (casa, ufficio…)",
         "addresses-label-full-name": "Nome completo",
