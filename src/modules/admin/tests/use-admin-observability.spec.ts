@@ -257,6 +257,20 @@ describe('useAdminObservability', () => {
             });
         });
 
+        it('converts a datetime-local `since` (no timezone) into a real ISO instant', () => {
+            const { fetchAuditLogs } = useAdminObservability();
+
+            // What a `<input type="datetime-local">` actually yields — no `Z`, no offset — which
+            // the contract's `since` schema rejects outright.
+            return fetchAuditLogs({ since: '2026-09-24T10:00' }).then(() => {
+                expect(getObservabilityAuditLogs).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        since: new Date('2026-09-24T10:00').toISOString()
+                    })
+                );
+            });
+        });
+
         it('asks for everything when called with no filters', () => {
             const { fetchAuditLogs } = useAdminObservability();
 

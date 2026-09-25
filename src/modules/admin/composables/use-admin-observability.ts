@@ -148,7 +148,10 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
                 actor: filters.actor,
                 action: filters.action,
                 outcome: filters.outcome,
-                since: filters.since,
+                // `datetime-local` has no timezone of its own; the contract wants a real ISO
+                // instant. An already-ISO `since` (e.g. re-run from a saved filter) round-trips
+                // unchanged.
+                since: filters.since ? new Date(filters.since).toISOString() : undefined,
                 page: filters.page,
                 pageSize: filters.pageSize
             }).then((response) => response.data),
