@@ -2,23 +2,18 @@
  * @module
  * Unit tests for the Admin dashboard's data composable.
  *
- * The three endpoints are mocked at `@api`: what this file owns is the composition — that each
- * fetcher writes its own slice of state without touching the other two, that the audit envelope is
- * split into items and page meta rather than tracked as state that could disagree, and that a dead
- * endpoint degrades to an error message beside the panels that did answer.
+ * The two endpoints are mocked at `@api`: what this file owns is the composition — that each
+ * fetcher writes its own slice of state without touching the other, and that a dead endpoint
+ * degrades to an error message beside the panel that did answer. The audit trail is covered by
+ * `use-audit-trail.spec.ts` instead — see that composable's own docs for why it moved out of here.
  *
  * The loading/error bookkeeping itself belongs to `useAsyncAction` and is covered in
  * `tests/unit/infrastructure/use-async-action.spec.ts`; only the parts this composable configures —
- * the fallback messages and the filter payload — are asserted here.
+ * the fallback messages — are asserted here.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    getObservabilityHealth,
-    getObservabilityMetricsOverview,
-    getObservabilityAuditLogs,
-    deleteExpiredTokens
-} from '@api';
-import type { AuditEventItem, ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
+import { getObservabilityHealth, getObservabilityMetricsOverview, deleteExpiredTokens } from '@api';
+import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
 import * as schemas from '@api/schemas';
 import { useAdminObservability } from '@/modules/admin/composables/use-admin-observability';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -59,42 +54,6 @@ const METRICS: ObservabilityMetricsSummary = {
     timestamp: '2026-01-01T00:00:00.000Z'
 };
 
-/**
- * A page's worth of meta, as `PaginationMeta` declares it.
- */
-const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
-    page,
-    pageSize,
-    totalItems,
-    totalPages
-});
-
-/**
- * One audit row exactly as `AuditEventItem` declares it.
- *
- * Typed rather than a bare literal: the schema is `additionalProperties: false` with six required
- * fields, so an invented key or a missing one is a compile error here instead of a green test
- * standing on a shape the endpoint never returns.
- */
-const AUDIT_ITEM: AuditEventItem = {
-    actor_user_id: 'ada@example.com',
-    actor_role: 'admin',
-    action: 'user.login',
-    outcome: 'success',
-    timestamp: '2026-01-01T00:00:00.000Z',
-    level: 'info'
-};
-
-/**
- * An audit-log page, proven against the endpoint's generated response schema.
- *
- * @param items - the rows on this page
- * @param pageMeta - the page's `PaginationMeta`
- * @returns the success envelope the client resolves with
- */
-const auditPage = (items: AuditEventItem[], pageMeta: ReturnType<typeof meta>) =>
-    contractResponse(schemas.GetObservabilityAuditLogsResponse, { items, meta: pageMeta });
-
 vi.mock('@api', () => ({
     getObservabilityHealth: vi.fn(() =>
         Promise.resolve(contractResponse(schemas.GetObservabilityHealthResponse, HEALTH))
@@ -102,7 +61,6 @@ vi.mock('@api', () => ({
     getObservabilityMetricsOverview: vi.fn(() =>
         Promise.resolve(contractResponse(schemas.GetObservabilityMetricsOverviewResponse, METRICS))
     ),
-    getObservabilityAuditLogs: vi.fn(() => Promise.resolve(auditPage([AUDIT_ITEM], meta(1)))),
     deleteExpiredTokens: vi.fn(() =>
         Promise.resolve(contractResponse(schemas.DeleteExpiredTokensResponse))
     )
@@ -131,15 +89,11 @@ describe('useAdminObservability', () => {
 
             expect(observability.health.value).toBeUndefined();
             expect(observability.metrics.value).toBeUndefined();
-            expect(observability.auditEvents.value).toEqual([]);
-            expect(observability.auditTotal.value).toBe(0);
             expect(observability.loadingHealth.value).toBe(false);
             expect(observability.loadingMetrics.value).toBe(false);
-            expect(observability.loadingAudit.value).toBe(false);
             expect(observability.clearingExpiredTokens.value).toBe(false);
             expect(observability.errorHealth.value).toBeUndefined();
             expect(observability.errorMetrics.value).toBeUndefined();
-            expect(observability.errorAudit.value).toBeUndefined();
         });
     });
 
@@ -166,12 +120,11 @@ describe('useAdminObservability', () => {
             });
         });
 
-        it('reports its own failure without rejecting or touching the other panels', () => {
+        it('reports its own failure without rejecting or touching the other panel', () => {
             vi.mocked(getObservabilityHealth).mockRejectedValueOnce(
                 apiFailure(503, 'Health probe timed out')
             );
-            const { health, errorHealth, errorMetrics, errorAudit, fetchHealth } =
-                useAdminObservability();
+            const { health, errorHealth, errorMetrics, fetchHealth } = useAdminObservability();
 
             return expect(fetchHealth())
                 .resolves.toBeUndefined()
@@ -181,7 +134,6 @@ describe('useAdminObservability', () => {
                     expect(errorHealth.value).toBe('Health probe timed out');
                     expect(health.value).toBeUndefined();
                     expect(errorMetrics.value).toBeUndefined();
-                    expect(errorAudit.value).toBeUndefined();
                 });
         });
     });
@@ -208,157 +160,38 @@ describe('useAdminObservability', () => {
         });
     });
 
-    describe('fetchAuditLogs', () => {
-        it('splits the envelope into items, total and page count', () => {
-            const { auditEvents, auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
-
-            return expect(fetchAuditLogs())
-                .resolves.toBeUndefined()
-                .then(() => {
-                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-                    expect(auditTotal.value).toBe(1);
-                    expect(auditPages.value).toBe(1);
-                });
-        });
-
-        it('reports a total larger than the page, and the pages that reach the rest', () => {
-            // The number the dashboard renders as "50 of 3,412" — and, unlike the capped read it
-            // replaces, a page count that can actually get to the 3,412nd.
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
-                auditPage([AUDIT_ITEM], meta(3412, 69)) as never
-            );
-            const { auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
-
-            return fetchAuditLogs().then(() => {
-                expect(auditTotal.value).toBe(3412);
-                expect(auditPages.value).toBe(69);
-            });
-        });
-
-        it('sends every filter through under its contract name', () => {
-            const { fetchAuditLogs } = useAdminObservability();
-
-            return fetchAuditLogs({
-                actor: 'ada@example.com',
-                action: 'user.login',
-                outcome: 'failure',
-                since: '2026-01-01T00:00:00.000Z',
-                page: 3,
-                pageSize: 25
-            }).then(() => {
-                expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
-                    actor: 'ada@example.com',
-                    action: 'user.login',
-                    outcome: 'failure',
-                    since: '2026-01-01T00:00:00.000Z',
-                    page: 3,
-                    pageSize: 25
-                });
-            });
-        });
-
-        it('asks for everything when called with no filters', () => {
-            const { fetchAuditLogs } = useAdminObservability();
-
-            return fetchAuditLogs().then(() => {
-                expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
-                    actor: undefined,
-                    action: undefined,
-                    outcome: undefined,
-                    since: undefined,
-                    page: undefined,
-                    pageSize: undefined
-                });
-            });
-        });
-
-        it('reads an empty page as no events and a zero total', () => {
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
-                auditPage([], meta(0, 0)) as never
-            );
-            const { auditEvents, auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
-
-            return fetchAuditLogs().then(() => {
-                expect(auditEvents.value).toEqual([]);
-                expect(auditTotal.value).toBe(0);
-                // No pages rather than one empty one: the pager hides itself below two.
-                expect(auditPages.value).toBe(0);
-            });
-        });
-
-        it('falls back to an empty page when the call fails', () => {
-            vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce(
-                apiFailure(500, 'Audit store unavailable')
-            );
-            const { auditEvents, auditTotal, auditPages, errorAudit, fetchAuditLogs } =
-                useAdminObservability();
-
-            return fetchAuditLogs().then(() => {
-                // The panel renders "no events" rather than throwing on an undefined envelope
-                expect(auditEvents.value).toEqual([]);
-                expect(auditTotal.value).toBe(0);
-                expect(auditPages.value).toBe(0);
-                expect(errorAudit.value).toBe('Audit store unavailable');
-            });
-        });
-
-        it('replaces the previous page rather than appending to it', () => {
-            vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce(
-                auditPage([AUDIT_ITEM, AUDIT_ITEM], meta(2)) as never
-            );
-            const { auditEvents, auditTotal, fetchAuditLogs } = useAdminObservability();
-
-            return fetchAuditLogs()
-                .then(() => {
-                    expect(auditTotal.value).toBe(2);
-                    return fetchAuditLogs({ actor: 'ada@example.com' });
-                })
-                .then(() => {
-                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-                    expect(auditTotal.value).toBe(1);
-                });
-        });
-    });
-
     describe('fetchAll', () => {
-        it('loads all three panels in one call', () => {
-            const { health, metrics, auditEvents, auditTotal, fetchAll } = useAdminObservability();
+        it('loads both panels in one call', () => {
+            const { health, metrics, fetchAll } = useAdminObservability();
 
             return expect(fetchAll())
                 .resolves.toBeUndefined()
                 .then(() => {
                     expect(getObservabilityHealth).toHaveBeenCalledTimes(1);
                     expect(getObservabilityMetricsOverview).toHaveBeenCalledTimes(1);
-                    expect(getObservabilityAuditLogs).toHaveBeenCalledTimes(1);
                     expect(health.value).toEqual(HEALTH);
                     expect(metrics.value).toEqual(METRICS);
-                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-                    expect(auditTotal.value).toBe(1);
                 });
         });
 
-        it('starts the three calls together rather than one after the other', () => {
-            const { loadingHealth, loadingMetrics, loadingAudit, fetchAll } =
-                useAdminObservability();
+        it('starts both calls together rather than one after the other', () => {
+            const { loadingHealth, loadingMetrics, fetchAll } = useAdminObservability();
 
             const pending = fetchAll();
             expect(loadingHealth.value).toBe(true);
             expect(loadingMetrics.value).toBe(true);
-            expect(loadingAudit.value).toBe(true);
 
             return pending.then(() => {
                 expect(loadingHealth.value).toBe(false);
                 expect(loadingMetrics.value).toBe(false);
-                expect(loadingAudit.value).toBe(false);
             });
         });
 
-        it('renders the panels that answered when one endpoint is down', () => {
+        it('renders the panel that answered when the other endpoint is down', () => {
             vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce(
                 apiFailure(502, 'Metrics upstream refused')
             );
-            const { health, metrics, errorMetrics, auditEvents, fetchAll } =
-                useAdminObservability();
+            const { health, metrics, errorMetrics, fetchAll } = useAdminObservability();
 
             return expect(fetchAll())
                 .resolves.toBeUndefined()
@@ -366,7 +199,6 @@ describe('useAdminObservability', () => {
                     expect(errorMetrics.value).toBe('Metrics upstream refused');
                     expect(metrics.value).toBeUndefined();
                     expect(health.value).toEqual(HEALTH);
-                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
                 });
         });
     });
@@ -374,7 +206,7 @@ describe('useAdminObservability', () => {
     /*
      * The one WRITE on this composable, and the only one that rejects: the view owes the visitor
      * an answer either way, so the rejection is passed through rather than swallowed into an
-     * `error` ref like the three reads. What the composable does own is the pending flag, which
+     * `error` ref like the two reads. What the composable does own is the pending flag, which
      * the view binds to the button and never sets — so both halves are asserted here.
      */
     describe('clearExpiredTokens', () => {

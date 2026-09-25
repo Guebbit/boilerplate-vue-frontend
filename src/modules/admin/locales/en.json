@@ -65,7 +65,12 @@
         "kpi-status-loading": "Status: loading",
         "kpi-status-unknown": "Status: unknown"
     },
+    "audit-log-page": {
+        "page-title": "Audit trail",
+        "page-title-target": "History of {target}"
+    },
     "navigation": {
-        "label-admin": "Admin"
+        "label-admin": "Admin",
+        "label-audit-log": "Audit log"
     }
 }

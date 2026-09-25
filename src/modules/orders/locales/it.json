@@ -69,7 +69,8 @@
         "label-vat-net": "Imponibile",
         "label-vat-tax": "IVA",
         "label-net-total": "Totale imponibile",
-        "label-tax-total": "Totale IVA"
+        "label-tax-total": "Totale IVA",
+        "button-history": "Cronologia"
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

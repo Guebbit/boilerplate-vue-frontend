@@ -1,24 +1,20 @@
 /**
  * @module
- * Composable wrapping the admin dashboard's three read endpoints (health, metrics, audit) and one
- * write (expired-token purge). Each read is a {@link useAsyncAction}, so a failure resolves into
- * that panel's own error ref rather than rejecting; the write rejects instead, since its outcome
- * is owed to the visitor who asked for it.
+ * Composable wrapping the admin dashboard's two read endpoints (health, metrics) and one write
+ * (expired-token purge). The audit trail is NOT here — `AdminAuditTab.vue` fetches its own through
+ * `useAuditTrail`, which is what lets that component be reused unchanged for a record's history
+ * and the shop-wide audit page, not just this dashboard's tab. Each read is a
+ * {@link useAsyncAction}, so a failure resolves into that panel's own error ref rather than
+ * rejecting; the write rejects instead, since its outcome is owed to the visitor who asked for it.
  */
-import { computed, ref, type ComputedRef, type Ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
-import {
-    getObservabilityHealth,
-    getObservabilityMetricsOverview,
-    getObservabilityAuditLogs,
-    deleteExpiredTokens
-} from '@api';
-import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
-import type { AdminAuditFilters } from '@/modules/admin/types.ts';
+import { getObservabilityHealth, getObservabilityMetricsOverview, deleteExpiredTokens } from '@api';
+import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import { translate } from '@/infrastructure/i18n';
 
 /**
- * Shape returned by {@link useAdminObservability}: the three panels' payloads and per-call
+ * Shape returned by {@link useAdminObservability}: the two panels' payloads and per-call
  * load/error state, plus the fetchers and the token-purge action.
  */
 export interface UseAdminObservabilityReturn {
@@ -31,18 +27,6 @@ export interface UseAdminObservabilityReturn {
      */
     metrics: Ref<ObservabilityMetricsSummary | undefined>;
     /**
-     * Audit rows for the current page.
-     */
-    auditEvents: ComputedRef<AuditEventItem[]>;
-    /**
-     * Total audit rows matching the current filters, across every page.
-     */
-    auditTotal: ComputedRef<number>;
-    /**
-     * Total pages the current filters span.
-     */
-    auditPages: ComputedRef<number>;
-    /**
      * Whether the health call is in flight.
      */
     loadingHealth: Ref<boolean>;
@@ -50,10 +34,6 @@ export interface UseAdminObservabilityReturn {
      * Whether the metrics call is in flight.
      */
     loadingMetrics: Ref<boolean>;
-    /**
-     * Whether the audit call is in flight.
-     */
-    loadingAudit: Ref<boolean>;
     /**
      * The health call's error message, if its last attempt failed.
      */
@@ -63,10 +43,6 @@ export interface UseAdminObservabilityReturn {
      */
     errorMetrics: Ref<string | undefined>;
     /**
-     * The audit call's error message, if its last attempt failed.
-     */
-    errorAudit: Ref<string | undefined>;
-    /**
      * Runs the health fetch.
      */
     fetchHealth: () => Promise<void>;
@@ -75,11 +51,7 @@ export interface UseAdminObservabilityReturn {
      */
     fetchMetrics: () => Promise<void>;
     /**
-     * Runs the audit fetch with the given filters.
-     */
-    fetchAuditLogs: (filters?: AdminAuditFilters) => Promise<void>;
-    /**
-     * Runs all three fetches in parallel.
+     * Runs both fetches in parallel.
      */
     fetchAll: () => Promise<void>;
     /**
@@ -93,19 +65,17 @@ export interface UseAdminObservabilityReturn {
 }
 
 /**
- * Unified composable for the Admin observability dashboard.
+ * Unified composable for the Admin observability dashboard's overview tab.
  *
- * It exposes the three contract-backed endpoints behind one shared state:
+ * It exposes two contract-backed endpoints behind one shared state:
  * - GET /observability/health
  * - GET /observability/metrics/overview
- * - GET /observability/audit
  *
  * Each is a {@link useAsyncAction}: the loading/data/error bookkeeping is written once there
- * rather than three times here, and every fetcher resolves rather than rejects, so a partially
- * available stack still renders the panels that answered.
+ * rather than twice here, and every fetcher resolves rather than rejects, so a partially
+ * available stack still renders the panel that answered.
  *
- * @returns Shared state (payloads, per-call loading flags and error messages) plus the four
- *  fetchers.
+ * @returns Shared state (payloads, per-call loading flags and error messages) plus the fetchers.
  */
 export const useAdminObservability = (): UseAdminObservabilityReturn => {
     /**
@@ -134,44 +104,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     });
 
     /**
-     * The audit call answers with a page AND its meta, so its payload is the envelope; the parts
-     * are split back out below rather than tracked as separate state that could disagree.
-     */
-    const {
-        data: audit,
-        error: errorAudit,
-        loading: loadingAudit,
-        run: runAuditLogs
-    } = useAsyncAction(
-        (filters: AdminAuditFilters = {}) =>
-            getObservabilityAuditLogs({
-                actor: filters.actor,
-                action: filters.action,
-                outcome: filters.outcome,
-                since: filters.since,
-                page: filters.page,
-                pageSize: filters.pageSize
-            }).then((response) => response.data),
-        { fallbackErrorMessage: translate('admin-page.error-load-audit') }
-    );
-
-    /**
-     * Audit rows for the current page, or none while nothing has loaded yet.
-     */
-    const auditEvents = computed(() => audit.value?.items ?? []);
-
-    /**
-     * Every entry matching the filters, not the page — which is what the pager below counts with.
-     */
-    const auditTotal = computed(() => audit.value?.meta.totalItems ?? 0);
-
-    /**
-     * How many pages the current filters span, for the pager's `length`.
-     */
-    const auditPages = computed(() => audit.value?.meta.totalPages ?? 0);
-
-    /**
-     * The three fetchers resolve with nothing: every consumer reads the state refs, and the
+     * The two fetchers resolve with nothing: every consumer reads the state refs, and the
      * rejection is already swallowed into `error` by {@link useAsyncAction}.
      *
      * @returns A promise resolving once `health` or `errorHealth` is set.
@@ -184,22 +117,11 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     const fetchMetrics = () => runMetrics().then(() => undefined);
 
     /**
-     * Loads the audit log page matching the given filters.
+     * Loads health and metrics in parallel, for the initial dashboard render.
      *
-     * @param filters - Actor/action/outcome/since criteria and the page to read; defaults to the
-     *   first page, unfiltered.
-     * @returns A promise resolving once `auditEvents` + `auditTotal`, or `errorAudit`, are set.
+     * @returns A promise resolving once both calls have settled.
      */
-    const fetchAuditLogs = (filters: AdminAuditFilters = {}) =>
-        runAuditLogs(filters).then(() => undefined);
-
-    /**
-     * Loads health, metrics and audit logs in parallel, for the initial dashboard render.
-     *
-     * @returns A promise resolving once all three calls have settled.
-     */
-    const fetchAll = () =>
-        Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => undefined);
+    const fetchAll = () => Promise.all([fetchHealth(), fetchMetrics()]).then(() => undefined);
 
     /**
      * Pending flag for {@link clearExpiredTokens}, bound by the view to its button.
@@ -209,7 +131,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     /**
      * Purges the expired refresh tokens.
      *
-     * The odd one out here, and deliberately not a {@link useAsyncAction}: the other four are
+     * The odd one out here, and deliberately not a {@link useAsyncAction}: the other two are
      * READS whose failure is a panel that renders an error, so swallowing the rejection into an
      * `error` ref is exactly right. This is a WRITE whose outcome the visitor asked for and is
      * owed either way, so it REJECTS and lets the view answer with the toast it already writes.
@@ -234,18 +156,12 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     return {
         health,
         metrics,
-        auditEvents,
-        auditTotal,
-        auditPages,
         loadingHealth,
         loadingMetrics,
-        loadingAudit,
         errorHealth,
         errorMetrics,
-        errorAudit,
         fetchHealth,
         fetchMetrics,
-        fetchAuditLogs,
         fetchAll,
         clearingExpiredTokens,
         clearExpiredTokens

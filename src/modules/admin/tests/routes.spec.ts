@@ -25,17 +25,17 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('admin route access', () => {
-    it.each([['Admin', 'auth', 'read', 'ObservabilitySnapshot']])(
-        '%s declares access %s, permission %s %s',
-        (name, access, action, subject) => {
-            expect(byName(name)).toBeDefined();
-            expect(byName(name)?.meta?.access).toBe(access);
-            expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
-        }
-    );
+    it.each([
+        ['Admin', 'auth', 'read', 'ObservabilitySnapshot'],
+        ['AuditLog', 'auth', 'read', 'AuditLog']
+    ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
+        expect(byName(name)).toBeDefined();
+        expect(byName(name)?.meta?.access).toBe(access);
+        expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
+    });
 
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it.
-        expect(routes.map(({ name }) => name).toSorted()).toEqual(['Admin'].toSorted());
+        expect(routes.map(({ name }) => name).toSorted()).toEqual(['Admin', 'AuditLog'].toSorted());
     });
 });

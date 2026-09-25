@@ -12,6 +12,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Order from '@/modules/orders/views/Order.vue';
 import { useOrdersStore } from '@/modules/orders/store';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -155,6 +156,39 @@ describe('the VAT summary', () => {
         expect(summary.text()).toContain('VAT summary');
 
         wrapper.unmount();
+    });
+});
+
+/**
+ * Grants (or withholds) `audit.any.read`, the ability the "History" link is gated on — see
+ * `users/tests/user-view.spec.ts` for the same gate on the user detail page.
+ *
+ * @param canReadAuditLog - Whether to hold the ability.
+ */
+const signIn = (canReadAuditLog: boolean) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'operator1', email: 'operator@example.com', role: 'admin' };
+    session.setAbilities({
+        tenant: canReadAuditLog ? [['read', 'AuditLog']] : [],
+        platform: []
+    });
+};
+
+describe('the "History" link', () => {
+    it('is absent for a visitor with no audit.any.read', () => {
+        signIn(false);
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-history]').exists()).toBe(false);
+    });
+
+    it("links to the shop audit trail, filtered to this order's id, for a visitor who holds it", () => {
+        signIn(true);
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        const link = wrapper.get('[data-test=order-history]');
+        expect(link.attributes('href')).toBe('/en/audit?target=o1');
     });
 });
 
