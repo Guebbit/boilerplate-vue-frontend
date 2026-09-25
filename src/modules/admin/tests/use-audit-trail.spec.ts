@@ -115,6 +115,19 @@ describe('useAuditTrail — platform endpoint', () => {
                 });
             }));
 
+    it('converts a datetime-local `since` (no timezone) into a real ISO instant', () =>
+        // What a `<input type="datetime-local">` actually yields — no `Z`, no offset — which the
+        // contract's `since` schema rejects outright.
+        useAuditTrail('platform')
+            .fetchPage({ since: '2026-09-24T10:00' })
+            .then(() => {
+                expect(getObservabilityAuditLogs).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        since: new Date('2026-09-24T10:00').toISOString()
+                    })
+                );
+            }));
+
     it('falls back to an empty page when the call fails', () => {
         vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce(
             apiFailure(500, 'Audit store unavailable')
