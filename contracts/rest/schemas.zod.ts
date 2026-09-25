@@ -4540,7 +4540,38 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
 });
 
 /**
- * Updates status/notes of a feedback request.
+ * Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
+ * @summary Replace feedback request status
+ */
+export const ReplaceFeedbackRequestStatusParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const ReplaceFeedbackRequestStatusBody = zod.strictObject({
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    adminNotes: zod.string().min(1).nullish()
+});
+
+export const ReplaceFeedbackRequestStatusResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        name: zod.string().optional(),
+        email: zod.email(),
+        subject: zod.string(),
+        message: zod.string(),
+        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+        adminNotes: zod.string().optional(),
+        respondedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const UpdateFeedbackRequestStatusParams = zod.strictObject({

@@ -34,6 +34,11 @@ export const feedbackResponseSchemas: ResponseSchemaRoute[] = [
     {
         method: 'PUT',
         pattern: /^\/feedback\/[^/]+$/,
+        schema: schemas.ReplaceFeedbackRequestStatusResponse
+    },
+    {
+        method: 'PATCH',
+        pattern: /^\/feedback\/[^/]+$/,
         schema: schemas.UpdateFeedbackRequestStatusResponse
     },
     {

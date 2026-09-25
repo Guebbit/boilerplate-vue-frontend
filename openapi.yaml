@@ -2676,8 +2676,49 @@ paths:
     put:
       tags:
         - Feedback
+      summary: Replace feedback request status
+      description: Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
+      operationId: replaceFeedbackRequestStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceFeedbackRequestStatusRequest"
+      responses:
+        "200":
+          description: Updated feedback request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackRequestEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - Feedback
       summary: Update feedback request status
-      description: Updates status/notes of a feedback request.
+      description: Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
       operationId: updateFeedbackRequestStatus
       security:
         - bearerAuth: []
@@ -8964,6 +9005,18 @@ components:
           $ref: "#/components/schemas/FeedbackRequestStatus"
         email:
           $ref: "#/components/schemas/Email"
+    ReplaceFeedbackRequestStatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/FeedbackRequestStatus"
+        adminNotes:
+          type: string
+          minLength: 1
+          nullable: true
     UpdateFeedbackRequestStatusRequest:
       type: object
       additionalProperties: false

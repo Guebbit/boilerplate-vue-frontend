@@ -59,7 +59,7 @@ beforeEach(() => {
             items: [TICKET],
             meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
         }),
-        'PUT /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
+        'PATCH /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
         'DELETE /feedback/f1': orvalEnvelope()
     };
 });
@@ -183,7 +183,7 @@ describe('updateRequest', () => {
                     );
                 expect(request).toMatchObject({
                     url: '/feedback/f1',
-                    method: 'PUT',
+                    method: 'PATCH',
                     data: { status: 'resolved' }
                 });
                 expect(store.requests.f1?.status).toBe('resolved');

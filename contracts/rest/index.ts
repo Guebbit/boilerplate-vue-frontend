@@ -2201,6 +2201,15 @@ export interface SearchFeedbackRequestsRequest {
     email?: Email;
 }
 
+export interface ReplaceFeedbackRequestStatusRequest {
+    status: FeedbackRequestStatus;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    adminNotes?: string | null;
+}
+
 export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
     /**
@@ -5312,7 +5321,27 @@ export const searchFeedbackRequests = (
 };
 
 /**
- * Updates status/notes of a feedback request.
+ * Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
+ * @summary Replace feedback request status
+ */
+export const replaceFeedbackRequestStatus = (
+    id: string,
+    replaceFeedbackRequestStatusRequest: ReplaceFeedbackRequestStatusRequest,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceFeedbackRequestStatusRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatus = (
@@ -5323,7 +5352,7 @@ export const updateFeedbackRequestStatus = (
     return orvalMutator<FeedbackRequestEnvelope>(
         {
             url: `/feedback/${id}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             data: updateFeedbackRequestStatusRequest
         },
@@ -6664,6 +6693,9 @@ export type ListFeedbackRequestsResult = NonNullable<
 >;
 export type SearchFeedbackRequestsResult = NonNullable<
     Awaited<ReturnType<typeof searchFeedbackRequests>>
+>;
+export type ReplaceFeedbackRequestStatusResult = NonNullable<
+    Awaited<ReturnType<typeof replaceFeedbackRequestStatus>>
 >;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
