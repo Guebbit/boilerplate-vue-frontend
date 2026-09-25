@@ -9,9 +9,10 @@ export default {
  * @module
  * Signup form: the zod schema chains a password-confirm `.refine` onto the shared
  * `usersSchema`/`usersPasswordSchema` rules, and `trackUpload` wraps the store call so
- * `FormImageUpload` can show real upload progress when an avatar is attached.
+ * `FormImageUpload` can show real upload progress when an avatar is attached. The breach check
+ * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -33,6 +34,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
+import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -132,6 +134,17 @@ const {
 );
 
 /**
+ * Advisory breach check for the password field — never a submit gate, see `@module`.
+ */
+const { breached: passwordBreached, check: checkPasswordBreach } = usePasswordBreachCheck();
+
+// Debounced inside the composable — this fires on every keystroke, the check itself does not.
+watch(
+    () => form.value.password,
+    (password) => checkPasswordBreach(password ?? '')
+);
+
+/**
  * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
  * flight.
  */
@@ -227,6 +240,18 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.password : []"
                     class="mb-2"
                 />
+                <!-- Advisory only, never a submit gate — the four password-SET paths remain the
+                     actual authority, checked again server-side regardless of this warning. -->
+                <v-alert
+                    v-if="passwordBreached"
+                    type="warning"
+                    density="compact"
+                    variant="tonal"
+                    class="mb-2"
+                    data-test="password-breach-warning"
+                >
+                    {{ t('users-form.password-breached-warning') }}
+                </v-alert>
                 <v-text-field
                     v-model="form.passwordConfirm"
                     type="password"

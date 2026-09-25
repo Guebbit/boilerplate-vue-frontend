@@ -95,6 +95,12 @@ interface ProfileForm {
     updatedAt?: string | null;
     phone?: string;
     website?: string;
+    /**
+     * GDPR Art. 7(3) withdrawal switch. Signup only ever asks once and never lets it change
+     * afterward — this is the other half, so consent stays as revocable as it was given.
+     * `undefined` until the record loads, rendered off like every other field before hydration.
+     */
+    analyticsConsent?: boolean;
 }
 
 /**
@@ -204,13 +210,22 @@ const submitForm = () => {
     // is disabled in this state, so only a keyboard submit reaches here.
     if (!isDirty.value) return;
     clearSaveError();
+    // Absent means "leave alone" on this PATCH (RFC 7396) — sent only when it actually moved, so
+    // toggling it back to the baseline before saving reads as untouched, never as a fresh choice.
+    const analyticsConsentChanged = form.value.analyticsConsent !== profile.value?.analyticsConsent;
+    // Same rule protects a pending email change (B5): the backend reads any INCLUDED `email` as
+    // "cancel/redirect the pending change" — see `resendPendingEmail`/`cancelPendingEmail` below,
+    // which send it ON PURPOSE. A routine save of some unrelated field must never carry the
+    // visitor's own unchanged address and accidentally cancel a change already in flight.
+    const emailChanged = form.value.email !== profile.value?.email;
     return updateProfile({
-        email: form.value.email,
+        ...(emailChanged ? { email: form.value.email } : {}),
         username: form.value.username,
         locale: form.value.locale,
         imageUrl: form.value.imageUrl ?? undefined,
         phone: form.value.phone,
-        website: form.value.website
+        website: form.value.website,
+        ...(analyticsConsentChanged ? { analyticsConsent: form.value.analyticsConsent } : {})
     })
         .then(() => {
             // Re-baseline on what the server now holds: the store refetched it, and a form
@@ -223,6 +238,50 @@ const submitForm = () => {
             return applyLanguagePreference(profile.value?.locale);
         })
         .catch((error) => reportSaveError(error));
+};
+
+/**
+ * The pending-email resend/cancel actions' own blocked state — kept separate from
+ * {@link saveError} since neither action touches anything the profile form validates.
+ */
+const {
+    message: pendingEmailError,
+    report: reportPendingEmailError,
+    clear: clearPendingEmailError
+} = useBlockingError();
+
+/**
+ * Re-sends the pending-email confirmation link. There is no dedicated resend endpoint: sending
+ * `PATCH /account` with the SAME address already parked in `pendingEmail` is the backend's
+ * documented resend path (AUDIT_0924 D17d).
+ *
+ * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
+ *  place ({@link pendingEmailError}).
+ */
+const resendPendingEmail = () => {
+    const pendingEmail = profile.value?.pendingEmail;
+    if (!pendingEmail) return;
+    clearPendingEmailError();
+    return updateProfile({ email: pendingEmail })
+        .then(() => addMessage(t('profile-page.pending-email-resent')))
+        .catch((error) => reportPendingEmailError(error));
+};
+
+/**
+ * Cancels the pending email change. Sending back the CURRENT address is the backend's documented
+ * cancellation path (AUDIT_0924 D17d) — the same value an untouched form would send, which is
+ * exactly the ordinary save this page must never confuse it with (see `emailChanged` above).
+ *
+ * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
+ *  place ({@link pendingEmailError}).
+ */
+const cancelPendingEmail = () => {
+    const currentEmail = profile.value?.email;
+    if (!currentEmail) return;
+    clearPendingEmailError();
+    return updateProfile({ email: currentEmail })
+        .then(() => addMessage(t('profile-page.pending-email-cancelled')))
+        .catch((error) => reportPendingEmailError(error));
 };
 </script>
 
@@ -248,6 +307,38 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.email : []"
                     class="mb-2"
                 />
+                <div
+                    v-if="profile?.pendingEmail"
+                    class="mb-2 flex flex-wrap items-center gap-2 text-sm opacity-80"
+                    data-test="pending-email-notice"
+                >
+                    <span>
+                        {{
+                            t('profile-page.pending-email-notice', { email: profile.pendingEmail })
+                        }}
+                    </span>
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        data-test="pending-email-resend"
+                        @click="resendPendingEmail"
+                    >
+                        {{ t('profile-page.pending-email-resend') }}
+                    </v-btn>
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        data-test="pending-email-cancel"
+                        @click="cancelPendingEmail"
+                    >
+                        {{ t('profile-page.pending-email-cancel') }}
+                    </v-btn>
+                </div>
+                <InlineErrorAlert
+                    :message="pendingEmailError"
+                    class="mb-2"
+                    test-id="pending-email-error"
+                />
                 <v-text-field
                     v-model="form.phone"
                     type="tel"
@@ -271,6 +362,14 @@ const submitForm = () => {
                     :hint="t('profile-page.language-hint')"
                     :persistent-hint="true"
                     data-test="profile-language"
+                />
+                <v-switch
+                    v-model="form.analyticsConsent"
+                    :label="t('profile-page.label-analytics-consent')"
+                    :hint="t('profile-page.analytics-consent-hint')"
+                    :persistent-hint="true"
+                    color="primary"
+                    data-test="profile-analytics-consent"
                 />
 
                 <div class="mt-4 flex flex-wrap gap-2">

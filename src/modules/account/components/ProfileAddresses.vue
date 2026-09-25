@@ -92,6 +92,13 @@ const emptyForm = (): AddressForm => ({
 const dialogOpen = ref(false);
 
 /**
+ * "Set as default" for a NEW address only — convenience alongside each row's own "make default"
+ * action, which is unaffected. Hidden entirely on an empty book: the first address always becomes
+ * the default server-side regardless of this box, so there is nothing for it to add there.
+ */
+const setAsDefaultOnAdd = ref(false);
+
+/**
  * The entry being edited, or `undefined` when the dialog is adding a new one.
  */
 const editingId = ref<string>();
@@ -149,6 +156,7 @@ const {
 const openAdd = () => {
     editingId.value = undefined;
     setForm(emptyForm());
+    setAsDefaultOnAdd.value = false;
     clearSaveError();
     dialogOpen.value = true;
 };
@@ -186,17 +194,21 @@ const openEdit = (address: Address) => {
  */
 const handleSave = () =>
     handleSubmit((fields) => {
+        const payload: AddressInput = {
+            ...fields,
+            label: fields.label || undefined,
+            phone: fields.phone || undefined,
+            // Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
+            // the only way to demote an entry is making a DIFFERENT one the default instead.
+            ...(!editingId.value && setAsDefaultOnAdd.value ? { default: true } : {})
+        };
         const save = editingId.value
             ? updateAddress(editingId.value, {
                   ...fields,
                   label: emptyToNull(fields.label),
                   phone: emptyToNull(fields.phone)
               } satisfies UpdateAddressRequest)
-            : addAddress({
-                  ...fields,
-                  label: fields.label || undefined,
-                  phone: fields.phone || undefined
-              } satisfies AddressInput);
+            : addAddress(payload);
         return save
             .then(() => {
                 addMessage(t('profile-page.addresses-saved'));
@@ -403,6 +415,14 @@ onMounted(fetchAddresses);
                         :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
                         autocomplete="tel"
                         type="tel"
+                    />
+                    <v-checkbox
+                        v-if="!editingId && addresses.length > 0"
+                        v-model="setAsDefaultOnAdd"
+                        :label="t('profile-page.addresses-set-default')"
+                        data-test="address-set-default"
+                        density="compact"
+                        hide-details
                     />
                     <InlineErrorAlert
                         :message="saveError"
