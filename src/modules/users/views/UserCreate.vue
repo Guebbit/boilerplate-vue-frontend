@@ -9,9 +9,11 @@ export default {
  * @module
  * User-create page. Builds a form on `useStructureFormValidation`, submitting multipart when
  * an avatar is attached and JSON otherwise (the branch itself lives in the
- * users store).
+ * users store). A password is only conditionally required: checking "send setup email" trades it
+ * for a reset-style email instead, so the schema's `superRefine` enforces "one or the other"
+ * itself rather than trusting the server's own 422 for it.
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -22,6 +24,8 @@ import {
 } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
+import { userRoleOptions } from '@/modules/users/roles.ts';
+import { supportedLanguages, translate } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -59,20 +63,49 @@ interface UserCreateForm {
     email?: string;
     username?: string;
     password?: string;
+    sendSetupEmail?: boolean;
     role?: string;
     active?: boolean;
+    locale?: string;
     imageUpload?: File;
 }
 
 /**
  * Built once: the messages inside are thunks, resolved in the active language at parse time.
+ *
+ * `password` is a plain optional string here rather than `usersPasswordSchema` directly, because
+ * that schema treats an empty value as a failure — wrong once `sendSetupEmail` makes a password
+ * optional. The `superRefine` below enforces "one or the other" and, only when a password was
+ * typed, re-runs `usersPasswordSchema`'s own strength rules against it — so those rules stay
+ * declared in one place instead of being copied here.
  */
-const createSchema = usersSchema.pick({ email: true, username: true }).extend({
-    password: usersPasswordSchema,
-    role: z.string().optional(),
-    active: z.boolean().optional(),
-    imageUpload: imageUploadSchema
-});
+const createSchema = usersSchema
+    .pick({ email: true, username: true })
+    .extend({
+        password: z.string().optional(),
+        sendSetupEmail: z.boolean().optional(),
+        role: z.string().optional(),
+        active: z.boolean().optional(),
+        locale: z.string().optional(),
+        imageUpload: imageUploadSchema
+    })
+    .superRefine((data, ctx) => {
+        if (data.sendSetupEmail) return;
+        if (!data.password) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['password'],
+                message: translate('user-create-page.password-or-setup-email-required')
+            });
+            return;
+        }
+        const strength = usersPasswordSchema.safeParse(data.password);
+        if (!strength.success) {
+            for (const issue of strength.error.issues) {
+                ctx.addIssue({ ...issue, path: ['password'] });
+            }
+        }
+    });
 
 /**
  * Reference to the mounted `FormCard`, read for its `<form>` element.
@@ -117,6 +150,16 @@ const trackUpload = <T,>(
 ) => track(send, { enabled: !!file });
 
 /**
+ * The locale select's options — the languages this build can switch to, named in whatever
+ * language is currently on screen. Same source as `Profile.vue`'s own language select: it already
+ * includes whatever `GET /locales` reported at boot, so a deployment that adds one gets it here
+ * for free.
+ */
+const localeOptions = computed(() =>
+    supportedLanguages.map((code) => ({ value: code, title: t(`generic.${code}`) }))
+);
+
+/**
  * This form's own blocked state — a create that failed blocks the visitor from proceeding past
  * this one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a
  * toast — see docs/theory/request-flow.md.
@@ -142,9 +185,14 @@ const submitForm = () => {
                 {
                     email: form.value.email!,
                     username: form.value.username!,
-                    password: form.value.password!,
+                    // Never both: `sendSetupEmail` is exactly what makes a password optional, so
+                    // sending an empty one alongside it would ask the API to validate a field the
+                    // schema above never required.
+                    password: form.value.sendSetupEmail ? undefined : form.value.password,
+                    sendSetupEmail: form.value.sendSetupEmail,
                     role: form.value.role,
                     active: form.value.active,
+                    locale: form.value.locale,
                     imageUpload: form.value.imageUpload
                 },
                 options
@@ -190,20 +238,41 @@ const submitForm = () => {
                 type="password"
                 data-test="user-password"
                 autocomplete="new-password"
+                :disabled="form.sendSetupEmail"
                 :label="t('user-create-page.label-password')"
                 :error-messages="showErrors ? formErrors.password : []"
+                class="mb-2"
+            />
+            <v-checkbox
+                v-model="form.sendSetupEmail"
+                :label="t('user-create-page.label-send-setup-email')"
+                :hint="t('user-create-page.hint-send-setup-email')"
+                persistent-hint
+                data-test="user-send-setup-email"
+                class="mb-2"
             />
             <FormImageUpload
                 v-model="form.imageUpload"
                 :error-messages="showErrors ? formErrors.imageUpload : []"
                 :progress="uploadProgress"
                 :disabled="isSubmitting"
-                class="mt-2"
+                class="mt-2 mb-2"
             />
             <div class="flex flex-wrap gap-x-8">
-                <!-- Free text, not a select: roles are data, and the server refuses a name
-                     nothing declares — a hard-coded list here would be a second copy of it. -->
-                <v-text-field v-model="form.role" :label="t('user-create-page.label-role')" />
+                <!-- One list, not a free-text field: `roles.ts` is the single place every role
+                     select in this module reads from, so it cannot drift into a second copy. -->
+                <v-select
+                    v-model="form.role"
+                    :items="userRoleOptions"
+                    :label="t('user-create-page.label-role')"
+                    data-test="user-role"
+                />
+                <v-select
+                    v-model="form.locale"
+                    :items="localeOptions"
+                    :label="t('user-create-page.label-locale')"
+                    data-test="user-locale"
+                />
                 <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
             </div>
 

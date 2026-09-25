@@ -106,8 +106,10 @@ describe('UserCreate', () => {
                         email: 'ada@example.com',
                         username: 'ada',
                         password: GOOD_PASSWORD,
+                        sendSetupEmail: undefined,
                         role: undefined,
                         active: undefined,
+                        locale: undefined,
                         imageUpload: undefined
                     },
                     undefined
@@ -119,6 +121,45 @@ describe('UserCreate', () => {
             })
             .then(() => {
                 expect(router.currentRoute.value.fullPath).toBe('/en/users/u-new');
+            });
+    });
+
+    // U2: the backend 422s a create with neither a password nor `sendSetupEmail: true` — the form
+    // must refuse it before that round trip, not only report the server's own rejection.
+    it('refuses a create with no password and no setup email, and sends nothing', () => {
+        const { wrapper, create } = mountPage();
+
+        return wrapper
+            .get('[data-test=user-email] input')
+            .setValue('ada@example.com')
+            .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(create).not.toHaveBeenCalled();
+                expect(wrapper.find('[data-test=user-password] .v-messages').text()).not.toBe('');
+            });
+    });
+
+    it('accepts a blank password once "send setup email" is checked, and sends no password', () => {
+        const { wrapper, create } = mountPage();
+        create.mockResolvedValue(aUser({ id: 'u-new', email: 'ada@example.com' }));
+
+        return wrapper
+            .get('[data-test=user-email] input')
+            .setValue('ada@example.com')
+            .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
+            .then(() => wrapper.get('[data-test=user-send-setup-email] input').setValue(true))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        password: undefined,
+                        sendSetupEmail: true
+                    }),
+                    undefined
+                );
             });
     });
 
