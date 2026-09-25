@@ -20,6 +20,8 @@ import { usersSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import HumanCheck from '@/ui/organisms/HumanCheck.vue';
+import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -36,6 +38,12 @@ const { addMessage } = useNotificationsStore();
  * Sends the reset email. Answers the same way whether or not the address exists.
  */
 const { requestPasswordReset } = useAuthStore();
+
+/**
+ * The human-challenge widget. `POST /account/reset` is always guarded by `humanChallengeGate`, so
+ * this attaches unconditionally rather than waiting for a first refusal.
+ */
+const humanCheck = ref<InstanceType<typeof HumanCheck>>();
 
 /**
  * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
@@ -84,9 +92,11 @@ const {
 const submitForm = () => {
     clearRequestError();
     return handleSubmit(() =>
-        requestPasswordReset(form.value.email!).then(() => {
-            addMessage(t('password-reset-request-page.success'));
-        })
+        requestPasswordReset(form.value.email!, withAntibotToken(humanCheck.value?.token)).then(
+            () => {
+                addMessage(t('password-reset-request-page.success'));
+            }
+        )
     ).catch((error) => {
         if (!applyServerErrors(error)) reportRequestError(error);
     });
@@ -108,6 +118,7 @@ const submitForm = () => {
                     :label="t('password-reset-request-page.label-email')"
                     :error-messages="showErrors ? formErrors.email : []"
                 />
+                <HumanCheck ref="humanCheck" class="mt-2" />
                 <v-btn
                     type="submit"
                     color="primary"

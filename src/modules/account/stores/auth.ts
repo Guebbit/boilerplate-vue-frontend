@@ -216,10 +216,13 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * Starts the password reset flow by sending a token to the provided email.
      *
      * @param email - Email of the account to reset.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
+     *  `PasswordResetRequest.vue` attaches a solved `HumanCheck` token through it: this route is
+     *  always guarded by `humanChallengeGate` once a provider is active.
      * @returns A promise resolving once the request has been accepted.
      */
-    const requestPasswordReset = (email: string) =>
-        fetchAny(() => apiRequestPasswordReset({ email }));
+    const requestPasswordReset = (email: string, options?: AxiosRequestConfig) =>
+        fetchAny(() => apiRequestPasswordReset({ email }, options));
 
     /**
      * Completes the password reset using the one-time token and a new password.

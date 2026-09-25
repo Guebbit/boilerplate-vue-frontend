@@ -19,6 +19,8 @@ import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import HumanCheck from '@/ui/organisms/HumanCheck.vue';
+import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
@@ -51,6 +53,12 @@ const { addMessage } = useNotificationsStore();
  * The public submit action this form calls.
  */
 const { submitContact } = useFeedbackStore();
+
+/**
+ * The human-challenge widget. `POST /feedback/contact` is always guarded by `humanChallengeGate`,
+ * so this attaches unconditionally rather than waiting for a first refusal.
+ */
+const humanCheck = ref<InstanceType<typeof HumanCheck>>();
 
 /**
  * The `<form>` element, handed to `useStructureFormValidation` so it can trigger native validation UI.
@@ -99,13 +107,16 @@ const {
 const submitForm = () =>
     handleSubmit(() => {
         clearSubmitError();
-        return submitContact({
-            name: form.value.name || undefined,
-            email: form.value.email ?? '',
-            subject: form.value.subject ?? '',
-            message: form.value.message ?? '',
-            website: form.value.website || undefined
-        }).then(() => {
+        return submitContact(
+            {
+                name: form.value.name || undefined,
+                email: form.value.email ?? '',
+                subject: form.value.subject ?? '',
+                message: form.value.message ?? '',
+                website: form.value.website || undefined
+            },
+            withAntibotToken(humanCheck.value?.token)
+        ).then(() => {
             addMessage(t('contact-page.success'));
             resetForm();
         });
@@ -167,6 +178,7 @@ const submitForm = () =>
                     :error-messages="showFormErrors ? (formErrors.message ?? []) : []"
                     rows="5"
                 />
+                <HumanCheck ref="humanCheck" class="mb-2" />
                 <v-btn
                     type="submit"
                     color="primary"

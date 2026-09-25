@@ -32,10 +32,12 @@ import { usePostLoginRedirect } from '@/modules/account/composables/use-post-log
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
+import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
@@ -157,6 +159,13 @@ const trackUpload = <T,>(
 const { signup } = useAuthStore();
 
 /**
+ * The human-challenge widget — rendered only once a provider is active, and read here for its
+ * solved token. `POST /account/signup` is always guarded by `humanChallengeGate`, so this attaches
+ * unconditionally rather than waiting for a first refusal, unlike the login/payment retries.
+ */
+const humanCheck = ref<InstanceType<typeof HumanCheck>>();
+
+/**
  * This submit's own blocked state — an API failure that names no field lands here instead of a
  * toast, so it stays next to the button the visitor just pressed.
  */
@@ -196,7 +205,7 @@ const submitForm = () => {
                     analyticsConsent: form.value.analyticsConsent,
                     imageUpload: form.value.imageUpload
                 },
-                options
+                withAntibotToken(humanCheck.value?.token, options)
             )
         )
             .then(() => redirectAfterLogin())
@@ -279,6 +288,7 @@ const submitForm = () => {
                     data-test="signup-analytics-consent"
                     :label="t('signup-page.text-analytics-consent')"
                 />
+                <HumanCheck ref="humanCheck" class="mb-2" />
                 <v-btn
                     type="submit"
                     color="primary"

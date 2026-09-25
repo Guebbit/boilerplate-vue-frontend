@@ -44,7 +44,11 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
-            parseOrvalFixture(config.method, config.url, responses[`${config.method} ${config.url}`])
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                responses[`${config.method} ${config.url}`]
+            )
         )
     )
 }));
@@ -105,7 +109,11 @@ beforeEach(() => {
         'GET /account/oauth/providers': orvalEnvelope({ providers: [] }),
         // A minimal `User`, matching `auth-signup.spec.ts`'s own fixture — `SignupResponse` needs
         // a real object under `data`, not the bodyless shape `orvalEnvelope()` defaults to.
-        'POST /account/signup': orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+        'POST /account/signup': orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com'
+        })
     };
     return loadLocale('en');
 });

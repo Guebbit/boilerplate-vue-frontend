@@ -6,6 +6,7 @@
  */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import type { AxiosRequestConfig } from 'axios';
 import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 import {
     createFeedbackRequest,
@@ -105,10 +106,13 @@ export const useFeedbackStore = defineStore('feedback', () => {
      * reads the inbox, so there is nothing to cache the created ticket into.
      *
      * @param message - Name (optional), email, subject and message.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` — `Contact.vue`
+     *  attaches a solved `HumanCheck` token through it: this route is always guarded by
+     *  `humanChallengeGate` once a provider is active.
      * @returns A promise resolving once the API accepts it.
      */
-    const submitContact = (message: CreateFeedbackRequest) =>
-        fetchAny(() => createFeedbackRequest(message));
+    const submitContact = (message: CreateFeedbackRequest, options?: AxiosRequestConfig) =>
+        fetchAny(() => createFeedbackRequest(message, options));
 
     return {
         requests,
