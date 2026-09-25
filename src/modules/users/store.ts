@@ -126,8 +126,26 @@ export const useUsersStore = defineStore('users', () => {
 
             remove: (userId) => deleteUserById(userId),
 
-            // The new imageUrl comes back from the API; a Blob has no business in store state.
-            optimisticPatch: ({ imageUpload: _uploaded, ...userData } = {}) => userData
+            // The new imageUrl comes back from the API; a Blob has no business in store state —
+            // this is the MULTIPART request shape, which never carries `imageUrl` itself, only
+            // the upload.
+            //
+            // `locale`/`phone`/`website` accept `null` on the wire (clears the field — backend
+            // AUDIT_0924 D17c) but the LOCAL `User` never does; `null` reads as "leave the
+            // optimistic guess alone" here, since the real clear only takes visible effect once
+            // the response `update:` above already waits for lands.
+            optimisticPatch: ({
+                imageUpload: _uploaded,
+                locale,
+                phone,
+                website,
+                ...userData
+            } = {}) => ({
+                ...userData,
+                ...(locale != null && { locale }),
+                ...(phone != null && { phone }),
+                ...(website != null && { website })
+            })
         },
         { loadingKey: 'users', getLoading, setLoading }
     );

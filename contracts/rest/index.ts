@@ -67,7 +67,8 @@ export type PasswordNew = string;
 export type Locale = string;
 
 /**
- * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `''` is never a synonym for "no image", only `null` is, on a field that allows it.
+ * @minLength 1
  */
 export type ImageUrl = string;
 
@@ -1506,10 +1507,18 @@ export interface UpdateAccountRequest {
     email?: Email;
     /** @minLength 3 */
     username?: string;
-    locale?: Locale;
-    imageUrl?: ImageUrl;
-    phone?: string;
-    website?: string;
+    locale?: Locale | null;
+    imageUrl?: ImageUrl | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
     analyticsConsent?: boolean;
 }
 
@@ -1517,11 +1526,19 @@ export interface UpdateAccountRequestMultipart {
     email?: Email;
     /** @minLength 3 */
     username?: string;
-    locale?: Locale;
+    locale?: Locale | null;
     /** Optional user profile image */
     imageUpload?: Blob;
-    phone?: string;
-    website?: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
     analyticsConsent?: boolean;
 }
 
@@ -1632,7 +1649,11 @@ export interface AddressInput {
 }
 
 export interface UpdateAddressRequest {
-    label?: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    label?: string | null;
     /** @minLength 1 */
     fullName?: string;
     /** @minLength 1 */
@@ -1643,7 +1664,11 @@ export interface UpdateAddressRequest {
     zip?: string;
     /** @minLength 1 */
     country?: string;
-    phone?: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
     default?: boolean;
 }
 
@@ -1948,26 +1973,44 @@ export interface DeleteUserRequest {
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: PasswordNew;
+    /** @minLength 1 */
     username?: string;
     role?: string;
     active?: boolean;
-    imageUrl?: ImageUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
+    imageUrl?: ImageUrl | null;
+    locale?: Locale | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
 }
 
 export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: PasswordNew;
+    /** @minLength 1 */
     username?: string;
     role?: string;
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
+    locale?: Locale | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    phone?: string | null;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    website?: string | null;
 }
 
 export interface SearchUsersRequest {
@@ -2052,7 +2095,11 @@ export interface SearchFeedbackRequestsRequest {
 
 export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
-    adminNotes?: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    adminNotes?: string | null;
 }
 
 export interface ProductsResponse {
@@ -2168,9 +2215,10 @@ export interface UpdateProductRequest {
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
+     * @nullable
      */
-    weight?: number;
-    imageUrl?: ImageUrl;
+    weight?: number | null;
+    imageUrl?: ImageUrl | null;
     categories?: string[];
     tags?: string[];
 }
@@ -2189,8 +2237,9 @@ export interface UpdateProductRequestMultipart {
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
+     * @nullable
      */
-    weight?: number;
+    weight?: number | null;
     /** Optional product image */
     imageUpload?: Blob;
     categories?: string[];
@@ -2909,7 +2958,11 @@ export interface UpdateWebhookSubscriptionRequest {
      * @pattern (?:^https://)
      */
     url?: string;
-    description?: string;
+    /**
+     * @minLength 1
+     * @nullable
+     */
+    description?: string | null;
     /** @minItems 1 */
     eventTypes?: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
@@ -4062,16 +4115,25 @@ export const updateAccountWithMultipart = (
     if (updateAccountRequestMultipart.username !== undefined) {
         formData.append(`username`, updateAccountRequestMultipart.username);
     }
-    if (updateAccountRequestMultipart.locale !== undefined) {
+    if (
+        updateAccountRequestMultipart.locale !== undefined &&
+        updateAccountRequestMultipart.locale !== null
+    ) {
         formData.append(`locale`, updateAccountRequestMultipart.locale);
     }
     if (updateAccountRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
     }
-    if (updateAccountRequestMultipart.phone !== undefined) {
+    if (
+        updateAccountRequestMultipart.phone !== undefined &&
+        updateAccountRequestMultipart.phone !== null
+    ) {
         formData.append(`phone`, updateAccountRequestMultipart.phone);
     }
-    if (updateAccountRequestMultipart.website !== undefined) {
+    if (
+        updateAccountRequestMultipart.website !== undefined &&
+        updateAccountRequestMultipart.website !== null
+    ) {
         formData.append(`website`, updateAccountRequestMultipart.website);
     }
     if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
@@ -4826,13 +4888,22 @@ export const updateUserByIdWithMultipart = (
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
-    if (updateUserByIdRequestMultipart.locale !== undefined) {
+    if (
+        updateUserByIdRequestMultipart.locale !== undefined &&
+        updateUserByIdRequestMultipart.locale !== null
+    ) {
         formData.append(`locale`, updateUserByIdRequestMultipart.locale);
     }
-    if (updateUserByIdRequestMultipart.phone !== undefined) {
+    if (
+        updateUserByIdRequestMultipart.phone !== undefined &&
+        updateUserByIdRequestMultipart.phone !== null
+    ) {
         formData.append(`phone`, updateUserByIdRequestMultipart.phone);
     }
-    if (updateUserByIdRequestMultipart.website !== undefined) {
+    if (
+        updateUserByIdRequestMultipart.website !== undefined &&
+        updateUserByIdRequestMultipart.website !== null
+    ) {
         formData.append(`website`, updateUserByIdRequestMultipart.website);
     }
 
@@ -5210,7 +5281,10 @@ export const updateProductByIdWithMultipart = (
             updateProductRequestMultipart.requiresShipping.toString()
         );
     }
-    if (updateProductRequestMultipart.weight !== undefined) {
+    if (
+        updateProductRequestMultipart.weight !== undefined &&
+        updateProductRequestMultipart.weight !== null
+    ) {
         formData.append(`weight`, updateProductRequestMultipart.weight.toString());
     }
     if (updateProductRequestMultipart.imageUpload !== undefined) {

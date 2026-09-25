@@ -1702,6 +1702,7 @@ export const GetAntibotChallengeResponse = zod.strictObject({
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
+
 export const getAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const GetAccountResponse = zod.strictObject({
@@ -1718,9 +1719,10 @@ export const GetAccountResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -1752,26 +1754,27 @@ export const GetAccountResponse = zod.strictObject({
  */
 export const updateAccountBodyUsernameMin = 3;
 
-export const updateAccountBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const UpdateAccountBody = zod.strictObject({
     email: zod.email().optional(),
     username: zod.string().min(updateAccountBodyUsernameMin).optional(),
     locale: zod
         .string()
-        .regex(updateAccountBodyLocaleRegExp)
-        .optional()
+        .regex(updateAccountBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
+        )
+        .nullish(),
     imageUrl: zod
         .string()
-        .optional()
+        .min(1)
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
-    phone: zod.string().optional(),
-    website: zod.string().optional(),
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+        )
+        .nullish(),
+    phone: zod.string().min(1).nullish(),
+    website: zod.string().min(1).nullish(),
     analyticsConsent: zod.boolean().optional()
 });
 
@@ -1791,9 +1794,10 @@ export const UpdateAccountResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -2163,13 +2167,13 @@ export const UpdateAddressParams = zod.strictObject({
 });
 
 export const UpdateAddressBody = zod.strictObject({
-    label: zod.string().optional(),
+    label: zod.string().min(1).nullish(),
     fullName: zod.string().min(1).optional(),
     street: zod.string().min(1).optional(),
     city: zod.string().min(1).optional(),
     zip: zod.string().min(1).optional(),
     country: zod.string().min(1).optional(),
-    phone: zod.string().optional(),
+    phone: zod.string().min(1).nullish(),
     default: zod.boolean().optional()
 });
 
@@ -2454,9 +2458,10 @@ export const SignupBody = zod.strictObject({
         ),
     imageUrl: zod
         .string()
+        .min(1)
         .optional()
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
         ),
     termsAccepted: zod.literal(true),
     analyticsConsent: zod.boolean().optional()
@@ -2478,9 +2483,10 @@ export const SignupResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -2602,6 +2608,7 @@ export const DeleteExpiredTokensResponse = zod.strictObject({
  * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  * @summary Export the caller's own data
  */
+
 export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
@@ -2616,6 +2623,7 @@ export const exportAccountDataResponseDataOrdersItemItemsItemProductTaxRateMax =
 export const exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const exportAccountDataResponseDataOrdersItemItemsItemTaxAmountMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemItemsItemNetAmountMin = 0;
@@ -2662,9 +2670,10 @@ export const ExportAccountDataResponse = zod.strictObject({
             pendingEmail: zod.email().optional(),
             imageUrl: zod
                 .string()
+                .min(1)
                 .optional()
                 .describe(
-                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                 ),
             thumbnailUrl: zod
                 .string()
@@ -2769,8 +2778,9 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .strictObject({
                                 imageUrl: zod
                                     .string()
+                                    .min(1)
                                     .describe(
-                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                                     ),
                                 thumbnailUrl: zod
                                     .string()
@@ -3545,9 +3555,10 @@ export const ListUsersResponse = zod.strictObject({
                 pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
+                    .min(1)
                     .optional()
                     .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                     ),
                 thumbnailUrl: zod
                     .string()
@@ -3622,9 +3633,10 @@ export const CreateUserBody = zod.strictObject({
     active: zod.boolean().default(createUserBodyActiveDefault),
     imageUrl: zod
         .string()
+        .min(1)
         .optional()
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
         ),
     locale: zod
         .string()
@@ -3651,9 +3663,10 @@ export const CreateUserResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -3729,9 +3742,10 @@ export const GetUserByIdResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -3770,7 +3784,8 @@ export const updateUserByIdBodyPasswordMin = 8;
 export const updateUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
 );
-export const updateUserByIdBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
@@ -3782,24 +3797,25 @@ export const UpdateUserByIdBody = zod.strictObject({
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
         ),
-    username: zod.string().optional(),
+    username: zod.string().min(1).optional(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
     imageUrl: zod
         .string()
-        .optional()
+        .min(1)
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+        )
+        .nullish(),
     locale: zod
         .string()
-        .regex(updateUserByIdBodyLocaleRegExp)
-        .optional()
+        .regex(updateUserByIdBodyLocaleOneRegExp)
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        ),
-    phone: zod.string().optional(),
-    website: zod.string().optional()
+        )
+        .nullish(),
+    phone: zod.string().min(1).nullish(),
+    website: zod.string().min(1).nullish()
 });
 
 export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -3818,9 +3834,10 @@ export const UpdateUserByIdResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -3899,9 +3916,10 @@ export const RestoreUserByIdResponse = zod.strictObject({
         pendingEmail: zod.email().optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -4030,9 +4048,10 @@ export const SearchUsersResponse = zod.strictObject({
                 pendingEmail: zod.email().optional(),
                 imageUrl: zod
                     .string()
+                    .min(1)
                     .optional()
                     .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                     ),
                 thumbnailUrl: zod
                     .string()
@@ -4320,7 +4339,7 @@ export const UpdateFeedbackRequestStatusParams = zod.strictObject({
 
 export const UpdateFeedbackRequestStatusBody = zod.strictObject({
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    adminNotes: zod.string().optional()
+    adminNotes: zod.string().min(1).nullish()
 });
 
 export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
@@ -4472,9 +4491,10 @@ export const ListProductsResponse = zod.strictObject({
                 weight: zod.number().min(listProductsResponseDataItemsItemWeightMin).optional(),
                 imageUrl: zod
                     .string()
+                    .min(1)
                     .optional()
                     .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                     ),
                 thumbnailUrl: zod
                     .string()
@@ -4557,9 +4577,10 @@ export const CreateProductBody = zod.strictObject({
         .describe('Grams. Absent counts as 0 for shipping-method filtering.'),
     imageUrl: zod
         .string()
+        .min(1)
         .optional()
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
         ),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
@@ -4616,9 +4637,10 @@ export const CreateProductResponse = zod.strictObject({
         weight: zod.number().min(createProductResponseDataWeightMin).optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -4744,9 +4766,10 @@ export const GetProductByIdResponse = zod.strictObject({
         weight: zod.number().min(getProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -4819,14 +4842,15 @@ export const UpdateProductByIdBody = zod.strictObject({
     weight: zod
         .number()
         .min(updateProductByIdBodyWeightMin)
-        .optional()
+        .nullish()
         .describe('Grams. Absent counts as 0 for shipping-method filtering.'),
     imageUrl: zod
         .string()
-        .optional()
+        .min(1)
         .describe(
-            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        ),
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
+        )
+        .nullish(),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
@@ -4884,9 +4908,10 @@ export const UpdateProductByIdResponse = zod.strictObject({
         weight: zod.number().min(updateProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -4985,9 +5010,10 @@ export const GetProductAdminResponse = zod.strictObject({
                 ),
             imageUrl: zod
                 .string()
+                .min(1)
                 .optional()
                 .describe(
-                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                 ),
             thumbnailUrl: zod
                 .string()
@@ -5074,9 +5100,10 @@ export const RestoreProductByIdResponse = zod.strictObject({
         weight: zod.number().min(restoreProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod
             .string()
+            .min(1)
             .optional()
             .describe(
-                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
             ),
         thumbnailUrl: zod
             .string()
@@ -5226,9 +5253,10 @@ export const SearchProductsResponse = zod.strictObject({
                 weight: zod.number().min(searchProductsResponseDataItemsItemWeightMin).optional(),
                 imageUrl: zod
                     .string()
+                    .min(1)
                     .optional()
                     .describe(
-                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                     ),
                 thumbnailUrl: zod
                     .string()
@@ -5612,6 +5640,7 @@ export const checkoutResponseDataOrderItemsItemProductTaxRateMax = 1;
 export const checkoutResponseDataOrderItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const checkoutResponseDataOrderItemsItemTaxAmountMin = 0;
 
 export const checkoutResponseDataOrderItemsItemNetAmountMin = 0;
@@ -5695,8 +5724,9 @@ export const CheckoutResponse = zod.strictObject({
                         .strictObject({
                             imageUrl: zod
                                 .string()
+                                .min(1)
                                 .describe(
-                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                                 ),
                             thumbnailUrl: zod
                                 .string()
@@ -6067,6 +6097,7 @@ export const listOrdersResponseDataItemsItemItemsItemProductTaxRateMax = 1;
 export const listOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const listOrdersResponseDataItemsItemItemsItemTaxAmountMin = 0;
 
 export const listOrdersResponseDataItemsItemItemsItemNetAmountMin = 0;
@@ -6161,8 +6192,9 @@ export const ListOrdersResponse = zod.strictObject({
                             .strictObject({
                                 imageUrl: zod
                                     .string()
+                                    .min(1)
                                     .describe(
-                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                                     ),
                                 thumbnailUrl: zod
                                     .string()
@@ -6412,6 +6444,7 @@ export const createOrderResponseDataItemsItemProductTaxRateMax = 1;
 export const createOrderResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const createOrderResponseDataItemsItemTaxAmountMin = 0;
 
 export const createOrderResponseDataItemsItemNetAmountMin = 0;
@@ -6492,8 +6525,9 @@ export const CreateOrderResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -6760,6 +6794,7 @@ export const searchOrdersResponseDataItemsItemItemsItemProductTaxRateMax = 1;
 export const searchOrdersResponseDataItemsItemItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const searchOrdersResponseDataItemsItemItemsItemTaxAmountMin = 0;
 
 export const searchOrdersResponseDataItemsItemItemsItemNetAmountMin = 0;
@@ -6854,8 +6889,9 @@ export const SearchOrdersResponse = zod.strictObject({
                             .strictObject({
                                 imageUrl: zod
                                     .string()
+                                    .min(1)
                                     .describe(
-                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                                     ),
                                 thumbnailUrl: zod
                                     .string()
@@ -7078,6 +7114,7 @@ export const getOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
 export const getOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const getOrderByIdResponseDataItemsItemTaxAmountMin = 0;
 
 export const getOrderByIdResponseDataItemsItemNetAmountMin = 0;
@@ -7158,8 +7195,9 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -7374,6 +7412,7 @@ export const updateOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
 export const updateOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const updateOrderByIdResponseDataItemsItemTaxAmountMin = 0;
 
 export const updateOrderByIdResponseDataItemsItemNetAmountMin = 0;
@@ -7456,8 +7495,9 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -7687,6 +7727,7 @@ export const restoreOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
 export const restoreOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const restoreOrderByIdResponseDataItemsItemTaxAmountMin = 0;
 
 export const restoreOrderByIdResponseDataItemsItemNetAmountMin = 0;
@@ -7769,8 +7810,9 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -8000,6 +8042,7 @@ export const cancelOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
 export const cancelOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const cancelOrderByIdResponseDataItemsItemTaxAmountMin = 0;
 
 export const cancelOrderByIdResponseDataItemsItemNetAmountMin = 0;
@@ -8082,8 +8125,9 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -8301,6 +8345,7 @@ export const overrideOrderStatusResponseDataItemsItemProductTaxRateMax = 1;
 export const overrideOrderStatusResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const overrideOrderStatusResponseDataItemsItemTaxAmountMin = 0;
 
 export const overrideOrderStatusResponseDataItemsItemNetAmountMin = 0;
@@ -8383,8 +8428,9 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -8853,6 +8899,7 @@ export const getOrderByReferenceResponseDataItemsItemProductTaxRateMax = 1;
 export const getOrderByReferenceResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+
 export const getOrderByReferenceResponseDataItemsItemTaxAmountMin = 0;
 
 export const getOrderByReferenceResponseDataItemsItemNetAmountMin = 0;
@@ -8935,8 +8982,9 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .strictObject({
                         imageUrl: zod
                             .string()
+                            .min(1)
                             .describe(
-                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `\'\'` is never a synonym for \"no image\", only `null` is, on a field that allows it.'
                             ),
                         thumbnailUrl: zod
                             .string()
@@ -10297,7 +10345,7 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
         .regex(updateWebhookSubscriptionBodyUrlRegExp)
         .optional()
         .describe('Must be `https:\/\/` — same rule `CreateWebhookSubscriptionRequest` states.'),
-    description: zod.string().optional(),
+    description: zod.string().min(1).nullish(),
     eventTypes: zod.array(zod.string()).min(1).optional(),
     enabled: zod
         .boolean()

@@ -5206,7 +5206,8 @@ components:
     ImageUrl:
       type: string
       format: uri-reference
-      description: "Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI."
+      minLength: 1
+      description: "Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `''` is never a synonym for \"no image\", only `null` is, on a field that allows it."
     ThumbnailUrl:
       type: string
       format: uri-reference
@@ -7311,13 +7312,21 @@ components:
           type: string
           minLength: 3
         locale:
-          $ref: "#/components/schemas/Locale"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
         imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
         phone:
           type: string
+          minLength: 1
+          nullable: true
         website:
           type: string
+          minLength: 1
+          nullable: true
         analyticsConsent:
           type: boolean
     UpdateAccountRequestMultipart:
@@ -7330,15 +7339,21 @@ components:
           type: string
           minLength: 3
         locale:
-          $ref: "#/components/schemas/Locale"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
         imageUpload:
           type: string
           format: binary
           description: Optional user profile image
         phone:
           type: string
+          minLength: 1
+          nullable: true
         website:
           type: string
+          minLength: 1
+          nullable: true
         analyticsConsent:
           type: boolean
     ChangePasswordRequest:
@@ -7593,6 +7608,8 @@ components:
       properties:
         label:
           type: string
+          minLength: 1
+          nullable: true
         fullName:
           type: string
           minLength: 1
@@ -7610,6 +7627,8 @@ components:
           minLength: 1
         phone:
           type: string
+          minLength: 1
+          nullable: true
         default:
           type: boolean
     EmailVerificationRequested:
@@ -8446,18 +8465,27 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
+          minLength: 1
         role:
           type: string
         active:
           type: boolean
         imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
         locale:
-          $ref: "#/components/schemas/Locale"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          minLength: 1
+          nullable: true
         website:
           type: string
+          minLength: 1
+          nullable: true
     UpdateUserByIdRequestMultipart:
       type: object
       additionalProperties: false
@@ -8468,6 +8496,7 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
+          minLength: 1
         role:
           type: string
         active:
@@ -8477,11 +8506,17 @@ components:
           format: binary
           description: Optional user profile image
         locale:
-          $ref: "#/components/schemas/Locale"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          minLength: 1
+          nullable: true
         website:
           type: string
+          minLength: 1
+          nullable: true
     SearchUsersRequest:
       type: object
       additionalProperties: false
@@ -8640,6 +8675,8 @@ components:
           $ref: "#/components/schemas/FeedbackRequestStatus"
         adminNotes:
           type: string
+          minLength: 1
+          nullable: true
     ProductsResponse:
       type: object
       additionalProperties: false
@@ -8870,9 +8907,12 @@ components:
         weight:
           type: integer
           minimum: 0
+          nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
         categories:
           type: array
           items:
@@ -8902,6 +8942,7 @@ components:
         weight:
           type: integer
           minimum: 0
+          nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUpload:
           type: string
@@ -10123,6 +10164,8 @@ components:
           description: Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
         description:
           type: string
+          minLength: 1
+          nullable: true
         eventTypes:
           type: array
           items:
