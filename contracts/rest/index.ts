@@ -3724,6 +3724,20 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
+ * Public readiness probe for an orchestrator (Kubernetes' own `/livez` + `/readyz`
+ * convention). Empty body either way: 200 once this instance has finished booting,
+ * has not started draining for shutdown, and can reach the database; 503 otherwise.
+ *
+ * NOT the liveness probe — `GET /` is that, and answers regardless of readiness.
+ * Point a load balancer or a container HEALTHCHECK here instead of at `/`, so a
+ * draining instance stops receiving new traffic before its connections are cut.
+ * @summary Readiness check
+ */
+export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) => {
+    return orvalMutator<void>({ url: `/readyz`, method: 'GET' }, options);
+};
+
+/**
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
@@ -4086,9 +4100,10 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  * backing service is missing when it cannot. Also carries uptime, memory, system and
  * telemetry-wiring detail for the dashboard card.
  *
- * This is NOT the liveness probe — `GET /` is, and it is what the container
- * HEALTHCHECK calls. Nothing here performs I/O; every dependency is read from the
- * connection state its adapter already maintains.
+ * This is NOT the liveness probe (`GET /`) or the readiness probe the container
+ * HEALTHCHECK calls (`GET /readyz`) — this is the detailed, authenticated view for a
+ * dashboard. Nothing here performs I/O; every dependency is read from the connection
+ * state its adapter already maintains.
  *
  * Requires admin role.
  * @summary Health snapshot
@@ -6545,6 +6560,7 @@ export const revokeApiKey = (
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>;
