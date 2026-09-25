@@ -68,17 +68,20 @@ describe('Feedback', () => {
         cy.navigateViaMenu('admin', '/en/feedback');
         cy.get('[data-test=feedback-item]').should('have.length', 1);
 
-        // The reload after a delete is a POST /feedback/search — never browser-cached, unlike
-        // GET /feedback. Waited on explicitly rather than left to `.should()`'s implicit retry, so
-        // a regression here fails on THIS line instead of timing out on the assertion below.
-        cy.intercept('POST', '**/feedback/search').as('reload');
+        cy.intercept('DELETE', '**/feedback/*').as('delete');
 
         cy.get('[data-test=feedback-delete]').click();
         cy.get('[data-test=app-dialog-confirm]').click();
-        cy.wait('@reload');
+        cy.wait('@delete').its('response.statusCode').should('eq', 200);
 
         cy.get('[data-test=feedback-item]').should('have.length', 0);
         cy.contains('Ticket deleted').should('exist');
+
+        // A fresh load must not hand the row back — the inbox reads through POST /feedback/search,
+        // which no browser cache answers, unlike GET /feedback's 30-second max-age.
+        cy.reload();
+        cy.get('#feedback-inbox-page').should('exist');
+        cy.get('[data-test=feedback-item]').should('have.length', 0);
     });
 
     it('declining the delete confirmation leaves the ticket in place', () => {

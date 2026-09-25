@@ -7,11 +7,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Admin inbox: fetches the whole ticket list on mount, or a filtered page through the search
- * form, and moves a ticket through its statuses via a per-row select — every write reloads
- * whatever the operator is currently looking at.
+ * Admin inbox: the store's paginated search wired to a filter form and a pager, like every other
+ * admin list, with a per-row status select and delete.
  */
-import { computed, onMounted, reactive } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox, Search } from 'lucide-vue-next';
@@ -23,11 +22,9 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { FeedbackRequestStatus } from '@types';
-import type {
-    FeedbackRequestStatus as TFeedbackRequestStatus,
-    SearchFeedbackRequestsRequest
-} from '@types';
+import type { FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
 /**
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
@@ -42,12 +39,13 @@ const { addMessage } = useNotificationsStore();
 /**
  * The admin actions this page drives.
  */
-const { fetchRequests, searchRequests, updateStatus, deleteRequest } = useFeedbackStore();
+const { watchSearchRequests, updateRequest, deleteRequest } = useFeedbackStore();
 
 /**
- * The inbox list, its shared loading flag, and whether a search is currently narrowing it.
+ * Inbox reactive state — filters, the current page window and the pagination counters.
  */
-const { requests, activeFilters, loading } = storeToRefs(useFeedbackStore());
+const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
+    storeToRefs(useFeedbackStore());
 
 /**
  * The status choices, labelled in the visitor's language.
@@ -74,31 +72,46 @@ const filterStatusOptions = computed(() => [
 ]);
 
 /**
- * The search form's own fields — kept separate from the store's `activeFilters` so typing does
- * not search on every keystroke; only submitting the form does.
+ * Whether any filter is narrowing the inbox — picks the empty state's wording.
  */
-const filters = reactive<SearchFeedbackRequestsRequest>({});
+const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
 
 /**
- * Runs the search form's current filters against `POST /feedback/search`.
- *
- * @returns Nothing; a failed request surfaces as a toast.
+ * Selectable page sizes for the inbox.
  */
-const handleSearch = () =>
-    searchRequests({ ...filters }).catch((error: unknown) =>
-        notifyErrorMessages(addMessage, error)
-    );
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
+];
 
 /**
- * Clears the search form and returns to the unfiltered inbox.
+ * Search function bound to the store's reactive `filters`/pagination, reporting a failed request
+ * as a toast.
+ */
+const { search } = watchSearchRequests({
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
+
+/**
+ * Applies the current filters, restarting from the first page.
  *
- * @returns Nothing; a failed request surfaces as a toast.
+ * @returns The search promise, resolving once the page is loaded.
+ */
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+/**
+ * Clears every filter and reloads the first page from the API.
+ *
+ * @returns The search promise, resolving once the page is loaded.
  */
 const handleReset = () => {
-    filters.text = undefined;
-    filters.status = undefined;
-    filters.email = undefined;
-    return fetchRequests().catch((error: unknown) => notifyErrorMessages(addMessage, error));
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
 };
 
 /**
@@ -115,17 +128,20 @@ const {
 } = useBlockingError();
 
 /**
- * Moves one ticket to a new status.
+ * Moves one ticket to a new status. The page is reloaded afterwards, since an active status
+ * filter may no longer match the row.
  *
  * @param requestId - Which ticket.
  * @param status - Its next status.
- * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
+ * @returns A promise settling once the write and the reload have finished; a failure blocks the
+ *  list in place ({@link rowActionError}).
  */
 const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
     clearRowActionError();
-    updateStatus(requestId, status)
+    return updateRequest(requestId, { status })
         .then(() => addMessage(t('feedback-inbox-page.success-status')))
-        .catch((error) => reportRowActionError(error));
+        .then(() => search(true))
+        .catch((error: unknown) => reportRowActionError(error));
 };
 
 /**
@@ -145,18 +161,16 @@ const handleDelete = (requestId: string, subject: string) => {
             clearRowActionError();
             return deleteRequest(requestId)
                 .then(() => addMessage(t('feedback-inbox-page.success-delete')))
-                .catch((error) => reportRowActionError(error));
+                .catch((error: unknown) => reportRowActionError(error));
         });
 };
-
-onMounted(fetchRequests);
 </script>
 
 <template>
     <LayoutDefault id="feedback-inbox-page" :title="t('feedback-inbox-page.page-title')">
         <v-card class="mx-auto mb-6 w-full max-w-3xl p-5">
             <form novalidate @submit.prevent="handleSearch">
-                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-3">
+                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     <v-text-field
                         v-model="filters.text"
                         :label="t('feedback-inbox-page.filter-text')"
@@ -175,6 +189,14 @@ onMounted(fetchRequests);
                         item-value="value"
                         hide-details
                     />
+                    <v-select
+                        v-model="pageSize"
+                        :label="t('generic.page-size')"
+                        :items="pageSizeOptions"
+                        item-title="label"
+                        item-value="value"
+                        hide-details
+                    />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary" :loading="loading">
@@ -189,11 +211,9 @@ onMounted(fetchRequests);
         </v-card>
 
         <v-empty-state
-            v-if="requests.length === 0"
+            v-if="pageItemList.length === 0"
             :title="
-                activeFilters
-                    ? t('feedback-inbox-page.empty-search')
-                    : t('feedback-inbox-page.empty')
+                isFiltered ? t('feedback-inbox-page.empty-search') : t('feedback-inbox-page.empty')
             "
         >
             <template #media>
@@ -205,7 +225,7 @@ onMounted(fetchRequests);
             <InlineErrorAlert :message="rowActionError" test-id="feedback-row-action-error" />
 
             <v-card
-                v-for="request in requests"
+                v-for="request in pageItemList"
                 :key="'feedback-' + request.id"
                 data-test="feedback-item"
                 class="p-5"
@@ -254,6 +274,8 @@ onMounted(fetchRequests);
                 </div>
                 <p class="mt-3 whitespace-pre-line">{{ request.message }}</p>
             </v-card>
+
+            <ListPagination v-model="pageCurrent" :length="pageTotal" />
         </div>
     </LayoutDefault>
 </template>

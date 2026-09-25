@@ -2,9 +2,9 @@
  * @module
  * The feedback store, transport-mocked like the wishlist's spec: `orvalMutator` is a router keyed
  * on `METHOD /url`, so the generated client and the store under test stay real. What is worth
- * pinning is whole-list replacement (the inbox renders what the API answered, never a local guess),
- * `POST /feedback/search` actually being called, and a write reloading through whichever of the
- * two the operator was last looking at rather than always snapping back to the whole list.
+ * pinning is the inbox reading pages through `POST /feedback/search` (never the browser-cached
+ * GET), `pageTotal` coming from the server's own count, and a write patching or evicting the
+ * cached row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -55,13 +55,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'POST /feedback/contact': orvalEnvelope(TICKET),
-        'GET /feedback': orvalEnvelope({
-            items: [TICKET],
-            meta: { totalItems: 1, totalPages: 1 }
-        }),
         'POST /feedback/search': orvalEnvelope({
             items: [TICKET],
-            meta: { totalItems: 1, totalPages: 1 }
+            meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
         }),
         'PUT /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
         'DELETE /feedback/f1': orvalEnvelope()
@@ -94,99 +90,117 @@ describe('submitContact', () => {
             }));
 });
 
-describe('fetchRequests', () => {
-    it('replaces the inbox with what the API answered', () => {
-        const store = useFeedbackStore();
-        return store.fetchRequests().then(() => {
-            expect(store.requests.map(({ id }) => id)).toEqual(['f1']);
-        });
-    });
+/**
+ * The JSON body of the most recent request — what `POST /feedback/search` reads.
+ */
+const lastBody = () => {
+    const [request] = vi.mocked(orvalMutator).mock.calls.at(-1) ?? [];
+    return (request as { data?: Record<string, unknown> } | undefined)?.data;
+};
 
+describe('the inbox search', () => {
     /*
-     * Through the unfiltered search, never `GET /feedback` with a cache-busting param: the
-     * contract declares no such param, and the API answers an undeclared one with 422 — the
-     * inbox then rendered empty for every admin.
+     * Through the search, never `GET /feedback`: the GET is browser-cached for 30 seconds, and
+     * the contract declares no cache-busting param (the API answers an undeclared one with 422).
      */
-    it('reads the whole inbox through the search, with no filters and no query string', () =>
+    it('reads a page through POST /feedback/search with no query string', () =>
         useFeedbackStore()
-            .fetchRequests()
+            .fetchPaginationRequests()
             .then(() => {
                 const [request] = vi.mocked(orvalMutator).mock.calls[0] as [
-                    { url: string; data?: unknown; params?: unknown }
+                    { url: string; method: string; data?: unknown; params?: unknown }
                 ];
-                expect(request).toMatchObject({ url: '/feedback/search', data: {} });
+                expect(request).toMatchObject({
+                    url: '/feedback/search',
+                    method: 'POST',
+                    data: { page: 1, pageSize: 10 }
+                });
                 expect(request.params).toBeUndefined();
             }));
-});
 
-describe('searchRequests', () => {
-    it('replaces the inbox through POST /feedback/search', () => {
-        const store = useFeedbackStore();
-        return store.searchRequests({ status: 'new' }).then(() => {
-            expect(requestedUrls()).toEqual(['/feedback/search']);
-            expect(store.requests.map(({ id }) => id)).toEqual(['f1']);
-        });
-    });
-});
-
-describe('updateStatus', () => {
-    it('writes the status, then reloads the inbox it changed', () => {
-        const store = useFeedbackStore();
-        return store
-            .fetchRequests()
-            .then(() => store.updateStatus('f1', 'resolved'))
+    it('passes an explicit page and size through', () =>
+        useFeedbackStore()
+            .fetchPaginationRequests(3, 25)
             .then(() => {
-                // The reload is the point: the row worth rendering is the API's.
-                expect(requestedUrls()).toEqual([
-                    '/feedback/search',
-                    '/feedback/f1',
-                    '/feedback/search'
-                ]);
+                expect(lastBody()).toMatchObject({ page: 3, pageSize: 25 });
+            }));
+
+    it('posts every supported filter', () => {
+        const store = useFeedbackStore();
+        store.filters = { text: 'cats', status: 'new', email: 'curious@example.com' };
+
+        return store
+            .watchSearchRequests()
+            .search()
+            .then(() => {
+                expect(lastBody()).toMatchObject({
+                    text: 'cats',
+                    status: 'new',
+                    email: 'curious@example.com'
+                });
             });
     });
 
-    it('reloads through the active search rather than snapping back to the whole list', () => {
+    // The toolkit's own pageTotal counts the local cache — one ticket here — not the inbox.
+    it("takes pageTotal from the server's meta, not from the rows it holds", () => {
         const store = useFeedbackStore();
         return store
-            .searchRequests({ status: 'new' })
-            .then(() => store.updateStatus('f1', 'resolved'))
+            .watchSearchRequests()
+            .search()
             .then(() => {
-                expect(requestedUrls()).toEqual([
-                    '/feedback/search',
-                    '/feedback/f1',
-                    '/feedback/search'
-                ]);
+                expect(store.pageItemList.map(({ id }) => id)).toEqual(['f1']);
+                expect(store.pageTotal).toBe(4);
+            });
+    });
+
+    it('reports a failed search to the supplied error handler', () => {
+        const failure = new Error('network down');
+        vi.mocked(orvalMutator).mockRejectedValueOnce(failure);
+        const onError = vi.fn();
+
+        return useFeedbackStore()
+            .watchSearchRequests({ onError })
+            .search()
+            .catch(() => {})
+            .then(() => {
+                expect(onError).toHaveBeenCalledWith(failure, expect.anything());
+            });
+    });
+});
+
+describe('updateRequest', () => {
+    it("writes the status and caches the API's row, not a local guess", () => {
+        const store = useFeedbackStore();
+        return store
+            .watchSearchRequests()
+            .search()
+            .then(() => store.updateRequest('f1', { status: 'resolved' }))
+            .then(() => {
+                const [, request] = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(
+                        (call) => call[0] as { url: string; method: string; data?: unknown }
+                    );
+                expect(request).toMatchObject({
+                    url: '/feedback/f1',
+                    method: 'PUT',
+                    data: { status: 'resolved' }
+                });
+                expect(store.requests.f1?.status).toBe('resolved');
             });
     });
 });
 
 describe('deleteRequest', () => {
-    it('removes the ticket, then reloads the inbox it emptied', () => {
+    it('deletes the ticket and drops it from the page on screen', () => {
         const store = useFeedbackStore();
         return store
-            .fetchRequests()
+            .watchSearchRequests()
+            .search()
             .then(() => store.deleteRequest('f1'))
             .then(() => {
-                // Same reload rule as updateStatus, for the same reason.
-                expect(requestedUrls()).toEqual([
-                    '/feedback/search',
-                    '/feedback/f1',
-                    '/feedback/search'
-                ]);
-            });
-    });
-
-    it('reloads through the active search rather than snapping back to the whole list', () => {
-        const store = useFeedbackStore();
-        return store
-            .searchRequests({ status: 'new' })
-            .then(() => store.deleteRequest('f1'))
-            .then(() => {
-                expect(requestedUrls()).toEqual([
-                    '/feedback/search',
-                    '/feedback/f1',
-                    '/feedback/search'
-                ]);
+                expect(requestedUrls()).toEqual(['/feedback/search', '/feedback/f1']);
+                expect(store.pageItemList).toEqual([]);
             });
     });
 });

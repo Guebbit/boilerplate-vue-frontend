@@ -22,9 +22,8 @@ export const feedbackResponseSchemas: ResponseSchemaRoute[] = [
     },
     { method: 'GET', pattern: /^\/feedback$/, schema: schemas.ListFeedbackRequestsResponse },
     /*
-     * The DTO spelling of the row above — same question, same envelope, different transport, used
-     * by the inbox's search form (`store.ts`'s `searchRequests`) for filters too broad to trust to
-     * a URL. Before the `[^/]+` row for the house order rule: `search` is a static segment a by-id
+     * The DTO spelling of the row above — same question, same envelope, different transport, and
+     * the one the inbox reads every page through (`store.ts`'s `search:`). Before the `[^/]+` row for the house order rule: `search` is a static segment a by-id
      * wildcard would swallow, and today's wildcard is a PUT.
      */
     {

@@ -47,43 +47,40 @@ The backend module has answered these endpoints all along. This is the frontend 
 which is worth noticing, because it is the shape a new domain arrives in: the server exists first,
 and a client module is one folder and one registry line away from using it.
 
-**The inbox loads the whole list on mount, or a filtered page through the search form above it.**
-`updateStatus` and `deleteRequest` both reload afterward through whichever of the two the operator
-was last looking at — never snapping a filtered view back to the whole list — since the row worth
-rendering next is the API's, not a local guess. `searchRequests` calls `POST /feedback/search`
-directly: a POST body is never browser-HTTP-cached, so unlike the plain list read it needs no
-cache-busting query param to survive a reload right after a write.
+**The inbox is a paginated admin list like users, products and orders.** The store is built on
+`useStructureCrudApi`, so paging, the page-size select and the pager behave the same as on every
+other admin list. `pageTotal` comes from the server's own `meta.totalPages` (`useServerPageTotal`),
+never from the rows already cached.
+
+Every page is read through `POST /feedback/search`, never `GET /feedback`: the GET answers
+`Cache-Control: private, max-age=30`, so a reload right after a delete could be a browser cache hit
+handing the deleted row back. A POST body is never browser-cached.
 
 ```mermaid
 flowchart LR
     subgraph public["contact — public"]
-        V["A visitor"] -->|"POST /feedback"| T["A ticket, status: new"]
+        V["A visitor"] -->|"POST /feedback/contact"| T["A ticket, status: new"]
     end
     subgraph admin["feedback — admin"]
-        T --> L["Inbox: the whole list on mount,<br/>or POST /feedback/search for a filtered page"]
+        T --> L["Inbox page:<br/>POST /feedback/search<br/>(filters + page + pageSize)"]
         L --> S{"Operator acts"}
-        S -->|"updateStatus"| P["new → read → resolved"]
-        S -->|"deleteRequest"| D["gone"]
-        P --> RL["Reload through whichever read<br/>the operator was last looking at"]
-        D --> RL
+        S -->|"updateRequest"| P["new → read → resolved<br/>row patched from the API's answer"]
+        S -->|"deleteRequest"| D["row evicted from the page"]
+        P --> RL["Page reloaded, since a status<br/>filter may no longer match"]
         RL --> L
     end
 ```
-
-The reload is the part worth keeping straight: it goes back through the list read **or** the search,
-whichever was last used, so acting on a row inside a filtered view never snaps the operator back to
-the whole list.
 
 ## State
 
 Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref
 is not part of the surface.
 
-| Kind        | Members                                                                                 | What it is                                                       |
-| ----------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `requests` · `activeFilters`                                                            | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                                               | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `submitContact` · `fetchRequests` · `searchRequests` · `updateStatus` · `deleteRequest` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                 | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `requests` · `filters` · `pageCurrent` · `pageSize` · `pageTotal`                                       | The refs the setup function returns — the only writable surface. |
+| **Getters** | `requestsList` · `pageItemList` · `loading`                                                             | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `submitContact` · `fetchPaginationRequests` · `watchSearchRequests` · `updateRequest` · `deleteRequest` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
