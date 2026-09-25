@@ -36,7 +36,7 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    NODE_VERSION: 22
+    NODE_VERSION: 24
     # Where the backend checkout lands, and what the frontend's scripts/pairing/paired-backend-path.ts resolves.
     BACKEND_PATH: .backend
     # What `cy.restore()` shells out to between specs. There is no default in the code — unset

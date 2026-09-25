@@ -6,7 +6,7 @@
 | --------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
 | [Vue 3](https://vuejs.org/)                                                 | Reactive UI framework, Composition API, SFCs | source of all components and views in `src/`                                         |
 | [TypeScript](https://www.typescriptlang.org/)                               | Static types                                 | source language; `vue-tsc` type-checks `.vue` files                                  |
-| [Node.js 22+](https://nodejs.org/)                                          | JavaScript runtime                           | required for dev tooling (`vite`, `vitest`, `orval`, etc.)                           |
+| [Node.js 24+](https://nodejs.org/)                                          | JavaScript runtime                           | required for dev tooling (`vite`, `vitest`, `orval`, etc.)                           |
 | [Vite](https://vite.dev/)                                                   | Dev server + production bundler              | `vite.config.ts`; dev on `:8080`, production via `npm run build`                     |
 | [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)             | `.vue` SFC support in Vite                   | transforms SFCs in both dev and build                                                |
 | [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files       | runs in `npm run build` and CI                                                       |

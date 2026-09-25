@@ -10,7 +10,7 @@ Run `npm run docs:dev`, or read `docs/`.
 
 ## Start here
 
-> Requires **[Node.js 22+](https://nodejs.org/)** and `npm`.
+> Requires **[Node.js 24+](https://nodejs.org/)** and `npm`.
 
 The dev server talks to the paired backend at `http://localhost:3000` — there is no
 backend-less mode. The lightest way to have one is its demo profile: the real API against an

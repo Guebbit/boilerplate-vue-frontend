@@ -36,7 +36,7 @@ flowchart TD
 
 ## First run — with the demo backend
 
-> Requires **[Node.js 22+](https://nodejs.org/)** and `npm`, and the paired
+> Requires **[Node.js 24+](https://nodejs.org/)** and `npm`, and the paired
 > `boilerplate-node-backend` checkout beside this one.
 
 ```bash
