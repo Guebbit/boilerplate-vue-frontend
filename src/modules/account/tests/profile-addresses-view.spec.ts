@@ -1,0 +1,113 @@
+/**
+ * @module
+ * `ProfileAddresses.vue`'s own save logic — scoped to what the store test
+ * (`addresses.spec.ts`) does not cover: the create/update payload the component itself builds
+ * from the dialog's fields. B4 (AUDIT_0924 D17c follow-through): emptying label or phone on an
+ * EDIT must send `null` so the PATCH actually clears the field, not `''` (a 422 under D17c) nor
+ * an omitted key (a PATCH no-op that leaves the old value in place).
+ */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
+import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
+import { i18n, loadLocale } from '@/infrastructure/i18n';
+import vuetify from '@/ui/vuetify';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+
+wireModulesIntoCore();
+
+const OFFICE = {
+    id: 'a1',
+    label: 'office',
+    fullName: 'Ada Lovelace',
+    street: '2 Side St',
+    city: 'Shelbyville',
+    zip: '22222',
+    country: 'US',
+    phone: '555-1234',
+    default: false
+};
+
+/**
+ * Mounts the panel with the store pre-seeded (no fetch involved) and `updateAddress`/`addAddress`
+ * spied, so each case only has to assert on the payload sent.
+ */
+const mountPanel = () => {
+    const store = useAddressesStore();
+    store.addresses = [OFFICE];
+    // Fire-and-forget in the component; stubbed so the real transport is never hit.
+    vi.spyOn(store, 'fetchAddresses').mockResolvedValue([OFFICE]);
+    const updateAddress = vi.spyOn(store, 'updateAddress').mockResolvedValue([OFFICE]);
+    const addAddress = vi.spyOn(store, 'addAddress').mockResolvedValue([OFFICE]);
+    const wrapper = mount(ProfileAddresses, {
+        global: {
+            plugins: [vuetify, i18n],
+            // The confirmation gate under test is not the overlay Vuetify manages — same
+            // reasoning as `EntriesImportDialog.spec.ts`.
+            stubs: { VDialog: { template: '<div><slot /></div>' } }
+        }
+    });
+    return { wrapper, updateAddress, addAddress };
+};
+
+/**
+ * The dialog's inputs in template order: label, fullName, street, zip, city, country, phone —
+ * the same order the e2e spec (`tests/e2e/profile.cy.ts`) indexes by, since none but `phone`
+ * carries a `data-test` of its own.
+ */
+const dialogInputs = (wrapper: ReturnType<typeof mountPanel>['wrapper']) =>
+    wrapper.get('[data-test=address-dialog]').findAll('input');
+
+beforeEach(() => {
+    setActivePinia(createPinia());
+    return loadLocale('en');
+});
+
+describe('ProfileAddresses save payload', () => {
+    it('sends null for an emptied label and phone on an edit, not "" or an omitted key', () => {
+        const { wrapper, updateAddress } = mountPanel();
+
+        return wrapper
+            .get('[data-test=address-edit]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                const inputs = dialogInputs(wrapper);
+                return inputs[0].setValue('').then(() => inputs[6].setValue(''));
+            })
+            .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(updateAddress).toHaveBeenCalledWith(
+                    'a1',
+                    expect.objectContaining({ label: null, phone: null })
+                );
+            });
+    });
+
+    it('omits label and phone on a create, rather than sending null', () => {
+        const { wrapper, addAddress } = mountPanel();
+
+        return wrapper
+            .get('[data-test=address-add]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                const inputs = dialogInputs(wrapper);
+                return inputs[1]
+                    .setValue('Ada Lovelace')
+                    .then(() => inputs[2].setValue('1 Main St'))
+                    .then(() => inputs[3].setValue('11111'))
+                    .then(() => inputs[4].setValue('Springfield'))
+                    .then(() => inputs[5].setValue('US'));
+            })
+            .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(addAddress).toHaveBeenCalledWith(
+                    expect.objectContaining({ label: undefined, phone: undefined })
+                );
+            });
+    });
+});

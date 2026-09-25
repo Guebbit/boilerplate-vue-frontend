@@ -26,7 +26,8 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import type { Address, AddressInput } from '@types';
+import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import type { Address, AddressInput, UpdateAddressRequest } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -173,22 +174,29 @@ const openEdit = (address: Address) => {
 };
 
 /**
- * Saves the dialog: an update when an entry is being edited, an add otherwise. Empty optional
- * fields are dropped rather than sent as empty strings.
+ * Saves the dialog: an update when an entry is being edited, an add otherwise.
+ *
+ * An emptied label/phone means two different things depending on which one this is: on an add
+ * there is no prior value, so it is just omitted; on an update (a PATCH merge) an omitted field
+ * is read as "leave it alone" — clearing one that was set needs an explicit `null`
+ * ({@link emptyToNull}), the AUDIT_0924 D17c contract's own way of saying so.
  *
  * @returns Nothing; success is toasted and closes the dialog, a failure blocks it in place
  *  ({@link saveError}).
  */
 const handleSave = () =>
     handleSubmit((fields) => {
-        const payload: AddressInput = {
-            ...fields,
-            label: fields.label || undefined,
-            phone: fields.phone || undefined
-        };
         const save = editingId.value
-            ? updateAddress(editingId.value, payload)
-            : addAddress(payload);
+            ? updateAddress(editingId.value, {
+                  ...fields,
+                  label: emptyToNull(fields.label),
+                  phone: emptyToNull(fields.phone)
+              } satisfies UpdateAddressRequest)
+            : addAddress({
+                  ...fields,
+                  label: fields.label || undefined,
+                  phone: fields.phone || undefined
+              } satisfies AddressInput);
         return save
             .then(() => {
                 addMessage(t('profile-page.addresses-saved'));
