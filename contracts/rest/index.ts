@@ -67,7 +67,7 @@ export type PasswordNew = string;
 export type Locale = string;
 
 /**
- * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `''` is never a synonym for "no image", only `null` is, on a field that allows it.
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for "no image" — only `null` is, on a field that allows it.
  * @minLength 1
  */
 export type ImageUrl = string;
@@ -1708,8 +1708,7 @@ export interface ReplaceAddressRequest {
      * @nullable
      */
     phone?: string | null;
-    /** @nullable */
-    default?: boolean | null;
+    default?: boolean;
 }
 
 export interface UpdateAddressRequest {
@@ -1733,8 +1732,7 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     phone?: string | null;
-    /** @nullable */
-    default?: boolean | null;
+    default?: boolean;
 }
 
 export interface EmailVerificationRequested {
@@ -2491,9 +2489,9 @@ export interface CartSummaryResponseEnvelope {
 export interface CheckoutRequest {
     /** Optional order notes */
     notes?: string;
-    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. */
     addressId?: Id;
-    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted is only legal for a digital-only basket — one with any `requiresShipping` line refuses with 422, `errors[].code` `CART_SHIPPING_METHOD_REQUIRED`; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
     shippingMethodId?: string;
     /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. */
     paymentMethod?: PaymentMethodId;
@@ -4198,7 +4196,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -4217,7 +4215,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (

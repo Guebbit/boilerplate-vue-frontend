@@ -978,7 +978,7 @@ paths:
       tags:
         - Account
       summary: Replace own profile
-      description: Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+      description: Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
       operationId: replaceAccount
       security:
         - bearerAuth: []
@@ -5376,7 +5376,7 @@ components:
       type: string
       format: uri-reference
       minLength: 1
-      description: "Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1` — AUDIT_0924 D17c: `''` is never a synonym for \"no image\", only `null` is, on a field that allows it."
+      description: "Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for \"no image\" — only `null` is, on a field that allows it."
     ThumbnailUrl:
       type: string
       format: uri-reference
@@ -7866,7 +7866,6 @@ components:
           nullable: true
         default:
           type: boolean
-          nullable: true
     UpdateAddressRequest:
       type: object
       additionalProperties: false
@@ -7896,7 +7895,6 @@ components:
           nullable: true
         default:
           type: boolean
-          nullable: true
     EmailVerificationRequested:
       type: object
       additionalProperties: false
@@ -9541,10 +9539,10 @@ components:
         addressId:
           allOf:
             - $ref: "#/components/schemas/Id"
-          description: Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere.
+          description: "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`."
         shippingMethodId:
           type: string
-          description: Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.
+          description: Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted is only legal for a digital-only basket — one with any `requiresShipping` line refuses with 422, `errors[].code` `CART_SHIPPING_METHOD_REQUIRED`; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.
         paymentMethod:
           allOf:
             - $ref: "#/components/schemas/PaymentMethodId"
