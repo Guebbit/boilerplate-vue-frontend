@@ -104,6 +104,7 @@ const tableHeaders = computed<CoreDataTableHeader<WebhookDelivery>[]>(() => [
     { title: t('webhook-deliveries-page.column-response-code'), key: 'responseCode' },
     { title: t('webhook-deliveries-page.column-duration'), key: 'durationMs' },
     { title: t('webhook-deliveries-page.column-error'), key: 'error' },
+    { title: t('webhook-deliveries-page.column-next-attempt-at'), key: 'nextAttemptAt' },
     { title: t('webhook-deliveries-page.column-actions'), key: 'actions', synthetic: true }
 ]);
 
@@ -239,6 +240,12 @@ const handlePageChange = (page: number) => {
                     {{ item.error }}
                 </span>
                 <span v-else>{{ EMPTY_VALUE }}</span>
+            </template>
+
+            <template v-slot:[`item.nextAttemptAt`]="{ item }">
+                <span class="whitespace-nowrap">
+                    {{ item.nextAttemptAt ? formatDateTime(item.nextAttemptAt) : EMPTY_VALUE }}
+                </span>
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">

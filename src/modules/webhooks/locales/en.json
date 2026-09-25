@@ -102,6 +102,7 @@
         "column-response-code": "Response",
         "column-duration": "Duration",
         "column-error": "Error",
+        "column-next-attempt-at": "Next attempt",
         "column-actions": "Actions",
         "table-caption": "Webhook deliveries",
         "showing": "Showing {shown} of {total}",
