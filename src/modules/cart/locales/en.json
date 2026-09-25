@@ -8,6 +8,7 @@
         "label-items-count": "Items",
         "label-total-quantity": "Total quantity",
         "label-total": "Total",
+        "label-notes": "Order notes (optional)",
         "button-remove": "Remove",
         "button-clear": "Clear cart",
         "button-checkout": "Checkout",

@@ -23,8 +23,8 @@ wireModulesIntoCore();
  * Fixture methods: one with a free-above threshold and no tracking, one flat-rate and tracked.
  */
 const METHODS = [
-    { id: 'standard', price: 5, freeAbove: 100, tracked: false },
-    { id: 'express', price: 15, tracked: true }
+    { id: 'standard', price: 5, freeAbove: 100, tracked: false, requiresAddress: true },
+    { id: 'express', price: 15, tracked: true, requiresAddress: true }
 ];
 
 /**

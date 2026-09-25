@@ -296,6 +296,21 @@ export const useCartStore = defineStore('cart', () => {
     });
 
     /**
+     * Whether the basket holds any line that needs a shipment — mirrors the backend's own
+     * `evaluateShippingRequirement` (`cart/domain/rules.ts`): a line whose product has not
+     * resolved yet (see {@link resolveTitles}) counts as needing one, the same safe-default
+     * `requiresShipping` absent takes there. Digital-only baskets (`false` on every line) are the
+     * one case that needs neither a shipping method nor an address at checkout.
+     */
+    const needsShipping = computed(() =>
+        cartItems.value.some(({ productId }) => {
+            const product = productShipping.value[productId] as
+                { weight?: number; requiresShipping?: boolean } | undefined;
+            return product?.requiresShipping !== false;
+        })
+    );
+
+    /**
      * Drops every resolved title, so the next `resolveTitles` call re-fetches instead of
      * rendering a name resolved in the language the visitor just left.
      *
@@ -323,6 +338,7 @@ export const useCartStore = defineStore('cart', () => {
         resolveTitles,
         resetProductTitles,
         basketWeight,
+        needsShipping,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,

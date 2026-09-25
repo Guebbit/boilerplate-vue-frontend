@@ -30,7 +30,8 @@
     "payment-method-selector": {
         "title": "Payment method",
         "method-card": "Card",
-        "method-bank_transfer": "Bank transfer"
+        "method-bank_transfer": "Bank transfer",
+        "hold-hours": "reserved for {hours}h"
     },
     "transfer-instructions-panel": {
         "title": "Bank transfer instructions",

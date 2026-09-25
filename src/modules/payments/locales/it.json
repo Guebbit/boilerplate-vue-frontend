@@ -30,7 +30,8 @@
     "payment-method-selector": {
         "title": "Metodo di pagamento",
         "method-card": "Carta",
-        "method-bank_transfer": "Bonifico bancario"
+        "method-bank_transfer": "Bonifico bancario",
+        "hold-hours": "riservato per {hours}h"
     },
     "transfer-instructions-panel": {
         "title": "Istruzioni per il bonifico",

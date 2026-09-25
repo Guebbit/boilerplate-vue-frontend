@@ -187,6 +187,19 @@ const orderStatus = computed(() => {
 });
 
 /**
+ * The frozen shipping address, one line — whoever fulfils the order needs to see it without
+ * opening the address book, which may since have changed or lost the entry this order was placed
+ * against.
+ *
+ * @returns The address as one readable line, or `undefined` when the order carries none.
+ */
+const shippingAddressText = computed(() => {
+    const address = currentOrder.value?.shippingAddress;
+    if (!address) return undefined;
+    return `${address.fullName}, ${address.street}, ${address.zip} ${address.city}, ${address.country}`;
+});
+
+/**
  * Whether an invoice request — either action below — is in flight. Its own flag, not the store's
  * shared `loading`, so paging through or cancelling the order doesn't spin this button too.
  */
@@ -320,6 +333,13 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         icon="✉"
                     />
                     <ItemDetailField
+                        v-if="currentOrder.paymentMethod"
+                        :label="t('order-target-page.label-payment-method')"
+                        :value="t(`payment-method-selector.method-${currentOrder.paymentMethod}`)"
+                        icon="💳"
+                        data-test="order-payment-method"
+                    />
+                    <ItemDetailField
                         :label="t('order-target-page.label-notes')"
                         :value="formatText(currentOrder.notes)"
                         icon="📝"
@@ -365,6 +385,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0)}`"
                         icon="🚚"
                         data-test="order-shipping"
+                    />
+                    <ItemDetailField
+                        v-if="shippingAddressText"
+                        :label="t('order-target-page.label-shipping-address')"
+                        :value="shippingAddressText"
+                        icon="📍"
+                        full-width
+                        data-test="order-shipping-address"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"

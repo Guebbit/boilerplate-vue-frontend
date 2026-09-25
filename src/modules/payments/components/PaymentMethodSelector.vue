@@ -62,7 +62,23 @@ onMounted(() => {
                 :data-test="'payment-method-' + method.id"
             >
                 <template #label>
-                    {{ t(`payment-method-selector.method-${method.id}`) }}
+                    <span class="flex items-baseline gap-2">
+                        {{ t(`payment-method-selector.method-${method.id}`) }}
+                        <!--
+                            `holdHours` is present on `bank_transfer` only — how long checkout
+                            reserves stock for that method, shown BEFORE the choice is made so it
+                            informs it, distinct from the post-checkout `payBy` deadline.
+                        -->
+                        <span
+                            v-if="method.holdHours !== undefined"
+                            class="text-xs opacity-75"
+                            data-test="payment-method-hold-hours"
+                        >
+                            {{
+                                t('payment-method-selector.hold-hours', { hours: method.holdHours })
+                            }}
+                        </span>
+                    </span>
                 </template>
             </v-radio>
         </v-radio-group>

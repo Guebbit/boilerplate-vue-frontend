@@ -29,7 +29,7 @@ import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
  */
 const MODULE_EDGES: Record<string, string[]> = {
     account: ['users'],
-    cart: ['delivery', 'payments'],
+    cart: ['delivery', 'payments', 'account'],
     inventory: ['products'],
     orders: ['cart', 'delivery', 'payments'],
     products: ['cart', 'wishlist'],

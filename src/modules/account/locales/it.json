@@ -209,5 +209,10 @@
             "error-provider_error": "Si è verificato un problema durante l'accesso. Riprova.",
             "link-back-to-login": "Torna al login"
         }
+    },
+    "address-picker": {
+        "title": "Indirizzo di spedizione",
+        "empty": "Non hai ancora indirizzi salvati.",
+        "add": "Aggiungi un indirizzo"
     }
 }

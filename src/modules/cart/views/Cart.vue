@@ -11,7 +11,7 @@ export default {
  * stepper (`useLineQuantity`) on top of the store's own quantity update so rapid
  * clicks collapse into one request per line.
  */
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -32,6 +32,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
+import { AddressPicker } from '@/modules/account';
 
 /**
  * Translation function.
@@ -39,7 +40,7 @@ import { PaymentMethodSelector } from '@/modules/payments';
 const { t } = useI18n();
 
 /**
- * Router, for the post-checkout navigation to the orders list.
+ * Router, for the post-checkout navigation to the new order's own page.
  */
 const router = useRouter();
 
@@ -64,7 +65,7 @@ const {
 /**
  * Cart store state, reactive.
  */
-const { cartItems, cartSummary, basketWeight } = storeToRefs(useCartStore());
+const { cartItems, cartSummary, basketWeight, needsShipping } = storeToRefs(useCartStore());
 
 /**
  * The chosen shipping method — optional, exactly as the API treats it.
@@ -72,9 +73,38 @@ const { cartItems, cartSummary, basketWeight } = storeToRefs(useCartStore());
 const shippingMethodId = ref<string | undefined>();
 
 /**
+ * Whether the chosen method needs an address — `undefined` while nothing is selected, mirrored
+ * out of `ShippingSelector` since `cart` may not reach `delivery`'s store directly.
+ */
+const shippingMethodRequiresAddress = ref<boolean>();
+
+/**
+ * The chosen shipping address's entry id — required only when
+ * {@link shippingMethodRequiresAddress} is true; omitted, checkout resolves the caller's default.
+ */
+const addressId = ref<string | undefined>();
+
+/**
  * The chosen payment method — optional; the API defaults an omitted choice to `card`.
  */
 const paymentMethodId = ref<PaymentMethodId | undefined>();
+
+/**
+ * Free-text notes left at checkout — optional, trimmed to `undefined` when blank so an empty
+ * textarea does not send an empty string the contract would rather see omitted.
+ */
+const notes = ref('');
+
+/**
+ * Whether checkout may run yet: a physical basket needs a method, and — only when that method
+ * demands it — an address, mirroring the backend's own `evaluateShippingRequirement`
+ * (`cart/domain/rules.ts` in the API repo). A digital-only basket needs neither.
+ */
+const canCheckout = computed(() => {
+    if (!needsShipping.value) return true;
+    if (shippingMethodId.value === undefined) return false;
+    return !shippingMethodRequiresAddress.value || addressId.value !== undefined;
+});
 
 /**
  * The short lines a `CART_INSUFFICIENT_STOCK` refusal named, rendered inline so the customer
@@ -112,8 +142,8 @@ const {
  * `CART_ADDRESS_NOT_FOUND` means the address on the order no longer resolves. Every other refusal
  * — including a transport failure — has no more specific answer than the generic toast.
  *
- * @returns A promise resolving once the flow settles: a success toast and a navigation to the
- *  orders list, or the refusal-specific handling below.
+ * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
+ *  order's own page, or the refusal-specific handling below.
  */
 const checkout = () => {
     insufficientStockLines.value = [];
@@ -123,12 +153,21 @@ const checkout = () => {
         ...(shippingMethodId.value === undefined
             ? {}
             : { shippingMethodId: shippingMethodId.value }),
-        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value })
+        ...(addressId.value === undefined ? {} : { addressId: addressId.value }),
+        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
+        ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
-        .then(() => {
+        .then((result) => {
+            // `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
+            // actually takes that path (see `useCartStore.checkout`'s own docblock), but the
+            // guard is what lets `result.order.id` below type-check, and it is cheap insurance
+            // against a client-side navigation to `/orders/undefined` either way.
+            if (!result?.order.id) return;
             addMessage(t('cart-page.success-checkout'));
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
-            void router.push(routerLinkI18n({ name: 'OrdersList' }));
+            void router.push(
+                routerLinkI18n({ name: 'OrderTarget', params: { id: result.order.id } })
+            );
         })
         .catch((error: unknown) => {
             const verdict = classifyCheckoutError(error);
@@ -357,10 +396,28 @@ onMounted(() =>
                     <v-divider class="my-3" />
                     <ShippingSelector
                         v-model="shippingMethodId"
+                        v-model:requires-address="shippingMethodRequiresAddress"
                         :items-total="cartSummary.total"
                         :weight="basketWeight"
                     />
+                    <!--
+                        Only asked when the chosen method actually needs one — a digital-only
+                        basket, or `pickup`, never renders this at all.
+                    -->
+                    <AddressPicker
+                        v-if="shippingMethodRequiresAddress"
+                        v-model="addressId"
+                        class="mt-3"
+                    />
                     <PaymentMethodSelector v-model="paymentMethodId" />
+                    <v-textarea
+                        v-model="notes"
+                        :label="t('cart-page.label-notes')"
+                        rows="2"
+                        auto-grow
+                        class="mt-3"
+                        data-test="cart-notes"
+                    />
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
@@ -374,6 +431,7 @@ onMounted(() =>
                         block
                         class="mt-4"
                         data-test="cart-checkout"
+                        :disabled="!canCheckout"
                         @click="checkout"
                     >
                         {{ t('cart-page.button-checkout') }}

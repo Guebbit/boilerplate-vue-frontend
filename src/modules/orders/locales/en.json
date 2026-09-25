@@ -66,6 +66,8 @@
         "button-reorder": "Buy again",
         "success-reorder": "Order added to cart.",
         "label-shipping": "Shipping",
+        "label-shipping-address": "Shipping address",
+        "label-payment-method": "Payment method",
         "label-vat-summary": "VAT summary",
         "label-vat-rate": "Rate",
         "label-vat-net": "Net",

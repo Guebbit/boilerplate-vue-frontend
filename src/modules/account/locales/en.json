@@ -209,5 +209,10 @@
             "error-provider_error": "Something went wrong signing you in. Please try again.",
             "link-back-to-login": "Back to login"
         }
+    },
+    "address-picker": {
+        "title": "Shipping address",
+        "empty": "You have no saved addresses yet.",
+        "add": "Add an address"
     }
 }

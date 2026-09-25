@@ -9989,6 +9989,11 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .describe(
                         "Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires."
                     ),
+                requiresAddress: zod
+                    .boolean()
+                    .describe(
+                        'Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file.'
+                    ),
                 maxInsuredValue: zod
                     .number()
                     .min(listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin)
