@@ -25,6 +25,8 @@
         "label-website": "Website",
         "label-language": "Lingua",
         "language-hint": "La lingua in cui si apre questo account. Si salva insieme al resto del profilo.",
+        "label-analytics-consent": "Condividi le analisi di utilizzo in forma anonima",
+        "analytics-consent-hint": "Puoi revocarlo in qualsiasi momento — avrà effetto al prossimo salvataggio.",
         "label-password": "Password",
         "label-passwordConfirm": "Conferma Password",
         "button-submit": "Salva modifiche",

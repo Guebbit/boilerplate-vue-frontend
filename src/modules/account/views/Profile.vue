@@ -95,6 +95,12 @@ interface ProfileForm {
     updatedAt?: string | null;
     phone?: string;
     website?: string;
+    /**
+     * GDPR Art. 7(3) withdrawal switch. Signup only ever asks once and never lets it change
+     * afterward — this is the other half, so consent stays as revocable as it was given.
+     * `undefined` until the record loads, rendered off like every other field before hydration.
+     */
+    analyticsConsent?: boolean;
 }
 
 /**
@@ -204,13 +210,17 @@ const submitForm = () => {
     // is disabled in this state, so only a keyboard submit reaches here.
     if (!isDirty.value) return;
     clearSaveError();
+    // Absent means "leave alone" on this PATCH (RFC 7396) — sent only when it actually moved, so
+    // toggling it back to the baseline before saving reads as untouched, never as a fresh choice.
+    const analyticsConsentChanged = form.value.analyticsConsent !== profile.value?.analyticsConsent;
     return updateProfile({
         email: form.value.email,
         username: form.value.username,
         locale: form.value.locale,
         imageUrl: form.value.imageUrl ?? undefined,
         phone: form.value.phone,
-        website: form.value.website
+        website: form.value.website,
+        ...(analyticsConsentChanged ? { analyticsConsent: form.value.analyticsConsent } : {})
     })
         .then(() => {
             // Re-baseline on what the server now holds: the store refetched it, and a form
@@ -271,6 +281,14 @@ const submitForm = () => {
                     :hint="t('profile-page.language-hint')"
                     :persistent-hint="true"
                     data-test="profile-language"
+                />
+                <v-switch
+                    v-model="form.analyticsConsent"
+                    :label="t('profile-page.label-analytics-consent')"
+                    :hint="t('profile-page.analytics-consent-hint')"
+                    :persistent-hint="true"
+                    color="primary"
+                    data-test="profile-analytics-consent"
                 />
 
                 <div class="mt-4 flex flex-wrap gap-2">

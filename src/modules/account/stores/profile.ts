@@ -149,9 +149,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * and the verification state stay untouched until `POST /account/email-change-confirm` proves
      * it — so the fresh record in the response is what shows the caller their change is pending.
      *
-     * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone` and
-     *  `website` are sent. An `imageUpload` switches the call to `multipart/form-data` — the
-     *  `{ imageUpload, ...rest }` split `modules/users/store.ts` already has for the admin form,
+     * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone`,
+     *  `website` and `analyticsConsent` are sent. An `imageUpload` switches the call to
+     *  `multipart/form-data` — the `{ imageUpload, ...rest }` split `modules/users/store.ts`
+     *  already has for the admin form,
      *  one shape for both call sites. `imageUrl` and `imageUpload` are mutually exclusive in
      *  practice: `ProfileAvatar.vue`'s remove button sends `imageUrl: ''` alone, its picker sends
      *  `imageUpload` alone.
@@ -173,7 +174,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
             username: userData.username,
             locale: userData.locale,
             phone: userData.phone,
-            website: userData.website
+            website: userData.website,
+            analyticsConsent: userData.analyticsConsent
         };
         return updateTarget(
             () =>
