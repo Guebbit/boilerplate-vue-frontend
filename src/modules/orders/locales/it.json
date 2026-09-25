@@ -64,6 +64,8 @@
         "button-reorder": "Acquista di nuovo",
         "success-reorder": "Ordine aggiunto al carrello.",
         "label-shipping": "Spedizione",
+        "label-shipping-address": "Indirizzo di spedizione",
+        "label-payment-method": "Metodo di pagamento",
         "label-vat-summary": "Riepilogo IVA",
         "label-vat-rate": "Aliquota",
         "label-vat-net": "Imponibile",
