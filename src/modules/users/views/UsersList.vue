@@ -17,6 +17,7 @@ import { storeToRefs } from 'pinia';
 import { Search, UserPlus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
+import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -27,6 +28,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -45,7 +47,20 @@ const { addMessage } = useNotificationsStore();
 /**
  * Users store actions.
  */
-const { watchSearchUsers, deleteUser, hardDeleteUser, restoreUser } = useUsersStore();
+const { watchSearchUsers, updateUser, deleteUser, hardDeleteUser, restoreUser } = useUsersStore();
+
+/**
+ * `UserAccessDialog`'s open state, target and picker options, plus the promise-returning
+ * `request()` this row action awaits — see `use-user-access-dialog.ts`.
+ */
+const {
+    isOpen: accessDialogOpen,
+    target: accessDialogTarget,
+    options: accessDialogOptions,
+    request: requestAccessChange,
+    confirm: confirmAccessChange,
+    cancel: cancelAccessChange
+} = useUserAccessDialog();
 
 /**
  * Users store reactive state — filters, the current page window and the pagination counters.
@@ -178,6 +193,29 @@ const handleRestore = (userId: string) => {
         .then(() => search(true))
         .catch((error: unknown) => reportRowActionError(error));
 };
+
+/**
+ * Opens `UserAccessDialog` for one row and, once the admin confirms a role or active-status
+ * change, sends only the fields that actually changed — see `UserAccessDialog.vue`'s own note on
+ * why an unchanged `role` must never ride along in the same `PATCH`.
+ *
+ * @param item - The row's user, read for its id, display name and loaded role/active.
+ * @returns A promise settling once the dialog closes and, if accepted, the update has finished; a
+ *  failure blocks the list in place ({@link rowActionError}).
+ */
+const handleManageAccess = (item: User) =>
+    requestAccessChange({
+        id: item.id,
+        name: item.username,
+        role: item.role,
+        active: item.active
+    }).then((result) => {
+        if (!result) return;
+        clearRowActionError();
+        return updateUser(item.id, result)
+            .then(() => addMessage(t('users-list-page.success-access-update')))
+            .catch((error: unknown) => reportRowActionError(error));
+    });
 
 /**
  * Permanently deletes a user after an explicit confirmation. Unlike {@link handleDelete}, this
@@ -344,6 +382,19 @@ const handleHardDelete = (userId: string) =>
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
+                        :size="rowActionSize"
+                        variant="tonal"
+                        color="secondary"
+                        data-test="row-access"
+                        :aria-label="
+                            t('users-list-page.button-access-named', { name: item.username })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleManageAccess(item)"
+                    >
+                        {{ t('users-list-page.button-access') }}
+                    </v-btn>
+                    <v-btn
                         v-if="item.deletedAt"
                         :size="rowActionSize"
                         variant="tonal"
@@ -389,5 +440,13 @@ const handleHardDelete = (userId: string) =>
         </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
+
+        <UserAccessDialog
+            v-model="accessDialogOpen"
+            :target="accessDialogTarget"
+            :options="accessDialogOptions"
+            @confirm="confirmAccessChange"
+            @cancel="cancelAccessChange"
+        />
     </LayoutDefault>
 </template>

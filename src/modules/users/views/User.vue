@@ -10,7 +10,8 @@ export default {
  * User detail (read-only) page. Loads one user by route id and renders its
  * fields, role and status, plus the audited, no-proof-required 2FA recovery
  * button for an admin who lost both their authenticator and their backup
- * codes.
+ * codes, and the `UserAccessDialog` shortcut for changing role/active status
+ * without opening the full edit form.
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -18,6 +19,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
+import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -29,6 +31,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
+import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
 import { formatText, formatDateTime, formatFlag } from '@/infrastructure/utils/formatters.ts';
 
 /**
@@ -101,9 +104,56 @@ const { addMessage } = useNotificationsStore();
 
 /**
  * Turns a user's second factor off, as an administrator — the recovery path when they have
- * lost every method.
+ * lost every method — plus the role/active-status writes `UserAccessDialog` confirms below.
  */
-const { adminDisableTwoFactor } = useUsersStore();
+const { adminDisableTwoFactor, updateUser } = useUsersStore();
+
+/**
+ * `UserAccessDialog`'s open state, target and picker options, plus the promise-returning
+ * `request()` this page's "Manage access" button awaits — see `use-user-access-dialog.ts`.
+ */
+const {
+    isOpen: accessDialogOpen,
+    target: accessDialogTarget,
+    options: accessDialogOptions,
+    request: requestAccessChange,
+    confirm: confirmAccessChange,
+    cancel: cancelAccessChange
+} = useUserAccessDialog();
+
+/**
+ * This action's own blocked state — same reasoning as {@link disableTwoFactorError} below.
+ */
+const {
+    message: accessError,
+    report: reportAccessError,
+    clear: clearAccessError
+} = useBlockingError();
+
+/**
+ * Opens `UserAccessDialog` for the currently loaded user and, once confirmed, sends only the
+ * fields that actually changed — see `UserAccessDialog.vue`'s own note on why an unchanged `role`
+ * must never ride along in the same `PATCH`.
+ *
+ * @returns A promise settling once the dialog closes and, if accepted, the update has finished; a
+ *  failure blocks this action in place ({@link accessError}).
+ */
+const handleManageAccess = () => {
+    const target = currentUser.value;
+    if (!target) return;
+    return requestAccessChange({
+        id: target.id,
+        name: target.username,
+        role: target.role,
+        active: target.active
+    }).then((result) => {
+        if (!result) return;
+        clearAccessError();
+        return updateUser(target.id, result)
+            .then(() => addMessage(t('user-target-page.success-access-update')))
+            .catch((error: unknown) => reportAccessError(error));
+    });
+};
 
 /**
  * This button's own blocked state — the only write action on this page, so a failure renders
@@ -240,6 +290,16 @@ const handleDisableTwoFactor = () => {
                 </v-btn>
                 <div v-if="currentUser" class="flex flex-col gap-2">
                     <v-btn
+                        variant="tonal"
+                        color="secondary"
+                        data-test="user-manage-access"
+                        @click="handleManageAccess"
+                    >
+                        {{ t('user-target-page.button-manage-access') }}
+                    </v-btn>
+                    <InlineErrorAlert :message="accessError" test-id="user-manage-access-error" />
+
+                    <v-btn
                         variant="text"
                         color="error"
                         data-test="user-disable-two-factor"
@@ -254,5 +314,13 @@ const handleDisableTwoFactor = () => {
                 </div>
             </template>
         </ItemDetailLayout>
+
+        <UserAccessDialog
+            v-model="accessDialogOpen"
+            :target="accessDialogTarget"
+            :options="accessDialogOptions"
+            @confirm="confirmAccessChange"
+            @cancel="cancelAccessChange"
+        />
     </LayoutDefault>
 </template>
