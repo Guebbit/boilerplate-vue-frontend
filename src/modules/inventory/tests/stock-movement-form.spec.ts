@@ -17,12 +17,23 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /**
- * Stands in for Vuetify's `v-select`: picking a real option needs its teleported overlay open,
- * which is unrelated to what this suite is proving. A native `<select>` keeps the product field
- * genuinely fillable through `setValue` while the amount schema — the actual subject — still runs
- * against the real component.
+ * The product field is now a search-as-you-type `v-autocomplete` (FE_PARITY_0924 B2), stubbed away
+ * below like `v-select` used to be — but the composable behind it still calls `searchProducts` on
+ * mount, debounced, for real. Mocked here so that call resolves immediately with nothing rather
+ * than leaving a pending network request (and its timer) once the test has already finished.
  */
-const V_SELECT_STUB = {
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@api')>()),
+    searchProducts: vi.fn().mockResolvedValue({ data: { items: [], meta: { totalPages: 0 } } })
+}));
+
+/**
+ * Stands in for Vuetify's `v-autocomplete`: opening its real, teleported overlay and typing
+ * through its debounced search is unrelated to what this suite is proving. A native `<select>`
+ * keeps the product field genuinely fillable through `setValue` while the amount schema — the
+ * actual subject — still runs against the real component.
+ */
+const V_AUTOCOMPLETE_STUB = {
     props: ['modelValue'],
     emits: ['update:modelValue'],
     template:
@@ -42,7 +53,7 @@ const mountForm = (mode: 'receipt' | 'adjust') => {
 
     return mount(StockMovementForm, {
         props: { mode },
-        global: { plugins: [vuetify, i18n], stubs: { VSelect: V_SELECT_STUB } }
+        global: { plugins: [vuetify, i18n], stubs: { VAutocomplete: V_AUTOCOMPLETE_STUB } }
     });
 };
 

@@ -80,6 +80,18 @@ const rowActionSize = useTouchFriendlySize();
 const deletedOptions = useDeletedFilterOptions();
 
 /**
+ * Options of the admin-only "Active" filter (FE_PARITY_0924 P4) — the public storefront's own
+ * search always forces `active: true` server-side, so this only ever matters for an admin.
+ *
+ * @returns The localized options, re-translated on locale change.
+ */
+const activeOptions = computed(() => [
+    { value: undefined, label: t('products-list-page.filter-active-all') },
+    { value: true, label: t('products-list-page.filter-active-yes') },
+    { value: false, label: t('products-list-page.filter-active-no') }
+]);
+
+/**
  * Selectable page sizes for the products table.
  */
 const pageSizeOptions = [
@@ -301,6 +313,16 @@ const handleHardDelete = (productId: string) =>
                         :label="t('products-list-page.filter-max-price')"
                         :min="0"
                         control-variant="hidden"
+                        hide-details
+                    />
+                    <v-select
+                        v-if="session.can('delete', 'Product')"
+                        v-model="filters.active"
+                        :label="t('products-list-page.filter-active')"
+                        :items="activeOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-active"
                         hide-details
                     />
                     <v-select

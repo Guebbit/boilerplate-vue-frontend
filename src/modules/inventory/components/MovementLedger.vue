@@ -22,6 +22,10 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
+import {
+    useProductPicker,
+    useProductPickerPin
+} from '@/modules/inventory/composables/use-product-picker.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { StockMovementReason } from '@types';
@@ -51,7 +55,8 @@ const inventoryStore = useInventoryStore();
 const { movements, movementsTotal, loading } = storeToRefs(inventoryStore);
 
 /**
- * Source of product titles for the ledger's product column and filter.
+ * Source of product titles for the ledger's product COLUMN — the filter above uses its own
+ * search-backed picker instead (see `productSearchOptions` below).
  */
 const productsStore = useProductsStore();
 
@@ -99,11 +104,23 @@ const movementsProductId = ref<string | undefined>();
 const movementsReason = ref<TStockMovementReason | undefined>();
 
 /**
+ * The product filter's search box and options — `POST /products/search`, not the products store's
+ * unpaged `listProducts()`, which only ever holds the first page (FE_PARITY_0924 B2).
+ */
+const { query: productQuery, options: productSearchOptions, pin: pinProduct } = useProductPicker();
+
+/**
+ * `focusProduct` (below) sets `movementsProductId` to an id `StockBoard` named, which the current
+ * search page has no reason to already contain — this is what keeps it displayable regardless.
+ */
+useProductPickerPin(() => movementsProductId.value, pinProduct);
+
+/**
  * The product filter, with an "everything" row on top.
  */
 const productFilterOptions = computed(() => [
     { value: undefined, title: t('inventory-page.filter-product-all') },
-    ...productsList.value.map((product) => ({ value: product.id, title: product.title }))
+    ...productSearchOptions.value
 ]);
 
 /**
@@ -202,9 +219,20 @@ onMounted(() => {
 <template>
     <div class="mb-2 flex flex-wrap items-center gap-3">
         <h2 class="text-base font-semibold">{{ t('inventory-page.ledger-title') }}</h2>
-        <v-select
+        <!--
+            Vuetify v-autocomplete: `search` is the typed text (bound to the picker's own query,
+            which drives the server search), `no-filter` turns off Vuetify's own client-side
+            filtering of `:items` since the server already filtered them.
+            https://vuetifyjs.com/en/api/v-autocomplete/
+        -->
+        <v-autocomplete
             v-model="movementsProductId"
+            v-model:search="productQuery"
             :items="productFilterOptions"
+            item-title="title"
+            item-value="value"
+            no-filter
+            clearable
             :label="t('inventory-page.label-product')"
             class="max-w-64"
             hide-details
