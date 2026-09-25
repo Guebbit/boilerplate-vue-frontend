@@ -128,6 +128,43 @@ slow network greys things out rather than opening them.
 - **`sameSite=lax`** (set by backend): reduces cross-site cookie sending in common CSRF scenarios.
 - **No PII in Umami**: `identifyUser()` passes the email to Faro (this deployment's own error/session tool, for triage) but strips it before calling Umami's `identify()` — Umami markets itself as privacy-respecting, cookieless analytics, and gets the user id only.
 
+## The human-challenge widget (rung 3)
+
+The backend's antibot rung is off by default (`NODE_ANTIBOT_PROVIDER=none`) but an operator can
+turn it on. Once on, `POST /account/signup`, `POST /account/reset` and `POST /feedback/contact`
+always require an `x-antibot-challenge-token` header; `POST /account/login` and
+`POST /payments/:id/confirm` only require it after a prior failure — see
+`boilerplate-node-backend/docs/modules/antibot.md`.
+
+`src/ui/organisms/HumanCheck.vue` is the one provider-neutral component every gated form mounts:
+
+```mermaid
+flowchart TD
+    A[HumanCheck mounts] --> B[GET /antibot/config]
+    B -->|provider: none| C[Renders nothing]
+    B -->|provider: altcha| D[altcha-widget web component]
+    B -->|provider: turnstile| E[Cloudflare vendor script + render]
+    D --> F[Solved token exposed as .token]
+    E --> F
+    F --> G["Hosting form: withAntibotToken(token, options)"]
+    G --> H[x-antibot-challenge-token header on submit]
+```
+
+| Concern                                       | File                                                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| The widget itself                             | `src/ui/organisms/HumanCheck.vue`                                                                         |
+| Header attach + 401 detection                 | `src/infrastructure/http/antibot.ts`                                                                      |
+| Always-guarded forms (signup, reset, contact) | Mount `<HumanCheck>` unconditionally                                                                      |
+| Conditionally-guarded forms (login, payment)  | Mount `<HumanCheck>` only after `ANTIBOT_VERIFICATION_FAILED`, then let the visitor retry the same submit |
+
+**Why `altcha` is the one npm dependency.** It is the official web component for the backend's
+self-hosted `altcha` provider — same project family as the backend's `altcha-lib` — MIT-licensed,
+actively maintained, and typed. Its `Challenge`/`ChallengeParameters` types match the backend's
+`AntibotChallenge` contract schema field-for-field, so `HumanCheck.vue` fetches a challenge through
+the generated client and hands it straight to the widget's `.configure()`, no translation layer.
+**Turnstile gets no wrapper**: it is one vendor `<script>` tag and one `window.turnstile.render()`
+call, not worth a dependency — see `docs/tools/package-dependencies.md`.
+
 ## External references
 
 - [OWASP SPA Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html)
