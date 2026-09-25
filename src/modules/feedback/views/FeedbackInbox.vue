@@ -10,7 +10,7 @@ export default {
  * Admin inbox: the store's paginated search wired to a filter form and a pager, like every other
  * admin list, with a per-row status select and delete.
  */
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox, Search } from 'lucide-vue-next';
@@ -24,7 +24,7 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { FeedbackRequestStatus } from '@types';
-import type { FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
+import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
 /**
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
@@ -145,6 +145,41 @@ const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
 };
 
 /**
+ * Unsaved internal-notes edits, keyed by ticket id — separate from the record itself so typing
+ * in one card's textarea never fights the row's own `adminNotes` while a save is in flight.
+ */
+const noteDrafts = reactive<Record<string, string | undefined>>({});
+
+/**
+ * What a ticket's notes textarea should show: the visitor's own unsaved edit if there is one,
+ * otherwise the record's last saved value.
+ *
+ * @param request - The ticket the textarea belongs to.
+ * @returns The current draft, or `''` when neither a draft nor a saved note exists.
+ */
+const noteValueOf = (request: FeedbackRequest) =>
+    noteDrafts[request.id] ?? request.adminNotes ?? '';
+
+/**
+ * Saves one ticket's internal notes through the same PATCH the status move uses — an empty
+ * textarea sends `null` (the D17c convention: `''` on this nullable, `minLength: 1` field is a
+ * 422, not a synonym for "no change").
+ *
+ * @param request - Which ticket, and its last saved notes (the fallback {@link noteValueOf} reads
+ *  if this save was never actually edited).
+ * @returns A promise settling once the write and the reload have finished; a failure blocks the
+ *  list in place ({@link rowActionError}).
+ */
+const handleSaveNotes = (request: FeedbackRequest) => {
+    clearRowActionError();
+    const value = noteValueOf(request).trim();
+    return updateRequest(request.id, { adminNotes: value === '' ? null : value })
+        .then(() => addMessage(t('feedback-inbox-page.success-notes')))
+        .then(() => search(true))
+        .catch((error: unknown) => reportRowActionError(error));
+};
+
+/**
  * Permanently removes one ticket, after an explicit confirmation — the erasure path a GDPR
  * request goes through, once an operator has found the rows by search.
  *
@@ -238,6 +273,17 @@ const handleDelete = (requestId: string, subject: string) => {
                             {{ request.name || t('feedback-inbox-page.anonymous') }} —
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
                         </p>
+                        <p
+                            v-if="request.respondedAt"
+                            class="text-sm opacity-70"
+                            data-test="feedback-responded-at"
+                        >
+                            {{
+                                t('feedback-inbox-page.label-responded-at', {
+                                    date: formatDateTime(request.respondedAt)
+                                })
+                            }}
+                        </p>
                     </div>
                     <div class="flex items-center gap-2">
                         <v-select
@@ -274,6 +320,38 @@ const handleDelete = (requestId: string, subject: string) => {
                     </div>
                 </div>
                 <p class="mt-3 whitespace-pre-line">{{ request.message }}</p>
+
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <v-textarea
+                        :model-value="noteValueOf(request)"
+                        :label="t('feedback-inbox-page.label-notes')"
+                        :aria-label="
+                            t('feedback-inbox-page.label-notes-named', { subject: request.subject })
+                        "
+                        maxlength="5000"
+                        rows="2"
+                        auto-grow
+                        density="compact"
+                        hide-details
+                        class="flex-1"
+                        data-test="feedback-notes"
+                        @update:model-value="(value) => (noteDrafts[request.id] = value)"
+                    />
+                    <v-btn
+                        size="small"
+                        variant="tonal"
+                        :disabled="loading"
+                        data-test="feedback-notes-save"
+                        :aria-label="
+                            t('feedback-inbox-page.button-save-notes-named', {
+                                subject: request.subject
+                            })
+                        "
+                        @click="handleSaveNotes(request)"
+                    >
+                        {{ t('feedback-inbox-page.button-save-notes') }}
+                    </v-btn>
+                </div>
             </v-card>
 
             <ListPagination v-model="pageCurrent" :length="pageTotal" />

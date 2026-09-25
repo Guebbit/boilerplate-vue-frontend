@@ -84,6 +84,77 @@ describe('Feedback', () => {
         cy.get('[data-test=feedback-item]').should('have.length', 0);
     });
 
+    it('an admin can save internal notes on a ticket, and they survive a reload', () => {
+        cy.loginAs('admin');
+        cy.visit('/en/contact');
+        cy.get('[data-test=contact-email] input').type('curious@example.com');
+        cy.get('[data-test=contact-subject] input').type('A question about the cats');
+        cy.get('[data-test=contact-message] textarea')
+            .first()
+            .type('Are they really illegal in 400 countries?');
+        cy.get('[data-test=contact-submit]').click();
+
+        cy.navigateViaMenu('admin', '/en/feedback');
+        cy.get('[data-test=feedback-item]').should('have.length', 1);
+
+        cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
+        cy.get('[data-test=feedback-notes] textarea').type('Called back, waiting on legal.');
+        cy.get('[data-test=feedback-notes-save]').click();
+        cy.wait('@patchNotes')
+            .its('request.body')
+            .should('deep.equal', { adminNotes: 'Called back, waiting on legal.' });
+        cy.contains('Notes saved.').should('exist');
+
+        // A fresh load must read the saved note back from the server, not a client-only draft.
+        cy.reload();
+        cy.get('[data-test=feedback-notes] textarea').should(
+            'have.value',
+            'Called back, waiting on legal.'
+        );
+    });
+
+    it("clearing a ticket's notes sends null, not the empty string D17c now refuses", () => {
+        cy.loginAs('admin');
+        cy.visit('/en/contact');
+        cy.get('[data-test=contact-email] input').type('curious@example.com');
+        cy.get('[data-test=contact-subject] input').type('A question about the cats');
+        cy.get('[data-test=contact-message] textarea')
+            .first()
+            .type('Are they really illegal in 400 countries?');
+        cy.get('[data-test=contact-submit]').click();
+
+        cy.navigateViaMenu('admin', '/en/feedback');
+        cy.get('[data-test=feedback-notes] textarea').type('A draft note');
+        cy.get('[data-test=feedback-notes-save]').click();
+        cy.contains('Notes saved.').should('exist');
+
+        cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
+        cy.get('[data-test=feedback-notes] textarea').clear();
+        cy.get('[data-test=feedback-notes-save]').click();
+        cy.wait('@patchNotes').its('request.body').should('deep.equal', { adminNotes: null });
+    });
+
+    it('moving a ticket to resolved records and shows when it was responded to', () => {
+        cy.loginAs('admin');
+        cy.visit('/en/contact');
+        cy.get('[data-test=contact-email] input').type('curious@example.com');
+        cy.get('[data-test=contact-subject] input').type('A question about the cats');
+        cy.get('[data-test=contact-message] textarea')
+            .first()
+            .type('Are they really illegal in 400 countries?');
+        cy.get('[data-test=contact-submit]').click();
+
+        cy.navigateViaMenu('admin', '/en/feedback');
+        cy.get('[data-test=feedback-responded-at]').should('not.exist');
+
+        cy.get('[data-test=feedback-status]').click();
+        cy.get('[role=listbox] [role=option]').contains('Resolved').click();
+        cy.contains('Status updated.').should('exist');
+
+        // Set by the backend the first time a ticket becomes resolved — never sent by this UI.
+        cy.get('[data-test=feedback-responded-at]').should('exist');
+    });
+
     it('declining the delete confirmation leaves the ticket in place', () => {
         cy.loginAs('admin');
         cy.visit('/en/contact');
