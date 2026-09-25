@@ -7,6 +7,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import type { AxiosRequestConfig } from 'axios';
 import {
     createPaymentIntent,
     confirmPayment,
@@ -104,13 +105,22 @@ export const usePaymentsStore = defineStore('payments', () => {
      * @param paymentMethodRef - The provider's opaque handle for the method, from its own widget.
      *   Never a card number: with a live provider the card is tokenised inside the provider's
      *   iframe and this application never sees it.
+     * @param confirmOptions - Per-call axios overrides for the CONFIRM step only, forwarded to
+     *   `orvalMutator` — `PaymentPanel.vue` attaches a solved `HumanCheck` token through it on the
+     *   retry after an `ANTIBOT_VERIFICATION_FAILED` refusal (rung 3 only engages once this
+     *   account already has a prior decline). Never applied to the intent step, which the gate
+     *   does not guard.
      * @returns A promise resolving with the payment as it now stands.
      */
-    const payForOrder = (orderId: string, paymentMethodRef: string) =>
+    const payForOrder = (
+        orderId: string,
+        paymentMethodRef: string,
+        confirmOptions?: AxiosRequestConfig
+    ) =>
         fetchAny(() =>
             createPaymentIntent({ orderId })
                 .then((intentResponse) =>
-                    confirmPayment(intentResponse.data.id, { paymentMethodRef })
+                    confirmPayment(intentResponse.data.id, { paymentMethodRef }, confirmOptions)
                 )
                 .then((response) => {
                     payment.value = response.data;
