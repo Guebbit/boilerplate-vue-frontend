@@ -135,8 +135,8 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
  * Validates the form and persists the subscription changes.
  *
  * `description` is emptied through {@link emptyToNull} — Vuetify gives `''` for a hand-cleared
- * field, and the contract's own D17c rule ("null clears, `''` is invalid") means sending the raw
- * empty string back would be a 400, not a clear.
+ * field, and the contract's own rule ("null clears, `''` is invalid") means sending the raw empty
+ * string back would be a 422, not a clear.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the revealed
  *  validation errors when the input is invalid. An API failure blocks the form in place
@@ -149,7 +149,7 @@ const submitForm = () => {
         const { url, description, eventTypes, enabled } = form.value;
         return updateSubscription(id, {
             url,
-            description: description === undefined ? undefined : emptyToNull(description),
+            description: emptyToNull(description),
             eventTypes,
             enabled
         }).then(() => {

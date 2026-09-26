@@ -10,6 +10,7 @@ import type { AxiosRequestConfig } from 'axios';
 
 import { ref } from 'vue';
 import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
+import { omitNulls } from '@/infrastructure/utils/forms.ts';
 import {
     listProducts,
     searchProducts,
@@ -202,9 +203,7 @@ export const useProductsStore = defineStore('products', () => {
                 ...productData
             }) => ({
                 ...productData,
-                ...(weight != null && { weight }),
-                ...(imageUrl != null && { imageUrl }),
-                ...(taxClass != null && { taxClass })
+                ...omitNulls({ weight, imageUrl, taxClass }, ['weight', 'imageUrl', 'taxClass'])
             })
         },
         {
