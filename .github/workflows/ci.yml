@@ -369,6 +369,24 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            # spec-identity.spec.ts reads the sibling's bundled openapi.yaml, which only exists
+            # once the backend's own postinstall has assembled it — `openapi.yaml` is gitignored
+            # there and built from fragments on install, not committed. Without this the whole
+            # job read "openapi.yaml: absent" instead of running the comparison at all.
+            #
+            # Guarded so a PHP pair — which tracks its own committed `openapi.yaml` and has no
+            # `package.json` to install — skips this step instead of failing on it.
+            #
+            # `MONGOMS_DISABLE_POSTINSTALL`: mongodb-memory-server's own postinstall otherwise
+            # downloads a mongod binary this job never runs; bundling the contract needs no
+            # database at all.
+            - name: Install backend dependencies
+              if: hashFiles('.backend/package.json') != ''
+              working-directory: .backend
+              env:
+                  MONGOMS_DISABLE_POSTINSTALL: '1'
+              run: npm ci
+
             - name: Run unit tests with coverage
               run: npm run test:unit:coverage
 
@@ -458,6 +476,16 @@ jobs:
                   cache-dependency-path: package-lock.json
 
             - name: Install dependencies
+              run: npm ci
+
+            # Same reasoning as test-unit's own step: the sibling's openapi.yaml is gitignored
+            # there and only exists once its postinstall assembles it from fragments. Guarded for
+            # a PHP pair, which commits its own and has no package.json to install.
+            - name: Install backend dependencies
+              if: hashFiles('.spec-sibling/package.json') != ''
+              working-directory: .spec-sibling
+              env:
+                  MONGOMS_DISABLE_POSTINSTALL: '1'
               run: npm ci
 
             - name: Compare the shared contract files
