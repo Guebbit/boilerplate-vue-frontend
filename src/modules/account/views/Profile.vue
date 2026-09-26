@@ -59,7 +59,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Profile logic
  */
-const { updateProfile, fetchProfile } = useProfileStore();
+const { updateProfile, cancelPendingEmailChange, fetchProfile } = useProfileStore();
 
 /**
  * The signed-in visitor's profile record.
@@ -213,10 +213,8 @@ const submitForm = () => {
     // Absent means "leave alone" on this PATCH (RFC 7396) — sent only when it actually moved, so
     // toggling it back to the baseline before saving reads as untouched, never as a fresh choice.
     const analyticsConsentChanged = form.value.analyticsConsent !== profile.value?.analyticsConsent;
-    // Same rule protects a pending email change (B5): the backend reads any INCLUDED `email` as
-    // "cancel/redirect the pending change" — see `resendPendingEmail`/`cancelPendingEmail` below,
-    // which send it ON PURPOSE. A routine save of some unrelated field must never carry the
-    // visitor's own unchanged address and accidentally cancel a change already in flight.
+    // Omitted rather than sent unchanged: PATCH treats an included `email` as a real request, even
+    // one that resolves to a no-op, and this save has nothing to say about the address at all.
     const emailChanged = form.value.email !== profile.value?.email;
     return updateProfile({
         ...(emailChanged ? { email: form.value.email } : {}),
@@ -268,18 +266,17 @@ const resendPendingEmail = () => {
 };
 
 /**
- * Cancels the pending email change. Sending back the CURRENT address is the backend's documented
- * cancellation path (AUDIT_0924 D17d) — the same value an untouched form would send, which is
- * exactly the ordinary save this page must never confuse it with (see `emailChanged` above).
+ * Cancels the pending email change through its own endpoint — `DELETE /account/pending-email`.
+ * Resending the current address used to be the cancel path; it is a no-op now, so a routine save
+ * can no longer drop a change in flight by accident.
  *
  * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
  *  place ({@link pendingEmailError}).
  */
 const cancelPendingEmail = () => {
-    const currentEmail = profile.value?.email;
-    if (!currentEmail) return;
+    if (!profile.value?.pendingEmail) return;
     clearPendingEmailError();
-    return updateProfile({ email: currentEmail })
+    return cancelPendingEmailChange()
         .then(() => addMessage(t('profile-page.pending-email-cancelled')))
         .catch((error) => reportPendingEmailError(error));
 };

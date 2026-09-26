@@ -40,6 +40,11 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
     },
     { method: 'PUT', pattern: /^\/account$/, schema: schemas.ReplaceAccountResponse },
     { method: 'PATCH', pattern: /^\/account$/, schema: schemas.UpdateAccountResponse },
+    {
+        method: 'DELETE',
+        pattern: /^\/account\/pending-email$/,
+        schema: schemas.CancelPendingEmailChangeResponse
+    },
     { method: 'POST', pattern: /^\/account\/password$/, schema: schemas.ChangePasswordResponse },
     {
         method: 'POST',

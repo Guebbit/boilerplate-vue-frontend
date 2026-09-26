@@ -3240,6 +3240,11 @@ export type UnsupportedMediaTypeResponse = ErrorResponse;
 export type TooManyRequestsResponse = ErrorResponse;
 
 /**
+ * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ */
+export type ServiceUnavailableResponse = ErrorResponse;
+
+/**
  * Internal server error
  */
 export type InternalErrorResponse = ErrorResponse;
@@ -3724,20 +3729,6 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
- * Public readiness probe for an orchestrator (Kubernetes' own `/livez` + `/readyz`
- * convention). Empty body either way: 200 once this instance has finished booting,
- * has not started draining for shutdown, and can reach the database; 503 otherwise.
- *
- * NOT the liveness probe — `GET /` is that, and answers regardless of readiness.
- * Point a load balancer or a container HEALTHCHECK here instead of at `/`, so a
- * draining instance stops receiving new traffic before its connections are cut.
- * @summary Readiness check
- */
-export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) => {
-    return orvalMutator<void>({ url: `/readyz`, method: 'GET' }, options);
-};
-
-/**
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
@@ -4100,10 +4091,9 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  * backing service is missing when it cannot. Also carries uptime, memory, system and
  * telemetry-wiring detail for the dashboard card.
  *
- * This is NOT the liveness probe (`GET /`) or the readiness probe the container
- * HEALTHCHECK calls (`GET /readyz`) — this is the detailed, authenticated view for a
- * dashboard. Nothing here performs I/O; every dependency is read from the connection
- * state its adapter already maintains.
+ * This is NOT the liveness probe — `GET /` is, and it is what the container
+ * HEALTHCHECK calls. Nothing here performs I/O; every dependency is read from the
+ * connection state its adapter already maintains.
  *
  * Requires admin role.
  * @summary Health snapshot
@@ -4211,7 +4201,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -4230,7 +4220,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
@@ -4280,7 +4270,7 @@ export const replaceAccountWithMultipart = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Update own profile
  */
 export const updateAccount = (
@@ -4299,7 +4289,7 @@ export const updateAccount = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address cancels a pending change.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
@@ -4360,6 +4350,19 @@ export const requestAccountDelete = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+};
+
+/**
+ * Discards a pending `pendingEmail` change started by `PUT`/`PATCH /account`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
+ * @summary Cancel a pending email change
+ */
+export const cancelPendingEmailChange = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/pending-email`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
@@ -6560,7 +6563,6 @@ export const revokeApiKey = (
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
-export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>;
@@ -6615,6 +6617,9 @@ export type UpdateAccountWithMultipartResult = NonNullable<
 >;
 export type RequestAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountDelete>>
+>;
+export type CancelPendingEmailChangeResult = NonNullable<
+    Awaited<ReturnType<typeof cancelPendingEmailChange>>
 >;
 export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;

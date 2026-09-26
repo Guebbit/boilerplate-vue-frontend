@@ -18,6 +18,7 @@ import {
     confirmAccountDelete as apiConfirmAccountDelete,
     updateAccount as apiUpdateAccount,
     updateAccountWithMultipart as apiUpdateAccountWithMultipart,
+    cancelPendingEmailChange as apiCancelPendingEmailChange,
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
@@ -205,6 +206,19 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
+     * Cancels a pending email change, through the endpoint dedicated to it — `DELETE
+     * /account/pending-email`. Resending the current address no longer cancels anything (the
+     * backend now treats that as a no-op, so a routine save never drops a change in flight by
+     * accident); this is the only thing that does.
+     *
+     * @returns A promise resolving once the change is discarded and the profile refetched.
+     */
+    const cancelPendingEmailChange = () =>
+        fetchAny(() =>
+            apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined))
+        );
+
+    /**
      * Changes the visitor's OWN role, through the endpoint that owns roles.
      *
      * Deliberately not folded into {@link updateProfile}. `PUT/PATCH /account` is the self-service
@@ -376,6 +390,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         resetAll,
         fetchProfile,
         updateProfile,
+        cancelPendingEmailChange,
         updateOwnRole,
         changePassword,
         requestEmailVerification,

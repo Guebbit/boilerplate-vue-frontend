@@ -70,6 +70,19 @@ const lastAccountPatch = () =>
         .findLast((call) => call.method?.toUpperCase() === 'PATCH' && call.url === '/account');
 
 /**
+ * Whether `cancelPendingEmail` reached its own endpoint — the assertion for the cancel test below,
+ * since the call carries no body worth inspecting.
+ */
+const calledCancelPendingEmail = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.some(
+            (call) =>
+                (call[0] as { url: string; method?: string }).method?.toUpperCase() === 'DELETE' &&
+                (call[0] as { url: string }).url === '/account/pending-email'
+        );
+
+/**
  * Mounts the real page, every decorative sibling panel stubbed out — each owns its own fetch and
  * its own test file.
  */
@@ -102,7 +115,8 @@ beforeEach(() => {
             version: 1,
             subjects: []
         }),
-        'PATCH /account': orvalEnvelope(USER)
+        'PATCH /account': orvalEnvelope(USER),
+        'DELETE /account/pending-email': orvalEnvelope()
     };
     return loadLocale('en').then(() => router.push('/en/profile').then(() => router.isReady()));
 });
@@ -210,7 +224,7 @@ describe('the email field, and a pending change (A2 + B5)', () => {
             });
     });
 
-    it('cancel sends PATCH /account with the CURRENT address, the documented cancellation path', () => {
+    it('cancel calls DELETE /account/pending-email, its own dedicated endpoint', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
 
@@ -218,8 +232,7 @@ describe('the email field, and a pending change (A2 + B5)', () => {
             .then(() => wrapper.get('[data-test=pending-email-cancel]').trigger('click'))
             .then(flushPromises)
             .then(() => {
-                const patch = lastAccountPatch();
-                expect(patch?.data).toEqual({ email: USER.email });
+                expect(calledCancelPendingEmail()).toBe(true);
             });
     });
 });
