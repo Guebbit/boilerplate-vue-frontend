@@ -72,9 +72,7 @@ describe('The customer journey', () => {
         // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
         // the line just added is the whole cart.
         cy.get('[data-test=cart-item]').should('have.length', 1);
-        cy.get('[data-test=shipping-selector]').should('exist');
-        cy.get('[data-test=shipping-method-standard]').click();
-        cy.get('[data-test=cart-checkout]').click();
+        cy.checkoutWith('standard');
 
         // Checkout lands straight on the new order's own page.
         cy.get('#order-target').should('exist');
