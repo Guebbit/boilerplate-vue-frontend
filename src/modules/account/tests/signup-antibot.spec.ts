@@ -113,7 +113,11 @@ beforeEach(() => {
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com'
-        })
+        }),
+        // Typing the password debounces a breach check (`use-password-breach-check.ts`) that this
+        // test doesn't otherwise care about — without a fixture, the debounce's trailing edge can
+        // fire after the test's own assertions, hitting `parseOrvalFixture` with no matching entry.
+        'POST /account/password/check': orvalEnvelope({ breached: false })
     };
     return loadLocale('en');
 });
