@@ -150,6 +150,10 @@ vi.mock('vue-i18n', async (importOriginal) => {
         useI18n: () => ({
             // The plural form is echoed so a label built with `t(key, count)` can be asserted on.
             t: (key: string, count?: number) => (count === undefined ? key : `${key}:${count}`),
+            // `AppLanguageSwitcher.vue` (mounted here as a child of the nav it labels) uses this
+            // to decide whether a language has a translated name; real behaviour, not asserted by
+            // this file, so every key "exists".
+            te: () => true,
             locale: ref('en')
         })
     };

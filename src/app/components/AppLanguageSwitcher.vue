@@ -8,6 +8,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';
 import { supportedLanguages } from '@/infrastructure/i18n';
+import { languageLabel } from '@/infrastructure/i18n/language-label.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
@@ -21,9 +22,12 @@ const router = useRouter();
 const route = useRoute();
 
 /**
- * Translation function and the currently active locale code.
+ * The i18n instance. `te` (its "does this key exist" check) is read off it directly rather than
+ * destructured, so it stays bound to the instance instead of floating as an unbound method
+ * reference.
  */
-const { t, locale } = useI18n();
+const i18n = useI18n();
+const { t, locale } = i18n;
 
 /**
  * Re-enters the current route under the new locale.
@@ -86,13 +90,19 @@ function switchLanguage(newLocale: string) {
                 v-for="sLocale in supportedLanguages"
                 :key="`locale-${sLocale}`"
                 role="menuitem"
+                :lang="sLocale"
                 :active="locale === sLocale"
                 :aria-current="locale === sLocale ? 'true' : undefined"
                 color="primary"
                 :data-test="`language-option-${sLocale}`"
                 @click="switchLanguage(sLocale)"
             >
-                <v-list-item-title>{{ t(`generic.${sLocale}`) }}</v-list-item-title>
+                <v-list-item-title>{{
+                    languageLabel(sLocale, locale, {
+                        t: (key) => t(key),
+                        te: (key) => i18n.te(key)
+                    })
+                }}</v-list-item-title>
                 <template #append>
                     <Check v-if="locale === sLocale" :size="16" aria-hidden="true" />
                 </template>

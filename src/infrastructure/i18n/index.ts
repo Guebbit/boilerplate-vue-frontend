@@ -77,6 +77,16 @@ export const loadedLanguages: string[] = [];
 export const localeDirections: Record<string, 'ltr' | 'rtl'> = {};
 
 /**
+ * A language's own name for itself, as the API's manifest reports it — "Español", not "Spanish".
+ *
+ * Filled by `mergeRemoteLocales` at boot, same as {@link localeDirections}; empty offline, and for
+ * a language the manifest has not been fetched for yet. `AppLanguageSwitcher.vue` reads it so a
+ * language this build has no translated `generic.*` entry for — one the API added at runtime —
+ * shows its own name rather than the raw dictionary key.
+ */
+export const localeNativeNames: Record<string, string> = {};
+
+/**
  * Per-locale loaders for the dictionaries the enabled modules contribute.
  *
  * A domain owns its own copy under `src/modules/<name>/locales/`, merged at boot, per locale, on
