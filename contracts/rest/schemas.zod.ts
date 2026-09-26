@@ -10917,16 +10917,76 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
             .string()
             .optional()
             .describe(
-                "A rotated-in secret's plaintext, present only when `PATCH` was sent with `rotateSecret:true`."
+                "A rotated-in secret's plaintext, present only in the response of `POST ...\/rotate-secret`."
             )
     })
 });
 
 /**
- * Partial update. `rotateSecret: true` adds a new secret to the ring and returns its
- * plaintext in `newSecret` — the ring then carries two active secrets, and deliveries
- * sign with both (two space-separated `v1,` values in `webhook-signature`) until
- * `removeSecretId` names the old one to drop. Both may be sent in the same request.
+ * Full replace of url/description/eventTypes/enabled — an omitted `description` is
+ * cleared. Never touches the secret ring; rotate or drop a secret through its own
+ * action route below.
+ * @summary Replace a webhook subscription
+ */
+export const ReplaceWebhookSubscriptionParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
+
+export const ReplaceWebhookSubscriptionBody = zod.strictObject({
+    url: zod
+        .url()
+        .regex(replaceWebhookSubscriptionBodyUrlRegExp)
+        .describe('Must be `https:\/\/` — same rule `CreateWebhookSubscriptionRequest` states.'),
+    description: zod.string().min(1).nullish(),
+    eventTypes: zod.array(zod.string()).min(1),
+    enabled: zod
+        .boolean()
+        .describe(
+            'Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`.'
+        )
+});
+
+export const replaceWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
+
+export const replaceWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+
+export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        url: zod.url().regex(replaceWebhookSubscriptionResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(replaceWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                'The newly minted secret, in plaintext. Shown here once, on creation, and never again.'
+            ),
+        newSecret: zod
+            .string()
+            .optional()
+            .describe(
+                "A rotated-in secret's plaintext, present only in the response of `POST ...\/rotate-secret`."
+            )
+    })
+});
+
+/**
+ * Partial update of url/description/eventTypes/enabled. Never touches the secret
+ * ring; rotate or drop a secret through its own action route below.
  * @summary Update a webhook subscription
  */
 export const UpdateWebhookSubscriptionParams = zod.strictObject({
@@ -10948,16 +11008,6 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
         .optional()
         .describe(
             'Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`.'
-        ),
-    rotateSecret: zod
-        .boolean()
-        .optional()
-        .describe('Add a new secret to the ring; its plaintext comes back once, in `newSecret`.'),
-    removeSecretId: zod
-        .string()
-        .optional()
-        .describe(
-            'Drop this secret id from the ring — the other half of a rotation, once every consumer has switched.'
         )
 });
 
@@ -10992,7 +11042,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
             .string()
             .optional()
             .describe(
-                "A rotated-in secret's plaintext, present only when `PATCH` was sent with `rotateSecret:true`."
+                "A rotated-in secret's plaintext, present only in the response of `POST ...\/rotate-secret`."
             )
     })
 });
@@ -11009,6 +11059,102 @@ export const DeleteWebhookSubscriptionResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+
+/**
+ * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
+ * ring then carries two active secrets, and deliveries sign with both (two
+ * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
+ * through `DELETE .../secrets/{secretId}`. Split out from the old `PATCH` body's
+ * `rotateSecret` flag: a command, not state, so it gets its own route instead of
+ * sharing one with url/description/eventTypes/enabled.
+ * @summary Rotate a webhook subscription's secret
+ */
+export const RotateWebhookSubscriptionSecretParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const rotateWebhookSubscriptionSecretResponseDataUrlRegExp = new RegExp('(?:^https://)');
+
+export const rotateWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin = 0;
+
+export const RotateWebhookSubscriptionSecretResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        url: zod.url().regex(rotateWebhookSubscriptionSecretResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(rotateWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                'The newly minted secret, in plaintext. Shown here once, on creation, and never again.'
+            ),
+        newSecret: zod
+            .string()
+            .optional()
+            .describe(
+                "A rotated-in secret's plaintext, present only in the response of `POST ...\/rotate-secret`."
+            )
+    })
+});
+
+/**
+ * The other half of a rotation, once every consumer has switched. Refuses to empty
+ * the ring — a subscription with no secret can never sign a delivery. The remove twin
+ * of `POST .../rotate-secret`, split out for the same reason.
+ * @summary Drop one secret from a subscription's ring
+ */
+export const RemoveWebhookSubscriptionSecretParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier'),
+    secretId: zod.string().describe("A ring entry's id, from `secretIds`.")
+});
+
+export const removeWebhookSubscriptionSecretResponseDataUrlRegExp = new RegExp('(?:^https://)');
+
+export const removeWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin = 0;
+
+export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        url: zod.url().regex(removeWebhookSubscriptionSecretResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(removeWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }),
+        secret: zod
+            .string()
+            .optional()
+            .describe(
+                'The newly minted secret, in plaintext. Shown here once, on creation, and never again.'
+            ),
+        newSecret: zod
+            .string()
+            .optional()
+            .describe(
+                "A rotated-in secret's plaintext, present only in the response of `POST ...\/rotate-secret`."
+            )
+    })
 });
 
 /**
