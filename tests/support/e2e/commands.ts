@@ -419,17 +419,34 @@ Cypress.Commands.add(
     })
 );
 
-/** A plain request: the outbox lives in the demo backend's process, not in the page. */
-const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
+/** How many times the demo outbox is polled before giving up — mirrors `MAILPIT_ATTEMPTS` below. */
+const DEMO_OUTBOX_ATTEMPTS = 20;
+
+/**
+ * The demo outbox, polled: a send that attaches an invoice (`sendOrderPlacedEmail`) enqueues the
+ * mail only once its own PDF render has finished, which can outlast the checkout response by more
+ * than one HTTP round trip — a single un-retried read can beat the enqueue and find nothing.
+ * Same poll shape as {@link mailpitEmailTo} below, for the same reason.
+ *
+ * @param address - the recipient
+ * @param attempt - how many polls came before this one
+ */
+const demoOutboxEmailTo = (address: string, attempt = 0): Cypress.Chainable<MailedEmail> =>
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
-        .then((response): MailedEmail => {
+        .then((response): Cypress.Chainable<MailedEmail> => {
             const { emails } = response.body as { emails: DemoOutboxEmail[] };
             const email = emails.find(({ to }) => to === address);
-            expect(email, `an email to ${address} in the demo outbox`).to.not.equal(undefined);
-            // Proven present by the assertion above, which the compiler cannot follow.
-            return email!;
+            // Both branches return a Chainable, never a bare value: mixing the two makes
+            // Cypress's `.then` typing infer `Chainable<Chainable<MailedEmail>>` instead of
+            // flattening, since it can no longer tell this call always resolves to one email.
+            if (email) return cy.wrap<MailedEmail>(email);
+            expect(attempt, `an email to ${address} in the demo outbox`).to.be.lessThan(
+                DEMO_OUTBOX_ATTEMPTS
+            );
+            // eslint-disable-next-line cypress/no-unnecessary-waiting -- outbox delivery has no event the browser can wait on
+            return cy.wait(500).then(() => demoOutboxEmailTo(address, attempt + 1));
         });
 
 /** How long a live send may take to reach Mailpit — SMTP is asynchronous, the outbox is not. */
