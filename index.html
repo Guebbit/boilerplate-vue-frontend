@@ -18,13 +18,59 @@
         <meta name="theme-color" content="#ffffff" />
         <!-- Replaced on every navigation by the router (`<page> — <app name>`); this is the pre-boot default. -->
         <title>Guebbit</title>
+        <!--
+          a static splash, shown until Vue mounts and replaces `#app`'s content. Vue cannot
+          render anything before its own bootstrap settles (locale merge, first navigation), so a
+          slow API otherwise leaves a blank page for however long that takes — this is the one
+          piece of UI that exists before any JavaScript has run. Plain CSS, no framework: Vuetify
+          and Tailwind are what is still loading.
+        -->
+        <style>
+            #app-splash {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                font-family: system-ui, sans-serif;
+                color: #616161;
+                background: #fafafa;
+            }
+            @media (prefers-color-scheme: dark) {
+                #app-splash {
+                    color: #e0e0e0;
+                    background: #121212;
+                }
+            }
+            #app-splash__spinner {
+                width: 2rem;
+                height: 2rem;
+                border: 0.25rem solid currentColor;
+                border-right-color: transparent;
+                border-radius: 50%;
+                animation: app-splash-spin 0.75s linear infinite;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #app-splash__spinner {
+                    animation: none;
+                }
+            }
+            @keyframes app-splash-spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
     </head>
     <body>
         <noscript
             >This application needs JavaScript to run. Please enable it in your browser and reload
             the page.</noscript
         >
-        <div id="app"></div>
+        <div id="app">
+            <div id="app-splash" role="status" aria-label="Loading">
+                <div id="app-splash__spinner" aria-hidden="true"></div>
+            </div>
+        </div>
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>

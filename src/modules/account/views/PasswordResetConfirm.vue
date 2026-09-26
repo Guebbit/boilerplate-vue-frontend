@@ -19,10 +19,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
@@ -105,6 +107,10 @@ const {
     }
 );
 
+// The token is the only credential for this action; it must not linger in the URL for every
+// pageview and observability event after mount to carry to Umami, Faro and browser history.
+useClearQueryOnMount(route, router);
+
 /**
  * Advisory breach check for the new password field — never a submit gate, see `@module`.
  */
@@ -174,6 +180,7 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.password : []"
                     class="mb-2"
                 />
+                <PasswordStrengthMeter :password="form.password ?? ''" />
                 <!-- Advisory only, never a submit gate — the four password-SET paths remain the
                      actual authority, checked again server-side regardless of this warning. -->
                 <v-alert

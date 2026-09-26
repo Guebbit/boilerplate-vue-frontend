@@ -32,12 +32,9 @@ const { addMessage } = useNotificationsStore();
 
 /**
  * The shell's projection of the signed-in visitor — the one thing hydrated on every page load,
- * unlike the account module's full record, which only the profile page fetches. `can` is a
- * method, not state, so it comes off the store directly rather than through `storeToRefs`.
+ * unlike the account module's full record, which only the profile page fetches.
  */
-const sessionStore = useSessionStore();
-const { viewer } = storeToRefs(sessionStore);
-const { can } = sessionStore;
+const { viewer } = storeToRefs(useSessionStore());
 
 /**
  * Re-sends the address-verification email. Reaches into the account module the way
@@ -101,7 +98,7 @@ const handleResendVerification = () => {
 
 <template>
     <v-alert
-        v-if="viewer && !can('checkout', 'Cart')"
+        v-if="viewer && !viewer.verified"
         type="warning"
         variant="tonal"
         density="compact"

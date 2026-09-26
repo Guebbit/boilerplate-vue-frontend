@@ -23,7 +23,7 @@ vi.mock('@api', async (importOriginal) => ({
     // The generated const objects are not network calls — the module under test may compare
     // against them, so the real ones have to survive the mock.
     ...(await importOriginal<Record<string, unknown>>()),
-    getLocales: () => getLocalesMock(),
+    getLocales: (options?: { timeout?: number }) => getLocalesMock(options),
     getLocaleMessages: (locale: string, parameters?: { tenant?: string }) =>
         getLocaleMessagesMock(locale, parameters)
 }));
@@ -125,6 +125,20 @@ describe('fetchRemoteLocales', () => {
     it('returns an empty list when the API is unreachable', () => {
         getLocalesMock.mockRejectedValue(new Error('network down'));
         return expect(fetchRemoteLocales()).resolves.toEqual([]);
+    });
+
+    /**
+     * this is a boot-blocking read — `main.ts` awaits it before the app can mount — so it
+     * must not sit on the client's ordinary 10s default while the first paint waits behind it.
+     */
+    it('asks with a short, boot-specific timeout', () => {
+        void fetchRemoteLocales();
+
+        expect(getLocalesMock).toHaveBeenCalledWith(
+            expect.objectContaining({ timeout: expect.any(Number) })
+        );
+        const [{ timeout }] = getLocalesMock.mock.calls.at(-1) as [{ timeout: number }];
+        expect(timeout).toBeLessThanOrEqual(2000);
     });
 
     /**

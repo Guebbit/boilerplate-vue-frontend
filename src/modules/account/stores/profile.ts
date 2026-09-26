@@ -37,9 +37,10 @@ import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
  * @param imageUrl - The record's picture field, `''` when the call is a removal.
  * @returns The postfix appended to the store's loading key, or `''` for a plain save.
  */
-const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string) => {
+const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string | null) => {
     if (imageUpload) return ':avatar-upload';
-    return imageUrl === '' ? ':avatar-remove' : '';
+    // `null` is the removal — the contract's `minLength: 1` refuses `''`.
+    return imageUrl === null ? ':avatar-remove' : '';
 };
 
 /**
@@ -102,7 +103,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 // `unverified`, not `customer` — same least-privileged fallback the backend
                 // resolves an absent role to (`account/module.ts`).
                 role: user.role ?? 'unverified',
-                imageUrl: user.imageUrl
+                imageUrl: user.imageUrl,
+                // Absent means unverified: the backend sends the field only once it's set.
+                verified: user.verifiedAt != null
             }
         );
 
@@ -125,9 +128,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
-                    // Identify user in observability tools after profile is fetched
+                    // Umami/Faro identity follows the visitor's own analytics consent, checked
+                    // fresh on every fetch — this store also refetches right after a consent
+                    // toggle (`updateProfile`), which is what turns a withdrawal into an unidentify.
                     const obs = useObservabilityStore();
-                    obs.identifyUser(payload.id, payload.email);
+                    if (payload.analyticsConsent === true) obs.identifyUser(payload.id);
+                    else obs.unidentifyUser();
                     // Keep the shell's projection in step with the record just loaded, rules
                     // included: a screen that renders before them hides what it should show.
                     return publishViewer(payload).then(() => payload);
@@ -155,15 +161,21 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  `multipart/form-data` — the `{ imageUpload, ...rest }` split `modules/users/store.ts`
      *  already has for the admin form,
      *  one shape for both call sites. `imageUrl` and `imageUpload` are mutually exclusive in
-     *  practice: `ProfileAvatar.vue`'s remove button sends `imageUrl: ''` alone, its picker sends
-     *  `imageUpload` alone.
+     *  practice: `ProfileAvatar.vue`'s remove button sends `imageUrl: null` alone (never `''` —
+     *  the contract's own `minLength: 1` refuses that with a 422), its picker sends
+     *  `imageUpload` alone. `imageUrl` widens past `Partial<User>`'s own (read-shape, non-null)
+     *  type for exactly this: the write contract allows `null`, the record itself never reads
+     *  back as one.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
      *  `ProfileAvatar.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving with the updated profile, rejected with an
      *  `invalid user` error when no profile is selected.
      */
     const updateProfile = (
-        { imageUpload, ...userData }: Partial<User> & { imageUpload?: File } = {},
+        {
+            imageUpload,
+            ...userData
+        }: Partial<Omit<User, 'imageUrl'>> & { imageUpload?: File; imageUrl?: string | null } = {},
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
@@ -190,7 +202,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     return payload ? publishViewer(payload).then(() => data) : data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
-            userData,
+            // `null` narrows to `undefined` for this OPTIMISTIC patch only — the toolkit's own
+            // `Partial<User>` (the record's read shape) never carries a null image, and the
+            // refetch right below corrects the visible state within one round trip regardless.
+            { ...userData, imageUrl: userData.imageUrl ?? undefined },
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own loading key so the picker
             // and the remove button spin one at a time. `imageUrl: ''` is the removal.

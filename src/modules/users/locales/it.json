@@ -52,7 +52,12 @@
         "password-special-required": "La password deve contenere almeno un carattere speciale",
         "password-confirm-required": "Digita nuovamente la password",
         "password-dont-match": "Le password non corrispondono",
-        "password-breached-warning": "Questa password è comparsa in violazioni di dati note. Valuta di sceglierne un'altra."
+        "password-breached-warning": "Questa password è comparsa in violazioni di dati note. Valuta di sceglierne un'altra.",
+        "password-strength-very-weak": "Molto debole",
+        "password-strength-weak": "Debole",
+        "password-strength-fair": "Discreta",
+        "password-strength-good": "Buona",
+        "password-strength-strong": "Forte"
     },
     "user-target-page": {
         "page-title": "Utente selezionato",

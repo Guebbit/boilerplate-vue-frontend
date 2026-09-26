@@ -163,14 +163,15 @@ counting the logout that succeeded rather than the one that was attempted. See
 | `components/ProfileAddresses.vue`        | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/ProfileAvatar.vue`           | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/ProfileDeleteAccount.vue`    | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
+| `components/PasswordStrengthMeter.vue`   | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/ProfilePasswordChange.vue`   | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `components/ProfileRole.vue`             | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/ProfileSessions.vue`         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/ProfileTwoFactor.vue`        | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/TwoFactorBackupCodes.vue`    | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `components/TwoFactorEnroll.vue`         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
 | `composables/use-countdown.ts`           | The one ticking “seconds left” primitive: a server-sent deadline, counted down. Every 2FA expiry and the resend cooldown share it.                          | [read](../theory/layers.md)           |
 | `composables/use-method-label.ts`        | Renders a 2FA method’s wire name as copy, falling back to the wire string for a method this build has no word for.                                          | [read](../tools/i18n.md)              |
+| `composables/use-password-strength.ts`   | A local, advisory-only zxcvbn score for a password field — never a submit gate.                                                                             | [read](#libraries)                    |
 | `composables/use-post-login-redirect.ts` | Where a visitor lands once a session exists — shared by the password step and the 2FA step so both end the same way.                                        | [read](../theory/sitemap.md)          |
 | `locales/en.json`                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
 | `locales/it.json`                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
@@ -330,6 +331,14 @@ the dialog that is the difference between one prompt and five stacked on top of 
 `ReauthDialog.vue` lives in `app/`, and the store holding its open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
 infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.
+
+## Libraries
+
+`@zxcvbn-ts/core` (plus `@zxcvbn-ts/language-common` and `@zxcvbn-ts/language-en`) drives
+`components/PasswordStrengthMeter.vue`'s local strength bar — the maintained TypeScript fork of the
+original `zxcvbn`, which is unmaintained since 2022. English dictionary only, since this is
+advisory feedback rather than an enforced rule; the actual gate stays `usersPasswordSchema` plus
+the server's own composition and breach checks. See `composables/use-password-strength.ts`.
 
 ## Related pages
 

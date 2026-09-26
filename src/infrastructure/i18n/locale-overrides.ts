@@ -71,8 +71,18 @@ export const localeTenant = (): string =>
  *
  * @returns The API's language tags, or an empty list when it cannot be reached. Never rejects.
  */
+/**
+ * this is a boot-blocking read — `main.ts` awaits it before the app can mount at all — so it
+ * gets a much shorter budget than the client's ordinary 10s default. A visitor's first paint
+ * should not sit behind a slow or unreachable API for longer than this.
+ */
+const BOOT_READ_TIMEOUT_MS = 1500;
+
+/**
+ *
+ */
 export const fetchRemoteLocales = (): Promise<string[]> =>
-    getLocales()
+    getLocales({ timeout: BOOT_READ_TIMEOUT_MS })
         .then((response) =>
             response.data.locales
                 .filter(

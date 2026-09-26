@@ -109,37 +109,6 @@ describe('Profile self-service', () => {
         });
     });
 
-    describe('role', () => {
-        it('offers no role control to a standard user', () => {
-            // The select is not merely disabled: a non-admin has no business being shown a
-            // control whose endpoint would answer them 403.
-            cy.get('[data-test=profile-role]').should('not.exist');
-        });
-
-        it('lets an administrator see it, and asks before rights are given away', () => {
-            cy.logout();
-            cy.loginAs('admin');
-            cy.visit('/en/profile');
-
-            cy.get('[data-test=profile-role]').should('exist');
-            // Nothing to apply until the select is moved off what the record says.
-            cy.get('[data-test=role-submit]').should('be.disabled');
-
-            cy.get('[data-test=role-select]').click();
-            cy.get('.v-overlay-container').contains('.v-list-item', 'Standard user').click();
-            cy.get('[data-test=role-submit]').should('not.be.disabled').click();
-
-            // Self-demotion is the one change here nobody can undo for themselves, so it asks.
-            // Declining must leave both the select and the rights exactly as they were — which
-            // is also why this spec never commits the change: the demo admin stays an admin for
-            // every other spec in the run.
-            cy.get('[data-test=app-dialog-cancel]').click();
-            cy.contains('Role updated').should('not.exist');
-            cy.get('[data-test=profile-role]').should('exist');
-            cy.get('[data-test=role-submit]').should('be.disabled');
-        });
-    });
-
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();

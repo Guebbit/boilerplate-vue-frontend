@@ -8,6 +8,7 @@ import { storeToRefs } from 'pinia';
 import { translate, getCurrentLocale } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
+import { toPathname } from './url.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { AxiosRequestData, AxiosResponseErrorBody, AxiosResponseErrorData } from './types.ts';
 
@@ -40,6 +41,21 @@ const getFallbackMessage = (status: number, fallback: string) => {
  * @returns A code matching this client's own vocabulary, not the API's.
  */
 const getFallbackErrorCode = (status: number) => (status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN');
+
+/**
+ * axios's own classification of a request that never got an answer — offline, a timeout, a
+ * CORS refusal (which surfaces to the caller as a network error, not the browser-console-only
+ * CORS message), or a caller-initiated cancel. Distinct codes rather than one, because a caller
+ * choosing to retry cares whether it was cancelled on purpose.
+ *
+ * @param error - Axios error carrying no `response`.
+ * @returns The matching code, `NETWORK_ERROR` for anything axios did not classify further.
+ */
+const getTransportErrorCode = (error: AxiosError): 'TIMEOUT' | 'CANCELED' | 'NETWORK_ERROR' => {
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'TIMEOUT';
+    if (error.code === 'ERR_CANCELED') return 'CANCELED';
+    return 'NETWORK_ERROR';
+};
 
 /**
  * Request interceptor: injects the bearer token (when authenticated) and the active language.
@@ -96,9 +112,11 @@ const withFieldLifted = (item: unknown): unknown => {
  * Response error normalizer: every rejection reaches a call site in the same envelope.
  *
  * A response that already carries the standard `errors` field passes through, enriched with the
- * backend correlation headers (`x-request-id` → requestId, `x-trace-id` → traceId) and each item's
- * field lifted for the forms ({@link withFieldLifted}); anything else — transport failure, bare
- * proxy error — is mapped onto the same shape.
+ * backend correlation header (`x-request-id` → requestId), the W3C trace context
+ * (`traceparent` — neither backend has ever sent `x-trace-id`, so this replaces it), the
+ * request's own method/path (what lets `captureException` name an error by more than its
+ * status), and each item's field lifted for the forms ({@link withFieldLifted}); anything else —
+ * transport failure, bare proxy error — is mapped onto the same shape.
  *
  * @param error - Axios error, with or without a response.
  * @returns A promise that never resolves; it always rejects with an
@@ -108,7 +126,15 @@ export const onResponseReject = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ): Promise<never> => {
     const requestId = error.response?.headers['x-request-id'] as string | undefined;
-    const traceId = error.response?.headers['x-trace-id'] as string | undefined;
+    const traceparent = error.response?.headers.traceparent as string | undefined;
+    const method = error.config?.method?.toUpperCase();
+    const path = error.config?.url ? toPathname(error.config.url) : undefined;
+    const correlation = {
+        ...(requestId && { requestId }),
+        ...(traceparent && { traceparent }),
+        ...(method && { method }),
+        ...(path && { path })
+    };
 
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
         const { errors } = error.response.data;
@@ -116,14 +142,29 @@ export const onResponseReject = (
         return Promise.reject({
             ...error.response.data,
             ...(Array.isArray(errors) && { errors: errors.map((item) => withFieldLifted(item)) }),
-            ...(requestId && { requestId }),
-            ...(traceId && { traceId })
+            ...correlation
         });
     }
 
-    const status = error.response?.status ?? 500;
-    const fallbackMessage =
-        error.response?.statusText || error.message || translate('api-errors.unknown');
+    // no `response` at all — offline, a timeout, CORS, or a cancelled request — is not the
+    // same failure as a 500, and must not be reported as one. `status: 0` is what
+    // `isTransportFailure` (`utils/errors.ts`) keys on.
+    if (!error.response) {
+        const code = getTransportErrorCode(error);
+        const message = translate('api-errors.network');
+        // Never a 5xx-worthy `logger.debug` below: nothing HERE answered at all.
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
+        return Promise.reject({
+            success: false,
+            status: 0,
+            message,
+            errors: [{ code, message }],
+            ...correlation
+        });
+    }
+
+    const { status, statusText } = error.response;
+    const fallbackMessage = statusText || error.message || translate('api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
     // A 5xx is the server's problem, not this client's, so it is a trace rather than an error
     // here — opt in with `VITE_APP_LOG_SCOPES=http`.
@@ -134,13 +175,12 @@ export const onResponseReject = (
         success: false,
         status,
         message,
-        // No `errors` field arrived (transport failure, bare proxy error) — synthesize the
+        // No `errors` field arrived (a bare proxy error, an empty body) — synthesize the
         // structured shape callers rely on rather than leaving it empty.
         errors:
             status === 401 || status === 403
                 ? [{ code: getFallbackErrorCode(status), message }]
                 : [],
-        ...(requestId && { requestId }),
-        ...(traceId && { traceId })
+        ...correlation
     });
 };

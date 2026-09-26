@@ -5,15 +5,16 @@ Groups are organised by concern, with same-namespace tools together where that h
 
 ## Runtime dependencies
 
-| Group           | Packages                                             | Why they exist here                                                                         | Read more                                      |
-| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Vue framework   | `vue`, `pinia`, `vue-router`, `vue-i18n`             | UI, state, navigation, localisation                                                         | [State & Routing](./state-and-routing.md)      |
-| HTTP client     | `axios`                                              | single HTTP client used by the generated API client                                         | [Runtime](./runtime.md)                        |
-| Validation      | `zod`                                                | form and response validation; schemas generated from `openapi.yaml`                         | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| Observability   | `@grafana/faro-web-sdk`, `@grafana/faro-web-tracing` | error monitoring + frontend tracing + web-vitals; Umami analytics loads via injected script | [Observability](./observability.md)            |
-| Realtime        | — (clients in `src/infrastructure/`)                 | SSE via native browser APIs                                                                 | [Realtime](./realtime.md)                      |
-| Guebbit shared  | `@guebbit/css-toolkit`, `@guebbit/vue-toolkit`       | shared SCSS tokens and Vue components                                                       | [Tools Explained](./tools-explained.md)        |
-| Human challenge | `altcha`                                             | ALTCHA's web component — rung 3's self-hosted widget, `<HumanCheck>`'s `altcha` branch      | [Security](./security.md)                      |
+| Group             | Packages                                                                  | Why they exist here                                                                                                                          | Read more                                      |
+| ----------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Vue framework     | `vue`, `pinia`, `vue-router`, `vue-i18n`                                  | UI, state, navigation, localisation                                                                                                          | [State & Routing](./state-and-routing.md)      |
+| HTTP client       | `axios`                                                                   | single HTTP client used by the generated API client                                                                                          | [Runtime](./runtime.md)                        |
+| Validation        | `zod`                                                                     | form and response validation; schemas generated from `openapi.yaml`                                                                          | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| Observability     | `@grafana/faro-web-sdk`, `@grafana/faro-web-tracing`                      | error monitoring + frontend tracing + web-vitals; Umami analytics loads via injected script                                                  | [Observability](./observability.md)            |
+| Realtime          | — (clients in `src/infrastructure/`)                                      | SSE via native browser APIs                                                                                                                  | [Realtime](./realtime.md)                      |
+| Guebbit shared    | `@guebbit/css-toolkit`, `@guebbit/vue-toolkit`                            | shared SCSS tokens and Vue components                                                                                                        | [Tools Explained](./tools-explained.md)        |
+| Human challenge   | `altcha`                                                                  | ALTCHA's web component — rung 3's self-hosted widget, `<HumanCheck>`'s `altcha` branch                                                       | [Security](./security.md)                      |
+| Password strength | `@zxcvbn-ts/core`, `@zxcvbn-ts/language-common`, `@zxcvbn-ts/language-en` | local, advisory-only strength score on signup/reset/change forms (`PasswordStrengthMeter.vue`); dynamic `import()`, never in the boot bundle | [Account module](../modules/account.md)        |
 
 ## Dev dependencies
 

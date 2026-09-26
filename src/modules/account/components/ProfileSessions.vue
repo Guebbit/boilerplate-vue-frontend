@@ -159,6 +159,10 @@ onMounted(fetchSessions);
                         {{ t('profile-page.sessions-current') }}
                     </v-chip>
                 </v-list-item-title>
+                <v-list-item-subtitle v-if="session.lastUsedAt" class="session-last-used">
+                    {{ t('profile-page.sessions-last-used') }}:
+                    {{ formatDateTime(session.lastUsedAt) }}
+                </v-list-item-subtitle>
                 <v-list-item-subtitle v-if="session.expiration" class="session-expiry">
                     {{ t('profile-page.sessions-expires') }}:
                     {{ formatDateTime(session.expiration) }}
@@ -200,12 +204,14 @@ onMounted(fetchSessions);
 /*
  * Vuetify renders a list subtitle at `--v-medium-emphasis-opacity` (0.6). On this card's surface
  * that lands under the 4.5:1 WCAG AA threshold, and `account/tests/e2e/a11y.cy.ts` fails on it —
- * the one string it dims below legibility being the one that says when you will be signed out.
+ * both strings it dims below legibility saying something the visitor is here to check: when a
+ * device last used the session, and when they will be signed out.
  *
  * The TOKEN is raised rather than `opacity` overridden, because Vuetify owns what emphasis means
  * here and a hard-coded value would be a second answer to the same question. Scoped, so no other
  * subtitle in the app inherits a decision made for this list.
  */
+.session-last-used,
 .session-expiry {
     --v-medium-emphasis-opacity: 1;
 }

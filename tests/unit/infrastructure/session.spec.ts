@@ -17,13 +17,16 @@ import { aUser } from '../../support/unit/fixtures.ts';
 const updateAccountMock = vi.fn();
 const getAccountMock = vi.fn();
 const getMyAbilitiesMock = vi.fn();
+const refreshTokenMock = vi.fn();
+const logoutMock = vi.fn();
+const logoutAllMock = vi.fn();
 
 vi.mock('@api', () => ({
     getAccount: () => getAccountMock(),
     getMyAbilities: () => getMyAbilitiesMock(),
-    refreshToken: vi.fn(),
-    logout: vi.fn(),
-    logoutAll: vi.fn(),
+    refreshToken: () => refreshTokenMock(),
+    logout: () => logoutMock(),
+    logoutAll: () => logoutAllMock(),
     updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
@@ -49,6 +52,8 @@ beforeEach(() => {
             subjects: []
         })
     );
+    logoutMock.mockResolvedValue(undefined);
+    logoutAllMock.mockResolvedValue(undefined);
 });
 
 describe('persistLocalePreference', () => {
@@ -239,6 +244,35 @@ describe('loadViewer', () => {
         });
     });
 
+    /**
+     * B10: the verification banner keys on this, not on a shop permission — a platform-only
+     * operator with no `Cart` subject at all must still be told their address is unproven.
+     */
+    it('projects verified true once verifiedAt is set', () => {
+        getAccountMock.mockResolvedValue(
+            contractResponse(
+                schemas.GetAccountResponse,
+                aUser({ role: 'customer', verifiedAt: '2026-01-01T00:00:00.000Z' })
+            )
+        );
+        const store = useSessionStore();
+
+        return store.loadViewer().then(() => {
+            expect(store.viewer?.verified).toBe(true);
+        });
+    });
+
+    it('projects verified false while verifiedAt is absent', () => {
+        getAccountMock.mockResolvedValue(
+            contractResponse(schemas.GetAccountResponse, aUser({ role: 'customer' }))
+        );
+        const store = useSessionStore();
+
+        return store.loadViewer().then(() => {
+            expect(store.viewer?.verified).toBe(false);
+        });
+    });
+
     /*
      * The reload case, and the reason the fetch sits beside `setViewer` rather than in the account
      * store: a page load restores the session through this path alone, and a viewer whose rules
@@ -327,5 +361,178 @@ describe('loadViewer', () => {
         store.setAbilities({ tenant: [['read', 'Order']], platform: [] });
 
         expect(store.declaredSubjects).toEqual(new Set(['Order']));
+    });
+});
+
+/**
+ * local state must go whether or not the server call succeeds. A network error, a 5xx, the
+ * D16 503, or a 429 must never leave the visitor believing they logged out while the access
+ * token, viewer and `isAuth` cookie are all still live.
+ */
+describe.each(['logout', 'logoutAll'] as const)('%s fails open', (method) => {
+    it('clears local state even when the API call rejects', () => {
+        const mock = method === 'logout' ? logoutMock : logoutAllMock;
+        mock.mockRejectedValue(new Error('network error'));
+        const store = signedIn();
+
+        return (store[method]() as Promise<unknown>)
+            .catch(() => undefined)
+            .then(() => {
+                expect(store.isAuth).toBe(false);
+                expect(store.accessToken).toBeUndefined();
+                expect(cookieJar().isAuth).toBeUndefined();
+            });
+    });
+
+    it('still rejects with the original error, so a caller can report the failure', () => {
+        const mock = method === 'logout' ? logoutMock : logoutAllMock;
+        const error = new Error('network error');
+        mock.mockRejectedValue(error);
+
+        return expect(signedIn()[method]()).rejects.toBe(error);
+    });
+
+    it('resolves, and clears local state, when the API call succeeds', () => {
+        const mock = method === 'logout' ? logoutMock : logoutAllMock;
+        mock.mockResolvedValue(undefined);
+        const store = signedIn();
+
+        return (store[method]() as Promise<unknown>).then(() => {
+            expect(store.isAuth).toBe(false);
+        });
+    });
+});
+
+/**
+ * the refresh cookie rotates on every renewal, so ending the session while one is still in
+ * flight risks revoking the OLD cookie and leaving a rotated one behind, unrevoked.
+ */
+describe('logout waits out an in-flight refresh', () => {
+    it('does not call the API until a pending refresh has settled', () => {
+        let resolveRefresh!: (value: { data: { token: string } }) => void;
+        refreshTokenMock.mockReturnValue(
+            new Promise((resolve) => {
+                resolveRefresh = resolve;
+            })
+        );
+        const store = signedIn();
+        const refreshing = store.refreshToken();
+
+        const logoutOutcome = store.logout();
+
+        return Promise.resolve()
+            .then(() => {
+                // Microtask has run; the refresh has not settled, so logout must still be waiting.
+                expect(logoutMock).not.toHaveBeenCalled();
+                resolveRefresh({ data: { token: 'renewed' } });
+                return refreshing;
+            })
+            .then(() => logoutOutcome)
+            .then(() => {
+                expect(logoutMock).toHaveBeenCalledOnce();
+            });
+    });
+});
+
+describe('clearSession', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("broadcasts a logout to this browser's other tabs", () => {
+        const postMessage = vi.spyOn(BroadcastChannel.prototype, 'postMessage');
+        signedIn().clearSession();
+
+        expect(postMessage).toHaveBeenCalledWith({ type: 'logout' });
+    });
+
+    it('clears local state on receiving a logout broadcast from another tab', () => {
+        const store = signedIn();
+        const channel = new BroadcastChannel('session');
+
+        channel.postMessage({ type: 'logout' });
+
+        return vi.waitFor(() => expect(store.isAuth).toBe(false)).finally(() => channel.close());
+    });
+});
+
+/**
+ * a definitive 401/403 from the refresh endpoint means the refresh cookie itself is dead —
+ * the one case that must end the session outright, not just answer this one caller `undefined`.
+ * A network error or a 5xx says nothing about the cookie, so it must leave the session alone.
+ */
+describe('refreshToken', () => {
+    it('stores the fresh token on success', () => {
+        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        const store = useSessionStore();
+
+        return store.refreshToken().then((token) => {
+            expect(token).toBe('fresh');
+            expect(store.accessToken).toBe('fresh');
+        });
+    });
+
+    it('ends the session and signals expiry on a definitive 401', () => {
+        refreshTokenMock.mockRejectedValue({ response: { status: 401 } });
+        const store = signedIn();
+
+        return store.refreshToken().then((token) => {
+            expect(token).toBeUndefined();
+            expect(store.isAuth).toBe(false);
+            expect(store.expiredSignal).toBe(1);
+        });
+    });
+
+    it('ends the session on a definitive 403 the same way', () => {
+        refreshTokenMock.mockRejectedValue({ response: { status: 403 } });
+        const store = signedIn();
+
+        return store.refreshToken().then(() => {
+            expect(store.isAuth).toBe(false);
+            expect(store.expiredSignal).toBe(1);
+        });
+    });
+
+    it('leaves an already-signed-in session alone on a network error', () => {
+        refreshTokenMock.mockRejectedValue(new Error('Network Error'));
+        const store = signedIn();
+
+        return store.refreshToken().then((token) => {
+            expect(token).toBeUndefined();
+            // Still signed in: a network error says nothing about the refresh cookie itself.
+            expect(store.isAuth).toBe(true);
+            expect(store.expiredSignal).toBe(0);
+        });
+    });
+
+    it('shares one in-flight attempt between concurrent callers', () => {
+        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        const store = useSessionStore();
+
+        return Promise.all([store.refreshToken(), store.refreshToken()]).then(() => {
+            expect(refreshTokenMock).toHaveBeenCalledOnce();
+        });
+    });
+
+    /**
+     * The race this also guards against from the other side: a refresh that was already in flight
+     * when the session was cleared must not resurrect it once it lands.
+     */
+    it('drops a fresh token that arrives after the session was cleared mid-flight', () => {
+        let resolveRefresh!: (value: { data: { token: string } }) => void;
+        refreshTokenMock.mockReturnValue(
+            new Promise((resolve) => {
+                resolveRefresh = resolve;
+            })
+        );
+        const store = signedIn();
+        const refreshing = store.refreshToken();
+
+        store.clearSession();
+        resolveRefresh({ data: { token: 'too-late' } });
+
+        return refreshing.then(() => {
+            expect(store.accessToken).toBeUndefined();
+        });
     });
 });

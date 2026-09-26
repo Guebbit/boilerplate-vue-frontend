@@ -121,8 +121,9 @@ watch(pickedFile, (file) => {
 });
 
 /**
- * Clears the record's picture after confirmation — `imageUrl: ''` is what the API reads as
- * "remove it"; `undefined` means "not sent", which would leave the stored one alone.
+ * Clears the record's picture after confirmation — `imageUrl: null` is what the API reads as
+ * "remove it"; `undefined` means "not sent", which would leave the stored one alone. Never `''`:
+ * the contract's `minLength: 1` refuses an empty string with a 422 .
  *
  * @returns Nothing; success is toasted, a failure blocks the panel in place ({@link avatarError}).
  */
@@ -132,7 +133,7 @@ const handleRemove = () =>
         .then((accepted) => {
             if (!accepted) return;
             clearAvatarError();
-            return updateProfile({ imageUrl: '' })
+            return updateProfile({ imageUrl: null })
                 .then(() => addMessage(t('profile-page.avatar-success-remove')))
                 .catch((error) => reportAvatarError(error));
         });

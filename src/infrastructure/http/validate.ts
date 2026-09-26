@@ -6,8 +6,11 @@
  */
 
 import { logger } from '@/infrastructure/utils/logger.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { translate } from '@/infrastructure/i18n';
 import { resolveResponseSchema } from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';
+import type { AxiosResponseErrorData } from './types.ts';
 
 /**
  * Whether `orvalMutator` should parse every response through its contract schema before
@@ -35,14 +38,19 @@ export const shouldValidateResponses = (): boolean => {
 };
 
 /**
- * Parses a response body through the schema matching its request, throwing loudly on a mismatch.
+ * Parses a response body through the schema matching its request, rejecting on a mismatch.
  *
  * An unmapped route fails open — logged, not thrown — because a gap in the map means the map is
  * stale, not that the response is wrong.
  *
+ * a contract mismatch is a defect in THIS deployment, never something a shopper caused or
+ * can act on. The full issue list — which fields, which rule — is a developer diagnostic, so it
+ * goes to Faro; what the rejection carries for a call site to show is the same generic envelope
+ * every other unreadable failure gets.
+ *
  * @param config - The request config that produced `data` (used to resolve the schema).
  * @param data - The already-unwrapped response body.
- * @throws {Error} When a mapped schema rejects the body — the message lists every failed field.
+ * @throws {AxiosResponseErrorData} When a mapped schema rejects the body.
  */
 export const validateResponseAgainstContract = (
     config: AxiosRequestConfig,
@@ -63,7 +71,16 @@ export const validateResponseAgainstContract = (
     const issues = result.error.issues
         .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('\n');
-    throw new Error(
-        `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`
-    );
+    const diagnostic = `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
+    useObservabilityStore().captureException(new Error(diagnostic));
+
+    const message = translate('api-errors.unknown');
+
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- the envelope IS this client's rejection contract; every catch downstream destructures it, same as `onResponseReject`
+    throw {
+        success: false,
+        status: 0,
+        message,
+        errors: [{ code: 'CONTRACT_MISMATCH', message }]
+    } satisfies AxiosResponseErrorData;
 };

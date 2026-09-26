@@ -147,7 +147,7 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                     });
                 })
                 .then(() => {
-                    // `_dontRetry` on the replay stops a second prompt from opening.
+                    // `_steppedUp` on the replay stops a second prompt from opening.
                     expect(timesRequested('POST /checkout')).toBe(2);
                 });
         }));

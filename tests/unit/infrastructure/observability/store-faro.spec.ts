@@ -9,7 +9,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import {
+    useObservabilityStore,
+    stripSensitiveUrlParts,
+    stripTokensFromTelemetry
+} from '@/infrastructure/observability/store.ts';
+import type { TransportItem } from '@grafana/faro-web-sdk';
 
 /** The `faro.api` surface this store calls, spied so each call can be asserted. */
 const faroApi = {
@@ -118,23 +123,127 @@ describe('initFaro', () => {
         expect(store.faroReady).toBe(false);
         expect(initializeFaro).not.toHaveBeenCalled();
     });
+
+    /**
+     * a one-time email token (verification, password reset, account deletion, email change)
+     * is the only credential for its action, and it arrives as a `?token=` query param — this is
+     * what keeps it out of every event Faro ships.
+     */
+    it("hands the SDK this repo's own token-stripping beforeSend hook", async () => {
+        const store = useObservabilityStore();
+        await store.initFaro();
+
+        expect(initializeFaro).toHaveBeenCalledWith(
+            expect.objectContaining({ beforeSend: stripTokensFromTelemetry })
+        );
+    });
+});
+
+describe('stripSensitiveUrlParts', () => {
+    it('drops the query string and fragment from an absolute URL', () => {
+        expect(stripSensitiveUrlParts('https://shop.example/account/verify?token=secret#top')).toBe(
+            'https://shop.example/account/verify'
+        );
+    });
+
+    it('leaves a URL with neither untouched', () => {
+        expect(stripSensitiveUrlParts('https://shop.example/orders')).toBe(
+            'https://shop.example/orders'
+        );
+    });
+
+    it('tolerates a value URL cannot parse rather than throwing', () => {
+        expect(() => stripSensitiveUrlParts('not a url??token=1')).not.toThrow();
+    });
+});
+
+/**
+ * The minimum a `TransportItem` needs for {@link stripTokensFromTelemetry} to have anything to
+ * strip. Loosely typed on purpose: a real OTLP `resourceSpans` tree is deep and this only needs a
+ * few of its fields.
+ */
+const fakeTransportItem = (overrides: Record<string, unknown>): TransportItem =>
+    ({
+        type: 'exception',
+        payload: {},
+        meta: {},
+        ...overrides
+    }) as TransportItem;
+
+describe('stripTokensFromTelemetry', () => {
+    it('strips the page URL every item carries', () => {
+        const result = stripTokensFromTelemetry(
+            fakeTransportItem({
+                meta: { page: { url: 'https://shop.example/verify?token=secret' } }
+            })
+        );
+
+        expect(result.meta.page?.url).toBe('https://shop.example/verify');
+    });
+
+    it('leaves an item with no page meta alone', () => {
+        expect(() => stripTokensFromTelemetry(fakeTransportItem({}))).not.toThrow();
+    });
+
+    it.each(['url.full', 'http.url'])(
+        'strips a %s attribute on a trace span, at any resource/scope depth',
+        (key) => {
+            const result = stripTokensFromTelemetry(
+                fakeTransportItem({
+                    payload: {
+                        resourceSpans: [
+                            {
+                                scopeSpans: [
+                                    {
+                                        spans: [
+                                            {
+                                                attributes: [
+                                                    {
+                                                        key,
+                                                        value: {
+                                                            stringValue:
+                                                                'https://shop.example/verify?token=secret'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                })
+            );
+
+            const spans = (
+                result.payload as {
+                    resourceSpans: {
+                        scopeSpans: {
+                            spans: {
+                                attributes: { key: string; value: { stringValue: string } }[];
+                            }[];
+                        }[];
+                    }[];
+                }
+            ).resourceSpans[0]?.scopeSpans[0]?.spans[0]?.attributes[0];
+
+            expect(spans?.value.stringValue).toBe('https://shop.example/verify');
+        }
+    );
+
+    it('leaves a trace item with no spans alone', () => {
+        expect(() => stripTokensFromTelemetry(fakeTransportItem({ payload: {} }))).not.toThrow();
+    });
 });
 
 describe('identifyUser, once Faro is up', () => {
-    it('sets the user on Faro', async () => {
-        const store = useObservabilityStore();
-        await store.initFaro();
-        store.identifyUser('u1', 'a@example.com');
-
-        expect(faroApi.setUser).toHaveBeenCalledWith({ id: 'u1', email: 'a@example.com' });
-    });
-
-    it('passes an undefined email through rather than inventing one', async () => {
+    it('sets the user on Faro — id only, it takes no email', async () => {
         const store = useObservabilityStore();
         await store.initFaro();
         store.identifyUser('u1');
 
-        expect(faroApi.setUser).toHaveBeenCalledWith({ id: 'u1', email: undefined });
+        expect(faroApi.setUser).toHaveBeenCalledWith({ id: 'u1' });
     });
 
     it('clears the identity on unidentify', async () => {
@@ -202,5 +311,76 @@ describe('captureException, once Faro is up', () => {
         store.captureException(new Error('boom'), {});
 
         expect(faroApi.pushError).toHaveBeenCalledWith(expect.any(Error), undefined);
+    });
+
+    /**
+     * every failed API call throws this shape (`onResponseReject`, `http/interceptors.ts`).
+     * Before this fix it stringified to the same unreadable, ungroupable `Error: [object Object]`
+     * whatever the actual failure — this is the fix's whole point.
+     */
+    describe('given an API rejection envelope', () => {
+        it('names the error by status, code, method and path', async () => {
+            const store = useObservabilityStore();
+            await store.initFaro();
+            store.captureException({
+                success: false,
+                status: 401,
+                message: 'nope',
+                errors: [{ code: 'UNAUTHORIZED', message: 'nope' }],
+                method: 'GET',
+                path: '/account'
+            });
+
+            const [pushed] = faroApi.pushError.mock.calls[0] as [Error];
+            expect(pushed.message).toBe('HTTP 401 UNAUTHORIZED GET /account');
+        });
+
+        it('omits pieces the envelope did not carry, rather than leaving gaps', async () => {
+            const store = useObservabilityStore();
+            await store.initFaro();
+            store.captureException({ success: false, status: 0, message: 'offline', errors: [] });
+
+            const [pushed] = faroApi.pushError.mock.calls[0] as [Error];
+            expect(pushed.message).toBe('HTTP 0');
+        });
+
+        it('attaches its own correlation fields as context, merged with any hints', async () => {
+            const store = useObservabilityStore();
+            await store.initFaro();
+            store.captureException(
+                {
+                    success: false,
+                    status: 500,
+                    message: 'boom',
+                    errors: [{ code: 'INTERNAL' }],
+                    requestId: 'req-1',
+                    traceparent: '00-abc-def-01'
+                },
+                { data: { orderId: 'o1' } }
+            );
+
+            expect(faroApi.pushError).toHaveBeenCalledWith(expect.any(Error), {
+                context: {
+                    status: '500',
+                    code: 'INTERNAL',
+                    requestId: 'req-1',
+                    traceparent: '00-abc-def-01',
+                    orderId: 'o1'
+                }
+            });
+        });
+
+        /**
+         * The trap this guards: `{ code: 'E' }` (already pinned above as `[object Object]`) has
+         * no `status`, so it must not be misread as an envelope with a missing one.
+         */
+        it('does not misread an arbitrary object with a status-shaped field as an envelope', async () => {
+            const store = useObservabilityStore();
+            await store.initFaro();
+            store.captureException({ status: 'not-a-number', code: 'E' });
+
+            const [pushed] = faroApi.pushError.mock.calls[0] as [Error];
+            expect(pushed.message).toBe('[object Object]');
+        });
     });
 });

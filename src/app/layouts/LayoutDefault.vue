@@ -98,8 +98,10 @@ const legalLinks = STATIC_PAGES.map((page) => ({
 }));
 
 /**
- * Loading keys the full-page overlay answers to: app bootstrap, the one thing allowed to block
- * the whole screen.
+ * Loading keys the full-page overlay answers to — the one thing allowed to block the whole
+ * screen. Only `demo/views/Playground.vue` sets `core` today: app bootstrap has its own,
+ * necessarily earlier, cover — `index.html`'s static splash, shown before Vue (and this layout)
+ * exists at all to render an overlay.
  */
 const MAIN_LOADING_KEYS = ['core'];
 

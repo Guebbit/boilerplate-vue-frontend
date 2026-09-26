@@ -49,6 +49,7 @@
         "sessions-title": "Sessioni attive",
         "sessions-intro": "Tutti i dispositivi connessi a questo account. Revocarne uno lo disconnette al prossimo aggiornamento del token.",
         "sessions-current": "Questo dispositivo",
+        "sessions-last-used": "Ultimo utilizzo",
         "sessions-expires": "Scade",
         "sessions-revoke": "Revoca",
         "sessions-revoked": "Sessione revocata.",

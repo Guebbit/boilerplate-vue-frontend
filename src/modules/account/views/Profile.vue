@@ -25,7 +25,6 @@ import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
-import ProfileRole from '@/modules/account/components/ProfileRole.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
 import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue';
 import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAccount.vue';
@@ -401,7 +400,6 @@ const cancelPendingEmail = () => {
                 />
             </form>
 
-            <ProfileRole />
             <ProfilePasswordChange />
             <ProfileTwoFactor />
         </v-card>
