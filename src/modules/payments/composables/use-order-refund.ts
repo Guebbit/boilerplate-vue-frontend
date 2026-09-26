@@ -29,9 +29,12 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
     const paymentsStore = usePaymentsStore();
 
     /**
-     * The order's payment, whose status decides what this composable will allow.
+     * The order's payment, whose status decides what this composable will allow, and the
+     * payments store's own in-flight flag — a different loading key from the orders store's, so
+     * a caller gating its refund BUTTON on the orders store's `loading` alone (PL-66) never
+     * actually blocks a double click while `refund()` itself is still out.
      */
-    const { payment } = storeToRefs(paymentsStore);
+    const { payment, loading: refundLoading } = storeToRefs(paymentsStore);
 
     watch(
         orderId,
@@ -46,6 +49,12 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          * Whether `refund()` would be accepted — false once the money is already back.
          */
         canRefund: computed(() => payment.value?.actions?.refund === true),
+        /**
+         * Whether a refund (or any other payments-store call for this order) is already in
+         * flight — the flag a "Refund only" button must also disable on, since `refund()` runs
+         * under the payments store, not the caller's own orders-store `loading`.
+         */
+        refundLoading,
         /**
          * Returns the money without touching the order's status.
          *

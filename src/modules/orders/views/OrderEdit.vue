@@ -126,7 +126,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
 /**
  * The money half of the operator's actions — `payments` answers for it, this page only asks.
  */
-const { canRefund, refund, refreshPayment } = useOrderRefund(computed(() => id));
+const { canRefund, refund, refreshPayment, refundLoading } = useOrderRefund(computed(() => id));
 
 /**
  * The operator's money actions, and whether each is still open.
@@ -424,7 +424,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             variant="tonal"
                             color="warning"
                             data-test="button-refund-only"
-                            :disabled="!canRefund || loading"
+                            :disabled="!canRefund || loading || refundLoading"
                             @click="runRefund"
                         >
                             {{ t('order-edit-page.button-refund-only') }}

@@ -33,12 +33,15 @@ import type { Order } from '@types';
 wireModulesIntoCore();
 
 const refreshPayment = vi.fn(() => Promise.resolve());
+const mockCanRefund = ref(false);
+const mockRefundLoading = ref(false);
 
 vi.mock('@/modules/payments', () => ({
     useOrderRefund: () => ({
-        canRefund: ref(false),
+        canRefund: mockCanRefund,
         refund: () => Promise.resolve(),
-        refreshPayment
+        refreshPayment,
+        refundLoading: mockRefundLoading
     }),
     RecordOfflinePaymentForm: {
         name: 'RecordOfflinePaymentForm',
@@ -128,6 +131,8 @@ const mountFromListCache = (detailOrder: Order) => {
 beforeEach(() => {
     setActivePinia(createPinia());
     refreshPayment.mockClear();
+    mockCanRefund.value = false;
+    mockRefundLoading.value = false;
     return loadLocale('en').then(() =>
         router.push('/en/orders/o1/edit').then(() => router.isReady())
     );
@@ -178,6 +183,34 @@ describe('a list-cache arrival gains actions', () => {
                 ).not.toBe(undefined);
                 expect(
                     wrapper.get('[data-test=button-cancel-and-refund]').attributes('disabled')
+                ).not.toBe(undefined);
+            });
+    });
+});
+
+describe('refunding (PL-66)', () => {
+    it('disables Refund only while a refund is in flight, even though the orders store is idle', () => {
+        signInAsAdmin();
+        mockCanRefund.value = true;
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: { transitions: [], cancel: true, pay: false }
+        });
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                // The orders store's own `loading` is idle — only the payments store's is not.
+                expect(
+                    wrapper.get('[data-test=button-refund-only]').attributes('disabled')
+                ).toBe(undefined);
+                mockRefundLoading.value = true;
+                return nextTick();
+            })
+            .then(() => {
+                expect(
+                    wrapper.get('[data-test=button-refund-only]').attributes('disabled')
                 ).not.toBe(undefined);
             });
     });
