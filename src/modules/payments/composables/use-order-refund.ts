@@ -29,9 +29,12 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
     const paymentsStore = usePaymentsStore();
 
     /**
-     * The order's payment, whose status decides what this composable will allow.
+     * The order's payment, whose status decides what this composable will allow, and the
+     * payments store's own in-flight flag — a different loading key from the orders store's, so
+     * a caller gating its refund BUTTON on the orders store's `loading` alone never actually
+     * blocks a double click while `refund()` itself is still out.
      */
-    const { payment } = storeToRefs(paymentsStore);
+    const { payment, loading: refundLoading } = storeToRefs(paymentsStore);
 
     watch(
         orderId,
@@ -47,6 +50,12 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          */
         canRefund: computed(() => payment.value?.actions?.refund === true),
         /**
+         * Whether a refund (or any other payments-store call for this order) is already in
+         * flight — the flag a "Refund only" button must also disable on, since `refund()` runs
+         * under the payments store, not the caller's own orders-store `loading`.
+         */
+        refundLoading,
+        /**
          * Returns the money without touching the order's status.
          *
          * @returns A promise resolving once the refreshed payment has replaced the cached one,
@@ -55,6 +64,18 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         refund: () =>
             orderId.value
                 ? paymentsStore.refundForOrder(orderId.value).then(() => undefined)
+                : Promise.resolve(),
+        /**
+         * Re-reads the payment against the current order id, forced past the cache.
+         *
+         * For a caller that just moved the ORDER (a cancel), not the payment, so `canRefund`
+         * reflects the fresh state instead of whatever the mount-time fetch last saw.
+         *
+         * @returns A promise resolving once the refreshed payment has replaced the cached one.
+         */
+        refreshPayment: () =>
+            orderId.value
+                ? paymentsStore.fetchPaymentForOrder(orderId.value).then(() => undefined)
                 : Promise.resolve()
     };
 };

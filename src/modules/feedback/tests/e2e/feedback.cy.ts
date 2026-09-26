@@ -23,8 +23,7 @@ describe('Feedback', () => {
         cy.get('[data-test=contact-subject] input')
             .should('not.be.disabled')
             .type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
+        cy.textareaIn('contact-message')
             .should('not.be.disabled')
             .type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
@@ -44,7 +43,7 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('bot@example.com');
         cy.get('[data-test=contact-subject] input').type('Buy now');
-        cy.get('[data-test=contact-message] textarea').first().type('Cheap products, click here.');
+        cy.textareaIn('contact-message').type('Cheap products, click here.');
         cy.get('[data-test=contact-website]').type('https://spam-bot.example', { force: true });
         cy.get('[data-test=contact-submit]').click();
         // The BE's whole point: the bot sees the same success a real visitor does.
@@ -60,9 +59,7 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
-            .type('Are they really illegal in 400 countries?');
+        cy.textareaIn('contact-message').type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');
@@ -89,18 +86,14 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
-            .type('Are they really illegal in 400 countries?');
+        cy.textareaIn('contact-message').type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');
         cy.get('[data-test=feedback-item]').should('have.length', 1);
 
         cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
-        cy.get('[data-test=feedback-notes] textarea')
-            .first()
-            .type('Called back, waiting on legal.');
+        cy.textareaIn('feedback-notes').type('Called back, waiting on legal.');
         cy.get('[data-test=feedback-notes-save]').click();
         cy.wait('@patchNotes')
             .its('request.body')
@@ -109,9 +102,7 @@ describe('Feedback', () => {
 
         // A fresh load must read the saved note back from the server, not a client-only draft.
         cy.reload();
-        cy.get('[data-test=feedback-notes] textarea')
-            .first()
-            .should('have.value', 'Called back, waiting on legal.');
+        cy.textareaIn('feedback-notes').should('have.value', 'Called back, waiting on legal.');
     });
 
     it("clearing a ticket's notes sends null, not the empty string D17c now refuses", () => {
@@ -119,18 +110,16 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
-            .type('Are they really illegal in 400 countries?');
+        cy.textareaIn('contact-message').type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');
-        cy.get('[data-test=feedback-notes] textarea').first().type('A draft note');
+        cy.textareaIn('feedback-notes').type('A draft note');
         cy.get('[data-test=feedback-notes-save]').click();
         cy.contains('Notes saved.').should('exist');
 
         cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
-        cy.get('[data-test=feedback-notes] textarea').first().clear();
+        cy.textareaIn('feedback-notes').clear();
         cy.get('[data-test=feedback-notes-save]').click();
         cy.wait('@patchNotes').its('request.body').should('deep.equal', { adminNotes: null });
     });
@@ -140,9 +129,7 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
-            .type('Are they really illegal in 400 countries?');
+        cy.textareaIn('contact-message').type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');
@@ -161,9 +148,7 @@ describe('Feedback', () => {
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
         cy.get('[data-test=contact-subject] input').type('A question about the cats');
-        cy.get('[data-test=contact-message] textarea')
-            .first()
-            .type('Are they really illegal in 400 countries?');
+        cy.textareaIn('contact-message').type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');

@@ -262,6 +262,68 @@ describe('the checkout refusals', () => {
     });
 });
 
+describe('the checkout payload', () => {
+    /**
+     * `AddressPicker` unmounts the instant a method needing no address is chosen, but its
+     * `v-model` ref keeps whatever id it last held — this proves `runCheckout` still leaves
+     * `addressId` out of the request rather than sending a stale one paired with a method that
+     * cannot use it (the actual 409 `CART_ADDRESS_NOT_APPLICABLE` fix).
+     */
+    it('drops a stale addressId once the chosen method no longer needs one', () => {
+        const cart = useCartStore();
+        cart.cart = A_CART;
+        vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
+        vi.spyOn(cart, 'resolveTitles').mockResolvedValue({});
+        const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
+
+        const wrapper = mount(Cart, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    LayoutDefault: { template: '<div><slot /></div>' },
+                    ShippingSelector: {
+                        props: ['modelValue', 'requiresAddress'],
+                        emits: ['update:modelValue', 'update:requiresAddress'],
+                        template: '<div data-test="shipping-selector-stub" />',
+                        mounted() {
+                            this.$emit('update:modelValue', 'courier');
+                            this.$emit('update:requiresAddress', true);
+                        }
+                    },
+                    AddressPicker: {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: '<div />',
+                        mounted() {
+                            this.$emit('update:modelValue', 'addr-1');
+                        }
+                    },
+                    PaymentMethodSelector: { template: '<div />' }
+                }
+            }
+        });
+
+        return flushPromises()
+            .then(() => {
+                // Courier chosen, address picked — the ordinary case, checkout would send both.
+                const selector = wrapper.getComponent(
+                    '[data-test=shipping-selector-stub]'
+                ) as VueWrapper;
+                // The shopper switches to a method needing no address. `AddressPicker` unmounts;
+                // `addressId` itself is untouched, still 'addr-1'.
+                selector.vm.$emit('update:modelValue', 'pickup');
+                selector.vm.$emit('update:requiresAddress', false);
+                return wrapper.vm.$nextTick();
+            })
+            .then(() => wrapper.get('[data-test=cart-checkout]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(checkoutSpy).toHaveBeenCalledOnce();
+                expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('addressId');
+            });
+    });
+});
+
 describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
     it('disables both while a cart write is in flight', () =>
         mountCart().then(({ wrapper }) => {

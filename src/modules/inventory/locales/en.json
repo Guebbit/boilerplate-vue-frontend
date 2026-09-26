@@ -20,6 +20,7 @@
         "reason-expire": "Expired",
         "reason-receive": "Received",
         "reason-adjust": "Adjusted",
+        "reason-restock": "Restocked",
         "label-note": "Note (supplier, delivery ref…)",
         "label-note-why": "Why (goes on the row)",
         "adjust-title": "Adjust stock",

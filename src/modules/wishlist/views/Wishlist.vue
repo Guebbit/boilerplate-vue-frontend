@@ -40,9 +40,10 @@ const { addMessage } = useNotificationsStore();
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 
 /**
- * The wishlist's lines.
+ * The wishlist's lines, and whether a move-to-cart or remove is already in flight — both actions
+ * share the store's one loading flag, so either blocks the other.
  */
-const { items } = storeToRefs(useWishlistStore());
+const { items, loading } = storeToRefs(useWishlistStore());
 
 /**
  * The saved products' titles — the wishlist answers ids only, and the cart store holds the join.
@@ -136,6 +137,7 @@ onMounted(() =>
                         variant="tonal"
                         size="small"
                         data-test="wishlist-move-to-cart"
+                        :disabled="loading"
                         :aria-label="
                             t('wishlist-page.button-move-to-cart-named', {
                                 id: titleOf(item.productId)
@@ -151,6 +153,7 @@ onMounted(() =>
                         color="error"
                         size="small"
                         data-test="wishlist-remove"
+                        :disabled="loading"
                         :aria-label="
                             t('wishlist-page.button-remove-named', { id: titleOf(item.productId) })
                         "

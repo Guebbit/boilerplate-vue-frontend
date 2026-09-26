@@ -142,7 +142,7 @@ describe('OrdersList — a soft-deleted row', () => {
             )
         );
         const orders = useOrdersStore();
-        const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(undefined);
+        const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(order('live'));
 
         const wrapper = mount(OrdersList, {
             global: {

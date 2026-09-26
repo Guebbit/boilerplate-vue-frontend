@@ -32,8 +32,17 @@ import type { Order } from '@types';
 
 wireModulesIntoCore();
 
+const refreshPayment = vi.fn(() => Promise.resolve());
+const mockCanRefund = ref(false);
+const mockRefundLoading = ref(false);
+
 vi.mock('@/modules/payments', () => ({
-    useOrderRefund: () => ({ canRefund: ref(false), refund: () => Promise.resolve() }),
+    useOrderRefund: () => ({
+        canRefund: mockCanRefund,
+        refund: () => Promise.resolve(),
+        refreshPayment,
+        refundLoading: mockRefundLoading
+    }),
     RecordOfflinePaymentForm: {
         name: 'RecordOfflinePaymentForm',
         template: '<div data-test="record-offline-payment-form" />'
@@ -121,6 +130,9 @@ const mountFromListCache = (detailOrder: Order) => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    refreshPayment.mockClear();
+    mockCanRefund.value = false;
+    mockRefundLoading.value = false;
     return loadLocale('en').then(() =>
         router.push('/en/orders/o1/edit').then(() => router.isReady())
     );
@@ -172,6 +184,61 @@ describe('a list-cache arrival gains actions', () => {
                 expect(
                     wrapper.get('[data-test=button-cancel-and-refund]').attributes('disabled')
                 ).not.toBe(undefined);
+            });
+    });
+});
+
+describe('refunding', () => {
+    it('disables Refund only while a refund is in flight, even though the orders store is idle', () => {
+        signInAsAdmin();
+        mockCanRefund.value = true;
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: { transitions: [], cancel: true, pay: false }
+        });
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                // The orders store's own `loading` is idle — only the payments store's is not.
+                expect(wrapper.get('[data-test=button-refund-only]').attributes('disabled')).toBe(
+                    undefined
+                );
+                mockRefundLoading.value = true;
+                return nextTick();
+            })
+            .then(() => {
+                expect(
+                    wrapper.get('[data-test=button-refund-only]').attributes('disabled')
+                ).not.toBe(undefined);
+            });
+    });
+});
+
+describe('cancelling', () => {
+    it('re-reads the payment once the order is cancelled', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: { transitions: [OrderStatus.cancelled], cancel: true, pay: false }
+        });
+        // Spied BEFORE mounting, same reasoning as the override test above.
+        const cancelOrder = vi
+            .spyOn(useOrdersStore(), 'cancelOrder')
+            .mockResolvedValue({ ...detail, status: OrderStatus.cancelled });
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => wrapper.get('[data-test=button-cancel-only]').trigger('click'))
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(cancelOrder).toHaveBeenCalledWith('o1', false);
+                // Cancelling the order leaves a sibling `succeeded` payment's `actions.refund`
+                // stale unless the payment itself is re-read too.
+                expect(refreshPayment).toHaveBeenCalledTimes(1);
             });
     });
 });
@@ -242,11 +309,10 @@ describe('the correct-status door', () => {
                     OrderStatus.delivered,
                     'carrier scan never arrived'
                 );
-                // A second forced re-fetch beyond the one `useOrderActionsRefetch` already made on
-                // mount: without it, another page's own `watchOrder` cache (Order.vue's, reached
-                // by navigating away from here) would still answer with the pre-override status.
-                expect(fetchOrder).toHaveBeenCalledTimes(2);
-                expect(fetchOrder).toHaveBeenLastCalledWith('o1', { forced: true });
+                // Only the one forced re-fetch `useOrderActionsRefetch` already made on mount:
+                // `overrideStatus` writes through the store's own `updateTarget` now, so a second,
+                // per-view forced re-fetch would just repeat what the store already guarantees.
+                expect(fetchOrder).toHaveBeenCalledTimes(1);
             });
     });
 });

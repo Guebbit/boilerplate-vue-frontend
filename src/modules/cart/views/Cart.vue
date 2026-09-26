@@ -209,13 +209,19 @@ const runCheckout = () =>
  * checkout reads the cart could otherwise land after the server already emptied it, either
  * re-creating a line in an already-completed order's aftermath or racing the read itself.
  *
- * @returns Same as {@link runCheckout}.
+ * `settle` rejects when a flushed step failed to reach the server — `useLineQuantity`'s own
+ * `onError` has already reported that failure, so this only needs to skip {@link runCheckout}
+ * rather than place the order at whatever stale quantity the cart still holds.
+ *
+ * @returns Same as {@link runCheckout}, or nothing when settling failed.
  */
 const checkout = () => {
     insufficientStockLines.value = [];
     unavailableLines.value = [];
     clearCheckoutError();
-    return settle().then(runCheckout);
+    return settle()
+        .then(runCheckout)
+        .catch(() => undefined);
 };
 
 /**
@@ -403,6 +409,7 @@ onMounted(() =>
                             variant="text"
                             color="error"
                             data-test="cart-remove"
+                            :disabled="loading"
                             :aria-label="
                                 t('cart-page.button-remove-named', { id: titleOf(item.productId) })
                             "

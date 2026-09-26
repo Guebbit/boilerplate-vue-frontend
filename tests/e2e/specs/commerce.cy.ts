@@ -20,8 +20,7 @@
  * @param label - the option to pick, as `override-status-select` lists it
  */
 const correctStatusTo = (label: RegExp) => {
-    cy.get('#order-edit-page [data-test=override-status-select]').click();
-    cy.get('.v-overlay__content .v-list-item').contains(label).click();
+    cy.pickOption('#order-edit-page [data-test=override-status-select]', label);
     cy.get('#order-edit-page [data-test=override-reason] textarea').type(
         'E2E: moving the order along so it can be shipped.'
     );
@@ -48,9 +47,7 @@ describe('Commerce', () => {
 
         // ── Choose express at the cart; the selector quotes the flat rate ───────────
         cy.goToCart();
-        cy.get('[data-test=shipping-selector]').should('exist');
-        cy.get('[data-test=shipping-method-express]').click();
-        cy.get('[data-test=cart-checkout]').click();
+        cy.checkoutWith('express');
 
         // ── Checkout lands straight on the new order's own page ─────────────────────
         cy.get('#order-target').should('exist');
@@ -101,9 +98,7 @@ describe('Commerce', () => {
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
         cy.goToCart();
-        cy.get('[data-test=shipping-selector]').should('exist');
-        cy.get('[data-test=shipping-method-standard]').click();
-        cy.get('[data-test=cart-checkout]').click();
+        cy.checkoutWith('standard');
         // Checkout lands straight on the new order's own page.
         cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');

@@ -162,6 +162,33 @@ declare global {
             goToCart(): Chainable<void>;
 
             /**
+             * The (only) textarea inside a `data-test` field wrapper — Vuetify nests its actual
+             * `<textarea>` under the wrapper the app names, so every caller repeated the same
+             * `.first()`.
+             *
+             * @param testId - the wrapper's `data-test` value, e.g. `contact-message`
+             */
+            textareaIn(testId: string): Chainable<JQuery<HTMLTextAreaElement>>;
+
+            /**
+             * From the cart, picks a shipping method and checks out — the sequence every spec
+             * that buys something for real repeats.
+             *
+             * @param method - the method's `data-test` suffix, e.g. `express`, `standard`, `pickup`
+             */
+            checkoutWith(method: string): Chainable<void>;
+
+            /**
+             * Opens a Vuetify select/autocomplete through its activator and picks the option
+             * matching `label` — by ARIA role rather than a Vuetify implementation class, since
+             * the overlay renders outside the field itself.
+             *
+             * @param activatorSelector - the field that opens the overlay when clicked
+             * @param label - the option's visible label, matched with `cy.contains`
+             */
+            pickOption(activatorSelector: string, label: string | RegExp): Chainable<void>;
+
+            /**
              * Submits the order page's payment panel with one of the demo provider's methods.
              *
              * The panel has no card field — a live provider tokenises the card in its own iframe
@@ -419,6 +446,32 @@ Cypress.Commands.add(
     })
 );
 
+/**
+ * Retries `attempt` until it finds something, waiting 500ms between tries — the one poll loop
+ * {@link demoOutboxEmailTo} and {@link mailpitEmailTo} both need, since neither outbox
+ * tells the browser when a send has landed.
+ *
+ * @param attempt - One lookup try; `undefined` means "not there yet".
+ * @param maxAttempts - How many tries before failing the assertion named by `subject`.
+ * @param subject - What is being searched for, named in the failure message.
+ * @param tried - How many polls came before this one.
+ */
+const pollUntilFound = <T>(
+    attempt: () => Cypress.Chainable<T | undefined>,
+    maxAttempts: number,
+    subject: string,
+    tried = 0
+): Cypress.Chainable<T> =>
+    attempt().then((found): Cypress.Chainable<T> => {
+        // Both branches return a Chainable, never a bare value: mixing the two makes Cypress's
+        // `.then` typing infer `Chainable<Chainable<T>>` instead of flattening, since it can no
+        // longer tell this call always resolves to one T.
+        if (found !== undefined) return cy.wrap<T>(found);
+        expect(tried, subject).to.be.lessThan(maxAttempts);
+        // eslint-disable-next-line cypress/no-unnecessary-waiting -- delivery has no event the browser can wait on
+        return cy.wait(500).then(() => pollUntilFound(attempt, maxAttempts, subject, tried + 1));
+    });
+
 /** How many times the demo outbox is polled before giving up — mirrors `MAILPIT_ATTEMPTS` below. */
 const DEMO_OUTBOX_ATTEMPTS = 20;
 
@@ -429,25 +482,21 @@ const DEMO_OUTBOX_ATTEMPTS = 20;
  * Same poll shape as {@link mailpitEmailTo} below, for the same reason.
  *
  * @param address - the recipient
- * @param attempt - how many polls came before this one
  */
-const demoOutboxEmailTo = (address: string, attempt = 0): Cypress.Chainable<MailedEmail> =>
-    cy
-        .env(['apiUrl'])
-        .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
-        .then((response): Cypress.Chainable<MailedEmail> => {
-            const { emails } = response.body as { emails: DemoOutboxEmail[] };
-            const email = emails.find(({ to }) => to === address);
-            // Both branches return a Chainable, never a bare value: mixing the two makes
-            // Cypress's `.then` typing infer `Chainable<Chainable<MailedEmail>>` instead of
-            // flattening, since it can no longer tell this call always resolves to one email.
-            if (email) return cy.wrap<MailedEmail>(email);
-            expect(attempt, `an email to ${address} in the demo outbox`).to.be.lessThan(
-                DEMO_OUTBOX_ATTEMPTS
-            );
-            // eslint-disable-next-line cypress/no-unnecessary-waiting -- outbox delivery has no event the browser can wait on
-            return cy.wait(500).then(() => demoOutboxEmailTo(address, attempt + 1));
-        });
+const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
+    pollUntilFound<DemoOutboxEmail>(
+        () =>
+            cy
+                .env(['apiUrl'])
+                .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
+                .then((response): Cypress.Chainable<DemoOutboxEmail | undefined> => {
+                    const { emails } = response.body as { emails: DemoOutboxEmail[] };
+                    return cy.wrap(emails.find(({ to }) => to === address));
+                }),
+        DEMO_OUTBOX_ATTEMPTS,
+        `an email to ${address} in the demo outbox`
+        // `DemoOutboxEmail` mirrors `MailedEmail`'s shape exactly (see the interface below).
+    ).then((email) => cy.wrap<MailedEmail>(email));
 
 /** How long a live send may take to reach Mailpit — SMTP is asynchronous, the outbox is not. */
 const MAILPIT_ATTEMPTS = 20;
@@ -459,31 +508,30 @@ const MAILPIT_ATTEMPTS = 20;
  *
  * @param mailpitUrl - Mailpit's HTTP root, e.g. `http://localhost:8025`
  * @param address - the recipient
- * @param attempt - how many polls came before this one
  */
-const mailpitEmailTo = (
-    mailpitUrl: string,
-    address: string,
-    attempt = 0
-): Cypress.Chainable<MailedEmail> =>
-    cy
-        .request(`${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`)
-        .then((response): Cypress.Chainable<MailedEmail> => {
-            const [newest] = (response.body as { messages: { ID: string }[] }).messages;
-            if (newest)
-                return cy
-                    .request(`${mailpitUrl}/api/v1/message/${newest.ID}`)
-                    .then((message) =>
-                        parseMailpitMessage(
-                            address,
-                            message.body as Parameters<typeof parseMailpitMessage>[1]
-                        )
-                    );
-            expect(attempt, `an email to ${address} in Mailpit`).to.be.lessThan(MAILPIT_ATTEMPTS);
-            // A poll interval, not a sleep standing in for a condition: the condition is polled.
-            // eslint-disable-next-line cypress/no-unnecessary-waiting -- SMTP delivery has no event the browser can wait on
-            return cy.wait(500).then(() => mailpitEmailTo(mailpitUrl, address, attempt + 1));
-        });
+const mailpitEmailTo = (mailpitUrl: string, address: string): Cypress.Chainable<MailedEmail> =>
+    pollUntilFound<{ ID: string }>(
+        () =>
+            cy
+                .request(
+                    `${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`
+                )
+                .then((response): Cypress.Chainable<{ ID: string } | undefined> => {
+                    const [newest] = (response.body as { messages: { ID: string }[] }).messages;
+                    return cy.wrap<{ ID: string } | undefined>(newest);
+                }),
+        MAILPIT_ATTEMPTS,
+        `an email to ${address} in Mailpit`
+    ).then((newest) =>
+        cy
+            .request(`${mailpitUrl}/api/v1/message/${newest.ID}`)
+            .then((message) =>
+                parseMailpitMessage(
+                    address,
+                    message.body as Parameters<typeof parseMailpitMessage>[1]
+                )
+            )
+    );
 
 // Profile-aware: the demo outbox, or the live stack's Mailpit — see the declaration above.
 Cypress.Commands.add('emailTo', (address: string) =>
@@ -520,13 +568,27 @@ Cypress.Commands.add('goToCart', () => {
     cy.get('[data-test=pinned-Cart]').click();
 });
 
+Cypress.Commands.add('textareaIn', (testId: string) =>
+    cy.get<HTMLTextAreaElement>(`[data-test=${testId}] textarea`).first()
+);
+
+Cypress.Commands.add('checkoutWith', (method: string) => {
+    cy.get('[data-test=shipping-selector]').should('exist');
+    cy.get(`[data-test=shipping-method-${method}]`).click();
+    cy.get('[data-test=cart-checkout]').click();
+});
+
 /**
  * Vuetify renders a select's options into an overlay outside the field, so the option is clicked
  * by role rather than inside the activator.
  */
-Cypress.Commands.add('payWith', (label: string) => {
-    cy.get('[data-test=payment-method-select]').should('exist').click();
+Cypress.Commands.add('pickOption', (activatorSelector: string, label: string | RegExp) => {
+    cy.get(activatorSelector).should('exist').click();
     cy.get('[role=listbox] [role=option]').contains(label).click();
+});
+
+Cypress.Commands.add('payWith', (label: string) => {
+    cy.pickOption('[data-test=payment-method-select]', label);
     cy.get('[data-test=payment-submit]').should('not.be.disabled').click();
 });
 

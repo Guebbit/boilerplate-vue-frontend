@@ -14,6 +14,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMongoAbility } from '@casl/ability';
+import { useCoreStore } from '@guebbit/vue-toolkit';
 import ShipmentPanel from '@/modules/delivery/components/ShipmentPanel.vue';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -142,6 +143,48 @@ describe('with a shipment already recorded', () => {
         return wrapper.vm.$nextTick().then(() => {
             expect(wrapper.find('[data-test=mark-delivered]').exists()).toBe(false);
             expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
+        });
+    });
+
+    /**
+     * The same catch `markShipped` already has, covered for `markDelivered` too.
+     */
+    it('shows a 409 on deliver as the inline error, instead of silently doing nothing', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
+        vi.spyOn(useDeliveryStore(), 'deliver').mockRejectedValue(new Error('already delivered'));
+
+        return wrapper.vm
+            .$nextTick()
+            .then(() => wrapper.find('[data-test=mark-delivered]').trigger('click'))
+            .then(() => wrapper.vm.$nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
+                    'already delivered'
+                );
+            });
+    });
+
+    /**
+     * mark-delivered had no in-flight guard at all — a double click could send two deliver
+     * requests while the first was still out.
+     */
+    it('disables mark-delivered while a deliver call is in flight', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
+
+        return wrapper.vm.$nextTick().then(() => {
+            expect(
+                wrapper.find('[data-test=mark-delivered]').attributes('disabled')
+            ).toBeUndefined();
+            useCoreStore().setLoading('delivery', true);
+            return wrapper.vm.$nextTick().then(() => {
+                expect(
+                    wrapper.find('[data-test=mark-delivered]').attributes('disabled')
+                ).toBeDefined();
+            });
         });
     });
 });

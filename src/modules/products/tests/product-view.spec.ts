@@ -127,19 +127,57 @@ describe('the shelf', () => {
             available: 4
         };
         const cart = useCartStore();
-        // `POST /cart` SETS a line's quantity — the store already holds 3 of this product, so the
-        // click must send 4, never a bare 1.
-        cart.cart = {
+        const fetchedCart = {
             items: [{ productId: product.id, quantity: 3 }],
             summary: { itemsCount: 1, totalQuantity: 3, total: 29.97 }
         };
-        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(cart.cart);
+        // `POST /cart` SETS a line's quantity — the fresh fetch answers 3 already on this line, so
+        // the click must send 4, never a bare 1.
+        const fetchCartSpy = vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
+            cart.cart = fetchedCart;
+            return Promise.resolve(fetchedCart);
+        });
+        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(fetchedCart);
 
         const wrapper = mountProduct(product);
         await wrapper.get('[data-test=add-to-cart]').trigger('click');
         await flushPromises();
 
+        expect(fetchCartSpy).toHaveBeenCalled();
         expect(upsertSpy).toHaveBeenCalledWith(product.id, 4);
+    });
+
+    it("reads the cart fresh rather than trusting a previous account's in-memory copy", async () => {
+        signIn();
+        const product = {
+            id: 'p-in-stock',
+            title: 'Available widget',
+            price: 9.99,
+            onHand: 5,
+            reserved: 1,
+            available: 4
+        };
+        const cart = useCartStore();
+        // A stale line left behind by whoever used this browser tab before — a different
+        // account's cart, still sitting in the store's memory because logout resets only the
+        // profile store. If the click trusted this, it would send 6 (5 + 1) into the NEW
+        // account's cart instead of the fresh answer's 1 (0 + 1).
+        cart.cart = {
+            items: [{ productId: product.id, quantity: 5 }],
+            summary: { itemsCount: 1, totalQuantity: 5, total: 49.95 }
+        };
+        const freshCart = { items: [], summary: { itemsCount: 0, totalQuantity: 0, total: 0 } };
+        vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
+            cart.cart = freshCart;
+            return Promise.resolve(freshCart);
+        });
+        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(freshCart);
+
+        const wrapper = mountProduct(product);
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+        await flushPromises();
+
+        expect(upsertSpy).toHaveBeenCalledWith(product.id, 1);
     });
 
     it('disables add-to-cart while a cart write is already in flight (FA39)', async () => {

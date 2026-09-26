@@ -20,6 +20,7 @@
         "reason-expire": "Scadute",
         "reason-receive": "Caricate",
         "reason-adjust": "Rettificate",
+        "reason-restock": "Ripristinate",
         "label-note": "Nota (fornitore, rif. bolla…)",
         "label-note-why": "Perché (finisce sulla riga)",
         "adjust-title": "Rettifica giacenza",

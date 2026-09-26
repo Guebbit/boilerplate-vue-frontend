@@ -72,9 +72,11 @@ const session = useSessionStore();
 const deliveryStore = useDeliveryStore();
 
 /**
- * This order's parcel, reactive — `undefined` while nothing has shipped.
+ * This order's parcel, reactive — `undefined` while nothing has shipped — plus whether a ship or
+ * deliver call is already in flight: both actions share this one flag, which is enough since the
+ * two buttons are never offered at once.
  */
-const { shipment, methods } = storeToRefs(deliveryStore);
+const { shipment, methods, loading } = storeToRefs(deliveryStore);
 
 /**
  * The tracking code field, cleared once submitted.
@@ -239,7 +241,7 @@ onMounted(() => {
                 variant="tonal"
                 size="small"
                 data-test="mark-delivered"
-                :disabled="force && !forceReason"
+                :disabled="loading || (force && !forceReason)"
                 @click="markDelivered"
             >
                 {{ t('shipment-panel.button-deliver') }}
@@ -285,6 +287,7 @@ onMounted(() => {
                 size="small"
                 data-test="mark-shipped"
                 :disabled="
+                    loading ||
                     (trackingRequired && !trackingCode) ||
                     (orderStatus !== 'processing' && (!force || !forceReason)) ||
                     (force && !forceReason)

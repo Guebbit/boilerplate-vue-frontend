@@ -22,9 +22,11 @@ domain lives. The screens and the flow are load-bearing; the arithmetic is not h
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 44}}}%%
 flowchart TD
-    A["the cart screen<br/><i>lines, from the store</i>"] --> B["pick an address<br/><i>account's saved book</i>"]
-    B --> C["pick a shipping method<br/><i>ShippingSelector, mounted</i>"]
-    C --> D["POST /cart/checkout"]
+    A["the cart screen<br/><i>lines, from the store</i>"] --> C["pick a shipping method<br/><i>ShippingSelector, mounted</i>"]
+    C -->|"needs an address"| B["pick an address<br/><i>account's saved book</i>"]
+    C -->|"no address needed"| S["settle<br/><i>flush any pending quantity step first</i>"]
+    B --> S
+    S --> D["POST /cart/checkout"]
     D --> E["store replaces the cart<br/><i>with the empty one</i>"]
     E --> F["route to the new order"]
 
@@ -38,7 +40,7 @@ flowchart TD
     classDef ui fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef call fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#111827;
-    class A,B,C,E,F ui;
+    class A,B,C,S,E,F ui;
     class D call;
     class G,H,I,J,K,L bad;
 ```
