@@ -2952,6 +2952,7 @@ export interface InventoryLevelsResponseEnvelope {
  * * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
  * * `receive` — a supplier delivery. `onHand` up.
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
+ * * `restock` — a paid order's committed units came back (the order was cancelled after payment). `onHand` up.
  */
 export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
@@ -2961,7 +2962,8 @@ export const StockMovementReason = {
     release: 'release',
     expire: 'expire',
     receive: 'receive',
-    adjust: 'adjust'
+    adjust: 'adjust',
+    restock: 'restock'
 } as const;
 
 export interface StockMovement {

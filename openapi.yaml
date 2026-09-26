@@ -10785,6 +10785,7 @@ components:
         - expire
         - receive
         - adjust
+        - restock
       description: |
         * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
         * `commit` — the order was paid for and the units left. Both down.
@@ -10792,6 +10793,7 @@ components:
         * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
         * `receive` — a supplier delivery. `onHand` up.
         * `adjust` — a stocktake correction, signed. `onHand` moves either way.
+        * `restock` — a paid order's committed units came back (the order was cancelled after payment). `onHand` up.
     StockMovement:
       type: object
       additionalProperties: false
