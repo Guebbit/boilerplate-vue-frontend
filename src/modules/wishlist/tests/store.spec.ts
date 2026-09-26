@@ -41,7 +41,13 @@ beforeEach(() => {
         'POST /wishlist/p1/move-to-cart': orvalEnvelope({ items: [{ productId: 'p2' }] }),
         'GET /cart': orvalEnvelope({
             items: [],
-            summary: { itemsCount: 0, totalQuantity: 0, total: 0 }
+            summary: {
+                itemsCount: 0,
+                totalQuantity: 0,
+                itemsTotal: 0,
+                shippingCost: 0,
+                totalPrice: 0
+            }
         })
     };
 });

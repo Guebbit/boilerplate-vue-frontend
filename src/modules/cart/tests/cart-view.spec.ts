@@ -37,7 +37,14 @@ const router = createRouter({
  */
 const A_CART: CartResponse = {
     items: [{ productId: 'p1', quantity: 2 }],
-    summary: { itemsCount: 1, totalQuantity: 2, total: 20, currency: 'EUR' }
+    summary: {
+        itemsCount: 1,
+        totalQuantity: 2,
+        itemsTotal: 20,
+        shippingCost: 0,
+        totalPrice: 20,
+        currency: 'EUR'
+    }
 };
 
 /**
@@ -73,6 +80,10 @@ const mountCart = () => {
     cart.cart = A_CART;
     vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
     vi.spyOn(cart, 'resolveTitles').mockResolvedValue({});
+    // Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
+    // `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
+    // the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
+    vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
     const checkoutSpy = vi.spyOn(cart, 'checkout');
 
     const wrapper = mount(Cart, {
@@ -220,6 +231,10 @@ describe('the checkout refusals', () => {
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
         vi.spyOn(cart, 'resolveTitles').mockResolvedValue({});
+        // Stubbed, not exercised: the `v-model` events below drive `shippingMethodId` directly,
+        // which the page's own `watch` persists through this action — its real round trip is
+        // `store.spec.ts`'s concern.
+        vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout');
         checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_SHIPPING_METHOD_WEIGHT'));
 
@@ -274,6 +289,8 @@ describe('the checkout payload', () => {
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
         vi.spyOn(cart, 'resolveTitles').mockResolvedValue({});
+        // Stubbed, not exercised: same reasoning as the CART_SHIPPING_METHOD_WEIGHT case above.
+        vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
 
         const wrapper = mount(Cart, {

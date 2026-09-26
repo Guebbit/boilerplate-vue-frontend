@@ -26,9 +26,9 @@ import {
     updateCartItemById,
     removeCartItem,
     clearCart,
+    setCartShippingMethod,
     checkout as apiCheckout,
-    reorder as apiReorder,
-    getProductById
+    reorder as apiReorder
 } from '@api';
 import * as schemas from '@api/schemas';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -39,13 +39,22 @@ import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
  */
 const CART = {
     items: [{ productId: 'p1', quantity: 2 }],
-    summary: { itemsCount: 1, totalQuantity: 2, total: 19.98 }
+    summary: {
+        itemsCount: 1,
+        totalQuantity: 2,
+        itemsTotal: 19.98,
+        shippingCost: 0,
+        totalPrice: 19.98
+    }
 };
 
 /**
  * The cart after its last line is removed.
  */
-const EMPTY_CART = { items: [], summary: { itemsCount: 0, totalQuantity: 0, total: 0 } };
+const EMPTY_CART = {
+    items: [],
+    summary: { itemsCount: 0, totalQuantity: 0, itemsTotal: 0, shippingCost: 0, totalPrice: 0 }
+};
 
 /**
  * The order checkout creates from {@link CART}.
@@ -53,7 +62,7 @@ const EMPTY_CART = { items: [], summary: { itemsCount: 0, totalQuantity: 0, tota
 const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netTotal: 19.98 });
 
 /**
- * A catalogue product as `GET /products/{id}` answers it, weighed so `basketWeight` has a number.
+ * A catalogue product as `GET /products/{id}` answers it.
  *
  * @param id - the product id
  * @param requiresShipping - false for a digital good
@@ -63,7 +72,6 @@ const aProduct = (id: string, requiresShipping = true) => ({
     id,
     title: `Product ${id}`,
     price: 9.99,
-    weight: 500,
     requiresShipping
 });
 
@@ -80,6 +88,10 @@ const RESPONSES = {
     cleared: contractResponse(schemas.ClearCartResponse, EMPTY_CART),
     checkedOut: contractResponse(schemas.CheckoutResponse, { order: ORDER }),
     reordered: contractResponse(schemas.ReorderResponse, CART),
+    shippingSet: contractResponse(schemas.SetCartShippingMethodResponse, {
+        ...CART,
+        shippingMethodId: 'standard'
+    }),
     product: (id: string, requiresShipping = true) =>
         contractResponse(schemas.GetProductByIdResponse, aProduct(id, requiresShipping))
 };
@@ -103,6 +115,7 @@ vi.mock('@api', () => ({
     updateCartItemById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
     removeCartItem: vi.fn(() => Promise.resolve(RESPONSES.removed)),
     clearCart: vi.fn(() => Promise.resolve(RESPONSES.cleared)),
+    setCartShippingMethod: vi.fn(() => Promise.resolve(RESPONSES.shippingSet)),
     checkout: vi.fn(() => Promise.resolve(RESPONSES.checkedOut)),
     reorder: vi.fn(() => Promise.resolve(RESPONSES.reordered)),
     getProductById: vi.fn((id: string) => Promise.resolve(RESPONSES.product(id)))
@@ -229,6 +242,26 @@ describe('useCartStore', () => {
                 }));
     });
 
+    describe('setShippingMethod', () => {
+        it('sends the choice and replaces the local cart with the priced response', () =>
+            useCartStore()
+                .setShippingMethod('standard')
+                .then((result) => {
+                    expect(setCartShippingMethod).toHaveBeenCalledWith({
+                        shippingMethodId: 'standard'
+                    });
+                    expect(useCartStore().cart?.shippingMethodId).toBe('standard');
+                    expect(result?.shippingMethodId).toBe('standard');
+                }));
+
+        it('sends null to clear the choice, not undefined', () =>
+            useCartStore()
+                .setShippingMethod(null)
+                .then(() => {
+                    expect(setCartShippingMethod).toHaveBeenCalledWith({ shippingMethodId: null });
+                }));
+    });
+
     describe('checkout', () => {
         it('calls the endpoint with no payload when none is given', () =>
             useCartStore()
@@ -261,7 +294,9 @@ describe('useCartStore', () => {
                     expect(store.cartSummary).toEqual({
                         itemsCount: 0,
                         totalQuantity: 0,
-                        total: 0
+                        itemsTotal: 0,
+                        shippingCost: 0,
+                        totalPrice: 0
                     });
                     expect(store.badgeQuantity).toBe(0);
                 });
@@ -303,7 +338,9 @@ describe('useCartStore', () => {
                     expect(store.cartSummary).toEqual({
                         itemsCount: 0,
                         totalQuantity: 0,
-                        total: 0
+                        itemsTotal: 0,
+                        shippingCost: 0,
+                        totalPrice: 0
                     });
                 });
         });
@@ -333,44 +370,5 @@ describe('useCartStore', () => {
      */
     it('is registered under the "cart" id', () => {
         expect(useCartStore().$id).toBe('cart');
-    });
-
-    /**
-     * `basketWeight` mirrors the backend's own `cart/domain/rules.ts#basketWeight` exactly: a
-     * digital good contributes nothing, and an unresolved product (no `resolveTitles` call yet)
-     * counts as weightless rather than blocking the number.
-     */
-    describe('basketWeight', () => {
-        it('is zero before any product has been resolved', () => {
-            const store = useCartStore();
-            return store.fetchCart().then(() => {
-                expect(store.basketWeight).toBe(0);
-            });
-        });
-
-        it('sums weight × quantity once resolveTitles has fetched the product', () => {
-            const store = useCartStore();
-            return store
-                .fetchCart()
-                .then(() => store.resolveTitles(['p1']))
-                .then(() => {
-                    // CART's one line: quantity 2, the mocked product's weight 500 → 1000g.
-                    expect(store.basketWeight).toBe(1000);
-                });
-        });
-
-        it('excludes a line whose product does not require shipping', () => {
-            vi.mocked(getProductById).mockResolvedValueOnce(
-                RESPONSES.product('p1', false) as never
-            );
-            const store = useCartStore();
-
-            return store
-                .fetchCart()
-                .then(() => store.resolveTitles(['p1']))
-                .then(() => {
-                    expect(store.basketWeight).toBe(0);
-                });
-        });
     });
 });

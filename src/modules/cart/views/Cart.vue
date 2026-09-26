@@ -11,7 +11,7 @@ export default {
  * stepper (`useLineQuantity`) on top of the store's own quantity update so rapid
  * clicks collapse into one request per line.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -57,6 +57,7 @@ const {
     updateCartItem,
     removeCartItem,
     clearCart,
+    setShippingMethod,
     checkout: placeOrder,
     titleOf,
     resolveTitles
@@ -66,13 +67,49 @@ const {
  * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear (FA39): both
  * write endpoints, so a double-click before the first request answers must not fire a second one.
  */
-const { cartItems, cartSummary, basketWeight, needsShipping, loading } =
-    storeToRefs(useCartStore());
+const { cart, cartItems, cartSummary, needsShipping, loading } = storeToRefs(useCartStore());
 
 /**
- * The chosen shipping method — optional, exactly as the API treats it.
+ * The chosen shipping method — mirrors `cart.value?.shippingMethodId` (see the `watch` below that
+ * loads it once the cart resolves), and drives `PUT /cart/shipping-method` on every change the
+ * shopper makes through {@link ShippingSelector}.
  */
 const shippingMethodId = ref<string | undefined>();
+
+/**
+ * Loads {@link shippingMethodId} from whatever the cart says once it resolves — a returning
+ * shopper's earlier choice should pre-select the radio, not start every visit unchosen. `once`:
+ * only the cart's FIRST resolution seeds the picker; every change after that is the shopper's own,
+ * driven the other way by the `watch` below.
+ */
+watch(
+    cart,
+    (loaded) => {
+        if (loaded) shippingMethodId.value = loaded.shippingMethodId;
+    },
+    { once: true }
+);
+
+/**
+ * Persists a shopper's shipping-method choice the moment they make it — priced and validated
+ * against the real basket server-side, rather than only checked once at checkout. A refusal
+ * (the basket no longer needs shipping, or has outgrown the method's weight range) reverts the
+ * picker to its previous choice rather than leaving a selection the server rejected.
+ */
+watch(shippingMethodId, (chosen, previous) => {
+    if (chosen === cart.value?.shippingMethodId) return;
+    void setShippingMethod(chosen ?? null).catch((error: unknown) => {
+        const verdict = classifyCheckoutError(error);
+        addMessage(
+            t(
+                verdict.kind === 'shipping-method-weight'
+                    ? 'cart-page.error-shipping-method-weight'
+                    : 'cart-page.error-shipping-method-generic'
+            )
+        );
+        shippingMethodId.value = previous;
+    });
+});
 
 /**
  * Whether the chosen method needs an address — `undefined` while nothing is selected, mirrored
@@ -147,9 +184,8 @@ const {
  */
 const runCheckout = () =>
     placeOrder({
-        ...(shippingMethodId.value === undefined
-            ? {}
-            : { shippingMethodId: shippingMethodId.value }),
+        // No `shippingMethodId` here — it is the cart's own choice now, already persisted via
+        // `PUT /cart/shipping-method` by the `watch` above.
         // Only when the chosen method actually needs one: the picker unmounts on pickup but
         // leaves `addressId` holding its last value, and the backend now refuses an address
         // paired with a method that can't use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
@@ -434,8 +470,7 @@ onMounted(() =>
                     <ShippingSelector
                         v-model="shippingMethodId"
                         v-model:requires-address="shippingMethodRequiresAddress"
-                        :items-total="cartSummary.total"
-                        :weight="basketWeight"
+                        :items-total="cartSummary.itemsTotal"
                     />
                     <!--
                         Only asked when the chosen method actually needs one — a digital-only
@@ -456,10 +491,23 @@ onMounted(() =>
                         data-test="cart-notes"
                     />
                     <v-divider class="my-3" />
+                    <dl class="grid grid-cols-[1fr_auto] gap-y-1">
+                        <dt class="opacity-70">{{ t('cart-page.label-items-total') }}</dt>
+                        <dd class="text-right font-medium">
+                            {{ formatCurrency(cartSummary.itemsTotal, cartSummary.currency) }}
+                        </dd>
+                        <dt v-if="shippingMethodId" class="opacity-70">
+                            {{ t('cart-page.label-shipping-cost') }}
+                        </dt>
+                        <dd v-if="shippingMethodId" class="text-right font-medium">
+                            {{ formatCurrency(cartSummary.shippingCost, cartSummary.currency) }}
+                        </dd>
+                    </dl>
+                    <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
                         <span class="text-xl font-bold" role="status">
-                            {{ formatCurrency(cartSummary.total, cartSummary.currency) }}
+                            {{ formatCurrency(cartSummary.totalPrice, cartSummary.currency) }}
                         </span>
                     </div>
                     <v-btn

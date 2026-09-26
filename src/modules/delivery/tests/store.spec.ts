@@ -83,7 +83,7 @@ describe('fetchMethods', () => {
         });
     });
 
-    it('omits the weight param when not given one', async () => {
+    it('takes no query param — the list is unfiltered', async () => {
         const { orvalMutator } = await import('@/infrastructure/http');
         const store = useDeliveryStore();
         return store.fetchMethods().then(() => {
@@ -91,17 +91,6 @@ describe('fetchMethods', () => {
                 .mocked(orvalMutator)
                 .mock.calls.find(([config]) => config.url === '/delivery/methods');
             expect(call?.[0].params).toBeUndefined();
-        });
-    });
-
-    it('forwards a given weight as the query param', async () => {
-        const { orvalMutator } = await import('@/infrastructure/http');
-        const store = useDeliveryStore();
-        return store.fetchMethods(1500).then(() => {
-            const call = vi
-                .mocked(orvalMutator)
-                .mock.calls.find(([config]) => config.url === '/delivery/methods');
-            expect(call?.[0].params).toEqual({ weight: 1500 });
         });
     });
 });
