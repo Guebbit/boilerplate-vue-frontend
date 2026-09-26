@@ -12,7 +12,7 @@
 | **Screens**             | 5 — `WebhooksList` · `WebhookCreate` · `WebhookTarget` · `WebhookEdit` · `WebhookDeliveries` |
 | **Store**               | `webhooks`                                                                                   |
 | **Menu entries**        | `WebhooksList` · `WebhookDeliveries`                                                         |
-| **API calls**           | 7                                                                                            |
+| **API calls**           | 9                                                                                            |
 | **Depends on**          | _nothing_                                                                                    |
 | **Depended on by**      | _nothing_                                                                                    |
 | **Languages**           | `en` · `it`                                                                                  |
@@ -93,7 +93,6 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | -------------------------------------------------- | ----------------------------------------- |
 | `GET /webhooks/subscriptions`                      | `ListWebhookSubscriptionsResponse`        |
 | `POST /webhooks/subscriptions`                     | `CreateWebhookSubscriptionResponse`       |
-| `PUT /webhooks/subscriptions/{id}`                 | `ReplaceWebhookSubscriptionResponse`      |
 | `PATCH /webhooks/subscriptions/{id}`               | `UpdateWebhookSubscriptionResponse`       |
 | `DELETE /webhooks/subscriptions/{id}`              | `DeleteWebhookSubscriptionResponse`       |
 | `POST /webhooks/subscriptions/{id}/rotate-secret`  | `RotateWebhookSubscriptionSecretResponse` |

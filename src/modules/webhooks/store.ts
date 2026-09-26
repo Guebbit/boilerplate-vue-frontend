@@ -191,8 +191,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
     /**
      * Drops one secret from a subscription's ring — the other half of a rotation, once every
-     * consumer has switched to the new one. Same hand-written shape as {@link rotateSecret}, for
-     * the same loading-state reason — its own action route, not the generic update path.
+     * consumer has switched to the new one. Hand-written, like {@link createSubscription} and
+     * {@link rotateSecret}, because it calls its own dedicated action route rather than the
+     * generic update path — but unlike those two, its response carries no plaintext secret to
+     * scrub before caching.
      *
      * @param id - the subscription to update
      * @param secretId - the ring entry to remove

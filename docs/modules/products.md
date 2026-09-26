@@ -97,10 +97,9 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /products`           | `DeleteProductResponse`         |
 | `GET /products`              | `ListProductsResponse`          |
 | `POST /products`             | `CreateProductResponse`         |
-| `PUT /products`              | `UpdateProductResponse`         |
 | `DELETE /products/{id}`      | `DeleteProductByIdResponse`     |
 | `GET /products/{id}`         | `GetProductByIdResponse`        |
-| `PUT /products/{id}`         | `UpdateProductByIdResponse`     |
+| `PATCH /products/{id}`       | `UpdateProductByIdResponse`     |
 | `DELETE /products/{id}/hard` | `HardDeleteProductByIdResponse` |
 | `GET /products/categories`   | `GetCatalogueFacetsResponse`    |
 | `POST /products/search`      | `SearchProductsResponse`        |
