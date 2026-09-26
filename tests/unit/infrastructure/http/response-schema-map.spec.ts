@@ -229,7 +229,9 @@ const ROUTES: [method: string, path: string, name: string][] = [
  */
 const NOT_CALLED_BY_THIS_CLIENT: Record<string, string> = {
     'POST /payments/webhook':
-        "the payment provider's own callback to the API — a machine-to-machine route, authenticated by a signature rather than a session, that no browser ever calls"
+        "the payment provider's own callback to the API — a machine-to-machine route, authenticated by a signature rather than a session, that no browser ever calls",
+    'GET /readyz':
+        'a load balancer / orchestrator readiness probe (200 or 503, empty body) — infrastructure polls it, this SPA never does'
 };
 
 const SPEC_OPERATIONS: string[] = (() => {
