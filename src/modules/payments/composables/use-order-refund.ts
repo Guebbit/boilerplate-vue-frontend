@@ -31,8 +31,8 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
     /**
      * The order's payment, whose status decides what this composable will allow, and the
      * payments store's own in-flight flag — a different loading key from the orders store's, so
-     * a caller gating its refund BUTTON on the orders store's `loading` alone (PL-66) never
-     * actually blocks a double click while `refund()` itself is still out.
+     * a caller gating its refund BUTTON on the orders store's `loading` alone never actually
+     * blocks a double click while `refund()` itself is still out.
      */
     const { payment, loading: refundLoading } = storeToRefs(paymentsStore);
 

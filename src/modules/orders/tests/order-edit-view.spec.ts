@@ -188,7 +188,7 @@ describe('a list-cache arrival gains actions', () => {
     });
 });
 
-describe('refunding (PL-66)', () => {
+describe('refunding', () => {
     it('disables Refund only while a refund is in flight, even though the orders store is idle', () => {
         signInAsAdmin();
         mockCanRefund.value = true;
@@ -202,9 +202,9 @@ describe('refunding (PL-66)', () => {
             .then(() => nextTick())
             .then(() => {
                 // The orders store's own `loading` is idle — only the payments store's is not.
-                expect(
-                    wrapper.get('[data-test=button-refund-only]').attributes('disabled')
-                ).toBe(undefined);
+                expect(wrapper.get('[data-test=button-refund-only]').attributes('disabled')).toBe(
+                    undefined
+                );
                 mockRefundLoading.value = true;
                 return nextTick();
             })
@@ -236,8 +236,8 @@ describe('cancelling', () => {
             .then(() => nextTick())
             .then(() => {
                 expect(cancelOrder).toHaveBeenCalledWith('o1', false);
-                // PL-61: cancelling the order leaves a sibling `succeeded` payment's
-                // `actions.refund` stale unless the payment itself is re-read too.
+                // Cancelling the order leaves a sibling `succeeded` payment's `actions.refund`
+                // stale unless the payment itself is re-read too.
                 expect(refreshPayment).toHaveBeenCalledTimes(1);
             });
     });

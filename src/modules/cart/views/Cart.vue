@@ -211,7 +211,7 @@ const runCheckout = () =>
  *
  * `settle` rejects when a flushed step failed to reach the server — `useLineQuantity`'s own
  * `onError` has already reported that failure, so this only needs to skip {@link runCheckout}
- * rather than place the order at whatever stale quantity the cart still holds (PL-63).
+ * rather than place the order at whatever stale quantity the cart still holds.
  *
  * @returns Same as {@link runCheckout}, or nothing when settling failed.
  */

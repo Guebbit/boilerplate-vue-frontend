@@ -2,8 +2,8 @@
  * @module
  * Every `StockMovementReason` the contract enumerates must have an `inventory-page.reason-*`
  * label in both locales — `MovementLedger.vue`'s filter and its ledger rows key off exactly this
- * pattern (PL-65: `restock` shipped with the enum value but no label, so the filter and every
- * `restock` row showed the raw key instead of a word).
+ * pattern. `restock` shipped with the enum value but no label, so the filter and every `restock`
+ * row showed the raw key instead of a word.
  *
  * Against the real i18n instance: vue-i18n resolves a missing key to the key itself, which is the
  * precise symptom this guards against.

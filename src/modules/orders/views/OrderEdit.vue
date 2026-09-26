@@ -73,7 +73,7 @@ const canOverride = computed(() => session.can('override', 'Order'));
 /**
  * The three destinations `POST /orders/{id}/status-override` accepts. Not filtered to "forward of
  * the order's current status" here: that rule lives in the API, and a copy here is how the two
- * come to disagree. An illegal pick surfaces as the server's own 409 toast.
+ * come to disagree. An illegal pick surfaces inline, as {@link overrideError}, not a toast.
  */
 const overrideStatusOptions = [
     OrderStatus.processing,
@@ -322,8 +322,8 @@ watchOrder(() => id);
 
 /**
  * Forces the one re-fetch a list-cache arrival needs to gain `actions` — without it, an order
- * opened from the list renders with a status select offering only its current status and a
- * greyed-out Cancel, since every control on this page gates on that field.
+ * opened from the list renders with cancel, refund and override all greyed out, since every
+ * control on this page gates on that field.
  */
 useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
@@ -448,10 +448,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 </div>
 
                 <!--
-                    The admin-only correction door: PUT /orders/:id no longer accepts
-                    shipped/delivered from anyone, this is what replaced it. Gated on the
-                    `orders.any.override` permission, not on any order-state flag, since the
-                    whole point is bypassing the ordinary rule.
+                    The admin-only correction door: PUT /orders/:id carries no status field, so
+                    this is the only way onto processing/shipped/delivered outside the ordinary
+                    flow. Gated on the `orders.any.override` permission, not on any order-state
+                    flag, since the whole point is bypassing the ordinary rule.
                 -->
                 <div v-if="canOverride" class="mt-6 border-t pt-5">
                     <h3 class="text-lg font-semibold">{{ t('order-edit-page.override-title') }}</h3>

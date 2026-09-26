@@ -262,7 +262,7 @@ describe('the checkout refusals', () => {
     });
 });
 
-describe('the checkout payload (PL-68)', () => {
+describe('the checkout payload', () => {
     /**
      * `AddressPicker` unmounts the instant a method needing no address is chosen, but its
      * `v-model` ref keeps whatever id it last held — this proves `runCheckout` still leaves

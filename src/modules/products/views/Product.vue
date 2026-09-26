@@ -133,10 +133,10 @@ const { isAuth } = storeToRefs(useSessionStore());
 const cartStore = useCartStore();
 
 /**
- * The loaded cart's lines, plus whether a cart write is already in flight (FA39's in-flight guard
- * on add-to-cart). Read off `storeToRefs`, not destructured off the store directly, so
- * {@link handleAddToCart} sees whatever the shopper's cart holds once its own forced fetch lands,
- * not a stale snapshot taken when this page mounted.
+ * The loaded cart's lines, plus whether a cart write is already in flight. Read off
+ * `storeToRefs`, not destructured off the store directly, so {@link handleAddToCart} sees
+ * whatever the shopper's cart holds once its own forced fetch lands, not a stale snapshot taken
+ * when this page mounted.
  */
 const { cartItems, loading: cartLoading } = storeToRefs(cartStore);
 
@@ -146,8 +146,8 @@ const { cartItems, loading: cartLoading } = storeToRefs(cartStore);
 const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlistStore();
 
 /**
- * Whether a wishlist toggle is already in flight (FA39's in-flight guard) — the heart's own
- * blocked state ({@link wishlistError}) covers a failure, not a double click while one is out.
+ * Whether a wishlist toggle is already in flight — the heart's own blocked state
+ * ({@link wishlistError}) covers a failure, not a double click while one is out.
  */
 const { loading: wishlistLoading } = storeToRefs(useWishlistStore());
 
@@ -181,8 +181,8 @@ const {
 } = useBlockingError();
 
 /**
- * Adds one unit to the cart — an INCREMENT on whatever the line already holds (FA30), always
- * reading the cart fresh first. `POST /cart` SETS a line's quantity, so sending a bare `1` here
+ * Adds one unit to the cart — an INCREMENT on whatever the line already holds, always reading the
+ * cart fresh first. `POST /cart` SETS a line's quantity, so sending a bare `1` here
  * would reset a line the shopper already has back down to one — and trusting an in-memory `cart`
  * left over from a PREVIOUS account (logout resets only the profile store, not this one) would
  * write that account's quantity into this one's cart instead.

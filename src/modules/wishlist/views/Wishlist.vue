@@ -40,8 +40,8 @@ const { addMessage } = useNotificationsStore();
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 
 /**
- * The wishlist's lines, and whether a move-to-cart or remove is already in flight (FA39's
- * in-flight guard) — both actions share the store's one loading flag, so either blocks the other.
+ * The wishlist's lines, and whether a move-to-cart or remove is already in flight — both actions
+ * share the store's one loading flag, so either blocks the other.
  */
 const { items, loading } = storeToRefs(useWishlistStore());
 

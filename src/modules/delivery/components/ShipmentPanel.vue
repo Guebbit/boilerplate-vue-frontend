@@ -73,8 +73,8 @@ const deliveryStore = useDeliveryStore();
 
 /**
  * This order's parcel, reactive — `undefined` while nothing has shipped — plus whether a ship or
- * deliver call is already in flight (FA39's in-flight guard): both actions share this one flag,
- * which is enough since the two buttons are never offered at once.
+ * deliver call is already in flight: both actions share this one flag, which is enough since the
+ * two buttons are never offered at once.
  */
 const { shipment, methods, loading } = storeToRefs(deliveryStore);
 

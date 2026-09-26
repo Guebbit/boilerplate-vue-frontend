@@ -206,7 +206,7 @@ describe('useLineQuantity — FA34: checkout and clear must not race a pending s
             useLineQuantity(makeUpdate().update, vi.fn(), DELAY).settle()
         ).resolves.toBeUndefined());
 
-    it('settle rejects when a flushed step failed to reach the server (PL-63)', async () => {
+    it('settle rejects when a flushed step failed to reach the server', async () => {
         const onError = vi.fn();
         const update = vi.fn(() => Promise.reject(new Error('nope')));
         const lines = useLineQuantity(update, onError, DELAY);
@@ -220,7 +220,7 @@ describe('useLineQuantity — FA34: checkout and clear must not race a pending s
         expect(onError).toHaveBeenCalledOnce();
     });
 
-    it('does not stop waiting on a newer request because an older one for the same line just landed (PL-64)', async () => {
+    it('does not stop waiting on a newer request because an older one for the same line just landed', async () => {
         const { update, calls, resolvers } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 

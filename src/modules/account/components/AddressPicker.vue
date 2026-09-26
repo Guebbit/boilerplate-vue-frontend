@@ -48,11 +48,10 @@ onMounted(() => {
 });
 
 /**
- * Pre-selects the book's default entry (B24): whenever the list loads or changes and nothing
- * valid is chosen — nothing yet, or the chosen entry no longer exists — falls back to the
- * `default` one, or the first. Runs `immediate` so it also covers the add-address dialog's own
- * save, which used to need its own handler for exactly this. Never overrides a still-valid
- * manual choice.
+ * Pre-selects the book's default entry: whenever the list loads or changes and nothing valid is
+ * chosen — nothing yet, or the chosen entry no longer exists — falls back to the `default` one,
+ * or the first. Runs `immediate` so it also covers the add-address dialog's own save, needing no
+ * separate handler for that case. Never overrides a still-valid manual choice.
  */
 watch(
     addresses,

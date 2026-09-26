@@ -164,7 +164,7 @@ declare global {
             /**
              * The (only) textarea inside a `data-test` field wrapper — Vuetify nests its actual
              * `<textarea>` under the wrapper the app names, so every caller repeated the same
-             * `.first()` (PL-69).
+             * `.first()`.
              *
              * @param testId - the wrapper's `data-test` value, e.g. `contact-message`
              */
@@ -172,7 +172,7 @@ declare global {
 
             /**
              * From the cart, picks a shipping method and checks out — the sequence every spec
-             * that buys something for real repeats (PL-69).
+             * that buys something for real repeats.
              *
              * @param method - the method's `data-test` suffix, e.g. `express`, `standard`, `pickup`
              */
@@ -181,7 +181,7 @@ declare global {
             /**
              * Opens a Vuetify select/autocomplete through its activator and picks the option
              * matching `label` — by ARIA role rather than a Vuetify implementation class, since
-             * the overlay renders outside the field itself (PL-69).
+             * the overlay renders outside the field itself.
              *
              * @param activatorSelector - the field that opens the overlay when clicked
              * @param label - the option's visible label, matched with `cy.contains`
@@ -448,7 +448,7 @@ Cypress.Commands.add(
 
 /**
  * Retries `attempt` until it finds something, waiting 500ms between tries — the one poll loop
- * {@link demoOutboxEmailTo} and {@link mailpitEmailTo} both need (PL-69), since neither outbox
+ * {@link demoOutboxEmailTo} and {@link mailpitEmailTo} both need, since neither outbox
  * tells the browser when a send has landed.
  *
  * @param attempt - One lookup try; `undefined` means "not there yet".

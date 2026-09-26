@@ -147,8 +147,7 @@ describe('with a shipment already recorded', () => {
     });
 
     /**
-     * PL-67: the same FA35 catch `markShipped` already has, but `markDelivered`'s own error path
-     * had no coverage at all.
+     * The same catch `markShipped` already has, covered for `markDelivered` too.
      */
     it('shows a 409 on deliver as the inline error, instead of silently doing nothing', () => {
         signIn();
@@ -156,8 +155,8 @@ describe('with a shipment already recorded', () => {
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
         vi.spyOn(useDeliveryStore(), 'deliver').mockRejectedValue(new Error('already delivered'));
 
-        return wrapper
-            .vm.$nextTick()
+        return wrapper.vm
+            .$nextTick()
             .then(() => wrapper.find('[data-test=mark-delivered]').trigger('click'))
             .then(() => wrapper.vm.$nextTick())
             .then(() => {
@@ -168,8 +167,8 @@ describe('with a shipment already recorded', () => {
     });
 
     /**
-     * PL-67: mark-delivered had no in-flight guard at all — a double click could send two
-     * deliver requests while the first was still out.
+     * mark-delivered had no in-flight guard at all — a double click could send two deliver
+     * requests while the first was still out.
      */
     it('disables mark-delivered while a deliver call is in flight', () => {
         signIn();

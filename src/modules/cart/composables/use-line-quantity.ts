@@ -91,7 +91,7 @@ export const useLineQuantity = (
             if (quantity === undefined) return;
             const request: Promise<boolean> = update(productId, quantity)
                 // `update`'s own resolved value is not this composable's to know — only whether
-                // the request succeeded, which is all `settle()` needs (PL-63).
+                // the request succeeded, which is all `settle()` needs.
                 .then(() => true)
                 .catch((error: unknown) => {
                     onError(error);
@@ -106,7 +106,7 @@ export const useLineQuantity = (
                     if (pending.value[productId] === quantity) forgetPending(productId);
                     // Same reasoning, for `inFlight`: an older request finishing AFTER a newer one
                     // has already started must not delete the newer one's entry — that is what let
-                    // `settle()` stop waiting on a request that was still on the wire (PL-64).
+                    // `settle()` stop waiting on a request that was still on the wire.
                     if (inFlight.get(productId) === request) inFlight.delete(productId);
                 });
             inFlight.set(productId, request);
@@ -174,7 +174,7 @@ export const useLineQuantity = (
      * never intended.
      *
      * @returns A promise resolving once every in-flight request has settled successfully, and
-     *  REJECTING if any one of them failed (PL-63) — `onError` has already reported the failure
+     *  REJECTING if any one of them failed — `onError` has already reported the failure
      *  itself; this is only the signal a caller like checkout needs to stop rather than proceed
      *  on a line the server never actually got the visitor's last quantity for.
      */

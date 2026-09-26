@@ -147,7 +147,7 @@ describe('the shelf', () => {
         expect(upsertSpy).toHaveBeenCalledWith(product.id, 4);
     });
 
-    it('reads the cart fresh rather than trusting a previous account\'s in-memory copy (PL-62)', async () => {
+    it("reads the cart fresh rather than trusting a previous account's in-memory copy", async () => {
         signIn();
         const product = {
             id: 'p-in-stock',

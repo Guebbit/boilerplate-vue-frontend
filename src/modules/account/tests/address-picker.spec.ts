@@ -1,8 +1,8 @@
 /**
  * @module
- * `AddressPicker.vue` — scoped to its own logic: the pre-select watcher (B24), which chooses the
+ * `AddressPicker.vue` — scoped to its own logic: the pre-select watcher, which chooses the
  * default (or first) entry whenever the list changes and nothing valid is already chosen, but
- * never overrides a still-valid manual pick (PL-68 — this had no spec at all).
+ * never overrides a still-valid manual pick.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -63,7 +63,7 @@ beforeEach(() => {
     return loadLocale('en');
 });
 
-describe('AddressPicker — the pre-select watcher (B24)', () => {
+describe('AddressPicker — the pre-select watcher', () => {
     it('pre-selects the default entry when nothing is chosen yet', () => {
         const { wrapper } = mountPicker([
             anAddress({ id: 'a1' }),
