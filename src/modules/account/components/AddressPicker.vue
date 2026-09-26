@@ -11,7 +11,7 @@ export default {
  * `ShippingSelector.vue`'s own shape. An empty book offers the same add-address dialog the
  * profile page uses (`AddressFormDialog.vue`) rather than a second copy of that form.
  */
-import { onMounted, ref, useId } from 'vue';
+import { onMounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Plus } from 'lucide-vue-next';
@@ -48,15 +48,21 @@ onMounted(() => {
 });
 
 /**
- * Selects the book's default entry — called once the add-address dialog reports a save, which
- * this component only offers on an empty book, so the entry it just created is always the one
- * about to become `default`. A visitor who already had a book still picks a radio by hand, the
- * same as `ShippingSelector.vue`'s own method choice.
+ * Pre-selects the book's default entry (B24): whenever the list loads or changes and nothing
+ * valid is chosen — nothing yet, or the chosen entry no longer exists — falls back to the
+ * `default` one, or the first. Runs `immediate` so it also covers the add-address dialog's own
+ * save, which used to need its own handler for exactly this. Never overrides a still-valid
+ * manual choice.
  */
-const selectDefault = () => {
-    const entry = addresses.value.find((address) => address.default) ?? addresses.value[0];
-    addressId.value = entry.id;
-};
+watch(
+    addresses,
+    (list) => {
+        if (list.length === 0) return;
+        if (addressId.value && list.some((address) => address.id === addressId.value)) return;
+        addressId.value = (list.find((address) => address.default) ?? list[0]).id;
+    },
+    { immediate: true }
+);
 </script>
 
 <template>
@@ -93,6 +99,6 @@ const selectDefault = () => {
                 {{ t('address-picker.add') }}
             </v-btn>
         </template>
-        <AddressFormDialog v-model="dialogOpen" @saved="selectDefault" />
+        <AddressFormDialog v-model="dialogOpen" />
     </div>
 </template>
