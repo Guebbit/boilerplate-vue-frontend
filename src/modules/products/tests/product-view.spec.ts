@@ -9,11 +9,13 @@
  * the dictionary instead, which is what lets one spec exercise every branch in milliseconds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
+import { useCoreStore } from '@guebbit/vue-toolkit';
 import Product from '@/modules/products/views/Product.vue';
 import { useProductsStore } from '@/modules/products/store';
+import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
@@ -112,6 +114,53 @@ describe('the shelf', () => {
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
         expect(wrapper.get('[data-test=product-stock]').text()).not.toContain('Out of stock');
+    });
+
+    it('adds to cart by incrementing a line already there, not resetting it to 1 (FA30)', async () => {
+        signIn();
+        const product = {
+            id: 'p-in-stock',
+            title: 'Available widget',
+            price: 9.99,
+            onHand: 5,
+            reserved: 1,
+            available: 4
+        };
+        const cart = useCartStore();
+        // `POST /cart` SETS a line's quantity — the store already holds 3 of this product, so the
+        // click must send 4, never a bare 1.
+        cart.cart = {
+            items: [{ productId: product.id, quantity: 3 }],
+            summary: { itemsCount: 1, totalQuantity: 3, total: 29.97 }
+        };
+        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(cart.cart);
+
+        const wrapper = mountProduct(product);
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+        await flushPromises();
+
+        expect(upsertSpy).toHaveBeenCalledWith(product.id, 4);
+    });
+
+    it('disables add-to-cart while a cart write is already in flight (FA39)', async () => {
+        signIn();
+        const wrapper = mountProduct({
+            id: 'p-in-stock',
+            title: 'Available widget',
+            price: 9.99,
+            onHand: 5,
+            reserved: 1,
+            available: 4
+        });
+
+        expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
+
+        // The cart store's own `loading` — the flag `upsertCartItem` runs under — not a local
+        // one, so a double-click while the first request is still out cannot fire a second.
+        useCoreStore().setLoading('cart', true);
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
     });
 });
 

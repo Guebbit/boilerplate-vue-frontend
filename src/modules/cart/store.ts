@@ -182,6 +182,15 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
+     * What the local cart becomes once checkout empties it server-side (FA33) — a known state,
+     * not a guess, since the server always empties the cart on a successful checkout.
+     */
+    const EMPTY_CART: CartResponse = {
+        items: [],
+        summary: { itemsCount: 0, totalQuantity: 0, total: 0 }
+    };
+
+    /**
      * Turns the authenticated user's cart into an order.
      *
      * Emits nothing: every checkout outcome the API saw is reported by the backend from the
@@ -193,10 +202,10 @@ export const useCartStore = defineStore('cart', () => {
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
             apiCheckout(checkoutData).then((response) => {
-                /* The server empties the cart on success. The local copy is dropped rather
-                 * than guessed at: this store never invents a payload the API did not send,
-                 * and every getter already reads an unfetched cart as empty. */
-                cart.value = undefined;
+                // The server empties the cart on success (FA33): setting it to the known-empty
+                // shape, rather than dropping it to `undefined`, is what keeps the header badge
+                // from falling back to `summarySeed`'s stale count from before checkout ran.
+                cart.value = EMPTY_CART;
                 return response.data;
             })
         );

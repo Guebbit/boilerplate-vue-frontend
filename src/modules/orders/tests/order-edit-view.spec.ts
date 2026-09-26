@@ -91,26 +91,32 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
  * would — the DETAIL row `detailOrder` names. This exercises `useOrderActionsRefetch` for real
  * rather than seeding the answer directly, which is what would let the latch's own removal pass.
  *
+ * The `fetchOrder` spy is returned alongside the wrapper — spied BEFORE mounting, since the page
+ * destructures its actions off the store at setup time (see the override test's own note) — so a
+ * later action's own forced re-fetch (`runOverride`) can be asserted on too, not just the one
+ * `useOrderActionsRefetch` fires on mount.
+ *
  * @param detailOrder - The shape the forced re-fetch resolves to (carrying `actions`).
- * @returns The mounted wrapper.
+ * @returns The mounted wrapper, and the `fetchOrder` spy driving it.
  */
 const mountFromListCache = (detailOrder: Order) => {
     const orders = useOrdersStore();
     vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopStopHandle);
     orders.addOrder({ ...detailOrder, actions: undefined });
     orders.selectedOrderId = detailOrder.id;
-    vi.spyOn(orders, 'fetchOrder').mockImplementation(() => {
+    const fetchOrder = vi.spyOn(orders, 'fetchOrder').mockImplementation(() => {
         orders.addOrder(detailOrder);
         return Promise.resolve(detailOrder);
     });
 
-    return mount(OrderEdit, {
+    const wrapper = mount(OrderEdit, {
         props: { id: detailOrder.id },
         global: {
             plugins: [router, vuetify, i18n],
             stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
         }
     });
+    return { wrapper, fetchOrder };
 };
 
 beforeEach(() => {
@@ -135,7 +141,7 @@ describe('a list-cache arrival gains actions', () => {
             }
         });
 
-        const wrapper = mountFromListCache(detail);
+        const { wrapper } = mountFromListCache(detail);
 
         // The mount itself proves nothing yet — `actions` only lands once the forced re-fetch's
         // promise resolves and Vue re-renders on it.
@@ -155,7 +161,7 @@ describe('a list-cache arrival gains actions', () => {
             actions: { transitions: [], cancel: false, pay: false }
         });
 
-        const wrapper = mountFromListCache(detail);
+        const { wrapper } = mountFromListCache(detail);
 
         return nextTick()
             .then(() => nextTick())
@@ -178,7 +184,7 @@ describe('the correct-status door', () => {
             actions: { transitions: [OrderStatus.delivered], cancel: true, pay: false }
         });
 
-        const wrapper = mountFromListCache(detail);
+        const { wrapper } = mountFromListCache(detail);
 
         return nextTick()
             .then(() => nextTick())
@@ -201,7 +207,7 @@ describe('the correct-status door', () => {
         const overrideStatus = vi
             .spyOn(useOrdersStore(), 'overrideStatus')
             .mockResolvedValue({ ...detail, status: OrderStatus.delivered });
-        const wrapper = mountFromListCache(detail);
+        const { wrapper, fetchOrder } = mountFromListCache(detail);
 
         return nextTick()
             .then(() => nextTick())
@@ -236,6 +242,11 @@ describe('the correct-status door', () => {
                     OrderStatus.delivered,
                     'carrier scan never arrived'
                 );
+                // A second forced re-fetch beyond the one `useOrderActionsRefetch` already made on
+                // mount: without it, another page's own `watchOrder` cache (Order.vue's, reached
+                // by navigating away from here) would still answer with the pre-override status.
+                expect(fetchOrder).toHaveBeenCalledTimes(2);
+                expect(fetchOrder).toHaveBeenLastCalledWith('o1', { forced: true });
             });
     });
 });
@@ -248,7 +259,7 @@ describe('recording a payment by hand', () => {
             actions: { transitions: [OrderStatus.cancelled], cancel: true, pay: true }
         });
 
-        const wrapper = mountFromListCache(detail);
+        const { wrapper } = mountFromListCache(detail);
 
         return nextTick()
             .then(() => nextTick())
@@ -266,7 +277,7 @@ describe('recording a payment by hand', () => {
             actions: { transitions: [OrderStatus.processing], cancel: true, pay: false }
         });
 
-        const wrapper = mountFromListCache(detail);
+        const { wrapper } = mountFromListCache(detail);
 
         return nextTick()
             .then(() => nextTick())

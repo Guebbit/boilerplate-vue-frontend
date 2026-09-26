@@ -10,21 +10,23 @@
  * it wrote depends on a store surviving a page load — the same discipline as journey.cy.ts.
  */
 /**
- * Moves the order on the edit page one step along its lifecycle.
+ * Corrects the order on the edit page to `label` via the `orders.any.override` door — the only
+ * way onto `processing`: `PUT /orders/:id` carries no `status` field, and shipping itself only
+ * ever moves `processing → shipped`, never `paid → processing`.
  *
- * One step at a time because the select offers only what the API would accept from where the order
- * currently is: `paid → processing → shipped` is three statuses and two moves, and a jump straight
- * to `shipped` is not on the menu because it is not a move anyone may make.
+ * Reachable here because `loginAs` just re-authenticated for real, well inside the override
+ * permission's `stepUp: critical` window — no `ReauthDialog` to answer.
  *
- * @param label - the option to pick, as it reads in the list
- * @param text - what the select should show once it is picked
+ * @param label - the option to pick, as `override-status-select` lists it
  */
-const moveOrderTo = (label: RegExp, text: string) => {
-    cy.get('#order-edit-page [data-test=status-select]').click();
+const correctStatusTo = (label: RegExp) => {
+    cy.get('#order-edit-page [data-test=override-status-select]').click();
     cy.get('.v-overlay__content .v-list-item').contains(label).click();
-    cy.get('#order-edit-page [data-test=status-select]').should('contain.text', text);
-    cy.get('#order-edit-page button[type=submit]').click();
-    cy.contains('Order updated successfully').should('exist');
+    cy.get('#order-edit-page [data-test=override-reason] textarea').type(
+        'E2E: moving the order along so it can be shipped.'
+    );
+    cy.get('#order-edit-page [data-test=button-override]').click();
+    cy.contains('Order status corrected.').should('exist');
 };
 
 describe('Commerce', () => {
@@ -50,11 +52,8 @@ describe('Commerce', () => {
         cy.get('[data-test=shipping-method-express]').click();
         cy.get('[data-test=cart-checkout]').click();
 
-        // ── The order froze the choice ──────────────────────────────────────────────
-        // At least one, not exactly one: this account's seed history carries its own orders
-        // (newest first, so this one — just placed — is still `.first()`).
-        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
-        cy.get('[data-test=row-view]').first().click();
+        // ── Checkout lands straight on the new order's own page ─────────────────────
+        cy.get('#order-target').should('exist');
         cy.get('[data-test=order-shipping]').should('contain.text', 'express');
 
         // ── Pay: the decline first, then the bank challenge, then a method that works ─
@@ -102,10 +101,11 @@ describe('Commerce', () => {
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
         cy.goToCart();
+        cy.get('[data-test=shipping-selector]').should('exist');
+        cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=cart-checkout]').click();
-        // At least one, not exactly one — see the same note in the test above.
-        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
-        cy.get('[data-test=row-view]').first().click();
+        // Checkout lands straight on the new order's own page.
+        cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');
         cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
 
@@ -123,10 +123,9 @@ describe('Commerce', () => {
         cy.get('#order-edit-page').should('exist');
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
-        // `paid → processing` is the ordinary admin move; `processing → shipped` is not — only the
-        // shipment panel's own `POST /delivery/order/{id}/ship` can make it, since the API
-        // restricts that transition to the system actor.
-        moveOrderTo(/processing/i, 'Processing');
+        // `paid → processing` has no ordinary door at all (SH1) — only the override correction
+        // reaches it; `processing → shipped` is the shipment panel's own move, below.
+        correctStatusTo(/processing/i);
 
         // ── Ship it: the shipment panel is the one door for the move ────────────────
         cy.contains('a', 'Back to order details').click();

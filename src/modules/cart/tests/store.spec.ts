@@ -245,7 +245,7 @@ describe('useCartStore', () => {
                     expect(result).toEqual({ order: ORDER });
                 }));
 
-        it('empties the local cart, because the server emptied the real one', () => {
+        it('empties the local cart to a known-zero state, not to undefined (FA33)', () => {
             const store = useCartStore();
 
             return store
@@ -255,9 +255,15 @@ describe('useCartStore', () => {
                     return store.checkout();
                 })
                 .then(() => {
-                    expect(store.cart).toBeUndefined();
+                    // Not `undefined`: that would fall back to `summarySeed`'s stale count from
+                    // before checkout ran, and the header badge would still read the old total.
                     expect(store.cartItems).toEqual([]);
-                    expect(store.cartSummary).toBeUndefined();
+                    expect(store.cartSummary).toEqual({
+                        itemsCount: 0,
+                        totalQuantity: 0,
+                        total: 0
+                    });
+                    expect(store.badgeQuantity).toBe(0);
                 });
         });
 
@@ -294,7 +300,11 @@ describe('useCartStore', () => {
                 .then(() => store.checkout())
                 .then((result) => {
                     expect(result).toEqual({});
-                    expect(store.cart).toBeUndefined();
+                    expect(store.cartSummary).toEqual({
+                        itemsCount: 0,
+                        totalQuantity: 0,
+                        total: 0
+                    });
                 });
         });
     });

@@ -10,6 +10,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
+import { useCoreStore } from '@guebbit/vue-toolkit';
 import Order from '@/modules/orders/views/Order.vue';
 import { useOrdersStore } from '@/modules/orders/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -208,5 +209,20 @@ describe('an order line’s picture', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
 
         expect(wrapper.get('[data-test=lazy-image]').attributes('data-placeholder')).toBe('true');
+    });
+});
+
+describe('the reorder button (FA39)', () => {
+    it("disables on the CART store's own loading, not the orders store's", () => {
+        // `reorder` runs under the cart store's `fetchAny` — a double-click firing it twice is
+        // exactly the bug this guard removes, and the orders store's own `loading` (already
+        // exercised by the invoice/cancel cases above) says nothing about it.
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeUndefined();
+
+        useCoreStore().setLoading('cart', true);
+        return wrapper.vm.$nextTick().then(() => {
+            expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeDefined();
+        });
     });
 });

@@ -10,6 +10,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
+import { useCoreStore } from '@guebbit/vue-toolkit';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
@@ -259,4 +260,22 @@ describe('the checkout refusals', () => {
                 ).toBeUndefined();
             });
     });
+});
+
+describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
+    it('disables both while a cart write is in flight', () =>
+        mountCart().then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.get('[data-test=cart-clear]').attributes('disabled')).toBeUndefined();
+
+            // Both buttons share the cart store's own `loading` — the same flag `checkout` and
+            // `clearCart` run under — so either write in flight has to block the other one too.
+            useCoreStore().setLoading('cart', true);
+            return wrapper.vm.$nextTick().then(() => {
+                expect(
+                    wrapper.get('[data-test=cart-checkout]').attributes('disabled')
+                ).toBeDefined();
+                expect(wrapper.get('[data-test=cart-clear]').attributes('disabled')).toBeDefined();
+            });
+        }));
 });

@@ -39,12 +39,6 @@ const { editing } = defineProps<{
     editing?: Address;
 }>();
 
-/**
- * Fires once a save lands, after the store's book has already been replaced by the response —
- * a caller reading the store's `addresses` in this handler sees the entry that was just saved.
- */
-const emit = defineEmits<{ saved: [] }>();
-
 const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { addAddress, updateAddress } = useAddressesStore();
@@ -168,8 +162,9 @@ watch(open, (isOpen) => {
  * is read as "leave it alone" — clearing one that was set needs an explicit `null`
  * ({@link emptyToNull}), the AUDIT_0924 D17c contract's own way of saying so.
  *
- * @returns Nothing; success is toasted, closes the dialog and emits `saved`; a failure blocks the
- *  dialog in place ({@link saveError}).
+ * @returns Nothing; success is toasted and closes the dialog — both callers read the shared
+ *  address store's own reactive list, so neither needs a `saved` event to react to it; a failure
+ *  blocks the dialog in place ({@link saveError}).
  */
 const handleSave = () =>
     handleSubmit((fields) => {
@@ -192,7 +187,6 @@ const handleSave = () =>
             .then(() => {
                 addMessage(t('profile-page.addresses-saved'));
                 open.value = false;
-                emit('saved');
             })
             .catch((error: unknown) => reportSaveError(error));
     });

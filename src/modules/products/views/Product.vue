@@ -127,9 +127,18 @@ const { addMessage } = useNotificationsStore();
 const { isAuth } = storeToRefs(useSessionStore());
 
 /**
- * Cart store's write action, used by {@link handleAddToCart}.
+ * Cart store instance, used by {@link handleAddToCart} both to write and to read whatever line
+ * the shopper already has for this product — see {@link cart}/{@link cartItems} below.
  */
-const { upsertCartItem } = useCartStore();
+const cartStore = useCartStore();
+
+/**
+ * The loaded cart and its lines, plus whether a cart write is already in flight (FA39's in-flight
+ * guard on add-to-cart). Read off `storeToRefs`, not destructured off the store directly, so
+ * {@link handleAddToCart} sees whatever the shopper's cart holds at click time, not a stale
+ * snapshot taken when this page mounted.
+ */
+const { cart, cartItems, loading: cartLoading } = storeToRefs(cartStore);
 
 /**
  * Wishlist store's actions and selector, used by {@link handleToggleWishlist}.
@@ -166,16 +175,25 @@ const {
 } = useBlockingError();
 
 /**
- * Puts one unit in the cart.
+ * Adds one unit to the cart — an INCREMENT on whatever the line already holds (FA30), fetching
+ * the cart first when this page hasn't loaded it yet. `POST /cart` SETS a line's quantity, so
+ * sending a bare `1` here would reset a line the shopper already has back down to one.
  *
  * @returns Nothing; a failure blocks the button in place ({@link addToCartError}).
  */
 const handleAddToCart = () => {
     if (!currentProduct.value) return;
+    const productId = currentProduct.value.id;
     clearAddToCartError();
-    upsertCartItem(currentProduct.value.id, 1)
+    (cart.value ? Promise.resolve() : cartStore.fetchCart())
+        .then(() => {
+            const existingQuantity = cartItems.value.find(
+                (item) => item.productId === productId
+            )?.quantity;
+            return cartStore.upsertCartItem(productId, (existingQuantity ?? 0) + 1);
+        })
         .then(() => addMessage(t('product-target-page.success-add-to-cart')))
-        .catch((error) => reportAddToCartError(error));
+        .catch((error: unknown) => reportAddToCartError(error));
 };
 
 /**
@@ -253,7 +271,7 @@ onMounted(() => {
                     <v-btn
                         color="primary"
                         data-test="add-to-cart"
-                        :disabled="!isAuth || outOfStock"
+                        :disabled="!isAuth || outOfStock || cartLoading"
                         @click="handleAddToCart"
                     >
                         <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
