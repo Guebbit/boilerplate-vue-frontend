@@ -2,6 +2,9 @@
 
 From a fresh clone to a running storefront: two repos, three commands, no Docker.
 
+Linux, macOS or WSL — several npm scripts run a POSIX shell script directly, so plain Windows
+(cmd.exe or PowerShell without WSL) is not a supported shell here.
+
 The app talks to the paired backend. The lightest way to have one is its **demo profile** — the
 real API booted against an in-memory, seeded database — so the catalogue, the cart and the order
 history all work with nothing installed beyond Node.
