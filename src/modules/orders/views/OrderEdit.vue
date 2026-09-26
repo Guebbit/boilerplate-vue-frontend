@@ -111,6 +111,13 @@ const runOverride = () => {
             overrideTo.value = undefined;
             overrideReason.value = '';
             addMessage(t('order-edit-page.override-done'));
+            // `overrideStatus` already updates this store's own copy of the order — this is for
+            // every OTHER page's `watchOrder`: its per-id query cache still holds the pre-override
+            // fetch, so a plain navigation to the order's own page (edit → detail) would read that
+            // stale status straight back over the fresher one. `forced: true` refreshes the cache
+            // entry itself, not just this component's local copy — same reasoning as `Order.vue`'s
+            // own `@paid`/`@moved` handlers.
+            return fetchOrder(id, { forced: true });
         })
         .catch((error: unknown) => reportOverrideError(error));
 };
