@@ -3,11 +3,20 @@
  * repeated query param (`route.query.continue` then an array) or a protocol-relative one
  * (`//evil.example`, which a browser follows off-site) must fall back to `Home` instead of being
  * handed straight to `router.push`.
+ *
+ * A saved language preference must be applied by ROUTING to it, never by activating the i18n
+ * runtime directly here — `localeChoice` is the one place that loads a locale's dictionary
+ * (bundle plus any edited overrides), and a caller that activates first makes every switch look
+ * like no switch at all to that guard (FA26). Every case below asserts `changeLanguage` was never
+ * called, not only that navigation happened.
  */
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const push = vi.fn(() => Promise.resolve());
 const currentRoute = { query: {} as Record<string, unknown> };
+const changeLanguageMock = vi.fn(() => Promise.resolve());
+/** Mutable so a single test can simulate a signed-in profile with a saved locale. */
+const profileState: { profile: { locale?: string } | undefined } = { profile: undefined };
 
 vi.mock('vue-router', () => ({
     useRoute: () => currentRoute,
@@ -19,7 +28,7 @@ vi.mock('vue-i18n', () => ({
 }));
 
 vi.mock('@/infrastructure/i18n', () => ({
-    changeLanguage: vi.fn(() => Promise.resolve()),
+    changeLanguage: changeLanguageMock,
     supportedLanguages: ['en', 'it']
 }));
 
@@ -28,13 +37,18 @@ vi.mock('@/infrastructure/i18n/router-link.ts', () => ({
 }));
 
 vi.mock('@/modules/account/stores/profile.ts', () => ({
-    useProfileStore: () => ({ profile: undefined })
+    useProfileStore: () => profileState
 }));
 
 const { usePostLoginRedirect } =
     await import('@/modules/account/composables/use-post-login-redirect.ts');
 
 describe('redirectAfterLogin', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        profileState.profile = undefined;
+    });
+
     it('navigates to a same-origin continue path', () => {
         currentRoute.query = { continue: '/cart' };
 
@@ -42,6 +56,7 @@ describe('redirectAfterLogin', () => {
             .redirectAfterLogin()
             .then(() => {
                 expect(push).toHaveBeenCalledWith({ path: '/cart' });
+                expect(changeLanguageMock).not.toHaveBeenCalled();
             });
     });
 
@@ -52,6 +67,53 @@ describe('redirectAfterLogin', () => {
             .redirectAfterLogin()
             .then(() => {
                 expect(push).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
+                expect(changeLanguageMock).not.toHaveBeenCalled();
+            });
+    });
+
+    /**
+     * The regression FA26 fixes: activating the language here, before navigating, made the guard
+     * see no change (the param it compares against was already flipped) and it never fetched the
+     * locale's overrides. Routing with an explicit `params.locale` instead lets `localeChoice` do
+     * that — this only proves the routing half, since the guard itself is `locale-choice.spec.ts`.
+     */
+    it('navigates to Home in the saved language preference, without activating it directly', () => {
+        currentRoute.query = {};
+        profileState.profile = { locale: 'it' };
+
+        return usePostLoginRedirect()
+            .redirectAfterLogin()
+            .then(() => {
+                expect(push).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: 'Home', params: { locale: 'it' } })
+                );
+                expect(changeLanguageMock).not.toHaveBeenCalled();
+            });
+    });
+
+    it('does not touch the locale when the saved preference matches the active one', () => {
+        currentRoute.query = {};
+        profileState.profile = { locale: 'en' };
+
+        return usePostLoginRedirect()
+            .redirectAfterLogin()
+            .then(() => {
+                expect(push).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
+                expect(push).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ params: expect.objectContaining({ locale: 'it' }) })
+                );
+            });
+    });
+
+    it('a ?continue= deep link keeps its own locale over the saved preference', () => {
+        currentRoute.query = { continue: '/it/cart' };
+        profileState.profile = { locale: 'en' };
+
+        return usePostLoginRedirect()
+            .redirectAfterLogin()
+            .then(() => {
+                expect(push).toHaveBeenCalledWith({ path: '/it/cart' });
+                expect(changeLanguageMock).not.toHaveBeenCalled();
             });
     });
 
