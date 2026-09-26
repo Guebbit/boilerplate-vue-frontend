@@ -57,7 +57,14 @@ describe('The customer journey', () => {
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('have.text', stockBeforeBuying);
+        // A callback, not a bare `stockBeforeBuying` argument: `.should('have.text', value)` reads
+        // `value` when this LINE runs — Cypress queues the whole test body synchronously before any
+        // command actually executes — which is before the `.then()` above has assigned it. A
+        // callback is invoked lazily, once Cypress actually runs this command, by which point the
+        // assignment has landed.
+        cy.get('[data-test=product-stock]').should(($stock) => {
+            expect($stock.text()).to.equal(stockBeforeBuying);
+        });
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
@@ -65,13 +72,12 @@ describe('The customer journey', () => {
         // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
         // the line just added is the whole cart.
         cy.get('[data-test=cart-item]').should('have.length', 1);
+        cy.get('[data-test=shipping-selector]').should('exist');
+        cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=cart-checkout]').click();
 
-        // Checkout lands on the orders list; scoped to the customer, it holds the order just
-        // placed, newest first — this account's other seeded orders are older (one soft-deleted
-        // and not shown at all), so `.first()` below is still the one just placed.
-        cy.get('#orders-list-page').should('exist');
-        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
+        // Checkout lands straight on the new order's own page.
+        cy.get('#order-target').should('exist');
 
         // The confirmation email lists what was bought — read from the outbox the way a customer
         // reads their inbox. Both cart lines are on it: the seeded one and the one added above.
@@ -80,14 +86,12 @@ describe('The customer journey', () => {
             if (liveProfile === true) return;
             cy.emailTo('customer@example.com').then((email) => {
                 // The outbox records template variables; the line items are structured data the
-                // orders page below asserts far more precisely than a variable dump could.
+                // order page below asserts far more precisely than a variable dump could.
                 expectMailTemplate(email, 'orders.order-confirm');
             });
         });
 
-        // ── Cancel it, from the order's own page ────────────────────────────────────
-        cy.get('[data-test=row-view]').first().click();
-        cy.get('#order-target').should('exist');
+        // ── Cancel it, from the order's own page (already there) ────────────────────
         cy.get('[data-test=order-cancel]').click();
         // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.
         cy.get('[data-test=app-dialog-confirm]').click();
@@ -109,6 +113,9 @@ describe('The customer journey', () => {
         // on whatever the unfiltered list re-rendered underneath it.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('have.text', stockBeforeBuying);
+        // Same closure trap as above — deferred, not a bare argument captured at queue time.
+        cy.get('[data-test=product-stock]').should(($stock) => {
+            expect($stock.text()).to.equal(stockBeforeBuying);
+        });
     });
 });
