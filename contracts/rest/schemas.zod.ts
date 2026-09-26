@@ -3299,6 +3299,39 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .boolean()
                             .describe(
                                 "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                            ),
+                        start: zod
+                            .boolean()
+                            .describe(
+                                "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                            ),
+                        ship: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        deliver: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        override: zod
+                            .array(
+                                zod
+                                    .enum([
+                                        'pending',
+                                        'paid',
+                                        'processing',
+                                        'shipped',
+                                        'delivered',
+                                        'cancelled'
+                                    ])
+                                    .describe(
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                                    )
+                            )
+                            .describe(
+                                'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                             )
                     })
                     .optional()
@@ -6495,6 +6528,39 @@ export const CheckoutResponse = zod.strictObject({
                         .boolean()
                         .describe(
                             "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                        ),
+                    start: zod
+                        .boolean()
+                        .describe(
+                            "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                        ),
+                    ship: zod
+                        .boolean()
+                        .describe(
+                            'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        ),
+                    deliver: zod
+                        .boolean()
+                        .describe(
+                            'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        ),
+                    override: zod
+                        .array(
+                            zod
+                                .enum([
+                                    'pending',
+                                    'paid',
+                                    'processing',
+                                    'shipped',
+                                    'delivered',
+                                    'cancelled'
+                                ])
+                                .describe(
+                                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                                )
+                        )
+                        .describe(
+                            'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                         )
                 })
                 .optional()
@@ -6963,6 +7029,39 @@ export const ListOrdersResponse = zod.strictObject({
                             .boolean()
                             .describe(
                                 "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                            ),
+                        start: zod
+                            .boolean()
+                            .describe(
+                                "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                            ),
+                        ship: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        deliver: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        override: zod
+                            .array(
+                                zod
+                                    .enum([
+                                        'pending',
+                                        'paid',
+                                        'processing',
+                                        'shipped',
+                                        'delivered',
+                                        'cancelled'
+                                    ])
+                                    .describe(
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                                    )
+                            )
+                            .describe(
+                                'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                             )
                     })
                     .optional()
@@ -7290,6 +7389,39 @@ export const CreateOrderResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -7660,6 +7792,39 @@ export const SearchOrdersResponse = zod.strictObject({
                             .boolean()
                             .describe(
                                 "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                            ),
+                        start: zod
+                            .boolean()
+                            .describe(
+                                "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                            ),
+                        ship: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        deliver: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        override: zod
+                            .array(
+                                zod
+                                    .enum([
+                                        'pending',
+                                        'paid',
+                                        'processing',
+                                        'shipped',
+                                        'delivered',
+                                        'cancelled'
+                                    ])
+                                    .describe(
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                                    )
+                            )
+                            .describe(
+                                'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                             )
                     })
                     .optional()
@@ -7960,6 +8125,39 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -7973,7 +8171,330 @@ export const GetOrderByIdResponse = zod.strictObject({
 });
 
 /**
- * Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * @summary Replace order
+ */
+export const ReplaceOrderByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const ReplaceOrderByIdBody = zod.strictObject({
+    email: zod.email()
+});
+
+export const replaceOrderByIdResponseDataItemsItemProductPriceMin = 0;
+
+export const replaceOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
+export const replaceOrderByIdResponseDataItemsItemProductWeightMin = 0;
+
+export const replaceOrderByIdResponseDataItemsItemProductTaxRateMin = 0;
+export const replaceOrderByIdResponseDataItemsItemProductTaxRateMax = 1;
+
+export const replaceOrderByIdResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const replaceOrderByIdResponseDataItemsItemTaxAmountMin = 0;
+
+export const replaceOrderByIdResponseDataItemsItemNetAmountMin = 0;
+
+export const replaceOrderByIdResponseDataTotalItemsMin = 0;
+
+export const replaceOrderByIdResponseDataTotalQuantityMin = 0;
+
+export const replaceOrderByIdResponseDataTotalPriceMin = 0;
+
+export const replaceOrderByIdResponseDataNetTotalMin = 0;
+
+export const replaceOrderByIdResponseDataTaxTotalMin = 0;
+
+export const replaceOrderByIdResponseDataShippingNetAmountMin = 0;
+
+export const replaceOrderByIdResponseDataShippingTaxAmountMin = 0;
+
+export const replaceOrderByIdResponseDataTaxSummaryItemRateMin = 0;
+
+export const replaceOrderByIdResponseDataTaxSummaryItemNetAmountMin = 0;
+
+export const replaceOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
+
+export const replaceOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
+
+export const replaceOrderByIdResponseDataShippingCostMin = 0;
+
+export const ReplaceOrderByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    title: zod.string(),
+                    price: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            replaceOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    weight: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataItemsItemProductTaxRateMin)
+                        .max(replaceOrderByIdResponseDataItemsItemProductTaxRateMax)
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        )
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(replaceOrderByIdResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `\'\'` is never a synonym for \"no image\" — only `null` is, on a field that allows it.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(replaceOrderByIdResponseDataItemsItemTaxAmountMin)
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(replaceOrderByIdResponseDataItemsItemNetAmountMin)
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
+                    )
+            })
+        ),
+        totalItems: zod
+            .number()
+            .min(replaceOrderByIdResponseDataTotalItemsMin)
+            .describe(
+                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+            ),
+        totalQuantity: zod
+            .number()
+            .min(replaceOrderByIdResponseDataTotalQuantityMin)
+            .describe('Sum of `quantity` across every line item.'),
+        totalPrice: zod
+            .number()
+            .min(replaceOrderByIdResponseDataTotalPriceMin)
+            .describe(
+                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(replaceOrderByIdResponseDataNetTotalMin)
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
+            ),
+        taxTotal: zod
+            .number()
+            .min(replaceOrderByIdResponseDataTaxTotalMin)
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+            ),
+        shippingNetAmount: zod
+            .number()
+            .min(replaceOrderByIdResponseDataShippingNetAmountMin)
+            .describe(
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
+            ),
+        shippingTaxAmount: zod
+            .number()
+            .min(replaceOrderByIdResponseDataShippingTaxAmountMin)
+            .describe(
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
+            ),
+        taxSummary: zod
+            .array(
+                zod.strictObject({
+                    rate: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataTaxSummaryItemRateMin)
+                        .describe(
+                            'The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.'
+                        ),
+                    netAmount: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataTaxSummaryItemNetAmountMin),
+                    taxAmount: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataTaxSummaryItemTaxAmountMin),
+                    grossAmount: zod
+                        .number()
+                        .min(replaceOrderByIdResponseDataTaxSummaryItemGrossAmountMin)
+                        .describe('`netAmount + taxAmount`, not re-derived from a price.')
+                })
+            )
+            .describe(
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
+            ),
+        notes: zod.string().optional().describe('Optional order notes'),
+        shippingMethod: zod
+            .string()
+            .optional()
+            .describe(
+                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+            ),
+        shippingCost: zod
+            .number()
+            .min(replaceOrderByIdResponseDataShippingCostMin)
+            .optional()
+            .describe(
+                'What that method cost at checkout time — a later rate change cannot re-price history.'
+            ),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
+                    )
+            })
+            .optional(),
+        status: zod
+            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            .describe(
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+            ),
+        actions: zod
+            .strictObject({
+                transitions: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                    ),
+                cancel: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                    ),
+                pay: zod
+                    .boolean()
+                    .describe(
+                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const UpdateOrderByIdParams = zod.strictObject({
@@ -8250,6 +8771,39 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -8565,6 +9119,39 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -8880,6 +9467,39 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -9183,6 +9803,39 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -9737,6 +10390,39 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .boolean()
                     .describe(
                         "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
                     )
             })
             .optional()
@@ -10397,6 +11083,325 @@ export const GetShipmentByOrderResponse = zod.strictObject({
         deliveredAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * Reports that fulfilment has started — the order moves `paid → processing`. No parcel exists yet at this point; that comes later, at `POST /delivery/order/{orderId}/ship`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * @summary Begin fulfilling a paid order
+ */
+export const StartFulfilmentParams = zod.strictObject({
+    orderId: zod.string().describe('The order to start fulfilling')
+});
+
+export const startFulfilmentResponseDataItemsItemProductPriceMin = 0;
+
+export const startFulfilmentResponseDataItemsItemProductRequiresShippingDefault = true;
+export const startFulfilmentResponseDataItemsItemProductWeightMin = 0;
+
+export const startFulfilmentResponseDataItemsItemProductTaxRateMin = 0;
+export const startFulfilmentResponseDataItemsItemProductTaxRateMax = 1;
+
+export const startFulfilmentResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const startFulfilmentResponseDataItemsItemTaxAmountMin = 0;
+
+export const startFulfilmentResponseDataItemsItemNetAmountMin = 0;
+
+export const startFulfilmentResponseDataTotalItemsMin = 0;
+
+export const startFulfilmentResponseDataTotalQuantityMin = 0;
+
+export const startFulfilmentResponseDataTotalPriceMin = 0;
+
+export const startFulfilmentResponseDataNetTotalMin = 0;
+
+export const startFulfilmentResponseDataTaxTotalMin = 0;
+
+export const startFulfilmentResponseDataShippingNetAmountMin = 0;
+
+export const startFulfilmentResponseDataShippingTaxAmountMin = 0;
+
+export const startFulfilmentResponseDataTaxSummaryItemRateMin = 0;
+
+export const startFulfilmentResponseDataTaxSummaryItemNetAmountMin = 0;
+
+export const startFulfilmentResponseDataTaxSummaryItemTaxAmountMin = 0;
+
+export const startFulfilmentResponseDataTaxSummaryItemGrossAmountMin = 0;
+
+export const startFulfilmentResponseDataShippingCostMin = 0;
+
+export const StartFulfilmentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    title: zod.string(),
+                    price: zod
+                        .number()
+                        .min(startFulfilmentResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            startFulfilmentResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    weight: zod
+                        .number()
+                        .min(startFulfilmentResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(startFulfilmentResponseDataItemsItemProductTaxRateMin)
+                        .max(startFulfilmentResponseDataItemsItemProductTaxRateMax)
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        )
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(startFulfilmentResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `\'\'` is never a synonym for \"no image\" — only `null` is, on a field that allows it.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(startFulfilmentResponseDataItemsItemTaxAmountMin)
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(startFulfilmentResponseDataItemsItemNetAmountMin)
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
+                    )
+            })
+        ),
+        totalItems: zod
+            .number()
+            .min(startFulfilmentResponseDataTotalItemsMin)
+            .describe(
+                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+            ),
+        totalQuantity: zod
+            .number()
+            .min(startFulfilmentResponseDataTotalQuantityMin)
+            .describe('Sum of `quantity` across every line item.'),
+        totalPrice: zod
+            .number()
+            .min(startFulfilmentResponseDataTotalPriceMin)
+            .describe(
+                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(startFulfilmentResponseDataNetTotalMin)
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
+            ),
+        taxTotal: zod
+            .number()
+            .min(startFulfilmentResponseDataTaxTotalMin)
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+            ),
+        shippingNetAmount: zod
+            .number()
+            .min(startFulfilmentResponseDataShippingNetAmountMin)
+            .describe(
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
+            ),
+        shippingTaxAmount: zod
+            .number()
+            .min(startFulfilmentResponseDataShippingTaxAmountMin)
+            .describe(
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
+            ),
+        taxSummary: zod
+            .array(
+                zod.strictObject({
+                    rate: zod
+                        .number()
+                        .min(startFulfilmentResponseDataTaxSummaryItemRateMin)
+                        .describe(
+                            'The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.'
+                        ),
+                    netAmount: zod
+                        .number()
+                        .min(startFulfilmentResponseDataTaxSummaryItemNetAmountMin),
+                    taxAmount: zod
+                        .number()
+                        .min(startFulfilmentResponseDataTaxSummaryItemTaxAmountMin),
+                    grossAmount: zod
+                        .number()
+                        .min(startFulfilmentResponseDataTaxSummaryItemGrossAmountMin)
+                        .describe('`netAmount + taxAmount`, not re-derived from a price.')
+                })
+            )
+            .describe(
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
+            ),
+        notes: zod.string().optional().describe('Optional order notes'),
+        shippingMethod: zod
+            .string()
+            .optional()
+            .describe(
+                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+            ),
+        shippingCost: zod
+            .number()
+            .min(startFulfilmentResponseDataShippingCostMin)
+            .optional()
+            .describe(
+                'What that method cost at checkout time — a later rate change cannot re-price history.'
+            ),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        invoiceNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
+                    )
+            })
+            .optional(),
+        status: zod
+            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            .describe(
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+            ),
+        actions: zod
+            .strictObject({
+                transitions: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                    ),
+                cancel: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                    ),
+                pay: zod
+                    .boolean()
+                    .describe(
+                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 

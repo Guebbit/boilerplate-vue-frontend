@@ -8,9 +8,9 @@ export default {
 /**
  * @module
  * Single-file component: `<script setup>` wires session/delivery-store state, the template
- * renders one of three states off the order's own status and shipment — not yet shippable,
- * ready to ship, or in transit/arrived — with the tracking-code field gated on the chosen
- * method's `tracked` flag, read live from the methods list.
+ * renders one of four states off the order's own status and shipment — not yet started, not yet
+ * shippable, ready to ship, or in transit/arrived — with the tracking-code field gated on the
+ * chosen method's `tracked` flag, read live from the methods list.
  */
 
 import { computed, onMounted, ref } from 'vue';
@@ -25,7 +25,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 /**
  * The order page's shipping corner: recording a handover and an arrival, one order at a time.
  */
-const { orderId, orderStatus, shippingMethodId } = defineProps<{
+const { orderId, orderStatus, shippingMethodId, canStart } = defineProps<{
     /**
      * The order whose parcel this shows.
      */
@@ -39,6 +39,13 @@ const { orderId, orderStatus, shippingMethodId } = defineProps<{
      * whether a tracking code is required.
      */
     shippingMethodId?: string;
+    /**
+     * The order's own `actions.start` — whether `POST /delivery/order/{id}/start` would be
+     * accepted right now. The server's answer, not re-derived here: unlike ship/deliver's
+     * `processing`/`shipped` gate, who may start fulfilment (`delivery.any.start`) is a different
+     * key than who may write a shipment (`delivery.any.update`).
+     */
+    canStart?: boolean;
 }>();
 
 /**
@@ -156,6 +163,22 @@ const {
 } = useBlockingError();
 
 /**
+ * Reports that fulfilment has started, then re-reads the order.
+ *
+ * @returns A promise resolving once the panel has refreshed.
+ */
+const markStarted = () => {
+    clearShipmentError();
+    return deliveryStore
+        .start(orderId)
+        .then(() => {
+            addMessage(t('shipment-panel.started'));
+            emit('moved');
+        })
+        .catch((error: unknown) => reportShipmentError(error));
+};
+
+/**
  * Records the handover, then re-reads the order.
  *
  * @returns A promise resolving once the panel has refreshed.
@@ -204,7 +227,22 @@ onMounted(() => {
 
         <InlineErrorAlert :message="shipmentError" class="mb-3" test-id="shipment-panel-error" />
 
-        <template v-if="shipment">
+        <template v-if="!shipment && canStart">
+            <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.not-started-yet') }}</p>
+            <v-btn
+                class="mt-1"
+                color="primary"
+                variant="tonal"
+                size="small"
+                data-test="mark-started"
+                :disabled="loading"
+                @click="markStarted"
+            >
+                {{ t('shipment-panel.button-start') }}
+            </v-btn>
+        </template>
+
+        <template v-else-if="shipment">
             <div class="flex items-center gap-3">
                 <v-chip
                     :color="shipment.status === 'delivered' ? 'success' : 'info'"

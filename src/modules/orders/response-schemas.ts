@@ -25,7 +25,8 @@ export const ordersResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetOrderInvoiceResponse
     },
     { method: 'GET', pattern: /^\/orders\/[^/]+$/, schema: schemas.GetOrderByIdResponse },
-    { method: 'PUT', pattern: /^\/orders\/[^/]+$/, schema: schemas.UpdateOrderByIdResponse },
+    { method: 'PUT', pattern: /^\/orders\/[^/]+$/, schema: schemas.ReplaceOrderByIdResponse },
+    { method: 'PATCH', pattern: /^\/orders\/[^/]+$/, schema: schemas.UpdateOrderByIdResponse },
     { method: 'DELETE', pattern: /^\/orders\/[^/]+$/, schema: schemas.DeleteOrderByIdResponse },
     {
         method: 'DELETE',

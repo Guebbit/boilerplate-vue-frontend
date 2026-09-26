@@ -71,6 +71,21 @@ beforeEach(() => {
             orderId: 'order-1',
             trackingCode: 'TRK-1',
             status: 'delivered'
+        }),
+        'POST /delivery/order/order-3/start': orvalEnvelope({
+            id: 'order-3',
+            userId: 'u1',
+            email: 'shopper@example.com',
+            items: [],
+            totalItems: 0,
+            totalQuantity: 0,
+            totalPrice: 0,
+            netTotal: 0,
+            taxTotal: 0,
+            shippingNetAmount: 0,
+            shippingTaxAmount: 0,
+            taxSummary: [],
+            status: 'processing'
         })
     };
 });
@@ -142,6 +157,16 @@ describe('fetchShipmentForOrder', () => {
         const store = useDeliveryStore();
         return expect(store.fetchShipmentForOrder('order-1')).rejects.toMatchObject({
             status: 500
+        });
+    });
+});
+
+describe('start', () => {
+    it('resolves once fulfilment starts, without touching `shipment` — this module owns no order data', () => {
+        const store = useDeliveryStore();
+        return store.start('order-3').then((result) => {
+            expect(result).toBeUndefined();
+            expect(store.shipment).toBeUndefined();
         });
     });
 });

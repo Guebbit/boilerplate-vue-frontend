@@ -295,6 +295,11 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
 /**
  * Validates the form and persists the order changes.
  *
+ * Sends `email` only when it actually differs from the loaded record — an unconditional resend
+ * is a no-op on the server (`orders/services/crud.ts`'s `update` merges it either way), but it
+ * still writes the document and audits `ORDER_UPDATED` every time staff opens and saves the form
+ * without touching anything, the same "diff against the hydrated record" rule D17d adopted for
+ * the account form.
  * @returns A promise resolving once the flow settles: a success toast, or the
  *  revealed validation errors when the input is invalid. An API failure blocks the form in
  *  place ({@link formError}). A missing route id is a no-op.
@@ -303,9 +308,10 @@ const submitForm = () => {
     clearFormError();
     return handleSubmit(() => {
         if (!id) return;
-        return updateOrder(id, {
-            email: form.value.email || undefined
-        }).then(() => {
+        const email = form.value.email || undefined;
+        const changes = email === currentOrder.value?.email ? {} : { email };
+
+        return updateOrder(id, changes).then(() => {
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {
@@ -368,6 +374,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 >
                     <v-text-field
                         v-model="form.email"
+                        data-test="order-edit-email"
                         type="email"
                         :label="t('order-edit-page.label-email')"
                         :error-messages="showFormErrors ? formErrors.email : []"

@@ -90,7 +90,15 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     shippingNetAmount: 0,
     shippingTaxAmount: 0,
     taxSummary: [],
-    actions: { transitions: [], cancel: false, pay: false }
+    actions: {
+        transitions: [],
+        cancel: false,
+        pay: false,
+        start: false,
+        ship: false,
+        deliver: false,
+        override: []
+    }
 };
 
 beforeEach(() => {
