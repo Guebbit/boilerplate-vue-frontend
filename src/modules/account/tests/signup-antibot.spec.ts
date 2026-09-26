@@ -113,11 +113,7 @@ beforeEach(() => {
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com'
-        }),
-        // Typing the password debounces a breach check (`use-password-breach-check.ts`) that this
-        // test doesn't otherwise care about — without a fixture, the debounce's trailing edge can
-        // fire after the test's own assertions, hitting `parseOrvalFixture` with no matching entry.
-        'POST /account/password/check': orvalEnvelope({ breached: false })
+        })
     };
     return loadLocale('en');
 });
@@ -128,6 +124,11 @@ describe('Signup — the antibot header', () => {
 
         return fillAndSubmit(wrapper).then(() => {
             expect(signupRequest()?.headers?.['x-antibot-challenge-token']).toBe(SOLVED_TOKEN);
+            // Typing the password above queued a breach check this spec doesn't otherwise care
+            // about; without unmounting, its real 500ms debounce fires later — after this test's
+            // own assertions, sometimes mid-way through a LATER spec — and needs a fixture this
+            // one has no reason to carry. Unmounting cancels it (the very fix under test).
+            wrapper.unmount();
         });
     });
 });

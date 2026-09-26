@@ -5,7 +5,7 @@
  * what this endpoint answered. Shared by `Signup.vue`, `ProfilePasswordChange.vue` and
  * `PasswordResetConfirm.vue`, the three forms that ask for a brand-new password.
  */
-import { ref } from 'vue';
+import { onScopeDispose, ref } from 'vue';
 import { debounce } from 'lodash-es';
 import { checkPasswordBreached } from '@api';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
@@ -74,6 +74,10 @@ export const usePasswordBreachCheck = (delayMs = 500) => {
         }
         send(password);
     };
+
+    // Leaving the form within `delayMs` (Signup, reset-confirm, the password panel) must not
+    // still fire the trailing edge and POST the typed password after the caller is gone.
+    onScopeDispose(() => send.cancel());
 
     return { breached, checking, check };
 };
