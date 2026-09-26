@@ -51,13 +51,19 @@ Which languages the app offers is not configured here. `src/locales/*.json` is t
 
 ## API and realtime
 
-| Variable                  | Purpose                                                                                                                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_URL`            | Backend API base URL                                                                                                                                                             |
-| `VITE_API_SSE`            | SSE URL for the realtime observability stream                                                                                                                                    |
-| `VITE_AXIOS_TIMEOUT`      | Axios timeout in ms                                                                                                                                                              |
-| `VITE_MAX_UPLOAD_BYTES`   | Client-side upload ceiling. A UX affordance only — the server re-checks                                                                                                          |
-| `VITE_VALIDATE_RESPONSES` | Validate every REST response and SSE frame against its generated contract schema. Unset means ON, production included (`false` turns it off); only the unit tests default to off |
+| Variable                  | Purpose                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`            | Backend API base URL                                                                                                                                                                                                                                                                                                                                                          |
+| `VITE_API_SSE`            | SSE URL for the realtime observability stream                                                                                                                                                                                                                                                                                                                                 |
+| `VITE_AXIOS_TIMEOUT`      | Axios timeout in ms                                                                                                                                                                                                                                                                                                                                                           |
+| `VITE_MAX_UPLOAD_BYTES`   | Client-side upload ceiling. A UX affordance only — the server re-checks                                                                                                                                                                                                                                                                                                       |
+| `VITE_VALIDATE_RESPONSES` | Validate every REST response and SSE frame against its generated contract schema. Unset means ON everywhere but the unit tests, which default to off. In production the validation is always **report-only**: unknown keys are stripped, and a mismatch reports to Faro without rejecting the call — the flag never re-enables a blocking outage there, whatever it is set to |
+
+Deploy order for a contract change: the backend adds a field additively (never removes or
+retypes one without a version bump this pair doesn't have yet), ships first, and the frontend
+redeploys whenever it likes after that — production's report-only validation above is exactly
+what makes that gap safe to leave open for a while, rather than a race the two deploys have to win
+together.
 
 ## Logging
 

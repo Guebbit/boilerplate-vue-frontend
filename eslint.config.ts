@@ -15,13 +15,9 @@ import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 
 /**
- * Which siblings a module may reach at all, hand-maintained rather than declared per module.
- *
- * This used to be a `dependsOn` field on each module's manifest — a typed `{ module, as, because }`
- * edge array — reconciled against real imports by a cross-cutting spec. It is gone: nothing read it
- * at runtime, and what it genuinely bought (a new cross-module coupling being a deliberate edit
- * rather than a one-line import nobody questions) is bought here instead, at the offending import.
- * See `docs/theory/strategic-ddd.md` §2.
+ * Which siblings a module may reach at all, hand-maintained rather than declared per module —
+ * a new cross-module coupling is a deliberate edit here, rather than a one-line import nobody
+ * questions. See `docs/theory/strategic-ddd.md` §2.
  *
  * The WHY for each edge — what is reached, and what kind of relationship it is
  * (conformist/customer-supplier/published-language) — is prose in the docblock at the top of the
@@ -350,7 +346,10 @@ const vueSfcConventionRules = {
     'vue/script-indent': 'off',
     'vue/multi-word-component-names': 'off',
     'vue/require-default-prop': 'off',
-    'vue/no-v-html': 'off',
+    // `docs/theory/web-attack-defences.md`'s XSS row rests on "no v-html in src/" — this is what
+    // makes that true rather than a claim nothing enforces. A future use gets a line disable next
+    // to whatever sanitiser justifies it.
+    'vue/no-v-html': 'error',
     'vue/block-order': ['error', { order: ['script', 'template', 'style'] }]
 };
 

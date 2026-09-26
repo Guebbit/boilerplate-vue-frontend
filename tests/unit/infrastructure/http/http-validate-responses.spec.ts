@@ -189,6 +189,56 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    it('report-only (PROD): strips an undeclared field and resolves instead of rejecting', () => {
+        server.use(
+            http.get(`${API}/account`, () =>
+                HttpResponse.json({
+                    success: true,
+                    status: 200,
+                    message: 'ok',
+                    data: {
+                        id: '1',
+                        email: 'a@b.com',
+                        username: 'alice',
+                        passwordHash: 'should-never-be-serialized'
+                    }
+                })
+            )
+        );
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        vi.stubEnv('PROD', true);
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
+                data: { id: '1', email: 'a@b.com', username: 'alice' }
+            })
+        );
+    });
+
+    it('report-only (PROD): a genuinely missing field still reports to Faro but resolves', () => {
+        server.use(
+            http.get(`${API}/account`, () =>
+                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
+            )
+        );
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        vi.stubEnv('PROD', true);
+        const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
+                    data: { id: '1' }
+                })
+            )
+            .then(() => {
+                expect(captureException).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        message: expect.stringContaining('does not match the OpenAPI schema')
+                    })
+                );
+            });
+    });
+
     it('fails open (warns, does not throw) for a route absent from the schema map', () => {
         server.use(
             http.get(`${API}/not-a-real-route`, () => HttpResponse.json({ anything: 'goes' }))
