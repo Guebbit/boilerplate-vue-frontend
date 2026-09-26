@@ -51,6 +51,14 @@ export const useLineQuantity = (
     const senders = new Map<string, ReturnType<typeof debounce<() => void>>>();
 
     /**
+     * The request a line's debounced sender currently has in flight, if any (FA34) — what
+     * {@link settle} awaits after flushing. `flushPending` alone fires the requests but does not
+     * wait for them, which is what let a late step land after checkout had already read the cart
+     * as empty and cleared it.
+     */
+    const inFlight = new Map<string, Promise<void>>();
+
+    /**
      * Drops a line's pending entry without touching its timer.
      */
     const forgetPending = (productId: string) => {
@@ -77,7 +85,7 @@ export const useLineQuantity = (
         const send = debounce(() => {
             const quantity = pending.value[productId];
             if (quantity === undefined) return;
-            update(productId, quantity)
+            const request = update(productId, quantity)
                 .catch(onError)
                 .finally(() => {
                     /*
@@ -86,7 +94,12 @@ export const useLineQuantity = (
                      * — the debounce losing the very data it was added to protect.
                      */
                     if (pending.value[productId] === quantity) forgetPending(productId);
-                });
+                    inFlight.delete(productId);
+                })
+                // `update`'s own resolved value is not this composable's to know — only whether
+                // the request has settled, which is all `settle()` needs.
+                .then(() => undefined);
+            inFlight.set(productId, request);
         }, delayMs);
 
         senders.set(productId, send);
@@ -130,5 +143,33 @@ export const useLineQuantity = (
         for (const send of senders.values()) send.flush();
     };
 
-    return { quantityOf, stepQuantity, forget, flushPending };
+    /**
+     * Forgets every line's pending step: cancels every timer and drops the whole map (FA34).
+     *
+     * For "Clear cart" — a queued step for a line the clear is about to wipe would otherwise fire
+     * afterward and put that line back into a cart the visitor just emptied.
+     */
+    const forgetAll = () => {
+        for (const send of senders.values()) send.cancel();
+        pending.value = {};
+    };
+
+    /**
+     * Flushes every outstanding step and waits for each one's request to actually land (FA34) —
+     * unlike {@link flushPending}, which fires them but does not wait.
+     *
+     * For checkout: reading the cart, then emptying it, then navigating away all have to happen
+     * AFTER any step still in the debounce window, or that step either lands on a cart the server
+     * already emptied (recreating a ghost line) or the server sees lines the visitor's last click
+     * never intended.
+     *
+     * @returns A promise resolving once every in-flight request has settled, success or reported
+     *  failure alike.
+     */
+    const settle = (): Promise<void> => {
+        flushPending();
+        return Promise.all(inFlight.values()).then(() => undefined);
+    };
+
+    return { quantityOf, stepQuantity, forget, forgetAll, flushPending, settle };
 };

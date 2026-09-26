@@ -63,9 +63,11 @@ const {
 } = useCartStore();
 
 /**
- * Cart store state, reactive.
+ * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear (FA39): both
+ * write endpoints, so a double-click before the first request answers must not fire a second one.
  */
-const { cartItems, cartSummary, basketWeight, needsShipping } = storeToRefs(useCartStore());
+const { cartItems, cartSummary, basketWeight, needsShipping, loading } =
+    storeToRefs(useCartStore());
 
 /**
  * The chosen shipping method — optional, exactly as the API treats it.
@@ -131,10 +133,8 @@ const {
 } = useBlockingError();
 
 /**
- * Places an order from the current cart.
- *
- * The store empties the local cart on success, so this only has to say so and move on — no
- * reload, and no reaching into another module's store for an endpoint that is this one's.
+ * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
+ * in the debounce window.
  *
  * See `docs/modules/cart-checkout.md` §"The four refusals, and why they are shaped differently"
  * for what each `classifyCheckoutError` branch below answers and why: `CART_CHANGED` means the
@@ -145,15 +145,17 @@ const {
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
  *  order's own page, or the refusal-specific handling below.
  */
-const checkout = () => {
-    insufficientStockLines.value = [];
-    unavailableLines.value = [];
-    clearCheckoutError();
-    return placeOrder({
+const runCheckout = () =>
+    placeOrder({
         ...(shippingMethodId.value === undefined
             ? {}
             : { shippingMethodId: shippingMethodId.value }),
-        ...(addressId.value === undefined ? {} : { addressId: addressId.value }),
+        // Only when the chosen method actually needs one: the picker unmounts on pickup but
+        // leaves `addressId` holding its last value, and the backend now refuses an address
+        // paired with a method that can't use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
+        ...(shippingMethodRequiresAddress.value && addressId.value !== undefined
+            ? { addressId: addressId.value }
+            : {}),
         ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
         ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
@@ -199,6 +201,21 @@ const checkout = () => {
             }
             reportCheckoutError(error);
         });
+
+/**
+ * Places an order from the current cart.
+ *
+ * Awaits {@link settle} first (FA34): a line-quantity step still in the debounce window when
+ * checkout reads the cart could otherwise land after the server already emptied it, either
+ * re-creating a line in an already-completed order's aftermath or racing the read itself.
+ *
+ * @returns Same as {@link runCheckout}.
+ */
+const checkout = () => {
+    insufficientStockLines.value = [];
+    unavailableLines.value = [];
+    clearCheckoutError();
+    return settle().then(runCheckout);
 };
 
 /**
@@ -217,7 +234,7 @@ const {
  * number the visitor stopped on — rather than three racing requests whose last answer wins. The
  * reason that mattered, and why the delay is invisible, is in the composable.
  */
-const { quantityOf, stepQuantity, forget, flushPending } = useLineQuantity(
+const { quantityOf, stepQuantity, forget, forgetAll, flushPending, settle } = useLineQuantity(
     updateCartItem,
     (error: unknown) => reportLineActionError(error)
 );
@@ -241,6 +258,19 @@ const removeLine = (productId: string) => {
     forget(productId);
     clearLineActionError();
     return removeCartItem(productId).catch((error: unknown) => reportLineActionError(error));
+};
+
+/**
+ * Empties the whole cart, forgetting every line's pending step first (FA34): a queued step for a
+ * line this is about to wipe would otherwise fire afterward and put that line back.
+ *
+ * @returns A promise resolving once the clear settles; a failure blocks the line actions in place
+ *  ({@link lineActionError}).
+ */
+const handleClearCart = () => {
+    forgetAll();
+    clearLineActionError();
+    return clearCart().catch((error: unknown) => reportLineActionError(error));
 };
 
 onBeforeUnmount(flushPending);
@@ -431,7 +461,7 @@ onMounted(() =>
                         block
                         class="mt-4"
                         data-test="cart-checkout"
-                        :disabled="!canCheckout"
+                        :disabled="!canCheckout || loading"
                         @click="checkout"
                     >
                         {{ t('cart-page.button-checkout') }}
@@ -446,7 +476,8 @@ onMounted(() =>
                         block
                         class="mt-2"
                         data-test="cart-clear"
-                        @click="clearCart()"
+                        :disabled="loading"
+                        @click="handleClearCart"
                     >
                         {{ t('cart-page.button-clear') }}
                     </v-btn>

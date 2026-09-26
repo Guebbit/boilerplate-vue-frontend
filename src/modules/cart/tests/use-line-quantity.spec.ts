@@ -179,3 +179,45 @@ describe('useLineQuantity — the ways a debounce loses data', () => {
         });
     });
 });
+
+describe('useLineQuantity — FA34: checkout and clear must not race a pending step', () => {
+    it('settle flushes the pending step immediately, then waits for it to land', async () => {
+        const { update, calls, settleAll } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+
+        lines.stepQuantity('p1', 1, 1);
+        let settled = false;
+        const done = lines.settle().then(() => {
+            settled = true;
+        });
+
+        // Flushed synchronously — the request is already out — but nothing has answered it yet.
+        // flushPending alone would stop right here, which is the bug this composable had.
+        expect(calls).toEqual([['p1', 2]]);
+        expect(settled).toBe(false);
+
+        settleAll();
+        await done;
+        expect(settled).toBe(true);
+    });
+
+    it('settle resolves immediately when nothing is pending', () =>
+        expect(
+            useLineQuantity(makeUpdate().update, vi.fn(), DELAY).settle()
+        ).resolves.toBeUndefined());
+
+    it('forgetAll cancels every line, so none of them fire after a clear', () => {
+        const { update } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+
+        lines.stepQuantity('p1', 1, 1);
+        lines.stepQuantity('p2', 5, -1);
+        lines.forgetAll();
+
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            expect(update).not.toHaveBeenCalled();
+            expect(lines.quantityOf('p1', 1)).toBe(1);
+            expect(lines.quantityOf('p2', 5)).toBe(5);
+        });
+    });
+});
