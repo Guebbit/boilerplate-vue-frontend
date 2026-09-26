@@ -360,6 +360,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         v-if="currentOrder"
                         :order-id="currentOrder.id"
                         :order-payable="currentOrder.actions?.pay"
+                        :order-status="currentOrder.status"
                         @paid="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <TransferInstructionsPanel

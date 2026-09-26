@@ -25,6 +25,7 @@
         "method-offline-other": "Paid another way",
         "label-reference": "reference {reference}",
         "refunded-by-hand": "Refunded — the money was returned to the customer outside this application.",
+        "refund-pending": "Refund pending — this order was cancelled, but only an operator can confirm the money was actually returned outside this application.",
         "none": "No payment yet."
     },
     "payment-method-selector": {
