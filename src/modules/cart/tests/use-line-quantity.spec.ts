@@ -33,7 +33,7 @@ const makeUpdate = () => {
         for (const resolve of settle) resolve(undefined);
     };
 
-    return { update, calls, settleAll };
+    return { update, calls, settleAll, resolvers: settle };
 };
 
 beforeEach(() => {
@@ -205,6 +205,54 @@ describe('useLineQuantity — FA34: checkout and clear must not race a pending s
         expect(
             useLineQuantity(makeUpdate().update, vi.fn(), DELAY).settle()
         ).resolves.toBeUndefined());
+
+    it('settle rejects when a flushed step failed to reach the server (PL-63)', async () => {
+        const onError = vi.fn();
+        const update = vi.fn(() => Promise.reject(new Error('nope')));
+        const lines = useLineQuantity(update, onError, DELAY);
+
+        lines.stepQuantity('p1', 1, 1);
+        // `settle` flushes synchronously, so the rejection is attached in the same tick it is
+        // produced — no gap where nothing has claimed it yet.
+        await expect(lines.settle()).rejects.toThrow();
+        // The per-line toast is still `onError`'s job — settle rejecting is only the signal a
+        // caller like checkout needs to stop, not a second report of the same failure.
+        expect(onError).toHaveBeenCalledOnce();
+    });
+
+    it('does not stop waiting on a newer request because an older one for the same line just landed (PL-64)', async () => {
+        const { update, calls, resolvers } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+
+        lines.stepQuantity('p1', 1, 1);
+        await vi.advanceTimersByTimeAsync(DELAY);
+        // Request A ("p1", 2) is now out, unresolved. A second click arrives before it answers,
+        // and is flushed immediately rather than waiting out another whole debounce window — the
+        // overlap this bug needs: two requests for the same line in flight at once.
+        lines.stepQuantity('p1', 2, 1);
+        lines.flushPending();
+        expect(calls).toEqual([
+            ['p1', 2],
+            ['p1', 3]
+        ]);
+
+        // Request A resolves first. The old code deleted `inFlight`'s entry unconditionally here
+        // — which by now holds request B, not A — so a `settle()` afterwards would not wait for
+        // B at all.
+        resolvers[0]?.(undefined);
+        await vi.advanceTimersByTimeAsync(0);
+
+        let settled = false;
+        const done = lines.settle().then(() => {
+            settled = true;
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(settled).toBe(false);
+
+        resolvers[1]?.(undefined);
+        await done;
+        expect(settled).toBe(true);
+    });
 
     it('forgetAll cancels every line, so none of them fire after a clear', () => {
         const { update } = makeUpdate();

@@ -55,8 +55,12 @@ export const useLineQuantity = (
      * {@link settle} awaits after flushing. `flushPending` alone fires the requests but does not
      * wait for them, which is what let a late step land after checkout had already read the cart
      * as empty and cleared it.
+     *
+     * Resolves to whether the send actually succeeded, never rejects: `onError` already reports a
+     * failure inline, so nothing here should also produce an unhandled rejection for a request
+     * `settle()` may never even be asked to await.
      */
-    const inFlight = new Map<string, Promise<void>>();
+    const inFlight = new Map<string, Promise<boolean>>();
 
     /**
      * Drops a line's pending entry without touching its timer.
@@ -85,8 +89,14 @@ export const useLineQuantity = (
         const send = debounce(() => {
             const quantity = pending.value[productId];
             if (quantity === undefined) return;
-            const request = update(productId, quantity)
-                .catch(onError)
+            const request: Promise<boolean> = update(productId, quantity)
+                // `update`'s own resolved value is not this composable's to know — only whether
+                // the request succeeded, which is all `settle()` needs (PL-63).
+                .then(() => true)
+                .catch((error: unknown) => {
+                    onError(error);
+                    return false;
+                })
                 .finally(() => {
                     /*
                      * Only if it has not been superseded. A click made WHILE the request was in
@@ -94,11 +104,11 @@ export const useLineQuantity = (
                      * — the debounce losing the very data it was added to protect.
                      */
                     if (pending.value[productId] === quantity) forgetPending(productId);
-                    inFlight.delete(productId);
-                })
-                // `update`'s own resolved value is not this composable's to know — only whether
-                // the request has settled, which is all `settle()` needs.
-                .then(() => undefined);
+                    // Same reasoning, for `inFlight`: an older request finishing AFTER a newer one
+                    // has already started must not delete the newer one's entry — that is what let
+                    // `settle()` stop waiting on a request that was still on the wire (PL-64).
+                    if (inFlight.get(productId) === request) inFlight.delete(productId);
+                });
             inFlight.set(productId, request);
         }, delayMs);
 
@@ -163,12 +173,17 @@ export const useLineQuantity = (
      * already emptied (recreating a ghost line) or the server sees lines the visitor's last click
      * never intended.
      *
-     * @returns A promise resolving once every in-flight request has settled, success or reported
-     *  failure alike.
+     * @returns A promise resolving once every in-flight request has settled successfully, and
+     *  REJECTING if any one of them failed (PL-63) — `onError` has already reported the failure
+     *  itself; this is only the signal a caller like checkout needs to stop rather than proceed
+     *  on a line the server never actually got the visitor's last quantity for.
      */
     const settle = (): Promise<void> => {
         flushPending();
-        return Promise.all(inFlight.values()).then(() => undefined);
+        return Promise.all(inFlight.values()).then((results) => {
+            if (results.some((succeeded) => !succeeded))
+                throw new Error('a cart line quantity failed to reach the server');
+        });
     };
 
     return { quantityOf, stepQuantity, forget, forgetAll, flushPending, settle };
