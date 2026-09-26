@@ -159,6 +159,50 @@ describe('_updateLocale', () => {
                 expect(loadedLanguages.filter((locale) => locale === 'es')).toHaveLength(1);
             });
     });
+
+    /**
+     * The regression FA25 fixes. Modules used to be merged in AFTER the caller's own dictionary,
+     * so a module contributing the SAME key the caller just registered — an edited override, or
+     * the shared file over a module's bundled default — silently lost to the module's text. 972 of
+     * this app's 1,119 keys live in module dictionaries, so this was most translation edits.
+     */
+    describe('the caller wins over a module contributing the same key', () => {
+        let restore: () => void;
+
+        beforeEach(() => {
+            restore = withLoadedLanguagesRestored();
+        });
+
+        afterEach(() => {
+            restore();
+            registerLocaleContributors({});
+        });
+
+        it("an override on a module-owned key beats the module's bundled default", () => {
+            const instance = freshInstance();
+            registerLocaleContributors({
+                es: [() => Promise.resolve({ cart: { title: 'Carrito' } })]
+            });
+
+            return _updateLocale(instance, 'es', { cart: { title: 'EDITADO' } }).then(() => {
+                instance.global.locale.value = 'es';
+                expect(instance.global.t('cart.title')).toBe('EDITADO');
+            });
+        });
+
+        it("still gets the module's own keys the caller's dictionary never mentioned", () => {
+            const instance = freshInstance();
+            registerLocaleContributors({
+                es: [() => Promise.resolve({ cart: { title: 'Carrito', empty: 'Vacío' } })]
+            });
+
+            return _updateLocale(instance, 'es', { cart: { title: 'EDITADO' } }).then(() => {
+                instance.global.locale.value = 'es';
+                expect(instance.global.t('cart.title')).toBe('EDITADO');
+                expect(instance.global.t('cart.empty')).toBe('Vacío');
+            });
+        });
+    });
 });
 
 describe('_changeLanguage', () => {
@@ -258,6 +302,17 @@ describe('getDefaultLocale', () => {
     it('falls back when the browser language is not supported', () => {
         vi.stubGlobal('navigator', { language: 'kl-GL' });
         expect(getDefaultLocale()).toBe('en');
+    });
+
+    /**
+     * The regression FA28 fixes: the instance's `fallbackLocale` is never empty (it is `'en'` by
+     * default too), so checking it BEFORE the configured default made `VITE_APP_DEFAULT_LOCALE`
+     * dead code — a deployment setting it had no effect on an unsupported browser language.
+     */
+    it('prefers the configured default locale over the instance fallback', () => {
+        vi.stubGlobal('navigator', { language: 'kl-GL' });
+        vi.stubEnv('VITE_APP_DEFAULT_LOCALE', 'it');
+        expect(getDefaultLocale()).toBe('it');
     });
 
     /**

@@ -28,9 +28,14 @@ vi.mock('@api', async (importOriginal) => ({
         getLocaleMessagesMock(locale, parameters)
 }));
 
-const { fetchRemoteLocales, fetchLocaleOverrides, mergeRemoteLocales, withLocaleOverrides } =
-    await import('@/infrastructure/i18n/locale-overrides.ts');
-const { supportedLanguages } = await import('@/infrastructure/i18n');
+const {
+    fetchRemoteLocales,
+    fetchLocaleOverrides,
+    mergeRemoteLocales,
+    withLocaleOverrides,
+    refreshRunningLocale
+} = await import('@/infrastructure/i18n/locale-overrides.ts');
+const { i18n, supportedLanguages } = await import('@/infrastructure/i18n');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */
 let snapshot: string[] = [];
@@ -257,5 +262,67 @@ describe('withLocaleOverrides', () => {
         return withLocaleOverrides('it', { greeting: 'Ciao' }).then((merged) => {
             expect(merged).toEqual({ greeting: 'Ciao' });
         });
+    });
+});
+
+/**
+ * The translation admin's live-refresh pipeline — the fix FA25 calls for. Re-derives from this
+ * build's own bundle (the real `src/locales/it.json`, not a fixture) each time, rather than
+ * layering fresh overrides onto whatever the running instance already has — the difference
+ * between an edit showing correctly and a REVERTED edit getting stuck.
+ */
+describe('refreshRunningLocale', () => {
+    it("merges this build's bundled dictionary with the fresh overrides, and registers it", () => {
+        getLocaleMessagesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocaleMessagesResponse, {
+                locale: 'it',
+                revision: 1,
+                messages: { navigation: { ['error-already-logged']: 'MODIFICATO' } }
+            })
+        );
+
+        return refreshRunningLocale('it').then(() => {
+            i18n.global.locale.value = 'it';
+            expect(i18n.global.t('navigation.error-already-logged')).toBe('MODIFICATO');
+            // A sibling under the same group the override never touched survives the merge.
+            expect(i18n.global.te('navigation.label-home')).toBe(true);
+        });
+    });
+
+    /**
+     * The regression: merging fresh overrides onto whatever is CURRENTLY loaded would let a
+     * reverted edit survive forever, since nothing would ever re-introduce the bundled default it
+     * is supposed to fall back to.
+     */
+    it('lets a reverted override fall back to the bundled default, not the stale registered one', () => {
+        getLocaleMessagesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocaleMessagesResponse, {
+                locale: 'it',
+                revision: 1,
+                messages: { navigation: { ['error-already-logged']: 'MODIFICATO' } }
+            })
+        );
+
+        return refreshRunningLocale('it')
+            .then(() => {
+                // The override is reverted: the API now answers with nothing for this key.
+                getLocaleMessagesMock.mockResolvedValue(
+                    contractResponse(schemas.GetLocaleMessagesResponse, {
+                        locale: 'it',
+                        revision: 2,
+                        messages: {}
+                    })
+                );
+                return refreshRunningLocale('it');
+            })
+            .then(() => {
+                i18n.global.locale.value = 'it';
+                expect(i18n.global.t('navigation.error-already-logged')).not.toBe('MODIFICATO');
+            });
+    });
+
+    it('never rejects when the overrides cannot be fetched', () => {
+        getLocaleMessagesMock.mockRejectedValue(new Error('network down'));
+        return expect(refreshRunningLocale('it')).resolves.toBeUndefined();
     });
 });

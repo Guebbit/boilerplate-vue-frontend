@@ -22,8 +22,7 @@ import { downloadBlob } from '@guebbit/js-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-import { updateLocale as applyDictionary } from '@/infrastructure/i18n';
-import { fetchLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
+import { refreshRunningLocale } from '@/infrastructure/i18n/locale-overrides.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { expandEntries } from '@/modules/locales/dictionaries.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -198,18 +197,6 @@ const handleSearch = () => {
 };
 
 /**
- * Refreshes the running app's copy of this language after a write, so the edit is visible now.
- *
- * Resolves regardless: the page's own state is already correct, and the live refresh is a
- * courtesy that must never turn a saved edit into an error toast.
- */
-const applyLiveOverrides = () =>
-    fetchLocaleOverrides(tag.value)
-        .then((messages) => applyDictionary(tag.value, messages))
-        // `fetchLocaleOverrides` already never rejects; this guards the merge itself.
-        .catch(() => undefined);
-
-/**
  * Adds one entry from the "add entry" dialog, then refreshes the page and the running app.
  *
  * @param fields - The dialog's own validated fields.
@@ -223,7 +210,7 @@ const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
         .then(() => {
             entryFormOpen.value = false;
             addMessage(t('locale-entries-page.success-add'));
-            return Promise.all([search(true), applyLiveOverrides()]);
+            return Promise.all([search(true), refreshRunningLocale(tag.value)]);
         })
         .catch((error: unknown) => reportAddError(error));
 };
@@ -273,7 +260,7 @@ const handleValueBlur = (entry: LocaleEntry) => {
             setTimeout(() => {
                 savedRows.value = omit(savedRows.value, entry.id);
             }, 1500);
-            return applyLiveOverrides();
+            return refreshRunningLocale(tag.value);
         })
         .catch((error: unknown) => reportRowActionError(error));
 };
@@ -298,7 +285,7 @@ const handleDelete = (entry: LocaleEntry) => {
                 .removeEntry(tag.value, entry.id)
                 .then(() => {
                     addMessage(t('locale-entries-page.success-delete'));
-                    return Promise.all([search(true), applyLiveOverrides()]);
+                    return Promise.all([search(true), refreshRunningLocale(tag.value)]);
                 })
                 .catch((error: unknown) => reportRowActionError(error));
         });
@@ -328,7 +315,11 @@ const handleImport = (payload: {
              */
             if (payload.mode === 'merge' && result?.removed)
                 addMessage(t('locale-entries-page.error-merge-removed'));
-            return Promise.all([search(true), localesStore.fetchLanguages(), applyLiveOverrides()]);
+            return Promise.all([
+                search(true),
+                localesStore.fetchLanguages(),
+                refreshRunningLocale(tag.value)
+            ]);
         })
         .catch((error: unknown) => reportImportError(error));
 };

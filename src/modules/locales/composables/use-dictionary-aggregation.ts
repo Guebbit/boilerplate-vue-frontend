@@ -8,22 +8,10 @@ import { computed, ref, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useLocalesStore } from '@/modules/locales/store.ts';
-import { updateLocale as applyDictionary } from '@/infrastructure/i18n';
-import { fetchLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
+import { refreshRunningLocale } from '@/infrastructure/i18n/locale-overrides.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { LocaleTenantKind } from '@types';
 import type { LocaleEntry } from '@types';
-
-/**
- * Refreshes the running app's copy of one language after a write, so the edit is visible now.
- *
- * Resolves regardless: the board's own state is already correct, and the live refresh is a
- * courtesy that must never turn a saved edit into an error toast.
- */
-const applyLiveOverrides = (tag: string) =>
-    fetchLocaleOverrides(tag)
-        .then((messages) => applyDictionary(tag, messages))
-        .catch(() => undefined);
 
 /**
  * The dictionary board's three-source aggregation: stored entries, the API's deployed baseline,
@@ -194,7 +182,7 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
      * What every write does afterwards: the column, the manifest's counts, the running app.
      */
     const afterWrite = (tag: string) =>
-        Promise.all([loadLanguage(tag), localesStore.fetchLanguages(), applyLiveOverrides(tag)]);
+        Promise.all([loadLanguage(tag), localesStore.fetchLanguages(), refreshRunningLocale(tag)]);
 
     /**
      * Records a key added here, not yet backed by an entry anywhere — see `allKeys`.

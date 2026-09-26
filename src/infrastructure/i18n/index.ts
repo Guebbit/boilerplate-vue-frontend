@@ -224,33 +224,44 @@ export function loadLocale(locale: string) {
 /**
  * Registers (or overwrites) the vocabulary of a locale, e.g. after fetching it from a server.
  *
+ * `setLocaleMessage` REPLACES the locale wholesale, and every install path funnels through this
+ * function (`_loadLocale` for a language switch, `localeChoice` → `updateLocale` for the router
+ * guard, the translation admin's live refresh) — so the enabled modules' own dictionaries are
+ * folded in here too, as the BASE `messages` sits on top of. A caller that forgot to include them
+ * (an override fetch, a bare shared-file import) still gets a fully-populated locale rather than a
+ * silently monolingual one.
+ *
+ * `messages` sits on top, not the modules, on purpose: an edited key — the shared file over a
+ * module's own default, or a stored override over either — must win over the module's bundled
+ * text. Merging modules in AFTER `messages` (the previous order) let a module key silently beat
+ * whatever the caller had just registered for it, which is why an edited translation could lose to
+ * bundled copy for most of this app's keys.
+ *
  * @param i18n - The vue-i18n instance to register the messages on.
  * @param locale - Locale code the messages belong to.
- * @param messages - Nested translation dictionary for that locale.
+ * @param messages - Nested translation dictionary for that locale, wins over the modules' own.
  * @returns A promise (`nextTick`) resolving once Vue has flushed the update.
  */
 export function _updateLocale(i18n: I18n, locale: string, messages: TranslationDictionaries) {
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
-    // Cloned, not registered by reference: `_loadLocale` passes the imported `en.json` module
-    // object straight through, so a later `mergeLocaleMessage` would write into the bundled
-    // dictionary itself, for every consumer of that import, for the life of the process.
-    i18n.global.setLocaleMessage(locale, structuredClone(messages));
 
-    /*
-     * Then the enabled modules' dictionaries, on top — and this has to happen here, because
-     * `setLocaleMessage` REPLACES the locale wholesale and every install path funnels through
-     * this function (`_loadLocale` for a language switch, `localeChoice` → `updateLocale` for the
-     * router guard). Merging in only one leaves the other silently monolingual.
-     *
-     * `mergeLocaleMessage` is a DEEP merge, which is what lets several modules each contribute a
-     * slice of the shared `navigation` namespace.
-     */
-    return Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load()))
-        .then((moduleDictionaries) => {
+    // `mergeDictionaries` is a DEEP merge, which is what lets several modules each contribute a
+    // slice of the shared `navigation` namespace, and what keeps an override from wiping the rest
+    // of the group it edits one key of.
+    return Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load())).then(
+        (moduleDictionaries) => {
+            let merged: TranslationDictionaries = {};
             for (const dictionary of moduleDictionaries)
-                i18n.global.mergeLocaleMessage(locale, dictionary);
-        })
-        .then(() => nextTick());
+                merged = mergeDictionaries(merged, dictionary);
+            merged = mergeDictionaries(merged, messages);
+
+            // Cloned, not registered by reference: `_loadLocale` passes the imported `en.json`
+            // module object straight through, and writing it by reference would translate the
+            // bundle itself for every other consumer of that import, for the life of the process.
+            i18n.global.setLocaleMessage(locale, structuredClone(merged));
+            return nextTick();
+        }
+    );
 }
 
 /**
