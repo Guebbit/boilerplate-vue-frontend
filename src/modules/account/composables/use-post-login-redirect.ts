@@ -7,7 +7,7 @@
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { supportedLanguages } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -48,13 +48,17 @@ export const usePostLoginRedirect = () => {
     const { locale } = useI18n();
 
     /**
-     * Applies the record's saved language preference, then navigates to the `?continue=` target
-     * when present, or `Home` otherwise.
+     * Navigates to the `?continue=` target when present, in the saved record's language
+     * preference otherwise, or plain `Home` when neither applies.
      *
      * The record's language wins over the tab's: the saved preference is what this visitor asked
      * to read, and this is the moment their record joins the session. A `?continue=` deep link
      * keeps its own locale — the page it names wins — and a record with no preference (or one
      * this build does not speak) changes nothing.
+     *
+     * ROUTING ONLY, deliberately: `localeChoice` is what loads the dictionary (bundle plus any
+     * edited overrides) and activates the language, off the `:locale` param this navigates to —
+     * see `AppLanguageSwitcher.vue`'s own docblock for why activating here first would be wrong.
      *
      * @returns A promise resolving once navigation settles.
      */
@@ -62,20 +66,17 @@ export const usePostLoginRedirect = () => {
         const continueTo = isSameOriginPath(route.query.continue)
             ? route.query.continue
             : undefined;
+        if (continueTo) return router.push({ path: continueTo });
+
         const saved = useProfileStore().profile?.locale;
-        const applyPreference =
-            !continueTo &&
+        const target =
             typeof saved === 'string' &&
             saved !== locale.value &&
             supportedLanguages.includes(saved)
-                ? changeLanguage(saved)
-                : Promise.resolve();
+                ? routerLinkI18n({ name: 'Home', params: { locale: saved } })
+                : routerLinkI18n({ name: 'Home' });
 
-        return applyPreference.then(() =>
-            continueTo
-                ? router.push({ path: continueTo })
-                : router.push(routerLinkI18n({ name: 'Home' }))
-        );
+        return router.push(target);
     };
 
     return { redirectAfterLogin };

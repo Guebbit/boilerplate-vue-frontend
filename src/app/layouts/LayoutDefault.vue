@@ -10,6 +10,7 @@ import { RouterLink } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
+import { localeDirections } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
@@ -74,16 +75,26 @@ const { t, locale } = useI18n();
  * and pointing `current` at a locale it does not know leaves its `aria-label`s half-resolved.
  * Saying so here keeps the fallback a decision rather than a side effect.
  */
-const { current: vuetifyLocale, messages: vuetifyMessages } = useLocale();
+const { current: vuetifyLocale, messages: vuetifyMessages, rtl: vuetifyRtl } = useLocale();
 
 /**
  * Applies the fallback rule above whenever the app locale changes, and once immediately
  * on mount so the very first render is already in sync.
+ *
+ * Also tells Vuetify's own components (text alignment, icon mirroring, `VNavigationDrawer`'s
+ * side…) which way the new locale reads. `<html dir>` alone only affects plain CSS; Vuetify reads
+ * its OWN `rtl` map instead, and it is empty until this fills it in. `localeDirections` only has
+ * an entry once the manifest has been fetched — a right-to-left language is `ltr` here until then,
+ * same as {@link applyHtmlLocaleAttributes} in `infrastructure/i18n` already assumes.
  */
 watch(
     locale,
     (newLocale) => {
         vuetifyLocale.value = newLocale in vuetifyMessages.value ? newLocale : 'en';
+        vuetifyRtl.value = {
+            ...vuetifyRtl.value,
+            [newLocale]: localeDirections[newLocale] === 'rtl'
+        };
     },
     { immediate: true } // run the callback once on mount, not just on future changes
 );

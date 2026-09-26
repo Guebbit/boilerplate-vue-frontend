@@ -8,9 +8,12 @@
 import { getLocales, getLocaleMessages } from '@api';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 import {
+    loadBundledDictionary,
     localeDirections,
+    localeNativeNames,
     mergeDictionaries,
     supportedLanguages,
+    updateLocale,
     type TranslationDictionaries
 } from './index.ts';
 
@@ -68,9 +71,9 @@ export const localeTenant = (): string =>
  * and did not care about the backend's half — so nothing here prevents it or warns about it. If it
  * is ever wrong, it is wrong in a way only a person can judge.
  *
- * The writing direction of every language the manifest lists is recorded on the way past, into
- * {@link localeDirections}: it is the one thing the manifest knows that the dictionary does not,
- * and the only moment it is in hand.
+ * The writing direction and native name of every language the manifest lists are recorded on the
+ * way past, into {@link localeDirections} and {@link localeNativeNames}: both are things the
+ * manifest knows that the dictionary does not, and this is the only moment either is in hand.
  *
  * @returns The API's language tags, or an empty list when it cannot be reached. Never rejects.
  */
@@ -95,6 +98,7 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
                 )
                 .map((language) => {
                     localeDirections[language.tag] = language.direction;
+                    localeNativeNames[language.tag] = language.nativeName;
                     return language.tag;
                 })
         )
@@ -147,3 +151,26 @@ export const withLocaleOverrides = (
     ownMessages: TranslationDictionaries
 ): Promise<TranslationDictionaries> =>
     fetchLocaleOverrides(locale).then((overrides) => mergeDictionaries(ownMessages, overrides));
+
+/**
+ * Refreshes the RUNNING app's copy of one language after a write, so an edit is visible before the
+ * next full navigation — the translation admin's live-preview courtesy.
+ *
+ * Re-derives the full dictionary from this build's own bundle, not from whatever is currently
+ * registered: an override that was just deleted must fall back to the bundled default, which
+ * merging fresh overrides onto the running state would never let happen. `updateLocale` folds in
+ * the enabled modules' own dictionaries on top of neither of these, so this only needs the shared
+ * file plus the module slices ({@link loadBundledDictionary}) and the overrides on top of that.
+ *
+ * Resolves regardless: the caller's own state (the board, the page) is already correct, and this
+ * must never turn a saved edit into an error toast.
+ *
+ * @param locale - Language tag just edited.
+ * @returns A promise resolving once the running app's copy is refreshed, or immediately on
+ *  failure. Never rejects.
+ */
+export const refreshRunningLocale = (locale: string): Promise<void> =>
+    Promise.all([loadBundledDictionary(locale), fetchLocaleOverrides(locale)])
+        .then(([bundled, overrides]) => updateLocale(locale, mergeDictionaries(bundled, overrides)))
+        .then(() => undefined)
+        .catch(() => undefined);

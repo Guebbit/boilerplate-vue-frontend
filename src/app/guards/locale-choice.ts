@@ -68,6 +68,27 @@ const resetLocaleSensitiveStores = (): void => {
 };
 
 /**
+ * The most recently REQUESTED locale, across every call to this guard.
+ *
+ * Two navigations close together (e.g. a user double-clicking two language options) each start
+ * their own async chain, and the two can settle in EITHER order. Without this, whichever chain's
+ * network round-trip happens to finish last wins — activating a language the visitor already
+ * navigated away from. {@link activateIfLatest} is the guard: a chain only activates its locale
+ * when it is still the last one requested by the time it gets there.
+ */
+let latestRequestedLocale: string | undefined;
+
+/**
+ * Activates a locale, unless a NEWER navigation has requested a different one since this chain
+ * started — see {@link latestRequestedLocale}.
+ *
+ * @param locale - Locale this chain was loading/activating.
+ * @returns A promise resolving once the locale is active, or immediately if superseded.
+ */
+const activateIfLatest = (locale: string): Promise<unknown> =>
+    latestRequestedLocale === locale ? changeLanguage(locale) : Promise.resolve();
+
+/**
  * Router guard (registered on `beforeResolve`) that keeps the active i18n
  * language in sync with the `:locale` route param.
  *
@@ -87,6 +108,10 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // ACTUAL switch — never for two pages visited back to back in the same language.
     const previousLocale = getCurrentLocale();
 
+    // Recorded before any async work starts, so a slower CONCURRENT chain for an earlier
+    // navigation can tell it has been superseded — see `activateIfLatest`.
+    latestRequestedLocale = locale;
+
     /**
      * Resolves the guard's `true` verdict, wiping locale-sensitive caches first if — and only
      * if — the language genuinely changed underneath this navigation.
@@ -99,15 +124,18 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // Already loaded: just make sure it is the active language and proceed.
     // (covers back/forward navigation and direct URLs between loaded locales)
     if (loadedLanguages.includes(locale))
-        return (getCurrentLocale() === locale ? Promise.resolve() : changeLanguage(locale)).then(
+        return (getCurrentLocale() === locale ? Promise.resolve() : activateIfLatest(locale)).then(
             settle
         );
 
-    // Supported but not yet loaded: fetch it, register the messages, activate it.
+    // Supported but not yet loaded: fetch it, register the messages, activate it — every
+    // activation funnels through here, whether the navigation came from a language switcher, a
+    // saved profile preference or a locale-less deep link, so an edited translation shows
+    // regardless of how this locale first got loaded.
     if (supportedLanguages.includes(locale))
         return fetchLanguageApi(locale)
             .then(([lang, vocabulary]) => updateLocale(lang, vocabulary).then(() => lang))
-            .then((lang) => changeLanguage(lang))
+            .then((lang) => activateIfLatest(lang))
             .then(settle);
 
     // Missing, unsupported or empty locale: redirect to the same route with the

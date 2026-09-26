@@ -79,12 +79,13 @@ vi.mock('@/modules/locales/store.ts', () => ({
     })
 }));
 
+/**
+ * The composable only asks this to run, never what it does internally — that pipeline (bundle
+ * plus overrides, merged) is `locale-overrides.spec.ts`'s job to prove.
+ */
+const refreshRunningLocaleMock = vi.fn((_locale: string) => Promise.resolve());
 vi.mock('@/infrastructure/i18n/locale-overrides.ts', () => ({
-    fetchLocaleOverrides: vi.fn(() => Promise.resolve({}))
-}));
-
-vi.mock('@/infrastructure/i18n', () => ({
-    updateLocale: vi.fn(() => Promise.resolve())
+    refreshRunningLocale: (locale: string) => refreshRunningLocaleMock(locale)
 }));
 
 beforeEach(() => {
@@ -208,5 +209,21 @@ describe('useDictionaryAggregation', () => {
 
         const backendTenantRef = ref(BACKEND_TENANT);
         expect(useDictionaryAggregation(backendTenantRef).hasBaseline.value).toBe(true);
+    });
+
+    /**
+     * `afterWrite` is every write's own courtesy refresh: the column (so the board reflects the
+     * save), the manifest's counts, and the RUNNING app's copy of the language — so an edit shows
+     * without a full reload. This only proves the composable asks for that refresh; FA25's actual
+     * fix (bundle plus overrides, merged, re-derived rather than layered onto whatever happens to
+     * be loaded) is `locale-overrides.spec.ts`'s job.
+     */
+    it("refreshes the running app's dictionary as part of every write's aftermath", () => {
+        const tenant = ref(OWN_TENANT);
+        const board = useDictionaryAggregation(tenant);
+
+        return board.afterWrite('en').then(() => {
+            expect(refreshRunningLocaleMock).toHaveBeenCalledWith('en');
+        });
     });
 });

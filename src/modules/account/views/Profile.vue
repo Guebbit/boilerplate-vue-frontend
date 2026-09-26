@@ -9,8 +9,8 @@ export default {
  * @module
  * The profile page: composes the record-edit form with the avatar/role/password/2FA/sessions/
  * addresses/delete panels as siblings, each owning its own store slice. `applyLanguagePreference`
- * chains the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring
- * the header's language switcher.
+ * re-enters the route under the saved language after a save, mirroring the header's language
+ * switcher — routing only, so the locale guard is what actually loads and activates it.
  *
  * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST, so
  * nobody reaches it on the way to the password form or the sessions list.
@@ -20,7 +20,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { supportedLanguages } from '@/infrastructure/i18n';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -159,26 +159,23 @@ const languageOptions = computed(() =>
 /**
  * Re-enters the current route in the language the saved record now carries.
  *
- * The select writes a PREFERENCE, and the preference is only read at login (see `Login.vue`) — so
- * without this a visitor saves "italian" and carries on reading English until they next sign in.
- * Switching the i18n runtime alone would not hold either: the `:locale` route param is what
- * `localeChoice` re-applies on the next navigation, and it would switch straight back. Hence
- * both, in that order — the same two steps the header's language switcher takes, for the same
- * reason.
+ * ROUTING ONLY, deliberately — the same pattern `AppLanguageSwitcher.vue` documents:
+ * `localeChoice` is what loads the dictionary (bundle plus any edited overrides) and activates the
+ * language, off the `:locale` param this re-enters on. Switching the i18n runtime here FIRST would
+ * make every switch look like no switch at all to the guard, which decides by comparing the param
+ * against whatever is already active.
  *
  * @param saved - The locale on the freshly saved record.
- * @returns A promise resolving once language and URL agree; immediately when the choice did not
- *  change. Never rejects — a failed re-entry must not report a saved profile as an error.
+ * @returns A promise resolving once the URL carries the new locale; immediately when the choice
+ *  did not change. Never rejects — a failed re-entry must not report a saved profile as an error.
  */
 const applyLanguagePreference = (saved?: string | null) =>
     typeof saved === 'string' && saved !== locale.value && supportedLanguages.includes(saved)
-        ? changeLanguage(saved)
-              .then(() =>
-                  router.replace({
-                      params: { ...route.params, locale: saved },
-                      query: route.query
-                  })
-              )
+        ? router
+              .replace({
+                  params: { ...route.params, locale: saved },
+                  query: route.query
+              })
               .then(() => undefined)
               .catch(() => undefined)
         : Promise.resolve();

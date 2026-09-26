@@ -245,6 +245,72 @@ describe('localeChoice', () => {
             expect(updateLocaleMock).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * The regression FA26 fixes: a switch to `it` was still in flight (fetching its dictionary)
+     * when the visitor navigated again to `es`. `es` has nothing slowing it down and activates
+     * first; `it` finishing afterwards must not un-switch the page back to a language the visitor
+     * already left. Only the LATEST requested locale may ever activate.
+     */
+    it('a switch overtaken by another navigation does not activate the abandoned language', () => {
+        i18nState.loadedLanguages = [];
+        i18nState.supportedLanguages = ['en', 'it', 'es'];
+
+        // `import('@/locales/it.json')` is a REAL dynamic import, whose timing is not
+        // deterministic relative to `es`'s (which rejects instantly, having no file). So this
+        // does not just release a promise on `es` settling — it waits until `it`'s own chain has
+        // actually reached (and is blocked on) the overrides fetch, THEN lets `es` win, THEN
+        // releases `it` to prove the now-abandoned chain still doesn't activate.
+        const itOverrides = Promise.withResolvers<ReturnType<typeof contractResponse>>();
+        const itRequested = Promise.withResolvers<undefined>();
+        getLocaleMessagesMock.mockImplementation((locale: string) => {
+            if (locale === 'it') {
+                itRequested.resolve(undefined);
+                return itOverrides.promise;
+            }
+            return Promise.resolve(
+                contractResponse(schemas.GetLocaleMessagesResponse, {
+                    locale,
+                    revision: 1,
+                    messages: {}
+                })
+            );
+        });
+
+        const itPromise = localeChoice(routeTo({ params: { locale: 'it' } }));
+        const esPromise = localeChoice(routeTo({ params: { locale: 'es' } }));
+
+        return itRequested.promise
+            .then(() => esPromise)
+            .then(() => {
+                expect(changeLanguageMock).toHaveBeenCalledWith('es');
+                changeLanguageMock.mockClear();
+                itOverrides.resolve(
+                    contractResponse(schemas.GetLocaleMessagesResponse, {
+                        locale: 'it',
+                        revision: 1,
+                        messages: {}
+                    })
+                );
+                return itPromise;
+            })
+            .then(() => {
+                // The dictionary can still finish registering — only ACTIVATING is guarded.
+                expect(changeLanguageMock).not.toHaveBeenCalled();
+            })
+            .finally(() => {
+                // Restore the shared mock's default behaviour for every test after this one.
+                getLocaleMessagesMock.mockImplementation((_locale: string) =>
+                    Promise.resolve(
+                        contractResponse(schemas.GetLocaleMessagesResponse, {
+                            locale: 'it',
+                            revision: 1,
+                            messages: { greeting: 'from-the-database' }
+                        })
+                    )
+                );
+            });
+    });
 });
 
 /**

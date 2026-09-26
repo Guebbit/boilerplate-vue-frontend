@@ -77,6 +77,16 @@ export const loadedLanguages: string[] = [];
 export const localeDirections: Record<string, 'ltr' | 'rtl'> = {};
 
 /**
+ * A language's own name for itself, as the API's manifest reports it — "Español", not "Spanish".
+ *
+ * Filled by `mergeRemoteLocales` at boot, same as {@link localeDirections}; empty offline, and for
+ * a language the manifest has not been fetched for yet. `AppLanguageSwitcher.vue` reads it so a
+ * language this build has no translated `generic.*` entry for — one the API added at runtime —
+ * shows its own name rather than the raw dictionary key.
+ */
+export const localeNativeNames: Record<string, string> = {};
+
+/**
  * Per-locale loaders for the dictionaries the enabled modules contribute.
  *
  * A domain owns its own copy under `src/modules/<name>/locales/`, merged at boot, per locale, on
@@ -224,33 +234,44 @@ export function loadLocale(locale: string) {
 /**
  * Registers (or overwrites) the vocabulary of a locale, e.g. after fetching it from a server.
  *
+ * `setLocaleMessage` REPLACES the locale wholesale, and every install path funnels through this
+ * function (`_loadLocale` for a language switch, `localeChoice` → `updateLocale` for the router
+ * guard, the translation admin's live refresh) — so the enabled modules' own dictionaries are
+ * folded in here too, as the BASE `messages` sits on top of. A caller that forgot to include them
+ * (an override fetch, a bare shared-file import) still gets a fully-populated locale rather than a
+ * silently monolingual one.
+ *
+ * `messages` sits on top, not the modules, on purpose: an edited key — the shared file over a
+ * module's own default, or a stored override over either — must win over the module's bundled
+ * text. Merging modules in AFTER `messages` (the previous order) let a module key silently beat
+ * whatever the caller had just registered for it, which is why an edited translation could lose to
+ * bundled copy for most of this app's keys.
+ *
  * @param i18n - The vue-i18n instance to register the messages on.
  * @param locale - Locale code the messages belong to.
- * @param messages - Nested translation dictionary for that locale.
+ * @param messages - Nested translation dictionary for that locale, wins over the modules' own.
  * @returns A promise (`nextTick`) resolving once Vue has flushed the update.
  */
 export function _updateLocale(i18n: I18n, locale: string, messages: TranslationDictionaries) {
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
-    // Cloned, not registered by reference: `_loadLocale` passes the imported `en.json` module
-    // object straight through, so a later `mergeLocaleMessage` would write into the bundled
-    // dictionary itself, for every consumer of that import, for the life of the process.
-    i18n.global.setLocaleMessage(locale, structuredClone(messages));
 
-    /*
-     * Then the enabled modules' dictionaries, on top — and this has to happen here, because
-     * `setLocaleMessage` REPLACES the locale wholesale and every install path funnels through
-     * this function (`_loadLocale` for a language switch, `localeChoice` → `updateLocale` for the
-     * router guard). Merging in only one leaves the other silently monolingual.
-     *
-     * `mergeLocaleMessage` is a DEEP merge, which is what lets several modules each contribute a
-     * slice of the shared `navigation` namespace.
-     */
-    return Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load()))
-        .then((moduleDictionaries) => {
+    // `mergeDictionaries` is a DEEP merge, which is what lets several modules each contribute a
+    // slice of the shared `navigation` namespace, and what keeps an override from wiping the rest
+    // of the group it edits one key of.
+    return Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load())).then(
+        (moduleDictionaries) => {
+            let merged: TranslationDictionaries = {};
             for (const dictionary of moduleDictionaries)
-                i18n.global.mergeLocaleMessage(locale, dictionary);
-        })
-        .then(() => nextTick());
+                merged = mergeDictionaries(merged, dictionary);
+            merged = mergeDictionaries(merged, messages);
+
+            // Cloned, not registered by reference: `_loadLocale` passes the imported `en.json`
+            // module object straight through, and writing it by reference would translate the
+            // bundle itself for every other consumer of that import, for the life of the process.
+            i18n.global.setLocaleMessage(locale, structuredClone(merged));
+            return nextTick();
+        }
+    );
 }
 
 /**
@@ -343,17 +364,23 @@ export function changeLanguage(locale: string) {
 /**
  * Best guess of the locale to use when the route carries none.
  *
- * @returns The browser language when supported, otherwise the configured fallback locale,
- *  `VITE_APP_DEFAULT_LOCALE`, or `'en'`.
+ * @returns The browser language when supported, otherwise the configured default locale
+ *  (`APP_DEFAULT_LOCALE` at runtime, `VITE_APP_DEFAULT_LOCALE` at build time — the same
+ *  precedence {@link i18n}'s own `locale` option uses), the i18n instance's fallback locale, or
+ *  `'en'`.
  */
 export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
     // Supported, not loaded: on a first visit nothing is loaded and detection would never match.
     if (supportedLanguages.includes(foundLocale)) return foundLocale;
+    // The configured default is checked BEFORE the instance's fallback locale, not after: the
+    // fallback is never empty (it defaults to 'en' too), so checking it first made the configured
+    // default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
+    // unsupported browser language, regardless of what a deployment set it to.
     return (
-        (i18n.global.fallbackLocale as WritableComputedRef<string>).value ||
-        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ||
-        'en'
+        runtimeValue('APP_DEFAULT_LOCALE') ??
+        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ??
+        (i18n.global.fallbackLocale as WritableComputedRef<string>).value
     );
 }
 

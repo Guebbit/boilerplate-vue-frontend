@@ -19,6 +19,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
+import { deactivateThenDelete } from '@/modules/locales/domain/deactivate-then-delete.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -164,7 +165,9 @@ const {
  * Deletes a language and everything translated into it, after a confirmation that names the cost.
  *
  * An ACTIVE row is deactivated first, because the API refuses to delete one — its guard rail;
- * the confirmation here is this page's half. An already-inactive row goes straight out.
+ * the confirmation here is this page's half. An already-inactive row goes straight out. A row
+ * deactivated this way that then fails to delete is reactivated before the error is reported —
+ * see {@link deactivateThenDelete}.
  *
  * @param language - The row being destroyed.
  * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
@@ -182,14 +185,12 @@ const handleDelete = (language: LocaleCapability) => {
         .then((accepted) => {
             if (!accepted) return;
             clearDeleteError();
-            // The API refuses to delete an active language — its guard rail; the confirm above
-            // is this page's half — so an active row is deactivated first and an inactive one
-            // goes straight out.
-            const deactivated = language.active
-                ? localesStore.editLanguage(language.tag, { active: false })
-                : Promise.resolve(undefined);
-            return deactivated
-                .then(() => localesStore.removeLanguage(language.tag))
+            return deactivateThenDelete(
+                language.active,
+                () => localesStore.editLanguage(language.tag, { active: false }),
+                () => localesStore.removeLanguage(language.tag),
+                () => localesStore.editLanguage(language.tag, { active: true })
+            )
                 .then(() => addMessage(t('locales-list-page.success-delete')))
                 .catch((error: unknown) => reportDeleteError(error));
         });
