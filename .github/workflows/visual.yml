@@ -43,18 +43,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Checkout paired backend
-              uses: actions/checkout@v4
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
               with:
-                  # Override with a repository variable when the pair lives elsewhere.
-                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
                   path: .backend
-                  # Only needed when the sibling is private; falls back to this repo's token.
-                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
-
-            - name: Install backend dependencies
-              working-directory: .backend
-              run: npm ci
 
             # The image already holds the matching Cypress binary, so none is downloaded.
             - name: Install dependencies

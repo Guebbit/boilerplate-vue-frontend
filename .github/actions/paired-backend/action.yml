@@ -1,0 +1,69 @@
+name: Checkout and install the paired backend
+description: >-
+    Checks out the sibling backend repository at a given path and installs its dependencies —
+    the five call sites this replaces (ci.yml's test-unit/spec-identity/test-e2e jobs,
+    e2e-live.yml, visual.yml) differed only in the checkout path, whether a failed checkout is
+    reported as the job's own error, and whether the install is skipped for a sibling with no
+    package.json (a PHP pair commits its own bundled contract and has nothing to install).
+
+inputs:
+    path:
+        description: Where the checkout lands, relative to the workspace.
+        required: false
+        default: .backend
+    report-failure:
+        description: >-
+            'true' to continue past a failed checkout and fail the job with a message naming the
+            SPEC_SIBLING_REPO/SPEC_SIBLING_TOKEN fix, instead of failing on the checkout step
+            itself. Every e2e-shaped job wants this; the plain contract-comparison jobs do too.
+        required: false
+        default: 'false'
+    no-backend-mode:
+        description: >-
+            Free text describing what the caller cannot do without a backend, interpolated into
+            the failure message report-failure prints (e.g. "The e2e suite boots its demo
+            profile, so there is no backend-less mode"). Ignored when report-failure is 'false'.
+        required: false
+        default: ''
+    guarded-install:
+        description: >-
+            'true' to skip the install when the checkout has no package.json (a PHP sibling) and
+            to set MONGOMS_DISABLE_POSTINSTALL=1 (the caller bundles a contract, never runs the
+            backend, so mongodb-memory-server's own postinstall download is pure waste). 'false'
+            installs unconditionally with no such guard, for a caller that always needs a
+            runnable backend.
+        required: false
+        default: 'false'
+
+runs:
+    using: composite
+    steps:
+        - name: Checkout paired backend
+          id: sibling
+          continue-on-error: ${{ inputs.report-failure == 'true' }}
+          uses: actions/checkout@v4
+          with:
+              # Override with a repository variable when the pair lives elsewhere.
+              repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+              path: ${{ inputs.path }}
+              # Only needed when the sibling is private; falls back to this repo's token.
+              token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+
+        - name: Report an unreachable sibling
+          if: inputs.report-failure == 'true' && steps.sibling.outcome == 'failure'
+          shell: bash
+          run: |
+              echo "::error::Could not check out the paired backend "\
+              "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
+              "${{ inputs.no-backend-mode }}${{ inputs.no-backend-mode != '' && ': ' || '' }}"\
+              "set the SPEC_SIBLING_REPO variable, or add a SPEC_SIBLING_TOKEN secret if it is "\
+              "private."
+              exit 1
+
+        - name: Install backend dependencies
+          if: inputs.guarded-install != 'true' || hashFiles(format('{0}/package.json', inputs.path)) != ''
+          working-directory: ${{ inputs.path }}
+          shell: bash
+          env:
+              MONGOMS_DISABLE_POSTINSTALL: ${{ inputs.guarded-install == 'true' && '1' || '' }}
+          run: npm ci

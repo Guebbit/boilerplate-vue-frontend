@@ -32,7 +32,6 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    NODE_VERSION: 24
 
 jobs:
     commitlint:
@@ -53,7 +52,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -76,7 +75,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -100,7 +99,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -124,7 +123,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -147,7 +146,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -173,7 +172,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -201,7 +200,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -231,7 +230,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -254,7 +253,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -300,7 +299,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -323,7 +322,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -350,19 +349,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Checkout paired backend
-              uses: actions/checkout@v4
-              with:
-                  # Override with a repository variable when the pair lives elsewhere.
-                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
-                  path: .backend
-                  # Only needed when the sibling is private; falls back to this repo's token.
-                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
-
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -374,18 +364,14 @@ jobs:
             # there and built from fragments on install, not committed. Without this the whole
             # job read "openapi.yaml: absent" instead of running the comparison at all.
             #
-            # Guarded so a PHP pair — which tracks its own committed `openapi.yaml` and has no
-            # `package.json` to install — skips this step instead of failing on it.
-            #
-            # `MONGOMS_DISABLE_POSTINSTALL`: mongodb-memory-server's own postinstall otherwise
-            # downloads a mongod binary this job never runs; bundling the contract needs no
-            # database at all.
-            - name: Install backend dependencies
-              if: hashFiles('.backend/package.json') != ''
-              working-directory: .backend
-              env:
-                  MONGOMS_DISABLE_POSTINSTALL: '1'
-              run: npm ci
+            # `guarded-install`: skips a PHP pair, which tracks its own committed `openapi.yaml`
+            # and has no `package.json` to install, and disables mongodb-memory-server's own
+            # postinstall download — bundling the contract needs no database at all.
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
+              with:
+                  path: .backend
+                  guarded-install: 'true'
 
             - name: Run unit tests with coverage
               run: npm run test:unit:coverage
@@ -448,30 +434,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Checkout paired backend
-              id: sibling
-              continue-on-error: true
-              uses: actions/checkout@v4
-              with:
-                  # Override with a repository variable when the pair lives elsewhere.
-                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
-                  path: .spec-sibling
-                  # Only needed when the sibling is private; falls back to this repo's token.
-                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
-
-            - name: Report an unreachable sibling
-              if: steps.sibling.outcome == 'failure'
-              run: |
-                  echo "::error::Could not check out the paired backend "\
-                  "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
-                  "Set the SPEC_SIBLING_REPO variable, add a SPEC_SIBLING_TOKEN secret if it is "\
-                  "private, or delete this job if this copy has no paired backend."
-                  exit 1
-
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -479,14 +445,14 @@ jobs:
               run: npm ci
 
             # Same reasoning as test-unit's own step: the sibling's openapi.yaml is gitignored
-            # there and only exists once its postinstall assembles it from fragments. Guarded for
-            # a PHP pair, which commits its own and has no package.json to install.
-            - name: Install backend dependencies
-              if: hashFiles('.spec-sibling/package.json') != ''
-              working-directory: .spec-sibling
-              env:
-                  MONGOMS_DISABLE_POSTINSTALL: '1'
-              run: npm ci
+            # there and only exists once its postinstall assembles it from fragments.
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
+              with:
+                  path: .spec-sibling
+                  report-failure: 'true'
+                  no-backend-mode: 'This job only compares contracts, so delete it if this copy has no paired backend'
+                  guarded-install: 'true'
 
             - name: Compare the shared contract files
               env:
@@ -518,31 +484,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Checkout paired backend
-              id: sibling
-              continue-on-error: true
-              uses: actions/checkout@v4
-              with:
-                  # Override with a repository variable when the pair lives elsewhere.
-                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
-                  path: .backend
-                  # Only needed when the sibling is private; falls back to this repo's token.
-                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
-
-            - name: Report an unreachable sibling
-              if: steps.sibling.outcome == 'failure'
-              run: |
-                  echo "::error::Could not check out the paired backend "\
-                  "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
-                  "The e2e suite boots its demo profile, so there is no backend-less mode: set "\
-                  "the SPEC_SIBLING_REPO variable, or add a SPEC_SIBLING_TOKEN secret if it is "\
-                  "private."
-                  exit 1
-
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
@@ -560,9 +505,12 @@ jobs:
             # The shard runner spawns `npm --prefix .backend run demo`, which is tsx against the
             # backend's own dependency tree — an uninstalled checkout would fail at require time,
             # after the 120s readiness poll rather than at the point of the mistake.
-            - name: Install backend dependencies
-              working-directory: ${{ env.BACKEND_PATH }}
-              run: npm ci
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
+              with:
+                  path: ${{ env.BACKEND_PATH }}
+                  report-failure: 'true'
+                  no-backend-mode: 'The e2e suite boots its demo profile, so there is no backend-less mode'
 
             - name: Run e2e tests
               run: npm run test:e2e
