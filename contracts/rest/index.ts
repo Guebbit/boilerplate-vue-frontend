@@ -867,6 +867,15 @@ export interface LocaleDictionaryEnvelope {
     data: LocaleDictionary;
 }
 
+export interface ReplaceLocaleRequest {
+    /** @minLength 1 */
+    name: string;
+    /** @minLength 1 */
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+}
+
 /**
  * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
  */
@@ -2317,6 +2326,50 @@ export interface CatalogueFacetsEnvelope {
     data: CatalogueFacetsResponse;
 }
 
+export interface ReplaceProductRequest {
+    translations: ProductTranslationsWrite;
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
+    price: number;
+    taxClass?: TaxClass | null;
+    active: boolean;
+    requiresShipping: boolean;
+    /**
+     * Grams. Absent counts as 0 for shipping-method filtering.
+     * @minimum 0
+     * @nullable
+     */
+    weight?: number | null;
+    imageUrl?: ImageUrl | null;
+    categories: string[];
+    tags: string[];
+}
+
+export interface ReplaceProductRequestMultipart {
+    /** JSON-encoded `ProductTranslationsWrite`. */
+    translations: string;
+    /**
+     * Gross — VAT included. Same convention as `Product.price`.
+     * @minimum 0
+     */
+    price: number;
+    taxClass?: TaxClass | null;
+    active: boolean;
+    requiresShipping: boolean;
+    /**
+     * Grams. Absent counts as 0 for shipping-method filtering.
+     * @minimum 0
+     * @nullable
+     */
+    weight?: number | null;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories: string[];
+    tags: string[];
+}
+
 export interface UpdateProductRequest {
     translations?: ProductTranslationsWrite;
     /**
@@ -2324,7 +2377,7 @@ export interface UpdateProductRequest {
      * @minimum 0
      */
     price?: number;
-    taxClass?: TaxClass;
+    taxClass?: TaxClass | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -2346,7 +2399,7 @@ export interface UpdateProductRequestMultipart {
      * @minimum 0
      */
     price?: number;
-    taxClass?: TaxClass;
+    taxClass?: TaxClass | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -3832,9 +3885,34 @@ export const getLocaleDictionary = (
 };
 
 /**
- * Updates a language's display names, writing direction or visibility. The tag itself
- * is immutable — it is what every entry references, so changing it would be a rename
- * of the whole dictionary rather than an edit of this record.
+ * Replaces a language's display names, writing direction and visibility (RFC 9110
+ * §9.3.4 — every writable field is required, none of them has a legal "cleared"
+ * state). The tag itself is immutable — it is what every entry references, so
+ * changing it would be a rename of the whole dictionary rather than an edit of this
+ * record.
+ * @summary Replace a language
+ */
+export const replaceLocale = (
+    locale: string,
+    replaceLocaleRequest: ReplaceLocaleRequest,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales/${locale}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceLocaleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges a language's display names, writing direction or visibility (RFC 7396, an
+ * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * entry references, so changing it would be a rename of the whole dictionary rather
+ * than an edit of this record.
  * @summary Edit a language
  */
 export const updateLocale = (
@@ -3845,7 +3923,7 @@ export const updateLocale = (
     return orvalMutator<LanguageEnvelope>(
         {
             url: `/locales/${locale}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             data: updateLocaleRequest
         },
@@ -5532,6 +5610,85 @@ export const getProductById = (
 };
 
 /**
+ * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
+ * writable scalar field is required, since none of them but `taxClass`/`weight`/
+ * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
+ * semantics `PATCH` uses (see its own description): a translations table is keyed
+ * sub-resources, not a single field a "whole-body replace" can meaningfully null out
+ * — a caller cannot be expected to enumerate every locale that currently exists just
+ * to keep it.
+ * @summary Replace product
+ */
+export const replaceProductById = (
+    id: string,
+    replaceProductRequest: ReplaceProductRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceProductRequest
+        },
+        options
+    );
+};
+
+/**
+ * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
+ * writable scalar field is required, since none of them but `taxClass`/`weight`/
+ * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
+ * semantics `PATCH` uses (see its own description): a translations table is keyed
+ * sub-resources, not a single field a "whole-body replace" can meaningfully null out
+ * — a caller cannot be expected to enumerate every locale that currently exists just
+ * to keep it.
+ * @summary Replace product
+ */
+export const replaceProductByIdWithMultipart = (
+    id: string,
+    replaceProductRequestMultipart: ReplaceProductRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`translations`, replaceProductRequestMultipart.translations);
+    formData.append(`price`, replaceProductRequestMultipart.price.toString());
+    if (
+        replaceProductRequestMultipart.taxClass !== undefined &&
+        replaceProductRequestMultipart.taxClass !== null
+    ) {
+        formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
+    }
+    formData.append(`active`, replaceProductRequestMultipart.active.toString());
+    formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
+    if (
+        replaceProductRequestMultipart.weight !== undefined &&
+        replaceProductRequestMultipart.weight !== null
+    ) {
+        formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
+    }
+    if (replaceProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, replaceProductRequestMultipart.imageUpload);
+    }
+    replaceProductRequestMultipart.categories.forEach((value) =>
+        formData.append(`categories`, value)
+    );
+    replaceProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
+
+/**
  * Updates the product identified by `{id}` in the path, merging. Every field but
  * `translations` replaces the stored value when sent; `translations` merges one
  * locale at a time — three signals, and no way to mistake one for another:
@@ -5595,7 +5752,10 @@ export const updateProductByIdWithMultipart = (
     if (updateProductRequestMultipart.price !== undefined) {
         formData.append(`price`, updateProductRequestMultipart.price.toString());
     }
-    if (updateProductRequestMultipart.taxClass !== undefined) {
+    if (
+        updateProductRequestMultipart.taxClass !== undefined &&
+        updateProductRequestMultipart.taxClass !== null
+    ) {
         formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
     }
     if (updateProductRequestMultipart.active !== undefined) {
@@ -6585,6 +6745,7 @@ export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLo
 export type GetLocaleDictionaryResult = NonNullable<
     Awaited<ReturnType<typeof getLocaleDictionary>>
 >;
+export type ReplaceLocaleResult = NonNullable<Awaited<ReturnType<typeof replaceLocale>>>;
 export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
 export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
 export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
@@ -6745,6 +6906,10 @@ export type CreateProductWithMultipartResult = NonNullable<
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
+export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>;
+export type ReplaceProductByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof replaceProductByIdWithMultipart>>
+>;
 export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
 export type UpdateProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductByIdWithMultipart>>

@@ -90,7 +90,7 @@ beforeEach(() => {
     responses = {
         'GET /locales': orvalEnvelope({ locales: [CAPABILITY], default: 'en', fallback: 'en' }),
         'POST /locales': orvalEnvelope(LANGUAGE),
-        'PUT /locales/es': orvalEnvelope(LANGUAGE),
+        'PATCH /locales/es': orvalEnvelope(LANGUAGE),
         'GET /locales/tenants': orvalEnvelope({
             tenants: [
                 { id: 'demo-be', label: 'API', kind: 'backend' },
@@ -144,7 +144,7 @@ describe('language writes', () => {
         return store.editLanguage('es', { name: 'Castilian' }).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ name: 'Castilian' });
-            expect(requestedUrls()).toEqual(['PUT /locales/es', 'GET /locales']);
+            expect(requestedUrls()).toEqual(['PATCH /locales/es', 'GET /locales']);
         });
     });
 

@@ -16,7 +16,8 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
  */
 export const localesResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'POST', pattern: /^\/locales$/, schema: schemas.CreateLocaleResponse },
-    { method: 'PUT', pattern: /^\/locales\/[^/]+$/, schema: schemas.UpdateLocaleResponse },
+    { method: 'PUT', pattern: /^\/locales\/[^/]+$/, schema: schemas.ReplaceLocaleResponse },
+    { method: 'PATCH', pattern: /^\/locales\/[^/]+$/, schema: schemas.UpdateLocaleResponse },
     { method: 'DELETE', pattern: /^\/locales\/[^/]+$/, schema: schemas.DeleteLocaleResponse },
     {
         method: 'GET',

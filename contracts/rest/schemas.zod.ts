@@ -316,9 +316,80 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
 });
 
 /**
- * Updates a language's display names, writing direction or visibility. The tag itself
- * is immutable — it is what every entry references, so changing it would be a rename
- * of the whole dictionary rather than an edit of this record.
+ * Replaces a language's display names, writing direction and visibility (RFC 9110
+ * §9.3.4 — every writable field is required, none of them has a legal "cleared"
+ * state). The tag itself is immutable — it is what every entry references, so
+ * changing it would be a rename of the whole dictionary rather than an edit of this
+ * record.
+ * @summary Replace a language
+ */
+export const replaceLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const ReplaceLocaleParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(replaceLocalePathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const ReplaceLocaleBody = zod.strictObject({
+    name: zod.string().min(1),
+    nativeName: zod.string().min(1),
+    direction: zod
+        .enum(['ltr', 'rtl'])
+        .describe(
+            'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+        ),
+    active: zod.boolean()
+});
+
+export const replaceLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const replaceLocaleResponseDataRevisionMin = 0;
+
+export const ReplaceLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            tag: zod
+                .string()
+                .regex(replaceLocaleResponseDataTagRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            baseLanguage: zod
+                .string()
+                .regex(replaceLocaleResponseDataBaseLanguageRegExp)
+                .describe(
+                    'The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'
+                ),
+            name: zod.string().describe('English name, for an admin list.'),
+            nativeName: zod
+                .string()
+                .describe("The language's own name, for a client's language picker."),
+            direction: zod
+                .enum(['ltr', 'rtl'])
+                .describe(
+                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+                ),
+            active: zod.boolean(),
+            revision: zod.number().min(replaceLocaleResponseDataRevisionMin),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+        .describe(
+            'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
+        )
+});
+
+/**
+ * Merges a language's display names, writing direction or visibility (RFC 7396, an
+ * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * entry references, so changing it would be a rename of the whole dictionary rather
+ * than an edit of this record.
  * @summary Edit a language
  */
 export const updateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -5050,6 +5121,139 @@ export const GetProductByIdResponse = zod.strictObject({
 });
 
 /**
+ * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
+ * writable scalar field is required, since none of them but `taxClass`/`weight`/
+ * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
+ * semantics `PATCH` uses (see its own description): a translations table is keyed
+ * sub-resources, not a single field a "whole-body replace" can meaningfully null out
+ * — a caller cannot be expected to enumerate every locale that currently exists just
+ * to keep it.
+ * @summary Replace product
+ */
+export const ReplaceProductByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const replaceProductByIdBodyPriceMin = 0;
+
+export const replaceProductByIdBodyWeightMin = 0;
+
+export const ReplaceProductByIdBody = zod.strictObject({
+    translations: zod
+        .record(
+            zod.string(),
+            zod
+                .strictObject({
+                    title: zod.string(),
+                    description: zod.string().optional()
+                })
+                .nullable()
+        )
+        .describe(
+            'One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.'
+        ),
+    price: zod
+        .number()
+        .min(replaceProductByIdBodyPriceMin)
+        .describe('Gross — VAT included. Same convention as `Product.price`.'),
+    taxClass: zod
+        .enum(['reduced', 'zero'])
+        .describe(
+            "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+        )
+        .nullish(),
+    active: zod.boolean(),
+    requiresShipping: zod.boolean(),
+    weight: zod
+        .number()
+        .min(replaceProductByIdBodyWeightMin)
+        .nullish()
+        .describe('Grams. Absent counts as 0 for shipping-method filtering.'),
+    imageUrl: zod
+        .string()
+        .min(1)
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `\'\'` is never a synonym for \"no image\" — only `null` is, on a field that allows it.'
+        )
+        .nullish(),
+    categories: zod.array(zod.string()),
+    tags: zod.array(zod.string())
+});
+
+export const replaceProductByIdResponseDataPriceMin = 0;
+
+export const replaceProductByIdResponseDataOnHandMin = 0;
+
+export const replaceProductByIdResponseDataReservedMin = 0;
+
+export const replaceProductByIdResponseDataAvailableMin = 0;
+
+export const replaceProductByIdResponseDataRequiresShippingDefault = true;
+export const replaceProductByIdResponseDataWeightMin = 0;
+
+export const ReplaceProductByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        title: zod.string(),
+        price: zod
+            .number()
+            .min(replaceProductByIdResponseDataPriceMin)
+            .describe(
+                'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        taxClass: zod
+            .enum(['reduced', 'zero'])
+            .optional()
+            .describe(
+                "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        onHand: zod
+            .number()
+            .min(replaceProductByIdResponseDataOnHandMin)
+            .optional()
+            .describe('Units physically present, whether or not they are spoken for.'),
+        reserved: zod
+            .number()
+            .min(replaceProductByIdResponseDataReservedMin)
+            .optional()
+            .describe('Units held by an open order — present, but not for sale.'),
+        available: zod
+            .number()
+            .min(replaceProductByIdResponseDataAvailableMin)
+            .optional()
+            .describe('What a customer may actually buy. Derived from the two counters above.'),
+        description: zod.string().optional(),
+        active: zod.boolean().optional(),
+        requiresShipping: zod
+            .boolean()
+            .default(replaceProductByIdResponseDataRequiresShippingDefault),
+        weight: zod.number().min(replaceProductByIdResponseDataWeightMin).optional(),
+        imageUrl: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `\'\'` is never a synonym for \"no image\" — only `null` is, on a field that allows it.'
+            ),
+        thumbnailUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+            ),
+        categories: zod.array(zod.string()).optional(),
+        tags: zod.array(zod.string()).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
  * Updates the product identified by `{id}` in the path, merging. Every field but
  * `translations` replaces the stored value when sent; `translations` merges one
  * locale at a time — three signals, and no way to mistake one for another:
@@ -5097,10 +5301,10 @@ export const UpdateProductByIdBody = zod.strictObject({
         .describe('Gross — VAT included. Same convention as `Product.price`.'),
     taxClass: zod
         .enum(['reduced', 'zero'])
-        .optional()
         .describe(
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
-        ),
+        )
+        .nullish(),
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     weight: zod

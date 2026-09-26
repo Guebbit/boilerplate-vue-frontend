@@ -241,11 +241,60 @@ paths:
     put:
       tags:
         - System
+      summary: Replace a language
+      description: |
+        Replaces a language's display names, writing direction and visibility (RFC 9110
+        §9.3.4 — every writable field is required, none of them has a legal "cleared"
+        state). The tag itself is immutable — it is what every entry references, so
+        changing it would be a rename of the whole dictionary rather than an edit of this
+        record.
+      operationId: replaceLocale
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LocalePathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceLocaleRequest"
+      responses:
+        "200":
+          description: The updated language
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LanguageEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    patch:
+      tags:
+        - System
       summary: Edit a language
       description: |
-        Updates a language's display names, writing direction or visibility. The tag itself
-        is immutable — it is what every entry references, so changing it would be a rename
-        of the whole dictionary rather than an edit of this record.
+        Merges a language's display names, writing direction or visibility (RFC 7396, an
+        omitted field is left unchanged). The tag itself is immutable — it is what every
+        entry references, so changing it would be a rename of the whole dictionary rather
+        than an edit of this record.
       operationId: updateLocale
       security:
         - bearerAuth: []
@@ -3165,6 +3214,60 @@ paths:
                 $ref: "#/components/schemas/ProductEnvelope"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      tags:
+        - Products
+      summary: Replace product
+      description: |
+        Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
+        writable scalar field is required, since none of them but `taxClass`/`weight`/
+        `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+        cleared, not left alone. `translations` keeps the same per-locale upsert/delete
+        semantics `PATCH` uses (see its own description): a translations table is keyed
+        sub-resources, not a single field a "whole-body replace" can meaningfully null out
+        — a caller cannot be expected to enumerate every locale that currently exists just
+        to keep it.
+      operationId: replaceProductById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceProductRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ReplaceProductRequestMultipart"
+      responses:
+        "200":
+          description: Replaced product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -6805,6 +6908,25 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/LocaleDictionary"
+    ReplaceLocaleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - nativeName
+        - direction
+        - active
+      properties:
+        name:
+          type: string
+          minLength: 1
+        nativeName:
+          type: string
+          minLength: 1
+        direction:
+          $ref: "#/components/schemas/LocaleDirection"
+        active:
+          type: boolean
     UpdateLocaleRequest:
       type: object
       additionalProperties: false
@@ -9569,6 +9691,93 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/CatalogueFacetsResponse"
+    ReplaceProductRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - price
+        - translations
+        - active
+        - requiresShipping
+        - categories
+        - tags
+      properties:
+        translations:
+          $ref: "#/components/schemas/ProductTranslationsWrite"
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TaxClass"
+        active:
+          type: boolean
+        requiresShipping:
+          type: boolean
+        weight:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Grams. Absent counts as 0 for shipping-method filtering.
+        imageUrl:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ImageUrl"
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+    ReplaceProductRequestMultipart:
+      type: object
+      additionalProperties: false
+      required:
+        - price
+        - translations
+        - active
+        - requiresShipping
+        - categories
+        - tags
+      properties:
+        translations:
+          type: string
+          description: JSON-encoded `ProductTranslationsWrite`.
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: Gross — VAT included. Same convention as `Product.price`.
+        taxClass:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TaxClass"
+        active:
+          type: boolean
+        requiresShipping:
+          type: boolean
+        weight:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Grams. Absent counts as 0 for shipping-method filtering.
+        imageUpload:
+          type: string
+          format: binary
+          description: Optional product image
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
     UpdateProductRequest:
       type: object
       additionalProperties: false
@@ -9581,7 +9790,9 @@ components:
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
-          $ref: "#/components/schemas/TaxClass"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TaxClass"
         active:
           type: boolean
         requiresShipping:
@@ -9616,7 +9827,9 @@ components:
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
-          $ref: "#/components/schemas/TaxClass"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TaxClass"
         active:
           type: boolean
         requiresShipping:

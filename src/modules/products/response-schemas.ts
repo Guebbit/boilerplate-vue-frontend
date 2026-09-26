@@ -28,8 +28,11 @@ export const productsResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetCatalogueFacetsResponse
     },
     { method: 'GET', pattern: /^\/products\/[^/]+$/, schema: schemas.GetProductByIdResponse },
-    // PATCH, not PUT: the edit endpoint MERGES rather than replaces, and the choice lives in the
-    // method.
+    {
+        method: 'PUT',
+        pattern: /^\/products\/[^/]+$/,
+        schema: schemas.ReplaceProductByIdResponse
+    },
     { method: 'PATCH', pattern: /^\/products\/[^/]+$/, schema: schemas.UpdateProductByIdResponse },
     {
         method: 'DELETE',
