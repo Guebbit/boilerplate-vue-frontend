@@ -98,7 +98,9 @@ describe('Feedback', () => {
         cy.get('[data-test=feedback-item]').should('have.length', 1);
 
         cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
-        cy.get('[data-test=feedback-notes] textarea').type('Called back, waiting on legal.');
+        cy.get('[data-test=feedback-notes] textarea')
+            .first()
+            .type('Called back, waiting on legal.');
         cy.get('[data-test=feedback-notes-save]').click();
         cy.wait('@patchNotes')
             .its('request.body')
@@ -107,10 +109,9 @@ describe('Feedback', () => {
 
         // A fresh load must read the saved note back from the server, not a client-only draft.
         cy.reload();
-        cy.get('[data-test=feedback-notes] textarea').should(
-            'have.value',
-            'Called back, waiting on legal.'
-        );
+        cy.get('[data-test=feedback-notes] textarea')
+            .first()
+            .should('have.value', 'Called back, waiting on legal.');
     });
 
     it("clearing a ticket's notes sends null, not the empty string D17c now refuses", () => {
@@ -124,12 +125,12 @@ describe('Feedback', () => {
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/feedback');
-        cy.get('[data-test=feedback-notes] textarea').type('A draft note');
+        cy.get('[data-test=feedback-notes] textarea').first().type('A draft note');
         cy.get('[data-test=feedback-notes-save]').click();
         cy.contains('Notes saved.').should('exist');
 
         cy.intercept('PATCH', '**/feedback/*').as('patchNotes');
-        cy.get('[data-test=feedback-notes] textarea').clear();
+        cy.get('[data-test=feedback-notes] textarea').first().clear();
         cy.get('[data-test=feedback-notes-save]').click();
         cy.wait('@patchNotes').its('request.body').should('deep.equal', { adminNotes: null });
     });
