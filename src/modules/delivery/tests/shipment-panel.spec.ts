@@ -6,9 +6,9 @@
  * `session.can('update', 'Shipment')`/`session.can('override', 'Order')` reads exercise the real
  * CASL check.
  *
- * Scoped to what is this component's own logic: which of the three template branches renders, and
- * the override-forward gate `canOverrideTo` — not `deliveryStore.ship`/`.deliver` themselves,
- * which `delivery/tests/store.spec.ts` already covers.
+ * Scoped to what is this component's own logic: which of the four template branches renders, and
+ * the override-forward gate `canOverrideTo` — not `deliveryStore.start`/`.ship`/`.deliver`
+ * themselves, which `delivery/tests/store.spec.ts` already covers.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -49,6 +49,7 @@ const mountPanel = (props: {
     orderId: string;
     orderStatus?: string;
     shippingMethodId?: string;
+    canStart?: boolean;
 }) => {
     const store = useDeliveryStore();
     vi.spyOn(store, 'fetchMethods').mockResolvedValue(undefined);
@@ -63,6 +64,37 @@ const mountPanel = (props: {
 beforeEach(() => {
     setActivePinia(createPinia());
     return loadLocale('en');
+});
+
+describe('the start-fulfilment door (Q6)', () => {
+    it('offers "Start fulfilment" on a paid order when `actions.start` says so', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: true });
+
+        expect(wrapper.find('[data-test=mark-started]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
+    });
+
+    it('never offers it when `actions.start` is false, even on a paid order', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: false });
+
+        expect(wrapper.find('[data-test=mark-started]').exists()).toBe(false);
+    });
+
+    it('calls the delivery store and emits `moved` on click', () => {
+        signIn();
+        const start = vi.spyOn(useDeliveryStore(), 'start').mockResolvedValue(undefined);
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: true });
+
+        return wrapper
+            .get('[data-test=mark-started]')
+            .trigger('click')
+            .then(() => {
+                expect(start).toHaveBeenCalledWith('o1');
+                expect(wrapper.emitted('moved')).toHaveLength(1);
+            });
+    });
 });
 
 describe('with no shipment yet', () => {

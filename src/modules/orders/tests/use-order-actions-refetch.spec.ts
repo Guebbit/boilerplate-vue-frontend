@@ -16,10 +16,18 @@ import type { Order, OrderActions } from '@types';
 const order = (id: string, actions?: OrderActions): Order => ({ id, actions }) as Order;
 
 /** A terminal order: the detail representation arrived and offers nothing. */
-const NO_MOVES: OrderActions = { transitions: [], cancel: false, pay: false };
+const NO_MOVES: OrderActions = {
+    transitions: [],
+    cancel: false,
+    pay: false,
+    start: false,
+    ship: false,
+    deliver: false,
+    override: []
+};
 
 /** A live order with a move available. */
-const CAN_CANCEL: OrderActions = { transitions: ['cancelled'], cancel: true, pay: false };
+const CAN_CANCEL: OrderActions = { ...NO_MOVES, transitions: ['cancelled'], cancel: true };
 
 /**
  * Mounts the composable over a settable record, handing back the ref and the fetch spy.

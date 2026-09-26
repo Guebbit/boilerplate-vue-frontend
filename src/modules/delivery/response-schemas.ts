@@ -28,6 +28,11 @@ export const deliveryResponseSchemas: ResponseSchemaRoute[] = [
     },
     {
         method: 'POST',
+        pattern: /^\/delivery\/order\/[^/]+\/start$/,
+        schema: schemas.StartFulfilmentResponse
+    },
+    {
+        method: 'POST',
         pattern: /^\/delivery\/order\/[^/]+\/ship$/,
         schema: schemas.ShipOrderResponse
     },

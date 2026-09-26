@@ -8,7 +8,13 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { listShippingMethods, getShipmentByOrder, shipOrder, deliverOrder } from '@api';
+import {
+    listShippingMethods,
+    getShipmentByOrder,
+    startFulfilment,
+    shipOrder,
+    deliverOrder
+} from '@api';
 import type { ShippingMethod, Shipment } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 
@@ -92,6 +98,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
+     * Reports that fulfilment has started on a paid order (admin): the order moves
+     * `paid → processing`, before any parcel exists. No result stored here — this module owns
+     * the shipment, not the order — the caller re-reads the order the same way it already does
+     * after {@link ship}/{@link deliver}.
+     *
+     * @param orderId - The order to start fulfilling.
+     * @returns A promise resolving once the move lands.
+     */
+    const start = (orderId: string) =>
+        fetchAny(() => startFulfilment(orderId).then(() => undefined));
+
+    /**
      * Record a parcel's handover to the carrier (admin): the order moves `processing → shipped`.
      *
      * @param orderId - The order being shipped.
@@ -136,6 +154,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchMethods,
         effectivePrice,
         fetchShipmentForOrder,
+        start,
         ship,
         deliver
     };

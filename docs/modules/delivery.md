@@ -84,6 +84,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 | Call                                | Response envelope             |
 | ----------------------------------- | ----------------------------- |
+| `POST /delivery/order/{id}/start`   | `StartFulfilmentResponse`     |
 | `POST /delivery/order/{id}/ship`    | `ShipOrderResponse`           |
 | `POST /delivery/order/{id}/deliver` | `DeliverOrderResponse`        |
 | `GET /delivery/methods`             | `ListShippingMethodsResponse` |

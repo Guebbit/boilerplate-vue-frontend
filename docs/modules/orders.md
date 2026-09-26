@@ -91,19 +91,21 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                       | Response envelope             |
-| -------------------------- | ----------------------------- |
-| `DELETE /orders`           | `DeleteOrderResponse`         |
-| `GET /orders`              | `ListOrdersResponse`          |
-| `POST /orders`             | `CreateOrderResponse`         |
-| `PUT /orders`              | `UpdateOrderResponse`         |
-| `DELETE /orders/{id}`      | `DeleteOrderByIdResponse`     |
-| `GET /orders/{id}`         | `GetOrderByIdResponse`        |
-| `PUT /orders/{id}`         | `UpdateOrderByIdResponse`     |
-| `POST /orders/{id}/cancel` | `CancelOrderByIdResponse`     |
-| `DELETE /orders/{id}/hard` | `HardDeleteOrderByIdResponse` |
-| `GET /orders/{id}/invoice` | `GetOrderInvoiceResponse`     |
-| `POST /orders/search`      | `SearchOrdersResponse`        |
+| Call                                | Response envelope             |
+| ----------------------------------- | ----------------------------- |
+| `DELETE /orders`                    | `DeleteOrderResponse`         |
+| `GET /orders`                       | `ListOrdersResponse`          |
+| `POST /orders`                      | `CreateOrderResponse`         |
+| `DELETE /orders/{id}`               | `DeleteOrderByIdResponse`     |
+| `GET /orders/{id}`                  | `GetOrderByIdResponse`        |
+| `PUT /orders/{id}`                  | `ReplaceOrderByIdResponse`    |
+| `PATCH /orders/{id}`                | `UpdateOrderByIdResponse`     |
+| `POST /orders/{id}/cancel`          | `CancelOrderByIdResponse`     |
+| `POST /orders/{id}/restore`         | `RestoreOrderByIdResponse`    |
+| `POST /orders/{id}/status-override` | `OverrideOrderStatusResponse` |
+| `DELETE /orders/{id}/hard`          | `HardDeleteOrderByIdResponse` |
+| `GET /orders/{id}/invoice`          | `GetOrderInvoiceResponse`     |
+| `POST /orders/search`               | `SearchOrdersResponse`        |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

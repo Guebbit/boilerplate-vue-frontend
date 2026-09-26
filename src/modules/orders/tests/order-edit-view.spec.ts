@@ -28,7 +28,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { OrderStatus } from '@types';
-import type { Order } from '@types';
+import type { Order, OrderActions } from '@types';
 
 wireModulesIntoCore();
 
@@ -73,6 +73,22 @@ const signInAsAdmin = () => {
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'operator@example.com', role: 'admin' };
 };
+
+/**
+ * `OrderActions`, defaulted to "nothing" — each case overrides only the fields its own scenario
+ * is about, rather than restating `start`/`ship`/`deliver`/`override` (never this suite's
+ * concern) at every call site.
+ */
+const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
+    transitions: [],
+    cancel: false,
+    pay: false,
+    start: false,
+    ship: false,
+    deliver: false,
+    override: [],
+    ...overrides
+});
 
 /**
  * A minimal order, everything but what each case overrides.
@@ -146,11 +162,11 @@ describe('a list-cache arrival gains actions', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
-            actions: {
+            actions: anAction({
                 transitions: [OrderStatus.delivered, OrderStatus.cancelled],
                 cancel: true,
                 pay: false
-            }
+            })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -170,7 +186,7 @@ describe('a list-cache arrival gains actions', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.delivered,
-            actions: { transitions: [], cancel: false, pay: false }
+            actions: anAction({ transitions: [], cancel: false, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -194,7 +210,7 @@ describe('refunding', () => {
         mockCanRefund.value = true;
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: { transitions: [], cancel: true, pay: false }
+            actions: anAction({ transitions: [], cancel: true, pay: false })
         });
         const { wrapper } = mountFromListCache(detail);
 
@@ -221,7 +237,7 @@ describe('cancelling', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: { transitions: [OrderStatus.cancelled], cancel: true, pay: false }
+            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: false })
         });
         // Spied BEFORE mounting, same reasoning as the override test above.
         const cancelOrder = vi
@@ -248,7 +264,7 @@ describe('the correct-status door', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
-            actions: { transitions: [OrderStatus.delivered], cancel: true, pay: false }
+            actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -266,7 +282,7 @@ describe('the correct-status door', () => {
         session.tenantAbility = createMongoAbility([{ action: 'override', subject: 'Order' }]);
         const detail = anOrder({
             status: OrderStatus.shipped,
-            actions: { transitions: [OrderStatus.delivered], cancel: true, pay: false }
+            actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
         });
         // Spied BEFORE mounting: the component destructures `overrideStatus` off the store at
         // setup time, so a spy attached after mount would replace the store's own method while
@@ -317,12 +333,55 @@ describe('the correct-status door', () => {
     });
 });
 
+describe('the edit form (FA31)', () => {
+    it('sends no fields when the form is submitted unchanged', () => {
+        signInAsAdmin();
+        const detail = anOrder();
+        const updateOrder = vi
+            .spyOn(useOrdersStore(), 'updateOrder')
+            .mockResolvedValue({ ...detail });
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(updateOrder).toHaveBeenCalledWith('o1', {});
+            });
+    });
+
+    it('sends `email` once the field actually changes', () => {
+        signInAsAdmin();
+        const detail = anOrder();
+        const updateOrder = vi
+            .spyOn(useOrdersStore(), 'updateOrder')
+            .mockResolvedValue({ ...detail, email: 'billing@example.com' });
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                (wrapper.getComponent('[data-test="order-edit-email"]') as VueWrapper).vm.$emit(
+                    'update:modelValue',
+                    'billing@example.com'
+                );
+                return nextTick();
+            })
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(updateOrder).toHaveBeenCalledWith('o1', { email: 'billing@example.com' });
+            });
+    });
+});
+
 describe('recording a payment by hand', () => {
     it('offers the form while the order can still reach paid', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: { transitions: [OrderStatus.cancelled], cancel: true, pay: true }
+            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -340,7 +399,7 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.paid,
-            actions: { transitions: [OrderStatus.processing], cancel: true, pay: false }
+            actions: anAction({ transitions: [OrderStatus.processing], cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);

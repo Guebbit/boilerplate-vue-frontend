@@ -394,6 +394,14 @@ export interface OrderActions {
     cancel: boolean;
     /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
     pay: boolean;
+    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
+    start: boolean;
+    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
+    ship: boolean;
+    /** Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
+    deliver: boolean;
+    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
+    override: OrderStatus[];
 }
 
 export interface OrderTaxSummaryRow {
@@ -2648,6 +2656,10 @@ export interface SearchOrdersRequest {
     paymentMethod?: PaymentMethodId;
     notes?: string;
     deleted?: boolean;
+}
+
+export interface ReplaceOrderByIdRequest {
+    email: Email;
 }
 
 export interface UpdateOrderByIdRequest {
@@ -6224,7 +6236,27 @@ export const getOrderById = (
 };
 
 /**
- * Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * @summary Replace order
+ */
+export const replaceOrderById = (
+    id: string,
+    replaceOrderByIdRequest: ReplaceOrderByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceOrderByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const updateOrderById = (
@@ -6235,7 +6267,7 @@ export const updateOrderById = (
     return orvalMutator<OrderEnvelope>(
         {
             url: `/orders/${id}`,
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             data: updateOrderByIdRequest
         },
@@ -6509,6 +6541,20 @@ export const getShipmentByOrder = (
 ) => {
     return orvalMutator<ShipmentEnvelope>(
         { url: `/delivery/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Reports that fulfilment has started — the order moves `paid → processing`. No parcel exists yet at this point; that comes later, at `POST /delivery/order/{orderId}/ship`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * @summary Begin fulfilling a paid order
+ */
+export const startFulfilment = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        { url: `/delivery/order/${orderId}/start`, method: 'POST' },
         options
     );
 };
@@ -7074,6 +7120,7 @@ export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrde
 export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>;
 export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
+export type ReplaceOrderByIdResult = NonNullable<Awaited<ReturnType<typeof replaceOrderById>>>;
 export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
 export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
 export type RestoreOrderByIdResult = NonNullable<Awaited<ReturnType<typeof restoreOrderById>>>;
@@ -7108,6 +7155,7 @@ export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>
 >;
 export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
+export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
 export type ShipOrderResult = NonNullable<Awaited<ReturnType<typeof shipOrder>>>;
 export type DeliverOrderResult = NonNullable<Awaited<ReturnType<typeof deliverOrder>>>;
 export type ListInventoryLevelsResult = NonNullable<
