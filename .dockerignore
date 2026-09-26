@@ -4,8 +4,11 @@ node_modules
 # Version control
 .git
 
-# Secrets
-.env
+# Secrets. `.env*` rather than the exact spelling: a backup, an export or a tool's scratch copy
+# (`.env.bak`, `.env.save`) carries the same secrets as `.env` itself. `!.env-example` matches
+# `.gitignore`'s own rule for the same reason.
+.env*
+!.env-example
 
 # IDE
 .idea
