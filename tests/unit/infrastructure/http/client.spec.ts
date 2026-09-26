@@ -24,6 +24,7 @@ const loadClient = (environment: Record<string, string | undefined>) => {
 
 afterEach(() => {
     vi.unstubAllEnvs();
+    Reflect.deleteProperty(globalThis, '__APP_CONFIG');
 });
 
 describe('axios instance defaults', () => {
@@ -50,6 +51,20 @@ describe('axios instance defaults', () => {
     it('sends credentials, so the httpOnly refresh cookie travels with every call', () => {
         return loadClient({}).then(({ instance }) => {
             expect(instance.defaults.withCredentials).toBe(true);
+        });
+    });
+
+    it('a runtime-configured API_URL and timeout win over the build-time VITE_* values', () => {
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+            API_URL: 'http://runtime.test',
+            AXIOS_TIMEOUT: '5000'
+        };
+        return loadClient({
+            VITE_API_URL: 'http://build-time.test',
+            VITE_AXIOS_TIMEOUT: '2500'
+        }).then(({ instance }) => {
+            expect(instance.defaults.baseURL).toBe('http://runtime.test');
+            expect(instance.defaults.timeout).toBe(5000);
         });
     });
 });

@@ -19,6 +19,7 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { staticPageRouteName } from '@/app/utils/static-pages.ts';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /*
  * Every domain route in the app arrives through this one call, and this file names no domain at
@@ -35,7 +36,8 @@ const moduleRoutes = collectModuleRoutes(enabledModules);
  * The name that follows every page title in the browser tab, and stands alone on a route that
  * declares none. An env value so a derived project renames the tab without touching the router.
  */
-const appName = (import.meta.env.VITE_APP_NAME as string | undefined) || 'Guebbit';
+const appName =
+    runtimeValue('APP_NAME') || (import.meta.env.VITE_APP_NAME as string | undefined) || 'Guebbit';
 
 /**
  * Whether the visitor asked the OS for less motion; read per call, since the setting can change.
@@ -47,7 +49,9 @@ const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)'
  * the kernel registry, plus the top-level 404/redirect shells the shell owns itself.
  */
 const router = createRouter({
-    history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
+    // Vite's own BASE_URL, derived from `vite.config.ts`'s `base` — never `VITE_APP_BASE_URL`
+    // directly, which vue-router would treat as a full origin, not a path.
+    history: createWebHistory(import.meta.env.BASE_URL),
     /**
      * Back/forward restore where the visitor was; a new page starts at the top, or at its anchor.
      *

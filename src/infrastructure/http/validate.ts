@@ -5,6 +5,7 @@
  * logging (not throwing) on an unmapped route.
  */
 
+import { z } from 'zod';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/infrastructure/i18n';
@@ -19,9 +20,7 @@ import type { AxiosResponseErrorData } from './types.ts';
  *
  * Production is the point: the generated envelope types promise `data` on every 2xx, and the
  * stores trust that promise instead of guarding every read. This gate is what makes the promise
- * true — a malformed 200 becomes a visible rejection at the one unwrap point, not a silently
- * empty page. The schemas cost no extra bundle: `response-schema-map` was always a static import
- * of this module.
+ * true. What differs between profiles is what a mismatch DOES — see {@link isReportOnly}.
  *
  * The `MODE !== 'test'` half is load-bearing: Vitest also sets `DEV: true`, and plenty of unit
  * tests exercise `orvalMutator` against deliberately partial fixtures.
@@ -38,6 +37,16 @@ export const shouldValidateResponses = (): boolean => {
 };
 
 /**
+ * Whether a mismatch reports (production) rather than rejects (dev, unit, every e2e profile).
+ *
+ * Decided (FA-D2 = C): one added optional field on the backend must not turn into an outage for
+ * every deployed frontend before it redeploys — production still catches drift, it just never
+ * blocks a call on it. Unknown keys are stripped rather than rejected for the same reason; a
+ * missing or mistyped field is still a real defect, so it is still reported, just not thrown.
+ */
+export const isReportOnly = (): boolean => import.meta.env.PROD;
+
+/**
  * Parses a response body through the schema matching its request, rejecting on a mismatch.
  *
  * An unmapped route fails open — logged, not thrown — because a gap in the map means the map is
@@ -48,21 +57,33 @@ export const shouldValidateResponses = (): boolean => {
  * goes to Faro; what the rejection carries for a call site to show is the same generic envelope
  * every other unreadable failure gets.
  *
+ * In {@link isReportOnly} mode, unknown keys are stripped before parsing — an additive backend
+ * field is not this deployment's problem — and a remaining mismatch (a field missing or the
+ * wrong type) is sent to Faro but never thrown; the caller gets the response exactly as it
+ * arrived, same as validation being off. Dev, unit and every e2e profile keep throwing: that is
+ * the whole point of catching drift where it happened, before it reaches production.
+ *
  * @param config - The request config that produced `data` (used to resolve the schema).
  * @param data - The already-unwrapped response body.
- * @throws {AxiosResponseErrorData} When a mapped schema rejects the body.
+ * @throws {AxiosResponseErrorData} When a mapped schema rejects the body outside report-only mode.
  */
 export const validateResponseAgainstContract = (
     config: AxiosRequestConfig,
     data: unknown
 ): void => {
-    const schema = resolveResponseSchema(config.method, config.url);
-    if (!schema) {
+    const mappedSchema = resolveResponseSchema(config.method, config.url);
+    if (!mappedSchema) {
         logger.warn(
             `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
         );
         return;
     }
+
+    const reportOnly = isReportOnly();
+    // `.strip()` only exists on an object schema — every generated envelope is one, but the
+    // lookup's declared type is the wider `ZodType`, so this guards the cast.
+    const schema =
+        reportOnly && mappedSchema instanceof z.ZodObject ? mappedSchema.strip() : mappedSchema;
 
     const result = schema.safeParse(data);
     if (result.success) return;
@@ -73,6 +94,8 @@ export const validateResponseAgainstContract = (
         .join('\n');
     const diagnostic = `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
     useObservabilityStore().captureException(new Error(diagnostic));
+
+    if (reportOnly) return;
 
     const message = translate('api-errors.unknown');
 

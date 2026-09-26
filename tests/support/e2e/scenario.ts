@@ -47,7 +47,7 @@ const NOTHING_DESCRIBED: ScenarioDescription = { scenario: null, accounts: {}, s
  * Loaded once in the `before` hook at the bottom and re-read by `cy.restore()`, rather than
  * fetched where it is used: `seedAccount()` is read SYNCHRONOUSLY by two dozen spec lines that
  * type an address into a login form, and Cypress has no synchronous way to ask anything. The same
- * arrangement `commands.ts` uses for `__E2E_API_URL`.
+ * arrangement `commands.ts` uses for `__APP_CONFIG`.
  */
 let current: ScenarioDescription = NOTHING_DESCRIBED;
 

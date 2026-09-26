@@ -12,6 +12,7 @@ import {
     formatFlag as formatFlagBase
 } from '@guebbit/js-toolkit';
 import { getCurrentLocale } from '@/infrastructure/i18n';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
  * Shared fallback rendered when a display value is empty or unavailable.
@@ -19,7 +20,8 @@ import { getCurrentLocale } from '@/infrastructure/i18n';
  * Configured through `VITE_APP_EMPTY_VALUE` so a deployment can swap the glyph
  * (em dash, `N/A`, ...) without touching the code; falls back to an em dash.
  */
-export const EMPTY_VALUE = import.meta.env.VITE_APP_EMPTY_VALUE ?? '—';
+export const EMPTY_VALUE =
+    runtimeValue('APP_EMPTY_VALUE') ?? import.meta.env.VITE_APP_EMPTY_VALUE ?? '—';
 
 /*
  * The formatting lives in `@guebbit/js-toolkit`, which is pure: it takes the locale and the

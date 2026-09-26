@@ -6,13 +6,13 @@
 #   docker compose -f docker-compose.production.yml up -d --build
 #   docker compose -f docker-compose.production.yml logs -f frontend
 #
-# ── AN IMAGE IS SPECIFIC TO ONE ENVIRONMENT ──────────────────────────────────────────────────────
-# Vite replaces every `import.meta.env.VITE_*` with a literal while bundling, so the values below
-# are BUILD arguments, not runtime environment. Changing one requires a rebuild — `up -d` alone
-# will happily restart a container with the old values compiled in. See the long note at the top of
-# `docker/Dockerfile.production`.
+# ── ONE IMAGE, CONFIGURED WHEN IT STARTS ─────────────────────────────────────────────────────────
+# `VITE_APP_BASE_URL` is the one value Vite still bakes into every asset URL at build time — it is
+# the only build arg below. Everything else is `environment:`: `docker/docker-entrypoint.d/`
+# writes it into `/config.js` fresh at every container start, so changing it is `up -d`, not a
+# rebuild. See the long note at the top of `docker/Dockerfile.production`.
 #
-# Set them in a `.env` file beside this one (compose interpolates it automatically) or export them
+# Set these in a `.env` file beside this one (compose interpolates it automatically) or export them
 # in the shell. `VITE_API_URL` is required and has no sensible default: a frontend pointed at the
 # wrong API is a frontend that looks fine and does nothing.
 
@@ -22,29 +22,28 @@ services:
             context: .
             dockerfile: docker/Dockerfile.production
             args:
-                # Required. The `:?` form fails the build with this message rather than quietly
-                # baking an empty string into the bundle and shipping an app that calls itself.
-                VITE_API_URL: '${VITE_API_URL:?set VITE_API_URL — it is compiled into the bundle}'
-                VITE_API_SSE: '${VITE_API_SSE:-}'
                 VITE_APP_BASE_URL: '${VITE_APP_BASE_URL:-/}'
-                VITE_APP_DEFAULT_LOCALE: '${VITE_APP_DEFAULT_LOCALE:-en}'
-                VITE_APP_FALLBACK_LOCALE: '${VITE_APP_FALLBACK_LOCALE:-en}'
-                # `warn` rather than the development default: the browser console is a user-facing
-                # surface in production, and request-level logging there is noise at best.
-                VITE_APP_LOG_LEVEL: '${VITE_APP_LOG_LEVEL:-warn}'
-                VITE_AXIOS_TIMEOUT: '${VITE_AXIOS_TIMEOUT:-30000}'
-                VITE_MAX_UPLOAD_BYTES: '${VITE_MAX_UPLOAD_BYTES:-5242880}'
-                # Zod-validating every response against the OpenAPI envelope costs CPU on the main
-                # thread for every request. It is a development and live-E2E instrument; off here.
-                VITE_VALIDATE_RESPONSES: '${VITE_VALIDATE_RESPONSES:-false}'
-                # Telemetry. All optional — an unset value disables the integration entirely rather
-                # than pointing it at nothing.
-                VITE_FARO_URL: '${VITE_FARO_URL:-}'
-                VITE_FARO_APP_NAME: '${VITE_FARO_APP_NAME:-frontend}'
-                VITE_FARO_APP_VERSION: '${VITE_FARO_APP_VERSION:-}'
-                VITE_FARO_ENVIRONMENT: '${VITE_FARO_ENVIRONMENT:-production}'
-                VITE_UMAMI_SRC: '${VITE_UMAMI_SRC:-}'
-                VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
+
+        environment:
+            # Required. The `:?` form fails the container's own start-up rather than quietly
+            # shipping an app that calls itself.
+            VITE_API_URL: '${VITE_API_URL:?set VITE_API_URL}'
+            VITE_API_SSE: '${VITE_API_SSE:-}'
+            VITE_APP_DEFAULT_LOCALE: '${VITE_APP_DEFAULT_LOCALE:-en}'
+            VITE_APP_FALLBACK_LOCALE: '${VITE_APP_FALLBACK_LOCALE:-en}'
+            # `warn` rather than the development default: the browser console is a user-facing
+            # surface in production, and request-level logging there is noise at best.
+            VITE_APP_LOG_LEVEL: '${VITE_APP_LOG_LEVEL:-warn}'
+            VITE_AXIOS_TIMEOUT: '${VITE_AXIOS_TIMEOUT:-30000}'
+            VITE_MAX_UPLOAD_BYTES: '${VITE_MAX_UPLOAD_BYTES:-5242880}'
+            # Telemetry. All optional — an unset value disables the integration entirely rather
+            # than pointing it at nothing.
+            VITE_FARO_URL: '${VITE_FARO_URL:-}'
+            VITE_FARO_APP_NAME: '${VITE_FARO_APP_NAME:-frontend}'
+            VITE_FARO_APP_VERSION: '${VITE_FARO_APP_VERSION:-}'
+            VITE_FARO_ENVIRONMENT: '${VITE_FARO_ENVIRONMENT:-production}'
+            VITE_UMAMI_SRC: '${VITE_UMAMI_SRC:-}'
+            VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
 
         restart: unless-stopped
 
