@@ -12,21 +12,33 @@ import PaymentPanel from '@/modules/payments/components/PaymentPanel.vue';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
+import type { Payment } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();
 
-const mountPanel = () => {
+const mountPanel = (props: Record<string, unknown> = {}) => {
     const store = usePaymentsStore();
     vi.spyOn(store, 'fetchPaymentForOrder').mockResolvedValue(undefined);
 
     return {
         store,
         wrapper: mount(PaymentPanel, {
-            props: { orderId: 'order-1', orderPayable: true },
+            props: { orderId: 'order-1', orderPayable: true, ...props },
             global: { plugins: [vuetify, i18n] }
         })
     };
+};
+
+/** A hand-paid, settled payment — the fixture B1b's "refund pending" label needs. */
+const handPaidSucceededPayment: Payment = {
+    id: 'payment-1',
+    orderId: 'order-1',
+    amount: 100,
+    currency: 'EUR',
+    status: 'succeeded',
+    provider: 'manual',
+    method: 'bank_transfer'
 };
 
 beforeEach(() => {
@@ -110,5 +122,54 @@ describe('PaymentPanel', () => {
             .then(() => {
                 expect(wrapper.findAll('[data-test=payment-unavailable-line]')).toHaveLength(0);
             });
+    });
+
+    /*
+     * B1b: cancelling a hand-paid order no longer auto-marks it refunded — it stays `succeeded`
+     * until an operator confirms the money actually came back. The panel must say why a "paid"
+     * payment sits on a cancelled order, rather than showing a plain, misleading "Paid".
+     */
+    describe('a hand-paid payment on a cancelled order', () => {
+        it('shows the refund-pending label', () => {
+            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
+            store.payment = { ...handPaidSucceededPayment };
+
+            return wrapper.vm.$nextTick().then(() => {
+                expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(true);
+                expect(wrapper.find('[data-test=payment-refunded-by-hand]').exists()).toBe(false);
+            });
+        });
+
+        it('does not show the label once an operator has confirmed the refund', () => {
+            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
+            store.payment = {
+                ...handPaidSucceededPayment,
+                status: 'refunded',
+                refundedByHand: true
+            };
+
+            return wrapper.vm.$nextTick().then(() => {
+                expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
+                expect(wrapper.find('[data-test=payment-refunded-by-hand]').exists()).toBe(true);
+            });
+        });
+
+        it('does not show the label for a card payment — B1b is the hand-paid case only', () => {
+            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
+            store.payment = { ...handPaidSucceededPayment, provider: 'fake', method: 'card' };
+
+            return wrapper.vm.$nextTick().then(() => {
+                expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
+            });
+        });
+
+        it('does not show the label while the order is still active', () => {
+            const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+            store.payment = { ...handPaidSucceededPayment };
+
+            return wrapper.vm.$nextTick().then(() => {
+                expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
+            });
+        });
     });
 });

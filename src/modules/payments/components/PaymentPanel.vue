@@ -22,6 +22,7 @@ import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/
 import { usePaymentsStore } from '../store.ts';
 import { classifyPaymentError } from '@/modules/payments/domain';
 import type { UnavailableOrderLine } from '@/modules/payments/domain';
+import { OrderStatus } from '@types';
 
 /**
  * The order page's payment corner: a method picker while the order is payable, the payment's fate
@@ -33,7 +34,7 @@ import type { UnavailableOrderLine } from '@/modules/payments/domain';
  * one. The picker below stands exactly where that widget mounts, and produces the same kind of
  * value it would.
  */
-const { orderId, orderPayable } = defineProps<{
+const { orderId, orderPayable, orderStatus } = defineProps<{
     /**
      * The order this panel pays.
      */
@@ -42,6 +43,12 @@ const { orderId, orderPayable } = defineProps<{
      * The order's own `actions.pay` — whether it is still awaiting payment.
      */
     orderPayable?: boolean;
+    /**
+     * The order's current status — decides whether a hand-paid `succeeded` payment shows as
+     * "refund pending" (B1b): cancelling never moves it to `refunded` on its own any more, only an
+     * operator's own confirmation does.
+     */
+    orderStatus?: string;
 }>();
 
 /**
@@ -111,6 +118,19 @@ const payable = computed(() =>
  */
 const inFlight = computed(
     () => payment.value?.status === 'requires_action' || payment.value?.status === 'processing'
+);
+
+/**
+ * A hand-paid order was cancelled, but nobody has confirmed the money actually went back (B1b):
+ * cancelling a `manual` payment now only leaves it `succeeded` and waits for an operator's own
+ * refund — it no longer moves to `refunded` by itself, so the panel must say why a "paid" order is
+ * also a cancelled one.
+ */
+const refundPending = computed(
+    () =>
+        payment.value?.status === 'succeeded' &&
+        payment.value.method !== 'card' &&
+        orderStatus === OrderStatus.cancelled
 );
 
 /**
@@ -280,7 +300,10 @@ onMounted(() => {
 
         <template v-else-if="payment">
             <div class="flex items-center gap-3" data-test="payment-status">
-                <v-chip :color="payment.status === 'refunded' ? 'warning' : 'success'" size="small">
+                <v-chip
+                    :color="payment.status === 'refunded' || refundPending ? 'warning' : 'success'"
+                    size="small"
+                >
                     {{ t(`payments-panel.status-${payment.status}`) }}
                 </v-chip>
                 <span v-if="payment.cardLast4" class="text-sm opacity-75">
@@ -310,6 +333,13 @@ onMounted(() => {
                 data-test="payment-refunded-by-hand"
             >
                 {{ t('payments-panel.refunded-by-hand') }}
+            </p>
+            <p
+                v-else-if="refundPending"
+                class="mt-2 mb-0 text-sm"
+                data-test="payment-refund-pending"
+            >
+                {{ t('payments-panel.refund-pending') }}
             </p>
         </template>
 
