@@ -116,4 +116,10 @@ See [Test timings](./docs/tools/testing-and-docs.md#test-timings) for what each 
 
 ## License
 
-AGPL-3.0. See [LICENSE](./LICENSE).
+AGPL-3.0-or-later. See [LICENSE](./LICENSE).
+
+This app is shipped straight to browsers, so AGPL §13 applies the same way it does to the paired
+backend: if you modify it, you must offer everyone who interacts with it remotely a way to get the
+Corresponding Source of your modified version, including the AGPL toolkits it bundles
+(`@guebbit/vue-toolkit`, `@guebbit/js-toolkit`). This binds _you_, the operator, not your users. It
+is not legal advice — some organisations forbid AGPL dependencies outright; check before adopting.
