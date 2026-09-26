@@ -68,7 +68,7 @@ Twelve domains, one array. Identical in spirit to the backend's file of the same
 ### 3 · `src/kernel/registry.ts` — what a module _is_
 
 The thesis of the repository. A module is a **typed object** declaring: `routes`, `navigation`,
-`dependsOn`, `responseSchemas` and `locales`. The
+`responseSchemas` and `locales`. The
 `collect*` functions are how each of those reaches the system that consumes it.
 
 **Take away:** read the `collect*` exports before the validation logic. They are the map of
@@ -158,7 +158,7 @@ generated code inherits all of the above without knowing it exists.
 
 1. **A module is a value.** One typed object per domain, listed in `src/modules.ts`.
 2. **Four tiers, pointing downward.** `ui` knows nothing; `infrastructure` and `kernel` know no
-   domain; `modules/*` know each other only through declared `dependsOn`; `app` assembles.
+   domain; `modules/*` know each other only through a sibling's public barrel; `app` assembles.
 3. **The contract is an output.** `@api` and `@types` are generated from `openapi.yaml`. Never edit
    generated files, and never hand-write a request type.
 4. **Views render, stores call, interceptors cross-cut.** No layer does two of those.

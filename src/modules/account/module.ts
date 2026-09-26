@@ -25,9 +25,8 @@ import { accountResponseSchemas } from './response-schemas';
  * `isAuth` and the caller's rules before any domain code runs. This module owns the user's
  * editable record.
  *
- * There is no `index.ts` next to this file, and that is the answer rather than an omission: account
- * is a consumer, not a provider, and no other domain has ever needed anything from it. A barrel
- * exists when a module exports something; an empty one would only be a promise nobody asked for.
+ * `index.ts` publishes exactly one thing: `AddressPicker`, so `cart`'s checkout can mount the
+ * address choice without reaching into this module's stores or its own add/edit dialog directly.
  *
  * Login, signup, password reset. There is no version of this that is a competitive advantage,
  * and the client half is thinner still — it renders forms over rules the server owns.

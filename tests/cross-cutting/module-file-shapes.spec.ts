@@ -2,7 +2,7 @@
  * Every file in a module folder is a shape someone named on purpose.
  *
  * A module is a vocabulary as much as a folder: `module.ts`, `routes.ts`, `store.ts`,
- * `views/*.vue`, `response-schemas.ts`. That vocabulary is what makes fourteen domains legible to
+ * `views/*.vue`, `response-schemas.ts`. That vocabulary is what makes sixteen domains legible to
  * someone who has read one of them — and it holds only as long as nothing else quietly appears
  * beside it. A `helpers/`, a `utils.ts`, a `constants.ts`: each is reasonable on its own, and
  * together they are the end of the pattern, because the next person copies whatever they find.

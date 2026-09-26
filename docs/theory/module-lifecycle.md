@@ -365,7 +365,7 @@ naming a domain. That is not a substitute for actually deleting a folder.
 
 ## Related pages
 
-- [Modules overview](../modules/) — the fourteen pages this procedure adds to and removes from
+- [Modules overview](../modules/) — the sixteen pages this procedure adds to and removes from
 
 - [Modules](./modules.md) — why the shape is what it is
 - [Layers](./layers.md) — the folder map
