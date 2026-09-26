@@ -84,6 +84,7 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOne: updateOrder,
         deleteOne: deleteOrder,
         deleteTarget,
+        updateTarget,
         fetchAny,
         destroy
     } = useStructureCrudApi<
@@ -172,18 +173,20 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the restored order.
      */
     const restoreOrder = (orderId: string) =>
-        fetchAny(() =>
-            restoreOrderById(orderId).then((response) => {
-                addOrder(response.data);
-                return response.data;
-            })
+        updateTarget(
+            () => restoreOrderById(orderId).then((response) => response.data),
+            {},
+            orderId
         );
 
     /**
      * Cancels one order. Which statuses allow it is the server's `actions.cancel`, and its
      * conditional write decides, so a cancel racing a status change comes back as the 409 this
-     * rethrows rather than a silent double write. The returned record replaces the cached one,
-     * because the fact worth rendering afterwards is the new status.
+     * rethrows rather than a silent double write.
+     *
+     * `updateTarget` (not a plain {@link addOrder}) replaces both the cached record AND its
+     * per-item query-cache entry, so a sibling page's own `watchOrder` reads the new status
+     * instead of serving back the pre-cancel copy it still holds fresh.
      *
      * `refund` is an operator's choice and is ignored for a customer, who is always refunded.
      *
@@ -192,21 +195,21 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the cancelled order.
      */
     const cancelOrder = (orderId: string, refund?: boolean) =>
-        fetchAny(() =>
-            cancelOrderById(orderId, refund === undefined ? undefined : { refund }).then(
-                (response) => {
-                    addOrder(response.data);
-                    return response.data;
-                }
-            )
+        updateTarget(
+            () =>
+                cancelOrderById(orderId, refund === undefined ? undefined : { refund }).then(
+                    (response) => response.data
+                ),
+            {},
+            orderId
         );
 
     /**
      * Forces a move to `processing`, `shipped` or `delivered` with a reason, bypassing the
      * ordinary transition rule — `orders.any.override` only. No parcel record and no shipped
      * email fire; this is a manual correction, not the shipping flow (`useDeliveryStore`'s
-     * `ship`/`deliver` are that door, with their own `forced` option). The returned record
-     * replaces the cached one, same reasoning as {@link cancelOrder}.
+     * `ship`/`deliver` are that door, with their own `forced` option). `updateTarget` replaces the
+     * cached record and its query-cache entry, same reasoning as {@link cancelOrder}.
      *
      * @param orderId - Which order.
      * @param to - The corrected status. Must be forward of the order's current one.
@@ -214,11 +217,10 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the corrected order.
      */
     const overrideStatus = (orderId: string, to: OrderStatus, reason: string) =>
-        fetchAny(() =>
-            overrideOrderStatus(orderId, { to, reason }).then((response) => {
-                addOrder(response.data);
-                return response.data;
-            })
+        updateTarget(
+            () => overrideOrderStatus(orderId, { to, reason }).then((response) => response.data),
+            {},
+            orderId
         );
 
     /**

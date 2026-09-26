@@ -98,9 +98,12 @@ const {
 } = useBlockingError();
 
 /**
- * Submits the correction, then reloads the order for its new status/actions.
+ * Submits the correction. The status/actions refresh comes from the store: `overrideStatus`
+ * writes through `updateTarget`, which replaces both the cached record and its query-cache entry
+ * — every other page's `watchOrder` reads the new status too, no separate forced fetch needed
+ * here.
  *
- * @returns A promise resolving once the panel has refreshed. A missing route id or target status
+ * @returns A promise resolving once the correction lands. A missing route id or target status
  *  is a no-op — the submit button is disabled until both are set.
  */
 const runOverride = () => {
@@ -111,13 +114,6 @@ const runOverride = () => {
             overrideTo.value = undefined;
             overrideReason.value = '';
             addMessage(t('order-edit-page.override-done'));
-            // `overrideStatus` already updates this store's own copy of the order — this is for
-            // every OTHER page's `watchOrder`: its per-id query cache still holds the pre-override
-            // fetch, so a plain navigation to the order's own page (edit → detail) would read that
-            // stale status straight back over the fresher one. `forced: true` refreshes the cache
-            // entry itself, not just this component's local copy — same reasoning as `Order.vue`'s
-            // own `@paid`/`@moved` handlers.
-            return fetchOrder(id, { forced: true });
         })
         .catch((error: unknown) => reportOverrideError(error));
 };
@@ -130,7 +126,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
 /**
  * The money half of the operator's actions — `payments` answers for it, this page only asks.
  */
-const { canRefund, refund } = useOrderRefund(computed(() => id));
+const { canRefund, refund, refreshPayment } = useOrderRefund(computed(() => id));
 
 /**
  * The operator's money actions, and whether each is still open.
@@ -174,7 +170,10 @@ const {
 } = useBlockingError();
 
 /**
- * Cancels the order, with or without returning the money.
+ * Cancels the order, with or without returning the money. The order re-read is the store's own
+ * `updateTarget` write; the payment is a sibling record the order's cache entry knows nothing
+ * about, so it needs its own re-read here — otherwise "Refund only" stays enabled on a payment
+ * that a `withRefund` cancel already settled.
  *
  * @param withRefund - Whether the money goes back with the cancellation.
  * @returns A promise resolving once the order and its payment are re-read.
@@ -184,8 +183,14 @@ const runCancel = (withRefund: boolean) => {
     clearActionsError();
     return cancelOrder(id, withRefund)
         .then(() =>
-            addMessage(
-                t(withRefund ? 'order-edit-page.cancel-refund-done' : 'order-edit-page.cancel-done')
+            refreshPayment().then(() =>
+                addMessage(
+                    t(
+                        withRefund
+                            ? 'order-edit-page.cancel-refund-done'
+                            : 'order-edit-page.cancel-done'
+                    )
+                )
             )
         )
         .catch((error: unknown) => reportActionsError(error));

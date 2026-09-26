@@ -55,6 +55,18 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         refund: () =>
             orderId.value
                 ? paymentsStore.refundForOrder(orderId.value).then(() => undefined)
+                : Promise.resolve(),
+        /**
+         * Re-reads the payment against the current order id, forced past the cache.
+         *
+         * For a caller that just moved the ORDER (a cancel), not the payment, so `canRefund`
+         * reflects the fresh state instead of whatever the mount-time fetch last saw.
+         *
+         * @returns A promise resolving once the refreshed payment has replaced the cached one.
+         */
+        refreshPayment: () =>
+            orderId.value
+                ? paymentsStore.fetchPaymentForOrder(orderId.value).then(() => undefined)
                 : Promise.resolve()
     };
 };
