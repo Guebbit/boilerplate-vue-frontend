@@ -32,6 +32,10 @@ concurrency:
     cancel-in-progress: true
 
 env:
+    # `npm ci` runs cypress's own postinstall, which downloads its ~200 MB binary — needed by
+    # `test-e2e` below and nowhere else in this workflow. Set back to unset (which means "install
+    # it") only on that one job.
+    CYPRESS_INSTALL_BINARY: '0'
 
 jobs:
     commitlint:
@@ -211,6 +215,65 @@ jobs:
             # see the script's `peerTargets`.
             - name: Check every path the docs cite still exists
               run: npm run check:docs-references
+
+            - name: Build the docs site
+              # The other half of this job's own docblock: a dead LINK between pages, which
+              # `check:docs-references` above does not look for.
+              run: npm run docs:build
+
+    docker-image:
+        # Neither this image nor the docs site (job above) was ever built in CI — so a Dockerfile
+        # break, or a build arg silently dropped from `docker/Dockerfile.production`, first
+        # surfaced on whoever tried to deploy. This builds it and proves the running container
+        # actually serves the app at the domain root — the sub-path case is NOT covered here: it
+        # needs a design call first, see the note on `docker/nginx.conf`.
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Build the production image
+              run: docker build -f docker/Dockerfile.production -t boilerplate-frontend:ci .
+
+            - name: Run it and prove it serves the app
+              run: |
+                  docker run -d --name frontend-smoke -p 8080:80 \
+                    -e VITE_API_URL=http://localhost:3000 \
+                    -e VITE_APP_NAME='CI Smoke Test' \
+                    boilerplate-frontend:ci
+                  # The entrypoint script writes config.js on start; give it a moment before curling.
+                  sleep 2
+
+                  echo 'index.html, with the no-store cache headers:'
+                  curl --fail --silent --show-error --include http://localhost:8080/ \
+                    | tee /tmp/index-headers.txt
+                  grep -qi 'cache-control: no-cache, no-store' /tmp/index-headers.txt
+
+                  echo 'config.js, written by the entrypoint from this container'"'"'s own env:'
+                  curl --fail --silent --show-error http://localhost:8080/config.js \
+                    | tee /tmp/config.js
+                  grep -q 'CI Smoke Test' /tmp/config.js
+
+                  echo 'a missing asset is a 404, not the SPA fallback:'
+                  status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+                    http://localhost:8080/assets/does-not-exist.js)
+                  test "$status" = '404'
+
+                  echo 'a deep link falls back to index.html for vue-router to resolve:'
+                  status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+                    http://localhost:8080/en/products/42)
+                  test "$status" = '200'
+
+            - name: Container logs (always, for debugging a failed smoke test)
+              if: always()
+              run: docker logs frontend-smoke
+
+            - name: Clean up
+              if: always()
+              run: docker rm -f frontend-smoke || true
 
     audit:
         # Scoped to the production dependency tree only: devDependencies (build
@@ -480,6 +543,9 @@ jobs:
             # unset means "boot nothing" — so the pairing has to be spelled out here as it is in
             # `.env-example`; this is the Node twin's, the PHP one goes through composer.
             BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
+            # This job is the one place in this workflow that needs it — overrides the workflow's
+            # own `CYPRESS_INSTALL_BINARY: '0'` back to unset (which means "install it").
+            CYPRESS_INSTALL_BINARY: ''
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -565,6 +631,12 @@ jobs:
         # Delegated rather than duplicated — `e2e-live.yml` owns the datastore services, the
         # sibling checkout and the seeding, and is also scheduled nightly on its own. Two copies of
         # that setup would drift, which is the exact failure mode this whole job exists to close.
+        #
+        # Gated on the cheap checks: a live run composes a real backend, Mongo and Redis, and
+        # nothing spares that cost for a build that a plain `npm run build` already knows is broken.
+        needs:
+            - build
+            - test-unit
         uses: ./.github/workflows/e2e-live.yml
         # SPEC_SIBLING_TOKEN, for checking out the paired backend.
         secrets: inherit
@@ -585,6 +657,7 @@ jobs:
             - lint-asyncapi
             - asyncapi-types-freshness
             - docs-references
+            - docker-image
             - audit
             - api-freshness
             - typecheck
