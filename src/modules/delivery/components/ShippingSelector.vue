@@ -12,7 +12,7 @@ export default {
  * delegated to the store so the template only formats and displays it.
  */
 
-import { watch, useId } from 'vue';
+import { onMounted, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -23,17 +23,11 @@ import { useDeliveryStore } from '../store.ts';
  * the free-above rule is visible while it is being earned. Selecting nothing is allowed —
  * shipping is not required to buy, and the checkout sends no method for `undefined`.
  */
-const { itemsTotal, weight } = defineProps<{
+const { itemsTotal } = defineProps<{
     /**
      * The cart's lines total, the number free-above thresholds compare against.
      */
     itemsTotal: number;
-    /**
-     * The basket's total weight in grams, when the caller has resolved it — filters out methods
-     * that cannot carry it, mirroring `POST /cart/checkout`'s own enforced check. `undefined`
-     * lists every method, the same as omitting the query param entirely.
-     */
-    weight?: number;
 }>();
 
 /**
@@ -69,22 +63,13 @@ const deliveryStore = useDeliveryStore();
 const { methods } = storeToRefs(deliveryStore);
 
 /*
- * Fetches on mount, and again whenever the caller resolves — or changes — a weight: the cart's
- * own product lookups (`resolveTitles`) settle after this component's first mount, not before
- * it, so the initial fetch routinely runs with `weight` still `undefined`.
- *
- * Always runs, never guarded by "the list already has something": the delivery store's
- * `methods` is shared app-wide, and another page can have populated it UNWEIGHTED already
- * (the order page's `ShipmentPanel` calls `fetchMethods()` with no weight at all) — a guard
- * would then skip the weighted reload this component actually needs.
+ * Fetches on mount. The list is the same unfiltered catalogue everywhere it's read (the order
+ * page's `ShipmentPanel` also calls `fetchMethods()`), so there is nothing left to re-fetch for —
+ * weight-fit is now checked server-side, at the point of choosing, not by filtering this list.
  */
-watch(
-    () => weight,
-    (current) => {
-        void deliveryStore.fetchMethods(current);
-    },
-    { immediate: true }
-);
+onMounted(() => {
+    void deliveryStore.fetchMethods();
+});
 
 /*
  * Keeps `requiresAddress` in step with the chosen method, including a method that vanishes from

@@ -129,7 +129,13 @@ describe('the shelf', () => {
         const cart = useCartStore();
         const fetchedCart = {
             items: [{ productId: product.id, quantity: 3 }],
-            summary: { itemsCount: 1, totalQuantity: 3, total: 29.97 }
+            summary: {
+                itemsCount: 1,
+                totalQuantity: 3,
+                itemsTotal: 29.97,
+                shippingCost: 0,
+                totalPrice: 29.97
+            }
         };
         // `POST /cart` SETS a line's quantity — the fresh fetch answers 3 already on this line, so
         // the click must send 4, never a bare 1.
@@ -164,9 +170,24 @@ describe('the shelf', () => {
         // account's cart instead of the fresh answer's 1 (0 + 1).
         cart.cart = {
             items: [{ productId: product.id, quantity: 5 }],
-            summary: { itemsCount: 1, totalQuantity: 5, total: 49.95 }
+            summary: {
+                itemsCount: 1,
+                totalQuantity: 5,
+                itemsTotal: 49.95,
+                shippingCost: 0,
+                totalPrice: 49.95
+            }
         };
-        const freshCart = { items: [], summary: { itemsCount: 0, totalQuantity: 0, total: 0 } };
+        const freshCart = {
+            items: [],
+            summary: {
+                itemsCount: 0,
+                totalQuantity: 0,
+                itemsTotal: 0,
+                shippingCost: 0,
+                totalPrice: 0
+            }
+        };
         vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
             cart.cart = freshCart;
             return Promise.resolve(freshCart);

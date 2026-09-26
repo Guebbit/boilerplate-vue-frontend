@@ -24,6 +24,11 @@ export const cartResponseSchemas: ResponseSchemaRoute[] = [
      * segment the wildcard would otherwise swallow — the same order rule the products/categories
      * row follows. */
     { method: 'DELETE', pattern: /^\/cart\/all$/, schema: schemas.ClearCartResponse },
+    {
+        method: 'PUT',
+        pattern: /^\/cart\/shipping-method$/,
+        schema: schemas.SetCartShippingMethodResponse
+    },
     { method: 'PUT', pattern: /^\/cart\/[^/]+$/, schema: schemas.UpdateCartItemByIdResponse },
     { method: 'DELETE', pattern: /^\/cart\/[^/]+$/, schema: schemas.RemoveCartItemResponse },
     {

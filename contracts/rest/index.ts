@@ -2494,7 +2494,17 @@ export interface CartSummaryResponse {
      * Sum of item prices * quantity (before tax/shipping/discounts)
      * @minimum 0
      */
-    total: number;
+    itemsTotal: number;
+    /**
+     * What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying.
+     * @minimum 0
+     */
+    shippingCost: number;
+    /**
+     * itemsTotal + shippingCost
+     * @minimum 0
+     */
+    totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
     currency?: string;
 }
@@ -2502,6 +2512,8 @@ export interface CartSummaryResponse {
 export interface CartResponse {
     items: CartItem[];
     summary: CartSummaryResponse;
+    /** The cart's chosen shipping method (`PUT /cart/shipping-method`), so a client can pre-select it on load. Absent when none is chosen. */
+    shippingMethodId?: string;
 }
 
 export interface CartResponseEnvelope {
@@ -2532,6 +2544,14 @@ export interface UpdateCartItemByIdRequest {
     quantity: CartQuantity;
 }
 
+export interface SetCartShippingMethodRequest {
+    /**
+     * Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
+     * @nullable
+     */
+    shippingMethodId: string | null;
+}
+
 export interface CartSummaryResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -2542,10 +2562,8 @@ export interface CartSummaryResponseEnvelope {
 export interface CheckoutRequest {
     /** Optional order notes */
     notes?: string;
-    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. */
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
     addressId?: Id;
-    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted is only legal for a digital-only basket — one with any `requiresShipping` line refuses with 422, `errors[].code` `CART_SHIPPING_METHOD_REQUIRED`; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
-    shippingMethodId?: string;
     /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. */
     paymentMethod?: PaymentMethodId;
 }
@@ -2848,7 +2866,7 @@ export interface ShippingMethod {
      */
     maxInsuredValue?: number;
     /**
-     * Grams. Absent means no floor. Enforced — GET /delivery/methods?weight= omits a method the basket doesn't reach, and checkout refuses one chosen outside its range.
+     * Grams. Absent means no floor. Enforced server-side — `PUT /cart/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range.
      * @minimum 0
      */
     minWeight?: number;
@@ -3674,14 +3692,6 @@ export type GetOrderByReferenceParams = {
      * @maxLength 64
      */
     ref: string;
-};
-
-export type ListShippingMethodsParams = {
-    /**
-     * The current basket's total weight in grams, computed by the caller. Omitted returns every method regardless of weight range.
-     * @minimum 0
-     */
-    weight?: number;
 };
 
 export type ListInventoryLevelsParams = {
@@ -6009,6 +6019,25 @@ export const removeCartItem = (
 };
 
 /**
+ * Sets which shipping method (see `GET /delivery/methods`) the cart plans to ship by, ahead of checkout — priced and validated against the basket as it stands right now. `null` clears the choice. Checkout re-validates from scratch regardless of what this endpoint accepted, since the basket may change afterward. Returns the updated cart, including the priced `summary.shippingCost`/`summary.totalPrice`.
+ * @summary Choose (or clear) the cart's shipping method
+ */
+export const setCartShippingMethod = (
+    setCartShippingMethodRequest: SetCartShippingMethodRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart/shipping-method`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: setCartShippingMethodRequest
+        },
+        options
+    );
+};
+
+/**
  * Returns a lightweight summary of the authenticated user's cart.
  * @summary Get cart summary
  */
@@ -6458,15 +6487,14 @@ export const receivePaymentWebhook = (
 };
 
 /**
- * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate. `weight` is advisory filtering for this list only — checkout re-checks the chosen method against the basket's real weight server-side and refuses one that doesn't fit, so a stale or omitted query value cannot buy a method this endpoint would have hidden.
+ * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
  * @summary List shipping methods
  */
 export const listShippingMethods = (
-    params?: ListShippingMethodsParams,
     options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>
 ) => {
     return orvalMutator<ShippingMethodsResponseEnvelope>(
-        { url: `/delivery/methods`, method: 'GET', params },
+        { url: `/delivery/methods`, method: 'GET' },
         options
     );
 };
@@ -7029,6 +7057,9 @@ export type RemoveCartItemByBodyResult = NonNullable<
 export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
 export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
 export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
+export type SetCartShippingMethodResult = NonNullable<
+    Awaited<ReturnType<typeof setCartShippingMethod>>
+>;
 export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>;
 export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
 export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;

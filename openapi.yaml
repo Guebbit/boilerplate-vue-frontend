@@ -3771,6 +3771,48 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /cart/shipping-method:
+    put:
+      tags:
+        - Cart
+      summary: Choose (or clear) the cart's shipping method
+      description: Sets which shipping method (see `GET /delivery/methods`) the cart plans to ship by, ahead of checkout — priced and validated against the basket as it stands right now. `null` clears the choice. Checkout re-validates from scratch regardless of what this endpoint accepted, since the basket may change afterward. Returns the updated cart, including the priced `summary.shippingCost`/`summary.totalPrice`.
+      operationId: setCartShippingMethod
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetCartShippingMethodRequest"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /cart/summary:
     get:
       tags:
@@ -4885,17 +4927,9 @@ paths:
       tags:
         - Delivery
       summary: List shipping methods
-      description: The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate. `weight` is advisory filtering for this list only — checkout re-checks the chosen method against the basket's real weight server-side and refuses one that doesn't fit, so a stale or omitted query value cannot buy a method this endpoint would have hidden.
+      description: Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
       operationId: listShippingMethods
       security: []
-      parameters:
-        - name: weight
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-          description: The current basket's total weight in grams, computed by the caller. Omitted returns every method regardless of weight range.
       responses:
         "200":
           description: The methods
@@ -10163,7 +10197,9 @@ components:
       required:
         - itemsCount
         - totalQuantity
-        - total
+        - itemsTotal
+        - shippingCost
+        - totalPrice
       properties:
         itemsCount:
           type: integer
@@ -10173,11 +10209,21 @@ components:
           type: integer
           minimum: 0
           description: Sum of quantities across all items
-        total:
+        itemsTotal:
           type: number
           format: double
           minimum: 0
           description: Sum of item prices * quantity (before tax/shipping/discounts)
+        shippingCost:
+          type: number
+          format: double
+          minimum: 0
+          description: What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying.
+        totalPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: itemsTotal + shippingCost
         currency:
           type: string
           description: ISO-4217 currency code (e.g. USD)
@@ -10194,6 +10240,9 @@ components:
             $ref: "#/components/schemas/CartItem"
         summary:
           $ref: "#/components/schemas/CartSummaryResponse"
+        shippingMethodId:
+          type: string
+          description: The cart's chosen shipping method (`PUT /cart/shipping-method`), so a client can pre-select it on load. Absent when none is chosen.
     CartResponseEnvelope:
       type: object
       additionalProperties: false
@@ -10245,6 +10294,16 @@ components:
           $ref: "#/components/schemas/Id"
         quantity:
           $ref: "#/components/schemas/CartQuantity"
+    SetCartShippingMethodRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - shippingMethodId
+      properties:
+        shippingMethodId:
+          type: string
+          nullable: true
+          description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
     CartSummaryResponseEnvelope:
       type: object
       additionalProperties: false
@@ -10272,10 +10331,7 @@ components:
         addressId:
           allOf:
             - $ref: "#/components/schemas/Id"
-          description: "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`."
-        shippingMethodId:
-          type: string
-          description: Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted is only legal for a digital-only basket — one with any `requiresShipping` line refuses with 422, `errors[].code` `CART_SHIPPING_METHOD_REQUIRED`; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.
+          description: "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`."
         paymentMethod:
           allOf:
             - $ref: "#/components/schemas/PaymentMethodId"
@@ -10747,7 +10803,7 @@ components:
         minWeight:
           type: integer
           minimum: 0
-          description: Grams. Absent means no floor. Enforced — GET /delivery/methods?weight= omits a method the basket doesn't reach, and checkout refuses one chosen outside its range.
+          description: Grams. Absent means no floor. Enforced server-side — `PUT /cart/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range.
         maxWeight:
           type: integer
           minimum: 0

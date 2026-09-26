@@ -163,6 +163,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/cart', 'UpsertCartItemResponse'],
     ['DELETE', '/cart', 'RemoveCartItemByBodyResponse'],
     ['DELETE', '/cart/all', 'ClearCartResponse'],
+    ['PUT', '/cart/shipping-method', 'SetCartShippingMethodResponse'],
     ['GET', '/cart/summary', 'GetCartSummaryResponse'],
     ['POST', '/cart/checkout', 'CheckoutResponse'],
     ['PUT', `/cart/${ID}`, 'UpdateCartItemByIdResponse'],

@@ -14,6 +14,7 @@ import {
     updateCartItemById,
     removeCartItem,
     clearCart,
+    setCartShippingMethod,
     checkout as apiCheckout,
     reorder as apiReorder,
     getProductById
@@ -83,7 +84,7 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * What the header writes beside the badge: the cart's money total, before shipping.
      */
-    const badgeTotal = computed(() => liveSummary.value?.total);
+    const badgeTotal = computed(() => liveSummary.value?.itemsTotal);
 
     /**
      * The currency {@link badgeTotal} is in; absent when the API did not say.
@@ -154,6 +155,23 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
+     * Chooses, or clears (`null`), the shipping method the cart plans to ship by ahead of
+     * checkout — priced and validated server-side against the basket as it stands right now.
+     * Replaces `cart` wholesale like every other write here, so `cartSummary`'s
+     * `shippingCost`/`totalPrice` are current the moment this resolves.
+     *
+     * @param shippingMethodId - The chosen method's id, or `null` to clear the choice.
+     * @returns A promise resolving with the updated cart response.
+     */
+    const setShippingMethod = (shippingMethodId: string | null) =>
+        fetchAny(() =>
+            setCartShippingMethod({ shippingMethodId }).then((response) => {
+                cart.value = response.data;
+                return response.data;
+            })
+        );
+
+    /**
      * Removes a product's line from the cart entirely.
      *
      * @param productId - Product to remove.
@@ -187,7 +205,7 @@ export const useCartStore = defineStore('cart', () => {
      */
     const EMPTY_CART: CartResponse = {
         items: [],
-        summary: { itemsCount: 0, totalQuantity: 0, total: 0 }
+        summary: { itemsCount: 0, totalQuantity: 0, itemsTotal: 0, shippingCost: 0, totalPrice: 0 }
     };
 
     /**
@@ -239,14 +257,12 @@ export const useCartStore = defineStore('cart', () => {
     const productTitles = ref<Record<string, string>>({});
 
     /**
-     * The weight/shipping half of the same per-product read `productTitles` needs — cached
-     * alongside it rather than fetched again, since `resolveTitles` already pulls the whole
-     * `Product` down to read `.title` off it. Keyed the same way, absent for the same reason: a
-     * product `resolveTitles` has not (yet, or ever) resolved.
+     * The shipping half of the same per-product read `productTitles` needs — cached alongside
+     * it rather than fetched again, since `resolveTitles` already pulls the whole `Product` down.
+     * Keyed the same way, absent for the same reason: a product `resolveTitles` has not (yet, or
+     * ever) resolved.
      */
-    const productShipping = ref<Record<string, { weight?: number; requiresShipping?: boolean }>>(
-        {}
-    );
+    const productShipping = ref<Record<string, { requiresShipping?: boolean }>>({});
 
     /**
      * The title of one product, or its id while unknown.
@@ -272,37 +288,11 @@ export const useCartStore = defineStore('cart', () => {
                         productTitles.value = { ...productTitles.value, [productId]: data.title };
                         productShipping.value = {
                             ...productShipping.value,
-                            [productId]: {
-                                weight: data.weight,
-                                requiresShipping: data.requiresShipping
-                            }
+                            [productId]: { requiresShipping: data.requiresShipping }
                         };
                     })
                 )
         ).then(() => productTitles.value);
-
-    /**
-     * The basket's total weight in grams — every SHIPPED line's product weight (absent counts as
-     * 0) times its quantity, summed. Mirrors the backend's own `basketWeight`
-     * (`cart/domain/rules.ts`) exactly: a digital good (`requiresShipping: false`) contributes
-     * nothing, and `requiresShipping` absent counts as shipped. Lines whose product has not been
-     * resolved yet (see {@link resolveTitles}) count as weightless rather than blocking the
-     * number entirely — the server re-checks the real weight at checkout regardless, so this is
-     * advisory, the same as the methods list it feeds.
-     */
-    const basketWeight = computed(() => {
-        let total = 0;
-        for (const { productId, quantity } of cartItems.value) {
-            // `Record`'s index signature claims every key is present; a line's product may not
-            // be — `resolveTitles` fills this cache asynchronously, one request per id, and a
-            // line the cart just loaded has not necessarily been resolved yet.
-            const product = productShipping.value[productId] as
-                { weight?: number; requiresShipping?: boolean } | undefined;
-            if (product?.requiresShipping === false) continue;
-            total += (product?.weight ?? 0) * quantity;
-        }
-        return total;
-    });
 
     /**
      * Whether the basket holds any line that needs a shipment — mirrors the backend's own
@@ -314,7 +304,7 @@ export const useCartStore = defineStore('cart', () => {
     const needsShipping = computed(() =>
         cartItems.value.some(({ productId }) => {
             const product = productShipping.value[productId] as
-                { weight?: number; requiresShipping?: boolean } | undefined;
+                { requiresShipping?: boolean } | undefined;
             return product?.requiresShipping !== false;
         })
     );
@@ -346,13 +336,13 @@ export const useCartStore = defineStore('cart', () => {
         titleOf,
         resolveTitles,
         resetProductTitles,
-        basketWeight,
         needsShipping,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,
         updateCartItem,
         removeCartItem: removeCartItemAction,
-        clearCart: clearCartAction
+        clearCart: clearCartAction,
+        setShippingMethod
     };
 });

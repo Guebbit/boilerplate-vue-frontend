@@ -5898,7 +5898,11 @@ export const getCartResponseDataSummaryItemsCountMin = 0;
 
 export const getCartResponseDataSummaryTotalQuantityMin = 0;
 
-export const getCartResponseDataSummaryTotalMin = 0;
+export const getCartResponseDataSummaryItemsTotalMin = 0;
+
+export const getCartResponseDataSummaryShippingCostMin = 0;
+
+export const getCartResponseDataSummaryTotalPriceMin = 0;
 
 export const GetCartResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5920,12 +5924,28 @@ export const GetCartResponse = zod.strictObject({
                 .number()
                 .min(getCartResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(getCartResponseDataSummaryTotalMin)
+                .min(getCartResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(getCartResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(getCartResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -5950,7 +5970,11 @@ export const upsertCartItemResponseDataSummaryItemsCountMin = 0;
 
 export const upsertCartItemResponseDataSummaryTotalQuantityMin = 0;
 
-export const upsertCartItemResponseDataSummaryTotalMin = 0;
+export const upsertCartItemResponseDataSummaryItemsTotalMin = 0;
+
+export const upsertCartItemResponseDataSummaryShippingCostMin = 0;
+
+export const upsertCartItemResponseDataSummaryTotalPriceMin = 0;
 
 export const UpsertCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5972,12 +5996,28 @@ export const UpsertCartItemResponse = zod.strictObject({
                 .number()
                 .min(upsertCartItemResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(upsertCartItemResponseDataSummaryTotalMin)
+                .min(upsertCartItemResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(upsertCartItemResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(upsertCartItemResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -5993,7 +6033,11 @@ export const removeCartItemByBodyResponseDataSummaryItemsCountMin = 0;
 
 export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
 
-export const removeCartItemByBodyResponseDataSummaryTotalMin = 0;
+export const removeCartItemByBodyResponseDataSummaryItemsTotalMin = 0;
+
+export const removeCartItemByBodyResponseDataSummaryShippingCostMin = 0;
+
+export const removeCartItemByBodyResponseDataSummaryTotalPriceMin = 0;
 
 export const RemoveCartItemByBodyResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6015,12 +6059,28 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                 .number()
                 .min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(removeCartItemByBodyResponseDataSummaryTotalMin)
+                .min(removeCartItemByBodyResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(removeCartItemByBodyResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(removeCartItemByBodyResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -6033,7 +6093,11 @@ export const clearCartResponseDataSummaryItemsCountMin = 0;
 
 export const clearCartResponseDataSummaryTotalQuantityMin = 0;
 
-export const clearCartResponseDataSummaryTotalMin = 0;
+export const clearCartResponseDataSummaryItemsTotalMin = 0;
+
+export const clearCartResponseDataSummaryShippingCostMin = 0;
+
+export const clearCartResponseDataSummaryTotalPriceMin = 0;
 
 export const ClearCartResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6055,12 +6119,28 @@ export const ClearCartResponse = zod.strictObject({
                 .number()
                 .min(clearCartResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(clearCartResponseDataSummaryTotalMin)
+                .min(clearCartResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(clearCartResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(clearCartResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -6089,7 +6169,11 @@ export const updateCartItemByIdResponseDataSummaryItemsCountMin = 0;
 
 export const updateCartItemByIdResponseDataSummaryTotalQuantityMin = 0;
 
-export const updateCartItemByIdResponseDataSummaryTotalMin = 0;
+export const updateCartItemByIdResponseDataSummaryItemsTotalMin = 0;
+
+export const updateCartItemByIdResponseDataSummaryShippingCostMin = 0;
+
+export const updateCartItemByIdResponseDataSummaryTotalPriceMin = 0;
 
 export const UpdateCartItemByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6111,12 +6195,28 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                 .number()
                 .min(updateCartItemByIdResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(updateCartItemByIdResponseDataSummaryTotalMin)
+                .min(updateCartItemByIdResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(updateCartItemByIdResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(updateCartItemByIdResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -6132,7 +6232,11 @@ export const removeCartItemResponseDataSummaryItemsCountMin = 0;
 
 export const removeCartItemResponseDataSummaryTotalQuantityMin = 0;
 
-export const removeCartItemResponseDataSummaryTotalMin = 0;
+export const removeCartItemResponseDataSummaryItemsTotalMin = 0;
+
+export const removeCartItemResponseDataSummaryShippingCostMin = 0;
+
+export const removeCartItemResponseDataSummaryTotalPriceMin = 0;
 
 export const RemoveCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6154,12 +6258,96 @@ export const RemoveCartItemResponse = zod.strictObject({
                 .number()
                 .min(removeCartItemResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(removeCartItemResponseDataSummaryTotalMin)
+                .min(removeCartItemResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(removeCartItemResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(removeCartItemResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
+    })
+});
+
+/**
+ * Sets which shipping method (see `GET /delivery/methods`) the cart plans to ship by, ahead of checkout — priced and validated against the basket as it stands right now. `null` clears the choice. Checkout re-validates from scratch regardless of what this endpoint accepted, since the basket may change afterward. Returns the updated cart, including the priced `summary.shippingCost`/`summary.totalPrice`.
+ * @summary Choose (or clear) the cart's shipping method
+ */
+export const SetCartShippingMethodBody = zod.strictObject({
+    shippingMethodId: zod
+        .string()
+        .nullable()
+        .describe(
+            'Which shipping method (see `GET \/delivery\/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).'
+        )
+});
+
+export const setCartShippingMethodResponseDataSummaryItemsCountMin = 0;
+
+export const setCartShippingMethodResponseDataSummaryTotalQuantityMin = 0;
+
+export const setCartShippingMethodResponseDataSummaryItemsTotalMin = 0;
+
+export const setCartShippingMethodResponseDataSummaryShippingCostMin = 0;
+
+export const setCartShippingMethodResponseDataSummaryTotalPriceMin = 0;
+
+export const SetCartShippingMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                productId: zod.string().describe('Resource identifier'),
+                quantity: zod.number().min(1)
+            })
+        ),
+        summary: zod.strictObject({
+            itemsCount: zod
+                .number()
+                .min(setCartShippingMethodResponseDataSummaryItemsCountMin)
+                .describe('Number of distinct cart lines\/items'),
+            totalQuantity: zod
+                .number()
+                .min(setCartShippingMethodResponseDataSummaryTotalQuantityMin)
+                .describe('Sum of quantities across all items'),
+            itemsTotal: zod
+                .number()
+                .min(setCartShippingMethodResponseDataSummaryItemsTotalMin)
+                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(setCartShippingMethodResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(setCartShippingMethodResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
+            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -6171,7 +6359,11 @@ export const getCartSummaryResponseDataItemsCountMin = 0;
 
 export const getCartSummaryResponseDataTotalQuantityMin = 0;
 
-export const getCartSummaryResponseDataTotalMin = 0;
+export const getCartSummaryResponseDataItemsTotalMin = 0;
+
+export const getCartSummaryResponseDataShippingCostMin = 0;
+
+export const getCartSummaryResponseDataTotalPriceMin = 0;
 
 export const GetCartSummaryResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6186,10 +6378,20 @@ export const GetCartSummaryResponse = zod.strictObject({
             .number()
             .min(getCartSummaryResponseDataTotalQuantityMin)
             .describe('Sum of quantities across all items'),
-        total: zod
+        itemsTotal: zod
             .number()
-            .min(getCartSummaryResponseDataTotalMin)
+            .min(getCartSummaryResponseDataItemsTotalMin)
             .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+        shippingCost: zod
+            .number()
+            .min(getCartSummaryResponseDataShippingCostMin)
+            .describe(
+                "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+            ),
+        totalPrice: zod
+            .number()
+            .min(getCartSummaryResponseDataTotalPriceMin)
+            .describe('itemsTotal + shippingCost'),
         currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
     })
 });
@@ -6207,13 +6409,7 @@ export const CheckoutBody = zod.strictObject({
         .describe('Resource identifier')
         .optional()
         .describe(
-            "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`."
-        ),
-    shippingMethodId: zod
-        .string()
-        .optional()
-        .describe(
-            'Which shipping method (see `GET \/delivery\/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted is only legal for a digital-only basket — one with any `requiresShipping` line refuses with 422, `errors[].code` `CART_SHIPPING_METHOD_REQUIRED`; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`.'
+            "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT \/cart\/shipping-method`."
         ),
     paymentMethod: zod
         .enum(['card', 'bank_transfer'])
@@ -6521,7 +6717,11 @@ export const reorderResponseDataSummaryItemsCountMin = 0;
 
 export const reorderResponseDataSummaryTotalQuantityMin = 0;
 
-export const reorderResponseDataSummaryTotalMin = 0;
+export const reorderResponseDataSummaryItemsTotalMin = 0;
+
+export const reorderResponseDataSummaryShippingCostMin = 0;
+
+export const reorderResponseDataSummaryTotalPriceMin = 0;
 
 export const ReorderResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6543,12 +6743,28 @@ export const ReorderResponse = zod.strictObject({
                 .number()
                 .min(reorderResponseDataSummaryTotalQuantityMin)
                 .describe('Sum of quantities across all items'),
-            total: zod
+            itemsTotal: zod
                 .number()
-                .min(reorderResponseDataSummaryTotalMin)
+                .min(reorderResponseDataSummaryItemsTotalMin)
                 .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            shippingCost: zod
+                .number()
+                .min(reorderResponseDataSummaryShippingCostMin)
+                .describe(
+                    "What the cart's chosen shipping method (`PUT \/cart\/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST \/cart\/checkout` freezes onto the order, priced early so a shopper sees the true total before paying."
+                ),
+            totalPrice: zod
+                .number()
+                .min(reorderResponseDataSummaryTotalPriceMin)
+                .describe('itemsTotal + shippingCost'),
             currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
-        })
+        }),
+        shippingMethodId: zod
+            .string()
+            .optional()
+            .describe(
+                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+            )
     })
 });
 
@@ -10288,21 +10504,9 @@ export const ReceivePaymentWebhookResponse = zod.strictObject({
 });
 
 /**
- * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate. `weight` is advisory filtering for this list only — checkout re-checks the chosen method against the basket's real weight server-side and refuses one that doesn't fit, so a stale or omitted query value cannot buy a method this endpoint would have hidden.
+ * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
  * @summary List shipping methods
  */
-export const listShippingMethodsQueryWeightMin = 0;
-
-export const ListShippingMethodsQueryParams = zod.strictObject({
-    weight: zod
-        .number()
-        .min(listShippingMethodsQueryWeightMin)
-        .optional()
-        .describe(
-            "The current basket's total weight in grams, computed by the caller. Omitted returns every method regardless of weight range."
-        )
-});
-
 export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
@@ -10358,7 +10562,7 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .min(listShippingMethodsResponseDataMethodsItemMinWeightMin)
                     .optional()
                     .describe(
-                        "Grams. Absent means no floor. Enforced — GET \/delivery\/methods?weight= omits a method the basket doesn't reach, and checkout refuses one chosen outside its range."
+                        "Grams. Absent means no floor. Enforced server-side — `PUT \/cart\/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range."
                     ),
                 maxWeight: zod
                     .number()
