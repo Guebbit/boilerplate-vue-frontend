@@ -84,6 +84,13 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
 const { reorder } = useCartStore();
 
 /**
+ * Whether a reorder is in flight (FA39). `reorder` runs under the CART store's `fetchAny`, a
+ * different loading flag from {@link loading} above (the orders store's own) — the reorder
+ * button has to disable on this one, or a double-click fires the request twice.
+ */
+const { loading: reorderLoading } = storeToRefs(useCartStore());
+
+/**
  * Router instance, for the navigations this file performs.
  */
 const router = useRouter();
@@ -503,7 +510,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     color="primary"
                     variant="tonal"
                     data-test="order-reorder"
-                    :disabled="loading"
+                    :disabled="loading || reorderLoading"
                     @click="handleReorder"
                 >
                     <ShoppingCart :size="16" class="mr-1" aria-hidden="true" />
