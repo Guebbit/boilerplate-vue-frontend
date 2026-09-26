@@ -26,6 +26,11 @@ export const webhooksResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.CreateWebhookSubscriptionResponse
     },
     {
+        method: 'PUT',
+        pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
+        schema: schemas.ReplaceWebhookSubscriptionResponse
+    },
+    {
         method: 'PATCH',
         pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
         schema: schemas.UpdateWebhookSubscriptionResponse
@@ -34,6 +39,16 @@ export const webhooksResponseSchemas: ResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
         schema: schemas.DeleteWebhookSubscriptionResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/webhooks\/subscriptions\/[^/]+\/rotate-secret$/,
+        schema: schemas.RotateWebhookSubscriptionSecretResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/webhooks\/subscriptions\/[^/]+\/secrets\/[^/]+$/,
+        schema: schemas.RemoveWebhookSubscriptionSecretResponse
     },
     {
         method: 'GET',

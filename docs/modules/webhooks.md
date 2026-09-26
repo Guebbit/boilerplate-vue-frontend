@@ -89,15 +89,18 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                    | Response envelope                   |
-| --------------------------------------- | ----------------------------------- |
-| `GET /webhooks/subscriptions`           | `ListWebhookSubscriptionsResponse`  |
-| `POST /webhooks/subscriptions`          | `CreateWebhookSubscriptionResponse` |
-| `PATCH /webhooks/subscriptions/{id}`    | `UpdateWebhookSubscriptionResponse` |
-| `DELETE /webhooks/subscriptions/{id}`   | `DeleteWebhookSubscriptionResponse` |
-| `GET /webhooks/deliveries`              | `ListWebhookDeliveriesResponse`     |
-| `POST /webhooks/deliveries/{id}/replay` | `ReplayWebhookDeliveryResponse`     |
-| `GET /webhooks/events`                  | `ListWebhookEventsResponse`         |
+| Call                                               | Response envelope                         |
+| -------------------------------------------------- | ----------------------------------------- |
+| `GET /webhooks/subscriptions`                      | `ListWebhookSubscriptionsResponse`        |
+| `POST /webhooks/subscriptions`                     | `CreateWebhookSubscriptionResponse`       |
+| `PUT /webhooks/subscriptions/{id}`                 | `ReplaceWebhookSubscriptionResponse`      |
+| `PATCH /webhooks/subscriptions/{id}`               | `UpdateWebhookSubscriptionResponse`       |
+| `DELETE /webhooks/subscriptions/{id}`              | `DeleteWebhookSubscriptionResponse`       |
+| `POST /webhooks/subscriptions/{id}/rotate-secret`  | `RotateWebhookSubscriptionSecretResponse` |
+| `DELETE /webhooks/subscriptions/{id}/secrets/{id}` | `RemoveWebhookSubscriptionSecretResponse` |
+| `GET /webhooks/deliveries`                         | `ListWebhookDeliveriesResponse`           |
+| `POST /webhooks/deliveries/{id}/replay`            | `ReplayWebhookDeliveryResponse`           |
+| `GET /webhooks/events`                             | `ListWebhookEventsResponse`               |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

@@ -204,8 +204,19 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/products/categories', 'GetCatalogueFacetsResponse'],
     ['GET', '/webhooks/subscriptions', 'ListWebhookSubscriptionsResponse'],
     ['POST', '/webhooks/subscriptions', 'CreateWebhookSubscriptionResponse'],
+    ['PUT', `/webhooks/subscriptions/${ID}`, 'ReplaceWebhookSubscriptionResponse'],
     ['PATCH', `/webhooks/subscriptions/${ID}`, 'UpdateWebhookSubscriptionResponse'],
     ['DELETE', `/webhooks/subscriptions/${ID}`, 'DeleteWebhookSubscriptionResponse'],
+    [
+        'POST',
+        `/webhooks/subscriptions/${ID}/rotate-secret`,
+        'RotateWebhookSubscriptionSecretResponse'
+    ],
+    [
+        'DELETE',
+        `/webhooks/subscriptions/${ID}/secrets/${ID}`,
+        'RemoveWebhookSubscriptionSecretResponse'
+    ],
     ['GET', '/webhooks/deliveries', 'ListWebhookDeliveriesResponse'],
     ['POST', `/webhooks/deliveries/${ID}/replay`, 'ReplayWebhookDeliveryResponse'],
     ['GET', '/webhooks/events', 'ListWebhookEventsResponse'],
