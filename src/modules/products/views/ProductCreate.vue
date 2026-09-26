@@ -43,6 +43,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import type { ProductTranslationsWrite } from '@types';
+import type { TaxClass } from '@api';
 
 /**
  * Localized dictionary helper, with the active locale reference used to revalidate the form.
@@ -83,8 +84,11 @@ interface ProductCreateForm {
     active?: boolean;
     requiresShipping?: boolean;
     weight?: number;
-    // Create-only (FE_PARITY_0924 P3): the opening stock count. An edit never carries this field —
-    // every later change to stock goes through `/inventory`'s signed transitions instead.
+    // Absent means the shop's standard rate; an edit sends `null` for the same meaning, but a
+    // create simply omits the key rather than declaring a clear that has nothing to clear yet.
+    taxClass?: TaxClass;
+    // Create-only: the opening stock count. An edit never carries this field — every later change
+    // to stock goes through `/inventory`'s signed transitions instead.
     onHand?: number;
     categories?: string[];
     tags?: string[];
@@ -257,6 +261,7 @@ const submitForm = () => {
                     active: form.value.active,
                     requiresShipping: form.value.requiresShipping,
                     weight: form.value.weight,
+                    taxClass: form.value.taxClass,
                     onHand: form.value.onHand,
                     categories: form.value.categories,
                     tags: form.value.tags,
@@ -375,9 +380,20 @@ const submitForm = () => {
                 data-test="product-weight-field"
                 class="mb-2"
             />
+            <v-select
+                v-model="form.taxClass"
+                :label="t('product-create-page.label-tax-class')"
+                :items="[
+                    { title: t('product-create-page.tax-class-standard'), value: undefined },
+                    { title: t('product-create-page.tax-class-reduced'), value: 'reduced' },
+                    { title: t('product-create-page.tax-class-zero'), value: 'zero' }
+                ]"
+                data-test="product-tax-class-field"
+                class="mb-2"
+            />
             <!--
-                Create-only opening stock (FE_PARITY_0924 P3) — an edit never shows this field, since
-                every later stock change goes through /inventory's signed transitions instead.
+                Create-only: opening stock. An edit never shows this field, since every later
+                stock change goes through /inventory's signed transitions instead.
             -->
             <v-number-input
                 v-model="form.onHand"
