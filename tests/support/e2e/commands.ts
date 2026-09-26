@@ -241,13 +241,14 @@ const resetLiveDatabase = (command: string) =>
     });
 
 /*
- * `__E2E_API_URL` is how one built bundle serves many backends: each shard owns its own demo API
- * (see scripts/e2e/run-shards.ts), and the app's axios client reads this override before falling back
- * to the baked VITE_API_URL. Injected from `window:before:load` rather than a `cy.visit`
- * overwrite, because the hook fires for EVERY page load — `cy.reload()` and app-initiated
- * navigations included — while an overwrite covers only the visits Cypress itself issues. The
- * sessions specs found that hole: their `cy.reload()` booted the app pointed at a backend a
- * different shard owned.
+ * `window.__APP_CONFIG` is how one built bundle serves many backends: each shard owns its own
+ * demo API (see scripts/e2e/run-shards.ts), and `src/infrastructure/runtime-config.ts` reads this
+ * override before falling back to the baked VITE_API_URL — the same object a running container's
+ * `config.js` sets, so e2e exercises the production read path rather than a test-only global.
+ * Injected from `window:before:load` rather than a `cy.visit` overwrite, because the hook fires
+ * for EVERY page load — `cy.reload()` and app-initiated navigations included — while an overwrite
+ * covers only the visits Cypress itself issues. The sessions specs found that hole: their
+ * `cy.reload()` booted the app pointed at a backend a different shard owned.
  *
  * The value is captured in a `before` hook because `allowCypressEnv: false` makes the env
  * readable only through the stateful `cy.env()` command, which cannot run inside an event
@@ -261,8 +262,9 @@ before(() => {
 });
 Cypress.on('window:before:load', (contentWindow) => {
     if (injectedApiUrl !== undefined)
-        (contentWindow as Cypress.AUTWindow & { __E2E_API_URL?: string }).__E2E_API_URL =
-            injectedApiUrl;
+        (
+            contentWindow as Cypress.AUTWindow & { __APP_CONFIG?: { API_URL?: string } }
+        ).__APP_CONFIG = { API_URL: injectedApiUrl };
 });
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
@@ -363,7 +365,7 @@ const visitAndAwaitApp = (
         )._supersededByVisit = true;
     });
 
-    // Options are passed through untouched — the `__E2E_API_URL` injection lives in the
+    // Options are passed through untouched — the `__APP_CONFIG` injection lives in the
     // `window:before:load` hook below, so a caller's own `onBeforeLoad` reaches Cypress
     // exactly as they wrote it.
     originalFunction(url, options);

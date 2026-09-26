@@ -96,8 +96,9 @@ describe('useRealtimeObservability', () => {
             });
         });
 
-        it('falls back to the local dev endpoint when VITE_API_SSE is unset', () => {
+        it('falls back to the REST base when VITE_API_SSE is unset', () => {
             vi.stubEnv('VITE_API_SSE', undefined);
+            vi.stubEnv('VITE_API_URL', 'http://localhost:3000');
             return loadComposable().then(({ useRealtimeObservability }) => {
                 useRealtimeObservability().connect();
 
@@ -107,9 +108,11 @@ describe('useRealtimeObservability', () => {
             });
         });
 
-        it('follows the e2e runtime API override over the build-time VITE_API_SSE', () => {
-            vi.stubEnv('VITE_API_SSE', 'https://api.example.com/observability/events');
-            vi.stubGlobal('__E2E_API_URL', 'http://localhost:3102');
+        it('derives from a runtime-configured REST base (container/e2e override) when VITE_API_SSE is unset', () => {
+            vi.stubEnv('VITE_API_SSE', undefined);
+            (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+                API_URL: 'http://localhost:3102'
+            };
             return loadComposable()
                 .then(({ useRealtimeObservability }) => {
                     useRealtimeObservability().connect();
@@ -118,7 +121,46 @@ describe('useRealtimeObservability', () => {
                         'http://localhost:3102/observability/events'
                     );
                 })
-                .finally(() => vi.unstubAllGlobals());
+                .finally(() => Reflect.deleteProperty(globalThis, '__APP_CONFIG'));
+        });
+
+        /**
+         * The exact shape of a real bug: every e2e shard's build carries the SAME baked-in
+         * `VITE_API_SSE` (from the checked-out `.env`), and only the shard runner's own
+         * `API_URL` override tells this bundle which of the four demo backends it is this time.
+         * A `VITE_API_SSE` fallback checked BEFORE that override would silently point every
+         * shard's stream at whichever backend happened to be baked in.
+         */
+        it('a runtime-overridden API_URL wins over a build-time VITE_API_SSE that was never overridden itself', () => {
+            vi.stubEnv('VITE_API_SSE', 'http://localhost:3000/observability/events');
+            (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+                API_URL: 'http://localhost:3102'
+            };
+            return loadComposable()
+                .then(({ useRealtimeObservability }) => {
+                    useRealtimeObservability().connect();
+
+                    expect(createSseClient.mock.calls[0]?.[0]).toBe(
+                        'http://localhost:3102/observability/events'
+                    );
+                })
+                .finally(() => Reflect.deleteProperty(globalThis, '__APP_CONFIG'));
+        });
+
+        it('a runtime-configured API_SSE still wins over the build-time VITE_API_SSE', () => {
+            vi.stubEnv('VITE_API_SSE', 'https://api.example.com/observability/events');
+            (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+                API_SSE: 'http://localhost:3102/observability/events'
+            };
+            return loadComposable()
+                .then(({ useRealtimeObservability }) => {
+                    useRealtimeObservability().connect();
+
+                    expect(createSseClient.mock.calls[0]?.[0]).toBe(
+                        'http://localhost:3102/observability/events'
+                    );
+                })
+                .finally(() => Reflect.deleteProperty(globalThis, '__APP_CONFIG'));
         });
 
         it('reports connecting before the transport answers', () =>

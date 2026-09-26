@@ -8,6 +8,8 @@
 import { storeToRefs } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/realtime/store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
+import { instance } from '@/infrastructure/http/client';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 /**
@@ -17,17 +19,26 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 let activeClient: ReturnType<typeof createSseClient> | undefined;
 
 /**
- * Where the stream is opened. The e2e shard runner's runtime `__E2E_API_URL` wins, the same
- * precedence `infrastructure/http/client.ts` gives it for every REST call — one built bundle
- * serves a different backend per shard, and a build-time `VITE_API_SSE` cannot know which.
- * Otherwise `VITE_API_SSE`, and the local dev server when that is unset.
+ * Where the stream is opened, in priority order:
+ *
+ * 1. A runtime `API_SSE` override (a container's `config.js`) — explicit, always wins.
+ * 2. A runtime-overridden `API_URL` — the e2e shard runner, or a container with no `API_SSE` of
+ *    its own — derives from `client.ts`'s own resolved `baseURL` for that SAME override. One
+ *    built bundle serves many backends here, and a build-time `VITE_API_SSE` cannot know which;
+ *    checking this before it is what lets each e2e shard reach its own demo backend's stream.
+ * 3. `VITE_API_SSE`, the build-time default for a deployment with no runtime override at all.
+ * 4. Derived from the (build-time) REST base — never a hardcoded fallback, so an empty value
+ *    never opens an `EventSource` against the page itself.
  *
  * @returns The absolute SSE endpoint URL.
  */
 const sseEndpoint = (): string => {
-    const override = (globalThis as { __E2E_API_URL?: string }).__E2E_API_URL;
-    if (override) return `${override}/observability/events`;
-    return import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
+    const runtimeOverride = runtimeValue('API_SSE');
+    if (runtimeOverride) return runtimeOverride;
+
+    if (runtimeValue('API_URL')) return `${instance.defaults.baseURL}/observability/events`;
+
+    return import.meta.env.VITE_API_SSE || `${instance.defaults.baseURL}/observability/events`;
 };
 
 /**

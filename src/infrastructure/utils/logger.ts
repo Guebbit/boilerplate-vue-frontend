@@ -19,6 +19,8 @@
  * store, and a failure before Faro initialises still leaves a trace.
  */
 
+import { runtimeValue } from '@/infrastructure/runtime-config';
+
 /**
  * Severity, most severe first. Position in this array IS the ordering.
  */
@@ -63,7 +65,9 @@ export type LogScope = keyof LogScopes;
  * typo in an env var must not be the reason an error went unseen.
  */
 const resolveLevel = (): LogLevel => {
-    const configured = (import.meta.env.VITE_APP_LOG_LEVEL as string | undefined)?.trim();
+    const configured =
+        runtimeValue('APP_LOG_LEVEL') ??
+        (import.meta.env.VITE_APP_LOG_LEVEL as string | undefined)?.trim();
     if (configured && (LEVELS as readonly string[]).includes(configured))
         return configured as LogLevel;
     return import.meta.env.DEV ? 'debug' : 'warn';
@@ -74,7 +78,9 @@ const resolveLevel = (): LogLevel => {
  * per-request trace is worth having available and not worth paying for unasked.
  */
 const resolveScopes = (): Set<string> => {
-    const configured = (import.meta.env.VITE_APP_LOG_SCOPES as string | undefined)?.trim();
+    const configured =
+        runtimeValue('APP_LOG_SCOPES') ??
+        (import.meta.env.VITE_APP_LOG_SCOPES as string | undefined)?.trim();
     if (!configured) return new Set();
     // `filter(Boolean)` is what makes a trailing comma or a stray space harmless in an .env file.
     return new Set(

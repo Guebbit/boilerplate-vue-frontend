@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
+import { readFileSync } from 'node:fs';
 
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -6,8 +7,19 @@ import vuetify from 'vite-plugin-vuetify';
 import tailwindcss from '@tailwindcss/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
+/** This package's own version, read once rather than imported — `resolveJsonModule` would pull
+ * the whole file into the bundle's type graph for one field. */
+const packageVersion = (JSON.parse(readFileSync('./package.json', 'utf8')) as { version: string })
+    .version;
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+    // Every asset URL is generated relative to this at build time — an unset `VITE_APP_BASE_URL`
+    // (or one already shaped as a bare path) is served from the domain root, same as today.
+    base: loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_BASE_URL || '/',
+    define: {
+        __APP_VERSION__: JSON.stringify(packageVersion)
+    },
     server: {
         // The port lives here, not in the `dev` script, so the compose publish
         // (`${VITE_APP_PORT}:${VITE_APP_PORT}`) and the server it forwards to can never disagree.
@@ -57,8 +69,10 @@ export default defineConfig(({ mode }) => ({
             ? []
             : [
                   vueDevTools({
-                      // open webstorm instead of vscode when using the __devtools__
-                      launchEditor: 'webstorm'
+                      // Which editor `__devtools__` opens a file in — a per-developer choice, not
+                      // this repo's, so it reads the same `LAUNCH_EDITOR` convention vue-cli/CRA
+                      // popularised rather than hard-coding one IDE.
+                      launchEditor: process.env.LAUNCH_EDITOR || 'webstorm'
                   })
               ])
     ],
@@ -73,14 +87,11 @@ export default defineConfig(({ mode }) => ({
             '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url))
         }
     },
-    css: {
-        preprocessorOptions: {
-            scss: {
-                silenceDeprecations: ['legacy-js-api']
-            }
-        }
-    },
     build: {
+        // Written next to every chunk but never referenced from it (no `//# sourceMappingURL`),
+        // so production never ships a source map to the browser — only an error tracker fed the
+        // file directly (or a developer with the build artifact) can symbolicate a stack trace.
+        sourcemap: 'hidden',
         rollupOptions: {
             output: {
                 manualChunks(id) {

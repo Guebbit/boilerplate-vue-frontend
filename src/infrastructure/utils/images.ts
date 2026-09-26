@@ -38,7 +38,7 @@ const isSelfContained = (source: string) => /^(?:[a-z][\d+.a-z-]*:|\/\/)/i.test(
  * asserting on the `src` attribute asserts the string, never that a byte arrived.
  *
  * The prefix is read off the axios instance rather than from `import.meta.env`, so it follows the
- * client — including the e2e shard runner's `__E2E_API_URL` override, which is a runtime value no
+ * client — including the e2e shard runner's `__APP_CONFIG` override, which is a runtime value no
  * build-time env read can see.
  *
  * @param source - The record's `imageUrl`, or an object URL, or nothing.

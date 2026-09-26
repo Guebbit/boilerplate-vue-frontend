@@ -9,6 +9,7 @@
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { mergeWith } from 'lodash-es';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
  * Shape of one locale's message tree: nested groups of strings, with array leaves for the static
@@ -106,8 +107,11 @@ export const registerLocaleContributors = (
 export const i18n = createI18n({
     // MUST be false to use the composition API.
     legacy: false,
-    locale: import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
-    fallbackLocale: (import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined) ?? 'en',
+    locale: runtimeValue('APP_DEFAULT_LOCALE') ?? import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
+    fallbackLocale:
+        runtimeValue('APP_FALLBACK_LOCALE') ??
+        (import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined) ??
+        'en',
     modifiers: {
         customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
     }

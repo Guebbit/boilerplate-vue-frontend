@@ -34,6 +34,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.unstubAllEnvs();
+    Reflect.deleteProperty(globalThis, '__APP_CONFIG');
 });
 
 describe('originToRegExp', () => {
@@ -95,6 +96,15 @@ describe('readUmamiConfig', () => {
             websiteId: 'site-2'
         });
     });
+
+    it('a runtime-configured website id wins over the build-time one', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'build-time-site');
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+            UMAMI_WEBSITE_ID: 'runtime-site'
+        };
+
+        expect(readUmamiConfig()).toMatchObject({ websiteId: 'runtime-site' });
+    });
 });
 
 describe('readFaroConfig', () => {
@@ -114,7 +124,9 @@ describe('readFaroConfig', () => {
         expect(readFaroConfig()).toEqual({
             url: 'http://collector/collect',
             appName: 'frontend',
-            appVersion: '1.0.0',
+            // This package's own version, not a hand-maintained fallback — see `__APP_VERSION__`
+            // in `src/globals.d.ts`.
+            appVersion: __APP_VERSION__,
             environment: import.meta.env.MODE,
             apiOrigin: 'http://localhost:3000',
             ignoreUrls: ['http://collector/collect']
@@ -133,6 +145,20 @@ describe('readFaroConfig', () => {
             appVersion: '2.4.0',
             environment: 'staging',
             apiOrigin: 'https://api.example.com'
+        });
+    });
+
+    it('a runtime-configured value wins over its build-time VITE_* counterpart', () => {
+        vi.stubEnv('VITE_FARO_URL', 'http://collector/collect');
+        vi.stubEnv('VITE_FARO_APP_NAME', 'build-time-name');
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+            FARO_URL: 'http://runtime-collector/collect',
+            FARO_APP_NAME: 'runtime-name'
+        };
+
+        expect(readFaroConfig()).toMatchObject({
+            url: 'http://runtime-collector/collect',
+            appName: 'runtime-name'
         });
     });
 

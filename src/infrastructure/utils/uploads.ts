@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { formatFileSize, isAcceptedFileType, isWithinFileSize } from '@guebbit/js-toolkit';
 import { translate } from '@/infrastructure/i18n';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
  * Client-side limits for the `imageUpload` multipart fields.
@@ -42,7 +43,9 @@ export const ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE = ACCEPTED_IMAGE_TYPES.join(',');
  * non-numeric or zero value falls back to 5 MB, so a malformed `.env` fails safe rather than
  * rejecting every file.
  */
-export const MAX_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_UPLOAD_BYTES) || 5 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES =
+    Number(runtimeValue('MAX_UPLOAD_BYTES') ?? import.meta.env.VITE_MAX_UPLOAD_BYTES) ||
+    5 * 1024 * 1024;
 
 /**
  * {@link MAX_UPLOAD_BYTES} as display text, resolved once for the hint and the error message.

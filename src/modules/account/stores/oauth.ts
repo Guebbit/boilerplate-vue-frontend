@@ -37,7 +37,7 @@ export const providerLabel = (provider: string): string =>
  * come back with cookies set, which neither a `RouterLink` nor an axios call can do.
  *
  * The prefix is read off the axios instance rather than `import.meta.env`, same reasoning as
- * `resolveImageUrl` — it follows the e2e shard runner's `__E2E_API_URL` override, a runtime value
+ * `resolveImageUrl` — it follows the e2e shard runner's `__APP_CONFIG` override, a runtime value
  * a build-time env read can't see.
  *
  * @param provider - Registry key, e.g. `'google'`.

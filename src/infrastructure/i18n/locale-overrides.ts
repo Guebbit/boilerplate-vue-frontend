@@ -6,6 +6,7 @@
  */
 
 import { getLocales, getLocaleMessages } from '@api';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 import {
     localeDirections,
     mergeDictionaries,
@@ -48,7 +49,9 @@ import {
  * demo pair's frontend id, so a checkout with no `.env` still talks to the demo backend.
  */
 export const localeTenant = (): string =>
-    (import.meta.env.VITE_LOCALE_TENANT as string | undefined)?.trim() || 'demo-fe';
+    runtimeValue('LOCALE_TENANT') ??
+    (import.meta.env.VITE_LOCALE_TENANT as string | undefined)?.trim() ??
+    'demo-fe';
 
 /**
  * Languages the deployment offers, from the API's manifest.
