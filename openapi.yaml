@@ -5348,7 +5348,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreatedEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5393,7 +5393,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreatedEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5450,9 +5450,9 @@ paths:
         Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
         ring then carries two active secrets, and deliveries sign with both (two
         space-separated `v1,` values in `webhook-signature`) until the old one is dropped
-        through `DELETE .../secrets/{secretId}`. Split out from the old `PATCH` body's
-        `rotateSecret` flag: a command, not state, so it gets its own route instead of
-        sharing one with url/description/eventTypes/enabled.
+        through `DELETE .../secrets/{secretId}`. Its own route rather than a flag on
+        `PATCH`'s body: a command, not state, so it does not share a route with
+        url/description/eventTypes/enabled.
       operationId: rotateWebhookSubscriptionSecret
       security:
         - bearerAuth: []
@@ -5505,7 +5505,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreatedEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7470,8 +7470,8 @@ components:
         nullable: true
         allOf:
           - $ref: "#/components/schemas/UpsertTranslationRequest"
-        description: Upserts this locale's row when an object, deletes it when `null`. A key this map does not name is left exactly as it is — see the operation description for the full three-way table.
-      description: One or more locales for one entity, keyed by locale tag. A key absent from this map leaves that locale untouched; see the operation description for what an object and a `null` each mean.
+        description: Upserts this locale's row when an object, deletes it when `null`. See the operation description for what a key this map does not name means for the verb in use.
+      description: One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean for the verb in use.
       example:
         it:
           fields:
@@ -11145,6 +11145,7 @@ components:
           description: Must be `https://`. Validated again, against the resolved IP, on every delivery.
         description:
           type: string
+          minLength: 1
         eventTypes:
           type: array
           items:
@@ -11242,6 +11243,23 @@ components:
         enabled:
           type: boolean
           description: Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`.
+    WebhookSubscriptionEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/WebhookSubscription"
     UpdateWebhookSubscriptionRequest:
       type: object
       additionalProperties: false

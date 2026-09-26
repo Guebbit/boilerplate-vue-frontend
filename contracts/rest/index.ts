@@ -1079,7 +1079,7 @@ export interface UpsertTranslationRequest {
 }
 
 /**
- * One or more locales for one entity, keyed by locale tag. A key absent from this map leaves that locale untouched; see the operation description for what an object and a `null` each mean.
+ * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean for the verb in use.
  */
 export interface UpsertTranslationsRequest {
     [key: string]: UpsertTranslationRequest | null;
@@ -3072,6 +3072,7 @@ export interface CreateWebhookSubscriptionRequest {
      * @pattern (?:^https://)
      */
     url: string;
+    /** @minLength 1 */
     description?: string;
     /** @minItems 1 */
     eventTypes: string[];
@@ -3119,6 +3120,13 @@ export interface ReplaceWebhookSubscriptionRequest {
     eventTypes: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
     enabled: boolean;
+}
+
+export interface WebhookSubscriptionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscription;
 }
 
 export interface UpdateWebhookSubscriptionRequest {
@@ -6644,9 +6652,9 @@ export const createWebhookSubscription = (
 export const replaceWebhookSubscription = (
     id: string,
     replaceWebhookSubscriptionRequest: ReplaceWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
 ) => {
-    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+    return orvalMutator<WebhookSubscriptionEnvelope>(
         {
             url: `/webhooks/subscriptions/${id}`,
             method: 'PUT',
@@ -6665,9 +6673,9 @@ export const replaceWebhookSubscription = (
 export const updateWebhookSubscription = (
     id: string,
     updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
 ) => {
-    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+    return orvalMutator<WebhookSubscriptionEnvelope>(
         {
             url: `/webhooks/subscriptions/${id}`,
             method: 'PATCH',
@@ -6696,9 +6704,9 @@ export const deleteWebhookSubscription = (
  * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
  * ring then carries two active secrets, and deliveries sign with both (two
  * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
- * through `DELETE .../secrets/{secretId}`. Split out from the old `PATCH` body's
- * `rotateSecret` flag: a command, not state, so it gets its own route instead of
- * sharing one with url/description/eventTypes/enabled.
+ * through `DELETE .../secrets/{secretId}`. Its own route rather than a flag on
+ * `PATCH`'s body: a command, not state, so it does not share a route with
+ * url/description/eventTypes/enabled.
  * @summary Rotate a webhook subscription's secret
  */
 export const rotateWebhookSubscriptionSecret = (
@@ -6720,9 +6728,9 @@ export const rotateWebhookSubscriptionSecret = (
 export const removeWebhookSubscriptionSecret = (
     id: string,
     secretId: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
 ) => {
-    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+    return orvalMutator<WebhookSubscriptionEnvelope>(
         { url: `/webhooks/subscriptions/${id}/secrets/${secretId}`, method: 'DELETE' },
         options
     );
