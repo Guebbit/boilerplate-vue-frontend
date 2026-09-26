@@ -121,7 +121,10 @@ beforeEach(() => {
 });
 
 describe('a list-cache arrival gains actions', () => {
-    it('offers every reachable status once the forced re-fetch lands', () => {
+    it('enables Cancel once the forced re-fetch lands', () => {
+        // `status` is not a form field any more (SH1) — the moves this page renders from
+        // `actions` are the cancel/refund/override controls, not a status select, so proving the
+        // re-fetch landed means proving THOSE gain their real state.
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
@@ -139,15 +142,6 @@ describe('a list-cache arrival gains actions', () => {
         return nextTick()
             .then(() => nextTick())
             .then(() => {
-                const select = wrapper.getComponent({ name: 'VSelect' });
-                const values = (select.props('items') as { value: string }[]).map(
-                    (item) => item.value
-                );
-
-                // Exactly the two reachable statuses plus the current one — never the full
-                // six-value enum, which is what a select built from the bare status list would
-                // offer instead.
-                expect(values.toSorted()).toEqual(['cancelled', 'delivered', 'shipped'].toSorted());
                 expect(wrapper.get('[data-test=button-cancel-only]').attributes('disabled')).toBe(
                     undefined
                 );

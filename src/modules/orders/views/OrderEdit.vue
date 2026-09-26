@@ -7,9 +7,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Order-edit page. Loads one order by route id, exposes a status/email form
- * built on `useStructureFormValidation`, and the operator's cancel/refund actions — each
- * gated on the `actions` the server attaches to the loaded record.
+ * Order-edit page. Loads one order by route id, exposes an email-only edit form built on
+ * `useStructureFormValidation`, and the operator's cancel/refund/override actions — each gated
+ * on the `actions` the server attaches to the loaded record. `status` is not a form field: it
+ * moves only through the cancel and override actions below.
  */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -19,7 +20,6 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
-import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -64,17 +64,16 @@ const { id } = defineProps<{
 const { watchOrder, fetchOrder, updateOrder, cancelOrder, overrideStatus } = useOrdersStore();
 
 /**
- * `orders.any.override` gate — the only correction door once `PUT /orders/:id` stopped accepting
- * `shipped`/`delivered` from anyone.
+ * `orders.any.override` gate — the only correction door onto `processing`/`shipped`/`delivered`,
+ * since `PUT /orders/:id` carries no `status` field at all.
  */
 const session = useSessionStore();
 const canOverride = computed(() => session.can('override', 'Order'));
 
 /**
  * The three destinations `POST /orders/{id}/status-override` accepts. Not filtered to "forward of
- * the order's current status" here — same reasoning `statusOptions` above already states: that
- * rule lives in the API, and a copy here is how the two come to disagree. An illegal pick surfaces
- * as the server's own 409 toast.
+ * the order's current status" here: that rule lives in the API, and a copy here is how the two
+ * come to disagree. An illegal pick surfaces as the server's own 409 toast.
  */
 const overrideStatusOptions = [
     OrderStatus.processing,
@@ -125,27 +124,6 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
  * The money half of the operator's actions — `payments` answers for it, this page only asks.
  */
 const { canRefund, refund } = useOrderRefund(computed(() => id));
-
-/**
- * Options of the status select — the moves the SERVER says this operator may make, plus the status
- * the order is already in so the select can show what it is.
- *
- * Read from `actions.transitions` rather than listed from the enum: which value may follow which
- * depends on where the order is, and offering all six meant most picks came back as a 409. The
- * rules live in the API's order lifecycle and are not copied here, because a copy in a separately
- * deployed client is how the two come to disagree.
- *
- * @returns One entry per reachable status, with a localized label.
- */
-const statusOptions = computed(() => {
-    const current = currentOrder.value?.status;
-    const reachable = currentOrder.value?.actions?.transitions ?? [];
-
-    return [...(current ? [current] : []), ...reachable].map((value) => ({
-        value,
-        label: t(`orders-form.status-${value}`)
-    }));
-});
 
 /**
  * The operator's money actions, and whether each is still open.
@@ -219,10 +197,10 @@ const runRefund = () => {
 };
 
 /**
- * Order edit form model.
+ * Order edit form model. `status` is not editable here — it moves only through the cancel and
+ * override actions below, never a field on this form. See `docs/theory/tactical-ddd.md`.
  */
 interface OrderEditForm {
-    status?: OrderStatus;
     email?: string;
 }
 
@@ -230,7 +208,6 @@ interface OrderEditForm {
  * Validation schema for order updates.
  */
 const editSchema = z.object({
-    status: ordersStatusSchema.optional(),
     email: z.preprocess(
         (v) => (v === '' ? undefined : v),
         z.email({ error: () => t('orders-form.email-invalid') }).optional()
@@ -265,14 +242,7 @@ const {
  * Auto-hydrate the form from the fetched record once it resolves.
  */
 activateAutoHydrate(
-    computed(() =>
-        currentOrder.value
-            ? {
-                  status: currentOrder.value.status,
-                  email: currentOrder.value.email
-              }
-            : undefined
-    )
+    computed(() => (currentOrder.value ? { email: currentOrder.value.email } : undefined))
 );
 
 /**
@@ -322,7 +292,6 @@ const submitForm = () => {
     return handleSubmit(() => {
         if (!id) return;
         return updateOrder(id, {
-            status: form.value.status,
             email: form.value.email || undefined
         }).then(() => {
             addMessage(t('order-edit-page.success-update'));
@@ -385,15 +354,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-select
-                        v-model="form.status"
-                        data-test="status-select"
-                        :label="t('order-edit-page.label-status')"
-                        :items="statusOptions"
-                        item-title="label"
-                        item-value="value"
-                        :error-messages="showFormErrors ? formErrors.status : []"
-                    />
                     <v-text-field
                         v-model="form.email"
                         type="email"
