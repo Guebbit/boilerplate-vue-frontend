@@ -409,6 +409,7 @@ onMounted(() =>
                             variant="text"
                             color="error"
                             data-test="cart-remove"
+                            :disabled="loading"
                             :aria-label="
                                 t('cart-page.button-remove-named', { id: titleOf(item.productId) })
                             "

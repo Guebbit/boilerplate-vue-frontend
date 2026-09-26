@@ -146,6 +146,12 @@ const { cartItems, loading: cartLoading } = storeToRefs(cartStore);
 const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlistStore();
 
 /**
+ * Whether a wishlist toggle is already in flight (FA39's in-flight guard) — the heart's own
+ * blocked state ({@link wishlistError}) covers a failure, not a double click while one is out.
+ */
+const { loading: wishlistLoading } = storeToRefs(useWishlistStore());
+
+/**
  * Whether the shelf still holds anything. An absent `stock` reads as unconstrained — rows that
  * predate the column must not all render as sold out, mirroring the checkout rule.
  *
@@ -291,6 +297,7 @@ onMounted(() => {
                         variant="tonal"
                         :color="isSaved(currentProduct.id) ? 'secondary' : undefined"
                         data-test="wishlist-toggle"
+                        :disabled="wishlistLoading"
                         :aria-label="
                             isSaved(currentProduct.id)
                                 ? t('product-target-page.button-unsave-wishlist')
