@@ -7,6 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
+import { effectScope } from 'vue';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { checkPasswordBreached } from '@api';
 import type { PasswordCheckEnvelope } from '@types';
@@ -38,6 +39,18 @@ describe('debouncing', () => {
         check('pas');
         return vi.advanceTimersByTimeAsync(DELAY).then(() => {
             expect(checkPasswordBreached).toHaveBeenCalledExactlyOnceWith({ password: 'pas' });
+        });
+    });
+
+    it('cancels a pending check when the owning scope is disposed (leaving the form early)', () => {
+        vi.mocked(checkPasswordBreached).mockReturnValue(envelope(true));
+        const scope = effectScope();
+        const { check } = scope.run(() => usePasswordBreachCheck(DELAY))!;
+
+        check('password1');
+        scope.stop();
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            expect(checkPasswordBreached).not.toHaveBeenCalled();
         });
     });
 

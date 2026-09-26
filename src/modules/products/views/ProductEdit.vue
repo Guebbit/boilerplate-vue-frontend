@@ -53,6 +53,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import type { ProductTranslationsWrite } from '@types';
+import type { TaxClass } from '@api';
 
 /**
  * Localized dictionary helper, with the active locale reference used to revalidate the form.
@@ -129,6 +130,9 @@ interface ProductEditForm {
     active?: boolean;
     requiresShipping?: boolean;
     weight?: number;
+    // `null` clears the class back to the shop's standard rate — always sent on submit, unlike
+    // `translations`, which is the one field this PATCH merges instead of replacing.
+    taxClass?: TaxClass | null;
     categories?: string[];
     tags?: string[];
     translations: ProductTranslationsWrite;
@@ -195,6 +199,7 @@ activateAutoHydrate(
                   active: adminProduct.value.active ?? false,
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
                   weight: adminProduct.value.weight,
+                  taxClass: adminProduct.value.taxClass ?? null,
                   // Fresh arrays too, same reason as `translations` below: a chip added then
                   // discarded via "Reset changes" must not have mutated the fetched record.
                   categories: [...(adminProduct.value.categories ?? [])],
@@ -357,6 +362,7 @@ const submitForm = () => {
             active,
             requiresShipping,
             weight,
+            taxClass,
             categories,
             tags,
             translations,
@@ -371,6 +377,7 @@ const submitForm = () => {
                     active,
                     requiresShipping,
                     weight,
+                    taxClass,
                     categories,
                     tags,
                     translations,
@@ -527,6 +534,19 @@ const submitForm = () => {
                         "
                         persistent-hint
                         data-test="product-weight-field"
+                    />
+                    <v-select
+                        v-model="form.taxClass"
+                        :label="t('product-edit-page.label-tax-class')"
+                        :items="[
+                            { title: t('product-edit-page.tax-class-standard'), value: null },
+                            {
+                                title: t('product-edit-page.tax-class-reduced'),
+                                value: 'reduced'
+                            },
+                            { title: t('product-edit-page.tax-class-zero'), value: 'zero' }
+                        ]"
+                        data-test="product-tax-class-field"
                     />
                     <v-combobox
                         v-model="form.categories"

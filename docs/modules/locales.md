@@ -96,7 +96,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | ----------------------------------- | ------------------------------ |
 | `POST /locales`                     | `CreateLocaleResponse`         |
 | `DELETE /locales/{id}`              | `DeleteLocaleResponse`         |
-| `PUT /locales/{id}`                 | `UpdateLocaleResponse`         |
+| `PATCH /locales/{id}`               | `UpdateLocaleResponse`         |
 | `PATCH /locales/{id}/entries`       | `MergeLocaleEntriesResponse`   |
 | `POST /locales/{id}/entries`        | `CreateLocaleEntryResponse`    |
 | `PUT /locales/{id}/entries`         | `ReplaceLocaleEntriesResponse` |

@@ -110,7 +110,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | Call                                         | Response envelope                  |
 | -------------------------------------------- | ---------------------------------- |
 | `DELETE /account`                            | `RequestAccountDeleteResponse`     |
-| `PUT /account`                               | `UpdateAccountResponse`            |
+| `PATCH /account`                             | `UpdateAccountResponse`            |
 | `GET /account/2fa`                           | `GetTwoFactorStatusResponse`       |
 | `DELETE /account/2fa`                        | `DisableTwoFactorResponse`         |
 | `POST /account/2fa/backup-codes`             | `RegenerateBackupCodesResponse`    |
@@ -120,7 +120,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/addresses`                     | `GetAddressesResponse`             |
 | `POST /account/addresses`                    | `AddAddressResponse`               |
 | `DELETE /account/addresses/{id}`             | `RemoveAddressResponse`            |
-| `PUT /account/addresses/{id}`                | `UpdateAddressResponse`            |
+| `PATCH /account/addresses/{id}`              | `UpdateAddressResponse`            |
 | `DELETE /account/delete-confirm`             | `ConfirmAccountDeleteResponse`     |
 | `POST /account/export`                       | `ExportAccountDataResponse`        |
 | `POST /account/login`                        | `LoginResponse`                    |
@@ -131,6 +131,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/oauth/{provider}`              | `StartOAuthLoginResponse`          |
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
 | `POST /account/password`                     | `ChangePasswordResponse`           |
+| `DELETE /account/pending-email`              | `CancelPendingEmailChangeResponse` |
 | `POST /account/reauth`                       | `ReauthResponse`                   |
 | `POST /account/reset`                        | `RequestPasswordResetResponse`     |
 | `POST /account/reset-confirm`                | `ConfirmPasswordResetResponse`     |

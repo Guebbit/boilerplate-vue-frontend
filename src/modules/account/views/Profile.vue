@@ -249,36 +249,50 @@ const {
 } = useBlockingError();
 
 /**
+ * Whether a resend or cancel is in flight — shared by both, since they act on the same pending
+ * change and a click on one while the other settles would race it.
+ */
+const pendingEmailActionInFlight = ref(false);
+
+/**
  * Re-sends the pending-email confirmation link. There is no dedicated resend endpoint: sending
  * `PATCH /account` with the SAME address already parked in `pendingEmail` is the backend's
- * documented resend path (AUDIT_0924 D17d).
+ * documented resend path.
  *
  * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
  *  place ({@link pendingEmailError}).
  */
 const resendPendingEmail = () => {
     const pendingEmail = profile.value?.pendingEmail;
-    if (!pendingEmail) return;
+    if (!pendingEmail || pendingEmailActionInFlight.value) return;
     clearPendingEmailError();
+    pendingEmailActionInFlight.value = true;
     return updateProfile({ email: pendingEmail })
         .then(() => addMessage(t('profile-page.pending-email-resent')))
-        .catch((error) => reportPendingEmailError(error));
+        .catch((error) => reportPendingEmailError(error))
+        .finally(() => {
+            pendingEmailActionInFlight.value = false;
+        });
 };
 
 /**
  * Cancels the pending email change through its own endpoint — `DELETE /account/pending-email`.
- * Resending the current address used to be the cancel path; it is a no-op now, so a routine save
- * can no longer drop a change in flight by accident.
+ * Resending the current address is a no-op, not a cancel, so a routine save can never drop a
+ * change in flight by accident.
  *
  * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
  *  place ({@link pendingEmailError}).
  */
 const cancelPendingEmail = () => {
-    if (!profile.value?.pendingEmail) return;
+    if (!profile.value?.pendingEmail || pendingEmailActionInFlight.value) return;
     clearPendingEmailError();
+    pendingEmailActionInFlight.value = true;
     return cancelPendingEmailChange()
         .then(() => addMessage(t('profile-page.pending-email-cancelled')))
-        .catch((error) => reportPendingEmailError(error));
+        .catch((error) => reportPendingEmailError(error))
+        .finally(() => {
+            pendingEmailActionInFlight.value = false;
+        });
 };
 </script>
 
@@ -317,6 +331,7 @@ const cancelPendingEmail = () => {
                     <v-btn
                         variant="text"
                         size="small"
+                        :disabled="pendingEmailActionInFlight"
                         data-test="pending-email-resend"
                         @click="resendPendingEmail"
                     >
@@ -325,6 +340,7 @@ const cancelPendingEmail = () => {
                     <v-btn
                         variant="text"
                         size="small"
+                        :disabled="pendingEmailActionInFlight"
                         data-test="pending-email-cancel"
                         @click="cancelPendingEmail"
                     >

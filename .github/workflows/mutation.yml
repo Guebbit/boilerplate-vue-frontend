@@ -27,7 +27,6 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    NODE_VERSION: 24
 
 jobs:
     mutation:
@@ -44,7 +43,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ env.NODE_VERSION }}
+                  node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 

@@ -165,12 +165,12 @@ describe('the GDPR analytics-consent switch', () => {
 });
 
 /**
- * B5: an ordinary save must never carry the visitor's own unchanged address, because the backend
- * reads any INCLUDED `email` as "cancel/redirect the pending change" — see D17d's own doc comment
- * on `PATCH /account`. Both halves of the bug (A2's UI, B5's fix) are pinned in one file since
- * they are the same mechanism proven from two ends.
+ * An ordinary save must never carry the visitor's own unchanged address, because the backend
+ * reads any INCLUDED `email` as "cancel/redirect the pending change" — see `updateAccount`'s
+ * generated doc comment on `PATCH /account`. The notice's UI and the save-side fix are pinned in
+ * one file since they are the same mechanism proven from two ends.
  */
-describe('the email field, and a pending change (A2 + B5)', () => {
+describe('the email field, and a pending change', () => {
     it('omits email from the PATCH body on an ordinary save that leaves it untouched', () => {
         const wrapper = mountProfile();
 
@@ -233,6 +233,54 @@ describe('the email field, and a pending change (A2 + B5)', () => {
             .then(flushPromises)
             .then(() => {
                 expect(calledCancelPendingEmail()).toBe(true);
+            });
+    });
+
+    it('a double click on resend sends only one PATCH', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                const button = wrapper.get('[data-test=pending-email-resend]');
+                // Neither `.trigger()` call is awaited before the next: both click handlers run
+                // synchronously back to back, before the first request's promise ever settles —
+                // exactly the race a `disabled` bound only after the promise resolves would miss.
+                return Promise.all([button.trigger('click'), button.trigger('click')]);
+            })
+            .then(flushPromises)
+            .then(() => {
+                const patchesToAccount = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.filter(
+                        (call) =>
+                            (call[0] as { url: string; method?: string }).method?.toUpperCase() ===
+                                'PATCH' && (call[0] as { url: string }).url === '/account'
+                    );
+                expect(patchesToAccount).toHaveLength(1);
+            });
+    });
+
+    it('a double click on cancel sends only one DELETE', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                const button = wrapper.get('[data-test=pending-email-cancel]');
+                return Promise.all([button.trigger('click'), button.trigger('click')]);
+            })
+            .then(flushPromises)
+            .then(() => {
+                const deletes = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.filter(
+                        (call) =>
+                            (call[0] as { url: string; method?: string }).method?.toUpperCase() ===
+                                'DELETE' &&
+                            (call[0] as { url: string }).url === '/account/pending-email'
+                    );
+                expect(deletes).toHaveLength(1);
             });
     });
 });

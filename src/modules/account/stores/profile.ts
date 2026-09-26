@@ -207,9 +207,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Cancels a pending email change, through the endpoint dedicated to it — `DELETE
-     * /account/pending-email`. Resending the current address no longer cancels anything (the
-     * backend now treats that as a no-op, so a routine save never drops a change in flight by
-     * accident); this is the only thing that does.
+     * /account/pending-email`. Resending the current address is a no-op, not a cancel, so a
+     * routine save never drops a change in flight by accident; this is the only thing that does.
      *
      * @returns A promise resolving once the change is discarded and the profile refetched.
      */
