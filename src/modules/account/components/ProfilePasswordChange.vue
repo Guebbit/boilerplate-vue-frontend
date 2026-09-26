@@ -20,6 +20,8 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
+import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
@@ -42,6 +44,13 @@ const { addMessage } = useNotificationsStore();
  * Changes the visitor's password.
  */
 const { changePassword } = useProfileStore();
+
+/**
+ * Refetches the device-sessions list after a password change  — a live password change
+ * revokes every OTHER session server-side, so the panel showing them would otherwise go stale the
+ * moment this form succeeds.
+ */
+const { fetchSessions } = useAccountSessionsStore();
 
 /**
  * Whether the form below is open. While it is, its errors show instantly.
@@ -139,6 +148,12 @@ const submitPasswordChange = () =>
                 passwordForm.value.password = '';
                 passwordForm.value.passwordConfirm = '';
                 showChangePassword.value = false;
+                // Best-effort, and isolated from this form's own error handling below: the change
+                // itself already succeeded, and a failed (or synchronously throwing) refresh here
+                // must only leave the sessions panel stale, never surface as this form's error.
+                Promise.resolve()
+                    .then(() => fetchSessions())
+                    .catch(() => undefined);
             })
             .catch((error) => reportPasswordChangeError(error));
     });
@@ -185,6 +200,7 @@ const submitPasswordChange = () =>
                 :error-messages="showPasswordErrors ? (passwordErrors.password ?? []) : []"
                 class="mb-2"
             />
+            <PasswordStrengthMeter :password="passwordForm.password ?? ''" />
             <!-- Advisory only, never a submit gate — the four password-SET paths remain the
                  actual authority, checked again server-side regardless of this warning. -->
             <v-alert

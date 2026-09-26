@@ -11,6 +11,21 @@ import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
+ * a same-origin, relative path only — the one shape `?continue=` is ever meant to carry.
+ *
+ * Two failures this guards against: `route.query.continue` is `string[]` when the query string
+ * repeats the param (`?continue=a&continue=b`), which an unguarded `as string` cast would hand
+ * straight to `router.push` as a malformed location; and `//evil.example` is a
+ * protocol-relative URL a browser follows off-site, which is exactly the value an attacker crafts
+ * a phishing link's `?continue=` around.
+ *
+ * @param value - `route.query.continue`, in whichever shape vue-router parsed it as.
+ * @returns `true` only for a single string starting with one `/`.
+ */
+const isSameOriginPath = (value: unknown): value is string =>
+    typeof value === 'string' && value.startsWith('/') && !value.startsWith('//');
+
+/**
  * Builds the post-login redirect for the view calling it.
  *
  * @returns `{ redirectAfterLogin }`, a promise-returning action a login step calls once a session
@@ -44,9 +59,12 @@ export const usePostLoginRedirect = () => {
      * @returns A promise resolving once navigation settles.
      */
     const redirectAfterLogin = () => {
+        const continueTo = isSameOriginPath(route.query.continue)
+            ? route.query.continue
+            : undefined;
         const saved = useProfileStore().profile?.locale;
         const applyPreference =
-            !route.query.continue &&
+            !continueTo &&
             typeof saved === 'string' &&
             saved !== locale.value &&
             supportedLanguages.includes(saved)
@@ -54,8 +72,8 @@ export const usePostLoginRedirect = () => {
                 : Promise.resolve();
 
         return applyPreference.then(() =>
-            route.query.continue
-                ? router.push({ path: route.query.continue as string })
+            continueTo
+                ? router.push({ path: continueTo })
                 : router.push(routerLinkI18n({ name: 'Home' }))
         );
     };

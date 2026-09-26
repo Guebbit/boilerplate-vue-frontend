@@ -49,6 +49,7 @@
         "sessions-title": "Active sessions",
         "sessions-intro": "Every device signed into this account. Revoking one signs that device out at its next refresh.",
         "sessions-current": "This device",
+        "sessions-last-used": "Last used",
         "sessions-expires": "Expires",
         "sessions-revoke": "Revoke",
         "sessions-revoked": "Session revoked.",

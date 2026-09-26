@@ -6,7 +6,7 @@
  * restored-but-not-yet-identified session cannot be read as authenticated.
  */
 
-import { ref, shallowRef, computed } from 'vue';
+import { ref, shallowRef, computed, onScopeDispose } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie } from '@guebbit/js-toolkit';
 import {
@@ -22,6 +22,28 @@ import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility } from '@casl/ability';
 import { unpackRules } from '@casl/ability/extra';
 import type { Abilities } from '@types';
+import type { AxiosError } from 'axios';
+import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
+
+/**
+ * Cross-tab logout: another tab's `clearSession` reaches this one over `BroadcastChannel`, not on
+ * this tab's next request. `undefined` in an environment with none (older browsers, some test
+ * runners) — cross-tab sync degrades quietly rather than being something to retry or polyfill.
+ */
+const sessionChannel =
+    typeof BroadcastChannel === 'undefined' ? undefined : new BroadcastChannel('session');
+
+/**
+ * Whether an axios rejection is a definitive "this session is dead" answer from the refresh
+ * endpoint specifically — 401 (expired/revoked) or 403 (blocked account) — as opposed to a
+ * network failure, timeout or 5xx, none of which say the refresh cookie is actually bad.
+ *
+ * @param error - The rejection `apiRefreshToken` settled with.
+ */
+const isDefinitiveAuthFailure = (error: unknown): boolean => {
+    const status = (error as AxiosError | undefined)?.response?.status;
+    return status === 401 || status === 403;
+};
 
 /**
  * The concrete actions a screen may ask about — CASL's own vocabulary, as
@@ -71,6 +93,19 @@ export interface SessionViewer {
      * remote/default image or while a digest job is still pending.
      */
     thumbnailUrl?: string;
+    /**
+     * Whether the address on file has been proven — `verifiedAt != null` on the record. The one
+     * field here read by something OTHER than a route guard: `AppVerificationBanner` keys on it
+     * directly, deliberately not on a shop permission (an unverified operator on a platform-only
+     * site must see it too).
+     *
+     * Optional rather than required: every real projection (`loadViewer`, `publishViewer`) always
+     * sets it, but widening it to required would force `verified: true` onto every other module's
+     * `SessionViewer` test double, most of which are outside this lane's clusters and have nothing
+     * to do with verification. `!viewer.verified` reads a missing value as unverified, which is
+     * the fail-safe direction for a fixture that never set it on purpose.
+     */
+    verified?: boolean;
 }
 
 /**
@@ -140,6 +175,21 @@ export const useSessionStore = defineStore('session', () => {
      * guard admit someone whose role is still unknown.
      */
     const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
+
+    /**
+     * Bumped by {@link clearSession}. A refresh started before a clear must not act on its result
+     * once it lands — a continuation whose captured epoch no longer matches the current one is
+     * stale and is dropped, which is what stops a refresh that resolves just after logout from
+     * silently signing the visitor back in.
+     */
+    const sessionEpoch = ref(0);
+
+    /**
+     * Bumped only when the session died on its own — the refresh endpoint answered a definitive
+     * 401/403 — never on an explicit {@link logout}/{@link logoutAll}. `LayoutDefault.vue` watches
+     * this to turn it into a toast and a redirect to login; a plain logout needs neither.
+     */
+    const expiredSignal = ref(0);
 
     /**
      * The rules the SERVER enforces, unpacked from `GET /account/abilities` — one ability per
@@ -304,14 +354,50 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Renews the in-memory access token using the httpOnly refresh cookie.
-     *
-     * @returns A promise resolving once the new token is stored.
+     * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
+     * requests failing with 401 in the same tick must share one `GET /account/refresh`, not fire
+     * one each) and, unlike a generic `singleFlight` wrapper, inspectable: {@link logout} reads it
+     * directly to wait out an attempt already running rather than starting a fresh one.
      */
-    const refreshToken = () =>
-        apiRefreshToken().then((data) => {
-            setAccessToken(getTokenFromResponse(data));
-        });
+    let refreshInFlight: Promise<string | undefined> | undefined;
+
+    /**
+     * Renews the in-memory access token using the httpOnly refresh cookie. Single-flight: a
+     * caller arriving while a refresh is already running gets that SAME promise. Also the one
+     * place a definitively dead refresh cookie (401/403) ends the session — a network error or a
+     * 5xx stays non-fatal, since neither says the cookie itself is bad.
+     *
+     * Callers outside this module reach this through `http/refresh.ts`'s interceptor, which is
+     * what makes THIS the single shared refresh attempt rather than a second one of its own — see
+     * that module's own docblock.
+     *
+     * @returns A promise resolving with the fresh token, or `undefined` when the refresh failed,
+     *  answered with none, or landed after a {@link clearSession} that makes it moot.
+     */
+    const refreshToken = (): Promise<string | undefined> => {
+        if (!refreshInFlight) {
+            // Captured before the request goes out, not read again after: this attempt answers
+            // for the session as it was when it started, not as it is when the response lands.
+            const epochAtStart = sessionEpoch.value;
+            refreshInFlight = apiRefreshToken({
+                _refreshed: true
+            } as AxiosRequestConfigWithRetry)
+                .then((data) => {
+                    const token = getTokenFromResponse(data);
+                    if (epochAtStart === sessionEpoch.value) setAccessToken(token);
+                    return token;
+                })
+                .catch((error: AxiosError) => {
+                    if (isDefinitiveAuthFailure(error) && epochAtStart === sessionEpoch.value)
+                        signalExpired();
+                    return undefined;
+                })
+                .finally(() => {
+                    refreshInFlight = undefined;
+                });
+        }
+        return refreshInFlight;
+    };
 
     /**
      * Asks the API who the current token belongs to and stores the projection.
@@ -328,6 +414,7 @@ export const useSessionStore = defineStore('session', () => {
                 role?: string;
                 imageUrl?: string;
                 thumbnailUrl?: string;
+                verifiedAt?: string | null;
             }>(data);
             return setViewer(
                 payload && {
@@ -337,7 +424,9 @@ export const useSessionStore = defineStore('session', () => {
                     // resolves an absent role to (`account/module.ts`).
                     role: payload.role ?? 'unverified',
                     imageUrl: payload.imageUrl,
-                    thumbnailUrl: payload.thumbnailUrl
+                    thumbnailUrl: payload.thumbnailUrl,
+                    // Absent means unverified: the backend sends the field only once it's set.
+                    verified: payload.verifiedAt != null
                 }
             ).then(() => payload);
         });
@@ -370,13 +459,13 @@ export const useSessionStore = defineStore('session', () => {
             : Promise.resolve();
 
     /**
-     * Drops every trace of the session held here: token, viewer and the `isAuth` cookie.
+     * Drops every trace of the session held here: token, viewer and the `isAuth` cookie, without
+     * telling the other tabs — {@link clearSession} is the public action; this is the half a
+     * cross-tab broadcast also needs, since re-broadcasting what arrived AS a broadcast would loop.
      *
      * Domain caches are NOT cleared from here — the account module resets its own on logout.
-     *
-     * @returns Nothing; state is cleared as a side effect.
      */
-    const clearSession = () => {
+    const clearSessionLocally = () => {
         accessToken.value = undefined;
         viewer.value = undefined;
         // Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
@@ -385,22 +474,73 @@ export const useSessionStore = defineStore('session', () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
+        // A refresh that started before this must not act on its result once it lands — see
+        // `refreshToken`'s own epoch check.
+        sessionEpoch.value += 1;
+    };
+
+    const onBroadcast = (event: MessageEvent<unknown>) => {
+        // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
+        // running an older or newer build with a different message shape.
+        if ((event.data as { type?: unknown } | undefined)?.type === 'logout')
+            clearSessionLocally();
+    };
+    sessionChannel?.addEventListener('message', onBroadcast);
+    // Each `createPinia()` (every test file, every HMR reload) re-runs this setup and would
+    // otherwise pile another listener onto the one module-scoped channel.
+    onScopeDispose(() => sessionChannel?.removeEventListener('message', onBroadcast));
+
+    /**
+     * Drops every trace of the session held here, and tells this browser's other tabs to do the
+     * same  — logging out in one tab must not leave the others signed in with a token this
+     * one already revoked.
+     *
+     * @returns Nothing; state is cleared as a side effect.
+     */
+    const clearSession = () => {
+        clearSessionLocally();
+        sessionChannel?.postMessage({ type: 'logout' });
+    };
+
+    /**
+     * Ends the session the way it died on its own — a refresh that came back with a definitive
+     * 401/403 (see {@link isDefinitiveAuthFailure}) — as opposed to an explicit
+     * {@link logout}/{@link logoutAll}. Bumps {@link expiredSignal}, which is the only difference
+     * from calling {@link clearSession} directly: the shell owes a "session expired" toast to a
+     * visitor who did nothing wrong, never to one who just clicked "log out".
+     */
+    const signalExpired = () => {
+        clearSession();
+        expiredSignal.value += 1;
     };
 
     /**
      * Ends THIS session only: the refresh cookie's token is revoked server-side and local state is
      * cleared. Other devices keep their own tokens — `logoutAll` is the one that ends everything.
      *
-     * @returns A promise resolving once the API call succeeds and local state is cleared.
+     * Waits out an in-flight refresh first  — the server rotates the refresh cookie on every
+     * renewal, and revoking too early can race a renewal already under way into leaving a rotated
+     * cookie behind, unrevoked.
+     *
+     * Local state clears even when the API call fails (a network error, a 5xx): a visitor who
+     * asked to sign out sees themselves signed out on THIS device regardless of whether the
+     * server could be reached — the caller reports that failure, this store does not swallow it.
+     *
+     * @returns A promise resolving once the API call succeeds, or rejecting with its error —
+     *  either way, after local state has already cleared.
      */
-    const logout = () => apiLogout().then(() => clearSession());
+    const logout = () =>
+        (refreshInFlight ?? Promise.resolve()).then(() => apiLogout()).finally(clearSession);
 
     /**
-     * Ends every session for this visitor, server-side and locally.
+     * Ends every session for this visitor, server-side and locally. Same in-flight-refresh wait
+     * and same fails-closed-on-local-state guarantee as {@link logout}.
      *
-     * @returns A promise resolving once the API call succeeds and local state is cleared.
+     * @returns A promise resolving once the API call succeeds, or rejecting with its error —
+     *  either way, after local state has already cleared.
      */
-    const logoutAll = () => apiLogoutAll().then(() => clearSession());
+    const logoutAll = () =>
+        (refreshInFlight ?? Promise.resolve()).then(() => apiLogoutAll()).finally(clearSession);
 
     return {
         tenantAbility,
@@ -411,6 +551,7 @@ export const useSessionStore = defineStore('session', () => {
         accessToken,
         viewer,
         isAuth,
+        expiredSignal,
         setAccessToken,
         setViewer,
         refreshToken,

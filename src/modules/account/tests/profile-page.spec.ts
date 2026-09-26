@@ -2,8 +2,8 @@
  * @module
  * Mounts the real profile page for the record-edit form's own behaviour: what an ordinary save
  * sends over `PATCH /account` and, deliberately, what it leaves out. Every sibling panel
- * (`ProfileAvatar`, `ProfileRole`, ...) is stubbed — each fetches its own data on mount and has
- * its own test file; this one is scoped to the form `Profile.vue` owns directly.
+ * (`ProfileAvatar`, ...) is stubbed — each fetches its own data on mount and has its own test
+ * file; this one is scoped to the form `Profile.vue` owns directly.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -93,7 +93,6 @@ const mountProfile = () =>
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
                 ProfileAvatar: true,
-                ProfileRole: true,
                 ProfilePasswordChange: true,
                 ProfileTwoFactor: true,
                 ProfileSessions: true,

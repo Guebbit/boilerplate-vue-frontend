@@ -19,6 +19,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
+import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import type { TwoFactorMethodSummary } from '@api';
 
 /**
@@ -35,6 +36,12 @@ const route = useRoute();
  * Router instance, for the navigations this file performs.
  */
 const router = useRouter();
+
+/**
+ * Where a plain (non-2FA) success lands — the same `?continue=` handling and saved-locale
+ * preference the password login step uses, so OAuth does not skip either .
+ */
+const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
  * The closed set of codes the backend redirects with. Anything else — a future code this build
@@ -107,10 +114,7 @@ onMounted(() => {
         return;
     }
 
-    const continueTo = route.query.continue;
-    void router.push(
-        typeof continueTo === 'string' ? { path: continueTo } : routerLinkI18n({ name: 'Home' })
-    );
+    void redirectAfterLogin();
 });
 </script>
 

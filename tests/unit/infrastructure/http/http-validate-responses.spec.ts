@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 const API = 'http://api.test';
 
@@ -78,7 +79,9 @@ describe('orvalMutator contract validation', () => {
         );
         vi.stubEnv('MODE', 'production');
         return loadHttp().then(({ orvalMutator }) =>
-            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(/\[contract]/)
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
+                errors: [{ code: 'CONTRACT_MISMATCH' }]
+            })
         );
     });
 
@@ -101,7 +104,12 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
-    it('throws a contract error when VITE_VALIDATE_RESPONSES=true and a required field is missing', () => {
+    /**
+     * a contract mismatch is this deployment's own defect, never something a shopper can
+     * act on — the rejection a call site sees is the same generic envelope every unreadable
+     * failure gets, never the raw "[contract] ... does not match the OpenAPI schema" diagnostic.
+     */
+    it('rejects with a generic envelope, not the raw diagnostic, when a required field is missing', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
@@ -109,13 +117,15 @@ describe('orvalMutator contract validation', () => {
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         return loadHttp().then(({ orvalMutator }) =>
-            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(
-                /\[contract] response for GET \/account does not match the OpenAPI schema/
-            )
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
+                success: false,
+                status: 0,
+                errors: [{ code: 'CONTRACT_MISMATCH' }]
+            })
         );
     });
 
-    it('throws a contract error when the response carries an undeclared field (strict schema)', () => {
+    it('rejects with the same generic envelope for an undeclared field (strict schema)', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({
@@ -135,8 +145,34 @@ describe('orvalMutator contract validation', () => {
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         return loadHttp().then(({ orvalMutator }) =>
-            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(/\[contract]/)
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
+                errors: [{ code: 'CONTRACT_MISMATCH' }]
+            })
         );
+    });
+
+    it('reports the full field-level diagnostic to Faro, separate from what the call site sees', () => {
+        server.use(
+            http.get(`${API}/account`, () =>
+                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
+            )
+        );
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/account', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => {
+                expect(captureException).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        message: expect.stringContaining(
+                            '[contract] response for GET /account does not match the OpenAPI schema'
+                        )
+                    })
+                );
+            });
     });
 
     it('never validates when VITE_VALIDATE_RESPONSES=false, even for a non-conformant response', () => {

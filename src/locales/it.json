@@ -107,6 +107,7 @@
         "unauthorized": "Non hai effettuato l’accesso, oppure la sessione è scaduta.",
         "forbidden": "Non hai i permessi per farlo.",
         "internal-server-error": "Qualcosa è andato storto dalla nostra parte. Riprova.",
+        "network": "Impossibile raggiungere il server. Controlla la connessione e riprova.",
         "unknown": "Qualcosa è andato storto. Riprova."
     },
     "static-pages": {

@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sessionStore = {
     accessToken: undefined as string | undefined,
+    viewer: undefined as { id: string } | undefined,
     refreshToken: vi.fn(),
     loadViewer: vi.fn()
 };
@@ -34,6 +35,7 @@ import { tryRestoreAuth } from '@/app/guards/authentications';
 beforeEach(() => {
     vi.clearAllMocks();
     sessionStore.accessToken = undefined;
+    sessionStore.viewer = undefined;
     // The realistic default: a successful refresh is what puts the token in place, so the second
     // half of the function sees a state the first half created.
     sessionStore.refreshToken.mockImplementation(() => {
@@ -97,7 +99,7 @@ describe('a returning visitor holding the isAuth cookie', () => {
 describe('a visitor whose token is already in memory', () => {
     beforeEach(() => getCookieMock.mockReturnValue('true'));
 
-    it('skips the refresh but still loads the viewer', () => {
+    it('skips the refresh but still loads the viewer, when it is not known yet', () => {
         sessionStore.accessToken = 'already-here';
 
         return tryRestoreAuth().then(() => {
@@ -105,6 +107,19 @@ describe('a visitor whose token is already in memory', () => {
             // second call must happen even though the first is skipped.
             expect(sessionStore.refreshToken).not.toHaveBeenCalled();
             expect(sessionStore.loadViewer).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * this guard runs on EVERY navigation. Before this fix it re-fetched the viewer (and the
+     * two round trips `loadViewer` chains into) on every single one of them, not just the first.
+     */
+    it('does not reload an already-known viewer on a later navigation', () => {
+        sessionStore.accessToken = 'already-here';
+        sessionStore.viewer = { id: 'u1' };
+
+        return tryRestoreAuth().then(() => {
+            expect(sessionStore.loadViewer).not.toHaveBeenCalled();
         });
     });
 });

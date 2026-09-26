@@ -6,7 +6,7 @@
  *
  * It is therefore tested against a real HTTP server (MSW's node interceptor) rather than a stubbed
  * axios adapter. The whole point is that `instance.interceptors.response` runs, that the *replay*
- * goes back through the same instance, and that `_dontRetry` actually stops the second round —
+ * goes back through the same instance, and that `_refreshed` actually stops the second round —
  * none of which a hand-rolled adapter would reproduce.
  *
  * `tests/unit/infrastructure/http/http.spec.ts` covers the error-normalisation side of the same
@@ -23,6 +23,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -43,7 +44,6 @@ const EXCLUDED_PATHS = [
     '/account/signup',
     '/account/reset',
     '/account/reset-confirm',
-    '/account/logout-all',
     '/account/login/2fa',
     '/account/login/2fa/send'
 ];
@@ -137,7 +137,21 @@ const server = setupServer(
             requestLog.push({ route: `POST ${new URL(request.url).pathname}` });
             return unauthorized('Bad credentials');
         })
-    )
+    ),
+
+    /**
+     * `POST /account/logout-all` — unlike the excluded paths above, a 401 here means an
+     * EXPIRED access token, not bad credentials (the backend mounts it behind `isAuth`), so it
+     * must go through the same refresh-and-replay as any other protected route.
+     */
+    http.post(`${API}/account/logout-all`, ({ request }) => {
+        const authorization = request.headers.get('authorization') ?? undefined;
+        requestLog.push({ route: 'POST /account/logout-all', authorization });
+
+        return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
+            ? HttpResponse.json({ success: true, status: 200 })
+            : unauthorized('Unauthorized');
+    })
 );
 
 /**
@@ -247,6 +261,24 @@ describe('401 refresh flow', () => {
                     expect(timesRequested('GET /account/refresh')).toBe(1);
                 })
             ));
+
+        /**
+         * `POST /account/logout-all` sits behind `isAuth` on the backend, so an expired
+         * access token answers it a plain 401 — the same shape any other protected route gets,
+         * and one this flow must not treat as a bad-credentials dead end.
+         */
+        it('refreshes and replays a 401 from /account/logout-all', () =>
+            loadHttp()
+                .then(({ orvalMutator }) =>
+                    orvalMutator({ url: '/account/logout-all', method: 'POST', data: {} })
+                )
+                .then(() => {
+                    expect(routes()).toEqual([
+                        'POST /account/logout-all',
+                        'GET /account/refresh',
+                        'POST /account/logout-all'
+                    ]);
+                }));
     });
 
     describe('when the refresh does not produce a usable token', () => {
@@ -295,7 +327,7 @@ describe('401 refresh flow', () => {
                     })
                 )
                 .then(() => {
-                    // One refresh and two /orders calls — `_dontRetry` stopped the loop.
+                    // One refresh and two /orders calls — `_refreshed` stopped the loop.
                     expect(timesRequested('GET /account/refresh')).toBe(1);
                     expect(timesRequested('GET /orders')).toBe(2);
                 }));
@@ -327,5 +359,73 @@ describe('401 refresh flow', () => {
                     expect(timesRequested('GET /account/refresh')).toBe(0);
                 })
         );
+    });
+
+    /**
+     * a request may need BOTH a refresh and a step-up, in that order, and each guard must
+     * block only its own retry. Before the split, both branches shared one `_dontRetry` flag, so
+     * the refresh's own replay already looked "already retried" to the step-up branch — the
+     * REAUTH_REQUIRED it came back with surfaced as a generic error instead of the password prompt.
+     */
+    describe('a request needing both a refresh and a step-up', () => {
+        let checkoutCalls = 0;
+
+        beforeEach(() => {
+            checkoutCalls = 0;
+            server.use(
+                http.post(`${API}/checkout`, ({ request }) => {
+                    checkoutCalls += 1;
+                    const authorization = request.headers.get('authorization') ?? undefined;
+                    requestLog.push({ route: 'POST /checkout', authorization });
+
+                    // Call 1: no token yet — a plain 401, the shape that triggers a refresh.
+                    if (authorization !== `Bearer ${FRESH_TOKEN}`)
+                        return unauthorized('Unauthorized');
+                    // Call 2: refreshed, but the backend's `auth_time` is still the old one — the
+                    // critical action demands a step-up, same as a request never refreshed at all.
+                    if (checkoutCalls === 2)
+                        return HttpResponse.json(
+                            {
+                                success: false,
+                                status: 401,
+                                message: 'Fresh authentication required',
+                                errors: [
+                                    {
+                                        code: 'REAUTH_REQUIRED',
+                                        message: 'Fresh authentication required'
+                                    }
+                                ]
+                            },
+                            { status: 401 }
+                        );
+                    // Call 3: stepped up — the fresh session the second call demanded now exists.
+                    return HttpResponse.json({
+                        success: true,
+                        status: 200,
+                        data: { orderId: 'o1' }
+                    });
+                })
+            );
+        });
+
+        it('refreshes once, then steps up once, then succeeds', () =>
+            loadHttp().then(({ orvalMutator }) => {
+                const pending = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
+
+                return vi
+                    .waitFor(() => expect(useReauthPromptStore().isOpen).toBe(true))
+                    .then(() => {
+                        useReauthPromptStore().resolveStepUp();
+                        return pending;
+                    })
+                    .then(() => {
+                        expect(routes()).toEqual([
+                            'POST /checkout',
+                            'GET /account/refresh',
+                            'POST /checkout',
+                            'POST /checkout'
+                        ]);
+                    });
+            }));
     });
 });

@@ -20,6 +20,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
@@ -84,6 +85,10 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
+
+// The token is the only credential for this action; it must not linger in the URL for every
+// pageview and observability event after mount to carry to Umami, Faro and browser history.
+useClearQueryOnMount(route, router);
 
 /**
  * This submit's own blocked state — a spent or unknown token names no field, so it lands here

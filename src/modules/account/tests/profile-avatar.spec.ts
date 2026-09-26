@@ -2,7 +2,7 @@
  * @module
  * Unit tests for `stores/profile.ts`'s `updateProfile` avatar branches: the multipart upload an
  * `imageUpload` switches to, progress forwarded through to the transport, and the plain-JSON
- * `imageUrl: ''` remove path, and the per-path loading keys the two buttons spin on.
+ * `imageUrl: null` remove path, and the per-path loading keys the two buttons spin on.
  * `profile.spec.ts` covers every other field of the same action; this file is only about the
  * picture, which is why it is split out — same split the plan's testing table draws.
  */
@@ -133,16 +133,20 @@ describe('an imageUpload switches the call to multipart', () => {
 });
 
 describe('removing the picture', () => {
-    it('sends imageUrl: "" through the plain JSON path — not multipart', () => {
+    /**
+     * the contract's `minLength: 1` refuses `''` with a live 422 — `null` is the only value
+     * that reads as "remove it".
+     */
+    it('sends imageUrl: null through the plain JSON path — not multipart, never an empty string', () => {
         const store = useProfileStore();
 
         return store
             .fetchProfile(true)
-            .then(() => store.updateProfile({ imageUrl: '' }))
+            .then(() => store.updateProfile({ imageUrl: null }))
             .then(() => {
                 const patch = calls().find(({ method }) => method?.toUpperCase() === 'PATCH')!;
                 expect(patch.headers?.['Content-Type']).not.toBe('multipart/form-data');
-                expect(patch.data).toMatchObject({ imageUrl: '' });
+                expect(patch.data).toMatchObject({ imageUrl: null });
             });
     });
 });
@@ -175,7 +179,7 @@ describe('each avatar path owns its loading key', () => {
 
         return store.fetchProfile(true).then(() => {
             const release = gateNextCall();
-            const pending = store.updateProfile({ imageUrl: '' });
+            const pending = store.updateProfile({ imageUrl: null });
             return vi
                 .waitFor(() => expect(store.removingAvatar).toBe(true))
                 .then(() => {

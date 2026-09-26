@@ -32,6 +32,7 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
+import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
@@ -249,6 +250,7 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.password : []"
                     class="mb-2"
                 />
+                <PasswordStrengthMeter :password="form.password ?? ''" />
                 <!-- Advisory only, never a submit gate — the four password-SET paths remain the
                      actual authority, checked again server-side regardless of this warning. -->
                 <v-alert

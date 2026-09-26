@@ -46,7 +46,10 @@ export const getErrorMessage = (error: unknown): string =>
 export const isTransportFailure = (error: unknown): boolean =>
     !error ||
     typeof error !== 'object' ||
-    typeof (error as { status?: unknown }).status !== 'number';
+    typeof (error as { status?: unknown }).status !== 'number' ||
+    // `onResponseReject` (`http/interceptors.ts`) writes `status: 0` exactly for this case — no
+    // `response` arrived at all — never for an answered request.
+    (error as { status: number }).status === 0;
 
 /**
  * Whether a rejected API call failed with one of the statuses the caller treats as an ANSWER.

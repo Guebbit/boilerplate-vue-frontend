@@ -52,14 +52,14 @@ export const onResponseRejectWithStepUp = (
     if (
         error.response?.status === 401 &&
         code === 'REAUTH_REQUIRED' &&
-        !originalRequest?._dontRetry &&
+        !originalRequest?._steppedUp &&
         originalRequest
     )
         return requestFreshSession()
             .then(() =>
                 instance.request({
                     ...originalRequest,
-                    _dontRetry: true
+                    _steppedUp: true
                 } as AxiosRequestConfigWithRetry)
             )
             .catch(() => onResponseReject(error));

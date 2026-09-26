@@ -52,7 +52,12 @@
         "password-special-required": "Password must contain at least one special character",
         "password-confirm-required": "Type password again",
         "password-dont-match": "Passwords do not match",
-        "password-breached-warning": "This password has appeared in known data breaches. Consider choosing a different one."
+        "password-breached-warning": "This password has appeared in known data breaches. Consider choosing a different one.",
+        "password-strength-very-weak": "Very weak",
+        "password-strength-weak": "Weak",
+        "password-strength-fair": "Fair",
+        "password-strength-good": "Good",
+        "password-strength-strong": "Strong"
     },
     "user-target-page": {
         "page-title": "User page",

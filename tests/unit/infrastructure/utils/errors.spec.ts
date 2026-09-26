@@ -208,12 +208,13 @@ describe('isTransportFailure', () => {
     );
 
     /**
-     * `status: 0` is what some clients use for "no response", but this app's envelope only carries
-     * a status when the API replied — so a numeric zero still counts as answered here. Pinned
-     * because the alternative reading is tempting and would silently change what gets reported.
+     * `onResponseReject` (`http/interceptors.ts`) writes `status: 0` for exactly this case
+     * — offline, a timeout, CORS, a cancel — never for an answered request. Before this fix the
+     * fallback was `status: 500`, which is what made this classifier unable to ever report `true`
+     * for a real envelope: every rejection this app produces already carried a number.
      */
-    it('treats a numeric zero status as answered', () => {
-        expect(isTransportFailure({ status: 0 })).toBe(false);
+    it('treats a numeric zero status as a transport failure, not an answer', () => {
+        expect(isTransportFailure({ status: 0 })).toBe(true);
     });
 });
 

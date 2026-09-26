@@ -64,6 +64,7 @@ describe('onResponseReject', () => {
             return expect(onResponseReject(error as never)).rejects.toEqual({
                 success: false,
                 message: 'Unprocessable Entity',
+                path: '/test',
                 errors: [
                     {
                         code: 'VALIDATION_ERROR',
@@ -77,7 +78,7 @@ describe('onResponseReject', () => {
         });
     });
 
-    it('enriches a reject envelope with x-request-id and x-trace-id headers', () => {
+    it('enriches a reject envelope with the x-request-id and traceparent headers', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 422,
@@ -86,12 +87,30 @@ describe('onResponseReject', () => {
                     message: 'Validation',
                     errors: [{ code: 'NAME_REQUIRED', message: 'name required' }]
                 },
-                { 'x-request-id': 'req-abc-123', 'x-trace-id': 'trace-xyz-789' }
+                { 'x-request-id': 'req-abc-123', traceparent: '00-abc-def-01' }
             );
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
                 errors: [{ code: 'NAME_REQUIRED', message: 'name required' }],
                 requestId: 'req-abc-123',
-                traceId: 'trace-xyz-789'
+                traceparent: '00-abc-def-01'
+            });
+        });
+    });
+
+    /**
+     * `captureException` names an error by these, so they have to survive normalization
+     * whichever branch produced the rejection.
+     */
+    it('carries the request method and path for every rejection', () => {
+        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+            const error = {
+                response: { status: 422, statusText: 'Error', data: {}, headers: {} },
+                message: 'Request failed',
+                config: { url: '/orders/o1', method: 'patch' }
+            };
+            return expect(onResponseReject(error as never)).rejects.toMatchObject({
+                method: 'PATCH',
+                path: '/orders/o1'
             });
         });
     });
@@ -136,7 +155,7 @@ describe('onResponseReject', () => {
         });
     });
 
-    it('omits requestId and traceId when headers are absent', () => {
+    it('omits requestId and traceparent when headers are absent', () => {
         return import('@/infrastructure/http')
             .then(({ onResponseReject }) => {
                 const error = makeAxiosError(500, {});
@@ -144,7 +163,7 @@ describe('onResponseReject', () => {
             })
             .then((result) => {
                 expect(result).not.toHaveProperty('requestId');
-                expect(result).not.toHaveProperty('traceId');
+                expect(result).not.toHaveProperty('traceparent');
             });
     });
 });
@@ -201,14 +220,37 @@ describe('onResponseReject — fallback normalisation', () => {
                 expect((result as { errors: string[] }).errors).toEqual([]);
             }));
 
-    it('falls back to status 500 when there is no response at all', () =>
-        // A DNS failure, a refused connection, a CORS block: `error.response` is undefined, and
-        // every call site still needs a status to branch on.
+    /**
+     * a DNS failure, a refused connection, a CORS block — `error.response` is undefined —
+     * must not read as a 500. `isTransportFailure` (`utils/errors.ts`) keys on `status: 0` to tell
+     * these apart from an answered request.
+     */
+    it('reports status 0 and NETWORK_ERROR when there is no response at all', () =>
         import('@/infrastructure/http').then(({ onResponseReject }) =>
             expect(
                 onResponseReject({ message: 'Network Error', config: { url: '/x' } } as never)
-            ).rejects.toMatchObject({ success: false, status: 500 })
+            ).rejects.toMatchObject({
+                success: false,
+                status: 0,
+                errors: [{ code: 'NETWORK_ERROR' }]
+            })
         ));
+
+    it.each([
+        ['ECONNABORTED', 'TIMEOUT'],
+        ['ETIMEDOUT', 'TIMEOUT'],
+        ['ERR_CANCELED', 'CANCELED']
+    ])('maps axios code %s to %s when there is no response', (axiosCode, expectedCode) =>
+        import('@/infrastructure/http').then(({ onResponseReject }) =>
+            expect(
+                onResponseReject({
+                    code: axiosCode,
+                    message: 'boom',
+                    config: { url: '/x' }
+                } as never)
+            ).rejects.toMatchObject({ status: 0, errors: [{ code: expectedCode }] })
+        )
+    );
 
     it('prefers statusText over the axios message', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
