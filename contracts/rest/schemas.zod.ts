@@ -7973,7 +7973,7 @@ export const GetOrderByIdResponse = zod.strictObject({
 });
 
 /**
- * Updates the order identified by `{id}` in the path.
+ * Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const UpdateOrderByIdParams = zod.strictObject({
@@ -7981,10 +7981,6 @@ export const UpdateOrderByIdParams = zod.strictObject({
 });
 
 export const UpdateOrderByIdBody = zod.strictObject({
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional()
-        .describe('Updated order status'),
     email: zod.email().optional()
 });
 
@@ -10605,7 +10601,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
         .default(listStockMovementsQueryPageSizeDefault),
     productId: zod.string().optional().describe("Narrow to one product's movements"),
     reason: zod
-        .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust'])
+        .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust', 'restock'])
         .optional()
         .describe('Narrow to one kind of transition')
 });
@@ -10630,9 +10626,17 @@ export const ListStockMovementsResponse = zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
                 productId: zod.string().describe('Resource identifier'),
                 reason: zod
-                    .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust'])
+                    .enum([
+                        'reserve',
+                        'commit',
+                        'release',
+                        'expire',
+                        'receive',
+                        'adjust',
+                        'restock'
+                    ])
                     .describe(
-                        '\* `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.\n\* `commit` — the order was paid for and the units left. Both down.\n\* `release` — the hold was given up (the order was cancelled). `reserved` down.\n\* `expire` — the hold timed out unpaid. Same counters as `release`, different story.\n\* `receive` — a supplier delivery. `onHand` up.\n\* `adjust` — a stocktake correction, signed. `onHand` moves either way.\n'
+                        "\* `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.\n\* `commit` — the order was paid for and the units left. Both down.\n\* `release` — the hold was given up (the order was cancelled). `reserved` down.\n\* `expire` — the hold timed out unpaid. Same counters as `release`, different story.\n\* `receive` — a supplier delivery. `onHand` up.\n\* `adjust` — a stocktake correction, signed. `onHand` moves either way.\n\* `restock` — a paid order's committed units came back (the order was cancelled after payment). `onHand` up.\n"
                     ),
                 onHandDelta: zod.number(),
                 reservedDelta: zod.number(),
