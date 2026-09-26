@@ -2632,24 +2632,7 @@ export interface SearchOrdersRequest {
     deleted?: boolean;
 }
 
-/**
- * Updated order status
- */
-export type UpdateOrderByIdRequestStatus =
-    (typeof UpdateOrderByIdRequestStatus)[keyof typeof UpdateOrderByIdRequestStatus];
-
-export const UpdateOrderByIdRequestStatus = {
-    pending: 'pending',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    cancelled: 'cancelled'
-} as const;
-
 export interface UpdateOrderByIdRequest {
-    /** Updated order status */
-    status?: UpdateOrderByIdRequestStatus;
     email?: Email;
 }
 
@@ -6189,7 +6172,7 @@ export const getOrderById = (
 };
 
 /**
- * Updates the order identified by `{id}` in the path.
+ * Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const updateOrderById = (

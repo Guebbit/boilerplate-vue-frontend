@@ -7973,7 +7973,7 @@ export const GetOrderByIdResponse = zod.strictObject({
 });
 
 /**
- * Updates the order identified by `{id}` in the path.
+ * Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const UpdateOrderByIdParams = zod.strictObject({
@@ -7981,10 +7981,6 @@ export const UpdateOrderByIdParams = zod.strictObject({
 });
 
 export const UpdateOrderByIdBody = zod.strictObject({
-    status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-        .optional()
-        .describe('Updated order status'),
     email: zod.email().optional()
 });
 

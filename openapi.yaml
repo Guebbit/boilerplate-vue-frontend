@@ -4233,7 +4233,7 @@ paths:
       tags:
         - Orders
       summary: Edit order
-      description: Updates the order identified by `{id}` in the path.
+      description: Updates the order identified by `{id}` in the path. `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
       operationId: updateOrderById
       security:
         - bearerAuth: []
@@ -4260,8 +4260,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -10332,16 +10330,6 @@ components:
       type: object
       additionalProperties: false
       properties:
-        status:
-          type: string
-          enum:
-            - pending
-            - paid
-            - processing
-            - shipped
-            - delivered
-            - cancelled
-          description: Updated order status
         email:
           $ref: "#/components/schemas/Email"
     CancelOrderRequest:
