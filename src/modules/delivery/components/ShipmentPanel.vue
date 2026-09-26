@@ -19,6 +19,8 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeliveryStore } from '../store.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
  * The order page's shipping corner: recording a handover and an arrival, one order at a time.
@@ -139,12 +141,26 @@ const force = ref(false);
 const forceReason = ref('');
 
 /**
+ * This panel's own blocked state — a 422 (tracking required), a 409 (someone shipped it first) or
+ * a step-up failure on either action, shown in place rather than joining a toast queue the
+ * operator may have looked away from. One instance for both actions: ship and deliver are never
+ * offered at once (see the template below), so there is never a case of one overwriting the
+ * other's message.
+ */
+const {
+    message: shipmentError,
+    report: reportShipmentError,
+    clear: clearShipmentError
+} = useBlockingError();
+
+/**
  * Records the handover, then re-reads the order.
  *
  * @returns A promise resolving once the panel has refreshed.
  */
-const markShipped = () =>
-    deliveryStore
+const markShipped = () => {
+    clearShipmentError();
+    return deliveryStore
         .ship(orderId, trackingCode.value || undefined, force.value, forceReason.value || undefined)
         .then(() => {
             trackingCode.value = '';
@@ -152,20 +168,27 @@ const markShipped = () =>
             forceReason.value = '';
             addMessage(t('shipment-panel.shipped'));
             emit('moved');
-        });
+        })
+        .catch((error: unknown) => reportShipmentError(error));
+};
 
 /**
  * Records the arrival, then re-reads the order.
  *
  * @returns A promise resolving once the panel has refreshed.
  */
-const markDelivered = () =>
-    deliveryStore.deliver(orderId, force.value, forceReason.value || undefined).then(() => {
-        force.value = false;
-        forceReason.value = '';
-        addMessage(t('shipment-panel.delivered'));
-        emit('moved');
-    });
+const markDelivered = () => {
+    clearShipmentError();
+    return deliveryStore
+        .deliver(orderId, force.value, forceReason.value || undefined)
+        .then(() => {
+            force.value = false;
+            forceReason.value = '';
+            addMessage(t('shipment-panel.delivered'));
+            emit('moved');
+        })
+        .catch((error: unknown) => reportShipmentError(error));
+};
 
 onMounted(() => {
     void deliveryStore.fetchMethods();
@@ -176,6 +199,8 @@ onMounted(() => {
 <template>
     <v-card class="p-4" data-test="shipment-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('shipment-panel.title') }}</h3>
+
+        <InlineErrorAlert :message="shipmentError" class="mb-3" test-id="shipment-panel-error" />
 
         <template v-if="shipment">
             <div class="flex items-center gap-3">

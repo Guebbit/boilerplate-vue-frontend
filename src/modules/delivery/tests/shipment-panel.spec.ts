@@ -101,6 +101,26 @@ describe('with no shipment yet', () => {
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(true);
         expect(wrapper.find('[data-test=force-ship-toggle]').exists()).toBe(true);
     });
+
+    /**
+     * FA35: `ship`/`deliver` used to be `.then` chains with no `.catch` at all — a 422 (tracking
+     * required), a 409 (someone shipped it first) or a step-up failure showed nothing.
+     */
+    it('shows a 409 on ship as the inline error, instead of silently doing nothing', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing' });
+        vi.spyOn(useDeliveryStore(), 'ship').mockRejectedValue(new Error('already shipped'));
+
+        return wrapper
+            .find('[data-test=mark-shipped]')
+            .trigger('click')
+            .then(() => wrapper.vm.$nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
+                    'already shipped'
+                );
+            });
+    });
 });
 
 describe('with a shipment already recorded', () => {
