@@ -8,7 +8,8 @@
  * `updateOne`: both responses carry a plaintext secret meant to be shown exactly once, and the
  * generic path (`createTarget`/`updateTarget`) caches whatever the API call resolves to verbatim
  * — caching the raw response would park that plaintext in this store's state forever, readable by
- * anything with `getRecord(id)`. See `docs/modules/webhooks.md`.
+ * anything with `getRecord(id)`. `removeSecret` is hand-written too, for a different reason: it
+ * calls its own action route, not `updateOne`'s target. See `docs/modules/webhooks.md`.
  */
 import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
@@ -19,6 +20,8 @@ import {
     createWebhookSubscription,
     updateWebhookSubscription,
     deleteWebhookSubscription,
+    rotateWebhookSubscriptionSecret,
+    removeWebhookSubscriptionSecret,
     listWebhookDeliveries,
     replayWebhookDelivery,
     listWebhookEvents
@@ -179,7 +182,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      */
     const rotateSecret = (id: string) =>
         fetchAnySubscriptions(() =>
-            updateWebhookSubscription(id, { rotateSecret: true }).then(({ data: updated }) => {
+            rotateWebhookSubscriptionSecret(id).then(({ data: updated }) => {
                 const { secret: _secret, newSecret: _newSecret, ...record } = updated;
                 editSubscriptionRecord(record, id);
                 return updated;
@@ -188,14 +191,19 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
     /**
      * Drops one secret from a subscription's ring — the other half of a rotation, once every
-     * consumer has switched to the new one. The response never carries a secret, so this is the
-     * generic update path.
+     * consumer has switched to the new one. Same hand-written shape as {@link rotateSecret}, for
+     * the same loading-state reason — its own action route, not the generic update path.
      *
      * @param id - the subscription to update
      * @param secretId - the ring entry to remove
      */
     const removeSecret = (id: string, secretId: string) =>
-        updateSubscription(id, { removeSecretId: secretId });
+        fetchAnySubscriptions(() =>
+            removeWebhookSubscriptionSecret(id, secretId).then(({ data: updated }) => {
+                editSubscriptionRecord(updated, id);
+                return updated;
+            })
+        );
 
     /**
      * Deliveries: read + replay only. No create/update/remove/get — a delivery is produced by the

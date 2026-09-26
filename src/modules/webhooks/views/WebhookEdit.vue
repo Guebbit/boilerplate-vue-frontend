@@ -28,6 +28,7 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { emptyToNull } from '@/infrastructure/utils/forms.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
@@ -133,6 +134,10 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
 /**
  * Validates the form and persists the subscription changes.
  *
+ * `description` is emptied through {@link emptyToNull} — Vuetify gives `''` for a hand-cleared
+ * field, and the contract's own D17c rule ("null clears, `''` is invalid") means sending the raw
+ * empty string back would be a 400, not a clear.
+ *
  * @returns A promise resolving once the flow settles: a success toast, or the revealed
  *  validation errors when the input is invalid. An API failure blocks the form in place
  *  ({@link formError}). A missing route id is a no-op.
@@ -142,7 +147,12 @@ const submitForm = () => {
     return handleSubmit(() => {
         if (!id) return;
         const { url, description, eventTypes, enabled } = form.value;
-        return updateSubscription(id, { url, description, eventTypes, enabled }).then(() => {
+        return updateSubscription(id, {
+            url,
+            description: description === undefined ? undefined : emptyToNull(description),
+            eventTypes,
+            enabled
+        }).then(() => {
             addMessage(t('webhook-edit-page.success-update'));
         });
     }).catch((error) => {
@@ -180,17 +190,20 @@ watchSubscription(() => id);
                     <v-text-field
                         v-model="form.url"
                         type="url"
+                        data-test="webhook-url"
                         :label="t('webhook-edit-page.label-url')"
                         :error-messages="showFormErrors ? formErrors.url : []"
                     />
                     <v-text-field
                         v-model="form.description"
                         type="text"
+                        data-test="webhook-description"
                         :label="t('webhook-edit-page.label-description')"
                         :error-messages="showFormErrors ? formErrors.description : []"
                     />
                     <v-select
                         v-model="form.eventTypes"
+                        data-test="webhook-event-types"
                         multiple
                         chips
                         :items="eventCatalogue"

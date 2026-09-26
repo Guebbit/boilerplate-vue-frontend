@@ -44,7 +44,9 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.method?.toUpperCase() === 'DELETE'
+                // A bare subscription DELETE answers empty; every other call, including the
+                // secret-removal DELETE on its own sub-resource route, answers the full record.
+                config.method?.toUpperCase() === 'DELETE' && !config.url.includes('/secrets/')
                     ? orvalEnvelope()
                     : orvalEnvelope(SUBSCRIPTION)
             )
@@ -173,15 +175,14 @@ describe('useWebhooksStore', () => {
     });
 
     describe('rotateSecret', () => {
-        it('patches with rotateSecret: true', () =>
+        it('posts to the rotate-secret action route', () =>
             useWebhooksStore()
                 .rotateSecret('sub1')
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/webhooks/subscriptions/sub1',
-                        method: 'PATCH'
+                        url: '/webhooks/subscriptions/sub1/rotate-secret',
+                        method: 'POST'
                     });
-                    expect(lastBody()).toMatchObject({ rotateSecret: true });
                 }));
 
         it('returns the plaintext newSecret to the caller', () => {
@@ -209,15 +210,14 @@ describe('useWebhooksStore', () => {
     });
 
     describe('removeSecret', () => {
-        it('patches with the removeSecretId, over the generic update path', () =>
+        it('deletes through the secret sub-resource route, its own action route', () =>
             useWebhooksStore()
                 .removeSecret('sub1', 'sec1')
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/webhooks/subscriptions/sub1',
-                        method: 'PATCH'
+                        url: '/webhooks/subscriptions/sub1/secrets/sec1',
+                        method: 'DELETE'
                     });
-                    expect(lastBody()).toMatchObject({ removeSecretId: 'sec1' });
                 }));
     });
 
