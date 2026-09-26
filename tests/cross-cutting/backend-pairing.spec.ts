@@ -11,11 +11,11 @@
  *
  *   1. Every enabled module has an entry. A new domain here cannot be merged without someone
  *      saying what answers it.
- *   2. An entry whose counterpart is not simply the same name must give a reason. Eleven of
- *      fourteen pair one-to-one and need no prose; the interesting three are `admin` (one screen
- *      over two backend domains), `realtime` (consumes a stream `observability` serves) and
- *      `demo` (no backend domain at all). Those are exactly the facts that are invisible from
- *      either repo alone.
+ *   2. An entry whose counterpart is not simply the same name must give a reason. Twelve of
+ *      sixteen pair one-to-one and need no prose; the interesting four are `account` (the address
+ *      book lives here, not in its own module), `admin` (one screen over two backend domains),
+ *      `realtime` (consumes a stream `observability` serves) and `demo` (no backend domain at
+ *      all). Those are exactly the facts that are invisible from either repo alone.
  *   3. No entry names a module that is not enabled, so a deleted domain takes its row with it.
  *
  * Stated rather than derived, deliberately: a name matcher would call `admin` unpaired, which is
@@ -42,7 +42,10 @@ interface Pairing {
 }
 
 const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
-    account: { counterparts: ['account'] },
+    account: {
+        counterparts: ['account', 'addresses'],
+        why: 'The address book lives inside this module as `AddressPicker`, not its own — the backend keeps it a separate domain.'
+    },
     admin: {
         counterparts: ['observability', 'audit-logs'],
         why: 'The dashboard is one screen over two backend domains: `observability` serves health and the metrics overview, `audit-logs` owns the trail behind its audit table.'

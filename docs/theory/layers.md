@@ -34,12 +34,12 @@ internals. That rule is generated per module from the contents of `src/modules/`
 does not edit the lint config either.
 
 Two modules that each need the other are not a dependency pair: either they are one module, or one
-of them is holding state that belongs to the other. `dependsOn` is validated as a DAG while the
-router is assembled, and a cycle throws with the path named.
+of them is holding state that belongs to the other. Nothing here enforces that at build or boot
+time today — it is a rule for review, not a running check.
 
-The fourteen modules in this build are `account`, `admin`, `cart`, `delivery`, `demo`, `feedback`,
-`inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users` and `wishlist`. Six
-declare an edge; the other eight are leaves.
+The sixteen modules in this build are `account`, `admin`, `api-keys`, `cart`, `delivery`, `demo`,
+`feedback`, `inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users`,
+`webhooks` and `wishlist`.
 
 `demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
 store and the teaching route guard — everything that exists to demonstrate the boilerplate rather

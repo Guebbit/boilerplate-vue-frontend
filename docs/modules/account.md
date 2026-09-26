@@ -19,9 +19,9 @@ management — is answered through that one prompt.
 | **Menu entries**        | `Profile`                                                                                                                                                                                 |
 | **API calls**           | 31                                                                                                                                                                                        |
 | **Depends on**          | [`users`](./users.md)                                                                                                                                                                     |
-| **Depended on by**      | _nothing_                                                                                                                                                                                 |
+| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`                                                                                                                                              |
 | **Languages**           | `en` · `it`                                                                                                                                                                               |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                                                                                                        |
+| **Publishes**           | `AddressPicker`                                                                                                                                                                           |
 | **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                   |
 
 ## The map

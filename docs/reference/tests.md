@@ -5,7 +5,7 @@ _which_ test covers a rule is most of the value of having it.
 
 Tests live in two places, and the split is by scope. A test about **one module** lives inside that
 module. A test about **the system** — infrastructure, the kernel, the app shell, or a rule that
-holds across all fourteen modules — lives in `tests/`.
+holds across all sixteen modules — lives in `tests/`.
 
 ---
 
@@ -36,7 +36,7 @@ paired backend's demo profile.
 
 ## `tests/cross-cutting/` — rules that hold across every module
 
-One file per architectural rule, asserted over all fourteen modules at once. A new module is
+One file per architectural rule, asserted over all sixteen modules at once. A new module is
 covered the day it is added.
 
 Module coupling is not among them: which module may import which is a generated ESLint rule
@@ -126,7 +126,7 @@ No assertions live here.
 | File                                                | What it is                                                                                                                                                                                                                                                                                                                     | Read next                                                  |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | `tests/support/unit/setup.ts`                       | Vitest's per-run bootstrap: global plugins, and the state reset between cases.                                                                                                                                                                                                                                                 | [Unit Testing](../tools/unit-testing.md)                   |
-| `tests/support/unit/wire-modules.ts`                | Builds a router and registry from a chosen set of modules, so a test can exercise one domain without booting all fourteen.                                                                                                                                                                                                     | [Modules](../theory/modules.md)                            |
+| `tests/support/unit/wire-modules.ts`                | Builds a router and registry from a chosen set of modules, so a test can exercise one domain without booting all sixteen.                                                                                                                                                                                                      | [Modules](../theory/modules.md)                            |
 | `tests/support/unit/jsdom-quiet-css.environment.ts` | Silences jsdom's unparseable-CSS noise, which Vuetify's stylesheets otherwise emit on every mount.                                                                                                                                                                                                                             | [Unit Testing](../tools/unit-testing.md)                   |
 | `tests/support/stub.ts`                             | The one sanctioned cast for a hand-built stub, and the reason double casts can be banned everywhere else.                                                                                                                                                                                                                      | [Repository Root](./root.md)                               |
 | `tests/support/e2e/e2e.ts`                          | Cypress's support entry point — what loads before every browser spec.                                                                                                                                                                                                                                                          | [Live E2E](../tools/live-e2e.md)                           |
