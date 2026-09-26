@@ -83,6 +83,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     // below replaces each with the same `ID` constant — this row has to match that, not a real
     // entity type, or `has one table row per declared operation` mismatches by shape.
     ['GET', `/locales/translations/${ID}/${ID}`, 'GetEntityTranslationsResponse'],
+    ['PUT', `/locales/translations/${ID}/${ID}`, 'ReplaceEntityTranslationsResponse'],
     ['PATCH', `/locales/translations/${ID}/${ID}`, 'UpsertEntityTranslationsResponse'],
     ['GET', '/observability/events', 'GetObservabilityEventsResponse'],
     ['GET', '/observability/health', 'GetObservabilityHealthResponse'],

@@ -55,6 +55,11 @@ export const localesResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetEntityTranslationsResponse
     },
     {
+        method: 'PUT',
+        pattern: /^\/locales\/translations(?:\/[^/]+){2}$/,
+        schema: schemas.ReplaceEntityTranslationsResponse
+    },
+    {
         method: 'PATCH',
         pattern: /^\/locales\/translations(?:\/[^/]+){2}$/,
         schema: schemas.UpsertEntityTranslationsResponse

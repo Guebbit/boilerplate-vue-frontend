@@ -1073,6 +1073,135 @@ export const GetEntityTranslationsResponse = zod.strictObject({
 });
 
 /**
+ * REPLACING semantics: a locale currently stored but absent from the body is deleted
+ * — the whole set becomes exactly what the body carries. Paired with `PATCH` on this
+ * same resource, which merges instead; "does saving delete the locales I didn't
+ * touch" is the question every translation tool gets wrong, so the two behaviours
+ * are spelled in the METHOD rather than a flag. Same three signals as `PATCH` for a
+ * key that IS in the body — see its own description — plus the implicit fourth: a
+ * key that is neither in the body nor already stored never existed either way.
+ *
+ * The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
+ * invariant `POST /products` already enforces on create: a caller cannot replace the
+ * whole set and leave the entity with nothing to fall back to.
+ *
+ * 422 for the same reasons `PATCH` refuses — an unknown or inactive locale, an empty
+ * `fields` object, a `fields` key the `translatables` registry does not declare, or a
+ * missing/`null` fallback locale.
+ * @summary Replace every translation an entity has
+ */
+
+export const ReplaceEntityTranslationsParams = zod.strictObject({
+    entityType: zod.string().min(1).describe('A `translatables` registry key — `product` in V1.'),
+    id: zod.string().describe('Identifier of the translated entity — a product id, in V1.')
+});
+
+export const replaceEntityTranslationsBodyOneOriginDefault = `human`;
+
+export const ReplaceEntityTranslationsBody = zod
+    .record(
+        zod.string(),
+        zod
+            .strictObject({
+                fields: zod
+                    .record(zod.string(), zod.string())
+                    .describe(
+                        'Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates.'
+                    ),
+                origin: zod
+                    .enum(['machine', 'human'])
+                    .describe(
+                        "What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one."
+                    )
+                    .default(replaceEntityTranslationsBodyOneOriginDefault)
+            })
+            .nullable()
+            .describe(
+                "Upserts this locale's row when an object, deletes it when `null`. A key this map does not name is left exactly as it is — see the operation description for the full three-way table."
+            )
+    )
+    .describe(
+        'One or more locales for one entity, keyed by locale tag. A key absent from this map leaves that locale untouched; see the operation description for what an object and a `null` each mean.'
+    );
+
+export const replaceEntityTranslationsResponseDataTranslationsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const ReplaceEntityTranslationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            entityType: zod
+                .string()
+                .min(1)
+                .describe(
+                    'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                ),
+            entityId: zod.string().describe('Resource identifier'),
+            translations: zod.array(
+                zod
+                    .strictObject({
+                        id: zod.string().describe('Resource identifier'),
+                        entityType: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.'
+                            ),
+                        entityId: zod.string().describe('Resource identifier'),
+                        locale: zod
+                            .string()
+                            .regex(
+                                replaceEntityTranslationsResponseDataTranslationsItemLocaleRegExp
+                            )
+                            .describe(
+                                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            ),
+                        fields: zod
+                            .record(zod.string(), zod.string())
+                            .describe(
+                                'Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose.'
+                            ),
+                        sourceDigest: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                "Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content."
+                            ),
+                        origin: zod
+                            .enum(['machine', 'human'])
+                            .describe(
+                                "What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one."
+                            ),
+                        translatedBy: zod
+                            .string()
+                            .describe('Resource identifier')
+                            .optional()
+                            .describe(
+                                'The `translator` who last wrote this row, for the audit trail.'
+                            ),
+                        createdAt: zod.iso.datetime({ offset: true }),
+                        updatedAt: zod.iso.datetime({ offset: true })
+                    })
+                    .describe(
+                        "One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`."
+                    )
+            ),
+            fields: zod
+                .array(zod.string())
+                .describe(
+                    'Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.'
+                )
+        })
+        .describe(
+            'Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.'
+        )
+});
+
+/**
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
  * signals inside the map, and no way to mistake one for another:
  *

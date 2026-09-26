@@ -4131,6 +4131,41 @@ export const getEntityTranslations = (
 };
 
 /**
+ * REPLACING semantics: a locale currently stored but absent from the body is deleted
+ * — the whole set becomes exactly what the body carries. Paired with `PATCH` on this
+ * same resource, which merges instead; "does saving delete the locales I didn't
+ * touch" is the question every translation tool gets wrong, so the two behaviours
+ * are spelled in the METHOD rather than a flag. Same three signals as `PATCH` for a
+ * key that IS in the body — see its own description — plus the implicit fourth: a
+ * key that is neither in the body nor already stored never existed either way.
+ *
+ * The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
+ * invariant `POST /products` already enforces on create: a caller cannot replace the
+ * whole set and leave the entity with nothing to fall back to.
+ *
+ * 422 for the same reasons `PATCH` refuses — an unknown or inactive locale, an empty
+ * `fields` object, a `fields` key the `translatables` registry does not declare, or a
+ * missing/`null` fallback locale.
+ * @summary Replace every translation an entity has
+ */
+export const replaceEntityTranslations = (
+    entityType: string,
+    id: string,
+    upsertTranslationsRequest: UpsertTranslationsRequest,
+    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+) => {
+    return orvalMutator<EntityTranslationsEnvelope>(
+        {
+            url: `/locales/translations/${entityType}/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: upsertTranslationsRequest
+        },
+        options
+    );
+};
+
+/**
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
  * signals inside the map, and no way to mistake one for another:
  *
@@ -6759,6 +6794,9 @@ export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof upda
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetEntityTranslationsResult = NonNullable<
     Awaited<ReturnType<typeof getEntityTranslations>>
+>;
+export type ReplaceEntityTranslationsResult = NonNullable<
+    Awaited<ReturnType<typeof replaceEntityTranslations>>
 >;
 export type UpsertEntityTranslationsResult = NonNullable<
     Awaited<ReturnType<typeof upsertEntityTranslations>>
