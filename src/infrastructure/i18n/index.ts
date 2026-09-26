@@ -364,17 +364,23 @@ export function changeLanguage(locale: string) {
 /**
  * Best guess of the locale to use when the route carries none.
  *
- * @returns The browser language when supported, otherwise the configured fallback locale,
- *  `VITE_APP_DEFAULT_LOCALE`, or `'en'`.
+ * @returns The browser language when supported, otherwise the configured default locale
+ *  (`APP_DEFAULT_LOCALE` at runtime, `VITE_APP_DEFAULT_LOCALE` at build time — the same
+ *  precedence {@link i18n}'s own `locale` option uses), the i18n instance's fallback locale, or
+ *  `'en'`.
  */
 export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
     // Supported, not loaded: on a first visit nothing is loaded and detection would never match.
     if (supportedLanguages.includes(foundLocale)) return foundLocale;
+    // The configured default is checked BEFORE the instance's fallback locale, not after: the
+    // fallback is never empty (it defaults to 'en' too), so checking it first made the configured
+    // default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
+    // unsupported browser language, regardless of what a deployment set it to.
     return (
-        (i18n.global.fallbackLocale as WritableComputedRef<string>).value ||
-        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ||
-        'en'
+        runtimeValue('APP_DEFAULT_LOCALE') ??
+        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ??
+        (i18n.global.fallbackLocale as WritableComputedRef<string>).value
     );
 }
 
