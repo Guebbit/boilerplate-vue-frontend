@@ -421,7 +421,7 @@ const submitForm = () => {
                 />
                 <CardMaterialStat
                     :title="t('product-target-page.label-price')"
-                    :value="formatCurrency(adminProduct?.price)"
+                    :value="formatCurrency(adminProduct?.price, adminProduct?.currency ?? '')"
                     accent="secondary"
                 />
                 <CardMaterialStat

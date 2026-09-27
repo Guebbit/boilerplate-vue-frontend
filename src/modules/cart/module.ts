@@ -75,11 +75,11 @@ export default {
              * and the active locale (`formatCurrency` reads the i18n locale ref).
              */
             detail: () => {
-                const { badgeTotal, badgeCurrency } = storeToRefs(useCartStore());
+                const { badgeMoney } = storeToRefs(useCartStore());
                 return computed(() =>
-                    badgeTotal.value === undefined
+                    badgeMoney.value === undefined
                         ? undefined
-                        : formatCurrency(badgeTotal.value, badgeCurrency.value)
+                        : formatCurrency(badgeMoney.value.total, badgeMoney.value.currency)
                 );
             }
         }

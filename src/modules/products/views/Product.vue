@@ -245,7 +245,7 @@ onMounted(() => {
             <template #stats>
                 <CardMaterialStat
                     :title="t('product-target-page.label-price')"
-                    :value="formatCurrency(currentProduct?.price)"
+                    :value="formatCurrency(currentProduct?.price, currentProduct?.currency ?? '')"
                 />
                 <CardMaterialStat
                     data-test="product-stock"
@@ -340,7 +340,7 @@ onMounted(() => {
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-price')"
-                        :value="formatCurrency(currentProduct.price)"
+                        :value="formatCurrency(currentProduct.price, currentProduct.currency)"
                         icon="💶"
                     />
                     <ItemDetailField :label="t('product-target-page.label-active')" icon="●">

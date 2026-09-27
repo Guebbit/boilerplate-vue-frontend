@@ -77,7 +77,7 @@ describe('formatDate', () => {
 
 describe('formatCurrency', () => {
     it('formats a number with two decimals and a currency symbol', () => {
-        const formatted = formatCurrency(1234.5);
+        const formatted = formatCurrency(1234.5, 'EUR');
 
         expect(formatted).toMatch(/1.234[,.]50/);
         expect(formatted).toMatch(/€|EUR/);
@@ -99,12 +99,12 @@ describe('formatCurrency', () => {
     });
 
     it('falls back for anything that is not a number', () => {
-        expect(formatCurrency()).toBe(EMPTY_VALUE);
-        expect(formatCurrency(null)).toBe(EMPTY_VALUE);
+        expect(formatCurrency(undefined, 'EUR')).toBe(EMPTY_VALUE);
+        expect(formatCurrency(null, 'EUR')).toBe(EMPTY_VALUE);
     });
 
     it('formats zero rather than treating it as missing', () => {
-        expect(formatCurrency(0)).not.toBe(EMPTY_VALUE);
+        expect(formatCurrency(0, 'EUR')).not.toBe(EMPTY_VALUE);
     });
 });
 

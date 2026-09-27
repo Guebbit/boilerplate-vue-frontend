@@ -130,7 +130,7 @@ describe('formatCurrency', () => {
                     fc.boolean()
                 ),
                 (value) => {
-                    const result = formatCurrency(value as number | null | undefined);
+                    const result = formatCurrency(value as number | null | undefined, 'EUR');
                     expect(result === EMPTY_VALUE).toBe(typeof value !== 'number');
                 }
             ),
@@ -166,7 +166,7 @@ describe('formatCurrency', () => {
     it('renders every finite amount with at least one digit', () =>
         fc.assert(
             fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }), (value) => {
-                expect(formatCurrency(value)).toMatch(/\d/);
+                expect(formatCurrency(value, 'EUR')).toMatch(/\d/);
             }),
             RUN
         ));

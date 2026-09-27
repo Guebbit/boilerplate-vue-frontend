@@ -389,7 +389,7 @@ const handleHardDelete = (productId: string) =>
             </template>
 
             <template v-slot:[`item.price`]="{ item }">
-                {{ formatCurrency(item.price) }}
+                {{ formatCurrency(item.price, item.currency) }}
             </template>
 
             <template v-slot:[`item.active`]="{ item }">

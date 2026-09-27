@@ -370,7 +370,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.totalPrice)"
+                    :value="
+                        formatCurrency(currentOrder?.totalPrice, currentOrder?.currency ?? 'EUR')
+                    "
                     accent="tertiary"
                 />
             </template>
