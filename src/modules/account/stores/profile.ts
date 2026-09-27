@@ -5,7 +5,7 @@
  * account deletion each reuse the shared `selectedIdentifier`/`fetchTarget`/`updateTarget`
  * primitives rather than duplicating request/cache logic per action.
  */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -27,6 +27,10 @@ import {
     exportAccountData as apiExportAccountData
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import {
+    useAnalyticsConsentStore,
+    isAnalyticsGuestConsentEnabled
+} from '@/infrastructure/analytics-consent.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 
 /**
@@ -110,6 +114,15 @@ export const useProfileStore = defineStore('accountProfile', () => {
         );
 
     /**
+     * FA-D5: whether this store instance has already tried syncing a guest's cookie-held consent
+     * choice onto a freshly-authenticated account (see {@link syncGuestAnalyticsConsent}). Set
+     * BEFORE the sync's own `PATCH /account` call, not after it resolves — so a slow request, or
+     * one that somehow answers with `analyticsConsent` still absent, can never be retried by a
+     * later `fetchProfile` in the same session and loop.
+     */
+    const guestConsentSyncSettled = ref(false);
+
+    /**
      * Loads the authenticated user's profile and identifies them in the
      * observability tools.
      *
@@ -140,7 +153,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 }),
             undefined,
             { forced }
-        );
+        ).then((payload) => {
+            // Outside `fetchTarget`'s own callback on purpose: `syncGuestAnalyticsConsent` may
+            // call `updateProfile`, which calls back into THIS function — nesting that inside the
+            // callback `fetchTarget` is still tracking as in-flight would re-enter its own loading
+            // state before it ever settles.
+            if (!payload) return payload;
+            return syncGuestAnalyticsConsent(payload).then(() => payload);
+        });
     };
 
     /**
@@ -225,6 +245,30 @@ export const useProfileStore = defineStore('accountProfile', () => {
              */
             fetchProfile(true).then(() => result)
         );
+    };
+
+    /**
+     * FA-D5: the one place a guest's cookie-held consent choice crosses over into the account —
+     * a no-op unless ALL of: the feature is built (`VITE_ANALYTICS_GUEST_CONSENT`), this account
+     * has never recorded a preference of its own (`analyticsConsent` absent — signup always sends
+     * one, so this is an OAuth signup or an admin-created account), the browser holds an answered
+     * guest cookie, and this store has not already tried the sync this session.
+     *
+     * @param payload - The freshly loaded profile — read, never mutated, by `fetchProfile`.
+     * @returns A promise resolving once the sync (if any) settles; `updateProfile`'s own refetch
+     *  reruns this function too, where the now-defined `analyticsConsent` short-circuits it.
+     */
+    const syncGuestAnalyticsConsent = (payload: User): Promise<unknown> => {
+        if (
+            guestConsentSyncSettled.value ||
+            !isAnalyticsGuestConsentEnabled() ||
+            payload.analyticsConsent !== undefined
+        )
+            return Promise.resolve();
+        const guestChoice = useAnalyticsConsentStore().choice;
+        if (guestChoice === 'unknown') return Promise.resolve();
+        guestConsentSyncSettled.value = true;
+        return updateProfile({ analyticsConsent: guestChoice === 'granted' });
     };
 
     /**
