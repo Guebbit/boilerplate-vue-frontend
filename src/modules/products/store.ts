@@ -190,20 +190,26 @@ export const useProductsStore = defineStore('products', () => {
             // no way to guess them ahead of the response, so they stay whatever they were until
             // the real one arrives.
             //
-            // `weight`/`imageUrl`/`taxClass` accept `null` on the wire (clears the field) but the
-            // LOCAL `Product` never does; `null` reads as "leave the optimistic guess alone" here,
-            // same as omitting the field, since the real clear only takes visible effect once the
-            // response the two lines above already wait for lands.
+            // `weight`/`imageUrl`/`taxClass`/`sku` accept `null` on the wire (clears the field) but
+            // the LOCAL `Product` never does; `null` reads as "leave the optimistic guess alone"
+            // here, same as omitting the field, since the real clear only takes visible effect
+            // once the response the two lines above already wait for lands.
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 translations: _translations,
                 weight,
                 imageUrl,
                 taxClass,
+                sku,
                 ...productData
             }) => ({
                 ...productData,
-                ...omitNulls({ weight, imageUrl, taxClass }, ['weight', 'imageUrl', 'taxClass'])
+                ...omitNulls({ weight, imageUrl, taxClass, sku }, [
+                    'weight',
+                    'imageUrl',
+                    'taxClass',
+                    'sku'
+                ])
             })
         },
         {
