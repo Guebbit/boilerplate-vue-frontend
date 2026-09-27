@@ -14,6 +14,7 @@ export default {
  * opened this session and never saved just drops it — see `handleRemoveLocale`.
  */
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import {
@@ -83,9 +84,16 @@ const { fetchProductAdmin, updateProduct } = useProductsStore();
  * hold it without ever being handed `products.manage`, and an unrestricted role holds it like
  * everything else — `editor`, the shipped role with `translations.manage`, also carries
  * `products.manage`, so it never exercises that distinction.
+ *
+ * `router.hasRoute` first, same pattern `AboutPage.vue` uses for its own module-optional links:
+ * a build with no `EntityTranslations` route (LOCALES_OPTIONAL_0925 — the paired backend's
+ * `locales` module is optional) must not throw trying to resolve a link to it.
  */
+const router = useRouter();
 const session = useSessionStore();
-const mayViewTranslations = computed(() => session.can('read', 'Translation'));
+const mayViewTranslations = computed(
+    () => router.hasRoute('EntityTranslations') && session.can('read', 'Translation')
+);
 
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers to add.
