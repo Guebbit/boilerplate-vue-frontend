@@ -39,7 +39,7 @@
         "compose:restart": "npm run compose -- down && npm run compose -- up -d",
         "compose:rebuild": "npm run compose -- down -v && npm run compose -- build --no-cache && npm run compose -- up -d",
         "compose:kill": "npm run compose -- kill",
-        "gen:api": "orval",
+        "gen:api": "orval && tsx scripts/contracts/generate-operation-modules.ts --out contracts/rest/operation-modules.ts && tsx scripts/contracts/generate-error-codes.ts --out contracts/rest/error-codes.ts",
         "gen:asyncapi": "tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts",
         "regenerate": "npm run gen:api && npm run gen:asyncapi && npm run prettier:fix",
         "check:asyncapi-types": "tsx scripts/contracts/generate-asyncapi-types.ts --check --out src/types/asyncapi.generated.ts",

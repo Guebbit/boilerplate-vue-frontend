@@ -2,10 +2,14 @@
 /*
  * Generates the TypeScript realtime contract types from `asyncapi.yaml`.
  *
- * SHARED SCRIPT — byte-identical in both repos of the pair, and both write
- * `src/types/asyncapi.generated.ts`. Change it in one repo and copy it to the other, or the
- * outputs drift. What differs is the INPUT: the backend generates from the whole contract, the
- * frontend from the public subset, so only the backend's output carries the queue payloads.
+ * SHARED SCRIPT — started byte-identical in both repos of the pair, and both write
+ * `src/types/asyncapi.generated.ts`. NOT byte-identical any more: this copy also emits an
+ * inlined-JSON-Schema map for `create-sse-client.ts`'s runtime SSE-frame validation, which the
+ * backend copy has no use for and emits queue-payload Zod validators instead. What both copies
+ * still share is the input format and the channel/message-naming machinery — keep a fix to either
+ * half in step across both copies by hand until this generator gets its own shared package.
+ * What differs at the INPUT is unchanged: the backend generates from the whole contract, this
+ * repo from the public subset, so only the backend's output carries the queue payloads.
  *
  * From whichever document it is given it emits the payload interfaces, the message aliases, the
  * per-namespace channel constants and unions, the SSE event name/payload maps, and each SSE
@@ -29,6 +33,13 @@ import { parse } from 'yaml';
 interface AsyncApiChannel {
     /** 3.0: a channel declares its message(s) once, direction lives on the operations that bind to it. */
     messages?: Record<string, { $ref?: string }>;
+    /**
+     * Vendor extension: `sse` for a channel pushed over the observability dashboard's EventSource
+     * connection. Read instead of the `observability.` name prefix, which a channel outside that
+     * namespace could share without being SSE at all — the backend's fragment is what declares this,
+     * this script only reads it.
+     */
+    'x-transport'?: string;
 }
 
 interface AsyncApiMessage {
@@ -131,23 +142,24 @@ const resolveMessagePayloadType = (
 };
 
 /*
- * Builds channel-to-message-type entries from channel prefixes. Every channel here declares
- * exactly one message — direction (SSE push vs. queue publish/consume) lives on the operations
- * bound to the channel, not on which map this reads.
+ * Builds channel-to-message-type entries for the channels a predicate selects. Every channel here
+ * declares exactly one message — direction (SSE push vs. queue publish/consume) lives on the
+ * operations bound to the channel, not on which map this reads.
  *
  * @param channels AsyncAPI channels map.
  * @param messages AsyncAPI message definitions, resolved to their PAYLOAD type — never the
  *   message's own (possibly deduped-away) alias name.
- * @param prefix Channel prefix selector.
+ * @param select Which channels to include — data-driven (the channel's own declared transport),
+ *   never a name prefix: a name is free to change without that meaning anything moved.
  * @returns Ordered entries containing channel names and referenced message type names.
  */
 const collectChannelMessageEntries = (
     channels: Record<string, AsyncApiChannel>,
     messages: Record<string, AsyncApiMessage>,
-    prefix: string
+    select: (channelName: string, channel: AsyncApiChannel) => boolean
 ): { channelName: string; messageType: string }[] =>
     Object.entries(channels)
-        .filter(([channelName]) => channelName.startsWith(prefix))
+        .filter(([channelName, channel]) => select(channelName, channel))
         .map(([channelName, channel]) => {
             const ref = Object.values(channel.messages ?? {})[0]?.$ref;
             const messageName = ref ? (ref.split('/').pop() ?? '') : '';
@@ -319,14 +331,18 @@ const document = parse(specText) as AsyncApiDocument;
 const channels = document.channels ?? {};
 const messages = document.components?.messages ?? {};
 
-const sseEntries = collectChannelMessageEntries(channels, messages, 'observability.');
+/** A channel is SSE because it declares so, never because its name happens to start a certain way. */
+const isSseChannel = (_channelName: string, channel: AsyncApiChannel): boolean =>
+    channel['x-transport'] === 'sse';
+
+const sseEntries = collectChannelMessageEntries(channels, messages, isSseChannel);
 
 /*
  * The message each SSE channel carries, by name — what {@link renderPayloadSchemas} reads the
  * payload schema off.
  */
 const sseMessageNames = Object.entries(channels)
-    .filter(([channelName]) => channelName.startsWith('observability.'))
+    .filter(([channelName, channel]) => isSseChannel(channelName, channel))
     .map(([channelName, channel]) => ({
         channelName,
         messageName:

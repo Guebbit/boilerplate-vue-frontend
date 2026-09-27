@@ -23,7 +23,8 @@
             // path because every module's store imports them from its own folder depth, and one
             // entry here is what makes regenerating them somewhere else a one-line change.
             "@api": ["./contracts/rest/index"],
-            "@api/schemas": ["./contracts/rest/schemas.zod"]
+            "@api/schemas": ["./contracts/rest/schemas.zod"],
+            "@api/error-codes": ["./contracts/rest/error-codes"]
         }
     }
 }

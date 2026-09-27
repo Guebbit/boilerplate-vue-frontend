@@ -27,6 +27,7 @@ import {
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import { useProfileStore } from './profile.ts';
+import { ERROR_CODES } from '@api/error-codes';
 import type {
     TwoFactorStatus,
     TwoFactorSetup,
@@ -133,7 +134,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const applyResendCooldown = <T>(promise: Promise<T>): Promise<T> =>
         promise.catch((error: unknown) => {
-            const retryAfter = getRetryAfter(error, 'TWO_FACTOR_RESEND_TOO_SOON');
+            const retryAfter = getRetryAfter(error, ERROR_CODES.TWO_FACTOR_RESEND_TOO_SOON);
             if (retryAfter !== undefined) resendAvailableAt.value = Date.now() + retryAfter * 1000;
             throw error;
         });

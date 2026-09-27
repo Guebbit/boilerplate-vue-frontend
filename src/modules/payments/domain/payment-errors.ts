@@ -6,6 +6,8 @@
  * refusal worth a dedicated response here.
  */
 
+import { ERROR_CODES } from '@api/error-codes';
+
 /**
  * One line the payment refused for having no sellable product behind it, as
  * `ORDER_PRODUCT_UNAVAILABLE`'s `details.lines` carries it. `title` always present — read off the
@@ -61,7 +63,7 @@ const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } |
  */
 export const classifyPaymentError = (error: unknown): PaymentErrorVerdict => {
     const item = firstErrorItem(error);
-    if (item?.code === 'ORDER_PRODUCT_UNAVAILABLE') {
+    if (item?.code === ERROR_CODES.ORDER_PRODUCT_UNAVAILABLE) {
         const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
         const lines = Array.isArray(rawLines)
             ? rawLines.map((line) => asUnavailableLine(line)).filter((line) => line !== undefined)

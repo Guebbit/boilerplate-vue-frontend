@@ -17,6 +17,7 @@ import { onResponseReject } from './interceptors.ts';
 import { onResponseRejectWithRefresh } from './refresh.ts';
 import { useReauthPromptStore } from './reauth-prompt.ts';
 import { singleFlight } from './single-flight.ts';
+import { ERROR_CODES } from '@api/error-codes';
 import type { AxiosError } from 'axios';
 import type {
     AxiosRequestConfigWithRetry,
@@ -51,7 +52,7 @@ export const onResponseRejectWithStepUp = (
 
     if (
         error.response?.status === 401 &&
-        code === 'REAUTH_REQUIRED' &&
+        code === ERROR_CODES.REAUTH_REQUIRED &&
         !originalRequest?._steppedUp &&
         originalRequest
     )

@@ -9,7 +9,8 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
+import { ERROR_CODES } from '@api/error-codes';
 import type { AxiosRequestConfig } from 'axios';
 import type { User, AccountExportResponse, EmailVerificationRequested } from '@types';
 import {
@@ -60,6 +61,18 @@ const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string | null) => {
  * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
  * See `docs/theory/modules.md` for why this domain is split this many ways.
  */
+
+/**
+ * The server's own resend cooldown from a `requestEmailVerification` 429, or `undefined` when the
+ * rejection was something else. A component wires but does not call the API, so this is where the
+ * one code it needs to recognise (`EMAIL_VERIFY_RESEND_TOO_SOON`) lives instead.
+ *
+ * @param error - The rejected value `requestEmailVerification()` threw.
+ * @returns Seconds to wait, or `undefined`.
+ */
+export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>
+    getRetryAfter(error, ERROR_CODES.EMAIL_VERIFY_RESEND_TOO_SOON);
+
 export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * The session store, whose token and viewer this store writes.

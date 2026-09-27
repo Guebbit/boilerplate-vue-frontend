@@ -11,12 +11,10 @@
 import type { AxiosRequestConfig } from 'axios';
 import { getAntibotConfig, getAntibotChallenge } from '@api';
 import { getFirstApiError } from './envelope.ts';
+import { ERROR_CODES } from '@api/error-codes';
 
 /** The header `humanChallengeGate` reads off every gated request. */
 const ANTIBOT_TOKEN_HEADER = 'x-antibot-challenge-token';
-
-/** The refusal code a missing or invalid token comes back as. */
-const ANTIBOT_VERIFICATION_FAILED = 'ANTIBOT_VERIFICATION_FAILED';
 
 /**
  * Merges a solved `HumanCheck` token into a request's headers, alongside whatever the caller
@@ -48,7 +46,7 @@ export const withAntibotToken = (
  * @returns `true` when the first structured error is `ANTIBOT_VERIFICATION_FAILED`.
  */
 export const isAntibotVerificationFailed = (error: unknown): boolean =>
-    getFirstApiError(error)?.code === ANTIBOT_VERIFICATION_FAILED;
+    getFirstApiError(error)?.code === ERROR_CODES.ANTIBOT_VERIFICATION_FAILED;
 
 /**
  * Which provider is active, and what `HumanCheck.vue` needs to render its widget. Re-exported
