@@ -197,6 +197,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', '/orders', 'DeleteOrderResponse'],
     ['POST', '/orders/search', 'SearchOrdersResponse'],
     ['GET', `/orders/${ID}/invoice`, 'GetOrderInvoiceResponse'],
+    ['GET', `/orders/${ID}/credit-note`, 'GetOrderCreditNoteResponse'],
     ['GET', `/orders/${ID}`, 'GetOrderByIdResponse'],
     ['PUT', `/orders/${ID}`, 'ReplaceOrderByIdResponse'],
     ['PATCH', `/orders/${ID}`, 'UpdateOrderByIdResponse'],

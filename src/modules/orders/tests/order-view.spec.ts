@@ -98,7 +98,8 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         ship: false,
         deliver: false,
         fulfill: false,
-        override: []
+        override: [],
+        invoice: false
     }
 };
 
@@ -107,17 +108,40 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/orders/o1').then(() => router.isReady()));
 });
 
-describe('the receipt buttons', () => {
-    it('are both enabled, with their normal labels, for any order — the render is synchronous now', () => {
+describe('the invoice buttons', () => {
+    it('are absent until the server says the order has been invoiced', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-download-invoice]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=order-view-invoice]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('are both enabled, with their normal labels, once actions.invoice is true', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [lineWith(null)],
+            actions: {
+                transitions: [],
+                cancel: false,
+                pay: false,
+                start: false,
+                ship: false,
+                deliver: false,
+                fulfill: false,
+                override: [],
+                invoice: true
+            }
+        });
 
         const downloadButton = wrapper.get('[data-test=order-download-invoice]');
         expect(downloadButton.attributes('disabled')).toBeUndefined();
-        expect(downloadButton.text()).toContain('Download receipt');
+        expect(downloadButton.text()).toContain('Download invoice');
 
         const viewButton = wrapper.get('[data-test=order-view-invoice]');
         expect(viewButton.attributes('disabled')).toBeUndefined();
-        expect(viewButton.text()).toContain('View receipt');
+        expect(viewButton.text()).toContain('View invoice');
 
         wrapper.unmount();
     });
@@ -132,7 +156,7 @@ describe('the order number', () => {
         wrapper.unmount();
     });
 
-    it('shows next to the receipt button once the order has one', () => {
+    it('shows once the order has one', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             orderNumber: '2026-000041',

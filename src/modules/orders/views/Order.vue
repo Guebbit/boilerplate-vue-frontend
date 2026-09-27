@@ -108,6 +108,16 @@ const router = useRouter();
 const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
 
 /**
+ * Whether the server has actually issued this order's invoice — true once its `pending → paid`
+ * transition landed, per the same rule {@link cancellable} follows: read from the server rather
+ * than re-derived, so a lifecycle rule that changes there cannot leave this button offering a
+ * download the API refuses with 404.
+ *
+ * @returns `true` once `GET /orders/{id}/invoice` would answer a PDF rather than a 404.
+ */
+const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice === true);
+
+/**
  * The order's own frozen currency (FA37) — every price on this page is `currentOrder`'s own money,
  * never the shop's current default. `'EUR'` only stands in for an order that predates this field,
  * per the API's own note on `Order.currency`.
@@ -593,7 +603,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     {{ t('order-target-page.button-go-to-edit') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentOrder"
+                    v-if="invoiceAvailable"
                     variant="tonal"
                     color="tertiary"
                     data-test="order-download-invoice"
@@ -605,7 +615,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     {{ t('order-target-page.button-download-invoice') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentOrder"
+                    v-if="invoiceAvailable"
                     variant="tonal"
                     color="tertiary"
                     data-test="order-view-invoice"
