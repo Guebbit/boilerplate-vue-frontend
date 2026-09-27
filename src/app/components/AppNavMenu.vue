@@ -4,7 +4,8 @@
  * Generic dropdown-menu shell around `AppNavIconButton`: renders a list of `AppNavItem`s as a
  * `role="menu"`, used for both the account menu and the admin menu.
  */
-import type { Component } from 'vue';
+import { ref } from 'vue';
+import type { Component, ComponentPublicInstance } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import AppNavIconButton from '@/app/components/AppNavIconButton.vue';
@@ -96,10 +97,41 @@ defineProps<{
  * Translation function for badge labels.
  */
 const { t } = useI18n();
+
+/**
+ * Whether `v-menu` currently considers itself open — read by {@link focusFirstItemOnOpen} to
+ * ignore an `afterEnter` that fires after a very fast close (Escape pressed before the enter
+ * transition finished), so a closing menu never steals focus back into itself.
+ */
+const menuOpen = ref(false);
+
+/**
+ * The rendered `v-list`, queried for its first `menuitem` once the menu has fully opened.
+ */
+const listElement = ref<ComponentPublicInstance | null>(null);
+
+/**
+ * WAI-ARIA APG menu-button pattern: opening a menu (by click, Enter, Space or an arrow key)
+ * moves focus onto its first item. `v-menu`'s own single `focusChild()` call already does this
+ * most of the time; this is the fallback for when that call landed while the opening transition
+ * still had the content `visibility: hidden`, which makes `.focus()` silently no-op under load.
+ * https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
+ *
+ * Guarded on focus not already being inside the menu, rather than on the activator specifically:
+ * by the time the transition's `afterEnter` fires, `focusChild()` has normally already succeeded.
+ */
+const focusFirstItemOnOpen = () => {
+    if (!menuOpen.value) return;
+    // `$el` is typed loosely on a component instance; this ref only ever points at the `v-list`
+    // above, which always renders a real element.
+    const content = listElement.value?.$el as HTMLElement | undefined;
+    if (!content || content.contains(document.activeElement)) return;
+    content.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+};
 </script>
 
 <template>
-    <v-menu location="bottom end">
+    <v-menu v-model="menuOpen" location="bottom end" @after-enter="focusFirstItemOnOpen">
         <template #activator="{ props: menuProps }">
             <AppNavIconButton
                 v-bind="menuProps"
@@ -115,7 +147,7 @@ const { t } = useI18n();
             />
         </template>
 
-        <v-list density="compact" role="menu" :aria-label="label">
+        <v-list ref="listElement" density="compact" role="menu" :aria-label="label">
             <!--
                 Decorative for the reader: the description is already part of the activator's
                 name, and a role-less heading inside a `menu` is not a permitted child.
