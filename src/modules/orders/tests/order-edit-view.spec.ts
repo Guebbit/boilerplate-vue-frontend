@@ -412,4 +412,59 @@ describe('recording a payment by hand', () => {
                 );
             });
     });
+
+    it('force-refreshes the order once a payment is recorded', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+        });
+        const { wrapper, fetchOrder } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() =>
+                wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }).vm.$emit('recorded')
+            )
+            .then(() => nextTick())
+            .then(() => {
+                // The mount-time forced re-fetch from `useOrderActionsRefetch` is the first call;
+                // this is the second, PL-60's own.
+                expect(fetchOrder).toHaveBeenLastCalledWith(detail.id, { forced: true });
+            });
+    });
+
+    it('reports the refresh error, without touching the form', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+        });
+        const orders = useOrdersStore();
+        vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopStopHandle);
+        orders.addOrder({ ...detail, actions: detail.actions });
+        orders.selectedOrderId = detail.id;
+        vi.spyOn(orders, 'fetchOrder').mockRejectedValue(new Error('network down'));
+
+        const wrapper = mount(OrderEdit, {
+            props: { id: detail.id },
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            }
+        });
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() =>
+                wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }).vm.$emit('recorded')
+            )
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(
+                    wrapper.find('[data-test=order-edit-offline-payment-error]').text()
+                ).not.toBe('');
+            });
+    });
 });

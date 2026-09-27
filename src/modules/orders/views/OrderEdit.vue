@@ -151,11 +151,26 @@ const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 const canRecordOffline = computed(() => currentOrder.value?.actions?.pay === true);
 
 /**
+ * The offline-payment refresh's own blocked state. The form's own submit failures surface inside
+ * `RecordOfflinePaymentForm` itself; this only covers the forced re-fetch that follows a success.
+ */
+const {
+    message: offlinePaymentRefreshError,
+    report: reportOfflinePaymentRefreshError,
+    clear: clearOfflinePaymentRefreshError
+} = useBlockingError();
+
+/**
  * Reloads the order once money has been recorded by hand — its status moved `pending → paid`
- * server-side, which the form's own state does not reflect.
+ * server-side, which the form's own state does not reflect. Forced: `watchOrder`'s cache still
+ * holds the pre-payment record, same as the correction door's own forced re-fetch above.
  */
 const onOfflinePaymentRecorded = () => {
-    if (id) void fetchOrder(id);
+    if (!id) return;
+    clearOfflinePaymentRefreshError();
+    void fetchOrder(id, { forced: true }).catch((error: unknown) =>
+        reportOfflinePaymentRefreshError(error)
+    );
 };
 
 /**
@@ -405,6 +420,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         {{ t('order-edit-page.record-offline-hint') }}
                     </p>
                     <RecordOfflinePaymentForm :order-id="id" @recorded="onOfflinePaymentRecorded" />
+
+                    <InlineErrorAlert
+                        :message="offlinePaymentRefreshError"
+                        class="mt-3"
+                        test-id="order-edit-offline-payment-error"
+                    />
                 </div>
 
                 <!--
