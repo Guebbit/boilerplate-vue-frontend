@@ -6,6 +6,8 @@
  * what each verdict says and does.
  */
 
+import { ERROR_CODES } from '@api/error-codes';
+
 /** One line the checkout could not honour, as `CART_INSUFFICIENT_STOCK`'s `details.lines` carries it. */
 
 /**
@@ -102,20 +104,22 @@ const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } |
  */
 export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
     const item = firstErrorItem(error);
-    if (item?.code === 'CART_CHANGED') return { kind: 'cart-changed' };
-    if (item?.code === 'CART_ADDRESS_NOT_FOUND') return { kind: 'address-not-found' };
-    if (item?.code === 'CART_SHIPPING_METHOD_WEIGHT') return { kind: 'shipping-method-weight' };
-    if (item?.code === 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED') {
+    if (item?.code === ERROR_CODES.CART_CHANGED) return { kind: 'cart-changed' };
+    if (item?.code === ERROR_CODES.CART_ADDRESS_NOT_FOUND) return { kind: 'address-not-found' };
+    if (item?.code === ERROR_CODES.CART_SHIPPING_METHOD_WEIGHT) {
+        return { kind: 'shipping-method-weight' };
+    }
+    if (item?.code === ERROR_CODES.CART_SHIP_TO_COUNTRY_NOT_SUPPORTED) {
         return { kind: 'ship-to-country-not-supported' };
     }
-    if (item?.code === 'CART_INSUFFICIENT_STOCK') {
+    if (item?.code === ERROR_CODES.CART_INSUFFICIENT_STOCK) {
         const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
         const lines = Array.isArray(rawLines)
             ? rawLines.map((line) => asShortfallLine(line)).filter((line) => line !== undefined)
             : [];
         return { kind: 'insufficient-stock', lines };
     }
-    if (item?.code === 'CART_PRODUCT_UNAVAILABLE') {
+    if (item?.code === ERROR_CODES.CART_PRODUCT_UNAVAILABLE) {
         const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
         const lines = Array.isArray(rawLines)
             ? rawLines.map((line) => asUnavailableLine(line)).filter((line) => line !== undefined)

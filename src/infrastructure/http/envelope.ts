@@ -8,6 +8,8 @@
  * response and a product list arrive in the same wrapper, and neither is the session's business.
  */
 
+import type { ErrorCode } from '@api/error-codes';
+
 /**
  * One structured error as the reject envelope carries it. Both fields stay `unknown`: the shape
  * is asserted by the generated types, never verified, so the reader narrows and the caller checks.
@@ -81,7 +83,7 @@ export const getFirstApiError = (value: unknown): ApiErrorItem | undefined => {
  * @param code - The refusal's stable code, e.g. `EMAIL_VERIFY_RESEND_TOO_SOON`.
  * @returns The seconds to wait, or `undefined` when this is not that refusal.
  */
-export const getRetryAfter = (value: unknown, code: string): number | undefined => {
+export const getRetryAfter = (value: unknown, code: ErrorCode): number | undefined => {
     const { code: actual, details } = getFirstApiError(value) ?? {};
     if (actual !== code || !isObjectRecord(details)) return undefined;
     return typeof details.retryAfter === 'number' ? details.retryAfter : undefined;
