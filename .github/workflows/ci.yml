@@ -26,6 +26,9 @@ on:
         branches:
             - main
 
+permissions:
+    contents: read
+
 concurrency:
     # Cancel stale runs for the same branch/PR when newer commits arrive.
     group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -48,13 +51,13 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
               with:
                   # Need full history to walk the pushed commit range.
                   fetch-depth: 0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -74,10 +77,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -98,10 +101,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -122,10 +125,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -145,10 +148,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -171,10 +174,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -199,10 +202,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -233,7 +236,7 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Build the production image
               run: docker build -f docker/Dockerfile.production -t boilerplate-frontend:ci .
@@ -288,10 +291,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -311,10 +314,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -357,10 +360,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -380,10 +383,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -405,10 +408,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -428,7 +431,7 @@ jobs:
 
             - name: Upload test report
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: test-report-unit
                   path: reports/test-report.json
@@ -440,7 +443,7 @@ jobs:
               # file under its floor fails `test:unit:coverage`. This upload is the detail behind
               # that verdict — which lines are missed — and runs on failure for exactly that.
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: coverage-report
                   path: coverage/
@@ -476,10 +479,10 @@ jobs:
             contents: read
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -529,17 +532,17 @@ jobs:
             CYPRESS_INSTALL_BINARY: ''
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
                   cache-dependency-path: package-lock.json
 
             - name: Cache Cypress binary
-              uses: actions/cache@v4
+              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
               with:
                   path: ~/.cache/Cypress
                   key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -567,7 +570,7 @@ jobs:
               # stderr is the one copy that can be lost to a truncated log, and once it is the
               # failure is undiagnosable.
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: e2e-shard-logs
                   path: reports/e2e/
@@ -579,7 +582,7 @@ jobs:
               # gates on serious/critical and writes the rest to `reports/a11y/`. Uploaded on
               # success as well, because the point is the data a green run still produced.
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: a11y-reports
                   path: reports/a11y/
@@ -588,7 +591,7 @@ jobs:
 
             - name: Upload Cypress screenshots
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: cypress-screenshots
                   path: tests/e2e/screenshots
@@ -597,7 +600,7 @@ jobs:
 
             - name: Upload Cypress videos
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: cypress-videos
                   path: tests/e2e/videos
