@@ -12,7 +12,9 @@ import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 import { expectMailTemplate, mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
 
 /**
- * Fills the address dialog's six required inputs and saves.
+ * Fills the address dialog's six required inputs and saves. The country field is a `v-select`
+ * (E12, ISO 3166-1 codes) rather than free text — opened and picked the same way the language
+ * select above it already is, not `.clear()`/`.type()`.
  */
 const fillAddress = (label: string, street: string) => {
     cy.get('[data-test=address-dialog]').within(() => {
@@ -26,9 +28,9 @@ const fillAddress = (label: string, street: string) => {
         cy.get('input').eq(3).should('not.be.disabled').type('41121');
         cy.get('input').eq(4).should('not.be.disabled').clear();
         cy.get('input').eq(4).should('not.be.disabled').type('Modena');
-        cy.get('input').eq(5).should('not.be.disabled').clear();
-        cy.get('input').eq(5).should('not.be.disabled').type('IT');
+        cy.get('[data-test=address-country]').click();
     });
+    cy.get('.v-overlay-container').contains('.v-list-item', 'Italy').click();
     cy.get('[data-test=address-save]').click();
 };
 
