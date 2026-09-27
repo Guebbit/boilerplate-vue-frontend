@@ -53,6 +53,35 @@ describe('PaymentPanel', () => {
     });
 
     /**
+     * FA32c: every order that holds stock now freezes a real `payBy`, card orders included — the
+     * deadline has to show wherever the order is still payable, not only in
+     * `TransferInstructionsPanel`, which a card order never mounts (no `transferInstructions`).
+     */
+    describe('the payment deadline (FA32c)', () => {
+        it('shows it while the order is payable and a payBy is given', () => {
+            const { wrapper } = mountPanel({ payBy: '2026-01-10T12:00:00.000Z' });
+            expect(wrapper.find('[data-test=payment-deadline]').exists()).toBe(true);
+        });
+
+        it('shows nothing when no payBy is given — an order that predates the field', () => {
+            const { wrapper } = mountPanel();
+            expect(wrapper.find('[data-test=payment-deadline]').exists()).toBe(false);
+        });
+
+        it('shows nothing once the order is no longer payable', () => {
+            const { store, wrapper } = mountPanel({
+                orderPayable: false,
+                payBy: '2026-01-10T12:00:00.000Z'
+            });
+            store.payment = { ...handPaidSucceededPayment };
+
+            return wrapper.vm.$nextTick().then(() => {
+                expect(wrapper.find('[data-test=payment-deadline]').exists()).toBe(false);
+            });
+        });
+    });
+
+    /**
      * The refusal this component classifies itself, unlike every other one it hands to the
      * generic toast — a product removed or deactivated since the order was placed, caught fresh
      * at payment start rather than trusting the order's own frozen line snapshot.

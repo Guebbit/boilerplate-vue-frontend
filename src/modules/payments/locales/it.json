@@ -7,6 +7,7 @@
         "method-pm_card_declined": "Carta rifiutata dall'emittente",
         "method-pm_card_authentication_required": "Carta con verifica della banca (3-D Secure)",
         "method-pm_card_processing": "Metodo che si completa più tardi",
+        "label-deadline": "Completa il pagamento entro il {payBy}, o la prenotazione su questo ordine verrà rilasciata.",
         "button-pay": "Paga ora",
         "button-finish": "Ho completato la verifica in banca",
         "success": "Pagamento ricevuto — l'ordine è pagato.",

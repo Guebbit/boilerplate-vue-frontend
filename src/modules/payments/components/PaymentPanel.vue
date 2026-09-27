@@ -14,7 +14,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -34,7 +34,7 @@ import { OrderStatus } from '@types';
  * one. The picker below stands exactly where that widget mounts, and produces the same kind of
  * value it would.
  */
-const { orderId, orderPayable, orderStatus } = defineProps<{
+const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
     /**
      * The order this panel pays.
      */
@@ -49,6 +49,13 @@ const { orderId, orderPayable, orderStatus } = defineProps<{
      * operator's own confirmation does.
      */
     orderStatus?: string;
+    /**
+     * When the hold behind this order ends (FA32c) — every order that holds stock gets one now,
+     * card included, not only bank transfer's own `transferInstructions`. Shown here, generically,
+     * wherever {@link payable} is true; `TransferInstructionsPanel` still adds its own transfer-
+     * specific wording alongside it.
+     */
+    payBy?: string;
 }>();
 
 /**
@@ -228,6 +235,14 @@ onMounted(() => {
 <template>
     <v-card class="p-4" data-test="payment-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('payments-panel.title') }}</h3>
+
+        <!--
+            FA32c: shown wherever the order is still payable, not only bank transfer's own
+            TransferInstructionsPanel — a card order holds stock exactly the same way.
+        -->
+        <p v-if="payable && payBy" class="mb-3 text-sm opacity-75" data-test="payment-deadline">
+            {{ t('payments-panel.label-deadline', { payBy: formatDateTime(payBy) }) }}
+        </p>
 
         <InlineErrorAlert :message="paymentError" class="mb-3" test-id="payment-panel-error" />
 
