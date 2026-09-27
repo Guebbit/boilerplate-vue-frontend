@@ -89,7 +89,8 @@ export const productsSchema = z.object({
     onHand: z.number().nullish(),
     categories: z.array(z.string()).nullish(),
     tags: z.array(z.string()).nullish(),
-    imageUrl: z.string().nullish(),
+    // `null` clears the image; `''` is not a valid value the contract accepts (`minLength: 1`).
+    imageUrl: z.string().min(1).nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish(),
     translations: productTranslationsSchema

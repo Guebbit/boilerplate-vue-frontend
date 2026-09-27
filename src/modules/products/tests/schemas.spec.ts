@@ -86,6 +86,11 @@ describe('productsSchema', () => {
         );
     });
 
+    it('rejects an empty imageUrl — null is the only valid way to clear it', () => {
+        expect(productsSchema.safeParse({ ...validProduct, imageUrl: '' }).success).toBe(false);
+        expect(productsSchema.safeParse({ ...validProduct, imageUrl: null }).success).toBe(true);
+    });
+
     it('keeps the optional fields it was given', () => {
         const parsed = productsSchema.parse({
             ...validProduct,

@@ -14,12 +14,13 @@ a single button's spinner.
 
 A key is `<store>` plus an optional `:<action>` postfix, and the store half is the Pinia store id:
 
-| Key                             | Set by                                                    |
-| ------------------------------- | --------------------------------------------------------- |
-| `accountProfile`                | any `useProfileStore` call without its own postfix        |
-| `accountProfile:avatar-upload`  | `updateProfile` when the payload carries an `imageUpload` |
-| `accountTwoFactor:confirm`      | `confirmMethod`                                           |
-| `cart`, `orders`, `products`, … | the domain store of the same Pinia id                     |
+| Key                             | Set by                                                               |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `accountProfile`                | any `useProfileStore` call without its own postfix                   |
+| `accountProfile:avatar-upload`  | `updateProfile` when the payload carries an `imageUpload`            |
+| `accountProfile:avatar-remove`  | `updateProfile` when the payload clears the image (`imageUrl: null`) |
+| `accountTwoFactor:confirm`      | `confirmMethod`                                                      |
+| `cart`, `orders`, `products`, … | the domain store of the same Pinia id                                |
 
 The store half is declared once, where the toolkit composable is created:
 

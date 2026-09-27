@@ -205,6 +205,58 @@ describe('useUsersStore', () => {
         });
 
         /**
+         * The same rule `products/store.ts` already enforces for its own `imageUrl`: the LOCAL
+         * `User` never holds a `null` image, only a real value or absence, so an in-flight clear
+         * must not null out the cached one ahead of the response that actually confirms it.
+         */
+        it('leaves a cached imageUrl alone while a clearing update is in flight', () => {
+            const store = useUsersStore();
+            store.addUser({
+                id: 'u1',
+                username: 'ada',
+                email: 'ada@example.com',
+                imageUrl: 'https://cdn.example.com/avatars/ada.png'
+            });
+
+            // `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
+            // clears recorded calls but NOT an implementation set with `mockReturnValue`. A
+            // persistent override here would hand every later test this same settled promise.
+            let release!: (value: unknown) => void;
+            const transportResponse = new Promise((resolve) => {
+                release = resolve;
+            });
+            vi.mocked(orvalMutator).mockImplementationOnce(
+                (config: { url?: string; method?: string }) =>
+                    transportResponse.then((data) =>
+                        parseOrvalFixture(config.method, config.url, data)
+                    )
+            );
+
+            const pending = store.updateUser('u1', { username: 'ada2', imageUrl: null });
+
+            return vi
+                .waitFor(() => {
+                    expect(store.users.u1.username).toBe('ada2');
+                })
+                .then(() => {
+                    expect(store.users.u1.imageUrl).toBe('https://cdn.example.com/avatars/ada.png');
+                    // The read shape never answers `null` for `imageUrl` today — a cleared field
+                    // still resolves to the default placeholder URL until Step 1b's "null clears"
+                    // read-shape change lands. What this test pins is the OPTIMISTIC guess, not
+                    // this response value.
+                    release(
+                        orvalEnvelope({
+                            id: 'u1',
+                            username: 'ada2',
+                            email: 'ada@example.com',
+                            imageUrl: 'https://cdn.example.com/avatars/default.png'
+                        })
+                    );
+                    return pending;
+                });
+        });
+
+        /**
          * The reason `orvalMutator` takes a second argument at all — `UserEdit.vue` passes
          * `onUploadProgress` through it to drive its progress bar.
          */

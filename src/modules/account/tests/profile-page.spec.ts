@@ -283,3 +283,31 @@ describe('the email field, and a pending change', () => {
             });
     });
 });
+
+/**
+ * Regression for the bug this pins: the details form used to send back the ALREADY-LOADED
+ * `imageUrl` on every save, since the field lived in the form model like any other. That silently
+ * overwrote whatever `ProfileAvatar.vue`'s own request had just written — including a concurrent
+ * avatar change — and left the record pointing at a file the backend then deleted as orphaned.
+ * Only `ProfileAvatar.vue` (stubbed out here) may ever write `imageUrl`.
+ */
+describe('the image field', () => {
+    it('never includes imageUrl in an ordinary details save, loaded or not', () => {
+        responses['GET /account'] = orvalEnvelope({
+            ...USER,
+            imageUrl: 'https://cdn.example.com/avatars/ada.png'
+        });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('input[type=tel]').setValue('+1 555 0100'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const patch = lastAccountPatch();
+                // Not merely falsy: the KEY itself must be absent, the same "absent means
+                // untouched" proof the email and consent fields above pin.
+                expect(JSON.stringify(patch?.data)).not.toContain('imageUrl');
+            });
+    });
+});

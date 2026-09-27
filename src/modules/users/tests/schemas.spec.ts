@@ -103,6 +103,11 @@ describe('usersSchema', () => {
         }
     );
 
+    it('rejects an empty imageUrl — null is the only valid way to clear it', () => {
+        expect(usersSchema.safeParse({ ...validUser, imageUrl: '' }).success).toBe(false);
+        expect(usersSchema.safeParse({ ...validUser, imageUrl: null }).success).toBe(true);
+    });
+
     it('rejects a null phone or website, which are optional but not nullable', () => {
         expect(usersSchema.safeParse({ ...validUser, phone: null }).success).toBe(false);
         expect(usersSchema.safeParse({ ...validUser, website: null }).success).toBe(false);

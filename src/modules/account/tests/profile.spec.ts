@@ -173,12 +173,13 @@ describe('updateProfile', () => {
                 expect(last.url).toBe('/account');
                 // `admin` was passed in and must NOT reach the wire: a user editing their own
                 // record cannot promote themselves, and the store is the only thing enforcing it.
+                // No `imageUrl` either: this call carries none, the same shape as a details-only
+                // save from `Profile.vue` — only `ProfileAvatar.vue` ever includes that key.
                 expect(Object.keys(last.data).toSorted()).toEqual(
                     [
                         'email',
                         'username',
                         'locale',
-                        'imageUrl',
                         'phone',
                         'website',
                         'analyticsConsent'

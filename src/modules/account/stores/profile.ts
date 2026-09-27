@@ -34,7 +34,7 @@ import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
  * save, which has no button of its own to spin.
  *
  * @param imageUpload - The picked file, when the call carries one.
- * @param imageUrl - The record's picture field, `''` when the call is a removal.
+ * @param imageUrl - The record's picture field, `null` when the call is a removal.
  * @returns The postfix appended to the store's loading key, or `''` for a plain save.
  */
 const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string | null) => {
@@ -161,11 +161,13 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  `multipart/form-data` — the `{ imageUpload, ...rest }` split `modules/users/store.ts`
      *  already has for the admin form,
      *  one shape for both call sites. `imageUrl` and `imageUpload` are mutually exclusive in
-     *  practice: `ProfileAvatar.vue`'s remove button sends `imageUrl: null` alone (never `''` —
-     *  the contract's own `minLength: 1` refuses that with a 422), its picker sends
-     *  `imageUpload` alone. `imageUrl` widens past `Partial<User>`'s own (read-shape, non-null)
-     *  type for exactly this: the write contract allows `null`, the record itself never reads
-     *  back as one.
+     *  practice, and only `ProfileAvatar.vue` ever sets either: its remove button sends
+     *  `imageUrl: null` alone (never `''` — the contract's own `minLength: 1` refuses that with a
+     *  422), its picker sends `imageUpload` alone. `Profile.vue`'s own details form must send
+     *  neither: re-sending the already-loaded `imageUrl` there would overwrite a concurrent avatar
+     *  change and orphan the file it just uploaded. `imageUrl` widens past `Partial<User>`'s own
+     *  (read-shape, non-null) type for exactly this: the write contract allows `null`, the record
+     *  itself never reads back as one.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
      *  `ProfileAvatar.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving with the updated profile, rejected with an
@@ -190,11 +192,16 @@ export const useProfileStore = defineStore('accountProfile', () => {
             website: userData.website,
             analyticsConsent: userData.analyticsConsent
         };
+        // `in`, not a truthiness check: a caller that means to CLEAR the image passes
+        // `imageUrl: null`, a present key with a falsy value. Only `Profile.vue`'s details form
+        // omits the key outright, which is what keeps its save from re-sending a stale image.
+        const withImageUrl =
+            'imageUrl' in userData ? { ...fields, imageUrl: userData.imageUrl } : fields;
         return updateTarget(
             () =>
                 (imageUpload
                     ? apiUpdateAccountWithMultipart({ ...fields, imageUpload }, options)
-                    : apiUpdateAccount({ ...fields, imageUrl: userData.imageUrl }, options)
+                    : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
 
@@ -208,7 +215,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
             { ...userData, imageUrl: userData.imageUrl ?? undefined },
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own loading key so the picker
-            // and the remove button spin one at a time. `imageUrl: ''` is the removal.
+            // and the remove button spin one at a time. `imageUrl: null` is the removal.
             { loadingKey: avatarLoadingPostfix(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*

@@ -87,7 +87,6 @@ interface ProfileForm {
      * session in the language this visitor asked for.
      */
     locale?: string;
-    imageUrl?: string | null;
     admin?: boolean | null;
     active?: boolean | null;
     createdAt?: string | null;
@@ -212,11 +211,13 @@ const submitForm = () => {
     // Omitted rather than sent unchanged: PATCH treats an included `email` as a real request, even
     // one that resolves to a no-op, and this save has nothing to say about the address at all.
     const emailChanged = form.value.email !== profile.value?.email;
+    // No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
+    // own request. Sending the loaded value back on every details save would overwrite whatever
+    // the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
     return updateProfile({
         ...(emailChanged ? { email: form.value.email } : {}),
         username: form.value.username,
         locale: form.value.locale,
-        imageUrl: form.value.imageUrl ?? undefined,
         phone: form.value.phone,
         website: form.value.website,
         ...(analyticsConsentChanged ? { analyticsConsent: form.value.analyticsConsent } : {})

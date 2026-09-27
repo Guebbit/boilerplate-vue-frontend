@@ -27,7 +27,7 @@ import type { AxiosRequestConfig } from 'axios';
 import type {
     User,
     CreateUserRequestMultipart,
-    UpdateUserByIdRequestMultipart,
+    UpdateUserByIdRequest,
     SearchUsersRequest
 } from '@types';
 
@@ -39,6 +39,15 @@ import type {
  * one-element array `SearchUsersRequest.id` now requires, in `search:` below.
  */
 type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
+
+/**
+ * `updateUser`'s payload — the merging `PATCH` body plus the optional replacement image. The
+ * JSON write body, not the generated multipart request type: that one has no `imageUrl` field at
+ * all (a multipart write cannot clear the image today), and this store needs the field to strip a
+ * `null` from the optimistic patch below. See `products/store.ts`'s `UpdateProductData` for the
+ * same shape.
+ */
+type UpdateUserData = UpdateUserByIdRequest & { imageUpload?: Blob };
 
 /**
  * Users CRUD, paginated search and avatar upload.
@@ -89,7 +98,7 @@ export const useUsersStore = defineStore('users', () => {
         string,
         UsersFilters,
         CreateUserRequestMultipart,
-        UpdateUserByIdRequestMultipart,
+        UpdateUserData,
         AxiosRequestConfig
     >(
         {
@@ -134,19 +143,25 @@ export const useUsersStore = defineStore('users', () => {
             // this is the MULTIPART request shape, which never carries `imageUrl` itself, only
             // the upload.
             //
-            // `locale`/`phone`/`website` accept `null` on the wire (clears the field) but the
-            // LOCAL `User` never does; `null` reads as "leave the optimistic guess alone" here,
-            // since the real clear only takes visible effect once the response `update:` above
-            // already waits for lands.
+            // `locale`/`phone`/`website`/`imageUrl` accept `null` on the wire (clears the field)
+            // but the LOCAL `User` never does; `null` reads as "leave the optimistic guess alone"
+            // here, since the real clear only takes visible effect once the response `update:`
+            // above already waits for lands.
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 locale,
                 phone,
                 website,
+                imageUrl,
                 ...userData
             } = {}) => ({
                 ...userData,
-                ...omitNulls({ locale, phone, website }, ['locale', 'phone', 'website'])
+                ...omitNulls({ locale, phone, website, imageUrl }, [
+                    'locale',
+                    'phone',
+                    'website',
+                    'imageUrl'
+                ])
             })
         },
         { loadingKey: 'users', getLoading, setLoading }

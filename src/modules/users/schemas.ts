@@ -47,7 +47,8 @@ export const usersSchema = z.object({
     id: z.string().nullish(),
     email: usersEmailSchema,
     username: usersUsernameSchema,
-    imageUrl: z.string().nullish(),
+    // `null` clears the image; `''` is not a valid value the contract accepts (`minLength: 1`).
+    imageUrl: z.string().min(1).nullish(),
     phone: z.string().optional(),
     website: z.string().optional(),
     role: z.string().nullish(),
