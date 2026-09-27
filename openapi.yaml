@@ -3852,6 +3852,8 @@ paths:
       operationId: checkout
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: false
         content:
@@ -6156,6 +6158,11 @@ components:
       description: BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
       pattern: ^[a-z]{2}(-[A-Za-z0-9]+)*$
       example: it
+    CountryCode:
+      type: string
+      description: ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
+      pattern: ^[A-Z]{2}$
+      example: IT
     ImageUrl:
       type: string
       format: uri-reference
@@ -6460,6 +6467,7 @@ components:
         - id
         - title
         - price
+        - currency
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -6470,6 +6478,10 @@ components:
           format: double
           minimum: 0
           description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
         onHand:
@@ -6549,7 +6561,7 @@ components:
         zip:
           type: string
         country:
-          type: string
+          $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
     OrderTransferInstructions:
@@ -6801,6 +6813,10 @@ components:
           minimum: 0
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
           type: number
           format: double
@@ -8597,7 +8613,7 @@ components:
         zip:
           type: string
         country:
-          type: string
+          $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
         default:
@@ -8654,8 +8670,7 @@ components:
           type: string
           minLength: 1
         country:
-          type: string
-          minLength: 1
+          $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
         default:
@@ -8687,8 +8702,7 @@ components:
           type: string
           minLength: 1
         country:
-          type: string
-          minLength: 1
+          $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
           minLength: 1
@@ -8716,8 +8730,7 @@ components:
           type: string
           minLength: 1
         country:
-          type: string
-          minLength: 1
+          $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
           minLength: 1
@@ -10231,6 +10244,7 @@ components:
         - id
         - title
         - price
+        - currency
         - translations
       description: A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source.
       properties:
@@ -10243,6 +10257,10 @@ components:
           format: double
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code (e.g. EUR) — see `Product.currency`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
         onHand:
@@ -10353,6 +10371,7 @@ components:
         - itemsTotal
         - shippingCost
         - totalPrice
+        - currency
       properties:
         itemsCount:
           type: integer
@@ -10934,6 +10953,7 @@ components:
       required:
         - id
         - price
+        - currency
         - tracked
         - requiresAddress
       properties:
@@ -10944,7 +10964,10 @@ components:
           type: number
           format: double
           minimum: 0
-          description: Flat rate, in the shop's currency.
+          description: Flat rate, in `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`.
         freeAbove:
           type: number
           format: double
@@ -10974,11 +10997,17 @@ components:
       additionalProperties: false
       required:
         - methods
+        - shipToCountries
       properties:
         methods:
           type: array
           items:
             $ref: "#/components/schemas/ShippingMethod"
+        shipToCountries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountryCode"
+          description: Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it.
     ShippingMethodsResponseEnvelope:
       type: object
       additionalProperties: false

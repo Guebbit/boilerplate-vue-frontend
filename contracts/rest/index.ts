@@ -67,6 +67,12 @@ export type PasswordNew = string;
 export type Locale = string;
 
 /**
+ * ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
+ * @pattern ^[A-Z]{2}$
+ */
+export type CountryCode = string;
+
+/**
  * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for "no image" — only `null` is, on a field that allows it.
  * @minLength 1
  */
@@ -256,6 +262,8 @@ export interface Product {
      * @minimum 0
      */
     price: number;
+    /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
+    readonly currency: string;
     taxClass?: TaxClass;
     /**
      * Units physically present, whether or not they are spoken for.
@@ -297,7 +305,7 @@ export interface OrderAddress {
     street: string;
     city: string;
     zip: string;
-    country: string;
+    country: CountryCode;
     phone?: string;
 }
 
@@ -443,6 +451,8 @@ export interface Order {
      * @minimum 0
      */
     totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency?: string;
     /**
      * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
      * @minimum 0
@@ -511,7 +521,7 @@ export interface Address {
     street: string;
     city: string;
     zip: string;
-    country: string;
+    country: CountryCode;
     phone?: string;
     default: boolean;
 }
@@ -1700,8 +1710,7 @@ export interface AddressInput {
     city: string;
     /** @minLength 1 */
     zip: string;
-    /** @minLength 1 */
-    country: string;
+    country: CountryCode;
     phone?: string;
     default?: boolean;
 }
@@ -1720,8 +1729,7 @@ export interface ReplaceAddressRequest {
     city: string;
     /** @minLength 1 */
     zip: string;
-    /** @minLength 1 */
-    country: string;
+    country: CountryCode;
     /**
      * @minLength 1
      * @nullable
@@ -1744,8 +1752,7 @@ export interface UpdateAddressRequest {
     city?: string;
     /** @minLength 1 */
     zip?: string;
-    /** @minLength 1 */
-    country?: string;
+    country?: CountryCode;
     /**
      * @minLength 1
      * @nullable
@@ -2437,6 +2444,8 @@ export interface ProductAdmin {
      * @minimum 0
      */
     price: number;
+    /** ISO-4217 currency code (e.g. EUR) — see `Product.currency`. */
+    readonly currency: string;
     taxClass?: TaxClass;
     /** @minimum 0 */
     readonly onHand?: number;
@@ -2516,7 +2525,7 @@ export interface CartSummaryResponse {
      */
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
-    currency?: string;
+    currency: string;
 }
 
 export interface CartResponse {
@@ -2861,10 +2870,12 @@ export interface ShippingMethod {
     /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
     id: string;
     /**
-     * Flat rate, in the shop's currency.
+     * Flat rate, in `currency`.
      * @minimum 0
      */
     price: number;
+    /** ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`. */
+    currency: string;
     /**
      * Items total at which this method becomes free. Absent — it never does.
      * @minimum 0
@@ -2893,6 +2904,8 @@ export interface ShippingMethod {
 
 export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
+    /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
+    shipToCountries: CountryCode[];
 }
 
 export interface ShippingMethodsResponseEnvelope {
