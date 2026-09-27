@@ -627,7 +627,8 @@ export type ExportAuditEntryActorRole =
 export const ExportAuditEntryActorRole = {
     admin: 'admin',
     user: 'user',
-    anonymous: 'anonymous'
+    anonymous: 'anonymous',
+    system: 'system'
 } as const;
 
 /**
@@ -1346,7 +1347,8 @@ export type AuditEventItemActorRole =
 export const AuditEventItemActorRole = {
     admin: 'admin',
     user: 'user',
-    anonymous: 'anonymous'
+    anonymous: 'anonymous',
+    system: 'system'
 } as const;
 
 /**
@@ -1416,7 +1418,8 @@ export type AuditEntryItemActorRole =
 export const AuditEntryItemActorRole = {
     admin: 'admin',
     user: 'user',
-    anonymous: 'anonymous'
+    anonymous: 'anonymous',
+    system: 'system'
 } as const;
 
 /**
