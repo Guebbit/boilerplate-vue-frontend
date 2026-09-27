@@ -13,24 +13,7 @@ import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
-
-/**
- * Which siblings a module may reach at all, hand-maintained rather than declared per module —
- * a new cross-module coupling is a deliberate edit here, rather than a one-line import nobody
- * questions. See `docs/theory/strategic-ddd.md` §2.
- *
- * The WHY for each edge — what is reached, and what kind of relationship it is
- * (conformist/customer-supplier/published-language) — is prose in the docblock at the top of the
- * dependent module's `module.ts`, next to the imports it describes.
- */
-const MODULE_EDGES: Record<string, string[]> = {
-    account: ['users'],
-    cart: ['delivery', 'payments', 'account'],
-    inventory: ['products'],
-    orders: ['cart', 'delivery', 'payments'],
-    products: ['cart', 'wishlist'],
-    wishlist: ['cart']
-};
+import { MODULE_EDGES } from './scripts/module-edges';
 
 /**
  * Module boundaries, one config block per module.
