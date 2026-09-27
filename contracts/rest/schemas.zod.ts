@@ -3152,6 +3152,13 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .default(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault
                                 ),
+                            sku: zod
+                                .string()
+                                .min(1)
+                                .optional()
+                                .describe(
+                                    "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                                ),
                             weight: zod
                                 .number()
                                 .min(
@@ -5060,6 +5067,13 @@ export const ListProductsResponse = zod.strictObject({
                     .describe(
                         "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
                     ),
+                sku: zod
+                    .string()
+                    .min(1)
+                    .optional()
+                    .describe(
+                        "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                    ),
                 onHand: zod
                     .number()
                     .min(listProductsResponseDataItemsItemOnHandMin)
@@ -5161,6 +5175,13 @@ export const CreateProductBody = zod.strictObject({
         .describe(
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
         ),
+    sku: zod
+        .string()
+        .min(1)
+        .optional()
+        .describe(
+            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+        ),
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     active: zod.boolean().default(createProductBodyActiveDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
@@ -5214,6 +5235,13 @@ export const CreateProductResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        sku: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
             ),
         onHand: zod
             .number()
@@ -5349,6 +5377,13 @@ export const GetProductByIdResponse = zod.strictObject({
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
             ),
+        sku: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+            ),
         onHand: zod
             .number()
             .min(getProductByIdResponseDataOnHandMin)
@@ -5432,6 +5467,13 @@ export const ReplaceProductByIdBody = zod.strictObject({
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
         )
         .nullish(),
+    sku: zod
+        .string()
+        .min(1)
+        .describe(
+            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+        )
+        .nullish(),
     active: zod.boolean(),
     requiresShipping: zod.boolean(),
     weight: zod
@@ -5484,6 +5526,13 @@ export const ReplaceProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        sku: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
             ),
         onHand: zod
             .number()
@@ -5579,6 +5628,13 @@ export const UpdateProductByIdBody = zod.strictObject({
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
         )
         .nullish(),
+    sku: zod
+        .string()
+        .min(1)
+        .describe(
+            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+        )
+        .nullish(),
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     weight: zod
@@ -5631,6 +5687,13 @@ export const UpdateProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        sku: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
             ),
         onHand: zod
             .number()
@@ -5743,6 +5806,13 @@ export const GetProductAdminResponse = zod.strictObject({
                 .describe(
                     "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
                 ),
+            sku: zod
+                .string()
+                .min(1)
+                .optional()
+                .describe(
+                    "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                ),
             onHand: zod.number().min(getProductAdminResponseDataOnHandMin).optional(),
             reserved: zod.number().min(getProductAdminResponseDataReservedMin).optional(),
             available: zod.number().min(getProductAdminResponseDataAvailableMin).optional(),
@@ -5831,6 +5901,13 @@ export const RestoreProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        sku: zod
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
             ),
         onHand: zod
             .number()
@@ -5987,6 +6064,13 @@ export const SearchProductsResponse = zod.strictObject({
                     .optional()
                     .describe(
                         "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+                    ),
+                sku: zod
+                    .string()
+                    .min(1)
+                    .optional()
+                    .describe(
+                        "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
                     ),
                 onHand: zod
                     .number()
@@ -6670,6 +6754,13 @@ export const CheckoutResponse = zod.strictObject({
                             .default(
                                 checkoutResponseDataOrderItemsItemProductRequiresShippingDefault
                             ),
+                        sku: zod
+                            .string()
+                            .min(1)
+                            .optional()
+                            .describe(
+                                "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                            ),
                         weight: zod
                             .number()
                             .min(checkoutResponseDataOrderItemsItemProductWeightMin)
@@ -7206,6 +7297,13 @@ export const ListOrdersResponse = zod.strictObject({
                                 .default(
                                     listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
+                            sku: zod
+                                .string()
+                                .min(1)
+                                .optional()
+                                .describe(
+                                    "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                                ),
                             weight: zod
                                 .number()
                                 .min(listOrdersResponseDataItemsItemItemsItemProductWeightMin)
@@ -7588,6 +7686,13 @@ export const CreateOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(createOrderResponseDataItemsItemProductWeightMin)
@@ -8002,6 +8107,13 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .default(
                                     searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
+                            sku: zod
+                                .string()
+                                .min(1)
+                                .optional()
+                                .describe(
+                                    "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                                ),
                             weight: zod
                                 .number()
                                 .min(searchOrdersResponseDataItemsItemItemsItemProductWeightMin)
@@ -8357,6 +8469,13 @@ export const GetOrderByIdResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(getOrderByIdResponseDataItemsItemProductWeightMin)
@@ -8691,6 +8810,13 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                         .boolean()
                         .default(
                             replaceOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
                         ),
                     weight: zod
                         .number()
@@ -9030,6 +9156,13 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .boolean()
                         .default(
                             updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
                         ),
                     weight: zod
                         .number()
@@ -9395,6 +9528,13 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                         .default(
                             restoreOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(restoreOrderByIdResponseDataItemsItemProductWeightMin)
@@ -9759,6 +9899,13 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .default(
                             cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(cancelOrderByIdResponseDataItemsItemProductWeightMin)
@@ -10110,6 +10257,13 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .boolean()
                         .default(
                             overrideOrderStatusResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
                         ),
                     weight: zod
                         .number()
@@ -10713,6 +10867,13 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .boolean()
                         .default(
                             getOrderByReferenceResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
                         ),
                     weight: zod
                         .number()
@@ -11707,6 +11868,13 @@ export const StartFulfilmentResponse = zod.strictObject({
                         .default(
                             startFulfilmentResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(startFulfilmentResponseDataItemsItemProductWeightMin)
@@ -12132,6 +12300,13 @@ export const FulfillOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(fulfillOrderResponseDataItemsItemProductRequiresShippingDefault),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe(
+                            "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+                        ),
                     weight: zod
                         .number()
                         .min(fulfillOrderResponseDataItemsItemProductWeightMin)

@@ -254,6 +254,12 @@ export const TaxClass = {
     zero: 'zero'
 } as const;
 
+/**
+ * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
+ * @minLength 1
+ */
+export type Sku = string;
+
 export interface Product {
     id: Id;
     title: string;
@@ -265,6 +271,7 @@ export interface Product {
     /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
     readonly currency: string;
     taxClass?: TaxClass;
+    sku?: Sku;
     /**
      * Units physically present, whether or not they are spoken for.
      * @minimum 0
@@ -329,6 +336,7 @@ export interface OrderLineProduct {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
+    sku?: Sku;
     /** @minimum 0 */
     weight?: number;
     categories?: string[];
@@ -2275,6 +2283,7 @@ export interface CreateProductRequest {
      */
     price: number;
     taxClass?: TaxClass;
+    sku?: Sku;
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
@@ -2298,6 +2307,7 @@ export interface CreateProductRequestMultipart {
      */
     price: number;
     taxClass?: TaxClass;
+    sku?: Sku;
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
@@ -2351,6 +2361,7 @@ export interface ReplaceProductRequest {
      */
     price: number;
     taxClass?: TaxClass | null;
+    sku?: Sku | null;
     active: boolean;
     requiresShipping: boolean;
     /**
@@ -2373,6 +2384,7 @@ export interface ReplaceProductRequestMultipart {
      */
     price: number;
     taxClass?: TaxClass | null;
+    sku?: Sku | null;
     active: boolean;
     requiresShipping: boolean;
     /**
@@ -2395,6 +2407,7 @@ export interface UpdateProductRequest {
      */
     price?: number;
     taxClass?: TaxClass | null;
+    sku?: Sku | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -2417,6 +2430,7 @@ export interface UpdateProductRequestMultipart {
      */
     price?: number;
     taxClass?: TaxClass | null;
+    sku?: Sku | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -2447,6 +2461,7 @@ export interface ProductAdmin {
     /** ISO-4217 currency code (e.g. EUR) — see `Product.currency`. */
     readonly currency: string;
     taxClass?: TaxClass;
+    sku?: Sku;
     /** @minimum 0 */
     readonly onHand?: number;
     /** @minimum 0 */
@@ -5615,6 +5630,9 @@ export const createProductWithMultipart = (
     if (createProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, createProductRequestMultipart.taxClass);
     }
+    if (createProductRequestMultipart.sku !== undefined) {
+        formData.append(`sku`, createProductRequestMultipart.sku);
+    }
     if (createProductRequestMultipart.onHand !== undefined) {
         formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
     }
@@ -5750,6 +5768,12 @@ export const replaceProductByIdWithMultipart = (
     ) {
         formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
     }
+    if (
+        replaceProductRequestMultipart.sku !== undefined &&
+        replaceProductRequestMultipart.sku !== null
+    ) {
+        formData.append(`sku`, replaceProductRequestMultipart.sku);
+    }
     formData.append(`active`, replaceProductRequestMultipart.active.toString());
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
     if (
@@ -5846,6 +5870,12 @@ export const updateProductByIdWithMultipart = (
         updateProductRequestMultipart.taxClass !== null
     ) {
         formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
+    }
+    if (
+        updateProductRequestMultipart.sku !== undefined &&
+        updateProductRequestMultipart.sku !== null
+    ) {
+        formData.append(`sku`, updateProductRequestMultipart.sku);
     }
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());
