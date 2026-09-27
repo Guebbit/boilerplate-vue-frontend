@@ -7,6 +7,10 @@
 import { storeToRefs } from 'pinia';
 import { translate, getCurrentLocale } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import {
+    useAnalyticsConsentStore,
+    isAnalyticsGuestConsentEnabled
+} from '@/infrastructure/analytics-consent.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { toPathname } from './url.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
@@ -58,15 +62,32 @@ const getTransportErrorCode = (error: AxiosError): 'TIMEOUT' | 'CANCELED' | 'NET
 };
 
 /**
- * Request interceptor: injects the bearer token (when authenticated) and the active language.
+ * Request interceptor: injects the bearer token (when authenticated), the active language, and —
+ * for an anonymous request only — the guest's own analytics-consent choice (FA-D5).
+ *
+ * Guest-only on purpose: a signed-in caller's consent is the backend's own stored `analyticsConsent`
+ * field (`callerContextOf` ORs the header into it), so forwarding a stale guest cookie here could
+ * re-grant tracking to a visitor who explicitly denied it in their profile after logging in.
  *
  * @param config - Outgoing request config.
- * @returns The same config with `Authorization` and `Accept-Language` set.
+ * @returns The same config with `Authorization`, `Accept-Language` and (when it applies)
+ *  `X-Analytics-Consent` set.
  */
 export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) => {
     const { accessToken } = storeToRefs(useSessionStore());
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
     config.headers['Accept-Language'] = getCurrentLocale();
+
+    if (
+        !accessToken.value &&
+        isAnalyticsGuestConsentEnabled() &&
+        useAnalyticsConsentStore().choice === 'granted'
+    ) {
+        // The backend decodes this the way it decodes any other boolean-shaped header/query value
+        // (`parseFormBoolean`'s TRUTHY set) — verified against its own `request.test.ts`.
+        config.headers['X-Analytics-Consent'] = 'true';
+    }
+
     return config;
 };
 

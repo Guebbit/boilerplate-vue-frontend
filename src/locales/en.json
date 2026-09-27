@@ -49,6 +49,12 @@
         "button-resend-wait": "Resend in {seconds}s",
         "sent": "Verification email sent, check your inbox."
     },
+    "analytics-consent": {
+        "banner-label": "Analytics consent",
+        "message": "We'd like to measure how the catalogue is searched and browsed. Nothing is tracked until you say yes.",
+        "button-accept": "Accept",
+        "button-decline": "Decline"
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "You are already logged",

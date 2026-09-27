@@ -16,6 +16,7 @@ import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
+import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanner.vue';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -193,6 +194,11 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         }}</a>
 
         <AppHealthBanner />
+
+        <!-- Rides every page too, same reasoning as the verification banner: a guest who never
+             saw this outside checkout has never actually been asked. Renders nothing unless
+             VITE_ANALYTICS_GUEST_CONSENT is on. -->
+        <AppAnalyticsConsentBanner />
 
         <AppNavigation>
             <slot name="navigation" />

@@ -1,10 +1,10 @@
 /**
  * The request interceptor of `src/infrastructure/http/index.ts`.
  *
- * `onRequest` attaches the bearer token and the active language to every outgoing request.
- * Failing to attach the token logs the user out from the API's point of view while the UI still
- * believes they are signed in; failing to attach the language silently serves every response in
- * the fallback locale.
+ * `onRequest` attaches the bearer token and the active language to every outgoing request, plus
+ * FA-D5's guest `X-Analytics-Consent` header when it applies. Failing to attach the token logs the
+ * user out from the API's point of view while the UI still believes they are signed in; failing to
+ * attach the language silently serves every response in the fallback locale.
  *
  * The refresh-exclusion list is covered in `http-refresh.spec.ts`, which drives the real
  * interceptor chain against MSW and asserts on the server's own request log.
@@ -26,6 +26,20 @@ vi.mock('pinia', async (importOriginal) => ({
     storeToRefs: () => ({ accessToken })
 }));
 
+/** Mutable per test — `useAnalyticsConsentStore().choice`'s current value. */
+const analyticsConsentChoice = { value: 'unknown' as 'unknown' | 'granted' | 'denied' };
+/** Mutable per test — whether `VITE_ANALYTICS_GUEST_CONSENT` is on. */
+let analyticsGuestConsentEnabled = false;
+
+vi.mock('@/infrastructure/analytics-consent.ts', () => ({
+    useAnalyticsConsentStore: () => ({
+        get choice() {
+            return analyticsConsentChoice.value;
+        }
+    }),
+    isAnalyticsGuestConsentEnabled: () => analyticsGuestConsentEnabled
+}));
+
 // `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
 // mock without it throws before the refresh logic is ever reached.
 vi.mock('@/infrastructure/i18n', () => ({
@@ -41,6 +55,8 @@ const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: 
 
 beforeEach(() => {
     accessToken.value = undefined;
+    analyticsConsentChoice.value = 'unknown';
+    analyticsGuestConsentEnabled = false;
     vi.clearAllMocks();
 });
 
@@ -87,6 +103,44 @@ describe('onRequest', () => {
         const config = makeConfig();
 
         expect(onRequest(config)).toBe(config);
+    });
+
+    it('adds X-Analytics-Consent when anonymous, the flag is on, and consent was granted', () => {
+        analyticsGuestConsentEnabled = true;
+        analyticsConsentChoice.value = 'granted';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBe('true');
+    });
+
+    it('omits X-Analytics-Consent when the flag is off, granted or not', () => {
+        analyticsGuestConsentEnabled = false;
+        analyticsConsentChoice.value = 'granted';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+    });
+
+    it('omits X-Analytics-Consent while consent is still unknown', () => {
+        analyticsGuestConsentEnabled = true;
+        analyticsConsentChoice.value = 'unknown';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+    });
+
+    it('omits X-Analytics-Consent once denied', () => {
+        analyticsGuestConsentEnabled = true;
+        analyticsConsentChoice.value = 'denied';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+    });
+
+    it('never adds X-Analytics-Consent for a signed-in caller, even with a stale granted cookie', () => {
+        // The account's own stored preference is authoritative once signed in — see `onRequest`'s
+        // own docblock for why a leftover guest-cookie choice must not override it.
+        accessToken.value = 'abc.def.ghi';
+        analyticsGuestConsentEnabled = true;
+        analyticsConsentChoice.value = 'granted';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
     });
 });
 

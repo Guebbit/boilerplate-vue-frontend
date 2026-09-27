@@ -49,6 +49,12 @@
         "button-resend-wait": "Riprova tra {seconds}s",
         "sent": "Email di verifica inviata, controlla la posta."
     },
+    "analytics-consent": {
+        "banner-label": "Consenso analitico",
+        "message": "Vorremmo misurare come viene cercato e sfogliato il catalogo. Nulla viene tracciato finché non accetti.",
+        "button-accept": "Accetta",
+        "button-decline": "Rifiuta"
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "Sei già loggato",
