@@ -6,9 +6,8 @@
  * `npm run complete`, and available on its own.
  *
  * ── WHERE THE SIBLING PATH COMES FROM ────────────────────────────────────────────────────────────
- * `BACKEND_PATH`, read from the environment or from `.env` — `process.loadEnvFile()` is Node's own,
- * so a standalone script gets the same variable the app does without a dotenv dependency. Unset, it
- * falls back to the sibling-directory convention `paired-backend-path.ts` documents.
+ * `resolveBackendPath()` — the shell's `BACKEND_PATH`, then `.env`'s, then the sibling-directory
+ * convention `paired-backend-path.ts` documents. It reads `.env` itself, since `npm run` does not.
  *
  * ── EXIT CODES ARE THE INTERFACE ─────────────────────────────────────────────────────────────────
  *   0  the contracts are identical — or the sibling is absent and this is a developer's machine
@@ -38,14 +37,7 @@ import {
     THIS_REPO
 } from './spec-identity';
 
-// Before `resolveBackendPath()` reads it. Absent or unreadable `.env` is not an error: the variable
-// may come from the real environment, as it does in CI.
-try {
-    process.loadEnvFile();
-} catch {
-    /* no .env in this checkout */
-}
-
+/** The backend checkout to compare against: the shell's `BACKEND_PATH`, `.env`'s, or the default. */
 const siblingRoot = resolveBackendPath();
 
 if (!existsSync(siblingRoot)) {

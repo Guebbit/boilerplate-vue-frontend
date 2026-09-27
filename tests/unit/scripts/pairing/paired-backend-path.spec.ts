@@ -6,15 +6,23 @@
  * it. A wrong answer is a confusing npm error in the first and a false fork report in the second,
  * so what it does with a MISSING value matters more than what it does with a present one.
  *
- * The empty-string case is the one worth a test: `.env-example` declares `BACKEND_PATH =` with no
- * value, so every `.env` copied from it defines the variable as `''`. Resolved with `??` that
- * would be `path.resolve(cwd, '')` — this repo's own root, a directory that exists, so the sibling
- * check would compare the frontend against itself and report the backend's files as missing
- * instead of reporting that it could not find the backend.
+ * The order is the whole contract: the shell, then `.env`, then the sibling default.
+ * `.env` is the case worth guarding: `npm run` never loads it, so the resolver reads it itself.
+ * An empty value is the other: `.env-example` declares `BACKEND_PATH =` with no value, so every
+ * `.env` copied from it defines the variable as `''`; resolved with `??` that would be
+ * `path.resolve(cwd, '')` — this repo's own root, a directory that exists, so the sibling check
+ * would compare the frontend against itself and report the backend's files as missing instead of
+ * reporting that it could not find the backend.
  *
- * Mirrors `tests/unit/scripts/frontend-path.test.ts` in the backend.
+ * Every case runs against a throwaway working directory, so this checkout's own `.env` — which
+ * really does set `BACKEND_PATH` in this worktree — never leaks into a test that expects the
+ * sibling default.
+ *
+ * Mirrors `tests/unit/scripts/pairing/paired-frontend-path.test.ts` in the backend.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
     DEFAULT_BACKEND_PATH,
@@ -30,10 +38,31 @@ const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
 const previousResetCommand = process.env.LIVE_RESET_COMMAND;
 const previousShardLimit = process.env.BACKEND_DEMO_SHARD_LIMIT;
 
-/** What the sibling-directory convention resolves to from this checkout. */
-const sibling = path.resolve(process.cwd(), DEFAULT_BACKEND_PATH);
+/** The throwaway working directory of the current case. */
+let workingDirectory: string;
+
+/** Where the sibling-directory convention resolves to from the current working directory. */
+const sibling = (): string => path.resolve(workingDirectory, DEFAULT_BACKEND_PATH);
+
+/**
+ * Writes the current case's `.env`.
+ *
+ * @param contents - the file's full text
+ */
+const writeEnvironmentFile = (contents: string): void => {
+    writeFileSync(path.join(workingDirectory, '.env'), contents);
+};
+
+beforeEach(() => {
+    workingDirectory = mkdtempSync(path.join(tmpdir(), 'paired-backend-path-'));
+    vi.spyOn(process, 'cwd').mockReturnValue(workingDirectory);
+    delete process.env.BACKEND_PATH;
+});
 
 afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(workingDirectory, { recursive: true, force: true });
+
     if (previous === undefined) delete process.env.BACKEND_PATH;
     else process.env.BACKEND_PATH = previous;
 
@@ -49,22 +78,20 @@ afterEach(() => {
 
 describe('resolveBackendPath', () => {
     it('falls back to the sibling-directory convention when BACKEND_PATH is unset', () => {
-        delete process.env.BACKEND_PATH;
-
-        expect(resolveBackendPath()).toBe(sibling);
+        expect(resolveBackendPath()).toBe(sibling());
     });
 
     it('treats an empty BACKEND_PATH as unset, rather than as this repo', () => {
         process.env.BACKEND_PATH = '';
 
-        expect(resolveBackendPath()).toBe(sibling);
+        expect(resolveBackendPath()).toBe(sibling());
         expect(resolveBackendPath()).not.toBe(process.cwd());
     });
 
     it('treats a whitespace-only BACKEND_PATH as unset too', () => {
         process.env.BACKEND_PATH = '   ';
 
-        expect(resolveBackendPath()).toBe(sibling);
+        expect(resolveBackendPath()).toBe(sibling());
     });
 
     it('honours a relative override, resolved against the working directory', () => {
@@ -85,6 +112,41 @@ describe('resolveBackendPath', () => {
             process.env.BACKEND_PATH = value;
             expect(path.isAbsolute(resolveBackendPath())).toBe(true);
         }
+    });
+
+    it('reads BACKEND_PATH from .env, which npm run never loads', () => {
+        writeEnvironmentFile('BACKEND_PATH=/srv/lanes/backend-worktree\n');
+
+        expect(resolveBackendPath()).toBe('/srv/lanes/backend-worktree');
+    });
+
+    it('handles this repo\'s own .env spelling, with spaces around "="', () => {
+        writeEnvironmentFile('BACKEND_PATH = /srv/lanes/backend-worktree\n');
+
+        expect(resolveBackendPath()).toBe('/srv/lanes/backend-worktree');
+    });
+
+    it('lets the shell win over .env, so a one-off run needs no file edit', () => {
+        writeEnvironmentFile('BACKEND_PATH=/srv/lanes/from-file\n');
+        process.env.BACKEND_PATH = '/srv/lanes/from-shell';
+
+        expect(resolveBackendPath()).toBe('/srv/lanes/from-shell');
+    });
+
+    it("treats .env-example's empty declaration as unset, rather than as this repo", () => {
+        writeEnvironmentFile('BACKEND_PATH =\nNODE_PORT=3000\n');
+
+        expect(resolveBackendPath()).toBe(sibling());
+        expect(resolveBackendPath()).not.toBe(workingDirectory);
+    });
+
+    it('merges nothing from .env into the environment', () => {
+        writeEnvironmentFile('BACKEND_PATH=/srv/lanes/from-file\nPAIRED_PATH_PROBE=leaked\n');
+
+        resolveBackendPath();
+
+        expect(process.env.PAIRED_PATH_PROBE).toBeUndefined();
+        expect(process.env.BACKEND_PATH).toBeUndefined();
     });
 });
 
@@ -111,9 +173,10 @@ describe('resolveLiveResetCommand', () => {
 
     it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
         process.env.LIVE_RESET_COMMAND = 'npm --prefix {backend} run host -- db:seed:reset';
-        delete process.env.BACKEND_PATH;
 
-        expect(resolveLiveResetCommand()).toBe(`npm --prefix ${sibling} run host -- db:seed:reset`);
+        expect(resolveLiveResetCommand()).toBe(
+            `npm --prefix ${sibling()} run host -- db:seed:reset`
+        );
     });
 
     it('substitutes {backend} into the PHP pairing too', () => {
@@ -149,9 +212,8 @@ describe('resolveBackendDemoCommand', () => {
 
     it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
         process.env.BACKEND_DEMO_COMMAND = 'npm --prefix {backend} run demo';
-        delete process.env.BACKEND_PATH;
 
-        expect(resolveBackendDemoCommand()).toEqual(['npm', '--prefix', sibling, 'run', 'demo']);
+        expect(resolveBackendDemoCommand()).toEqual(['npm', '--prefix', sibling(), 'run', 'demo']);
     });
 
     it('substitutes {backend} into the PHP pairing too', () => {

@@ -1,4 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { parseEnv } from 'node:util';
 
 /**
  * Default sibling-checkout location of the paired backend, relative to this repo's root.
@@ -16,19 +18,46 @@ import path from 'node:path';
 export const DEFAULT_BACKEND_PATH = '../boilerplate-node-backend';
 
 /**
- * Resolves the backend checkout used by the live e2e profile: `BACKEND_PATH` env override when
- * set, `DEFAULT_BACKEND_PATH` otherwise — always returned as an absolute path, so a checkout
- * laid out differently from the sibling-directory convention fails with an unambiguous path
- * instead of a `npm --prefix` error relative to whatever `cwd` Cypress happened to have.
+ * `BACKEND_PATH` as the working directory's `.env` sets it, or undefined when there is no file.
+ *
+ * Read here, once for every caller, because `npm run` does not load `.env`. A CLI left to load it
+ * itself can forget, and then reads a different backend than its siblings.
+ *
+ * `parseEnv` rather than `process.loadEnvFile()`: reading one variable merges nothing else into
+ * the environment of whatever this script spawns next.
+ * https://nodejs.org/api/util.html#utilparseenvcontent
+ */
+const backendPathFromEnvironmentFile = (): string | undefined => {
+    const environmentFile = path.resolve(process.cwd(), '.env');
+    // Checked rather than caught: a checkout without a `.env` is ordinary — CI has none.
+    return existsSync(environmentFile)
+        ? parseEnv(readFileSync(environmentFile, 'utf8')).BACKEND_PATH
+        : undefined;
+};
+
+/**
+ * Resolves the backend checkout used by the live e2e profile, always absolute. The first
+ * non-empty value wins:
+ *
+ * 1. `BACKEND_PATH` in the real environment — a one-off run, or CI;
+ * 2. `BACKEND_PATH` in `.env` — a lane pointing at its own paired worktree;
+ * 3. {@link DEFAULT_BACKEND_PATH}.
  *
  * An EMPTY value counts as unset, which `??` alone would not do. `.env-example` declares
  * `BACKEND_PATH =` with no value, and every `.env` copied from it therefore defines the variable
  * as `''`; resolved with `??` that becomes `path.resolve(cwd, '')` — this repo's own root, which
  * exists, so the sibling check would compare the frontend against itself and report the backend's
  * files as missing rather than saying it could not find the backend.
+ *
+ * @returns the absolute path of the backend checkout, whether or not anything is there
  */
 export const resolveBackendPath = (): string =>
-    path.resolve(process.cwd(), process.env.BACKEND_PATH?.trim() || DEFAULT_BACKEND_PATH);
+    path.resolve(
+        process.cwd(),
+        process.env.BACKEND_PATH?.trim() ||
+            backendPathFromEnvironmentFile()?.trim() ||
+            DEFAULT_BACKEND_PATH
+    );
 
 /**
  * Where the live profile's reset writes its description of what it seeded, and where
