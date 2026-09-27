@@ -20,7 +20,13 @@ import {
     getProductById
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
-import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
+import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
+
+/**
+ * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
+ * `IdempotencyKeyHeader` in the contract.
+ */
+const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -82,14 +88,33 @@ export const useCartStore = defineStore('cart', () => {
     const badgeQuantity = computed(() => liveSummary.value?.totalQuantity);
 
     /**
-     * What the header writes beside the badge: the cart's money total, before shipping.
+     * What the header writes beside the badge: the cart's money total (before shipping) paired
+     * with its currency — one computed, not two, so a caller can never read one half of a summary
+     * that has not loaded yet (`formatCurrency` now takes currency as a required argument).
      */
-    const badgeTotal = computed(() => liveSummary.value?.itemsTotal);
+    const badgeMoney = computed(() =>
+        liveSummary.value === undefined
+            ? undefined
+            : { total: liveSummary.value.itemsTotal, currency: liveSummary.value.currency }
+    );
 
     /**
-     * The currency {@link badgeTotal} is in; absent when the API did not say.
+     * `POST /cart/checkout`'s `Idempotency-Key` for the checkout attempt under way (B19). Minted
+     * once here and again by {@link mintCheckoutIdempotencyKey} — never read directly outside
+     * {@link checkout}, which is the only caller that sends it.
      */
-    const badgeCurrency = computed(() => liveSummary.value?.currency);
+    const checkoutIdempotencyKey = ref(crypto.randomUUID());
+
+    /**
+     * Starts a fresh checkout attempt: a new key for the NEXT `checkout()` call.
+     *
+     * Called after a definitive answer (success, or a 4xx `checkout()` itself classifies as
+     * final) and after every cart-content mutation below — a changed basket is a genuinely
+     * different attempt, even if nobody has clicked "place order" yet.
+     */
+    const mintCheckoutIdempotencyKey = () => {
+        checkoutIdempotencyKey.value = crypto.randomUUID();
+    };
 
     /**
      * Fetches the lightweight summary. Resolves with nothing for a guest — a 401 here means "no
@@ -135,6 +160,8 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             upsertCartItem({ productId, quantity }).then((response) => {
                 cart.value = response.data;
+                // The basket just changed — any checkout attempt still pending is now stale (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
@@ -150,6 +177,8 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             updateCartItemById(productId, { quantity }).then((response) => {
                 cart.value = response.data;
+                // See upsertCartItemAction — a changed line means a new checkout attempt (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
@@ -167,6 +196,9 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             setCartShippingMethod({ shippingMethodId }).then((response) => {
                 cart.value = response.data;
+                // The cart's own choice, part of what checkout charges — a change here is a new
+                // checkout attempt too (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
@@ -181,6 +213,8 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
                 cart.value = response.data;
+                // See upsertCartItemAction — a changed basket means a new checkout attempt (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
@@ -195,18 +229,32 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             clearCart().then((response) => {
                 cart.value = response.data;
+                // See upsertCartItemAction — an emptied basket means a new checkout attempt (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
 
     /**
      * What the local cart becomes once checkout empties it server-side (FA33) — a known state,
-     * not a guess, since the server always empties the cart on a successful checkout.
+     * not a guess, since the server always empties the cart on a successful checkout. Takes the
+     * currency as an argument rather than hardcoding one: the shop's currency does not change
+     * just because the basket emptied (FA37).
+     *
+     * @param currency - ISO-4217 code the emptied cart's zeroed summary should still carry.
+     * @returns The known-empty cart shape.
      */
-    const EMPTY_CART: CartResponse = {
+    const emptyCart = (currency: string): CartResponse => ({
         items: [],
-        summary: { itemsCount: 0, totalQuantity: 0, itemsTotal: 0, shippingCost: 0, totalPrice: 0 }
-    };
+        summary: {
+            itemsCount: 0,
+            totalQuantity: 0,
+            itemsTotal: 0,
+            shippingCost: 0,
+            totalPrice: 0,
+            currency
+        }
+    });
 
     /**
      * Turns the authenticated user's cart into an order.
@@ -214,18 +262,38 @@ export const useCartStore = defineStore('cart', () => {
      * Emits nothing: every checkout outcome the API saw is reported by the backend from the
      * handler that decided it, and a request that never arrived is already a failed span in Faro.
      *
-     * @param checkoutData - Optional checkout payload (email, order notes).
+     * Sends {@link checkoutIdempotencyKey} on every attempt (B19): a retry after a network error
+     * or a 5xx reuses it, since neither answer is conclusive; any other outcome mints a fresh one
+     * for whatever the caller tries next.
+     *
+     * @param checkoutData - Optional checkout payload (address, payment method, order notes).
      * @returns A promise resolving with the checkout response, the created order included.
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
-            apiCheckout(checkoutData).then((response) => {
-                // The server empties the cart on success (FA33): setting it to the known-empty
-                // shape, rather than dropping it to `undefined`, is what keeps the header badge
-                // from falling back to `summarySeed`'s stale count from before checkout ran.
-                cart.value = EMPTY_CART;
-                return response.data;
+            apiCheckout(checkoutData, {
+                headers: { [IDEMPOTENCY_KEY_HEADER]: checkoutIdempotencyKey.value }
             })
+                .then((response) => {
+                    // The server empties the cart on success (FA33): setting it to the known-empty
+                    // shape, rather than dropping it to `undefined`, is what keeps the header badge
+                    // from falling back to `summarySeed`'s stale count from before checkout ran.
+                    // The currency itself survives the empty — the order was just frozen from the
+                    // same basket this cart is still showing, so its own is the same one; `'EUR'`
+                    // never actually reads here, it only satisfies the type for a cart the caller
+                    // never `fetchCart`/`fetchSummary`'d before checking out.
+                    cart.value = emptyCart(liveSummary.value?.currency ?? 'EUR');
+                    mintCheckoutIdempotencyKey();
+                    return response.data;
+                })
+                .catch((error: unknown) => {
+                    // Nothing conclusive happened (no answer, or the server's own failure): keep
+                    // the key so a retry is still the SAME attempt. Anything else — a 4xx like
+                    // `CART_EMPTY`/`CART_CHANGED` — is a definitive answer, so the caller's next
+                    // attempt needs a fresh one.
+                    if (!isRetryableFailure(error)) mintCheckoutIdempotencyKey();
+                    throw error;
+                })
         );
 
     /**
@@ -240,6 +308,8 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             apiReorder(orderId).then((response) => {
                 cart.value = response.data;
+                // See upsertCartItemAction — a refilled basket means a new checkout attempt (B19).
+                mintCheckoutIdempotencyKey();
                 return response.data;
             })
         );
@@ -265,6 +335,14 @@ export const useCartStore = defineStore('cart', () => {
     const productShipping = ref<Record<string, { requiresShipping?: boolean }>>({});
 
     /**
+     * The money half of the same per-product read (FA32b) — a line's unit price and the currency
+     * it is in, off the same `resolveTitles` response. Absent until resolved, the same as
+     * {@link productShipping}; the cart shows no price for that line until then rather than a
+     * guessed one.
+     */
+    const productMoney = ref<Record<string, { price: number; currency: string }>>({});
+
+    /**
      * The title of one product, or its id while unknown.
      *
      * @param productId - The product.
@@ -273,8 +351,17 @@ export const useCartStore = defineStore('cart', () => {
     const titleOf = (productId: string) => productTitles.value[productId] ?? productId;
 
     /**
+     * One line's unit price and currency (FA32b), or `undefined` before {@link resolveTitles} has
+     * answered for it.
+     *
+     * @param productId - The product.
+     * @returns The line's money, or `undefined`.
+     */
+    const moneyOf = (productId: string) => productMoney.value[productId];
+
+    /**
      * Resolves the titles not yet known, one request each, failures ignored. Also fills
-     * {@link productShipping} for the same ids, off the same response.
+     * {@link productShipping} and {@link productMoney} for the same ids, off the same response.
      *
      * @param productIds - The lines' products.
      * @returns A promise settling when every lookup has answered one way or the other.
@@ -289,6 +376,10 @@ export const useCartStore = defineStore('cart', () => {
                         productShipping.value = {
                             ...productShipping.value,
                             [productId]: { requiresShipping: data.requiresShipping }
+                        };
+                        productMoney.value = {
+                            ...productMoney.value,
+                            [productId]: { price: data.price, currency: data.currency }
                         };
                     })
                 )
@@ -326,14 +417,14 @@ export const useCartStore = defineStore('cart', () => {
         cartItems,
         cartSummary,
         badgeQuantity,
-        badgeTotal,
-        badgeCurrency,
+        badgeMoney,
         fetchSummary,
 
         loading,
         fetchCart,
         productTitles,
         titleOf,
+        moneyOf,
         resolveTitles,
         resetProductTitles,
         needsShipping,

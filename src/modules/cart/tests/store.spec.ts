@@ -44,7 +44,8 @@ const CART = {
         totalQuantity: 2,
         itemsTotal: 19.98,
         shippingCost: 0,
-        totalPrice: 19.98
+        totalPrice: 19.98,
+        currency: 'EUR'
     }
 };
 
@@ -53,7 +54,14 @@ const CART = {
  */
 const EMPTY_CART = {
     items: [],
-    summary: { itemsCount: 0, totalQuantity: 0, itemsTotal: 0, shippingCost: 0, totalPrice: 0 }
+    summary: {
+        itemsCount: 0,
+        totalQuantity: 0,
+        itemsTotal: 0,
+        shippingCost: 0,
+        totalPrice: 0,
+        currency: 'EUR'
+    }
 };
 
 /**
@@ -72,6 +80,7 @@ const aProduct = (id: string, requiresShipping = true) => ({
     id,
     title: `Product ${id}`,
     price: 9.99,
+    currency: 'EUR',
     requiresShipping
 });
 
@@ -108,6 +117,17 @@ const apiFailure = (status: number) =>
         errors: [{ code: 'STUB_ERROR', message: 'nope' }]
     }) as never;
 
+/**
+ * The `Idempotency-Key` header `checkout` sent, off the most recent `apiCheckout` call (B19).
+ *
+ * @returns The header value, or `undefined` if `apiCheckout` was never called.
+ */
+const lastIdempotencyKey = (): unknown => {
+    const lastCall = vi.mocked(apiCheckout).mock.calls.at(-1);
+    const headers = lastCall?.[1]?.headers as Record<string, unknown> | undefined;
+    return headers?.['Idempotency-Key'];
+};
+
 vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve(RESPONSES.cart)),
     getCartSummary: vi.fn(() => Promise.resolve(RESPONSES.summary)),
@@ -138,7 +158,7 @@ describe('useCartStore', () => {
             return store.fetchSummary().then(() => {
                 // Units, not lines: one line of two is a badge saying 2.
                 expect(store.badgeQuantity).toBe(2);
-                expect(store.badgeTotal).toBe(19.98);
+                expect(store.badgeMoney).toEqual({ total: 19.98, currency: 'EUR' });
             });
         });
 
@@ -149,7 +169,7 @@ describe('useCartStore', () => {
             return store.fetchSummary().then((summary) => {
                 expect(summary).toBeUndefined();
                 expect(store.badgeQuantity).toBeUndefined();
-                expect(store.badgeTotal).toBeUndefined();
+                expect(store.badgeMoney).toBeUndefined();
             });
         });
 
@@ -267,14 +287,17 @@ describe('useCartStore', () => {
             useCartStore()
                 .checkout()
                 .then(() => {
-                    expect(apiCheckout).toHaveBeenCalledWith(undefined);
+                    expect(apiCheckout).toHaveBeenCalledWith(undefined, expect.anything());
                 }));
 
         it('returns the checkout envelope, order included', () =>
             useCartStore()
                 .checkout({ notes: 'leave at door' })
                 .then((result) => {
-                    expect(apiCheckout).toHaveBeenCalledWith({ notes: 'leave at door' });
+                    expect(apiCheckout).toHaveBeenCalledWith(
+                        { notes: 'leave at door' },
+                        expect.anything()
+                    );
                     expect(result).toEqual({ order: ORDER });
                 }));
 
@@ -296,7 +319,9 @@ describe('useCartStore', () => {
                         totalQuantity: 0,
                         itemsTotal: 0,
                         shippingCost: 0,
-                        totalPrice: 0
+                        totalPrice: 0,
+                        // Carried over from the basket just checked out, not hardcoded (FA37).
+                        currency: 'EUR'
                     });
                     expect(store.badgeQuantity).toBe(0);
                 });
@@ -340,9 +365,98 @@ describe('useCartStore', () => {
                         totalQuantity: 0,
                         itemsTotal: 0,
                         shippingCost: 0,
-                        totalPrice: 0
+                        totalPrice: 0,
+                        currency: 'EUR'
                     });
                 });
+        });
+
+        /**
+         * B19: `POST /cart/checkout`'s `Idempotency-Key`, minted per attempt and reused or
+         * rotated depending on how the previous attempt ended.
+         */
+        describe('the Idempotency-Key header', () => {
+            it('sends a key on every attempt', () =>
+                useCartStore()
+                    .checkout()
+                    .then(() => {
+                        expect(typeof lastIdempotencyKey()).toBe('string');
+                    }));
+
+            it('reuses the same key across a retry after a network error', () => {
+                const store = useCartStore();
+                vi.mocked(apiCheckout).mockRejectedValueOnce(new Error('Network Error'));
+
+                return store
+                    .checkout()
+                    .catch(() => undefined)
+                    .then(() => {
+                        const firstKey = lastIdempotencyKey();
+                        return store.checkout().then(() => {
+                            expect(lastIdempotencyKey()).toBe(firstKey);
+                        });
+                    });
+            });
+
+            it('reuses the same key across a retry after a 5xx', () => {
+                const store = useCartStore();
+                vi.mocked(apiCheckout).mockRejectedValueOnce({
+                    status: 503,
+                    errors: [{ code: 'SERVICE_UNAVAILABLE' }]
+                });
+
+                return store
+                    .checkout()
+                    .catch(() => undefined)
+                    .then(() => {
+                        const firstKey = lastIdempotencyKey();
+                        return store.checkout().then(() => {
+                            expect(lastIdempotencyKey()).toBe(firstKey);
+                        });
+                    });
+            });
+
+            it('mints a fresh key after a successful checkout', () => {
+                const store = useCartStore();
+
+                return store.checkout().then(() => {
+                    const firstKey = lastIdempotencyKey();
+                    return store.checkout().then(() => {
+                        expect(lastIdempotencyKey()).not.toBe(firstKey);
+                    });
+                });
+            });
+
+            it('mints a fresh key after a definitive 4xx rejection', () => {
+                const store = useCartStore();
+                vi.mocked(apiCheckout).mockRejectedValueOnce({
+                    status: 409,
+                    errors: [{ code: 'CART_EMPTY' }]
+                });
+
+                return store
+                    .checkout()
+                    .catch(() => undefined)
+                    .then(() => {
+                        const firstKey = lastIdempotencyKey();
+                        return store.checkout().then(() => {
+                            expect(lastIdempotencyKey()).not.toBe(firstKey);
+                        });
+                    });
+            });
+
+            it('mints a fresh key once the cart itself changes', () => {
+                const store = useCartStore();
+
+                return store.checkout().then(() => {
+                    const firstKey = lastIdempotencyKey();
+                    return store.upsertCartItem('p1', 3).then(() =>
+                        store.checkout().then(() => {
+                            expect(lastIdempotencyKey()).not.toBe(firstKey);
+                        })
+                    );
+                });
+            });
         });
     });
 

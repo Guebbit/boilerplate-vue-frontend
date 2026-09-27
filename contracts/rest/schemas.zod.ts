@@ -2392,6 +2392,8 @@ export const RevokeSessionResponse = zod.strictObject({
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
  * @summary List saved addresses
  */
+export const getAddressesResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const GetAddressesResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -2408,7 +2410,12 @@ export const GetAddressesResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(getAddressesResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -2421,16 +2428,25 @@ export const GetAddressesResponse = zod.strictObject({
  * @summary Add an address
  */
 
+export const addAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const AddAddressBody = zod.strictObject({
     label: zod.string().optional(),
     fullName: zod.string().min(1),
     street: zod.string().min(1),
     city: zod.string().min(1),
     zip: zod.string().min(1),
-    country: zod.string().min(1),
+    country: zod
+        .string()
+        .regex(addAddressBodyCountryRegExp)
+        .describe(
+            "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+        ),
     phone: zod.string().optional(),
     default: zod.boolean().optional()
 });
+
+export const addAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const AddAddressResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2448,7 +2464,12 @@ export const AddAddressResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(addAddressResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -2464,16 +2485,25 @@ export const ReplaceAddressParams = zod.strictObject({
     addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
 });
 
+export const replaceAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const ReplaceAddressBody = zod.strictObject({
     label: zod.string().min(1).nullish(),
     fullName: zod.string().min(1),
     street: zod.string().min(1),
     city: zod.string().min(1),
     zip: zod.string().min(1),
-    country: zod.string().min(1),
+    country: zod
+        .string()
+        .regex(replaceAddressBodyCountryRegExp)
+        .describe(
+            "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+        ),
     phone: zod.string().min(1).nullish(),
     default: zod.boolean().optional()
 });
+
+export const replaceAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const ReplaceAddressResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2491,7 +2521,12 @@ export const ReplaceAddressResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(replaceAddressResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -2507,16 +2542,26 @@ export const UpdateAddressParams = zod.strictObject({
     addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
 });
 
+export const updateAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const UpdateAddressBody = zod.strictObject({
     label: zod.string().min(1).nullish(),
     fullName: zod.string().min(1).optional(),
     street: zod.string().min(1).optional(),
     city: zod.string().min(1).optional(),
     zip: zod.string().min(1).optional(),
-    country: zod.string().min(1).optional(),
+    country: zod
+        .string()
+        .regex(updateAddressBodyCountryRegExp)
+        .optional()
+        .describe(
+            "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+        ),
     phone: zod.string().min(1).nullish(),
     default: zod.boolean().optional()
 });
+
+export const updateAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const UpdateAddressResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2534,7 +2579,12 @@ export const UpdateAddressResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(updateAddressResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -2549,6 +2599,8 @@ export const UpdateAddressResponse = zod.strictObject({
 export const RemoveAddressParams = zod.strictObject({
     addressId: zod.string().describe('Address identifier from `GET \/account\/addresses`')
 });
+
+export const removeAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const RemoveAddressResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2566,7 +2618,12 @@ export const RemoveAddressResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(removeAddressResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -2953,6 +3010,7 @@ export const DeleteExpiredTokensResponse = zod.strictObject({
 export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const exportAccountDataResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault = true;
@@ -2992,6 +3050,10 @@ export const exportAccountDataResponseDataOrdersItemTaxSummaryItemTaxAmountMin =
 export const exportAccountDataResponseDataOrdersItemTaxSummaryItemGrossAmountMin = 0;
 
 export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp = new RegExp(
+    '^[A-Z]{2}$'
+);
 
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
 
@@ -3055,7 +3117,12 @@ export const ExportAccountDataResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(exportAccountDataResponseDataAddressesItemCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
@@ -3164,6 +3231,10 @@ export const ExportAccountDataResponse = zod.strictObject({
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
                     ),
+                currency: zod
+                    .string()
+                    .optional()
+                    .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
                 netTotal: zod
                     .number()
                     .min(exportAccountDataResponseDataOrdersItemNetTotalMin)
@@ -3238,7 +3309,14 @@ export const ExportAccountDataResponse = zod.strictObject({
                         street: zod.string(),
                         city: zod.string(),
                         zip: zod.string(),
-                        country: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(
+                                exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp
+                            )
+                            .describe(
+                                "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                            ),
                         phone: zod.string().optional()
                     })
                     .optional(),
@@ -4971,6 +5049,11 @@ export const ListProductsResponse = zod.strictObject({
                     .describe(
                         'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
                     ),
+                currency: zod
+                    .string()
+                    .describe(
+                        "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
+                    ),
                 taxClass: zod
                     .enum(['reduced', 'zero'])
                     .optional()
@@ -5121,6 +5204,11 @@ export const CreateProductResponse = zod.strictObject({
             .describe(
                 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
             ),
+        currency: zod
+            .string()
+            .describe(
+                "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
+            ),
         taxClass: zod
             .enum(['reduced', 'zero'])
             .optional()
@@ -5249,6 +5337,11 @@ export const GetProductByIdResponse = zod.strictObject({
             .min(getProductByIdResponseDataPriceMin)
             .describe(
                 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        currency: zod
+            .string()
+            .describe(
+                "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
             ),
         taxClass: zod
             .enum(['reduced', 'zero'])
@@ -5380,6 +5473,11 @@ export const ReplaceProductByIdResponse = zod.strictObject({
             .min(replaceProductByIdResponseDataPriceMin)
             .describe(
                 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        currency: zod
+            .string()
+            .describe(
+                "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
             ),
         taxClass: zod
             .enum(['reduced', 'zero'])
@@ -5523,6 +5621,11 @@ export const UpdateProductByIdResponse = zod.strictObject({
             .describe(
                 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
             ),
+        currency: zod
+            .string()
+            .describe(
+                "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
+            ),
         taxClass: zod
             .enum(['reduced', 'zero'])
             .optional()
@@ -5631,6 +5734,9 @@ export const GetProductAdminResponse = zod.strictObject({
                 .number()
                 .min(getProductAdminResponseDataPriceMin)
                 .describe('Gross — VAT included. Same convention as `Product.price`.'),
+            currency: zod
+                .string()
+                .describe('ISO-4217 currency code (e.g. EUR) — see `Product.currency`.'),
             taxClass: zod
                 .enum(['reduced', 'zero'])
                 .optional()
@@ -5714,6 +5820,11 @@ export const RestoreProductByIdResponse = zod.strictObject({
             .min(restoreProductByIdResponseDataPriceMin)
             .describe(
                 'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
+            ),
+        currency: zod
+            .string()
+            .describe(
+                "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
             ),
         taxClass: zod
             .enum(['reduced', 'zero'])
@@ -5866,6 +5977,11 @@ export const SearchProductsResponse = zod.strictObject({
                     .describe(
                         'Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.'
                     ),
+                currency: zod
+                    .string()
+                    .describe(
+                        "ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting."
+                    ),
                 taxClass: zod
                     .enum(['reduced', 'zero'])
                     .optional()
@@ -5985,7 +6101,7 @@ export const GetCartResponse = zod.strictObject({
                 .number()
                 .min(getCartResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6057,7 +6173,7 @@ export const UpsertCartItemResponse = zod.strictObject({
                 .number()
                 .min(upsertCartItemResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6120,7 +6236,7 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                 .number()
                 .min(removeCartItemByBodyResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6180,7 +6296,7 @@ export const ClearCartResponse = zod.strictObject({
                 .number()
                 .min(clearCartResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6256,7 +6372,7 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                 .number()
                 .min(updateCartItemByIdResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6319,7 +6435,7 @@ export const RemoveCartItemResponse = zod.strictObject({
                 .number()
                 .min(removeCartItemResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6387,7 +6503,7 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                 .number()
                 .min(setCartShippingMethodResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -6439,7 +6555,7 @@ export const GetCartSummaryResponse = zod.strictObject({
             .number()
             .min(getCartSummaryResponseDataTotalPriceMin)
             .describe('itemsTotal + shippingCost'),
-        currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+        currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
     })
 });
 
@@ -6447,6 +6563,22 @@ export const GetCartSummaryResponse = zod.strictObject({
  * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
+export const checkoutHeaderIdempotencyKeyMax = 200;
+
+export const checkoutHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+export const CheckoutHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(checkoutHeaderIdempotencyKeyMax)
+        .regex(checkoutHeaderIdempotencyKeyRegExp)
+        .optional()
+        .describe(
+            'An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.\n'
+        )
+});
+
 export const checkoutBodyPaymentMethodDefault = `card`;
 
 export const CheckoutBody = zod.strictObject({
@@ -6508,6 +6640,8 @@ export const checkoutResponseDataOrderTaxSummaryItemTaxAmountMin = 0;
 export const checkoutResponseDataOrderTaxSummaryItemGrossAmountMin = 0;
 
 export const checkoutResponseDataOrderShippingCostMin = 0;
+
+export const checkoutResponseDataOrderShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const CheckoutResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6609,6 +6743,10 @@ export const CheckoutResponse = zod.strictObject({
                 .describe(
                     'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
                 ),
+            currency: zod
+                .string()
+                .optional()
+                .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
             netTotal: zod
                 .number()
                 .min(checkoutResponseDataOrderNetTotalMin)
@@ -6677,7 +6815,12 @@ export const CheckoutResponse = zod.strictObject({
                     street: zod.string(),
                     city: zod.string(),
                     zip: zod.string(),
-                    country: zod.string(),
+                    country: zod
+                        .string()
+                        .regex(checkoutResponseDataOrderShippingAddressCountryRegExp)
+                        .describe(
+                            "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                        ),
                     phone: zod.string().optional()
                 })
                 .optional(),
@@ -6842,7 +6985,7 @@ export const ReorderResponse = zod.strictObject({
                 .number()
                 .min(reorderResponseDataSummaryTotalPriceMin)
                 .describe('itemsTotal + shippingCost'),
-            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+            currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
         shippingMethodId: zod
             .string()
@@ -7024,6 +7167,7 @@ export const listOrdersResponseDataItemsItemTaxSummaryItemGrossAmountMin = 0;
 
 export const listOrdersResponseDataItemsItemShippingCostMin = 0;
 
+export const listOrdersResponseDataItemsItemShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const listOrdersResponseDataMetaPageDefault = 1;
 export const listOrdersResponseDataMetaPageMax = 10000;
 
@@ -7135,6 +7279,10 @@ export const ListOrdersResponse = zod.strictObject({
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
                     ),
+                currency: zod
+                    .string()
+                    .optional()
+                    .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
                 netTotal: zod
                     .number()
                     .min(listOrdersResponseDataItemsItemNetTotalMin)
@@ -7203,7 +7351,12 @@ export const ListOrdersResponse = zod.strictObject({
                         street: zod.string(),
                         city: zod.string(),
                         zip: zod.string(),
-                        country: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(listOrdersResponseDataItemsItemShippingAddressCountryRegExp)
+                            .describe(
+                                "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                            ),
                         phone: zod.string().optional()
                     })
                     .optional(),
@@ -7409,6 +7562,8 @@ export const createOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const createOrderResponseDataShippingCostMin = 0;
 
+export const createOrderResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const CreateOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7504,6 +7659,10 @@ export const CreateOrderResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(createOrderResponseDataNetTotalMin)
@@ -7568,7 +7727,12 @@ export const CreateOrderResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(createOrderResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -7797,6 +7961,9 @@ export const searchOrdersResponseDataItemsItemTaxSummaryItemGrossAmountMin = 0;
 
 export const searchOrdersResponseDataItemsItemShippingCostMin = 0;
 
+export const searchOrdersResponseDataItemsItemShippingAddressCountryRegExp = new RegExp(
+    '^[A-Z]{2}$'
+);
 export const searchOrdersResponseDataMetaPageDefault = 1;
 export const searchOrdersResponseDataMetaPageMax = 10000;
 
@@ -7908,6 +8075,10 @@ export const SearchOrdersResponse = zod.strictObject({
                     .describe(
                         'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
                     ),
+                currency: zod
+                    .string()
+                    .optional()
+                    .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
                 netTotal: zod
                     .number()
                     .min(searchOrdersResponseDataItemsItemNetTotalMin)
@@ -7976,7 +8147,12 @@ export const SearchOrdersResponse = zod.strictObject({
                         street: zod.string(),
                         city: zod.string(),
                         zip: zod.string(),
-                        country: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(searchOrdersResponseDataItemsItemShippingAddressCountryRegExp)
+                            .describe(
+                                "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                            ),
                         phone: zod.string().optional()
                     })
                     .optional(),
@@ -8155,6 +8331,8 @@ export const getOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const getOrderByIdResponseDataShippingCostMin = 0;
 
+export const getOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const GetOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8250,6 +8428,10 @@ export const GetOrderByIdResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(getOrderByIdResponseDataNetTotalMin)
@@ -8314,7 +8496,12 @@ export const GetOrderByIdResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(getOrderByIdResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -8477,6 +8664,8 @@ export const replaceOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const replaceOrderByIdResponseDataShippingCostMin = 0;
 
+export const replaceOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const ReplaceOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8574,6 +8763,10 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(replaceOrderByIdResponseDataNetTotalMin)
@@ -8642,7 +8835,12 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(replaceOrderByIdResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -8805,6 +9003,8 @@ export const updateOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const updateOrderByIdResponseDataShippingCostMin = 0;
 
+export const updateOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const UpdateOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8902,6 +9102,10 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(updateOrderByIdResponseDataNetTotalMin)
@@ -8970,7 +9174,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(updateOrderByIdResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -9158,6 +9367,8 @@ export const restoreOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const restoreOrderByIdResponseDataShippingCostMin = 0;
 
+export const restoreOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const RestoreOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9255,6 +9466,10 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(restoreOrderByIdResponseDataNetTotalMin)
@@ -9323,7 +9538,12 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(restoreOrderByIdResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -9511,6 +9731,8 @@ export const cancelOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const cancelOrderByIdResponseDataShippingCostMin = 0;
 
+export const cancelOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const CancelOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9608,6 +9830,10 @@ export const CancelOrderByIdResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(cancelOrderByIdResponseDataNetTotalMin)
@@ -9676,7 +9902,12 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(cancelOrderByIdResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -9852,6 +10083,8 @@ export const overrideOrderStatusResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const overrideOrderStatusResponseDataShippingCostMin = 0;
 
+export const overrideOrderStatusResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const OverrideOrderStatusResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9949,6 +10182,10 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(overrideOrderStatusResponseDataNetTotalMin)
@@ -10017,7 +10254,12 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(overrideOrderStatusResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -10444,6 +10686,8 @@ export const getOrderByReferenceResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const getOrderByReferenceResponseDataShippingCostMin = 0;
 
+export const getOrderByReferenceResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const GetOrderByReferenceResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -10541,6 +10785,10 @@ export const GetOrderByReferenceResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(getOrderByReferenceResponseDataNetTotalMin)
@@ -10609,7 +10857,12 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(getOrderByReferenceResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -11272,6 +11525,8 @@ export const listShippingMethodsResponseDataMethodsItemMinWeightMin = 0;
 
 export const listShippingMethodsResponseDataMethodsItemMaxWeightMin = 0;
 
+export const listShippingMethodsResponseDataShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$');
+
 export const ListShippingMethodsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -11287,7 +11542,12 @@ export const ListShippingMethodsResponse = zod.strictObject({
                 price: zod
                     .number()
                     .min(listShippingMethodsResponseDataMethodsItemPriceMin)
-                    .describe("Flat rate, in the shop's currency."),
+                    .describe('Flat rate, in `currency`.'),
+                currency: zod
+                    .string()
+                    .describe(
+                        "ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`."
+                    ),
                 freeAbove: zod
                     .number()
                     .min(listShippingMethodsResponseDataMethodsItemFreeAboveMin)
@@ -11325,7 +11585,19 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .optional()
                     .describe('Grams. Absent means no ceiling. Enforced the same way as minWeight.')
             })
-        )
+        ),
+        shipToCountries: zod
+            .array(
+                zod
+                    .string()
+                    .regex(listShippingMethodsResponseDataShipToCountriesItemRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    )
+            )
+            .describe(
+                'Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it.'
+            )
     })
 });
 
@@ -11406,6 +11678,8 @@ export const startFulfilmentResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const startFulfilmentResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const startFulfilmentResponseDataShippingCostMin = 0;
+
+export const startFulfilmentResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 
 export const StartFulfilmentResponse = zod.strictObject({
     success: zod.literal(true),
@@ -11504,6 +11778,10 @@ export const StartFulfilmentResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(startFulfilmentResponseDataNetTotalMin)
@@ -11572,7 +11850,12 @@ export const StartFulfilmentResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(startFulfilmentResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -11823,6 +12106,8 @@ export const fulfillOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
 
 export const fulfillOrderResponseDataShippingCostMin = 0;
 
+export const fulfillOrderResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+
 export const FulfillOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -11918,6 +12203,10 @@ export const FulfillOrderResponse = zod.strictObject({
             .describe(
                 'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
             ),
+        currency: zod
+            .string()
+            .optional()
+            .describe('ISO-4217 currency code this order was priced in (e.g. EUR).'),
         netTotal: zod
             .number()
             .min(fulfillOrderResponseDataNetTotalMin)
@@ -11982,7 +12271,12 @@ export const FulfillOrderResponse = zod.strictObject({
                 street: zod.string(),
                 city: zod.string(),
                 zip: zod.string(),
-                country: zod.string(),
+                country: zod
+                    .string()
+                    .regex(fulfillOrderResponseDataShippingAddressCountryRegExp)
+                    .describe(
+                        "ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET \/delivery\/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports."
+                    ),
                 phone: zod.string().optional()
             })
             .optional(),
