@@ -50,10 +50,9 @@ const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
 
 /**
- * Two-factor state: what is armed, which methods are confirmed, and whether a
- * code-guarded mutation is in flight.
+ * Two-factor state: what is armed, and whether a code-guarded mutation is in flight.
  */
-const { status, confirmed, mutatingWithCode } = storeToRefs(twoFactor);
+const { status, mutatingWithCode } = storeToRefs(twoFactor);
 
 onMounted(twoFactor.fetchStatus);
 
@@ -61,6 +60,32 @@ onMounted(twoFactor.fetchStatus);
  * The method currently open in `TwoFactorEnroll.vue`, or `undefined` when the dialog is closed.
  */
 const enrolling = ref<string>();
+
+/**
+ * The one-time backup codes to reveal, from either a first-factor confirm or a regenerate — held
+ * here, not in the store: this is the same "never park a secret in a store" idiom `api-keys`/
+ * `webhooks` use for their own one-time secrets.
+ */
+const revealedBackupCodes = ref<string[]>();
+
+/**
+ * Closes `TwoFactorEnroll.vue`, opening the backup-codes reveal when it armed the FIRST factor.
+ *
+ * @param backupCodes - The codes `TwoFactorEnroll.vue`'s `close` event carried, if any.
+ */
+const handleEnrollClose = (backupCodes?: string[]) => {
+    enrolling.value = undefined;
+    if (backupCodes) revealedBackupCodes.value = backupCodes;
+};
+
+/**
+ * Dismisses the backup-codes reveal, and drops any leftover resend cooldown from the enrollment
+ * that led to it.
+ */
+const handleBackupCodesDone = () => {
+    revealedBackupCodes.value = undefined;
+    twoFactor.clearSetup();
+};
 
 /**
  * Opens enrollment for one method, confirming first when it REPLACES an already-armed one — the
@@ -179,7 +204,10 @@ const runCodePromptMutation = (
             .then(() => t('two-factor.success-removed', { method: methodLabel(request.method) }));
     if (request.kind === 'disable')
         return twoFactor.disableAll(code).then(() => t('two-factor.success-disabled'));
-    return twoFactor.regenerateBackupCodes(code).then(() => undefined);
+    return twoFactor.regenerateBackupCodes(code).then((result) => {
+        revealedBackupCodes.value = result?.backupCodes;
+        return undefined;
+    });
 };
 
 /**
@@ -334,15 +362,15 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
 
         <!-- Enrollment dialog -->
         <v-dialog :model-value="!!enrolling" max-width="480" persistent>
-            <TwoFactorEnroll v-if="enrolling" :method="enrolling" @close="enrolling = undefined" />
+            <TwoFactorEnroll v-if="enrolling" :method="enrolling" @close="handleEnrollClose" />
         </v-dialog>
 
         <!-- Backup codes — blocking, shown once, right after the first factor is confirmed -->
-        <v-dialog :model-value="!!confirmed?.backupCodes" max-width="480" persistent>
+        <v-dialog :model-value="!!revealedBackupCodes" max-width="480" persistent>
             <TwoFactorBackupCodes
-                v-if="confirmed?.backupCodes"
-                :codes="confirmed.backupCodes"
-                @done="twoFactor.clearSetup()"
+                v-if="revealedBackupCodes"
+                :codes="revealedBackupCodes"
+                @done="handleBackupCodesDone"
             />
         </v-dialog>
 

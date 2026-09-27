@@ -87,18 +87,6 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const status = ref<TwoFactorStatus>();
 
     /**
-     * The pending enrollment for whichever method {@link setupMethod} was last called with.
-     */
-    const setup = ref<TwoFactorSetup>();
-
-    /**
-     * The result of the most recent {@link confirmMethod} or {@link regenerateBackupCodes} call —
-     * both mint a set of codes to show exactly once, so the one-time screen reads off whichever
-     * ran last. `confirmMethod` carries `backupCodes` only when it armed the FIRST factor.
-     */
-    const confirmed = ref<TwoFactorConfirmed | TwoFactorBackupCodesRegenerated>();
-
-    /**
      * The live login-time challenge, from `useAuthStore().login()`'s `mfa` branch. `undefined`
      * outside the 2FA login step.
      */
@@ -170,9 +158,12 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * before the click reaches here.
      *
      * @param method - Wire name of the method to enroll, e.g. `'email'`, `'totp'`.
-     * @returns A promise resolving with the setup payload — `delivers` says which half to render.
-     *  A `TWO_FACTOR_RESEND_TOO_SOON` 429 still rejects, but starts the resend cooldown first —
-     *  see {@link applyResendCooldown}.
+     * @returns A promise resolving with the setup payload — `delivers` says which half to render,
+     *  and (for a device method) `secret`/`otpauthUri`. Never cached here: the payload carries the
+     *  TOTP secret, so the caller (`TwoFactorEnroll.vue`) holds it in a component-local ref instead
+     *  — the same "never park a secret in a store" idiom `api-keys`/`webhooks` already use for
+     *  their own one-time secrets. A `TWO_FACTOR_RESEND_TOO_SOON` 429 still rejects, but starts the
+     *  resend cooldown first — see {@link applyResendCooldown}.
      */
     const setupMethod = (method: string) =>
         applyResendCooldown(
@@ -180,7 +171,6 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 () =>
                     apiSetupTwoFactorMethod(method).then((data) => {
                         const payload = getPayloadFromResponse<TwoFactorSetup>(data);
-                        setup.value = payload;
                         if (
                             payload?.delivers &&
                             payload.sentTo &&
@@ -205,16 +195,17 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * @param method - The method being confirmed.
      * @param code - The code read off the device or received through its channel.
      * @returns A promise resolving with the confirmation once the account status has been
-     *  refetched, so `status` never lags what the server just armed.
+     *  refetched, so `status` never lags what the server just armed. Never cached here: a FIRST
+     *  factor's confirmation carries the one-time backup codes, so the caller holds the result in a
+     *  component-local ref (same idiom as {@link setupMethod}) instead of reading it off the store.
      */
     const confirmMethod = (method: string, code: string) =>
         fetchAny(
             () =>
                 apiConfirmTwoFactorMethod(method, { code }).then((data) => {
-                    confirmed.value = getPayloadFromResponse<TwoFactorConfirmed>(data);
-                    setup.value = undefined;
+                    const result = getPayloadFromResponse<TwoFactorConfirmed>(data);
                     resendAvailableAt.value = undefined;
-                    return fetchStatus().then(() => confirmed.value);
+                    return fetchStatus().then(() => result);
                 }),
             { loadingKey: ':confirm' }
         );
@@ -249,15 +240,16 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * an unused backup code.
      *
      * @param code - A code from any armed method, or an unused backup code.
-     * @returns A promise resolving with the fresh codes once `status` reflects the new count. The
-     *  caller reads them off {@link confirmed}, same as a first-factor {@link confirmMethod}.
+     * @returns A promise resolving with the fresh codes once `status` reflects the new count. Never
+     *  cached here — same "never park a secret in a store" reasoning as {@link confirmMethod}; the
+     *  caller holds the result in a component-local ref for the one-time reveal screen.
      */
     const regenerateBackupCodes = (code: string) =>
         fetchAny(
             () =>
                 apiRegenerateBackupCodes({ code }).then((data) => {
-                    confirmed.value = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
-                    return fetchStatus().then(() => confirmed.value);
+                    const result = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
+                    return fetchStatus().then(() => result);
                 }),
             { loadingKey: ':regenerate' }
         );
@@ -283,11 +275,12 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     );
 
     /**
-     * Clears the pending-enrollment state — the "never mind" path out of `TwoFactorEnroll.vue`.
+     * Clears the pending-enrollment resend cooldown — the "never mind" path out of
+     * `TwoFactorEnroll.vue`, and the safety net `ProfileTwoFactor.vue` calls once its backup-codes
+     * screen closes. The setup/confirmation payloads themselves are never here to clear: they live
+     * in those components' own local state.
      */
     const clearSetup = () => {
-        setup.value = undefined;
-        confirmed.value = undefined;
         resendAvailableAt.value = undefined;
     };
 
@@ -384,8 +377,6 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
 
     return {
         status,
-        setup,
-        confirmed,
         challenge,
         delivery,
         secondsUntilResend,

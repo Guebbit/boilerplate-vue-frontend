@@ -28,6 +28,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import type { TwoFactorSetup } from '@api';
 
 /**
  * Which second factor is being armed.
@@ -41,9 +42,11 @@ const { method } = defineProps<{
 
 /**
  * Fires once enrollment either armed the method or was abandoned — the parent closes the dialog
- * either way; success is told apart by `useTwoFactorStore().confirmed` still holding a value.
+ * either way. On success, carries the one-time backup codes when this armed the FIRST factor
+ * (`undefined` otherwise) — held here only long enough to hand off, never in the store, same
+ * "never park a secret in a store" idiom as `api-keys`/`webhooks`.
  */
-const emit = defineEmits<{ close: [] }>();
+const emit = defineEmits<{ close: [backupCodes?: string[]] }>();
 
 /**
  * Translation function.
@@ -61,10 +64,16 @@ const { addMessage } = useNotificationsStore();
 const twoFactor = useTwoFactorStore();
 
 /**
- * Enrolment state: the pending setup, its delivery target, the resend countdown, and a flag
- * per in-flight call so each button disables on its own.
+ * Enrolment state: the delivery target, the resend countdown, and a flag per in-flight call so
+ * each button disables on its own.
  */
-const { setup, delivery, secondsUntilResend, sendingCode, confirmingCode } = storeToRefs(twoFactor);
+const { delivery, secondsUntilResend, sendingCode, confirmingCode } = storeToRefs(twoFactor);
+
+/**
+ * The pending setup for {@link method} — held here, not in the store: it carries the TOTP secret
+ * and `otpauthUri` for a device method, shown once for this dialog's lifetime and never cached.
+ */
+const setup = ref<TwoFactorSetup>();
 
 /**
  * Closes the dialog, dropping any pending enrollment first — a delivered method's `setupMethod`
@@ -80,10 +89,15 @@ const closeAndClear = () => {
 onMounted(() => {
     // Stays a toast: a failure here closes the dialog immediately (nothing to render without a
     // setup answer), so an inline alert would have nowhere to stay visible.
-    void twoFactor.setupMethod(method).catch((error) => {
-        notifyErrorMessages(addMessage, error);
-        closeAndClear();
-    });
+    void twoFactor
+        .setupMethod(method)
+        .then((payload) => {
+            setup.value = payload;
+        })
+        .catch((error) => {
+            notifyErrorMessages(addMessage, error);
+            closeAndClear();
+        });
 });
 
 /**
@@ -128,21 +142,27 @@ const { message: codeError, report: reportCodeError, clear: clearCodeError } = u
  */
 const handleResend = () => {
     clearCodeError();
-    return twoFactor.setupMethod(method).catch((error) => reportCodeError(error));
+    return twoFactor
+        .setupMethod(method)
+        .then((payload) => {
+            setup.value = payload;
+        })
+        .catch((error) => reportCodeError(error));
 };
 
 /**
  * Proves the code and arms the method.
  *
- * @returns Nothing; on success the parent's watcher on `confirmed` takes over (the backup-codes
- *  screen, when this was the first factor). A wrong code blocks this card in place
- *  ({@link codeError}) — there is no form field of its own to attach it to.
+ * @returns Nothing; on success {@link emit} carries the fresh backup codes to the parent when this
+ *  armed the FIRST factor (its own backup-codes screen takes over then), or nothing otherwise. A
+ *  wrong code blocks this card in place ({@link codeError}) — there is no form field of its own to
+ *  attach it to.
  */
 const handleConfirm = () => {
     clearCodeError();
     return twoFactor
         .confirmMethod(method, code.value)
-        .then(() => emit('close'))
+        .then((result) => emit('close', result?.backupCodes))
         .catch((error) => reportCodeError(error));
 };
 </script>

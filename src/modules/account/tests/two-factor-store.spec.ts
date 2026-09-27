@@ -96,7 +96,7 @@ describe('fetchStatus', () => {
 });
 
 describe('the enrollment machine', () => {
-    it('a device method (no delivery) populates setup with the secret and otpauth URI', () => {
+    it('a device method (no delivery) resolves with the secret and otpauth URI, never cached on the store', () => {
         responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
             method: 'totp',
             delivers: false,
@@ -104,13 +104,14 @@ describe('the enrollment machine', () => {
             otpauthUri: 'otpauth://totp/x'
         });
         const store = useTwoFactorStore();
-        return store.setupMethod('totp').then(() => {
-            expect(store.setup).toMatchObject({ delivers: false, secret: 'JBSWY3DPEHPK3PXP' });
+        return store.setupMethod('totp').then((payload) => {
+            expect(payload).toMatchObject({ delivers: false, secret: 'JBSWY3DPEHPK3PXP' });
+            expect(store).not.toHaveProperty('setup');
             expect(store.delivery).toBeUndefined();
         });
     });
 
-    it('a delivered method populates setup AND starts the resend countdown', () => {
+    it('a delivered method resolves with the setup payload AND starts the resend countdown', () => {
         responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
             method: 'email',
             delivers: true,
@@ -119,14 +120,14 @@ describe('the enrollment machine', () => {
             expiresAt: '2026-01-01T00:10:00.000Z'
         });
         const store = useTwoFactorStore();
-        return store.setupMethod('email').then(() => {
-            expect(store.setup).toMatchObject({ delivers: true, sentTo: 'a***a@example.com' });
+        return store.setupMethod('email').then((payload) => {
+            expect(payload).toMatchObject({ delivers: true, sentTo: 'a***a@example.com' });
             expect(store.delivery).toMatchObject({ sentTo: 'a***a@example.com', resendAfter: 30 });
             expect(store.secondsUntilResend).toBeGreaterThan(0);
         });
     });
 
-    it('confirming the FIRST factor returns backup codes and refreshes status', () => {
+    it('confirming the FIRST factor resolves with backup codes, refreshes status, never caches the secret', () => {
         responses['POST /account/2fa/methods/email/confirm'] = orvalEnvelope({
             method: 'email',
             backupCodes: ['aaa-111', 'bbb-222'],
@@ -139,9 +140,9 @@ describe('the enrollment machine', () => {
             backupCodesRemaining: 2
         });
         const store = useTwoFactorStore();
-        return store.confirmMethod('email', '123456').then(() => {
-            expect(store.confirmed?.backupCodes).toEqual(['aaa-111', 'bbb-222']);
-            expect(store.setup).toBeUndefined();
+        return store.confirmMethod('email', '123456').then((confirmed) => {
+            expect(confirmed?.backupCodes).toEqual(['aaa-111', 'bbb-222']);
+            expect(store).not.toHaveProperty('confirmed');
             expect(store.status?.enabled).toBe(true);
         });
     });
@@ -158,16 +159,19 @@ describe('the enrollment machine', () => {
         });
     });
 
-    it('clearSetup drops the pending enrollment and any confirmed result', () => {
-        responses['POST /account/2fa/methods/totp/confirm'] = orvalEnvelope({
-            method: 'totp',
-            backupCodesRemaining: 7
+    it('clearSetup drops the resend cooldown', () => {
+        responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
+            method: 'email',
+            delivers: true,
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
         });
         const store = useTwoFactorStore();
-        return store.confirmMethod('totp', '123456').then(() => {
+        return store.setupMethod('email').then(() => {
+            expect(store.secondsUntilResend).toBeGreaterThan(0);
             store.clearSetup();
-            expect(store.setup).toBeUndefined();
-            expect(store.confirmed).toBeUndefined();
+            expect(store.secondsUntilResend).toBe(0);
         });
     });
 
@@ -213,7 +217,7 @@ describe('the enrollment machine', () => {
             });
     });
 
-    it('regenerateBackupCodes replaces confirmed with the fresh set and refetches status', () => {
+    it('regenerateBackupCodes resolves with the fresh set and refetches status, never caches it', () => {
         responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
             backupCodes: ['ccc-333', 'ddd-444'],
             backupCodesRemaining: 10
@@ -225,8 +229,9 @@ describe('the enrollment machine', () => {
             backupCodesRemaining: 10
         });
         const store = useTwoFactorStore();
-        return store.regenerateBackupCodes('123456').then(() => {
-            expect(store.confirmed?.backupCodes).toEqual(['ccc-333', 'ddd-444']);
+        return store.regenerateBackupCodes('123456').then((regenerated) => {
+            expect(regenerated?.backupCodes).toEqual(['ccc-333', 'ddd-444']);
+            expect(store).not.toHaveProperty('confirmed');
             expect(store.status?.backupCodesRemaining).toBe(10);
         });
     });

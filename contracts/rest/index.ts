@@ -3509,6 +3509,13 @@ export const ListAuditEntriesOutcome = {
     failure: 'failure'
 } as const;
 
+export type StartOAuthLoginParams = {
+    /**
+     * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
+     */
+    continue?: string;
+};
+
 export type CompleteOAuthLoginParams = {
     code?: string;
     state?: string;
@@ -5094,13 +5101,17 @@ export const listOAuthProviders = (
  */
 export const startOAuthLogin = (
     provider: string,
+    params?: StartOAuthLoginParams,
     options?: SecondParameter<typeof orvalMutator<unknown>>
 ) => {
-    return orvalMutator<unknown>({ url: `/account/oauth/${provider}`, method: 'GET' }, options);
+    return orvalMutator<unknown>(
+        { url: `/account/oauth/${provider}`, method: 'GET', params },
+        options
+    );
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path.
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
