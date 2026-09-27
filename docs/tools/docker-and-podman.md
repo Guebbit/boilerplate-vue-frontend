@@ -113,6 +113,22 @@ That is deliberate: a lone container is loudly broken rather than quietly faked.
 silently answered its own requests while the backend you just started sat unreachable would look
 like it works and would not.
 
+## Sub-path deployments
+
+Serving the app under a sub-path (`VITE_APP_BASE_URL=/shop/`) needs no change to this container or
+its image. The container keeps serving from `/`, unchanged:
+
+- `vite build` already prefixes every emitted asset URL with the configured base, and the router
+  (`createWebHistory`) already emits `/shop/...`-prefixed routes.
+- A reverse proxy placed in front of the container maps the public `/shop/...` path back to the
+  container's root before forwarding the request — the proxy strips the prefix, the container
+  never sees it.
+
+This is provider-neutral: whatever sits in front (a managed load balancer, an ingress controller,
+a self-hosted proxy) only needs that one path-stripping rule. Nothing in `docker/nginx.conf` is
+re-anchored for a sub-path, and nothing should be — that would only need undoing the moment the
+proxy in front already does it.
+
 ## Related pages
 
 - [Package Scripts](./package-scripts.md) — the `compose:*` helpers

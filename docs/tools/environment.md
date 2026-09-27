@@ -34,11 +34,11 @@ name like `http://app:3000`, even when both stacks run in containers.
 
 ## Application
 
-| Variable               | Purpose                                                                                                                    |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_BASE_URL`    | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root |
-| `VITE_APP_PORT`        | Dev-server port. Read in `vite.config.ts` via `loadEnv`, so the server and the compose publish always agree                |
-| `VITE_APP_EMPTY_VALUE` | Placeholder for empty/unavailable display values (default `—`)                                                             |
+| Variable               | Purpose                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_BASE_URL`    | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root. A production container still serves from `/` unchanged — a reverse proxy in front maps the public sub-path back to it, see [Docker and Podman](docker-and-podman.md#sub-path-deployments) |
+| `VITE_APP_PORT`        | Dev-server port. Read in `vite.config.ts` via `loadEnv`, so the server and the compose publish always agree                                                                                                                                                                                                           |
+| `VITE_APP_EMPTY_VALUE` | Placeholder for empty/unavailable display values (default `—`)                                                                                                                                                                                                                                                        |
 
 ## Locales
 
