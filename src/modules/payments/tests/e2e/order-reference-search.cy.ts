@@ -15,7 +15,11 @@ describe('Order reference search', () => {
         cy.loginAs('user');
 
         // ── Buy something, paying by bank transfer — the one method that mints an RF ──
+        // A digital-only product needs no shipping method and refuses one outright (E16), so
+        // `.first()` alone is no longer guaranteed to land on something this flow can actually
+        // ship — the seed's one named water-bottle product always can.
         cy.navigateTo('/en/products');
+        cy.get('[data-test=filter-text]').type('Water Bottle{enter}');
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
