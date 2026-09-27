@@ -41,7 +41,7 @@ runs:
         - name: Checkout paired backend
           id: sibling
           continue-on-error: ${{ inputs.report-failure == 'true' }}
-          uses: actions/checkout@v4
+          uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
           with:
               # Override with a repository variable when the pair lives elsewhere.
               repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
