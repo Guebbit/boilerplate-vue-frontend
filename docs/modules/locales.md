@@ -6,18 +6,18 @@
 **Breaks if you change** — nothing outside this folder. Rendering never depended on it.
 :::
 
-| Fact                    | This module                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
-| **Screens**             | 3 — `LocalesList` · `LocalesDictionary` · `LocaleEntries`           |
-| **Store**               | `locales`                                                           |
-| **Menu entries**        | `LocalesList`                                                       |
-| **API calls**           | 9                                                                   |
-| **Depends on**          | _nothing_                                                           |
-| **Depended on by**      | _nothing_                                                           |
-| **Languages**           | `en` · `it`                                                         |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                  |
-| **Backend counterpart** | `locales` in `boilerplate-node-backend`                             |
+| Fact                    | This module                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.              |
+| **Screens**             | 4 — `LocalesList` · `LocalesDictionary` · `LocaleEntries` · `EntityTranslations` |
+| **Store**               | `locales`                                                                        |
+| **Menu entries**        | `LocalesList`                                                                    |
+| **API calls**           | 13                                                                               |
+| **Depends on**          | _nothing_                                                                        |
+| **Depended on by**      | _nothing_                                                                        |
+| **Languages**           | `en` · `it`                                                                      |
+| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                               |
+| **Backend counterpart** | `locales` in `boilerplate-node-backend`                                          |
 
 ::: info Stands alone
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
@@ -72,37 +72,48 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 
 Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                                                                            | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `capabilities` · `tenants` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                                      | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ownTenant` · `backendTenant` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                           | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `tenantLabel` · `fetchTenants` · `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                                                                                                   | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `capabilities` · `tenants` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                                                                                             | The refs the setup function returns — the only writable surface. |
+| **Getters** | `ownTenant` · `backendTenant` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                                                                                  | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `tenantLabel` · `fetchTenants` · `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `fetchEntityTranslations` · `saveEntityTranslations` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
-| Path                 | Route name          | Access | Permission      | View                          |
-| -------------------- | ------------------- | ------ | --------------- | ----------------------------- |
-| `locales`            | `LocalesList`       | `auth` | `update Locale` | `views/LocalesList.vue`       |
-| `locales/dictionary` | `LocalesDictionary` | `auth` | `update Locale` | `views/LocalesDictionary.vue` |
-| `locales/:tag`       | `LocaleEntries`     | `auth` | `update Locale` | `views/LocaleEntries.vue`     |
+| Path                                   | Route name           | Access | Permission         | View                           |
+| -------------------------------------- | -------------------- | ------ | ------------------ | ------------------------------ |
+| `locales`                              | `LocalesList`        | `auth` | `update Locale`    | `views/LocalesList.vue`        |
+| `locales/dictionary`                   | `LocalesDictionary`  | `auth` | `update Locale`    | `views/LocalesDictionary.vue`  |
+| `locales/:tag`                         | `LocaleEntries`      | `auth` | `update Locale`    | `views/LocaleEntries.vue`      |
+| `locales/translations/:entityType/:id` | `EntityTranslations` | `auth` | `read Translation` | `views/EntityTranslations.vue` |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+
+`EntityTranslations` is the generic translation door: any domain with translatable content links to
+it by route name (`ProductEdit.vue`'s own "Translations" button does, guarded by
+`router.hasRoute('EntityTranslations')` first — a build with this module disabled carries no such
+route to resolve). Gated on `translations.read` rather than that other domain's own permission, on
+purpose — see the route table's own comment in `routes.ts`.
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                                | Response envelope              |
-| ----------------------------------- | ------------------------------ |
-| `POST /locales`                     | `CreateLocaleResponse`         |
-| `DELETE /locales/{id}`              | `DeleteLocaleResponse`         |
-| `PATCH /locales/{id}`               | `UpdateLocaleResponse`         |
-| `PATCH /locales/{id}/entries`       | `MergeLocaleEntriesResponse`   |
-| `POST /locales/{id}/entries`        | `CreateLocaleEntryResponse`    |
-| `PUT /locales/{id}/entries`         | `ReplaceLocaleEntriesResponse` |
-| `GET /locales/{id}/entries(\?.*)?`  | `ListLocaleEntriesResponse`    |
-| `DELETE /locales/{id}/entries/{id}` | `DeleteLocaleEntryResponse`    |
-| `PUT /locales/{id}/entries/{id}`    | `UpdateLocaleEntryResponse`    |
+| Call                                            | Response envelope                   |
+| ----------------------------------------------- | ----------------------------------- |
+| `POST /locales`                                 | `CreateLocaleResponse`              |
+| `PUT /locales/{id}`                             | `ReplaceLocaleResponse`             |
+| `DELETE /locales/{id}`                          | `DeleteLocaleResponse`              |
+| `PATCH /locales/{id}`                           | `UpdateLocaleResponse`              |
+| `PATCH /locales/{id}/entries`                   | `MergeLocaleEntriesResponse`        |
+| `POST /locales/{id}/entries`                    | `CreateLocaleEntryResponse`         |
+| `PUT /locales/{id}/entries`                     | `ReplaceLocaleEntriesResponse`      |
+| `GET /locales/{id}/entries(\?.*)?`              | `ListLocaleEntriesResponse`         |
+| `DELETE /locales/{id}/entries/{id}`             | `DeleteLocaleEntryResponse`         |
+| `PUT /locales/{id}/entries/{id}`                | `UpdateLocaleEntryResponse`         |
+| `GET /locales/translations/{entityType}/{id}`   | `GetEntityTranslationsResponse`     |
+| `PUT /locales/translations/{entityType}/{id}`   | `ReplaceEntityTranslationsResponse` |
+| `PATCH /locales/translations/{entityType}/{id}` | `UpsertEntityTranslationsResponse`  |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
@@ -134,6 +145,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `tests/e2e/a11y.cy.ts`                           | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
 | `tests/e2e/locales.visual.cy.ts`                 | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
 | `tests/store.spec.ts`                            | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
+| `views/EntityTranslations.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own — the generic translation door any domain links to by route name.         | [read](../theory/layers.md)           |
 | `views/LocaleEntries.vue`                        | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/LocalesDictionary.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/LocalesList.vue`                          | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
