@@ -3194,6 +3194,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -3335,6 +3337,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -3396,6 +3400,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -6460,6 +6466,10 @@ components:
         - reduced
         - zero
       description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+    Sku:
+      type: string
+      minLength: 1
+      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
     Product:
       type: object
       additionalProperties: false
@@ -6484,6 +6494,8 @@ components:
           description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        sku:
+          $ref: "#/components/schemas/Sku"
         onHand:
           type: integer
           minimum: 0
@@ -6607,6 +6619,8 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        sku:
+          $ref: "#/components/schemas/Sku"
         weight:
           type: integer
           minimum: 0
@@ -9938,6 +9952,8 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        sku:
+          $ref: "#/components/schemas/Sku"
         onHand:
           type: integer
           minimum: 0
@@ -9979,6 +9995,8 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        sku:
+          $ref: "#/components/schemas/Sku"
         onHand:
           type: integer
           minimum: 0
@@ -10099,6 +10117,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        sku:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sku"
         active:
           type: boolean
         requiresShipping:
@@ -10143,6 +10165,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        sku:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sku"
         active:
           type: boolean
         requiresShipping:
@@ -10179,6 +10205,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        sku:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sku"
         active:
           type: boolean
         requiresShipping:
@@ -10216,6 +10246,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        sku:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sku"
         active:
           type: boolean
         requiresShipping:
@@ -10263,6 +10297,8 @@ components:
           description: ISO-4217 currency code (e.g. EUR) — see `Product.currency`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        sku:
+          $ref: "#/components/schemas/Sku"
         onHand:
           type: integer
           minimum: 0
