@@ -127,6 +127,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     post:
       tags:
         - System
@@ -173,6 +174,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/tenants:
     get:
       tags:
@@ -203,6 +205,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/{locale}:
     get:
       tags:
@@ -240,6 +243,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     put:
       tags:
         - System
@@ -288,6 +292,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     patch:
       tags:
         - System
@@ -335,6 +340,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     delete:
       tags:
         - System
@@ -367,6 +373,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/{locale}/messages:
     get:
       tags:
@@ -413,6 +420,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/{locale}/entries:
     get:
       tags:
@@ -454,6 +462,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     post:
       tags:
         - System
@@ -502,6 +511,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     put:
       tags:
         - System
@@ -557,6 +567,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     patch:
       tags:
         - System
@@ -607,6 +618,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/{locale}/entries/{entryId}:
     put:
       tags:
@@ -655,6 +667,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     delete:
       tags:
         - System
@@ -683,6 +696,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/translations/{entityType}/{id}:
     get:
       tags:
@@ -719,6 +733,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     put:
       tags:
         - System
@@ -778,6 +793,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     patch:
       tags:
         - System
@@ -841,6 +857,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /observability/events:
     get:
       tags:
@@ -865,6 +882,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: observability
   /observability/health:
     get:
       tags:
@@ -901,6 +919,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: observability
   /observability/metrics:
     get:
       tags:
@@ -931,6 +950,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+      x-module: observability
   /observability/metrics/overview:
     get:
       tags:
@@ -960,6 +980,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: observability
   /observability/audit:
     get:
       tags:
@@ -1020,6 +1041,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: observability
   /audit:
     get:
       tags:
@@ -1086,6 +1108,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: audit-logs
   /antibot/config:
     get:
       tags:
@@ -1108,6 +1131,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: antibot
   /antibot/challenge:
     get:
       tags:
@@ -1132,6 +1156,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: antibot
   /account:
     get:
       tags:
@@ -1154,6 +1179,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
     put:
       tags:
         - Account
@@ -1196,6 +1222,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
     patch:
       tags:
         - Account
@@ -1238,6 +1265,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
     delete:
       tags:
         - Account
@@ -1257,6 +1285,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/pending-email:
     delete:
       tags:
@@ -1277,6 +1306,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/abilities:
     get:
       tags:
@@ -1313,6 +1343,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/password:
     post:
       tags:
@@ -1355,6 +1386,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/password/check:
     post:
       tags:
@@ -1390,6 +1422,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/reauth:
     post:
       tags:
@@ -1428,6 +1461,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/logout:
     post:
       tags:
@@ -1445,6 +1479,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/sessions:
     get:
       tags:
@@ -1469,6 +1504,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/sessions/{sessionId}:
     delete:
       tags:
@@ -1500,6 +1536,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/addresses:
     get:
       tags:
@@ -1524,6 +1561,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
     post:
       tags:
         - Account
@@ -1561,6 +1599,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
   /account/addresses/{addressId}:
     put:
       tags:
@@ -1608,6 +1647,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
     patch:
       tags:
         - Account
@@ -1654,6 +1694,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
     delete:
       tags:
         - Account
@@ -1688,6 +1729,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
   /account/verify-request:
     post:
       tags:
@@ -1714,6 +1756,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/verify-confirm:
     post:
       tags:
@@ -1745,6 +1788,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/email-change-confirm:
     post:
       tags:
@@ -1778,6 +1822,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/delete-confirm:
     delete:
       tags:
@@ -1809,6 +1854,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/login:
     post:
       tags:
@@ -1846,6 +1892,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/signup:
     post:
       tags:
@@ -1891,6 +1938,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/reset:
     post:
       tags:
@@ -1926,6 +1974,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/reset-confirm:
     post:
       tags:
@@ -1957,6 +2006,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/refresh:
     get:
       tags:
@@ -1980,6 +2030,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/logout-all:
     post:
       tags:
@@ -2000,6 +2051,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/tokens/expired:
     delete:
       tags:
@@ -2022,6 +2074,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/export:
     post:
       tags:
@@ -2046,6 +2099,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/login/2fa:
     post:
       tags:
@@ -2083,6 +2137,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/login/2fa/send:
     post:
       tags:
@@ -2120,6 +2175,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/2fa:
     get:
       tags:
@@ -2144,6 +2200,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
     delete:
       tags:
         - Auth
@@ -2177,6 +2234,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/2fa/methods/{method}:
     delete:
       tags:
@@ -2215,6 +2273,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/2fa/methods/{method}/setup:
     post:
       tags:
@@ -2245,6 +2304,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/2fa/methods/{method}/confirm:
     post:
       tags:
@@ -2287,6 +2347,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/2fa/backup-codes:
     post:
       tags:
@@ -2325,6 +2386,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/oauth/providers:
     get:
       tags:
@@ -2346,6 +2408,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/oauth/{provider}:
     get:
       tags:
@@ -2380,6 +2443,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /account/oauth/{provider}/callback:
     get:
       tags:
@@ -2429,6 +2493,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
   /users:
     get:
       tags:
@@ -2479,6 +2544,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
     post:
       tags:
         - Users
@@ -2523,6 +2589,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
     delete:
       tags:
         - Users
@@ -2563,6 +2630,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/{id}:
     get:
       tags:
@@ -2595,6 +2663,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
     put:
       tags:
         - Users
@@ -2643,6 +2712,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
     patch:
       tags:
         - Users
@@ -2691,6 +2761,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
     delete:
       tags:
         - Users
@@ -2731,6 +2802,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/{id}/restore:
     post:
       tags:
@@ -2765,6 +2837,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/{id}/hard:
     delete:
       tags:
@@ -2794,6 +2867,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/{id}/2fa:
     delete:
       tags:
@@ -2822,6 +2896,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/search:
     post:
       tags:
@@ -2863,6 +2938,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /feedback/contact:
     post:
       tags:
@@ -2905,6 +2981,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
   /feedback:
     get:
       tags:
@@ -2947,6 +3024,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
   /feedback/search:
     post:
       tags:
@@ -2988,6 +3066,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
   /feedback/{id}:
     put:
       tags:
@@ -3032,6 +3111,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
     patch:
       tags:
         - Feedback
@@ -3075,6 +3155,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
     delete:
       tags:
         - Feedback
@@ -3102,6 +3183,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
   /products:
     get:
       tags:
@@ -3166,6 +3248,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
     post:
       tags:
         - Products
@@ -3210,6 +3293,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
     delete:
       tags:
         - Products
@@ -3250,6 +3334,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/categories:
     get:
       tags:
@@ -3271,6 +3356,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/{id}:
     get:
       tags:
@@ -3297,6 +3383,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
     put:
       tags:
         - Products
@@ -3353,6 +3440,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
     patch:
       tags:
         - Products
@@ -3416,6 +3504,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
     delete:
       tags:
         - Products
@@ -3456,6 +3545,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/{id}/admin:
     get:
       tags:
@@ -3488,6 +3578,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/{id}/restore:
     post:
       tags:
@@ -3522,6 +3613,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/{id}/hard:
     delete:
       tags:
@@ -3551,6 +3643,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /products/search:
     post:
       tags:
@@ -3586,6 +3679,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: products
   /cart:
     get:
       tags:
@@ -3610,6 +3704,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
     post:
       tags:
         - Cart
@@ -3649,6 +3744,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
     delete:
       tags:
         - Cart
@@ -3689,6 +3785,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/all:
     delete:
       tags:
@@ -3713,6 +3810,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/{productId}:
     put:
       tags:
@@ -3756,6 +3854,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
     delete:
       tags:
         - Cart
@@ -3785,6 +3884,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/shipping-method:
     put:
       tags:
@@ -3827,6 +3927,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/summary:
     get:
       tags:
@@ -3851,6 +3952,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/checkout:
     post:
       tags:
@@ -3906,6 +4008,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /cart/reorder/{orderId}:
     post:
       tags:
@@ -3943,6 +4046,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /wishlist:
     get:
       tags:
@@ -3967,6 +4071,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: wishlist
     post:
       tags:
         - Wishlist
@@ -4006,6 +4111,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: wishlist
   /wishlist/{productId}:
     delete:
       tags:
@@ -4036,6 +4142,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: wishlist
   /wishlist/{productId}/move-to-cart:
     post:
       tags:
@@ -4066,6 +4173,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: wishlist
   /orders:
     get:
       tags:
@@ -4122,6 +4230,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
     post:
       tags:
         - Orders
@@ -4178,6 +4287,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
     delete:
       tags:
         - Orders
@@ -4220,6 +4330,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/search:
     post:
       tags:
@@ -4263,6 +4374,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}:
     get:
       tags:
@@ -4295,6 +4407,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
     put:
       tags:
         - Orders
@@ -4338,6 +4451,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
     patch:
       tags:
         - Orders
@@ -4381,6 +4495,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
     delete:
       tags:
         - Orders
@@ -4423,6 +4538,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}/restore:
     post:
       tags:
@@ -4457,6 +4573,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}/hard:
     delete:
       tags:
@@ -4488,6 +4605,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}/cancel:
     post:
       tags:
@@ -4532,6 +4650,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}/status-override:
     post:
       tags:
@@ -4578,6 +4697,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /orders/{id}/invoice:
     get:
       tags:
@@ -4609,6 +4729,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: invoicing
   /orders/{id}/credit-note:
     get:
       tags:
@@ -4640,6 +4761,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: invoicing
   /payments/methods:
     get:
       tags:
@@ -4661,6 +4783,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/intent:
     post:
       tags:
@@ -4711,6 +4834,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/order/{orderId}:
     get:
       tags:
@@ -4746,6 +4870,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/order-by-reference:
     get:
       tags:
@@ -4791,6 +4916,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/order/{orderId}/refund:
     post:
       tags:
@@ -4831,6 +4957,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/order/{orderId}/offline:
     post:
       tags:
@@ -4883,6 +5010,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/{id}/confirm:
     post:
       tags:
@@ -4944,6 +5072,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/{id}/sync:
     post:
       tags:
@@ -4976,6 +5105,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/webhook:
     post:
       tags:
@@ -5018,6 +5148,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /delivery/methods:
     get:
       tags:
@@ -5039,6 +5170,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/order/{orderId}:
     get:
       tags:
@@ -5074,6 +5206,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/order/{orderId}/start:
     post:
       tags:
@@ -5113,6 +5246,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/order/{orderId}/ship:
     post:
       tags:
@@ -5164,6 +5298,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/order/{orderId}/deliver:
     post:
       tags:
@@ -5215,6 +5350,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/order/{orderId}/fulfill:
     post:
       tags:
@@ -5254,6 +5390,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /inventory/levels:
     get:
       tags:
@@ -5292,6 +5429,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
   /inventory/movements:
     get:
       tags:
@@ -5335,6 +5473,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
   /inventory/receipts:
     post:
       tags:
@@ -5377,6 +5516,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
   /inventory/adjustments:
     post:
       tags:
@@ -5425,6 +5565,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
   /inventory/reservations/sweep:
     post:
       tags:
@@ -5454,6 +5595,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
   /webhooks/subscriptions:
     get:
       tags:
@@ -5493,6 +5635,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
     post:
       tags:
         - Webhooks
@@ -5536,6 +5679,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/subscriptions/{id}:
     put:
       tags:
@@ -5583,6 +5727,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
     patch:
       tags:
         - Webhooks
@@ -5628,6 +5773,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
     delete:
       tags:
         - Webhooks
@@ -5655,6 +5801,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/subscriptions/{id}/rotate-secret:
     post:
       tags:
@@ -5693,6 +5840,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/subscriptions/{id}/secrets/{secretId}:
     delete:
       tags:
@@ -5734,6 +5882,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/deliveries:
     get:
       tags:
@@ -5775,6 +5924,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/deliveries/{id}/replay:
     post:
       tags:
@@ -5815,6 +5965,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/events:
     get:
       tags:
@@ -5844,6 +5995,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /api-keys:
     get:
       tags:
@@ -5875,6 +6027,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: api-keys
     post:
       tags:
         - ApiKeys
@@ -5919,6 +6072,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: api-keys
   /api-keys/{id}:
     delete:
       tags:
@@ -5950,6 +6104,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      x-module: api-keys
 components:
   securitySchemes:
     bearerAuth:
@@ -11888,3 +12043,202 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+x-error-codes:
+  ANTIBOT_NO_CHALLENGE:
+    status: 404
+    description: No challenge is currently active for this session.
+  ANTIBOT_VERIFICATION_FAILED:
+    status: 401
+    description: The human-challenge token is missing, expired, or the provider rejected it.
+  BAD_REQUEST:
+    status: 400
+    description: A malformed request the body parser or a library refused before any route ran.
+  CART_ADDRESS_NOT_APPLICABLE:
+    status: 409
+    description: The cart is all-digital and needs no shipping address.
+  CART_ADDRESS_NOT_FOUND:
+    status: 404
+    description: The named address does not exist, or does not belong to the caller.
+  CART_ADDRESS_REQUIRED:
+    status: 422
+    description: A shipping address is required and none was supplied or found on file.
+  CART_BANK_TRANSFER_LIMIT:
+    status: 409
+    description: This order total exceeds the bank-transfer payment method's configured ceiling.
+  CART_CHANGED:
+    status: 409
+    description: The cart changed between the request that read it and this write — reload and retry.
+  CART_EMPTY:
+    status: 409
+    description: Checkout was attempted on a cart with no lines.
+  CART_INSUFFICIENT_STOCK:
+    status: 409
+    description: One or more lines exceed the product's available stock — see `errors[].details.lines`.
+  CART_PAYMENT_METHOD_NOT_AVAILABLE:
+    status: 409
+    description: The chosen payment method is not enabled for this deployment or this cart.
+  CART_PRODUCT_UNAVAILABLE:
+    status: 409
+    description: A line references a product that was deleted or deactivated since it was added.
+  CART_QUANTITY_LIMIT:
+    status: 422
+    description: The requested quantity exceeds the per-line limit.
+  CART_SHIPPING_METHOD_NOT_FOUND:
+    status: 404
+    description: The named shipping method does not exist or is not offered.
+  CART_SHIPPING_METHOD_REQUIRED:
+    status: 422
+    description: A shipping method is required and none is set on the cart.
+  CART_SHIPPING_METHOD_WEIGHT:
+    status: 409
+    description: The cart's total weight falls outside the chosen shipping method's configured range.
+  CART_SHIPPING_NOT_APPLICABLE:
+    status: 409
+    description: The chosen shipping method does not apply to an all-digital cart.
+  CART_SHIP_TO_COUNTRY_NOT_SUPPORTED:
+    status: 422
+    description: The address's country is outside this deployment's configured ship-to list.
+  CONFLICT:
+    status: 409
+    description: The request is well-formed but conflicts with the resource's current state.
+  DELIVERY_OVERRIDE_REASON_REQUIRED:
+    status: 422
+    description: An admin status override requires a reason and none was supplied.
+  DELIVERY_TRACKING_CODE_REQUIRED:
+    status: 422
+    description: Marking a shipment shipped requires a tracking code and none was supplied.
+  EMAIL_NOT_VERIFIED:
+    status: 403
+    description: Checkout requires a verified email address — see `POST /account/verify-email`.
+  EMAIL_VERIFY_RESEND_TOO_SOON:
+    status: 429
+    description: A verification email was already sent recently — carries `details.retryAfter`.
+  FORBIDDEN:
+    status: 403
+    description: The caller is authenticated but lacks the permission this route requires. A key's own `deniedCode` can replace this default with a more specific one.
+  IDEMPOTENCY_IN_FLIGHT:
+    status: 409
+    description: Another request already carries this `Idempotency-Key` and has not finished yet.
+  IDEMPOTENCY_KEY_MISMATCH:
+    status: 422
+    description: This `Idempotency-Key` was already used with a different request body.
+  INTERNAL_ERROR:
+    status: 500
+    description: An unexpected server-side failure. Never carries library or stack detail.
+  INVALID_REQUEST:
+    status: 400
+    description: A driver-level failure that is really about the request — a malformed id, a duplicate key — with no dedicated code of its own.
+  INVENTORY_BELOW_RESERVED:
+    status: 409
+    description: The requested on-hand count is below what is already reserved by open orders.
+  LIMIT_FIELD_COUNT:
+    status: 400
+    description: A multipart upload carries too many non-file fields (multer).
+  LIMIT_FIELD_KEY:
+    status: 400
+    description: A multipart field name is too long (multer).
+  LIMIT_FIELD_VALUE:
+    status: 400
+    description: A multipart field value is too long (multer).
+  LIMIT_FILE_COUNT:
+    status: 400
+    description: A multipart upload carries too many files (multer).
+  LIMIT_FILE_SIZE:
+    status: 400
+    description: An uploaded file exceeds this deployment's size limit (multer).
+  LIMIT_PART_COUNT:
+    status: 400
+    description: A multipart upload carries too many parts (multer).
+  LIMIT_UNEXPECTED_FILE:
+    status: 400
+    description: A multipart upload carries a file under a field name this operation does not accept (multer).
+  MISSING_FIELD_NAME:
+    status: 400
+    description: A multipart file part carries no field name (multer).
+  NOT_FOUND:
+    status: 404
+    description: The addressed resource does not exist, or the caller may not be told that it does.
+  ORDER_CREDIT_NOTE_NOT_ISSUED:
+    status: 404
+    description: The order exists but no credit note has been issued for it yet.
+  ORDER_INSUFFICIENT_STOCK:
+    status: 409
+    description: An admin-created order references a quantity beyond the product's available stock.
+  ORDER_INVOICED:
+    status: 409
+    description: This action is not allowed once an order has been invoiced.
+  ORDER_INVOICE_NOT_ISSUED:
+    status: 404
+    description: The order exists but no invoice has been issued for it yet.
+  ORDER_NOTHING_TO_SHIP:
+    status: 409
+    description: The order has no physical lines left to ship.
+  ORDER_NOT_CANCELLABLE:
+    status: 409
+    description: The order is not in a state that can still be cancelled.
+  ORDER_NOT_DIGITAL_ONLY:
+    status: 409
+    description: This action only applies to an order with no physical lines.
+  ORDER_NOT_PAID:
+    status: 409
+    description: The order must be paid before this delivery action.
+  ORDER_NOT_PROCESSING:
+    status: 409
+    description: The order is not in a state this delivery action can run from.
+  ORDER_NOT_SHIPPED:
+    status: 409
+    description: The order must be shipped before this delivery action.
+  ORDER_OVERRIDE_NOT_ALLOWED:
+    status: 409
+    description: This status transition is not on the admin override's allowed list.
+  ORDER_PRODUCT_UNAVAILABLE:
+    status: 409
+    description: A line on this order references a product that was deleted or deactivated since the intent was created.
+  PAYLOAD_TOO_LARGE:
+    status: 413
+    description: The request body exceeds this deployment's size limit.
+  PAYMENT_DECLINED:
+    status: 409
+    description: The card issuer or gateway declined the charge.
+  PAYMENT_IN_FLIGHT:
+    status: 409
+    description: Another payment attempt for this order is already being recorded.
+  PAYMENT_NOT_CONFIRMABLE:
+    status: 409
+    description: The payment is not in a state this confirmation can apply to.
+  PAYMENT_NOT_REFUNDABLE:
+    status: 409
+    description: The payment is not in a state that can still be refunded.
+  PAYMENT_ORDER_NOT_PAYABLE:
+    status: 409
+    description: The order is not in a state that can still accept a payment.
+  RATE_LIMITED:
+    status: 429
+    description: The caller exceeded a rate-limit budget. Carries a `Retry-After` hint.
+  REAUTH_REQUIRED:
+    status: 401
+    description: This action requires a session fresher than the caller's current one — see `POST /account/reauth`.
+  REORDER_UNAVAILABLE:
+    status: 409
+    description: The past order named for reorder no longer has any purchasable lines.
+  REQUEST_ERROR:
+    status: 400
+    description: A 4xx with no more specific code of its own.
+  SERVICE_UNAVAILABLE:
+    status: 503
+    description: A dependency (database, broker) is unreachable. Carries a `Retry-After` hint.
+  TWO_FACTOR_RESEND_TOO_SOON:
+    status: 429
+    description: A two-factor code was already sent recently — carries `details.retryAfter`.
+  UNAUTHORIZED:
+    status: 401
+    description: No valid session — log in and retry.
+  UNSUPPORTED_MEDIA_TYPE:
+    status: 415
+    description: The request's `Content-Type` is not one this operation accepts.
+  VALIDATION_ERROR:
+    status: 422
+    description: One or more fields failed schema validation — see `errors[].details.field`.
+  WEBHOOK_DELIVERY_IN_PROGRESS:
+    status: 409
+    description: A retry of this delivery is already in flight.

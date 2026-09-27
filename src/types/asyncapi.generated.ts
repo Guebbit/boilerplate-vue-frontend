@@ -8,70 +8,70 @@
 export interface ObservabilityMetricsPayload {
   'timestamp': string;
   'uptimeSeconds': number;
-  'memory': AnonymousSchema3;
-  'http': AnonymousSchema8;
-  'realtime': AnonymousSchema11;
+  'memory': MemoryUsage;
+  'http': HttpMetrics;
+  'realtime': RealtimeMetrics;
 }
-export interface AnonymousSchema3 {
+export interface MemoryUsage {
   'rss': number;
   'heapUsed': number;
   'heapTotal': number;
   'external': number;
 }
-export interface AnonymousSchema8 {
+export interface HttpMetrics {
   'totalRequests': number;
   'totalErrors': number;
 }
-export interface AnonymousSchema11 {
+export interface RealtimeMetrics {
   'sseClients': number;
 }
 export interface OrderCreatedEnvelope {
-  'type': AnonymousSchema16;
+  'type': OrderCreatedEventType;
   'timestamp': string;
   'data': OrderIdPayload;
 }
-export type AnonymousSchema16 = "order.created";
+export type OrderCreatedEventType = "order.created";
 export interface OrderIdPayload {
   'orderId': string;
 }
 export interface OrderPaidEnvelope {
-  'type': AnonymousSchema19;
+  'type': OrderPaidEventType;
   'timestamp': string;
   'data': OrderIdPayload;
 }
-export type AnonymousSchema19 = "order.paid";
+export type OrderPaidEventType = "order.paid";
 export interface OrderShippedEnvelope {
-  'type': AnonymousSchema21;
+  'type': OrderShippedEventType;
   'timestamp': string;
   'data': OrderIdPayload;
 }
-export type AnonymousSchema21 = "order.shipped";
+export type OrderShippedEventType = "order.shipped";
 export interface OrderCancelledEnvelope {
-  'type': AnonymousSchema23;
+  'type': OrderCancelledEventType;
   'timestamp': string;
   'data': OrderCancelledPayload;
 }
-export type AnonymousSchema23 = "order.cancelled";
+export type OrderCancelledEventType = "order.cancelled";
 export interface OrderCancelledPayload {
   'orderId': string;
   'refund': boolean;
 }
 export interface PaymentSucceededEnvelope {
-  'type': AnonymousSchema27;
+  'type': PaymentSucceededEventType;
   'timestamp': string;
   'data': PaymentEventPayload;
 }
-export type AnonymousSchema27 = "payment.succeeded";
+export type PaymentSucceededEventType = "payment.succeeded";
 export interface PaymentEventPayload {
   'paymentId': string;
   'orderId': string;
 }
 export interface PaymentFailedEnvelope {
-  'type': AnonymousSchema31;
+  'type': PaymentFailedEventType;
   'timestamp': string;
   'data': PaymentEventPayload;
 }
-export type AnonymousSchema31 = "payment.failed";
+export type PaymentFailedEventType = "payment.failed";
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
@@ -128,7 +128,7 @@ export interface SseEventPayloadMap {
 }
 export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];
 export const SSE_EVENT_PAYLOAD_SCHEMAS: Record<SseEventName, Record<string, unknown>> = {
-    "observability.heartbeat": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
-    "observability.metrics.snapshot": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
-    "observability.metrics.updated": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
+    "observability.heartbeat": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
+    "observability.metrics.snapshot": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
+    "observability.metrics.updated": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
 };
