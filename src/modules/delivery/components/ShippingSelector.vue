@@ -43,6 +43,13 @@ const methodId = defineModel<string | undefined>();
 const requiresAddress = defineModel<boolean | undefined>('requiresAddress');
 
 /**
+ * The deployment's ship-to list (E12) — mirrored out of the delivery store the same way
+ * {@link requiresAddress} is, so `Cart.vue` can narrow `AddressPicker`'s country select without
+ * reaching past this component into a store `cart` may not import directly.
+ */
+const shipToCountries = defineModel<string[]>('shipToCountries', { default: () => [] });
+
+/**
  * Translation function.
  */
 const { t } = useI18n();
@@ -58,9 +65,9 @@ const titleId = useId();
 const deliveryStore = useDeliveryStore();
 
 /**
- * The available shipping methods, reactive.
+ * The available shipping methods, and the ship-to list fetched alongside them — both reactive.
  */
-const { methods } = storeToRefs(deliveryStore);
+const { methods, shipToCountries: storeShipToCountries } = storeToRefs(deliveryStore);
 
 /*
  * Fetches on mount. The list is the same unfiltered catalogue everywhere it's read (the order
@@ -85,6 +92,18 @@ watch(
     },
     { immediate: true }
 );
+
+/**
+ * Mirrors the store's own ship-to list out to the caller (E12), the same pattern as
+ * {@link requiresAddress} above.
+ */
+watch(
+    storeShipToCountries,
+    (list) => {
+        shipToCountries.value = list;
+    },
+    { immediate: true }
+);
 </script>
 
 <template>
@@ -103,7 +122,12 @@ watch(
                     <span class="flex items-baseline gap-2">
                         {{ t(`shipping-selector.method-${method.id}`) }}
                         <strong data-test="shipping-price">
-                            {{ formatCurrency(deliveryStore.effectivePrice(method, itemsTotal)) }}
+                            {{
+                                formatCurrency(
+                                    deliveryStore.effectivePrice(method, itemsTotal),
+                                    method.currency
+                                )
+                            }}
                         </strong>
                         <span
                             v-if="

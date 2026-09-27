@@ -24,6 +24,15 @@ import AddressFormDialog from './AddressFormDialog.vue';
  */
 const addressId = defineModel<string | undefined>();
 
+const { shipToCountries } = defineProps<{
+    /**
+     * Narrows the add-address dialog's country select to this list (E12) — `Cart.vue` reads it
+     * off `ShippingSelector` and forwards it here, so checkout never offers a country the shop
+     * cannot deliver to. Forwarded to `AddressFormDialog.vue` as-is.
+     */
+    shipToCountries?: string[];
+}>();
+
 const { t } = useI18n();
 const titleId = useId();
 
@@ -98,6 +107,6 @@ watch(
                 {{ t('address-picker.add') }}
             </v-btn>
         </template>
-        <AddressFormDialog v-model="dialogOpen" />
+        <AddressFormDialog v-model="dialogOpen" :ship-to-countries="shipToCountries" />
     </div>
 </template>

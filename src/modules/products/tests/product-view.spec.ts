@@ -92,6 +92,7 @@ describe('the shelf', () => {
             id: 'p-out-of-stock',
             title: 'Sold out widget',
             price: 9.99,
+            currency: 'EUR',
             onHand: 3,
             reserved: 3,
             available: 0
@@ -107,6 +108,7 @@ describe('the shelf', () => {
             id: 'p-in-stock',
             title: 'Available widget',
             price: 9.99,
+            currency: 'EUR',
             onHand: 5,
             reserved: 1,
             available: 4
@@ -122,6 +124,7 @@ describe('the shelf', () => {
             id: 'p-in-stock',
             title: 'Available widget',
             price: 9.99,
+            currency: 'EUR',
             onHand: 5,
             reserved: 1,
             available: 4
@@ -134,7 +137,8 @@ describe('the shelf', () => {
                 totalQuantity: 3,
                 itemsTotal: 29.97,
                 shippingCost: 0,
-                totalPrice: 29.97
+                totalPrice: 29.97,
+                currency: 'EUR'
             }
         };
         // `POST /cart` SETS a line's quantity — the fresh fetch answers 3 already on this line, so
@@ -159,6 +163,7 @@ describe('the shelf', () => {
             id: 'p-in-stock',
             title: 'Available widget',
             price: 9.99,
+            currency: 'EUR',
             onHand: 5,
             reserved: 1,
             available: 4
@@ -175,7 +180,8 @@ describe('the shelf', () => {
                 totalQuantity: 5,
                 itemsTotal: 49.95,
                 shippingCost: 0,
-                totalPrice: 49.95
+                totalPrice: 49.95,
+                currency: 'EUR'
             }
         };
         const freshCart = {
@@ -185,7 +191,8 @@ describe('the shelf', () => {
                 totalQuantity: 0,
                 itemsTotal: 0,
                 shippingCost: 0,
-                totalPrice: 0
+                totalPrice: 0,
+                currency: 'EUR'
             }
         };
         vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
@@ -207,6 +214,7 @@ describe('the shelf', () => {
             id: 'p-in-stock',
             title: 'Available widget',
             price: 9.99,
+            currency: 'EUR',
             onHand: 5,
             reserved: 1,
             available: 4
@@ -234,7 +242,8 @@ describe('a barebones product', () => {
         const wrapper = mountProduct({
             id: 'p-minimal',
             title: 'Bare widget',
-            price: 1
+            price: 1,
+            currency: 'EUR'
         });
 
         expect(wrapper.find('[data-test=add-to-cart]').exists()).toBe(true);
@@ -246,6 +255,7 @@ describe('a barebones product', () => {
             id: 'p-rich',
             title: 'Full widget',
             price: 1,
+            currency: 'EUR',
             description: 'Everything a widget could want',
             categories: ['tools']
         });

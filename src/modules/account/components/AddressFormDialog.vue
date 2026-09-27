@@ -21,6 +21,8 @@ import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
+import { countryLabel } from '@/infrastructure/i18n/country-label.ts';
 import type { Address, AddressInput, UpdateAddressRequest } from '@types';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -30,13 +32,20 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  */
 const open = defineModel<boolean>({ default: false });
 
-const { editing } = defineProps<{
+const { editing, shipToCountries } = defineProps<{
     /**
      * The entry to prefill the form with, or `undefined` to add a new one. Read only when the
      * dialog opens (see the `open` watcher below) — editing this prop live while open is not a
      * case either caller needs.
      */
     editing?: Address;
+    /**
+     * Narrows the country select to this list (E12) — `AddressPicker.vue` passes the deployment's
+     * own ship-to list at checkout. Absent or empty, every ISO 3166-1 country is offered instead:
+     * the Geo-blocking Regulation lets a shop restrict DELIVERY, not the address book itself, so
+     * `ProfileAddresses.vue` never passes this and always gets the full list.
+     */
+    shipToCountries?: string[];
 }>();
 
 const { t, locale } = useI18n();
@@ -110,6 +119,17 @@ const formFrom = (address: Address | undefined): AddressForm =>
  * The dialog heading's id, so the dialog is announced by its title rather than as "dialog".
  */
 const dialogTitleId = useId();
+
+/**
+ * The country select's own options (E12): {@link shipToCountries} when the caller named one,
+ * every ISO 3166-1 country otherwise — localized in the active locale and sorted by that label,
+ * so the list reads correctly whatever language the visitor is in rather than in raw code order.
+ */
+const countryOptions = computed(() =>
+    (shipToCountries?.length ? shipToCountries : ISO_COUNTRY_CODES)
+        .map((code) => ({ value: code, title: countryLabel(code, locale.value) }))
+        .toSorted((a, b) => a.title.localeCompare(b.title, locale.value))
+);
 
 /**
  * The contract's own rule — five non-empty strings — said in the visitor's language. Messages
@@ -233,12 +253,17 @@ const handleSave = () =>
                         autocomplete="address-level2"
                     />
                 </div>
-                <!-- `country-name`: the field holds the name a person types, not an ISO code. -->
-                <v-text-field
+                <!-- The field holds an ISO 3166-1 alpha-2 code (E12); `autocomplete="country"`
+                     is the token the browser's own address autofill expects for that shape,
+                     unlike `country-name`'s free text. `v-autocomplete` rather than `v-select`:
+                     ~249 options is unusable without typing to filter. -->
+                <v-autocomplete
                     v-model="form.country"
+                    :items="countryOptions"
                     :label="t('profile-page.addresses-label-country')"
                     :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
-                    autocomplete="country-name"
+                    autocomplete="country"
+                    data-test="address-country"
                     class="mb-2"
                 />
                 <v-text-field

@@ -108,6 +108,13 @@ const router = useRouter();
 const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
 
 /**
+ * The order's own frozen currency (FA37) — every price on this page is `currentOrder`'s own money,
+ * never the shop's current default. `'EUR'` only stands in for an order that predates this field,
+ * per the API's own note on `Order.currency`.
+ */
+const orderCurrency = computed(() => currentOrder.value?.currency ?? 'EUR');
+
+/**
  * The cancel button's own blocked state — its own dedicated control, so a failure blocks it in
  * place rather than joining the toast queue.
  */
@@ -305,7 +312,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.totalPrice)"
+                    :value="formatCurrency(currentOrder?.totalPrice, orderCurrency)"
                     accent="secondary"
                 />
                 <CardMaterialStat
@@ -331,7 +338,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     </ItemDetailField>
                     <ItemDetailField
                         :label="t('order-target-page.label-total')"
-                        :value="formatCurrency(currentOrder.totalPrice)"
+                        :value="formatCurrency(currentOrder.totalPrice, orderCurrency)"
                         icon="💶"
                     />
                     <ItemDetailField
@@ -368,6 +375,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :order-payable="currentOrder.actions?.pay"
                         :order-status="currentOrder.status"
+                        :pay-by="currentOrder.payBy"
                         @paid="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <TransferInstructionsPanel
@@ -392,7 +400,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ItemDetailField
                         v-if="currentOrder?.shippingMethod"
                         :label="t('order-target-page.label-shipping')"
-                        :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0)}`"
+                        :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0, orderCurrency)}`"
                         icon="🚚"
                         data-test="order-shipping"
                     />
@@ -453,6 +461,41 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             </p>
                                             <strong>{{ item.product.id }}</strong>
                                         </div>
+                                        <!-- FA32b: the response already carries the frozen unit
+                                             price and this order's own currency — line total is
+                                             derived here, not re-fetched or re-priced. -->
+                                        <div
+                                            class="flex items-center justify-between gap-3"
+                                            data-test="order-item-unit-price"
+                                        >
+                                            <p class="m-0 opacity-75">
+                                                {{ t('order-target-page.label-unit-price') }}
+                                            </p>
+                                            <strong>
+                                                {{
+                                                    formatCurrency(
+                                                        item.product.price,
+                                                        orderCurrency
+                                                    )
+                                                }}
+                                            </strong>
+                                        </div>
+                                        <div
+                                            class="flex items-center justify-between gap-3"
+                                            data-test="order-item-line-total"
+                                        >
+                                            <p class="m-0 opacity-75">
+                                                {{ t('order-target-page.label-line-total') }}
+                                            </p>
+                                            <strong>
+                                                {{
+                                                    formatCurrency(
+                                                        item.product.price * item.quantity,
+                                                        orderCurrency
+                                                    )
+                                                }}
+                                            </strong>
+                                        </div>
                                     </div>
                                 </div>
                             </article>
@@ -483,23 +526,27 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-vat-net')
                                 }}</span>
-                                <strong>{{ formatCurrency(row.netAmount) }}</strong>
+                                <strong>{{ formatCurrency(row.netAmount, orderCurrency) }}</strong>
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-vat-tax')
                                 }}</span>
-                                <strong>{{ formatCurrency(row.taxAmount) }}</strong>
+                                <strong>{{ formatCurrency(row.taxAmount, orderCurrency) }}</strong>
                             </div>
                             <div class="flex items-center justify-between gap-3 px-1 text-sm">
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-net-total')
                                 }}</span>
-                                <strong>{{ formatCurrency(currentOrder.netTotal) }}</strong>
+                                <strong>{{
+                                    formatCurrency(currentOrder.netTotal, orderCurrency)
+                                }}</strong>
                             </div>
                             <div class="flex items-center justify-between gap-3 px-1 text-sm">
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-tax-total')
                                 }}</span>
-                                <strong>{{ formatCurrency(currentOrder.taxTotal) }}</strong>
+                                <strong>{{
+                                    formatCurrency(currentOrder.taxTotal, orderCurrency)
+                                }}</strong>
                             </div>
                         </div>
                     </div>

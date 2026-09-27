@@ -1,7 +1,8 @@
 /**
  * @module
  * The cart store's product-title join — the one the cart and wishlist pages need, because both contracts
- * answer lines as product ids only.
+ * answer lines as product ids only. `moneyOf` (FA32b) piggybacks on the same lookup, for the same
+ * reason `productShipping` already does: `resolveTitles` already pulls the whole `Product` down.
  *
  * Two properties matter: an id is never rendered as nothing (unknown → the id itself), and a
  * lookup that fails must not take the others down with it.
@@ -21,7 +22,8 @@ vi.mock('@api', () => ({
                   contractResponse(schemas.GetProductByIdResponse, {
                       id,
                       title: `Title of ${id}`,
-                      price: 1
+                      price: 1,
+                      currency: 'EUR'
                   })
               )
     )
@@ -52,5 +54,25 @@ describe('useCartStore — product titles', () => {
             .resolveTitles(['p1'])
             .then(() => store.resolveTitles(['p1', 'p2']))
             .then(() => expect(getProductById).toHaveBeenCalledTimes(2));
+    });
+
+    describe('moneyOf (FA32b)', () => {
+        it('answers undefined while a line has not resolved yet', () => {
+            expect(useCartStore().moneyOf('p1')).toBeUndefined();
+        });
+
+        it('resolves the unit price and currency off the same lookup titleOf uses', () => {
+            const store = useCartStore();
+            return store.resolveTitles(['p1']).then(() => {
+                expect(store.moneyOf('p1')).toEqual({ price: 1, currency: 'EUR' });
+            });
+        });
+
+        it('stays undefined for a lookup that failed, same as the title', () => {
+            const store = useCartStore();
+            return store.resolveTitles(['broken']).then(() => {
+                expect(store.moneyOf('broken')).toBeUndefined();
+            });
+        });
     });
 });

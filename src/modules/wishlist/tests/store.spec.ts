@@ -46,7 +46,8 @@ beforeEach(() => {
                 totalQuantity: 0,
                 itemsTotal: 0,
                 shippingCost: 0,
-                totalPrice: 0
+                totalPrice: 0,
+                currency: 'EUR'
             }
         })
     };

@@ -51,6 +51,8 @@
         "label-date": "Date",
         "label-items": "Items",
         "label-product-id": "Product",
+        "label-unit-price": "Unit price",
+        "label-line-total": "Line total",
         "image-alt": "Photo of {name}",
         "label-quantity": "Quantity",
         "loading": "Loading order...",

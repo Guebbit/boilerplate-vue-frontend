@@ -38,7 +38,7 @@ vi.mock('@/infrastructure/http', () => ({
                 config.url,
                 config.method?.toUpperCase() === 'DELETE'
                     ? orvalEnvelope()
-                    : orvalEnvelope({ id: 'p1', title: 'T', price: 1 })
+                    : orvalEnvelope({ id: 'p1', title: 'T', price: 1, currency: 'EUR' })
             )
         )
     )
@@ -69,6 +69,7 @@ const PRODUCT: Product = {
     id: 'p1',
     title: 'Gadget',
     price: 49.99,
+    currency: 'EUR',
     description: 'A gadget',
     imageUrl: 'https://example.com/g.jpg',
     categories: ['tools'],
@@ -132,7 +133,7 @@ describe('useProductsStore', () => {
                     // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
                     // wrapper that forgot to unwrap `response.data` would navigate to
                     // `/products/undefined` rather than fail visibly here.
-                    expect(created).toEqual({ id: 'p1', title: 'T', price: 1 });
+                    expect(created).toEqual({ id: 'p1', title: 'T', price: 1, currency: 'EUR' });
                 }));
 
         it('posts multipart to /products when an image is attached', () =>

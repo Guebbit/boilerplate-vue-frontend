@@ -47,6 +47,13 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const methods = ref<ShippingMethod[]>([]);
 
     /**
+     * Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`, E12) —
+     * checkout's own real enforcement; this is only what narrows the address form's country
+     * choices so a shopper never picks one it would refuse.
+     */
+    const shipToCountries = ref<string[]>([]);
+
+    /**
      * The current order's parcel, or undefined while nothing has shipped.
      */
     const shipment = ref<Shipment | undefined>();
@@ -61,6 +68,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchAny(() =>
             listShippingMethods().then((response) => {
                 methods.value = response.data.methods;
+                shipToCountries.value = response.data.shipToCountries;
                 return methods.value;
             })
         );
@@ -163,6 +171,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     return {
         loading,
         methods,
+        shipToCountries,
         shipment,
         fetchMethods,
         effectivePrice,

@@ -320,7 +320,7 @@ describe('localeChoice', () => {
  * actually wires it in, against the real `enabledModules`.
  */
 describe('localeChoice — locale-sensitive store resets', () => {
-    const PRODUCT: Product = { id: 'p1', title: 'Gadget', price: 9.99 };
+    const PRODUCT: Product = { id: 'p1', title: 'Gadget', price: 9.99, currency: 'EUR' };
     const ORDER: Order = {
         id: 'o1',
         email: 'buyer@example.com',

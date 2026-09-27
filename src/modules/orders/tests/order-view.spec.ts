@@ -145,6 +145,22 @@ describe('the order number', () => {
     });
 });
 
+describe('the payment deadline (FA32c)', () => {
+    it("passes the order's own payBy into PaymentPanel, not only TransferInstructionsPanel", () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            payBy: '2026-01-10T12:00:00.000Z',
+            items: [lineWith(null)]
+        });
+
+        expect(wrapper.getComponent({ name: 'PaymentPanel' }).props('payBy')).toBe(
+            '2026-01-10T12:00:00.000Z'
+        );
+
+        wrapper.unmount();
+    });
+});
+
 describe('the VAT summary', () => {
     it('is absent on a pre-VAT order — no taxSummary at all', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
@@ -199,6 +215,19 @@ describe('the "History" link', () => {
 
         const link = wrapper.get('[data-test=order-history]');
         expect(link.attributes('href')).toBe('/en/audit?target=o1');
+    });
+});
+
+describe('an order line’s price (FA32b)', () => {
+    it("shows the frozen unit price and price × quantity, in the order's own currency", () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            currency: 'GBP',
+            items: [{ ...lineWith(null), quantity: 3 }]
+        });
+
+        expect(wrapper.get('[data-test=order-item-unit-price]').text()).toContain('£9.99');
+        expect(wrapper.get('[data-test=order-item-line-total]').text()).toContain('£29.97');
     });
 });
 

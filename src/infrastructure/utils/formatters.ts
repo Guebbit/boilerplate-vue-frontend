@@ -72,15 +72,20 @@ export const formatDate = (value?: string | null) =>
 /**
  * Formats numeric values as currency with locale-aware separators and symbol.
  *
+ * No default: the shop's currency is configurable (`NODE_DEFAULT_CURRENCY`), and every money
+ * resource (`Product`, `Order`, `ShippingMethod`, the cart's `summary`, `Payment`) now carries its
+ * own `currency` — a call site that forgot to read it is a bug, not a case to paper over with a
+ * silent EUR (FA37).
+ *
  * @param value - Amount to format; non-numbers yield the fallback glyph.
- * @param currency - ISO 4217 currency code. Defaults to `EUR`.
+ * @param currency - ISO 4217 currency code, from the same resource `value` was read off.
  * @param format - `Intl.NumberFormat` overrides. Defaults to 2 decimals.
  * @returns The formatted amount, or {@link EMPTY_VALUE} when `value` is not a
  *  number. Unknown currency codes degrade to a plain number format.
  */
 export const formatCurrency = (
-    value?: number | null,
-    currency = 'EUR',
+    value: number | null | undefined,
+    currency: string,
     format?: Intl.NumberFormatOptions
 ) => formatCurrencyBase(value, { currency, format, locale: getLocale(), empty: EMPTY_VALUE });
 

@@ -40,6 +40,7 @@ export type CheckoutErrorVerdict =
     | { kind: 'insufficient-stock'; lines: CheckoutShortfallLine[] }
     | { kind: 'address-not-found' }
     | { kind: 'shipping-method-weight' }
+    | { kind: 'ship-to-country-not-supported' }
     | { kind: 'product-unavailable'; lines: UnavailableCartLine[] }
     | { kind: 'other' };
 
@@ -104,6 +105,9 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
     if (item?.code === 'CART_CHANGED') return { kind: 'cart-changed' };
     if (item?.code === 'CART_ADDRESS_NOT_FOUND') return { kind: 'address-not-found' };
     if (item?.code === 'CART_SHIPPING_METHOD_WEIGHT') return { kind: 'shipping-method-weight' };
+    if (item?.code === 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED') {
+        return { kind: 'ship-to-country-not-supported' };
+    }
     if (item?.code === 'CART_INSUFFICIENT_STOCK') {
         const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
         const lines = Array.isArray(rawLines)

@@ -52,6 +52,19 @@ const lastAddCall = () =>
         );
 
 /**
+ * Stands in for the country `v-autocomplete` as a plain text input — same reasoning as
+ * `record-offline-payment-form.spec.ts`'s own `VSelect` stub, an `<input>` rather than a
+ * `<select>` so `fillRequired` below can keep setting it by `autocomplete`, the same as every
+ * other field here.
+ */
+const V_COUNTRY_SELECT_STUB = {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+        '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+};
+
+/**
  * Mounts the panel with `v-dialog` stubbed to always render its content, same as
  * `entries-import-dialog.spec.ts` — the checkbox's visibility is the component's own decision,
  * not something Vuetify's overlay should have to be driven open for.
@@ -60,7 +73,10 @@ const mountAddresses = () =>
     mount(ProfileAddresses, {
         global: {
             plugins: [vuetify, i18n],
-            stubs: { VDialog: { template: '<div><slot /></div>' } }
+            stubs: {
+                VDialog: { template: '<div><slot /></div>' },
+                VAutocomplete: V_COUNTRY_SELECT_STUB
+            }
         }
     });
 
@@ -86,7 +102,7 @@ const fillRequired = (wrapper: ReturnType<typeof mountAddresses>) =>
         )
         .then(() =>
             wrapper
-                .get('[data-test=address-dialog] form input[autocomplete=country-name]')
+                .get('[data-test=address-dialog] form input[autocomplete=country]')
                 .setValue('US')
         );
 
