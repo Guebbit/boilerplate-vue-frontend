@@ -30,6 +30,19 @@ const OFFICE = {
 };
 
 /**
+ * Stands in for the country `v-select` as a plain text input — same reasoning as
+ * `record-offline-payment-form.spec.ts`'s own `VSelect` stub, an `<input>` rather than a
+ * `<select>` specifically so it stays inside `dialogInputs`' positional `findAll('input')` at the
+ * SAME index the real field held before E12 turned it from a `v-text-field` into a select.
+ */
+const V_COUNTRY_SELECT_STUB = {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+        '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+};
+
+/**
  * Mounts the panel with the store pre-seeded (no fetch involved) and `updateAddress`/`addAddress`
  * spied, so each case only has to assert on the payload sent.
  */
@@ -43,9 +56,12 @@ const mountPanel = () => {
     const wrapper = mount(ProfileAddresses, {
         global: {
             plugins: [vuetify, i18n],
-            // The confirmation gate under test is not the overlay Vuetify manages — same
-            // reasoning as `EntriesImportDialog.spec.ts`.
-            stubs: { VDialog: { template: '<div><slot /></div>' } }
+            stubs: {
+                // The confirmation gate under test is not the overlay Vuetify manages — same
+                // reasoning as `EntriesImportDialog.spec.ts`.
+                VDialog: { template: '<div><slot /></div>' },
+                VSelect: V_COUNTRY_SELECT_STUB
+            }
         }
     });
     return { wrapper, updateAddress, addAddress };

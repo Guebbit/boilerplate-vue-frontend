@@ -1,7 +1,7 @@
 /**
  * @module
  * Mounts the real cart page against a real, memory-history router, proving the checkout screen
- * answers `docs/modules/cart-checkout.md`'s six documented refusals differently rather than
+ * answers `docs/modules/cart-checkout.md`'s seven documented refusals differently rather than
  * folding every one into the same generic toast. Same template as `product-view.spec.ts`: a real
  * router over `collectModuleRoutes(enabledModules)`, the store's own fetch stubbed, the cart
  * seeded directly into the store.
@@ -217,6 +217,29 @@ describe('the checkout refusals', () => {
                     // test), not a banner; this proves it is not silently rendered as an
                     // insufficient-stock case.
                     expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                });
+        }));
+
+    /**
+     * E12: the resolved address's country fell outside the deployment's ship-to list. Same shape
+     * as `CART_ADDRESS_NOT_FOUND` above — a message, no banner — since the fix is picking a
+     * different address, not a field this page can correct on the shopper's behalf.
+     */
+    it('answers CART_SHIP_TO_COUNTRY_NOT_SUPPORTED with a message distinct from the generic fallback', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(422, 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED')
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                    expect(wrapper.findAll('[data-test=checkout-unavailable-line]')).toHaveLength(
+                        0
+                    );
                 });
         }));
 

@@ -60,6 +60,7 @@ const {
     setShippingMethod,
     checkout: placeOrder,
     titleOf,
+    moneyOf,
     resolveTitles
 } = useCartStore();
 
@@ -118,6 +119,13 @@ watch(shippingMethodId, (chosen, previous) => {
 const shippingMethodRequiresAddress = ref<boolean>();
 
 /**
+ * The deployment's ship-to list (E12), mirrored out of `ShippingSelector` the same way — narrows
+ * `AddressPicker`'s add-address dialog so checkout never offers a country the shop cannot deliver
+ * to.
+ */
+const shipToCountries = ref<string[]>([]);
+
+/**
  * The chosen shipping address's entry id — required only when
  * {@link shippingMethodRequiresAddress} is true; omitted, checkout resolves the caller's default.
  */
@@ -173,11 +181,9 @@ const {
  * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
  * in the debounce window.
  *
- * See `docs/modules/cart-checkout.md` §"The four refusals, and why they are shaped differently"
- * for what each `classifyCheckoutError` branch below answers and why: `CART_CHANGED` means the
- * cart this screen shows is stale, `CART_INSUFFICIENT_STOCK` names which lines and by how much,
- * `CART_ADDRESS_NOT_FOUND` means the address on the order no longer resolves. Every other refusal
- * — including a transport failure — has no more specific answer than the generic toast.
+ * See `docs/modules/cart-checkout.md` §"The seven refusals, and why they are shaped differently"
+ * for what each `classifyCheckoutError` branch below answers and why. A transport failure alone
+ * has no more specific answer than the generic toast.
  *
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
  *  order's own page, or the refusal-specific handling below.
@@ -228,6 +234,13 @@ const runCheckout = () =>
                 // that actually knows the chosen method cannot carry it.
                 shippingMethodId.value = undefined;
                 addMessage(t('cart-page.error-shipping-method-weight'));
+                return;
+            }
+            if (verdict.kind === 'ship-to-country-not-supported') {
+                // E12: the resolved address's country fell outside the ship-to list — the select
+                // above already narrows a NEW address to it, so the fix is picking (or adding)
+                // one, not a field this page can correct on the shopper's behalf.
+                addMessage(t('cart-page.error-ship-to-country-not-supported'));
                 return;
             }
             if (verdict.kind === 'product-unavailable') {
@@ -411,6 +424,29 @@ onMounted(() =>
                     <p class="mt-1 opacity-80" role="status">
                         {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
                     </p>
+                    <!-- FA32b: absent until `resolveTitles` has answered for this line — no price
+                         guessed ahead of the server's own answer. -->
+                    <p
+                        v-if="moneyOf(item.productId)"
+                        class="mt-1 opacity-80"
+                        data-test="cart-line-price"
+                    >
+                        {{
+                            formatCurrency(
+                                moneyOf(item.productId)?.price,
+                                moneyOf(item.productId)?.currency ?? ''
+                            )
+                        }}
+                        ×
+                        {{ lineQuantity(item) }}
+                        =
+                        {{
+                            formatCurrency(
+                                (moneyOf(item.productId)?.price ?? 0) * lineQuantity(item),
+                                moneyOf(item.productId)?.currency ?? ''
+                            )
+                        }}
+                    </p>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                         <v-btn
                             icon
@@ -470,6 +506,7 @@ onMounted(() =>
                     <ShippingSelector
                         v-model="shippingMethodId"
                         v-model:requires-address="shippingMethodRequiresAddress"
+                        v-model:ship-to-countries="shipToCountries"
                         :items-total="cartSummary.itemsTotal"
                     />
                     <!--
@@ -479,6 +516,7 @@ onMounted(() =>
                     <AddressPicker
                         v-if="shippingMethodRequiresAddress"
                         v-model="addressId"
+                        :ship-to-countries="shipToCountries"
                         class="mt-3"
                     />
                     <PaymentMethodSelector v-model="paymentMethodId" />

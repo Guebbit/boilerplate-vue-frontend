@@ -21,6 +21,7 @@
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",
         "error-shipping-method-weight": "Il tuo carrello è troppo pesante per il metodo di spedizione scelto — scegline un altro.",
         "error-shipping-method-generic": "Non è stato possibile impostare quel metodo di spedizione — scegline un altro.",
+        "error-ship-to-country-not-supported": "Non spediamo al paese di quell'indirizzo — scegli o aggiungi un indirizzo in un paese che serviamo.",
         "error-product-unavailable": "Alcuni prodotti nel carrello non sono più disponibili — rimuovili per completare l'acquisto.",
         "button-decrease": "Diminuisci quantità",
         "button-increase": "Aumenta quantità",

@@ -34,6 +34,15 @@ describe('classifyCheckoutError', () => {
         ).toEqual({ kind: 'shipping-method-weight' });
     });
 
+    it('names CART_SHIP_TO_COUNTRY_NOT_SUPPORTED (E12)', () => {
+        expect(
+            classifyCheckoutError({
+                status: 422,
+                errors: [{ code: 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED', message: 'x' }]
+            })
+        ).toEqual({ kind: 'ship-to-country-not-supported' });
+    });
+
     it('reads every shortfall line off CART_INSUFFICIENT_STOCK', () => {
         const verdict = classifyCheckoutError({
             status: 409,

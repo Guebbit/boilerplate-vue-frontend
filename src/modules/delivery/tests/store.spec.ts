@@ -23,8 +23,15 @@ wireModulesIntoCore();
  * Fixture methods: one with a free-above threshold and no tracking, one flat-rate and tracked.
  */
 const METHODS = [
-    { id: 'standard', price: 5, freeAbove: 100, tracked: false, requiresAddress: true },
-    { id: 'express', price: 15, tracked: true, requiresAddress: true }
+    {
+        id: 'standard',
+        price: 5,
+        currency: 'EUR',
+        freeAbove: 100,
+        tracked: false,
+        requiresAddress: true
+    },
+    { id: 'express', price: 15, currency: 'EUR', tracked: true, requiresAddress: true }
 ];
 
 /**
@@ -53,7 +60,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /delivery/methods': orvalEnvelope({ methods: METHODS }),
+        'GET /delivery/methods': orvalEnvelope({ methods: METHODS, shipToCountries: ['IT'] }),
         'GET /delivery/order/order-1': orvalEnvelope({
             id: 's1',
             orderId: 'order-1',
@@ -121,6 +128,17 @@ describe('fetchMethods', () => {
                 .mocked(orvalMutator)
                 .mock.calls.find(([config]) => config.url === '/delivery/methods');
             expect(call?.[0].params).toBeUndefined();
+        });
+    });
+
+    /**
+     * E12: the deployment's ship-to list, alongside the methods it was fetched with — narrows
+     * the address form's country choices at checkout without a separate round trip.
+     */
+    it('mirrors the ship-to countries list', () => {
+        const store = useDeliveryStore();
+        return store.fetchMethods().then(() => {
+            expect(store.shipToCountries).toEqual(['IT']);
         });
     });
 });
