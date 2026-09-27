@@ -17,6 +17,9 @@ on:
         # Catch newly-disclosed query patterns against unchanged code.
         - cron: '17 3 * * 1'
 
+permissions:
+    contents: read
+
 concurrency:
     group: codeql-${{ github.ref }}
     cancel-in-progress: true
@@ -31,18 +34,18 @@ jobs:
             security-events: write
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             # Picks the query pack and sets up the extractor. No build step: JS/TS is analysed
             # from source, so unlike compiled languages nothing has to run first.
             - name: Initialize CodeQL
-              uses: github/codeql-action/init@v3
+              uses: github/codeql-action/init@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
               with:
                   languages: javascript-typescript
 
             # Runs the queries and uploads the SARIF results to the Security tab. `category`
             # namespaces them, so a future second language analysed here does not overwrite these.
             - name: Perform CodeQL analysis
-              uses: github/codeql-action/analyze@v3
+              uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
               with:
                   category: '/language:javascript-typescript'

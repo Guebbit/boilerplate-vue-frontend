@@ -17,6 +17,9 @@ on:
         - cron: '30 2 * * *'
     workflow_dispatch:
 
+permissions:
+    contents: read
+
 concurrency:
     group: visual-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
@@ -41,7 +44,7 @@ jobs:
             BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Checkout and install paired backend
               uses: ./.github/actions/paired-backend
@@ -59,7 +62,7 @@ jobs:
               # `always()`: a failed comparison is exactly when the pictures are needed, and a pass
               # leaves the folder empty, which `if-no-files-found: ignore` tolerates.
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: visual-diff
                   path: reports/visual-diff/

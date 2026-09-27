@@ -31,6 +31,9 @@ on:
         - cron: '15 3 * * *'
     workflow_dispatch:
 
+permissions:
+    contents: read
+
 concurrency:
     group: e2e-live-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
@@ -131,10 +134,10 @@ jobs:
 
         steps:
             - name: Checkout frontend
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version-file: .nvmrc
                   cache: npm
@@ -142,7 +145,7 @@ jobs:
 
             - name: Cache Cypress binary
               # ~200 MB that `npm ci` would otherwise re-download every night.
-              uses: actions/cache@v4
+              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
               with:
                   path: ~/.cache/Cypress
                   key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -289,7 +292,7 @@ jobs:
             - name: Upload backend log
               # Uploaded even on success: a green run whose log is full of 500s is worth seeing.
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: backend-log
                   path: backend.log
@@ -300,7 +303,7 @@ jobs:
             # a 500 is a backend problem, one that failed on a wrong value is usually seed drift.
             - name: Upload Cypress screenshots
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: cypress-screenshots-live
                   path: tests/e2e/screenshots
@@ -310,7 +313,7 @@ jobs:
             - name: Upload Cypress videos
               # Same, for the specs where the failure is a sequence rather than a single frame.
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: cypress-videos-live
                   path: tests/e2e/videos
@@ -321,7 +324,7 @@ jobs:
               # Same artifact `ci.yml`'s demo-profile job uploads, from the live stack: every axe
               # finding `cy.checkPageA11y()` saw, written to `reports/a11y/` — advisory ones too.
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: a11y-reports-live
                   path: reports/a11y/
