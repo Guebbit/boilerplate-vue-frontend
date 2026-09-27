@@ -30,7 +30,7 @@ const OFFICE = {
 };
 
 /**
- * Stands in for the country `v-select` as a plain text input — same reasoning as
+ * Stands in for the country `v-autocomplete` as a plain text input — same reasoning as
  * `record-offline-payment-form.spec.ts`'s own `VSelect` stub, an `<input>` rather than a
  * `<select>` specifically so it stays inside `dialogInputs`' positional `findAll('input')` at the
  * SAME index the real field held before E12 turned it from a `v-text-field` into a select.
@@ -60,7 +60,7 @@ const mountPanel = () => {
                 // The confirmation gate under test is not the overlay Vuetify manages — same
                 // reasoning as `EntriesImportDialog.spec.ts`.
                 VDialog: { template: '<div><slot /></div>' },
-                VSelect: V_COUNTRY_SELECT_STUB
+                VAutocomplete: V_COUNTRY_SELECT_STUB
             }
         }
     });

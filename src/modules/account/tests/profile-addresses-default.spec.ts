@@ -52,7 +52,7 @@ const lastAddCall = () =>
         );
 
 /**
- * Stands in for the country `v-select` as a plain text input — same reasoning as
+ * Stands in for the country `v-autocomplete` as a plain text input — same reasoning as
  * `record-offline-payment-form.spec.ts`'s own `VSelect` stub, an `<input>` rather than a
  * `<select>` so `fillRequired` below can keep setting it by `autocomplete`, the same as every
  * other field here.
@@ -75,7 +75,7 @@ const mountAddresses = () =>
             plugins: [vuetify, i18n],
             stubs: {
                 VDialog: { template: '<div><slot /></div>' },
-                VSelect: V_COUNTRY_SELECT_STUB
+                VAutocomplete: V_COUNTRY_SELECT_STUB
             }
         }
     });

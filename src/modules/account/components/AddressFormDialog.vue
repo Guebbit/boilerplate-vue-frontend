@@ -255,8 +255,9 @@ const handleSave = () =>
                 </div>
                 <!-- The field holds an ISO 3166-1 alpha-2 code (E12); `autocomplete="country"`
                      is the token the browser's own address autofill expects for that shape,
-                     unlike `country-name`'s free text. -->
-                <v-select
+                     unlike `country-name`'s free text. `v-autocomplete` rather than `v-select`:
+                     ~249 options is unusable without typing to filter. -->
+                <v-autocomplete
                     v-model="form.country"
                     :items="countryOptions"
                     :label="t('profile-page.addresses-label-country')"

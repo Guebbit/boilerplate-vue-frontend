@@ -1,10 +1,10 @@
 /**
  * @module
  * `AddressFormDialog.vue`'s country select (E12) — scoped to what neither `ProfileAddresses.vue`
- * nor `AddressPicker.vue`'s own suites cover: the options `v-select` actually renders, narrowed or
- * not. Reads `VSelect`'s own `items` prop rather than driving its overlay open — the same
- * "assert what was passed down" idiom `stock-movement-form.spec.ts` documents for a Vuetify
- * listbox that would otherwise need a real menu interaction to inspect.
+ * nor `AddressPicker.vue`'s own suites cover: the options `v-autocomplete` actually renders,
+ * narrowed or not. Reads `VAutocomplete`'s own `items` prop rather than driving its overlay open —
+ * the same "assert what was passed down" idiom `stock-movement-form.spec.ts` documents for a
+ * Vuetify listbox that would otherwise need a real menu interaction to inspect.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -18,7 +18,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /**
- * One option as `VSelect` receives it.
+ * One option as `VAutocomplete` receives it.
  */
 interface CountryOption {
     value: string;
@@ -42,13 +42,13 @@ const mountDialog = (props: Record<string, unknown> = {}) =>
     });
 
 /**
- * The country select's own `items`, off the real `VSelect` instance.
+ * The country select's own `items`, off the real `VAutocomplete` instance.
  *
  * @param wrapper - The mounted dialog.
- * @returns The options `VSelect` was handed.
+ * @returns The options `VAutocomplete` was handed.
  */
 const countryOptions = (wrapper: ReturnType<typeof mountDialog>) =>
-    wrapper.getComponent({ name: 'VSelect' }).props('items') as CountryOption[];
+    wrapper.getComponent({ name: 'VAutocomplete' }).props('items') as CountryOption[];
 
 beforeEach(() => {
     setActivePinia(createPinia());
