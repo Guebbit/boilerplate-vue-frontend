@@ -40,5 +40,10 @@ export const deliveryResponseSchemas: ResponseSchemaRoute[] = [
         method: 'POST',
         pattern: /^\/delivery\/order\/[^/]+\/deliver$/,
         schema: schemas.DeliverOrderResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/delivery\/order\/[^/]+\/fulfill$/,
+        schema: schemas.FulfillOrderResponse
     }
 ];

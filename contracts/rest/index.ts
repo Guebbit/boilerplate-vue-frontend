@@ -396,10 +396,12 @@ export interface OrderActions {
     pay: boolean;
     /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
     start: boolean;
-    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
+    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead. */
     ship: boolean;
     /** Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
     deliver: boolean;
+    /** Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not. */
+    fulfill: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
     override: OrderStatus[];
 }
@@ -475,7 +477,7 @@ export interface Order {
     shippingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
     payBy?: string;
-    readonly invoiceNumber?: string;
+    readonly orderNumber?: string;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     actions?: OrderActions;
@@ -6371,8 +6373,8 @@ export const overrideOrderStatus = (
 };
 
 /**
- * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
- * @summary Download order invoice (PDF)
+ * Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
+ * @summary Download order receipt (PDF)
  */
 export const getOrderInvoice = (
     id: string,
@@ -6571,7 +6573,7 @@ export const startFulfilment = (
 };
 
 /**
- * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+ * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`. Refuses a digital-only order outright, also 409 (`ORDER_NOTHING_TO_SHIP`) — nothing on it would ever ride in a parcel; `POST /delivery/order/{orderId}/fulfill` is that order's door instead.
  * @summary Record a parcel's handover to the carrier
  */
 export const shipOrder = (
@@ -6606,6 +6608,20 @@ export const deliverOrder = (
             headers: { 'Content-Type': 'application/json' },
             data: deliverOrderRequest
         },
+        options
+    );
+};
+
+/**
+ * The digital-only alternative to `ship`/`deliver` — reports that a `processing` order with no physical lines is done, moving it straight to `delivered` with no parcel record. Refuses an order that is not `processing` with a named 409 (`ORDER_NOT_PROCESSING`), and one that carries any line that still needs shipping with a named 409 (`ORDER_NOT_DIGITAL_ONLY`) — that order ships through the ordinary door instead.
+ * @summary Mark a digital-only order fulfilled, with no shipment
+ */
+export const fulfillOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        { url: `/delivery/order/${orderId}/fulfill`, method: 'POST' },
         options
     );
 };
@@ -7169,6 +7185,7 @@ export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof get
 export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
 export type ShipOrderResult = NonNullable<Awaited<ReturnType<typeof shipOrder>>>;
 export type DeliverOrderResult = NonNullable<Awaited<ReturnType<typeof deliverOrder>>>;
+export type FulfillOrderResult = NonNullable<Awaited<ReturnType<typeof fulfillOrder>>>;
 export type ListInventoryLevelsResult = NonNullable<
     Awaited<ReturnType<typeof listInventoryLevels>>
 >;

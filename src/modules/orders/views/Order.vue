@@ -574,13 +574,13 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     test-id="order-invoice-error"
                 />
                 <span
-                    v-if="currentOrder?.invoiceNumber"
+                    v-if="currentOrder?.orderNumber"
                     class="self-center text-sm opacity-75"
-                    data-test="order-invoice-number"
+                    data-test="order-number"
                 >
                     {{
-                        t('order-target-page.label-invoice-number', {
-                            number: currentOrder.invoiceNumber
+                        t('order-target-page.label-order-number', {
+                            number: currentOrder.orderNumber
                         })
                     }}
                 </span>

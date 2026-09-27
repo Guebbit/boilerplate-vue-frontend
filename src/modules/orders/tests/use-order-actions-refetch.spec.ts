@@ -23,6 +23,7 @@ const NO_MOVES: OrderActions = {
     start: false,
     ship: false,
     deliver: false,
+    fulfill: false,
     override: []
 };
 

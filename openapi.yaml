@@ -4566,8 +4566,8 @@ paths:
     get:
       tags:
         - Orders
-      summary: Download order invoice (PDF)
-      description: Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
+      summary: Download order receipt (PDF)
+      description: Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
       operationId: getOrderInvoice
       security:
         - bearerAuth: []
@@ -4575,7 +4575,7 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: Invoice PDF
+          description: Order receipt PDF
           content:
             application/pdf:
               schema:
@@ -5071,7 +5071,7 @@ paths:
       tags:
         - Delivery
       summary: Record a parcel's handover to the carrier
-      description: Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+      description: Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`. Refuses a digital-only order outright, also 409 (`ORDER_NOTHING_TO_SHIP`) — nothing on it would ever ride in a parcel; `POST /delivery/order/{orderId}/fulfill` is that order's door instead.
       operationId: shipOrder
       security:
         - bearerAuth: []
@@ -5160,6 +5160,45 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /delivery/order/{orderId}/fulfill:
+    post:
+      tags:
+        - Delivery
+      summary: Mark a digital-only order fulfilled, with no shipment
+      description: The digital-only alternative to `ship`/`deliver` — reports that a `processing` order with no physical lines is done, moving it straight to `delivered` with no parcel record. Refuses an order that is not `processing` with a named 409 (`ORDER_NOT_PROCESSING`), and one that carries any line that still needs shipping with a named 409 (`ORDER_NOT_DIGITAL_ONLY`) — that order ships through the ordinary door instead.
+      operationId: fulfillOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The digital-only order to mark fulfilled
+      responses:
+        "200":
+          description: The order, now `delivered`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -6653,6 +6692,7 @@ components:
         - start
         - ship
         - deliver
+        - fulfill
         - override
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
       properties:
@@ -6675,10 +6715,13 @@ components:
           description: "Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
         ship:
           type: boolean
-          description: Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.
+          description: Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead.
         deliver:
           type: boolean
           description: Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.
+        fulfill:
+          type: boolean
+          description: "Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not."
         override:
           type: array
           items:
@@ -6806,7 +6849,7 @@ components:
         payBy:
           type: string
           format: date-time
-        invoiceNumber:
+        orderNumber:
           type: string
           readOnly: true
           example: 2026-000041

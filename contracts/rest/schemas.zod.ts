@@ -3249,7 +3249,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
-                invoiceNumber: zod.string().optional(),
+                orderNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -3308,12 +3308,17 @@ export const ExportAccountDataResponse = zod.strictObject({
                         ship: zod
                             .boolean()
                             .describe(
-                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                                "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                             ),
                         deliver: zod
                             .boolean()
                             .describe(
                                 'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        fulfill: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                             ),
                         override: zod
                             .array(
@@ -6683,7 +6688,7 @@ export const CheckoutResponse = zod.strictObject({
                     'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                 ),
             payBy: zod.iso.datetime({ offset: true }).optional(),
-            invoiceNumber: zod.string().optional(),
+            orderNumber: zod.string().optional(),
             transferInstructions: zod
                 .strictObject({
                     beneficiary: zod.string(),
@@ -6742,12 +6747,17 @@ export const CheckoutResponse = zod.strictObject({
                     ship: zod
                         .boolean()
                         .describe(
-                            'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                         ),
                     deliver: zod
                         .boolean()
                         .describe(
                             'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        ),
+                    fulfill: zod
+                        .boolean()
+                        .describe(
+                            'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                         ),
                     override: zod
                         .array(
@@ -7204,7 +7214,7 @@ export const ListOrdersResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
-                invoiceNumber: zod.string().optional(),
+                orderNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -7263,12 +7273,17 @@ export const ListOrdersResponse = zod.strictObject({
                         ship: zod
                             .boolean()
                             .describe(
-                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                                "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                             ),
                         deliver: zod
                             .boolean()
                             .describe(
                                 'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        fulfill: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                             ),
                         override: zod
                             .array(
@@ -7564,7 +7579,7 @@ export const CreateOrderResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7623,12 +7638,17 @@ export const CreateOrderResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -7967,7 +7987,7 @@ export const SearchOrdersResponse = zod.strictObject({
                         'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
                     ),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
-                invoiceNumber: zod.string().optional(),
+                orderNumber: zod.string().optional(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -8026,12 +8046,17 @@ export const SearchOrdersResponse = zod.strictObject({
                         ship: zod
                             .boolean()
                             .describe(
-                                'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                                "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                             ),
                         deliver: zod
                             .boolean()
                             .describe(
                                 'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                            ),
+                        fulfill: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                             ),
                         override: zod
                             .array(
@@ -8300,7 +8325,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -8359,12 +8384,17 @@ export const GetOrderByIdResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -8623,7 +8653,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -8682,12 +8712,17 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -8946,7 +8981,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9005,12 +9040,17 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -9294,7 +9334,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9353,12 +9393,17 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -9642,7 +9687,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9701,12 +9746,17 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -9978,7 +10028,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -10037,12 +10087,17 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -10074,8 +10129,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
 });
 
 /**
- * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
- * @summary Download order invoice (PDF)
+ * Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
+ * @summary Download order receipt (PDF)
  */
 export const GetOrderInvoiceParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
@@ -10565,7 +10620,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -10624,12 +10679,17 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -11523,7 +11583,7 @@ export const StartFulfilmentResponse = zod.strictObject({
                 'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
             ),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        invoiceNumber: zod.string().optional(),
+        orderNumber: zod.string().optional(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -11582,12 +11642,17 @@ export const StartFulfilmentResponse = zod.strictObject({
                 ship: zod
                     .boolean()
                     .describe(
-                        'Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
                     ),
                 deliver: zod
                     .boolean()
                     .describe(
                         'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
                     ),
                 override: zod
                     .array(
@@ -11619,7 +11684,7 @@ export const StartFulfilmentResponse = zod.strictObject({
 });
 
 /**
- * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`.
+ * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`. Refuses a digital-only order outright, also 409 (`ORDER_NOTHING_TO_SHIP`) — nothing on it would ever ride in a parcel; `POST /delivery/order/{orderId}/fulfill` is that order's door instead.
  * @summary Record a parcel's handover to the carrier
  */
 export const ShipOrderParams = zod.strictObject({
@@ -11707,6 +11772,324 @@ export const DeliverOrderResponse = zod.strictObject({
         deliveredAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+
+/**
+ * The digital-only alternative to `ship`/`deliver` — reports that a `processing` order with no physical lines is done, moving it straight to `delivered` with no parcel record. Refuses an order that is not `processing` with a named 409 (`ORDER_NOT_PROCESSING`), and one that carries any line that still needs shipping with a named 409 (`ORDER_NOT_DIGITAL_ONLY`) — that order ships through the ordinary door instead.
+ * @summary Mark a digital-only order fulfilled, with no shipment
+ */
+export const FulfillOrderParams = zod.strictObject({
+    orderId: zod.string().describe('The digital-only order to mark fulfilled')
+});
+
+export const fulfillOrderResponseDataItemsItemProductPriceMin = 0;
+
+export const fulfillOrderResponseDataItemsItemProductRequiresShippingDefault = true;
+export const fulfillOrderResponseDataItemsItemProductWeightMin = 0;
+
+export const fulfillOrderResponseDataItemsItemProductTaxRateMin = 0;
+export const fulfillOrderResponseDataItemsItemProductTaxRateMax = 1;
+
+export const fulfillOrderResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+
+export const fulfillOrderResponseDataItemsItemTaxAmountMin = 0;
+
+export const fulfillOrderResponseDataItemsItemNetAmountMin = 0;
+
+export const fulfillOrderResponseDataTotalItemsMin = 0;
+
+export const fulfillOrderResponseDataTotalQuantityMin = 0;
+
+export const fulfillOrderResponseDataTotalPriceMin = 0;
+
+export const fulfillOrderResponseDataNetTotalMin = 0;
+
+export const fulfillOrderResponseDataTaxTotalMin = 0;
+
+export const fulfillOrderResponseDataShippingNetAmountMin = 0;
+
+export const fulfillOrderResponseDataShippingTaxAmountMin = 0;
+
+export const fulfillOrderResponseDataTaxSummaryItemRateMin = 0;
+
+export const fulfillOrderResponseDataTaxSummaryItemNetAmountMin = 0;
+
+export const fulfillOrderResponseDataTaxSummaryItemTaxAmountMin = 0;
+
+export const fulfillOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
+
+export const fulfillOrderResponseDataShippingCostMin = 0;
+
+export const FulfillOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    title: zod.string(),
+                    price: zod
+                        .number()
+                        .min(fulfillOrderResponseDataItemsItemProductPriceMin)
+                        .describe(
+                            'Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.'
+                        ),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(fulfillOrderResponseDataItemsItemProductRequiresShippingDefault),
+                    weight: zod
+                        .number()
+                        .min(fulfillOrderResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(fulfillOrderResponseDataItemsItemProductTaxRateMin)
+                        .max(fulfillOrderResponseDataItemsItemProductTaxRateMax)
+                        .describe(
+                            'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        )
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .regex(fulfillOrderResponseDataItemsItemLocaleRegExp)
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                    ),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod
+                            .string()
+                            .min(1)
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `\'\'` is never a synonym for \"no image\" — only `null` is, on a field that allows it.'
+                            ),
+                        thumbnailUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                            )
+                    })
+                    .nullable()
+                    .describe(
+                        "The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`."
+                    ),
+                taxAmount: zod
+                    .number()
+                    .min(fulfillOrderResponseDataItemsItemTaxAmountMin)
+                    .describe("VAT included in this line's total, at its own frozen `taxRate`."),
+                netAmount: zod
+                    .number()
+                    .min(fulfillOrderResponseDataItemsItemNetAmountMin)
+                    .describe(
+                        "This line's total excluding VAT — `price × quantity` minus `taxAmount`."
+                    )
+            })
+        ),
+        totalItems: zod
+            .number()
+            .min(fulfillOrderResponseDataTotalItemsMin)
+            .describe(
+                'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+            ),
+        totalQuantity: zod
+            .number()
+            .min(fulfillOrderResponseDataTotalQuantityMin)
+            .describe('Sum of `quantity` across every line item.'),
+        totalPrice: zod
+            .number()
+            .min(fulfillOrderResponseDataTotalPriceMin)
+            .describe(
+                'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+            ),
+        netTotal: zod
+            .number()
+            .min(fulfillOrderResponseDataNetTotalMin)
+            .describe(
+                "Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here."
+            ),
+        taxTotal: zod
+            .number()
+            .min(fulfillOrderResponseDataTaxTotalMin)
+            .describe(
+                "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+            ),
+        shippingNetAmount: zod
+            .number()
+            .min(fulfillOrderResponseDataShippingNetAmountMin)
+            .describe(
+                "Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping."
+            ),
+        shippingTaxAmount: zod
+            .number()
+            .min(fulfillOrderResponseDataShippingTaxAmountMin)
+            .describe(
+                "Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping."
+            ),
+        taxSummary: zod
+            .array(
+                zod.strictObject({
+                    rate: zod
+                        .number()
+                        .min(fulfillOrderResponseDataTaxSummaryItemRateMin)
+                        .describe(
+                            'The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.'
+                        ),
+                    netAmount: zod.number().min(fulfillOrderResponseDataTaxSummaryItemNetAmountMin),
+                    taxAmount: zod.number().min(fulfillOrderResponseDataTaxSummaryItemTaxAmountMin),
+                    grossAmount: zod
+                        .number()
+                        .min(fulfillOrderResponseDataTaxSummaryItemGrossAmountMin)
+                        .describe('`netAmount + taxAmount`, not re-derived from a price.')
+                })
+            )
+            .describe(
+                'One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines.'
+            ),
+        notes: zod.string().optional().describe('Optional order notes'),
+        shippingMethod: zod
+            .string()
+            .optional()
+            .describe(
+                "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+            ),
+        shippingCost: zod
+            .number()
+            .min(fulfillOrderResponseDataShippingCostMin)
+            .optional()
+            .describe(
+                'What that method cost at checkout time — a later rate change cannot re-price history.'
+            ),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod
+            .enum(['card', 'bank_transfer'])
+            .optional()
+            .describe(
+                'How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.'
+            ),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        orderNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod
+                    .string()
+                    .optional()
+                    .describe('Absent when the deployment has not configured one.'),
+                reference: zod
+                    .string()
+                    .describe(
+                        'The ISO 11649 \"RF\" creditor reference minted for this order at checkout — what the customer writes into the transfer\'s description, so an admin can match the incoming payment back to it via `GET \/payments\/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts.'
+                    )
+            })
+            .optional(),
+        status: zod
+            .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            .describe(
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+            ),
+        actions: zod
+            .strictObject({
+                transitions: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                    ),
+                cancel: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                    ),
+                pay: zod
+                    .boolean()
+                    .describe(
+                        "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                    ),
+                start: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+                    ),
+                ship: zod
+                    .boolean()
+                    .describe(
+                        "Whether `POST \/delivery\/order\/{id}\/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead."
+                    ),
+                deliver: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                fulfill: zod
+                    .boolean()
+                    .describe(
+                        'Whether `POST \/delivery\/order\/{id}\/fulfill` would be accepted for this caller — the digital-only alternative to `ship`\/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not.'
+                    ),
+                override: zod
+                    .array(
+                        zod
+                            .enum([
+                                'pending',
+                                'paid',
+                                'processing',
+                                'shipped',
+                                'delivered',
+                                'cancelled'
+                            ])
+                            .describe(
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                            )
+                    )
+                    .describe(
+                        'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    )
+            })
+            .optional()
+            .describe(
+                "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+            ),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 

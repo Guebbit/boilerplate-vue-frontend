@@ -97,6 +97,7 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         start: false,
         ship: false,
         deliver: false,
+        fulfill: false,
         override: []
     }
 };
@@ -106,39 +107,39 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/orders/o1').then(() => router.isReady()));
 });
 
-describe('the invoice buttons', () => {
+describe('the receipt buttons', () => {
     it('are both enabled, with their normal labels, for any order — the render is synchronous now', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
 
         const downloadButton = wrapper.get('[data-test=order-download-invoice]');
         expect(downloadButton.attributes('disabled')).toBeUndefined();
-        expect(downloadButton.text()).toContain('Download invoice');
+        expect(downloadButton.text()).toContain('Download receipt');
 
         const viewButton = wrapper.get('[data-test=order-view-invoice]');
         expect(viewButton.attributes('disabled')).toBeUndefined();
-        expect(viewButton.text()).toContain('View invoice');
+        expect(viewButton.text()).toContain('View receipt');
 
         wrapper.unmount();
     });
 });
 
-describe('the invoice number', () => {
+describe('the order number', () => {
     it('is absent when the order carries none', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
 
-        expect(wrapper.find('[data-test=order-invoice-number]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=order-number]').exists()).toBe(false);
 
         wrapper.unmount();
     });
 
-    it('shows next to the invoice button once the order has one', () => {
+    it('shows next to the receipt button once the order has one', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            invoiceNumber: '2026-000041',
+            orderNumber: '2026-000041',
             items: [lineWith(null)]
         });
 
-        expect(wrapper.get('[data-test=order-invoice-number]').text()).toContain('2026-000041');
+        expect(wrapper.get('[data-test=order-number]').text()).toContain('2026-000041');
 
         wrapper.unmount();
     });

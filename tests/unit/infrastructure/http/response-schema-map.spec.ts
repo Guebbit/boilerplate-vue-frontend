@@ -186,6 +186,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', `/delivery/order/${ID}/start`, 'StartFulfilmentResponse'],
     ['POST', `/delivery/order/${ID}/ship`, 'ShipOrderResponse'],
     ['POST', `/delivery/order/${ID}/deliver`, 'DeliverOrderResponse'],
+    ['POST', `/delivery/order/${ID}/fulfill`, 'FulfillOrderResponse'],
     ['GET', '/inventory/levels', 'ListInventoryLevelsResponse'],
     ['GET', '/inventory/movements', 'ListStockMovementsResponse'],
     ['POST', '/inventory/receipts', 'ReceiveStockResponse'],
