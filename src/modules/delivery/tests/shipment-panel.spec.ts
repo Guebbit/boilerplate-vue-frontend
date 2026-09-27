@@ -50,6 +50,7 @@ const mountPanel = (props: {
     orderStatus?: string;
     shippingMethodId?: string;
     canStart?: boolean;
+    canFulfill?: boolean;
 }) => {
     const store = useDeliveryStore();
     vi.spyOn(store, 'fetchMethods').mockResolvedValue(undefined);
@@ -93,6 +94,56 @@ describe('the start-fulfilment door (Q6)', () => {
             .then(() => {
                 expect(start).toHaveBeenCalledWith('o1');
                 expect(wrapper.emitted('moved')).toHaveLength(1);
+            });
+    });
+});
+
+describe('the digital-fulfilment door', () => {
+    it('offers "Mark fulfilled" on a processing, digital-only order when `actions.fulfill` says so', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+
+        expect(wrapper.find('[data-test=mark-fulfilled]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
+    });
+
+    it('never offers it when `actions.fulfill` is false, even while processing', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: false });
+
+        expect(wrapper.find('[data-test=mark-fulfilled]').exists()).toBe(false);
+    });
+
+    it('calls the delivery store and emits `moved` on click', () => {
+        signIn();
+        const fulfill = vi.spyOn(useDeliveryStore(), 'fulfill').mockResolvedValue(undefined);
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+
+        return wrapper
+            .get('[data-test=mark-fulfilled]')
+            .trigger('click')
+            .then(() => {
+                expect(fulfill).toHaveBeenCalledWith('o1');
+                expect(wrapper.emitted('moved')).toHaveLength(1);
+            });
+    });
+
+    /**
+     * The same catch FA35 gave `markShipped`/`markDelivered`, covered for `markFulfilled` too.
+     */
+    it('shows a 409 as the inline error, instead of silently doing nothing', () => {
+        signIn();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+        vi.spyOn(useDeliveryStore(), 'fulfill').mockRejectedValue(new Error('not digital-only'));
+
+        return wrapper
+            .find('[data-test=mark-fulfilled]')
+            .trigger('click')
+            .then(() => wrapper.vm.$nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
+                    'not digital-only'
+                );
             });
     });
 });

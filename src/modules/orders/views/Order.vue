@@ -381,6 +381,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-status="currentOrder.status"
                         :shipping-method-id="currentOrder.shippingMethod"
                         :can-start="currentOrder.actions?.start ?? false"
+                        :can-fulfill="currentOrder.actions?.fulfill ?? false"
                         @moved="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ItemDetailField

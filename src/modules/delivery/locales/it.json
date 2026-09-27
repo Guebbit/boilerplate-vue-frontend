@@ -12,14 +12,17 @@
         "status-delivered": "Consegnato",
         "not-shipped-yet": "Non ancora spedito.",
         "not-started-yet": "Non ancora avviato.",
+        "digital-only": "Niente da spedire — questo ordine è solo digitale.",
         "label-tracking-code": "Codice di tracciamento",
         "tracking-code-required": "Richiesto per questo metodo di spedizione",
         "button-start": "Avvia evasione",
         "button-ship": "Segna come spedito",
         "button-deliver": "Segna come consegnato",
+        "button-fulfill": "Segna come evaso",
         "started": "Evasione avviata.",
         "shipped": "Segnato come spedito.",
         "delivered": "Segnato come consegnato.",
+        "fulfilled": "Segnato come evaso.",
         "label-force": "Forza (override)",
         "label-force-reason": "Motivo dell'override"
     }

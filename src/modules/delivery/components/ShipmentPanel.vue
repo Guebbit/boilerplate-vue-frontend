@@ -8,9 +8,10 @@ export default {
 /**
  * @module
  * Single-file component: `<script setup>` wires session/delivery-store state, the template
- * renders one of four states off the order's own status and shipment — not yet started, not yet
- * shippable, ready to ship, or in transit/arrived — with the tracking-code field gated on the
- * chosen method's `tracked` flag, read live from the methods list.
+ * renders one of five states off the order's own status and shipment — not yet started, digital
+ * and awaiting fulfilment, not yet shippable, ready to ship, or in transit/arrived — with the
+ * tracking-code field gated on the chosen method's `tracked` flag, read live from the methods
+ * list.
  */
 
 import { computed, onMounted, ref } from 'vue';
@@ -46,6 +47,12 @@ const { orderId, orderStatus, shippingMethodId, canStart } = defineProps<{
      * key than who may write a shipment (`delivery.any.update`).
      */
     canStart?: boolean;
+    /**
+     * The order's own `actions.fulfill` — whether `POST /delivery/order/{id}/fulfill` would be
+     * accepted right now. `true` only once a digital-only order is `processing`: it never gets a
+     * parcel, so `ship`/`deliver` are never offered for it.
+     */
+    canFulfill?: boolean;
 }>();
 
 /**
@@ -179,6 +186,23 @@ const markStarted = () => {
 };
 
 /**
+ * Reports a digital-only order fulfilled, then re-reads the order. The `ship`/`deliver` pair's
+ * digital-only alternative: no parcel record, no tracking code, straight to `delivered`.
+ *
+ * @returns A promise resolving once the panel has refreshed.
+ */
+const markFulfilled = () => {
+    clearShipmentError();
+    return deliveryStore
+        .fulfill(orderId)
+        .then(() => {
+            addMessage(t('shipment-panel.fulfilled'));
+            emit('moved');
+        })
+        .catch((error: unknown) => reportShipmentError(error));
+};
+
+/**
  * Records the handover, then re-reads the order.
  *
  * @returns A promise resolving once the panel has refreshed.
@@ -239,6 +263,21 @@ onMounted(() => {
                 @click="markStarted"
             >
                 {{ t('shipment-panel.button-start') }}
+            </v-btn>
+        </template>
+
+        <template v-else-if="!shipment && canFulfill">
+            <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.digital-only') }}</p>
+            <v-btn
+                class="mt-1"
+                color="primary"
+                variant="tonal"
+                size="small"
+                data-test="mark-fulfilled"
+                :disabled="loading"
+                @click="markFulfilled"
+            >
+                {{ t('shipment-panel.button-fulfill') }}
             </v-btn>
         </template>
 

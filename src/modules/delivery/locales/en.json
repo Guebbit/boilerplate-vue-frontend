@@ -12,14 +12,17 @@
         "status-delivered": "Delivered",
         "not-shipped-yet": "Not shipped yet.",
         "not-started-yet": "Not started yet.",
+        "digital-only": "Nothing to ship — this order is digital-only.",
         "label-tracking-code": "Tracking code",
         "tracking-code-required": "Required for this shipping method",
         "button-start": "Start fulfilment",
         "button-ship": "Mark shipped",
         "button-deliver": "Mark delivered",
+        "button-fulfill": "Mark fulfilled",
         "started": "Fulfilment started.",
         "shipped": "Marked shipped.",
         "delivered": "Marked delivered.",
+        "fulfilled": "Marked fulfilled.",
         "label-force": "Force (override)",
         "label-force-reason": "Reason for override"
     }

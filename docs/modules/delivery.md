@@ -68,11 +68,11 @@ concerns, and between them they cover four of the client's nine context edges.
 
 Store `delivery`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                          | What it is                                                       |
-| ----------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `methods` · `shipment`                                                           | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                                        | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchMethods` · `effectivePrice` · `fetchShipmentForOrder` · `ship` · `deliver` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **State**   | `methods` · `shipment`                                                                                 | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                                              | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchMethods` · `effectivePrice` · `fetchShipmentForOrder` · `start` · `ship` · `deliver` · `fulfill` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -87,6 +87,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 | `POST /delivery/order/{id}/start`   | `StartFulfilmentResponse`     |
 | `POST /delivery/order/{id}/ship`    | `ShipOrderResponse`           |
 | `POST /delivery/order/{id}/deliver` | `DeliverOrderResponse`        |
+| `POST /delivery/order/{id}/fulfill` | `FulfillOrderResponse`        |
 | `GET /delivery/methods`             | `ListShippingMethodsResponse` |
 | `GET /delivery/order/{id}`          | `GetShipmentByOrderResponse`  |
 

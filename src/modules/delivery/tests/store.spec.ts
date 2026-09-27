@@ -86,6 +86,21 @@ beforeEach(() => {
             shippingTaxAmount: 0,
             taxSummary: [],
             status: 'processing'
+        }),
+        'POST /delivery/order/order-4/fulfill': orvalEnvelope({
+            id: 'order-4',
+            userId: 'u1',
+            email: 'shopper@example.com',
+            items: [],
+            totalItems: 0,
+            totalQuantity: 0,
+            totalPrice: 0,
+            netTotal: 0,
+            taxTotal: 0,
+            shippingNetAmount: 0,
+            shippingTaxAmount: 0,
+            taxSummary: [],
+            status: 'delivered'
         })
     };
 });
@@ -157,6 +172,22 @@ describe('start', () => {
             expect(result).toBeUndefined();
             expect(store.shipment).toBeUndefined();
         });
+    });
+});
+
+describe('fulfill', () => {
+    it('resolves once a digital-only order is fulfilled, without touching `shipment` — no parcel ever exists for it', () => {
+        const store = useDeliveryStore();
+        return store.fulfill('order-4').then((result) => {
+            expect(result).toBeUndefined();
+            expect(store.shipment).toBeUndefined();
+        });
+    });
+
+    it('rejects the same way any other refusal does — a 409 on a non-digital-only order', () => {
+        responses['POST /delivery/order/order-4/fulfill'] = new Error('ORDER_NOT_DIGITAL_ONLY');
+        const store = useDeliveryStore();
+        return expect(store.fulfill('order-4')).rejects.toBeDefined();
     });
 });
 

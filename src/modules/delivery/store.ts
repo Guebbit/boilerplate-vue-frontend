@@ -13,7 +13,8 @@ import {
     getShipmentByOrder,
     startFulfilment,
     shipOrder,
-    deliverOrder
+    deliverOrder,
+    fulfillOrder
 } from '@api';
 import type { ShippingMethod, Shipment } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
@@ -147,6 +148,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
             })
         );
 
+    /**
+     * Marks a digital-only order fulfilled (admin): the order moves `processing → delivered`
+     * directly, with no parcel record. The `ship`/`deliver` alternative for an order with nothing
+     * to ship. No result stored here, for the same reason {@link start} stores none — this module
+     * owns the shipment, not the order.
+     *
+     * @param orderId - The digital-only order to mark fulfilled.
+     * @returns A promise resolving once the move lands.
+     */
+    const fulfill = (orderId: string) =>
+        fetchAny(() => fulfillOrder(orderId).then(() => undefined));
+
     return {
         loading,
         methods,
@@ -156,6 +169,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchShipmentForOrder,
         start,
         ship,
-        deliver
+        deliver,
+        fulfill
     };
 });
