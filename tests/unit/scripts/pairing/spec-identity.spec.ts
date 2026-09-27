@@ -1,7 +1,7 @@
 /**
  * `scripts/pairing/spec-identity.ts` — the cross-repo contract check.
  *
- * Three separate things are worth testing here, and only one of them is the comparison logic:
+ * Two separate things are worth testing here, and only one of them is the comparison logic:
  *
  *  1. **The logic**, against fixtures on a temp directory. It has to work when the sibling
  *     checkout is absent, which is the state of every CI runner that has not checked it out and
@@ -14,11 +14,8 @@
  *     needs it, since each one only ever compares itself against the one frontend, written by the
  *     same dumper.
  *
- *  3. **The real pair**, when the sibling actually is beside this checkout. That case is
- *     conditional on purpose: it is the live assertion that the two repos agree today, and it is
- *     the only one that would notice a fork introduced by hand. Where the sibling is missing it
- *     reports as skipped rather than passing quietly, because a check that silently evaporates is
- *     worse than one that is visibly absent.
+ * The live assertion that the two repos agree today — the sibling checkout actually present, not
+ * a fixture — is the dedicated `check:spec-identity` CI job, not this suite.
  *
  * The fixtures are built from `SHARED_FILES` rather than from a hardcoded list, so a file added
  * to the check is covered by every case below without touching this file — and, more to the
@@ -28,7 +25,6 @@
  */
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -42,7 +38,6 @@ import {
     sharedFileProblems,
     type RepoRole
 } from '../../../../scripts/pairing/spec-identity';
-import { resolveBackendPath } from '../../../../scripts/pairing/paired-backend-path';
 
 /** Builds a throwaway repo root holding the named files with the given contents. */
 const makeRoot = (files: Record<string, string>): string => {
@@ -332,51 +327,5 @@ describe('formatSharedFileProblems', () => {
         // next `contracts:bundle` silently reverts.
         expect(message).toContain('contracts:bundle');
         expect(message).toContain('npm run gen:asyncapi');
-    });
-});
-
-/*
- * The live pair.
- *
- * Conditional on the sibling being checked out, because a clone with only this repo is a normal
- * way to work — but NOT silently. A skipped suite reads as green, and the one guard that would
- * have caught a forked contract is exactly the guard nobody notices going missing.
- *
- * So the absence is asserted rather than assumed: locally it says so out loud, and under `CI` it
- * fails, because a pipeline that checks out one half of a pair and reports success on the shared
- * contract is reporting something it did not check.
- *
- * `resolveBackendPath()` reads `BACKEND_PATH` off `process.env`, and nothing in the Vitest runner
- * loads `.env` into it the way `check-spec-identity.ts`'s CLI does for itself — so this loads it
- * the same guarded way, or a `.env` pointed at the PHP backend would still get checked against the
- * Node one here.
- */
-try {
-    process.loadEnvFile();
-} catch {
-    /* no .env in this checkout */
-}
-
-const siblingRoot = resolveBackendPath();
-const siblingPresent = existsSync(siblingRoot);
-
-describe(`the paired backend at ${siblingRoot}`, () => {
-    it('is checked out, or this suite is knowingly incomplete', () => {
-        if (siblingPresent) return;
-
-        const message = `Shared-contract checks skipped: no sibling repo at ${siblingRoot}.`;
-        // eslint-disable-next-line no-console -- the skip warning must reach a terminal that has no logger configured
-        if (!process.env.CI) console.warn(`⚠️  ${message}`);
-        expect(process.env.CI ? message : '').toBe('');
-    });
-
-    it('carries identical copies of every shared file', () => {
-        // Nothing to compare without the sibling. The test above is what makes that visible —
-        // and what fails in CI — so this one simply has no work to do.
-        if (!siblingPresent) return;
-
-        const comparisons = compareSharedFiles(siblingRoot);
-
-        expect(formatSharedFileProblems(comparisons, siblingRoot)).toBe('');
     });
 });

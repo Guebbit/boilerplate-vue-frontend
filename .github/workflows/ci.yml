@@ -396,18 +396,13 @@ jobs:
               run: npm run build-only
 
     test-unit:
-        # Vitest: components, stores, composables and the http layer, in jsdom.
-        #
-        # The paired backend is checked out too: `spec-identity.spec.ts` compares the real pair
-        # when the sibling is present and FAILS under CI when it is not, so a runner without it
-        # would be red for an infrastructure reason rather than a code one.
+        # Vitest: components, stores, composables and the http layer, in jsdom. No paired backend
+        # here — the one unit case that needed a real sibling checkout is `spec-identity`'s own
+        # job below, which does its own checkout for exactly that.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
             contents: read
-        env:
-            # Where the sibling lands, and what scripts/pairing/paired-backend-path.ts resolves.
-            BACKEND_PATH: .backend
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -421,20 +416,6 @@ jobs:
 
             - name: Install dependencies
               run: npm ci
-
-            # spec-identity.spec.ts reads the sibling's bundled openapi.yaml, which only exists
-            # once the backend's own postinstall has assembled it — `openapi.yaml` is gitignored
-            # there and built from fragments on install, not committed. Without this the whole
-            # job read "openapi.yaml: absent" instead of running the comparison at all.
-            #
-            # `guarded-install`: skips a PHP pair, which tracks its own committed `openapi.yaml`
-            # and has no `package.json` to install, and disables mongodb-memory-server's own
-            # postinstall download — bundling the contract needs no database at all.
-            - name: Checkout and install paired backend
-              uses: ./.github/actions/paired-backend
-              with:
-                  path: .backend
-                  guarded-install: 'true'
 
             - name: Run unit tests with coverage
               run: npm run test:unit:coverage
