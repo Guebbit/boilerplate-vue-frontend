@@ -19,10 +19,14 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
  * protocol-relative URL a browser follows off-site, which is exactly the value an attacker crafts
  * a phishing link's `?continue=` around.
  *
+ * Exported for `stores/oauth.ts`'s `oauthStartUrl`: the OAuth start redirect carries the same
+ * `?continue=` value onward as its own query param, so it needs the identical guard rather than a
+ * second copy of it.
+ *
  * @param value - `route.query.continue`, in whichever shape vue-router parsed it as.
  * @returns `true` only for a single string starting with one `/`.
  */
-const isSameOriginPath = (value: unknown): value is string =>
+export const isSameOriginPath = (value: unknown): value is string =>
     typeof value === 'string' && value.startsWith('/') && !value.startsWith('//');
 
 /**

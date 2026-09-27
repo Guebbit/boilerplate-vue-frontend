@@ -78,6 +78,18 @@ describe('oauthStartUrl', () => {
         instance.defaults.baseURL = undefined;
         expect(oauthStartUrl('github')).toBe('/account/oauth/github');
     });
+
+    it('carries a continueTo path as ?continue= on the start URL', () => {
+        expect(oauthStartUrl('google', '/cart')).toBe(
+            'https://api.example.test/account/oauth/google?continue=%2Fcart'
+        );
+    });
+
+    it('omits ?continue= entirely when there is nowhere to return to', () => {
+        expect(oauthStartUrl('google', undefined)).toBe(
+            'https://api.example.test/account/oauth/google'
+        );
+    });
 });
 
 describe('useOAuthProvidersStore', () => {

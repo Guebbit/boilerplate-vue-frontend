@@ -51,7 +51,10 @@ const ARMED_TOTP = { method: 'totp', delivers: false, enrolledAt: '2026-01-01T00
 const mountPanel = (status: Record<string, unknown>) => {
     setActivePinia(createPinia());
     responses = { 'GET /account/2fa': orvalEnvelope(status) };
-    return mount(ProfileTwoFactor, { attachTo: document.body, global: { plugins: [vuetify, i18n] } });
+    return mount(ProfileTwoFactor, {
+        attachTo: document.body,
+        global: { plugins: [vuetify, i18n] }
+    });
 };
 
 beforeEach(() => {
@@ -149,7 +152,9 @@ describe('ProfileTwoFactor + TwoFactorEnroll: the TOTP secret', () => {
             )
             .then(flushPromises)
             .then(() => {
-                expect(document.body.querySelector('[data-test=two-factor-backup-codes]')).toBeNull();
+                expect(
+                    document.body.querySelector('[data-test=two-factor-backup-codes]')
+                ).toBeNull();
             });
     });
 });

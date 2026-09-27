@@ -11,6 +11,7 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listOAuthProviders as apiListOAuthProviders } from '@api';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { instance } from '@/infrastructure/http/client.ts';
+import type { StartOAuthLoginParams } from '@api';
 
 /**
  * Display names for the providers this app knows about. A name absent here still renders — see
@@ -34,17 +35,28 @@ export const providerLabel = (provider: string): string =>
 /**
  * The URL a login button points at — a real navigation target, not an API call: the redirect
  * dance needs an actual top-level browser navigation to reach the provider's consent screen and
- * come back with cookies set, which neither a `RouterLink` nor an axios call can do.
+ * come back with cookies set, which neither a `RouterLink` nor an axios call can do. This is why
+ * `continueTo` is appended by hand rather than through `startOAuthLogin` itself — the generated
+ * function's own docblock says it is "not called programmatically" — typed against its
+ * `StartOAuthLoginParams` regardless, so a future rename of the `continue` param breaks this build
+ * instead of silently building the wrong URL.
  *
  * The prefix is read off the axios instance rather than `import.meta.env`, same reasoning as
  * `resolveImageUrl` — it follows the e2e shard runner's `__APP_CONFIG` override, a runtime value
  * a build-time env read can't see.
  *
  * @param provider - Registry key, e.g. `'google'`.
+ * @param continueTo - A same-origin path to send the browser back to once login completes — the
+ *  OAuth equivalent of the password-login flow's own `?continue=` (`isSameOriginPath`). Omitted
+ *  when there is nowhere in particular to return to.
  * @returns The backend's start-login URL for that provider.
  */
-export const oauthStartUrl = (provider: string): string =>
-    `${instance.defaults.baseURL ?? ''}/account/oauth/${provider}`;
+export const oauthStartUrl = (provider: string, continueTo?: string): string => {
+    const query = continueTo
+        ? `?${new URLSearchParams({ continue: continueTo } satisfies StartOAuthLoginParams).toString()}`
+        : '';
+    return `${instance.defaults.baseURL ?? ''}/account/oauth/${provider}${query}`;
+};
 
 /**
  * The enabled OAuth providers — `Login.vue`/`Signup.vue` render one button per name, and render

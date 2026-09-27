@@ -12,7 +12,7 @@ export default {
  * `FormImageUpload` can show real upload progress when an avatar is attached. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -27,9 +27,12 @@ import {
     oauthStartUrl,
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
+import {
+    usePostLoginRedirect,
+    isSameOriginPath
+} from '@/modules/account/composables/use-post-login-redirect.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
@@ -54,6 +57,11 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
+ * Current route, read for its `?continue=` — forwarded onto the OAuth start URL below.
+ */
+const route = useRoute();
+
+/**
  * Where a fresh session lands — the same ending both login steps use, so a signup that now
  * carries a session honours `?continue=` exactly as they do.
  */
@@ -65,6 +73,14 @@ const { redirectAfterLogin } = usePostLoginRedirect();
  */
 const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
 void useOAuthProvidersStore().fetchProviders();
+
+/**
+ * The same-origin `?continue=` this page arrived with, if any — forwarded onto the OAuth start
+ * URL below, same as `Login.vue`.
+ */
+const continueTo = computed(() =>
+    isSameOriginPath(route.query.continue) ? route.query.continue : undefined
+);
 
 /**
  * Form logics
@@ -345,7 +361,7 @@ const submitForm = () => {
                     v-for="provider in oauthProviders"
                     :key="provider"
                     :data-test="`oauth-${provider}`"
-                    :href="oauthStartUrl(provider)"
+                    :href="oauthStartUrl(provider, continueTo)"
                     variant="outlined"
                     size="large"
                     block

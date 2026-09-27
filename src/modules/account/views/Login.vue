@@ -12,7 +12,7 @@ export default {
  * the challenge to `useTwoFactorStore` and pushes `TwoFactorChallenge` instead — see the store's
  * `LoginOutcome` for the branch this reads.
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -26,7 +26,10 @@ import {
     oauthStartUrl,
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
-import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
+import {
+    usePostLoginRedirect,
+    isSameOriginPath
+} from '@/modules/account/composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
@@ -68,6 +71,15 @@ const { redirectAfterLogin } = usePostLoginRedirect();
  */
 const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
 void useOAuthProvidersStore().fetchProviders();
+
+/**
+ * The same-origin `?continue=` this page arrived with, if any — forwarded onto the OAuth start
+ * URL below so the round trip through the provider ends up wherever the password form's own
+ * `redirectAfterLogin` would have sent a plain login.
+ */
+const continueTo = computed(() =>
+    isSameOriginPath(route.query.continue) ? route.query.continue : undefined
+);
 
 /**
  * Form logics.
@@ -260,7 +272,7 @@ const submitForm = () => {
                     v-for="provider in oauthProviders"
                     :key="provider"
                     :data-test="`oauth-${provider}`"
-                    :href="oauthStartUrl(provider)"
+                    :href="oauthStartUrl(provider, continueTo)"
                     variant="outlined"
                     size="large"
                     block
