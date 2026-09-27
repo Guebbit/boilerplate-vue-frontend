@@ -84,7 +84,9 @@ beforeEach(() => {
         'POST /account/verify-confirm': orvalEnvelope(),
         'POST /account/email-change-confirm': orvalEnvelope(),
         // Every collection is an array the fixture is free to leave empty; only `exportedAt` and
-        // `profile` are required scalars on `AccountExportResponse`.
+        // `profile` are required scalars on `AccountExportResponse`. `invoicing` is the one
+        // exception — an object of two empty arrays, never absent, for an account with no paid
+        // orders yet.
         'POST /account/export': orvalEnvelope({
             exportedAt: '2026-09-07T00:00:00.000Z',
             profile: USER,
@@ -97,7 +99,8 @@ beforeEach(() => {
             wishlist: [],
             sessions: [],
             auditLog: [],
-            apiKeys: []
+            apiKeys: [],
+            invoicing: { invoices: [], creditNotes: [] }
         })
     };
 });

@@ -35,6 +35,8 @@ tags:
   - name: Wishlist
   - name: Orders
   - name: Payments
+  - name: Invoicing
+    description: The frozen invoice and credit-note PDFs — issued at payment and at refund, never before.
   - name: Delivery
   - name: Inventory
   - name: Feedback
@@ -4204,6 +4206,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4405,6 +4409,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4472,6 +4478,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -4573,9 +4581,9 @@ paths:
   /orders/{id}/invoice:
     get:
       tags:
-        - Orders
-      summary: Download order receipt (PDF)
-      description: Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
+        - Invoicing
+      summary: Download the order's invoice (PDF)
+      description: The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or the rare gap the "gaps are acceptable" numbering policy already accepts). The client should stream or save the response with an appropriate `Content-Disposition` header.
       operationId: getOrderInvoice
       security:
         - bearerAuth: []
@@ -4583,7 +4591,38 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: Order receipt PDF
+          description: Invoice PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /orders/{id}/credit-note:
+    get:
+      tags:
+        - Invoicing
+      summary: Download the order's credit note (PDF)
+      description: The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
+      operationId: getOrderCreditNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: Credit note PDF
           content:
             application/pdf:
               schema:
@@ -6720,6 +6759,7 @@ components:
         - deliver
         - fulfill
         - override
+        - invoice
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
       properties:
         transitions:
@@ -6757,6 +6797,9 @@ components:
             - processing
             - shipped
             - delivered
+        invoice:
+          type: boolean
+          description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
     OrderTaxSummaryRow:
       type: object
       additionalProperties: false
@@ -6914,6 +6957,7 @@ components:
         - sessions
         - auditLog
         - apiKeys
+        - invoicing
       properties:
         exportedAt:
           type: string
@@ -6983,6 +7027,21 @@ components:
           description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
           items:
             $ref: "#/components/schemas/ExportFeedbackTicket"
+        invoicing:
+          type: object
+          additionalProperties: false
+          required:
+            - invoices
+            - creditNotes
+          properties:
+            invoices:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
+            creditNotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
     AccountExportEnvelope:
       type: object
       additionalProperties: false
@@ -9218,6 +9277,29 @@ components:
         createdAt:
           type: string
           format: date-time
+    ExportInvoiceDocument:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - number
+        - issuedAt
+        - currency
+        - grandTotal
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        grandTotal:
+          type: number
+          format: double
+          minimum: 0
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false

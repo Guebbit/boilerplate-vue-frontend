@@ -3057,6 +3057,10 @@ export const exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp
 
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
 
+export const exportAccountDataResponseDataInvoicingInvoicesItemGrandTotalMin = 0;
+
+export const exportAccountDataResponseDataInvoicingCreditNotesItemGrandTotalMin = 0;
+
 export const ExportAccountDataResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3422,6 +3426,11 @@ export const ExportAccountDataResponse = zod.strictObject({
                             )
                             .describe(
                                 'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                            ),
+                        invoice: zod
+                            .boolean()
+                            .describe(
+                                'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                             )
                     })
                     .optional()
@@ -3548,7 +3557,31 @@ export const ExportAccountDataResponse = zod.strictObject({
                 })
             )
             .optional()
-            .describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.')
+            .describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.'),
+        invoicing: zod.strictObject({
+            invoices: zod.array(
+                zod.strictObject({
+                    orderId: zod.string().describe('Resource identifier'),
+                    number: zod.string(),
+                    issuedAt: zod.iso.datetime({ offset: true }),
+                    currency: zod.string(),
+                    grandTotal: zod
+                        .number()
+                        .min(exportAccountDataResponseDataInvoicingInvoicesItemGrandTotalMin)
+                })
+            ),
+            creditNotes: zod.array(
+                zod.strictObject({
+                    orderId: zod.string().describe('Resource identifier'),
+                    number: zod.string(),
+                    issuedAt: zod.iso.datetime({ offset: true }),
+                    currency: zod.string(),
+                    grandTotal: zod
+                        .number()
+                        .min(exportAccountDataResponseDataInvoicingCreditNotesItemGrandTotalMin)
+                })
+            )
+        })
     })
 });
 
@@ -7010,6 +7043,11 @@ export const CheckoutResponse = zod.strictObject({
                         )
                         .describe(
                             'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                        ),
+                    invoice: zod
+                        .boolean()
+                        .describe(
+                            'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                         )
                 })
                 .optional()
@@ -7553,6 +7591,11 @@ export const ListOrdersResponse = zod.strictObject({
                             )
                             .describe(
                                 'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                            ),
+                        invoice: zod
+                            .boolean()
+                            .describe(
+                                'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                             )
                     })
                     .optional()
@@ -7936,6 +7979,11 @@ export const CreateOrderResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -8363,6 +8411,11 @@ export const SearchOrdersResponse = zod.strictObject({
                             )
                             .describe(
                                 'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                            ),
+                        invoice: zod
+                            .boolean()
+                            .describe(
+                                'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                             )
                     })
                     .optional()
@@ -8719,6 +8772,11 @@ export const GetOrderByIdResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -9065,6 +9123,11 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -9411,6 +9474,11 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -9782,6 +9850,11 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -10153,6 +10226,11 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -10512,6 +10590,11 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -10525,14 +10608,24 @@ export const OverrideOrderStatusResponse = zod.strictObject({
 });
 
 /**
- * Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
- * @summary Download order receipt (PDF)
+ * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or the rare gap the "gaps are acceptable" numbering policy already accepts). The client should stream or save the response with an appropriate `Content-Disposition` header.
+ * @summary Download the order's invoice (PDF)
  */
 export const GetOrderInvoiceParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
 export const GetOrderInvoiceResponse = zod.unknown();
+
+/**
+ * The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
+ * @summary Download the order's credit note (PDF)
+ */
+export const GetOrderCreditNoteParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const GetOrderCreditNoteResponse = zod.unknown();
 
 /**
  * Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
@@ -11122,6 +11215,11 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -12122,6 +12220,11 @@ export const StartFulfilmentResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()
@@ -12550,6 +12653,11 @@ export const FulfillOrderResponse = zod.strictObject({
                     )
                     .describe(
                         'The statuses `POST \/orders\/{id}\/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.'
+                    ),
+                invoice: zod
+                    .boolean()
+                    .describe(
+                        'Whether `GET \/orders\/{id}\/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same \"gaps are acceptable\" policy `orderNumber` already lives under — see `docs\/modules\/invoicing.md`.'
                     )
             })
             .optional()

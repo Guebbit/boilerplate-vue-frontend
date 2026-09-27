@@ -420,6 +420,8 @@ export interface OrderActions {
     fulfill: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
     override: OrderStatus[];
+    /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
+    invoice: boolean;
 }
 
 export interface OrderTaxSummaryRow {
@@ -519,6 +521,20 @@ export type AccountExportResponseRolesItem = {
 
 export type AccountExportResponseWishlistItem = {
     productId: Id;
+};
+
+export interface ExportInvoiceDocument {
+    orderId: Id;
+    number: string;
+    issuedAt: string;
+    currency: string;
+    /** @minimum 0 */
+    grandTotal: number;
+}
+
+export type AccountExportResponseInvoicing = {
+    invoices: ExportInvoiceDocument[];
+    creditNotes: ExportInvoiceDocument[];
 };
 
 export interface Address {
@@ -690,6 +706,7 @@ export interface AccountExportResponse {
     auditLog: ExportAuditEntry[];
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
+    invoicing: AccountExportResponseInvoicing;
 }
 
 export interface AccountExportEnvelope {
@@ -6416,8 +6433,8 @@ export const overrideOrderStatus = (
 };
 
 /**
- * Generates and returns an order confirmation / receipt for the order identified by `{id}` as a binary PDF file — not a tax invoice, since no national e-invoicing system is involved. The client should save or stream the response with an appropriate `Content-Disposition` header.
- * @summary Download order receipt (PDF)
+ * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or the rare gap the "gaps are acceptable" numbering policy already accepts). The client should stream or save the response with an appropriate `Content-Disposition` header.
+ * @summary Download the order's invoice (PDF)
  */
 export const getOrderInvoice = (
     id: string,
@@ -6425,6 +6442,20 @@ export const getOrderInvoice = (
 ) => {
     return orvalMutator<Blob>(
         { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
+        options
+    );
+};
+
+/**
+ * The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
+ * @summary Download the order's credit note (PDF)
+ */
+export const getOrderCreditNote = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Blob>>
+) => {
+    return orvalMutator<Blob>(
+        { url: `/orders/${id}/credit-note`, method: 'GET', responseType: 'blob' },
         options
     );
 };
@@ -7202,6 +7233,7 @@ export type OverrideOrderStatusResult = NonNullable<
     Awaited<ReturnType<typeof overrideOrderStatus>>
 >;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type CreatePaymentIntentResult = NonNullable<
     Awaited<ReturnType<typeof createPaymentIntent>>

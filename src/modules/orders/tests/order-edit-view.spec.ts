@@ -88,6 +88,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     deliver: false,
     fulfill: false,
     override: [],
+    invoice: false,
     ...overrides
 });
 
