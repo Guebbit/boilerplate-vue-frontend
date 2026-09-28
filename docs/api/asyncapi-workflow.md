@@ -55,7 +55,7 @@ The file is named after the spec it comes from, which is also what the backend c
 
 Import from `@types` — `src/types/index.ts` re-exports the generated file. The shapes the
 contract does not describe (`RealtimeMetricsEntry`, `RealtimeConnectionStatus`) are the
-`realtime` module's own, in `src/modules/realtime/types.ts`:
+`observability` module's own, in `src/modules/observability/types.ts`:
 
 ```ts
 import type { SseEventName, SseEventPayload, MetricsSnapshotEvent } from '@types';

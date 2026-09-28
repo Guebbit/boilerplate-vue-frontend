@@ -80,11 +80,6 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'account', link: '/modules/account' },
-                            {
-                                text: 'admin',
-                                link: '/modules/admin',
-                                items: [{ text: 'The dashboard', link: '/modules/admin-dashboard' }]
-                            },
                             { text: 'api-keys', link: '/modules/api-keys' },
                             { text: 'demo', link: '/modules/demo' },
                             { text: 'feedback', link: '/modules/feedback' },
@@ -98,7 +93,16 @@ export default withMermaid(
                                     }
                                 ]
                             },
-                            { text: 'realtime', link: '/modules/realtime' },
+                            {
+                                text: 'observability',
+                                link: '/modules/observability',
+                                items: [
+                                    {
+                                        text: 'The dashboard',
+                                        link: '/modules/observability-dashboard'
+                                    }
+                                ]
+                            },
                             { text: 'users', link: '/modules/users' }
                         ]
                     }

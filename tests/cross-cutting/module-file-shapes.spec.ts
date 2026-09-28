@@ -124,8 +124,8 @@ const FILE_SHAPES: readonly FileShape[] = [
     },
     {
         match: /^use-realtime-observability\.ts$/,
-        what: '`realtime` only. The composable a screen uses to subscribe to that stream and unsubscribe on unmount.',
-        onlyIn: 'realtime'
+        what: '`observability` only. The composable a screen uses to subscribe to that stream and unsubscribe on unmount.',
+        onlyIn: 'observability'
     },
     {
         match: /^tests\/e2e\/__snapshots__\/.+\.png$/,

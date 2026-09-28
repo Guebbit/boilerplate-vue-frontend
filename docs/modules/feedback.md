@@ -38,7 +38,7 @@ declarations, not of anything in this folder, which is why the menu entry can be
 without restating a permission.
 
 ::: tip A leaf in both directions
-Together with [`demo`](./demo.md) and [`realtime`](./realtime.md), this is a module to read when you
+Together with [`demo`](./demo.md) and [`observability`](./observability.md), this is a module to read when you
 want the module system with none of the interesting coupling in the way. Zero edges, one store, two
 screens.
 :::
