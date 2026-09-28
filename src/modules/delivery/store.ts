@@ -74,17 +74,6 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
-     * What a method costs against a given items total — the same free-above rule the BE prices
-     * with, duplicated here only for DISPLAY (the checkout's number is the server's).
-     *
-     * @param method - The method in question.
-     * @param itemsTotal - The cart's lines total.
-     * @returns The effective price.
-     */
-    const effectivePrice = (method: ShippingMethod, itemsTotal: number) =>
-        method.freeAbove !== undefined && itemsTotal >= method.freeAbove ? 0 : method.price;
-
-    /**
      * Loads the parcel behind an order. A 404 is an answer — nothing shipped yet.
      *
      * @param orderId - The order in question.
@@ -174,7 +163,6 @@ export const useDeliveryStore = defineStore('delivery', () => {
         shipToCountries,
         shipment,
         fetchMethods,
-        effectivePrice,
         fetchShipmentForOrder,
         start,
         ship,

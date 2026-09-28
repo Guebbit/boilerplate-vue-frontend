@@ -19,7 +19,13 @@ import {
     reorder as apiReorder,
     getProductById
 } from '@api';
-import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
+import type {
+    CartItem,
+    CartResponse,
+    CartShipping,
+    CartSummaryResponse,
+    CheckoutRequest
+} from '@types';
 import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
 
 /**
@@ -68,6 +74,12 @@ export const useCartStore = defineStore('cart', () => {
      * Cart summary
      */
     const cartSummary = computed<CartSummaryResponse | undefined>(() => cart.value?.summary);
+
+    /**
+     * What this basket needs from shipping, and what it may choose from — the server's own
+     * answer (FA-D6/B3), replacing a client-computed basket weight and free-above math.
+     */
+    const cartShipping = computed<CartShipping | undefined>(() => cart.value?.shipping);
 
     /**
      * The summary alone, as `GET /cart/summary` answers it — the lightweight read that exists so
@@ -253,7 +265,8 @@ export const useCartStore = defineStore('cart', () => {
             shippingCost: 0,
             totalPrice: 0,
             currency
-        }
+        },
+        shipping: { required: false, selected: null, options: [] }
     });
 
     /**
@@ -386,21 +399,6 @@ export const useCartStore = defineStore('cart', () => {
         ).then(() => productTitles.value);
 
     /**
-     * Whether the basket holds any line that needs a shipment — mirrors the backend's own
-     * `evaluateShippingRequirement` (`cart/domain/rules.ts`): a line whose product has not
-     * resolved yet (see {@link resolveTitles}) counts as needing one, the same safe-default
-     * `requiresShipping` absent takes there. Digital-only baskets (`false` on every line) are the
-     * one case that needs neither a shipping method nor an address at checkout.
-     */
-    const needsShipping = computed(() =>
-        cartItems.value.some(({ productId }) => {
-            const product = productShipping.value[productId] as
-                { requiresShipping?: boolean } | undefined;
-            return product?.requiresShipping !== false;
-        })
-    );
-
-    /**
      * Drops every resolved title, so the next `resolveTitles` call re-fetches instead of
      * rendering a name resolved in the language the visitor just left.
      *
@@ -416,6 +414,7 @@ export const useCartStore = defineStore('cart', () => {
         cart,
         cartItems,
         cartSummary,
+        cartShipping,
         badgeQuantity,
         badgeMoney,
         fetchSummary,
@@ -427,7 +426,6 @@ export const useCartStore = defineStore('cart', () => {
         moneyOf,
         resolveTitles,
         resetProductTitles,
-        needsShipping,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,

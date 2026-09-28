@@ -1,8 +1,7 @@
 /**
  * @module
  * The delivery store — transport-mocked like the wishlist's spec. Worth pinning: the methods
- * list mirrors the API, `effectivePrice` applies the free-above rule for DISPLAY exactly as the
- * BE prices it for real, and a 404 on the shipment read is "nothing shipped yet" while any other
+ * list mirrors the API, and a 404 on the shipment read is "nothing shipped yet" while any other
  * failure still rejects.
  *
  * The stub rejects with the envelope `onResponseReject` builds. The store tells "nothing shipped
@@ -140,16 +139,6 @@ describe('fetchMethods', () => {
         return store.fetchMethods().then(() => {
             expect(store.shipToCountries).toEqual(['IT']);
         });
-    });
-});
-
-describe('effectivePrice', () => {
-    it('applies the free-above rule at the threshold and not below it', () => {
-        const store = useDeliveryStore();
-        expect(store.effectivePrice(METHODS[0], 99.99)).toBe(5);
-        expect(store.effectivePrice(METHODS[0], 100)).toBe(0);
-        // No threshold — never free, whatever the basket.
-        expect(store.effectivePrice(METHODS[1], 1_000_000)).toBe(15);
     });
 });
 

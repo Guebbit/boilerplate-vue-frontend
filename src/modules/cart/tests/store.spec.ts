@@ -46,6 +46,11 @@ const CART = {
         shippingCost: 0,
         totalPrice: 19.98,
         currency: 'EUR'
+    },
+    shipping: {
+        required: true,
+        selected: null,
+        options: [{ id: 'standard', price: 5, requiresAddress: true, tracked: false }]
     }
 };
 
@@ -61,7 +66,8 @@ const EMPTY_CART = {
         shippingCost: 0,
         totalPrice: 0,
         currency: 'EUR'
-    }
+    },
+    shipping: { required: false, selected: null, options: [] }
 };
 
 /**
@@ -99,7 +105,7 @@ const RESPONSES = {
     reordered: contractResponse(schemas.ReorderResponse, CART),
     shippingSet: contractResponse(schemas.SetCartShippingMethodResponse, {
         ...CART,
-        shippingMethodId: 'standard'
+        shipping: { ...CART.shipping, selected: 'standard' }
     }),
     product: (id: string, requiresShipping = true) =>
         contractResponse(schemas.GetProductByIdResponse, aProduct(id, requiresShipping))
@@ -270,8 +276,8 @@ describe('useCartStore', () => {
                     expect(setCartShippingMethod).toHaveBeenCalledWith({
                         shippingMethodId: 'standard'
                     });
-                    expect(useCartStore().cart?.shippingMethodId).toBe('standard');
-                    expect(result?.shippingMethodId).toBe('standard');
+                    expect(useCartStore().cart?.shipping.selected).toBe('standard');
+                    expect(result?.shipping.selected).toBe('standard');
                 }));
 
         it('sends null to clear the choice, not undefined', () =>

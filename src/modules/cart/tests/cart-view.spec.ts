@@ -44,6 +44,14 @@ const A_CART: CartResponse = {
         shippingCost: 0,
         totalPrice: 20,
         currency: 'EUR'
+    },
+    shipping: {
+        required: true,
+        selected: null,
+        options: [
+            { id: 'standard', price: 5, requiresAddress: true, tracked: false },
+            { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
+        ]
     }
 };
 

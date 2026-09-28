@@ -139,7 +139,8 @@ describe('the shelf', () => {
                 shippingCost: 0,
                 totalPrice: 29.97,
                 currency: 'EUR'
-            }
+            },
+            shipping: { required: false, selected: null, options: [] }
         };
         // `POST /cart` SETS a line's quantity — the fresh fetch answers 3 already on this line, so
         // the click must send 4, never a bare 1.
@@ -182,7 +183,8 @@ describe('the shelf', () => {
                 shippingCost: 0,
                 totalPrice: 49.95,
                 currency: 'EUR'
-            }
+            },
+            shipping: { required: false, selected: null, options: [] }
         };
         const freshCart = {
             items: [],
@@ -193,7 +195,8 @@ describe('the shelf', () => {
                 shippingCost: 0,
                 totalPrice: 0,
                 currency: 'EUR'
-            }
+            },
+            shipping: { required: false, selected: null, options: [] }
         };
         vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
             cart.cart = freshCart;

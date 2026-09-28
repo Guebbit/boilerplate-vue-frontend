@@ -48,7 +48,8 @@ beforeEach(() => {
                 shippingCost: 0,
                 totalPrice: 0,
                 currency: 'EUR'
-            }
+            },
+            shipping: { required: false, selected: null, options: [] }
         })
     };
 });
