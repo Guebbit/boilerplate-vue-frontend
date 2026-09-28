@@ -3390,8 +3390,8 @@ paths:
       summary: Replace product
       description: |
         Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
-        writable scalar field is required, since none of them but `taxClass`/`weight`/
-        `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+        writable scalar field is required, since none of them but `taxClass`/`rateType`/
+        `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
         cleared, not left alone. `translations` keeps the same per-locale upsert/delete
         semantics `PATCH` uses (see its own description): a translations table is keyed
         sub-resources, not a single field a "whole-body replace" can meaningfully null out
@@ -6660,6 +6660,13 @@ components:
         - reduced
         - zero
       description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+    RateType:
+      type: string
+      enum:
+        - standard
+        - zero-rated
+        - exempt
+      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
     Sku:
       type: string
       minLength: 1
@@ -6688,6 +6695,8 @@ components:
           description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        rateType:
+          $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
         onHand:
@@ -6841,6 +6850,8 @@ components:
           minimum: 0
           maximum: 1
           description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+        rateType:
+          $ref: "#/components/schemas/RateType"
     OrderLineCurrent:
       type: object
       additionalProperties: false
@@ -10192,6 +10203,8 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        rateType:
+          $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
         onHand:
@@ -10235,6 +10248,8 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        rateType:
+          $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
         onHand:
@@ -10357,6 +10372,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        rateType:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RateType"
         sku:
           nullable: true
           allOf:
@@ -10405,6 +10424,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        rateType:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RateType"
         sku:
           nullable: true
           allOf:
@@ -10445,6 +10468,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        rateType:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RateType"
         sku:
           nullable: true
           allOf:
@@ -10486,6 +10513,10 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
+        rateType:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RateType"
         sku:
           nullable: true
           allOf:
@@ -10537,6 +10568,8 @@ components:
           description: ISO-4217 currency code (e.g. EUR) — see `Product.currency`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
+        rateType:
+          $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
         onHand:

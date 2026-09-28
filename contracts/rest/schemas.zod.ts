@@ -3184,6 +3184,12 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 )
                                 .describe(
                                     'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                                ),
+                            rateType: zod
+                                .enum(['standard', 'zero-rated', 'exempt'])
+                                .optional()
+                                .describe(
+                                    "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -5100,6 +5106,12 @@ export const ListProductsResponse = zod.strictObject({
                     .describe(
                         "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
                     ),
+                rateType: zod
+                    .enum(['standard', 'zero-rated', 'exempt'])
+                    .optional()
+                    .describe(
+                        "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+                    ),
                 sku: zod
                     .string()
                     .min(1)
@@ -5208,6 +5220,12 @@ export const CreateProductBody = zod.strictObject({
         .describe(
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
         ),
+    rateType: zod
+        .enum(['standard', 'zero-rated', 'exempt'])
+        .optional()
+        .describe(
+            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+        ),
     sku: zod
         .string()
         .min(1)
@@ -5268,6 +5286,12 @@ export const CreateProductResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        rateType: zod
+            .enum(['standard', 'zero-rated', 'exempt'])
+            .optional()
+            .describe(
+                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
             ),
         sku: zod
             .string()
@@ -5410,6 +5434,12 @@ export const GetProductByIdResponse = zod.strictObject({
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
             ),
+        rateType: zod
+            .enum(['standard', 'zero-rated', 'exempt'])
+            .optional()
+            .describe(
+                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+            ),
         sku: zod
             .string()
             .min(1)
@@ -5459,8 +5489,8 @@ export const GetProductByIdResponse = zod.strictObject({
 
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
- * writable scalar field is required, since none of them but `taxClass`/`weight`/
- * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * writable scalar field is required, since none of them but `taxClass`/`rateType`/
+ * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
  * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
  * semantics `PATCH` uses (see its own description): a translations table is keyed
  * sub-resources, not a single field a "whole-body replace" can meaningfully null out
@@ -5498,6 +5528,12 @@ export const ReplaceProductByIdBody = zod.strictObject({
         .enum(['reduced', 'zero'])
         .describe(
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+        )
+        .nullish(),
+    rateType: zod
+        .enum(['standard', 'zero-rated', 'exempt'])
+        .describe(
+            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
         )
         .nullish(),
     sku: zod
@@ -5559,6 +5595,12 @@ export const ReplaceProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        rateType: zod
+            .enum(['standard', 'zero-rated', 'exempt'])
+            .optional()
+            .describe(
+                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
             ),
         sku: zod
             .string()
@@ -5661,6 +5703,12 @@ export const UpdateProductByIdBody = zod.strictObject({
             "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
         )
         .nullish(),
+    rateType: zod
+        .enum(['standard', 'zero-rated', 'exempt'])
+        .describe(
+            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+        )
+        .nullish(),
     sku: zod
         .string()
         .min(1)
@@ -5720,6 +5768,12 @@ export const UpdateProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        rateType: zod
+            .enum(['standard', 'zero-rated', 'exempt'])
+            .optional()
+            .describe(
+                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
             ),
         sku: zod
             .string()
@@ -5839,6 +5893,12 @@ export const GetProductAdminResponse = zod.strictObject({
                 .describe(
                     "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
                 ),
+            rateType: zod
+                .enum(['standard', 'zero-rated', 'exempt'])
+                .optional()
+                .describe(
+                    "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+                ),
             sku: zod
                 .string()
                 .min(1)
@@ -5934,6 +5994,12 @@ export const RestoreProductByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+            ),
+        rateType: zod
+            .enum(['standard', 'zero-rated', 'exempt'])
+            .optional()
+            .describe(
+                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
             ),
         sku: zod
             .string()
@@ -6097,6 +6163,12 @@ export const SearchProductsResponse = zod.strictObject({
                     .optional()
                     .describe(
                         "A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate."
+                    ),
+                rateType: zod
+                    .enum(['standard', 'zero-rated', 'exempt'])
+                    .optional()
+                    .describe(
+                        "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                     ),
                 sku: zod
                     .string()
@@ -6825,6 +6897,12 @@ export const CheckoutResponse = zod.strictObject({
                             .max(checkoutResponseDataOrderItemsItemProductTaxRateMax)
                             .describe(
                                 'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                            ),
+                        rateType: zod
+                            .enum(['standard', 'zero-rated', 'exempt'])
+                            .optional()
+                            .describe(
+                                "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                             )
                     }),
                     quantity: zod.number().min(1),
@@ -7375,6 +7453,12 @@ export const ListOrdersResponse = zod.strictObject({
                                 .max(listOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
                                 .describe(
                                     'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                                ),
+                            rateType: zod
+                                .enum(['standard', 'zero-rated', 'exempt'])
+                                .optional()
+                                .describe(
+                                    "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -7769,6 +7853,12 @@ export const CreateOrderResponse = zod.strictObject({
                         .max(createOrderResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -8195,6 +8285,12 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .max(searchOrdersResponseDataItemsItemItemsItemProductTaxRateMax)
                                 .describe(
                                     'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                                ),
+                            rateType: zod
+                                .enum(['standard', 'zero-rated', 'exempt'])
+                                .optional()
+                                .describe(
+                                    "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                                 )
                         }),
                         quantity: zod.number().min(1),
@@ -8562,6 +8658,12 @@ export const GetOrderByIdResponse = zod.strictObject({
                         .max(getOrderByIdResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -8909,6 +9011,12 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                         .max(replaceOrderByIdResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -9260,6 +9368,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .max(updateOrderByIdResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -9636,6 +9750,12 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                         .max(restoreOrderByIdResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -10012,6 +10132,12 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .max(cancelOrderByIdResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -10376,6 +10502,12 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .max(overrideOrderStatusResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -11001,6 +11133,12 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .max(getOrderByReferenceResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -12006,6 +12144,12 @@ export const StartFulfilmentResponse = zod.strictObject({
                         .max(startFulfilmentResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),
@@ -12443,6 +12587,12 @@ export const FulfillOrderResponse = zod.strictObject({
                         .max(fulfillOrderResponseDataItemsItemProductTaxRateMax)
                         .describe(
                             'The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.'
+                        ),
+                    rateType: zod
+                        .enum(['standard', 'zero-rated', 'exempt'])
+                        .optional()
+                        .describe(
+                            "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
                         )
                 }),
                 quantity: zod.number().min(1),

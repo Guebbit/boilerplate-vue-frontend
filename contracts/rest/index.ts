@@ -255,6 +255,17 @@ export const TaxClass = {
 } as const;
 
 /**
+ * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
+ */
+export type RateType = (typeof RateType)[keyof typeof RateType];
+
+export const RateType = {
+    standard: 'standard',
+    'zero-rated': 'zero-rated',
+    exempt: 'exempt'
+} as const;
+
+/**
  * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
  * @minLength 1
  */
@@ -271,6 +282,7 @@ export interface Product {
     /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
     readonly currency: string;
     taxClass?: TaxClass;
+    rateType?: RateType;
     sku?: Sku;
     /**
      * Units physically present, whether or not they are spoken for.
@@ -350,6 +362,7 @@ export interface OrderLineProduct {
      * @maximum 1
      */
     taxRate: number;
+    rateType?: RateType;
 }
 
 export interface OrderLineCurrent {
@@ -2303,6 +2316,7 @@ export interface CreateProductRequest {
      */
     price: number;
     taxClass?: TaxClass;
+    rateType?: RateType;
     sku?: Sku;
     /** @minimum 0 */
     onHand?: number;
@@ -2327,6 +2341,7 @@ export interface CreateProductRequestMultipart {
      */
     price: number;
     taxClass?: TaxClass;
+    rateType?: RateType;
     sku?: Sku;
     /** @minimum 0 */
     onHand?: number;
@@ -2381,6 +2396,7 @@ export interface ReplaceProductRequest {
      */
     price: number;
     taxClass?: TaxClass | null;
+    rateType?: RateType | null;
     sku?: Sku | null;
     active: boolean;
     requiresShipping: boolean;
@@ -2404,6 +2420,7 @@ export interface ReplaceProductRequestMultipart {
      */
     price: number;
     taxClass?: TaxClass | null;
+    rateType?: RateType | null;
     sku?: Sku | null;
     active: boolean;
     requiresShipping: boolean;
@@ -2427,6 +2444,7 @@ export interface UpdateProductRequest {
      */
     price?: number;
     taxClass?: TaxClass | null;
+    rateType?: RateType | null;
     sku?: Sku | null;
     active?: boolean;
     requiresShipping?: boolean;
@@ -2450,6 +2468,7 @@ export interface UpdateProductRequestMultipart {
      */
     price?: number;
     taxClass?: TaxClass | null;
+    rateType?: RateType | null;
     sku?: Sku | null;
     active?: boolean;
     requiresShipping?: boolean;
@@ -2481,6 +2500,7 @@ export interface ProductAdmin {
     /** ISO-4217 currency code (e.g. EUR) — see `Product.currency`. */
     readonly currency: string;
     taxClass?: TaxClass;
+    rateType?: RateType;
     sku?: Sku;
     /** @minimum 0 */
     readonly onHand?: number;
@@ -5650,6 +5670,9 @@ export const createProductWithMultipart = (
     if (createProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, createProductRequestMultipart.taxClass);
     }
+    if (createProductRequestMultipart.rateType !== undefined) {
+        formData.append(`rateType`, createProductRequestMultipart.rateType);
+    }
     if (createProductRequestMultipart.sku !== undefined) {
         formData.append(`sku`, createProductRequestMultipart.sku);
     }
@@ -5738,8 +5761,8 @@ export const getProductById = (
 
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
- * writable scalar field is required, since none of them but `taxClass`/`weight`/
- * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * writable scalar field is required, since none of them but `taxClass`/`rateType`/
+ * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
  * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
  * semantics `PATCH` uses (see its own description): a translations table is keyed
  * sub-resources, not a single field a "whole-body replace" can meaningfully null out
@@ -5765,8 +5788,8 @@ export const replaceProductById = (
 
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
- * writable scalar field is required, since none of them but `taxClass`/`weight`/
- * `imageUrl` has a legal "cleared" state, and an omitted one of those three is
+ * writable scalar field is required, since none of them but `taxClass`/`rateType`/
+ * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
  * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
  * semantics `PATCH` uses (see its own description): a translations table is keyed
  * sub-resources, not a single field a "whole-body replace" can meaningfully null out
@@ -5787,6 +5810,12 @@ export const replaceProductByIdWithMultipart = (
         replaceProductRequestMultipart.taxClass !== null
     ) {
         formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
+    }
+    if (
+        replaceProductRequestMultipart.rateType !== undefined &&
+        replaceProductRequestMultipart.rateType !== null
+    ) {
+        formData.append(`rateType`, replaceProductRequestMultipart.rateType);
     }
     if (
         replaceProductRequestMultipart.sku !== undefined &&
@@ -5890,6 +5919,12 @@ export const updateProductByIdWithMultipart = (
         updateProductRequestMultipart.taxClass !== null
     ) {
         formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
+    }
+    if (
+        updateProductRequestMultipart.rateType !== undefined &&
+        updateProductRequestMultipart.rateType !== null
+    ) {
+        formData.append(`rateType`, updateProductRequestMultipart.rateType);
     }
     if (
         updateProductRequestMultipart.sku !== undefined &&
