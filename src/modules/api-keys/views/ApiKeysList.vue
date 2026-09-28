@@ -163,6 +163,7 @@ const handleRevoke = (apiKey: ApiKey) =>
                 :items="pageSizeOptions"
                 item-title="label"
                 item-value="value"
+                data-test="page-size"
                 hide-details
                 style="max-width: 160px"
             />
