@@ -22,22 +22,38 @@
 # (re-executes the unit suite once per mutant — nightly in CI), and `complete:manual`, which is
 # `test:e2e:visual` (pixel diffs that answer to the machine that took them) plus `test:e2e:live`
 # (needs the paired backend up).
-# Write the generated artefacts first, then verify them. Regenerating here rather than leaving it
-# to whoever remembers is what stops a commit failing the gate with "STALE" for a file no human
-# authors — everything under `contracts/`, including `contracts/asyncapi.generated.ts`, is an
-# output of `openapi.yaml` and `asyncapi.yaml`, so there is never a reason to want it out of date.
 #
-# `git add` is required: a file rewritten after staging is not in the commit, so the gate below
-# would pass against content that is not what gets committed. Note this widens a partial
-# `git add -p` to include the whole regenerated output — which is what you want for a generated
-# file, and a surprise exactly once.
-#
-# `docs/` is deliberately NOT on the list: the module pages and the sitemap are written by hand
-# now, so nothing regenerates them and there is nothing to re-stage. What keeps them honest is
-# review, plus the two rules that outlived the generator —
-# `tests/cross-cutting/module-file-shapes.spec.ts` and `backend-pairing.spec.ts`, which run with
-# the rest of the suite below.
-npm run regenerate
-git add contracts
+# FA124 — lint and format check the STAGED SNAPSHOT, not the working tree. `lint-staged`
+# (`.lintstagedrc.json`) runs `eslint` and `prettier --check` on staged files only. Before this,
+# both ran over the whole tree here: a peer's unrelated dirty file — or a scratch note sitting in
+# the same checkout — could fail a commit that never touched it, and the `prettier --write` this
+# hook used to run as part of `regenerate` rewrote every unformatted file in the tree, not only the
+# ones being committed. `type-check-only` and `test:unit` below stay whole-project on purpose:
+# `vue-tsc` needs the whole project graph regardless of what changed, and neither one can be tricked
+# into failing by an unrelated dirty file the way a tree-wide format check can.
+npx lint-staged
 
-npm run complete:light
+# `contracts/` is generated FROM `openapi.yaml` and `asyncapi.yaml`, so regenerating it is only
+# ever needed when one of those two is staged — skipping otherwise is FA124's other half: this
+# used to run `regenerate` and `git add contracts` on EVERY commit regardless of relevance,
+# sweeping whatever a peer's unrelated, unstaged edit under `contracts/` happened to be sitting
+# there into this commit.
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(openapi|asyncapi)\.yaml$'; then
+    npm run regenerate
+
+    # A regenerated `contracts/` that still differs from the working tree means the staged
+    # contract and the generated client disagree. Fail and say so, rather than silently
+    # `git add`-ing whatever `regenerate` produced — the previous behaviour FA124 flagged as
+    # "surprising and risky for anyone with unrelated uncommitted work sitting in the same
+    # checkout."
+    if ! git diff --quiet -- contracts; then
+        echo ""
+        echo "[pre-commit] contracts/ changed after \`npm run regenerate\` but isn't staged."
+        echo "  Review the diff below, then \`git add contracts\` and commit again."
+        echo ""
+        git status --short -- contracts
+        exit 1
+    fi
+fi
+
+npm run complete:light:gates
