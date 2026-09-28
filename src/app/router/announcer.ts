@@ -4,7 +4,7 @@
  * a visually-hidden live region) and a one-shot flag for moving focus to `<v-main>` after a
  * real page change.
  */
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 
 /**
  * What the route announcer says after a navigation — the new page's title.
@@ -15,6 +15,25 @@ import { ref } from 'vue';
  * sees (WCAG 4.1.3). A single-page app otherwise swaps its content in silence.
  */
 export const routeAnnouncement = ref('');
+
+/**
+ * Publishes a new page title to the live region, clearing it first.
+ *
+ * A ref assignment that repeats the previous string is a no-op in Vue's reactivity, and even a
+ * genuine change collapses into the same DOM patch when both assignments land in one tick — so
+ * two navigations that resolve to the same title (or an identical repeat of the last one) would
+ * otherwise never mutate the live region a second time, and a screen reader stays silent.
+ * Clearing first, then setting after a tick, forces two separate DOM mutations every time.
+ *
+ * @param title - The new page's announced title.
+ * @returns The `nextTick` promise, so a caller can wait for the announcement to land.
+ */
+export const announceRouteChange = (title: string) => {
+    routeAnnouncement.value = '';
+    return nextTick(() => {
+        routeAnnouncement.value = title;
+    });
+};
 
 /**
  * The main landmark's selector — `<v-main data-main-content>` in `LayoutDefault.vue`.

@@ -12,7 +12,7 @@ import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { getDefaultLocale, translate } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
-import { routeAnnouncement, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
+import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
@@ -273,13 +273,20 @@ router.beforeResolve(localeChoice);
  * top, and a navigation to an anchor must leave focus alone so the anchor wins; a query-only
  * change (a list re-searching) keeps focus on the control that caused it (WCAG 2.4.3).
  *
+ * A failed navigation (aborted, cancelled, or a duplicate of the current route) returns early:
+ * `to` was never actually reached, so writing its title over the page the visitor is still on
+ * would be wrong regardless of whether the two titles happen to match.
+ *
  * @param to - Route that has just been entered.
  * @param from - Route that was left; `START_LOCATION` on the initial load.
+ * @param failure - Set when the navigation did not actually land on `to`.
  */
-router.afterEach((to, from) => {
+router.afterEach((to, from, failure) => {
+    if (failure) return;
+
     const title = to.meta.title ? translate(to.meta.title) : '';
     document.title = title ? `${title} — ${appName}` : appName;
-    routeAnnouncement.value = title;
+    void announceRouteChange(title);
 
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
     if (!isPageChange) return;
