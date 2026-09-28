@@ -6,7 +6,7 @@
  * This boilerplate's design tokens live here and ONLY here:
  * - Vuetify owns colors, typography, component defaults (this file).
  * - Tailwind owns layout/spacing utilities and ALIASES these colors
- *   (see src/styles/tailwind.css) — it defines no palette of its own.
+ *   (see src/styles/main.css) — it defines no palette of its own.
  *
  * Downstream projects restyle the whole app by editing the palettes and
  * the `defaults` section below. Nothing else needs to change.
