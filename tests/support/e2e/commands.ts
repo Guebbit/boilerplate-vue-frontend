@@ -50,6 +50,19 @@ declare global {
             loginAs(role?: E2ERole): Chainable<void>;
 
             /**
+             * FA123: logs the current visitor out and a different one in, in the SAME tab and
+             * without a `cy.visit()` reload — through the account menu's real logout, the nav
+             * bar's own login link, and the login form, exactly as a visitor clicking through
+             * would. `loginAs` always starts from `/en/login` via `cy.visit`, which is a fresh
+             * page load and so never actually proves a same-tab handoff works: the session
+             * store, the router guards and every locale-sensitive module's cache all have to
+             * drop the first visitor's state on nothing more than the UI's own reactivity.
+             *
+             * @param role - which seeded account to log in as; `user` by default
+             */
+            switchUser(role?: E2ERole): Chainable<void>;
+
+            /**
              * Starts counting API requests, so `settleNetwork()` can tell when the page has
              * finished loading. Call BEFORE `cy.visit()`: an intercept registered after the
              * navigation misses the requests the page fires on mount.
@@ -659,16 +672,30 @@ Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
     cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
 });
 
-Cypress.Commands.add('loginAs', (role: E2ERole = 'user') => {
-    const credentials = seedAccount(role);
-
-    cy.visit('/en/login');
+/**
+ * Fills and submits the login form already on screen — the half `loginAs` and `switchUser` share.
+ *
+ * @param credentials - the seeded account's email and password
+ */
+const submitLoginForm = (credentials: { email: string; password: string }) => {
     cy.get('[type=email]').clear();
     cy.get('[type=email]').type(credentials.email);
     cy.get('[type=password]').clear();
     cy.get('[type=password]').type(credentials.password);
     cy.get('form').submit();
     cy.url().should('not.include', '/login');
+};
+
+Cypress.Commands.add('loginAs', (role: E2ERole = 'user') => {
+    cy.visit('/en/login');
+    submitLoginForm(seedAccount(role));
+});
+
+Cypress.Commands.add('switchUser', (role: E2ERole = 'user') => {
+    cy.logout();
+    cy.get('[data-test=nav-login-link]').click();
+    cy.url().should('include', '/login');
+    submitLoginForm(seedAccount(role));
 });
 
 /**

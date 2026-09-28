@@ -291,6 +291,7 @@ const toggleTheme = () => {
                 <v-btn
                     v-if="hasSignIn && !isAuth && route.name !== SIGN_IN_ROUTE_NAME"
                     variant="text"
+                    data-test="nav-login-link"
                     :to="routerLinkI18n(loginContinueTo(route.fullPath))"
                 >
                     {{ t('navigation.label-login') }}
@@ -439,6 +440,7 @@ const toggleTheme = () => {
             <v-list-item
                 v-if="!isAuth && hasSignIn"
                 color="primary"
+                data-test="nav-login-link-mobile"
                 :to="routerLinkI18n(loginContinueTo(route.fullPath))"
             >
                 <v-list-item-title>{{ t('navigation.label-login') }}</v-list-item-title>

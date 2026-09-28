@@ -171,6 +171,35 @@ describe('Authentication', () => {
             cy.url().should('not.include', '/logout');
             cy.get('#home-page').should('exist');
         });
+
+        /**
+         * FA123: `cy.switchUser` — logout then login as someone else, in the SAME tab. A page
+         * reload (`cy.visit`, `cy.reload`) hands the app iframe a fresh `window`, so a marker
+         * planted before the switch surviving it IS the proof there was none — the same
+         * technique `resilience.cy.ts` uses to catch console noise across a page's lifetime.
+         *
+         * Admin-only UI is the identity check: `admin-menu` exists for `admin` and not for
+         * `user`, so seeing it disappear is seeing the SECOND account's own session take over,
+         * not just "some session, still logged in".
+         */
+        it('switches from an admin to a different account without reloading the page', () => {
+            cy.loginAs('admin');
+            cy.get('[data-test=admin-menu]').should('exist');
+
+            cy.window().then((win) => {
+                (win as typeof win & { __switchUserMarker?: true }).__switchUserMarker = true;
+            });
+
+            cy.switchUser('user');
+
+            cy.window().should((win) => {
+                expect(
+                    (win as typeof win & { __switchUserMarker?: true }).__switchUserMarker
+                ).to.equal(true);
+            });
+            cy.get('[data-test=admin-menu]').should('not.exist');
+            cy.get('[data-test=user-menu]').should('exist');
+        });
     });
 
     // Live profile only: this is the composed stack's cookie path, `withCredentials: true`
