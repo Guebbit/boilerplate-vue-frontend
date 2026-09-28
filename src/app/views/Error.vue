@@ -19,10 +19,14 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { SearchX } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { GENERIC_ERROR_KEY, isKnownErrorMessage } from '@/app/utils/error-messages.ts';
 
 /**
- * Params supplied by the route: the HTTP-like status shown in the title, and the message —
- * either a raw string from `router.onError`, or an i18n key the template translates.
+ * Params supplied by the route: the HTTP-like status shown in the title, and the message — a
+ * known i18n key (`error-page.*` / `navigation.*`) the template translates. `router/index.ts`'s
+ * `onError` already folds anything else into {@link GENERIC_ERROR_KEY} before it ever reaches
+ * here; the check below is this view's own defence against a hand-typed URL doing the same thing
+ * router.onError exists to prevent.
  */
 const { message = '' } = defineProps<{
     status?: string;
@@ -37,12 +41,12 @@ const { t } = useI18n();
 /**
  * Message actually displayed.
  *
- * @returns The translation of the message when it is a known i18n key
- *  (`error-page.*` / `navigation.*`), otherwise the raw text, since router
- *  errors carry free-form messages.
+ * @returns The translation of `message` when it names a known key, otherwise the generic
+ *  "something went wrong" copy — never the raw text a hand-typed URL or an unmapped error might
+ *  carry.
  */
 const normalizedMessage = computed(() =>
-    message.startsWith('error-page.') || message.startsWith('navigation.') ? t(message) : message
+    t(isKnownErrorMessage(message) ? message : GENERIC_ERROR_KEY)
 );
 </script>
 

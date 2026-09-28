@@ -14,6 +14,7 @@ import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 import App from './App.vue';
 import router from '@/app/router';
+import { handleUncaughtVueError } from '@/app/vue-error-handler.ts';
 
 /**
  * Global CSS
@@ -88,7 +89,13 @@ const bootstrapApplication = () =>
             return mergeRemoteLocales().then(() => pinia);
         })
         .then((pinia) => {
-            createApp(App).use(pinia).use(router).use(i18n).use(vuetify).mount('#app');
+            const app = createApp(App).use(pinia).use(router).use(i18n).use(vuetify);
+
+            // Anything a component's render/setup/watcher throws with nothing downstream to
+            // catch it lands here instead of a blank page — see vue-error-handler.ts (FA74).
+            app.config.errorHandler = handleUncaughtVueError;
+
+            app.mount('#app');
 
             /*
              * FA94/FA-D2: `@api/schemas` (Zod + ~1,700 generated schemas, ~350 KB) is the

@@ -13,6 +13,8 @@ import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications
 import { getDefaultLocale, translate } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
 import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
+import { registerStaleDeployRecovery, recoverFromStaleDeploy } from '@/app/router/stale-deploy.ts';
+import { GENERIC_ERROR_KEY, isKnownErrorMessage } from '@/app/utils/error-messages.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
@@ -205,6 +207,10 @@ const readLocaleParameter = ({ params }: RouteLocationNormalized): string | unde
  *  left — which sent people back where they already were after logging in.
  * @returns The `router.push` promise for the chosen redirect.
  */
+// Vite: registered once, at module load, so it is armed before the very first lazy route import
+// can fail. See `stale-deploy.ts` for why the actual reload happens in `onError` below instead.
+registerStaleDeployRecovery(globalThis);
+
 router.onError((error: Error, to: RouteLocationNormalized) => {
     // Report unhandled router errors to Grafana Faro (if initialised) so they
     // are visible in the error dashboard rather than silently swallowed.
@@ -214,6 +220,12 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     } catch {
         // Store may not be initialised yet in edge cases — ignore.
     }
+
+    // A stale chunk from a deploy that has since moved on: reload once, to the SAME target, and
+    // stop here — an open tab should recover silently rather than show an error a fresh load
+    // would not have hit at all.
+    if (recoverFromStaleDeploy(to.fullPath, (url) => location.assign(url), sessionStorage))
+        return Promise.resolve();
 
     // The aborted target first, then the route being left, then the default. The second step
     // matters when the failure came from a route that carries no `:locale` param of its own.
@@ -235,15 +247,22 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     // than whatever `error.message` holds. An absent or >=500 status collapses to a plain 500.
     const isClientError = status !== undefined && status < 500;
 
+    // Only a message THIS app's own dictionary owns reaches the page, the URL and Umami's
+    // pageview — anything else (a caught fetch failure's text, a stale chunk's own URL) folds
+    // into the generic key instead of leaking verbatim (FA74).
+    const message =
+        status === 403
+            ? 'navigation.error-forbidden'
+            : error.message && isKnownErrorMessage(error.message)
+              ? error.message
+              : GENERIC_ERROR_KEY;
+
     return router.push({
         name: 'Error',
         params: {
             locale,
             status: isClientError ? status : 500,
-            message:
-                status === 403
-                    ? 'navigation.error-forbidden'
-                    : error.message || 'error-page.unexpected'
+            message
         }
     });
 });

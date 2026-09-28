@@ -1,8 +1,10 @@
 /**
  * `Error.vue` (FA131) — the shell's own catch-all page, never mounted anywhere before this. Its
  * whole job: show the `status`/`message` the router handed it, translating `message` only when it
- * looks like one of THIS app's own i18n keys (`error-page.*`/`navigation.*`) rather than the raw
- * free text `router.onError` supplies, and offer a locale-prefixed way back Home.
+ * looks like one of THIS app's own i18n keys (`error-page.*`/`navigation.*`), and folding anything
+ * else into the generic key instead of showing it verbatim (FA74) — `router.onError` already does
+ * the same fold before pushing here, so this is the view's own defence, not the only one — plus a
+ * locale-prefixed way back Home.
  *
  * `LayoutDefault` is stubbed — it is the whole app shell (nav, banners, the reauth dialog), and
  * none of that is this page's own behaviour.
@@ -47,9 +49,14 @@ describe('Error page', () => {
             expect(wrapper.text()).not.toContain('error-page.not-found');
         }));
 
-    it('shows free-form router text as-is, not run through translation', () =>
+    it('folds free-form router text into the generic message, never showing it verbatim', () =>
         mountError({ message: 'Network Error: fetch failed' }).then((wrapper) => {
-            expect(wrapper.text()).toContain('Network Error: fetch failed');
+            expect(wrapper.text()).not.toContain('Network Error: fetch failed');
+        }));
+
+    it('shows the generic message when the router carried no message at all', () =>
+        mountError({ status: '500' }).then((wrapper) => {
+            expect(wrapper.text().trim().length).toBeGreaterThan(0);
         }));
 
     it('links back Home, under the current locale', () =>
