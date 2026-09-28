@@ -55,18 +55,13 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
               with:
-                  # Need full history to walk the commit range below.
+                  # Need full history to walk the commit range below — every other job's shallow
+                  # default is enough, which is why this checkout stays its own step rather than
+                  # going through `setup-node-and-install`.
                   fetch-depth: 0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Lint commit messages
               # A pull_request event carries no before/after SHAs — base/head is its own pair, and
@@ -87,15 +82,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Lint
               run: npm run lint
@@ -111,15 +99,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Check formatting
               run: npm run prettier:check
@@ -135,15 +116,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Lint OpenAPI spec
               run: npm run lint:openapi
@@ -158,15 +132,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Lint AsyncAPI spec
               run: npm run lint:asyncapi
@@ -184,15 +151,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             # The generator itself compares, so the committed file is never overwritten here and
             # the job needs no git state to read a verdict out of.
@@ -212,15 +172,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             # No sibling checkout here, so the cross-repo half is skipped rather than failed —
             # see the script's `peerTargets`.
@@ -301,15 +254,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Audit production dependencies
               run: npm audit --omit=dev --audit-level=high
@@ -332,15 +278,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Measure the demo-shop strip
               run: npm run measure:demo-strip
@@ -355,15 +294,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Check generated API client is fresh
               # The pathspec must list every orval output in orval.config.ts. It previously
@@ -401,15 +333,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Type check
               run: npm run type-check-only
@@ -424,15 +349,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             - name: Build
               run: npm run build-only
@@ -449,24 +367,22 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Run unit tests with coverage
-              run: npm run test:unit:coverage
+            - name: Run unit tests with coverage and a JSON report
+              # One vitest invocation, two reporters (`default` for the log, `json` for the
+              # rollup below) plus coverage — FA99: this used to be two full suite runs, one via
+              # `test:unit:coverage` and a second via `test:unit:report`, ~doubling the job's
+              # actual test time for a report the first run could already produce.
+              run: npm run test:unit:ci
 
             - name: Per-module test report
-              # Reads the JSON the run just wrote and prints the rollup into the job log, so a
-              # red build names the MODULE before anyone opens an artifact.
+              # Reads the JSON the run above already wrote and prints the rollup into the job
+              # log, so a red build names the MODULE before anyone opens an artifact. No test run
+              # of its own.
               if: always()
-              run: npm run test:unit:report && npm run test:report
+              run: npm run test:report
 
             - name: Upload test report
               if: always()
@@ -478,9 +394,10 @@ jobs:
                   if-no-files-found: ignore
 
             - name: Upload coverage report
-              # The gate is the step above: `vitest.config.ts` sets per-file thresholds, and a
-              # file under its floor fails `test:unit:coverage`. This upload is the detail behind
-              # that verdict — which lines are missed — and runs on failure for exactly that.
+              # The gate is "Run unit tests with coverage and a JSON report" above:
+              # `vitest.config.ts` sets per-file thresholds, and a file under its floor fails that
+              # step. This upload is the detail behind that verdict — which lines are missed —
+              # and runs on failure for exactly that.
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
@@ -520,15 +437,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-            - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-                  cache-dependency-path: package-lock.json
-
-            - name: Install dependencies
-              run: npm ci
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
 
             # Same reasoning as test-unit's own step: the sibling's openapi.yaml is gitignored
             # there and only exists once its postinstall assembles it from fragments.
