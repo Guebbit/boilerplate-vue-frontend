@@ -29,8 +29,8 @@ flowchart TD
 ```
 
 **The skeleton comes first, and every variant descends from it.** Producing variants from this
-repository instead would mean maintaining the same twelve domains four times over. The extraction
-plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the workspace root. <!-- doc-paths:ignore -->
+repository instead would mean maintaining the same domains four times over. Genuinely undecided:
+how the extraction itself happens is not written down anywhere durable yet.
 
 - **Skeleton** — the kernel, the infrastructure layer, the tooling and two demo modules. Blocked
   on the current polishing pass finishing.
@@ -75,11 +75,6 @@ Genuinely undecided, listed so the idea is not lost.
 - A Bootstrap variant from the skeleton.
 - Lighthouse metrics as a test layer. It would sit next to the accessibility and visual suites,
   and the open question is whether a score threshold is stable enough in CI to gate on.
-- A live admin events view, backed by `GET /observability/events` (an SSE stream, contract-only
-  today). Distinct from `getObservabilityAuditLogs` — that one is paginated history, this one is a
-  feed of what is happening right now. Genuinely unbuilt, not a duplicate of anything the admin
-  panel already calls: worth a view once there's an admin surface wanting a live tail rather than a
-  refresh button.
 - EPC QR / GiroCode on `TransferInstructionsPanel`, so the customer's own banking app fills in the
   transfer instead of them retyping the IBAN and RF reference by hand. Needs a QR library — left
   undecided rather than picked now, since the panel it renders into may still change shape.

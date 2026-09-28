@@ -38,9 +38,9 @@ flowchart TD
 
 ## `src/kernel/`
 
-| File                     | What it is                                                                                                                                                                                                                    | Read next                                                                     |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `src/kernel/registry.ts` | The thesis of the repository, and the mirror of the backend's: a module is a typed value, not a folder convention. Defines what a module declares — name, routes, store, locales, navigation — and validates the set at boot. | [Modules](../theory/modules.md) · [Strategic DDD](../theory/strategic-ddd.md) |
+| File                     | What it is                                                                                                                                                                                                                                                                                                                                                               | Read next                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `src/kernel/registry.ts` | The thesis of the repository, and the mirror of the backend's: a module is a typed value, not a folder convention. Defines what a module declares — name, routes, navigation, response schemas, locales, a locale-change reset callback — no store field; a module wires its own store's reset into that callback instead, so the kernel never has to know Pinia exists. | [Modules](../theory/modules.md) · [Strategic DDD](../theory/strategic-ddd.md) |
 
 ## `src/app/` — the shell
 

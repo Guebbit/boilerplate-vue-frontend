@@ -90,8 +90,9 @@ one. Switching which backend you mean to work against means flipping that variab
 running its `sync:frontend`: the check reads it fresh every time, so a sync from the "wrong" side
 of `BACKEND_PATH` still reports a fork even though the files really did just get copied.
 
-The two backends' bundles are function-identical (same routes, same event/action names) but not
-byte-identical — different bundlers, and the PHP one is not byte-stable run to run. `spec-identity`
+The two backends' bundles are NOT function-identical — the PHP twin trails the Node one by dozens
+of operations at any given time — and are not byte-identical either: different bundlers, and the
+PHP one is not byte-stable run to run. `spec-identity`
 compares `.yaml` files parsed and normalised rather than as raw bytes for exactly that reason
 (mirrors the PHP backend's own `SharedContract::normalise()`), so reformatting alone never reports
 as a fork; a real content difference still does.

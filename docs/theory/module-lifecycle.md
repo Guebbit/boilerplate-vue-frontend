@@ -23,14 +23,13 @@ flowchart LR
     REG --> N["AppNavigation<br/><i>renders entries</i>"]
     REG --> S["responseSchemaMap<br/><i>validates responses</i>"]
     REG --> I["i18n<br/><i>merges dictionaries</i>"]
-    REG --> M["analytics<br/><i>event names</i>"]
     classDef reg fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef out fill:#dbeafe,stroke:#2563eb,color:#111827;
     class REG reg;
-    class R,N,S,I,M out;
+    class R,N,S,I out;
 ```
 
-Every one of those five reads the registry and never names an entry, so none of them appears in
+Every one of those four reads the registry and never names an entry, so none of them appears in
 either checklist. **`src/modules.ts` is the whole runtime registry on this side** — unlike the
 backend, which also owns the contract fragments and their section lists. Here the contract is
 _consumed_:
@@ -293,24 +292,25 @@ assembled from — not a frontend chore.
 Deleting `products`, `cart`, `orders` **and `account`** together — four folders, five lines, and
 `account` is the hard one because the app shell shows who is signed in:
 
-|                    |                                                           |
-| ------------------ | --------------------------------------------------------- |
-| `src/` type-checks | **yes**                                                   |
-| lint               | **clean**                                                 |
-| production build   | **succeeds**                                              |
-| app-shell breakage | **none** — no menu entry, no sign-in button, no dead link |
-| unit specs failing | 34, all in **one** file — the openapi parity table        |
+|                    |                                                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/` type-checks | **no** — 12 errors: 4 in the shell (`AppVerificationBanner.vue`, `ReauthDialog.vue` importing `account`'s stores directly), the rest in `inventory` (reaches `products`) and `wishlist` (reaches `cart`) |
+| production build   | **fails** — `vite build` cannot resolve `InventoryLedger.vue`'s static import of `@/modules/products`, on top of the type errors above                                                                   |
+| app-shell breakage | **none** — no menu entry, no sign-in button, no dead link                                                                                                                                                |
+| unit specs failing | the openapi parity table, `response-schema-map.spec.ts`                                                                                                                                                  |
 
-Everything fixable inside this repo has been fixed. The one remaining failure is the shared
-contract, and it is correct.
+None of this is fixable inside this repo alone: the type errors and the failed build are real
+coupling the deletion makes visible — `inventory` and `wishlist` import `products`/`cart` directly
+rather than through an event, unlike the pairs this page elsewhere holds up as the pattern to
+copy — and the shared contract is a gate that isn't this repo's to satisfy alone.
 
 ---
 
 ## Re-running the deletability check
 
-Worth running deliberately after any significant change — not because it is expected to fail, but
-because every finding it has ever produced was invisible to lint, to `vue-tsc` and to a fully green
-suite.
+Worth running deliberately after any significant change — not to prove it stays clean, but because
+a deletion is exactly the moment a module's real coupling — not its declared one — shows up: the
+last time this was run it caught genuine breakage `lint` and a fully green suite had both missed.
 
 Run it on a throwaway copy so nothing in the repo is touched:
 
@@ -323,7 +323,7 @@ cd "$SB"
 rm -rf src/modules/{products,cart,orders,account}
 # drop the imports + array entries from src/modules.ts
 
-npm run build                                     # THE assertion: type-check and build both pass
+npm run build                                     # THE assertion: does type-check and build both pass, or name real coupling
 npm run lint
 npm run test:unit                                 # expect the parity table red, nothing else
 npm run test:e2e                                  # the app shell — what the build cannot see

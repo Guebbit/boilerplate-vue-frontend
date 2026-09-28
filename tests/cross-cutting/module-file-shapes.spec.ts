@@ -68,7 +68,7 @@ const FILE_SHAPES: readonly FileShape[] = [
     },
     {
         match: /^schemas\.ts$/,
-        what: 'Form schemas for this domain, built on the generated request schemas rather than hand-written beside them.'
+        what: 'Form schemas for this domain, hand-written rather than generated — reusing a generated bound or enum where the contract already declares one, instead of restating it.'
     },
     {
         match: /^domain\/index\.ts$/,

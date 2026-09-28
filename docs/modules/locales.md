@@ -3,7 +3,9 @@
 ::: tip At a glance
 **Owns** — the translation admin: which languages exist, and what has been edited into them.
 **Depends on** — nothing. It talks only to `/locales/*`.
-**Breaks if you change** — nothing outside this folder. Rendering never depended on it.
+**Breaks if you change** — nothing outside this folder through an import. `products`' `ProductEdit`
+checks `router.hasRoute('EntityTranslations')` before offering a link to it, guarded rather than
+assumed, so removing the route degrades that one link instead of breaking the build.
 :::
 
 | Fact                    | This module                                                                      |
@@ -14,18 +16,21 @@
 | **Menu entries**        | `LocalesList`                                                                    |
 | **API calls**           | 13                                                                               |
 | **Depends on**          | _nothing_                                                                        |
-| **Depended on by**      | _nothing_                                                                        |
+| **Depended on by**      | _nothing through an import_ — `products` checks for its route by name            |
 | **Languages**           | `en` · `it`                                                                      |
 | **Publishes**           | _nothing_ — no barrel, so no sibling may import it                               |
 | **Backend counterpart** | `locales` in `boilerplate-node-backend`                                          |
 
-::: info Stands alone
-No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
+::: info Almost stands alone
+No module imports this one and it imports none. `products`' `ProductEdit` still names its
+`EntityTranslations` route to guard a link, so deleting the folder and its line in `src/modules.ts`
+costs that one guarded link, checked rather than assumed.
 :::
 
 ## The map
 
-`locales` sits on no edge of the context map — nothing imports it and it imports nothing.
+`locales` sits on no import edge of the context map — nothing imports it and it imports nothing;
+`products` reaches it only by route name, guarded through `router.hasRoute`.
 
 ## The story
 

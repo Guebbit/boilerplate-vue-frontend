@@ -10,16 +10,16 @@ Pinia is the official state management library for Vue 3. Stores hold reactive d
 
 ### Stores in this repo
 
-| Store                  | File                                        | Owns                                                                                                         |
-| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Session                | `src/infrastructure/session.ts`             | access token, `isAuth`, the `viewer` projection, the caller's two abilities and `can()`, refresh, logout-all |
-| Account auth           | `src/modules/account/stores/auth.ts`        | login, signup, password reset, logout / logout-everywhere                                                    |
-| Account profile        | `src/modules/account/stores/profile.ts`     | the visitor's own editable `User` record, role view, email verification, account deletion                    |
-| Account sessions       | `src/modules/account/stores/sessions.ts`    | the device-session list, scoped to `ProfileSessions.vue`                                                     |
-| Account addresses      | `src/modules/account/stores/addresses.ts`   | the address book, scoped to `ProfileAddresses.vue`                                                           |
-| Observability          | `src/infrastructure/observability/store.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()`                                     |
-| Realtime observability | `src/modules/realtime/store.ts`             | SSE connection state, live metrics stream                                                                    |
-| Counter (example)      | `src/modules/demo/store.ts`                 | minimal Pinia example                                                                                        |
+| Store                  | File                                        | Owns                                                                                                                                         |
+| ---------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session                | `src/infrastructure/session.ts`             | access token, `isAuth`, the `viewer` projection, the caller's two abilities and `can()`, refresh, logout-all                                 |
+| Account auth           | `src/modules/account/stores/auth.ts`        | login, signup, password reset, logout / logout-everywhere                                                                                    |
+| Account profile        | `src/modules/account/stores/profile.ts`     | the visitor's own editable `User` record, role view, email verification, account deletion                                                    |
+| Account sessions       | `src/modules/account/stores/sessions.ts`    | the device-session list, scoped to `ProfileSessions.vue`                                                                                     |
+| Account addresses      | `src/modules/account/stores/addresses.ts`   | the address book, scoped to `ProfileAddresses.vue`                                                                                           |
+| Observability          | `src/infrastructure/observability/store.ts` | Faro init, Umami init, `captureException()`, `identifyUser()`, `unidentifyUser()` — no `track()`; pageviews are Umami's own automatic script |
+| Realtime observability | `src/modules/realtime/store.ts`             | SSE connection state, live metrics stream                                                                                                    |
+| Counter (example)      | `src/modules/demo/store.ts`                 | minimal Pinia example                                                                                                                        |
 
 Domain stores live inside `src/modules/<name>/store.ts` and follow the same pattern. They are
 reached through the module's barrel (`@/modules/<name>`), never by their file path.
@@ -68,7 +68,7 @@ flowchart LR
     Before["router.beforeEach\ntryRestoreAuth"] --> Access["router.beforeEach\nenforceRouteAccess"]
     Access --> BeforeResolve["router.beforeResolve\nlocaleChoice"]
     BeforeResolve --> View["Render view"]
-    View --> After["router.afterEach\ntrack(page_view)"]
+    View --> After["router.afterEach\ntitle, a11y announcement, focus"]
 
     classDef hook fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef view fill:#ddd6fe,stroke:#7c3aed,color:#111827;

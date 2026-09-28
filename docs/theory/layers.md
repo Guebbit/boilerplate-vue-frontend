@@ -166,16 +166,16 @@ instead of two.
 
 ### And when a container legitimately grows
 
-`AppNavigation.vue` is 228 lines and that is fine — all of it is shell assembly (collecting the
+`AppNavigation.vue` is 466 lines and that is fine — all of it is shell assembly (collecting the
 registry, filtering by `canAccess`, the `hasRoute` guards, the theme toggle, drawer state). A
 container is _allowed_ to know many things. When one gets genuinely unwieldy the release valve is a
 composable beside it — the shape `useAdminObservability` already has — never props and emits.
 
-`defineEmits`, in this codebase, is for something else entirely: a **domain component crossing a
-module boundary**. `PaymentPanel` and `ShipmentPanel` are the only two files that use it, and there
-the emit _is_ the published language — the panel says "a payment happened" and the order page
-decides what that means, neither side learning the other's store. Every component in `src/ui` uses
-`defineProps`/`defineModel` instead.
+`defineEmits` is ordinary here too — a form card's `submit`, a challenge's `solved` — but it also
+carries one thing more specific: a **domain component crossing a module boundary**. `PaymentPanel`
+and `ShipmentPanel` are the case to read for that: the emit _is_ the published language — the panel
+says "a payment happened" and the order page decides what that means, neither side learning the
+other's store.
 
 ## How to read a domain
 
@@ -202,8 +202,8 @@ flowchart LR
 For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
-- `src/modules/<name>/composables/<useThing>.ts` (optional — products has none today;
-  `src/modules/admin/composables/use-admin-observability.ts` is a real one)
+- `src/modules/<name>/composables/<useThing>.ts` (optional — products has two,
+  `use-active-locales.ts` and `translation-tab-errors.ts`)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `getProducts()`
 - `src/infrastructure/http/index.ts`
@@ -246,11 +246,12 @@ One store for both would give `infrastructure` a `User` entity and make the app 
 domain to render a name. So the session holds a deliberately minimal projection instead:
 
 ```ts
-viewer = { id, email, admin };
+viewer = { id, email, role, imageUrl, thumbnailUrl, verified };
 ```
 
-The shell knows _someone is signed in, here is their display name, they are staff_. It does not
-know what a `User` is, and deleting the account module does not break it.
+The shell knows _someone is signed in, here is their display name and picture, here is their role
+and whether their address is verified_. It does not know what a `User` is, and deleting the account
+module does not break it.
 
 Which `/account` calls belong to the session: the ones it needs to restore, remember or end
 **itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/logout-all`,
