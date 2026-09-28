@@ -195,10 +195,12 @@ describe('keyboard', () => {
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {
         cy.loginAs('admin');
         // `useConfirm` (`DialogHost.vue`) is the one shared confirmation dialog every domain that
-        // has something destructive to confirm opens the same way — webhooks is foundation, not
-        // shop, so its subscription list's delete button exercises the exact same overlay a
-        // shop-owned delete would have.
-        cy.visit('/en/webhooks/subscriptions');
+        // has something destructive to confirm opens the same way — users is foundation, not
+        // shop, and (unlike webhooks' subscription list, empty unless
+        // `NODE_WEBHOOK_DEMO_SINK_URL` is set) always seeds more than one row, so its delete
+        // button reliably exercises the exact same overlay a shop-owned delete would have. The
+        // dialog is declined below, so which row it opens on never matters.
+        cy.visit('/en/users');
         cy.get('[data-test=row-delete]').first().click();
         cy.get('[data-test=app-dialog-message]').should('be.visible');
 
