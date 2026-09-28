@@ -77,7 +77,15 @@ const withoutLineComments = (source: string): string =>
  */
 const UNSAFE_SPECIFIERS = [
     { kind: 'import.meta.glob', pattern: /import\.meta\.glob\s*\(/g },
-    { kind: 'dynamic import template', pattern: /\bimport\s*\(\s*(?:\/\*[\S\s]*?\*\/\s*)*`/g }
+    // The comment body is `(?:(?!\*\/)[\S\s])*`, not the lazy `[\S\s]*?` this began as: with the
+    // lazy form, the outer `*` and the closing `*/` can split a run of `*/ /*` pairs in
+    // exponentially many equivalent ways (CodeQL js/redos). Requiring every consumed character to
+    // fail a `*/` lookahead first makes each comment's extent unique, so there is nothing left to
+    // backtrack over.
+    {
+        kind: 'dynamic import template',
+        pattern: /\bimport\s*\(\s*(?:\/\*(?:(?!\*\/)[\S\s])*\*\/\s*)*`/g
+    }
 ] as const;
 
 interface Specifier {

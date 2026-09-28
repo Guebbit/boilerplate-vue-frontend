@@ -51,6 +51,10 @@ describe('originToRegExp', () => {
      * differs only where the dot is.
      */
     it('escapes regex metacharacters in the origin', () => {
+        // This literal is the plain ORIGIN argument, not a regex — originToRegExp escapes the
+        // dot (and every other metacharacter) before building the RegExp, which is exactly
+        // what this test and the it.each below it assert.
+        // codeql[js/incomplete-hostname-regexp]: false positive, escaped before regex construction — see above
         const pattern = originToRegExp('https://api.example.com');
 
         expect(pattern.test('https://api.example.com/v1')).toBe(true);
