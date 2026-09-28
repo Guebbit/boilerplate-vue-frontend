@@ -179,8 +179,12 @@ export interface AppModule {
      * A callback rather than a store reference: the kernel must not know Pinia exists, so a
      * module wires its own store's reset action (or several, or a partial one that spares
      * unrelated state) in here rather than exposing the store itself.
+     *
+     * May return a promise — a module reaching its store through a lazy `import()` (FA81) has no
+     * synchronous alternative — and the locale guard awaits it before resolving the navigation, so
+     * a page rendered right after a switch never reads a not-yet-wiped cache.
      */
-    resetOnLocaleChange?: () => void;
+    resetOnLocaleChange?: () => void | Promise<void>;
 }
 
 /**
@@ -287,7 +291,7 @@ export const collectModuleResponseSchemas = (
  *
  * @param appModules - the enabled module list
  */
-export const collectLocaleSensitiveResets = (appModules: AppModule[]): (() => void)[] =>
+export const collectLocaleSensitiveResets = (appModules: AppModule[]): (() => void | Promise<void>)[] =>
     appModules.flatMap((appModule) =>
         appModule.resetOnLocaleChange ? [appModule.resetOnLocaleChange] : []
     );

@@ -47,9 +47,8 @@ export default {
     // this manifest is evaluated eagerly for every enabled module, and a static import would
     // pull the whole store into that same eager chunk for a callback that only fires after a
     // real switch.
-    resetOnLocaleChange: () => {
-        void import('./store').then(({ useOrdersStore }) =>
-            useOrdersStore().resetForLocaleChange()
-        );
-    }
+    // Returned, not `void`-ed: the locale guard awaits this so a page it lets through never
+    // renders off a cache the reset hasn't reached yet.
+    resetOnLocaleChange: () =>
+        import('./store').then(({ useOrdersStore }) => useOrdersStore().resetForLocaleChange())
 } satisfies AppModule;

@@ -62,10 +62,16 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
  * Read `enabledModules` at call time rather than importing it into a module-level constant: the
  * list never actually changes at runtime, but reading it lazily keeps this file's only
  * `@/modules` touch inside the one function that needs it.
+ *
+ * Awaited by the caller: a module reaching its store through a lazy `import()` (FA81) resolves
+ * its reset a tick later than a synchronous one, and the navigation this guard gates must not
+ * settle before every reset actually lands — otherwise the page it lets through can render off a
+ * cache that has not been wiped yet.
  */
-const resetLocaleSensitiveStores = (): void => {
-    for (const reset of collectLocaleSensitiveResets(enabledModules)) reset();
-};
+const resetLocaleSensitiveStores = (): Promise<void> =>
+    Promise.all(
+        collectLocaleSensitiveResets(enabledModules).map((reset) => Promise.resolve(reset()))
+    ).then(() => undefined);
 
 /**
  * The most recently REQUESTED locale, across every call to this guard.
@@ -114,12 +120,11 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
 
     /**
      * Resolves the guard's `true` verdict, wiping locale-sensitive caches first if — and only
-     * if — the language genuinely changed underneath this navigation.
+     * if — the language genuinely changed underneath this navigation. Awaited: the navigation
+     * must not resolve before every reset has actually landed.
      */
-    const settle = (): true => {
-        if (locale !== previousLocale) resetLocaleSensitiveStores();
-        return true;
-    };
+    const settle = (): true | Promise<true> =>
+        locale === previousLocale ? true : resetLocaleSensitiveStores().then(() => true as const);
 
     // Already loaded: just make sure it is the active language and proceed.
     // (covers back/forward navigation and direct URLs between loaded locales)
