@@ -29,8 +29,12 @@
  * See: docs/modules/index.md
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { enabledModules } from '@/modules';
+import { resolveBackendPath } from '../../scripts/pairing/paired-backend-path';
 
 /** One module's counterpart in `boilerplate-node-backend`. */
 interface Pairing {
@@ -76,6 +80,40 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
 const isSameName = (name: string, pairing: Pairing): boolean =>
     pairing.counterparts.length === 1 && pairing.counterparts[0] === name;
 
+/**
+ * FA128: every name `BACKEND_PAIRING` claims as a counterpart, checked against the backend's OWN
+ * module list — closing the gap the rest of this file always had: everything above only checks
+ * this table against ITSELF, so a counterpart renamed or removed on the other side never made a
+ * red test here, only a person noticing by hand.
+ *
+ * Read from the backend's `src/modules.ts`, specifically its `ModuleName` union — that file's own
+ * docstring calls it "hand-listed", i.e. the one place the backend enumerates its module names as
+ * literal strings rather than as `AppModule[]` values a cross-repo static read cannot import
+ * (`@kernel/registry` is that repo's own path alias, unresolvable from here).
+ */
+const BACKEND_MODULES_FILE = path.join(resolveBackendPath(), 'src', 'modules.ts');
+
+/**
+ * The backend's real module names, or `undefined` when there is no sibling checkout to read —
+ * exactly `check-spec-identity.ts`'s own leniency: this spec runs in `npm run test:unit`, which
+ * `ci.yml`'s `test-unit` job runs WITHOUT checking out the backend, so treating an absent sibling
+ * as "skip this one check" rather than "fail" is what keeps the gate meaningful for both.
+ *
+ * @param file - the backend's `src/modules.ts`, {@link BACKEND_MODULES_FILE} unless a test points
+ *  elsewhere
+ * @returns every literal in the `ModuleName` union, or `undefined` if the file cannot be read or
+ *  no longer declares that union in a form this can parse
+ */
+const readBackendModuleNames = (file = BACKEND_MODULES_FILE): string[] | undefined => {
+    if (!existsSync(file)) return undefined;
+    const source = readFileSync(file, 'utf8');
+    const union = /export type ModuleName =\s*([\S\s]*?);/.exec(source);
+    if (!union) return undefined;
+    return [...union[1].matchAll(/'([\w-]+)'/g)].map(([, name]) => name);
+};
+
+const backendModuleNames = readBackendModuleNames();
+
 describe('the cross-repository pairing', () => {
     it('names a counterpart for every enabled module', () => {
         const missing = enabledModules
@@ -119,5 +157,73 @@ describe('the cross-repository pairing', () => {
      */
     it('is checking the modules it is meant to be checking', () => {
         expect(enabledModules.length).toBeGreaterThanOrEqual(1);
+    });
+
+    /**
+     * FA128 — the check the rest of this file never made: does the backend actually have what
+     * `BACKEND_PAIRING` says it does. Skipped, not failed, when there is no sibling checkout to
+     * read (see {@link readBackendModuleNames}); real names only, so `demo`'s empty list and
+     * nothing else passes it vacuously.
+     */
+    it.skipIf(backendModuleNames === undefined)(
+        "names only backend modules that actually exist in the sibling's own registry",
+        () => {
+            const known = new Set(backendModuleNames);
+            const ghosts = Object.entries(BACKEND_PAIRING).flatMap(([name, pairing]) =>
+                (pairing?.counterparts ?? [])
+                    .filter((counterpart) => !known.has(counterpart))
+                    .map(
+                        (counterpart) =>
+                            `"${name}" names backend counterpart "${counterpart}", which is not in ${BACKEND_MODULES_FILE}'s ModuleName union.`
+                    )
+            );
+
+            expect(ghosts).toEqual([]);
+        }
+    );
+
+    /** The guard on the guard for the check above: a sibling read that silently found nothing. */
+    it.skipIf(backendModuleNames === undefined)(
+        'read a real, non-empty module list from the sibling checkout',
+        () => {
+            expect(backendModuleNames?.length).toBeGreaterThan(0);
+        }
+    );
+});
+
+describe('readBackendModuleNames — independent of whether a sibling checkout is present', () => {
+    /** Scratch files made by a case, removed after it. */
+    const scratch: string[] = [];
+
+    afterEach(() => {
+        for (const directory of scratch.splice(0))
+            rmSync(directory, { recursive: true, force: true });
+    });
+
+    /** A `src/modules.ts`-shaped fixture at a fresh temp path, holding `contents`. */
+    const fixture = (contents: string): string => {
+        const directory = mkdtempSync(path.join(tmpdir(), 'backend-modules-'));
+        scratch.push(directory);
+        const file = path.join(directory, 'modules.ts');
+        writeFileSync(file, contents);
+        return file;
+    };
+
+    it('reads every literal out of the ModuleName union', () => {
+        const file = fixture(
+            "export type ModuleName =\n    | 'cart'\n    | 'orders'\n    | 'wishlist';\n"
+        );
+
+        expect(readBackendModuleNames(file)).toEqual(['cart', 'orders', 'wishlist']);
+    });
+
+    it('is undefined for a file with no ModuleName union to read', () => {
+        expect(readBackendModuleNames(fixture('export const nothing = 1;\n'))).toBeUndefined();
+    });
+
+    it('is undefined for a path with nothing at it', () => {
+        expect(
+            readBackendModuleNames(path.join(tmpdir(), 'does-not-exist-modules.ts'))
+        ).toBeUndefined();
     });
 });
