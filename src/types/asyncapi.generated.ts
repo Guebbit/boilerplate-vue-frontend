@@ -72,6 +72,18 @@ export interface PaymentFailedEnvelope {
   'data': PaymentEventPayload;
 }
 export type PaymentFailedEventType = "payment.failed";
+export interface PaymentRefundedEnvelope {
+  'type': PaymentRefundedEventType;
+  'timestamp': string;
+  'data': PaymentRefundedPayload;
+}
+export type PaymentRefundedEventType = "payment.refunded";
+export interface PaymentRefundedPayload {
+  'paymentId': string;
+  'orderId': string;
+  'amount': number;
+  'currency': string;
+}
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
@@ -82,6 +94,7 @@ export type OrderShippedEvent = OrderShippedEnvelope;
 export type OrderCancelledEvent = OrderCancelledEnvelope;
 export type PaymentSucceededEvent = PaymentSucceededEnvelope;
 export type PaymentFailedEvent = PaymentFailedEnvelope;
+export type PaymentRefundedEvent = PaymentRefundedEnvelope;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -110,6 +123,7 @@ export type OrderChannel = (typeof ORDER_CHANNELS)[keyof typeof ORDER_CHANNELS];
 export const PAYMENT_CHANNELS = {
     SUCCEEDED: 'payment.succeeded',
     FAILED: 'payment.failed',
+    REFUNDED: 'payment.refunded',
 } as const;
 
 /* Union of every "payment." channel name */
