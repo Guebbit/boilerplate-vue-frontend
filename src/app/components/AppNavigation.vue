@@ -232,7 +232,9 @@ const accountBadge = computed(() => menuItems.value.account.find((item) => item.
  */
 const logout = () =>
     router.push(
-        router.hasRoute('Logout') ? routerLinkI18n({ name: 'Logout' }) : routerLinkI18n({ name: 'Home' })
+        router.hasRoute('Logout')
+            ? routerLinkI18n({ name: 'Logout' })
+            : routerLinkI18n({ name: 'Home' })
     );
 
 /**

@@ -158,7 +158,9 @@ describe('enforceRouteAccess', () => {
         visitorStanding.isAuth.value = true;
         held.add('read User');
 
-        expect(enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin)).toBeUndefined();
+        expect(
+            enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin)
+        ).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
     });
 
