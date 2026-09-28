@@ -14,6 +14,15 @@ import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { MODULE_EDGES } from './scripts/module-edges';
+import { MODULE_GROUPS } from './scripts/module-groups';
+
+/**
+ * Every module `MODULE_GROUPS` labels `shop` — the removable pet-supply domain. Computed once
+ * rather than per module below, since the list is the same for every `foundation` caller.
+ */
+const shopModuleNames = Object.entries(MODULE_GROUPS)
+    .filter(([, group]) => group === 'shop')
+    .map(([name]) => name);
 
 /**
  * Module boundaries, one config block per module.
@@ -23,6 +32,9 @@ import { MODULE_EDGES } from './scripts/module-edges';
  * first pattern below stops, because the moment one happens the module stops being deletable. The
  * second pattern is coupling, not internals: a module may only reach the siblings `MODULE_EDGES`
  * names for it, so a new cross-module import fails at lint time until someone decides it belongs.
+ * The third locks in the `foundation | shop` direction `MODULE_GROUPS` labels: a `foundation`
+ * module ships with every deployment, so it may not import a `shop` module — the removable demo
+ * domain — even one `MODULE_EDGES` would otherwise allow.
  *
  * The list is read from the filesystem rather than written out, so adding a domain never edits
  * this file — which is the same reason `src/modules.ts` is the only place that names one. Each
@@ -35,6 +47,7 @@ const moduleBoundaryRules = readdirSync(fileURLToPath(new URL('src/modules', imp
     .filter((entry) => entry.isDirectory())
     .map(({ name }) => {
         const reaches = MODULE_EDGES[name] ?? [];
+        const isFoundation = MODULE_GROUPS[name] === 'foundation';
         return {
             files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
             rules: {
@@ -54,7 +67,15 @@ const moduleBoundaryRules = readdirSync(fileURLToPath(new URL('src/modules', imp
                                     ...reaches.map((reach) => `!@/modules/${reach}`)
                                 ],
                                 message: `${name} may reach ${reaches.join(', ') || 'no sibling'}. A new one is a new coupling: add it to MODULE_EDGES in eslint.config.ts and say in this module's docblock what it reaches for and why — or find a way not to need it.`
-                            }
+                            },
+                            ...(isFoundation && shopModuleNames.length > 0
+                                ? [
+                                      {
+                                          group: shopModuleNames.map((shop) => `@/modules/${shop}`),
+                                          message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
+                                      }
+                                  ]
+                                : [])
                         ]
                     }
                 ]

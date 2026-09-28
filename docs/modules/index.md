@@ -124,27 +124,32 @@ Two rows are worth noticing before you read any page: [`delivery`](./delivery.md
 [`payments`](./payments.md) have **no screens at all** — their published surface is a component
 another module mounts.
 
+**Group** is a second, independent axis from Subdomain: `foundation` ships with every deployment,
+`shop` is the removable pet-supply demo domain (`npm run demo:remove`). It mirrors the paired
+backend's own per-module `group` field. `scripts/module-groups.ts` holds the same map in code, and
+`eslint.config.ts` refuses a `foundation` module importing a `shop` one.
+
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
 | 15      | 3    | 5          | 7       | 38      | 15     | 9             |
 
-| Module                                | Subdomain    | Screens | Store                    | API calls | Depends on | Depended on by |
-| ------------------------------------- | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
-| [`account`](./account.md)             | `generic`    | 8       | `account`                | 18        | 1          | 0              |
-| [`api-keys`](./api-keys.md)           | `generic`    | 2       | `api-keys`               | 3         | 0          | 0              |
-| [`cart`](./cart.md)                   | `core`       | 1       | `cart`                   | 8         | 1          | 3              |
-| [`delivery`](./delivery.md)           | `supporting` | 0       | `delivery`               | 3         | 0          | 2              |
-| [`demo`](./demo.md)                   | `generic`    | 1       | `counter`                | 0         | 0          | 0              |
-| [`feedback`](./feedback.md)           | `generic`    | 2       | `feedback`               | 3         | 0          | 0              |
-| [`inventory`](./inventory.md)         | `supporting` | 1       | `inventory`              | 5         | 1          | 0              |
-| [`locales`](./locales.md)             | `generic`    | 3       | `locales`                | 9         | 0          | 0              |
-| [`observability`](./observability.md) | `generic`    | 3       | `realtime-observability` | 5         | 0          | 0              |
-| [`orders`](./orders.md)               | `core`       | 3       | `orders`                 | 11        | 3          | 0              |
-| [`payments`](./payments.md)           | `supporting` | 0       | `payments`               | 4         | 0          | 1              |
-| [`products`](./products.md)           | `core`       | 4       | `products`               | 10        | 2          | 1              |
-| [`users`](./users.md)                 | `generic`    | 4       | `users`                  | 9         | 0          | 1              |
-| [`webhooks`](./webhooks.md)           | `supporting` | 5       | `webhooks`               | 7         | 0          | 0              |
-| [`wishlist`](./wishlist.md)           | `supporting` | 1       | `wishlist`               | 4         | 1          | 1              |
+| Module                                | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
+| ------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
+| [`account`](./account.md)             | `generic`    | `foundation` | 8       | `account`                | 18        | 1          | 0              |
+| [`api-keys`](./api-keys.md)           | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
+| [`cart`](./cart.md)                   | `core`       | `shop`       | 1       | `cart`                   | 8         | 1          | 3              |
+| [`delivery`](./delivery.md)           | `supporting` | `shop`       | 0       | `delivery`               | 3         | 0          | 2              |
+| [`demo`](./demo.md)                   | `generic`    | `foundation` | 1       | `counter`                | 0         | 0          | 0              |
+| [`feedback`](./feedback.md)           | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
+| [`inventory`](./inventory.md)         | `supporting` | `shop`       | 1       | `inventory`              | 5         | 1          | 0              |
+| [`locales`](./locales.md)             | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
+| [`observability`](./observability.md) | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
+| [`orders`](./orders.md)               | `core`       | `shop`       | 3       | `orders`                 | 11        | 3          | 0              |
+| [`payments`](./payments.md)           | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
+| [`products`](./products.md)           | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
+| [`users`](./users.md)                 | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
+| [`webhooks`](./webhooks.md)           | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
+| [`wishlist`](./wishlist.md)           | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |
 
 ## The two repositories
 
