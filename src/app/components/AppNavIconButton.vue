@@ -5,7 +5,7 @@
  * `aria-label`). All non-prop attributes fall through to the underlying `<v-btn>` via
  * `useAttrs`/`mergeProps` so a parent can use this as a `v-menu` activator.
  */
-import { mergeProps, useAttrs } from 'vue';
+import { mergeProps, ref, useAttrs } from 'vue';
 import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
@@ -80,13 +80,46 @@ const props = defineProps<{
 const attributes = useAttrs();
 
 /**
- * Listeners and attributes from two sources, merged so neither shadows the other: the tooltip's
- * hover/focus handlers and whatever the parent passed through (a menu's activator props).
- * `mergeProps` chains same-named listeners instead of replacing them.
+ * Whether the tooltip shows — driven explicitly by {@link openTooltipOnRealFocus} and
+ * {@link closeTooltip} below, rather than `v-tooltip`'s own `open-on-focus` wiring. See the
+ * template's `open-on-focus="false"` for why.
+ */
+const tooltipOpen = ref(false);
+
+/**
+ * Opens the tooltip on a real keyboard focus, mirroring the `:focus-visible` check Vuetify's own
+ * `open-on-focus` makes — but that internal wiring also gates on a 50ms "reopen lock" left over
+ * from the tooltip's LAST close, meant to stop an immediate re-open right after a click. Tab away
+ * and Shift+Tab back inside that window (routine under real multi-shard e2e CPU contention) then
+ * silently drops the reopen, because the lock is checked before the focus-visible read even runs.
+ * Driving `v-model` here instead skips that lock entirely, since it lives only in Vuetify's own
+ * activator wiring, which `open-on-focus="false"` turns off.
+ * https://github.com/vuetifyjs/vuetify/blob/v4.1.5/packages/vuetify/src/components/VOverlay/useActivator.ts
+ *
+ * @param event - the native `focus` event
+ */
+const openTooltipOnRealFocus = (event: FocusEvent) => {
+    if ((event.target as HTMLElement).matches(':focus-visible')) tooltipOpen.value = true;
+};
+
+/**
+ * Closes the tooltip on blur. Simpler than Vuetify's own `onBlur` (which checks whether focus
+ * moved INTO the tooltip's content) because this tooltip is never `interactive`, so focus can
+ * never land there.
+ */
+const closeTooltip = () => {
+    tooltipOpen.value = false;
+};
+
+/**
+ * Listeners and attributes from three sources, merged so neither shadows the other: the tooltip's
+ * hover handlers, whatever the parent passed through (a menu's activator props), and the explicit
+ * focus/blur pair above. `mergeProps` chains same-named listeners instead of replacing them.
  *
  * @param tooltipProps - the activator props handed down by `<v-tooltip>`
  */
-const buttonProps = (tooltipProps: Record<string, unknown>) => mergeProps(attributes, tooltipProps);
+const buttonProps = (tooltipProps: Record<string, unknown>) =>
+    mergeProps(attributes, tooltipProps, { onFocus: openTooltipOnRealFocus, onBlur: closeTooltip });
 
 /**
  * The button's accessible name: the label alone, or the label plus {@link description}
@@ -104,7 +137,13 @@ const accessibleName = () =>
         the text inside it is shown, and a tooltip node with no name is an axe failure on every
         page that has one — five of them, here, before anyone hovers.
     -->
-    <v-tooltip :text="label" :aria-label="label" location="bottom">
+    <v-tooltip
+        v-model="tooltipOpen"
+        :open-on-focus="false"
+        :text="label"
+        :aria-label="label"
+        location="bottom"
+    >
         <template #activator="{ props: tooltipProps }">
             <!--
                 `model-value` rather than `v-if` on the badge: the button is the same element with
