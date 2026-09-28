@@ -20,6 +20,7 @@ import {
 } from '@/modules/admin/composables/use-audit-trail.ts';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 
 /**
  * i18n translator for this component's template and messages.
@@ -63,15 +64,28 @@ const filters = reactive<AdminAuditFilters>({
 });
 
 /**
- * Options of the outcome select.
+ * Options of the outcome select. The "all" row's value is `null`, not `undefined` (FA51) —
+ * Vuetify reads an `undefined` item value as "use the title", which would post the translated
+ * label instead of no filter at all.
  *
  * @returns The localized `all`/`success`/`failure` choices.
  */
 const outcomeOptions = computed(() => [
-    { value: undefined, label: t('admin-page.audit-filter-outcome-all') },
+    { value: null, label: t('admin-page.audit-filter-outcome-all') },
     { value: 'success', label: t('admin-page.audit-filter-outcome-success') },
     { value: 'failure', label: t('admin-page.audit-filter-outcome-failure') }
 ]);
+
+/**
+ * The outcome select's model: `null` (the "all" row) on screen, no `outcome` filter in
+ * {@link filters}.
+ */
+const outcomeChoice = useAnyFilterChoice(
+    () => filters.outcome,
+    (value) => {
+        filters.outcome = value;
+    }
+);
 
 /**
  * Selectable page sizes, bounded by the `maximum: 100` the contract declares — an option the API
@@ -168,7 +182,7 @@ void fetchPage({ ...filters });
                         hide-details
                     />
                     <v-select
-                        v-model="filters.outcome"
+                        v-model="outcomeChoice"
                         :items="outcomeOptions"
                         item-title="label"
                         item-value="value"

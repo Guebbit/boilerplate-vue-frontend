@@ -181,4 +181,56 @@ describe('UserCreate', () => {
             expect(router.currentRoute.value.fullPath).toBe('/en/users/create');
         });
     });
+
+    // FA52: FormCard's submit button bound :loading only, and in Vuetify 4.1.5 loading does not
+    // disable the button — a real second click (or Enter) while the first create was still in
+    // flight fired a second request. FormCard now also binds :disabled="loading", which a
+    // browser (and jsdom) refuses to dispatch a click's default action through.
+    it('disables the submit button while a create is in flight', () => {
+        const { wrapper, create } = mountPage();
+        create.mockReturnValue(new Promise(() => undefined));
+
+        return wrapper
+            .get('[data-test=user-email] input')
+            .setValue('ada@example.com')
+            .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
+            .then(() => wrapper.get('[data-test=user-password] input').setValue(GOOD_PASSWORD))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(create).toHaveBeenCalledTimes(1);
+                expect(
+                    wrapper.get('form button[type=submit]').attributes('disabled')
+                ).not.toBeUndefined();
+            });
+    });
+
+    it('puts a field error the API names on that field, not in the banner', () => {
+        const { wrapper, create } = mountPage();
+        // As `onResponseReject` hands it on: the contract's `details.field`, lifted to `field`.
+        create.mockRejectedValue({
+            success: false,
+            status: 422,
+            message: 'Unprocessable Entity',
+            errors: [
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Address already in use',
+                    details: { field: 'email' },
+                    field: 'email'
+                }
+            ]
+        });
+
+        return fillAndSubmit(wrapper, {
+            email: 'ada@example.com',
+            username: 'ada',
+            password: GOOD_PASSWORD
+        }).then(() => {
+            expect(wrapper.find('[data-test=user-email] .v-messages').text()).toContain(
+                'Address already in use'
+            );
+            expect(wrapper.find('[data-test=user-create-submit-error]').exists()).toBe(false);
+        });
+    });
 });

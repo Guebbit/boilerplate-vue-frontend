@@ -57,7 +57,15 @@ defineExpose({ formElement });
     <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
         <form ref="formElement" novalidate @submit.prevent="emit('submit')">
             <slot />
-            <v-btn type="submit" color="primary" size="large" block :loading="loading" class="mt-2">
+            <v-btn
+                type="submit"
+                color="primary"
+                size="large"
+                block
+                :loading="loading"
+                :disabled="loading"
+                class="mt-2"
+            >
                 {{ submitLabel }}
             </v-btn>
         </form>

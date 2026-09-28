@@ -19,6 +19,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Product } from '@types';
@@ -81,15 +82,39 @@ const deletedOptions = useDeletedFilterOptions();
 
 /**
  * Options of the admin-only "Active" filter (FE_PARITY_0924 P4) — the public storefront's own
- * search always forces `active: true` server-side, so this only ever matters for an admin.
+ * search always forces `active: true` server-side, so this only ever matters for an admin. The
+ * "all" row's value is `null`, not `undefined` (FA51) — Vuetify reads an `undefined` item value
+ * as "use the title", which would post the translated label instead of no filter at all.
  *
  * @returns The localized options, re-translated on locale change.
  */
 const activeOptions = computed(() => [
-    { value: undefined, label: t('products-list-page.filter-active-all') },
+    { value: null, label: t('products-list-page.filter-active-all') },
     { value: true, label: t('products-list-page.filter-active-yes') },
     { value: false, label: t('products-list-page.filter-active-no') }
 ]);
+
+/**
+ * The "Active" select's model: `null` (the "all" row) on screen, no `active` filter in
+ * {@link filters}.
+ */
+const activeChoice = useAnyFilterChoice(
+    () => filters.value.active,
+    (value) => {
+        filters.value.active = value;
+    }
+);
+
+/**
+ * The "Deleted" select's model: `null` (the "any" row) on screen, no `deleted` filter in
+ * {@link filters}.
+ */
+const deletedChoice = useAnyFilterChoice(
+    () => filters.value.deleted,
+    (value) => {
+        filters.value.deleted = value;
+    }
+);
 
 /**
  * Selectable page sizes for the products table.
@@ -317,7 +342,7 @@ const handleHardDelete = (productId: string) =>
                     />
                     <v-select
                         v-if="session.can('delete', 'Product')"
-                        v-model="filters.active"
+                        v-model="activeChoice"
                         :label="t('products-list-page.filter-active')"
                         :items="activeOptions"
                         item-title="label"
@@ -327,7 +352,7 @@ const handleHardDelete = (productId: string) =>
                     />
                     <v-select
                         v-if="session.can('delete', 'Product')"
-                        v-model="filters.deleted"
+                        v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
                         item-title="label"

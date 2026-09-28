@@ -74,7 +74,9 @@ const {
     form: passwordForm,
     formErrors: passwordErrors,
     showFormErrors: showPasswordErrors,
-    handleSubmit: handlePasswordSubmit
+    isSubmitting: isSubmittingPassword,
+    handleSubmit: handlePasswordSubmit,
+    applyServerErrors
 } = useStructureFormValidation(
     {
         currentPassword: '',
@@ -155,7 +157,9 @@ const submitPasswordChange = () =>
                     .then(() => fetchSessions())
                     .catch(() => undefined);
             })
-            .catch((error) => reportPasswordChangeError(error));
+            .catch((error: unknown) => {
+                if (!applyServerErrors(error)) reportPasswordChangeError(error);
+            });
     });
 </script>
 
@@ -221,7 +225,14 @@ const submitPasswordChange = () =>
                 :label="t('profile-page.label-passwordConfirm')"
                 :error-messages="showPasswordErrors ? (passwordErrors.passwordConfirm ?? []) : []"
             />
-            <v-btn type="submit" color="primary" class="mt-2" data-test="submit-password-change">
+            <v-btn
+                type="submit"
+                color="primary"
+                class="mt-2"
+                data-test="submit-password-change"
+                :loading="isSubmittingPassword"
+                :disabled="isSubmittingPassword"
+            >
                 {{ t('profile-page.button-submit-password') }}
             </v-btn>
 

@@ -15,20 +15,19 @@
  * test rather than by whichever files happen to sit in `src/locales/` — the suite must not change
  * meaning the day a translation is added.
  *
- * `enabledModules` is real (not mocked): the "resets locale-sensitive stores" describe block below
- * exercises the actual registry, `useProductsStore`/`useCartStore`/`useOrdersStore` included, which
- * is why a Pinia instance is installed in `beforeEach` — `resetOnLocaleChange` calls `useXStore()`.
+ * `@/modules` is mocked with two invented, made-up domains rather than the real registry — the
+ * "resets locale-sensitive stores" describe block below is about the WIRING (does `localeChoice`
+ * call every enabled module's `resetOnLocaleChange`?), not about any one domain's store shape.
+ * Asserting against `useProductsStore`/`useCartStore`/`useOrdersStore` would tie a guard-level
+ * test to the shop, and deleting the shop would break a test that is not about the shop at all —
+ * see `docs/theory/modules.md`, "Deleting a domain", and `tests/unit/app/app-navigation.spec.ts`
+ * for the same pattern.
  */
 
 import { asStub } from '../../../support/stub';
 import * as schemas from '@api/schemas';
 import { contractResponse } from '../../infrastructure/http/orval-fixture-schema.ts';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { createPinia, setActivePinia } from 'pinia';
-import { useProductsStore } from '@/modules/products/store';
-import { useCartStore } from '@/modules/cart';
-import { useOrdersStore } from '@/modules/orders/store';
-import type { Product, Order } from '@types';
 import type { RouteLocationNormalized } from 'vue-router';
 
 /** Mutable so individual tests can decide what is supported / already loaded. */
@@ -84,6 +83,21 @@ vi.mock('@api', async (importOriginal) => ({
     getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
 }));
 
+/**
+ * Two invented modules standing in for the enabled registry: one locale-sensitive, one not — see
+ * the file-level doc for why these are made up rather than real domains. Hoisted because the
+ * mock factory below reads them eagerly and `vi.mock` runs before this file's body.
+ */
+const { resetAlphaDomain } = vi.hoisted(() => ({ resetAlphaDomain: vi.fn() }));
+
+vi.mock('@/modules', () => ({
+    enabledModules: [
+        { name: 'alpha-domain', routes: [], resetOnLocaleChange: resetAlphaDomain },
+        // No `resetOnLocaleChange` at all — proves only locale-SENSITIVE modules fire.
+        { name: 'beta-domain', routes: [] }
+    ]
+}));
+
 const { fetchLanguageApi, localeChoice } = await import('@/app/guards/locale-choice');
 
 /** Minimal route stub — the guard only reads name, params and query. */
@@ -98,7 +112,6 @@ const routeTo = (overrides: Partial<RouteLocationNormalized> = {}) =>
 beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    setActivePinia(createPinia());
     i18nState.supportedLanguages = ['en', 'it', 'es'];
     i18nState.loadedLanguages = [];
     i18nState.currentLocale = 'en';
@@ -314,71 +327,28 @@ describe('localeChoice', () => {
 });
 
 /**
- * A language switch wipes every locale-sensitive module's cache, and ONLY those — never on a
- * navigation that keeps the same language. `collectLocaleSensitiveResets`
- * (kernel/registry.spec.ts) proves the collection step in isolation; this proves the guard
- * actually wires it in, against the real `enabledModules`.
+ * A language switch fires every locale-sensitive module's `resetOnLocaleChange`, and ONLY that —
+ * never on a navigation that keeps the same language, and never a module that declares none.
+ * `collectLocaleSensitiveResets` (`kernel/registry.spec.ts`) proves the collection step in
+ * isolation; this proves the guard actually wires it in, against `alpha-domain`/`beta-domain`
+ * (see the file-level doc) rather than any real domain's store.
  */
-describe('localeChoice — locale-sensitive store resets', () => {
-    const PRODUCT: Product = { id: 'p1', title: 'Gadget', price: 9.99, currency: 'EUR' };
-    const ORDER: Order = {
-        id: 'o1',
-        email: 'buyer@example.com',
-        items: [
-            {
-                product: { id: 'p1', title: 'Gadget', price: 9.99, taxRate: 0 },
-                quantity: 1,
-                locale: 'en',
-                current: null,
-                taxAmount: 0,
-                netAmount: 9.99
-            }
-        ],
-        totalItems: 1,
-        totalQuantity: 1,
-        totalPrice: 9.99,
-        netTotal: 9.99,
-        taxTotal: 0,
-        shippingNetAmount: 0,
-        shippingTaxAmount: 0,
-        taxSummary: [],
-        status: 'pending'
-    };
-
-    /**
-     * Seeds one record/title into each locale-sensitive store's cache. `productTitles` is read
-     * and written WITHOUT `.value`: Pinia auto-unwraps a setup store's own top-level refs on its
-     * public instance, so `useCartStore().productTitles` is already the plain object — only
-     * `store.ts`'s own internal `productTitles.value` (inside the `defineStore` setup function)
-     * is the ref itself.
-     */
-    const seedCaches = () => {
-        useProductsStore().addProduct(PRODUCT);
-        useCartStore().productTitles = { p1: 'Gadget' };
-        useOrdersStore().addOrder(ORDER);
-    };
-
-    it('wipes every locale-sensitive cache once the active language actually changes', () => {
-        seedCaches();
+describe('localeChoice — locale-sensitive resets', () => {
+    it('fires every locale-sensitive module once the active language actually changes', () => {
         i18nState.loadedLanguages = ['en', 'it'];
         i18nState.currentLocale = 'en';
 
         return localeChoice(routeTo({ params: { locale: 'it' } })).then(() => {
-            expect(useProductsStore().products.p1).toBeUndefined();
-            expect(useCartStore().productTitles).toEqual({});
-            expect(useOrdersStore().orders.o1).toBeUndefined();
+            expect(resetAlphaDomain).toHaveBeenCalledTimes(1);
         });
     });
 
-    it('leaves every cache alone when the locale is already active', () => {
-        seedCaches();
+    it('does not fire when the locale is already active', () => {
         i18nState.loadedLanguages = ['en'];
         i18nState.currentLocale = 'en';
 
         return localeChoice(routeTo({ params: { locale: 'en' } })).then(() => {
-            expect(useProductsStore().products.p1).toEqual(PRODUCT);
-            expect(useCartStore().productTitles).toEqual({ p1: 'Gadget' });
-            expect(useOrdersStore().orders.o1).toEqual(ORDER);
+            expect(resetAlphaDomain).not.toHaveBeenCalled();
         });
     });
 });

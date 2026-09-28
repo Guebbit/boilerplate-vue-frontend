@@ -18,6 +18,7 @@ import { Search, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { WebhookSubscription } from '@types';
 
@@ -64,15 +65,28 @@ const {
 const rowActionSize = useTouchFriendlySize();
 
 /**
- * Options of the "enabled" filter select.
+ * Options of the "enabled" filter select. The "any" row's value is `null`, not `undefined`
+ * (FA51) — Vuetify reads an `undefined` item value as "use the title", which would post the
+ * translated label instead of no filter at all.
  *
  * @returns The localized options, re-translated on locale change.
  */
 const enabledOptions = computed(() => [
-    { value: undefined, label: t('webhooks-list-page.filter-enabled-all') },
+    { value: null, label: t('webhooks-list-page.filter-enabled-all') },
     { value: true, label: t('webhooks-list-page.filter-enabled-yes') },
     { value: false, label: t('webhooks-list-page.filter-enabled-no') }
 ]);
+
+/**
+ * The "enabled" select's model: `null` (the "any" row) on screen, no `enabled` filter in the
+ * store.
+ */
+const enabledChoice = useAnyFilterChoice(
+    () => filters.value.enabled,
+    (value) => {
+        filters.value.enabled = value;
+    }
+);
 
 /**
  * Selectable page sizes for the subscriptions table.
@@ -166,7 +180,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                     <v-select
-                        v-model="filters.enabled"
+                        v-model="enabledChoice"
                         :label="t('webhooks-list-page.filter-enabled')"
                         :items="enabledOptions"
                         item-title="label"

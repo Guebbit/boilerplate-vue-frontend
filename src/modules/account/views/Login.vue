@@ -111,6 +111,7 @@ const {
     form,
     formErrors,
     showFormErrors: showErrors,
+    isSubmitting,
     handleSubmit,
     applyServerErrors
 } = useStructureFormValidation<
@@ -250,7 +251,15 @@ const submitForm = () => {
                     </RouterLink>
                 </div>
                 <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mt-2" />
-                <v-btn type="submit" color="primary" size="large" block class="mt-4">
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    class="mt-4"
+                    :loading="isSubmitting"
+                    :disabled="isSubmitting"
+                >
                     {{ t('login-page.button-submit') }}
                 </v-btn>
                 <InlineErrorAlert
