@@ -1,7 +1,9 @@
 # Realtime (SSE)
 
 ::: tip Mechanism here, domain on its module page
-The SSE client, its reconnection behaviour and the generated event types are here. What the `realtime` **module** is — one screen, one store, and why the transport is not part of it — is on [its module page](../modules/realtime.md).
+The SSE client, its reconnection behaviour and the generated event types are here. What the
+`observability` **module** is — the realtime playground screen, its store, and why the transport
+is not part of it — is on [its module page](../modules/observability.md).
 :::
 
 The boilerplate exposes one realtime transport — Server-Sent Events — driven by contracts in `asyncapi.yaml` and demonstrated in the `RealtimePlayground` view (`/:locale/playground/realtime`).
@@ -28,15 +30,15 @@ connection, so everything client → server goes through the REST API instead.
 
 ## Where the code lives
 
-| Concern                         | File                                                 |
-| ------------------------------- | ---------------------------------------------------- |
-| SSE client factory              | `src/infrastructure/create-sse-client.ts`            |
-| SSE composable                  | `src/modules/realtime/use-realtime-observability.ts` |
-| Observability SSE store + state | `src/modules/realtime/store.ts`                      |
-| Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)      |
-| Module-level type helpers       | `src/modules/realtime/types.ts`                      |
-| Route                           | `src/modules/realtime/views/RealtimePlayground.vue`  |
-| Route definition                | `src/modules/realtime/routes.ts`                     |
+| Concern                         | File                                                      |
+| ------------------------------- | --------------------------------------------------------- |
+| SSE client factory              | `src/infrastructure/create-sse-client.ts`                 |
+| SSE composable                  | `src/modules/observability/use-realtime-observability.ts` |
+| Observability SSE store + state | `src/modules/observability/store.ts`                      |
+| Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)           |
+| Module-level type helpers       | `src/modules/observability/types.ts`                      |
+| Route                           | `src/modules/observability/views/RealtimePlayground.vue`  |
+| Route definition                | `src/modules/observability/routes.ts`                     |
 
 ## SSE client lifecycle
 
@@ -98,7 +100,7 @@ npm run gen:asyncapi
 ## Dev strategy
 
 - HTTP goes to the same demo backend as everything else.
-- SSE connects to a real URL (`VITE_API_SSE`) — a running backend is required to test it, or a lightweight fake `EventSource` in unit tests. `src/modules/realtime/tests/e2e/realtime.cy.ts` drives the real stream in the demo profile.
+- SSE connects to a real URL (`VITE_API_SSE`) — a running backend is required to test it, or a lightweight fake `EventSource` in unit tests. `src/modules/observability/tests/e2e/realtime.cy.ts` drives the real stream in the demo profile.
 - Keep realtime logic in stores; keep the `RealtimePlayground` view thin.
 
 ## External references

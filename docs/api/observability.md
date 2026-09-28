@@ -16,10 +16,10 @@ The SSE stream is consumed separately by `realtimeObservability` store in the `R
 ## Admin Dashboard implementation
 
 ```
-src/modules/admin/
+src/modules/observability/
 ├── views/Admin.vue                         ← tab shell (Overview + Audit Log)
 ├── composables/use-admin-observability.ts    ← fetches all three endpoints; exposes reactive state
-└── types.ts                                ← view-model types (IAdminKpi, IAdminAuditFilters)
+└── types.ts                                ← view-model types (AdminKpiCard, AdminAuditFilters)
 ```
 
 `use-admin-observability.ts` is the single composable for the admin page. It exposes reactive refs that the view binds to directly.
@@ -87,14 +87,14 @@ KPI cards rendered from this response:
 | `since`   | ISO-8601               | Return events after this timestamp |
 | `limit`   | integer (1–200)        | Max events (default 50)            |
 
-The Audit Log tab passes these filters from `IAdminAuditFilters` reactive state directly as query params.
+The Audit Log tab passes these filters from `AdminAuditFilters` reactive state directly as query params.
 
 ## Types
 
 All response types are driven by `openapi.yaml` and generated into `contracts/rest/index.ts`:
 `ObservabilityHealth`, `ObservabilityMetricsSummary`, `AuditEventItem`, etc.
 
-View-model types specific to the FE layout (`IAdminKpi`, `IAdminAuditFilters`) live in `src/modules/admin/types.ts`.
+View-model types specific to the FE layout (`AdminKpiCard`, `AdminAuditFilters`) live in `src/modules/observability/types.ts`.
 
 ## Related pages
 

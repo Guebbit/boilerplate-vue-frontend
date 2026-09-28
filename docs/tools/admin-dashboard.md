@@ -1,7 +1,7 @@
 # Admin Dashboard
 
 ::: tip Mechanism here, domain on its module page
-The panels, the refresh behaviour and the metric definitions are here. What the `admin` **module** is — its five reads, the shapes it assembles, and why it is built to be deleted — is on [its module page](../modules/admin.md) and [The dashboard](../modules/admin-dashboard.md).
+The panels, the refresh behaviour and the metric definitions are here. What the `observability` **module** is — its five reads, the shapes it assembles, and why it is built to be deleted — is on [its module page](../modules/observability.md) and [The dashboard](../modules/observability-dashboard.md).
 :::
 
 Route: `/:locale/admin`. Requires the admin role — non-admins are redirected Home by the route's
@@ -58,11 +58,11 @@ starting point for a distributed trace rather than a dead end.
 
 ## Files
 
-| File                                                       | Role                                                      |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| `src/modules/admin/views/Admin.vue`                        | Tab shell (Overview + Audit Log)                          |
-| `src/modules/admin/composables/use-admin-observability.ts` | Fetches health, metrics and audit; exposes reactive state |
-| `src/modules/admin/types.ts`                               | View-model types (`IAdminKpi`, `IAdminAuditFilters`)      |
+| File                                                               | Role                                                      |
+| ------------------------------------------------------------------ | --------------------------------------------------------- |
+| `src/modules/observability/views/Admin.vue`                        | Tab shell (Overview + Audit Log)                          |
+| `src/modules/observability/composables/use-admin-observability.ts` | Fetches health, metrics and audit; exposes reactive state |
+| `src/modules/observability/types.ts`                               | View-model types (`AdminKpiCard`, `AdminAuditFilters`)    |
 
 ::: warning `useAdminObservability` has no unit tests
 It is one of the three files carrying almost all of this repo's no-coverage mutants. See
