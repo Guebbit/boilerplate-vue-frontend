@@ -189,12 +189,17 @@ const {
  * Deletes a user after an explicit confirmation.
  *
  * @param userId - Identifier of the user to delete.
+ * @param username - The row's own display name, named in the confirmation so accepting or
+ *  declining is about a specific user rather than "the one I last clicked".
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleDelete = (userId: string) =>
+const handleDelete = (userId: string, username: string) =>
     useDialogStore()
-        .confirm({ message: t('users-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('users-list-page.confirm-delete', { name: username }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -247,12 +252,16 @@ const handleManageAccess = (item: User) =>
  * bypasses the soft-delete and cannot be undone.
  *
  * @param userId - Identifier of the user to hard-delete.
+ * @param username - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleHardDelete = (userId: string) =>
+const handleHardDelete = (userId: string, username: string) =>
     useDialogStore()
-        .confirm({ message: t('users-list-page.confirm-hard-delete'), color: 'error' })
+        .confirm({
+            message: t('users-list-page.confirm-hard-delete', { name: username }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -443,7 +452,7 @@ const handleHardDelete = (userId: string) =>
                             t('users-list-page.button-delete-named', { name: item.username })
                         "
                         :disabled="loading"
-                        @click.stop="handleDelete(item.id!)"
+                        @click.stop="handleDelete(item.id!, item.username)"
                     >
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
@@ -456,7 +465,7 @@ const handleHardDelete = (userId: string) =>
                             t('users-list-page.button-hard-delete-named', { name: item.username })
                         "
                         :disabled="loading"
-                        @click.stop="handleHardDelete(item.id!)"
+                        @click.stop="handleHardDelete(item.id!, item.username)"
                     >
                         {{ t('users-list-page.button-hard-delete') }}
                     </v-btn>

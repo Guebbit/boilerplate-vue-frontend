@@ -184,7 +184,12 @@ const {
 const handleDisableTwoFactor = () => {
     if (!id) return;
     return useDialogStore()
-        .confirm({ message: t('user-target-page.confirm-disable-two-factor'), color: 'error' })
+        .confirm({
+            message: t('user-target-page.confirm-disable-two-factor', {
+                name: currentUser.value?.username ?? id
+            }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearDisableTwoFactorError();

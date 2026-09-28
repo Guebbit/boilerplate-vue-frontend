@@ -158,7 +158,10 @@ const handleCancel = () => {
     const order = currentOrder.value;
     if (!order) return;
     return useDialogStore()
-        .confirm({ message: t('order-target-page.confirm-cancel'), color: 'error' })
+        .confirm({
+            message: t('order-target-page.confirm-cancel', { id: order.id }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearCancelError();

@@ -144,7 +144,10 @@ const {
  */
 const handleRevoke = (apiKey: ApiKey) =>
     useDialogStore()
-        .confirm({ message: t('api-keys-list-page.confirm-revoke'), color: 'error' })
+        .confirm({
+            message: t('api-keys-list-page.confirm-revoke', { name: apiKey.name }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();

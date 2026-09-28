@@ -60,7 +60,7 @@
         "addresses-edit": "Edit",
         "addresses-remove": "Remove",
         "addresses-removed": "Address removed.",
-        "addresses-confirm-remove": "Remove this address?",
+        "addresses-confirm-remove": "Remove {name}?",
         "addresses-save": "Save",
         "addresses-saved": "Address saved.",
         "addresses-default": "Default",

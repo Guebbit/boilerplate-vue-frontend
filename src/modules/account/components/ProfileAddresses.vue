@@ -110,7 +110,12 @@ const handleMakeDefault = (address: Address) => {
  */
 const handleRemove = (address: Address) =>
     useDialogStore()
-        .confirm({ message: t('profile-page.addresses-confirm-remove'), color: 'error' })
+        .confirm({
+            message: t('profile-page.addresses-confirm-remove', {
+                name: address.label || address.fullName
+            }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();

@@ -226,7 +226,10 @@ const {
  */
 const handleDelete = (orderId: string) =>
     useDialogStore()
-        .confirm({ message: t('orders-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('orders-list-page.confirm-delete', { id: orderId }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -261,7 +264,10 @@ const handleRestore = (orderId: string) => {
  */
 const handleHardDelete = (orderId: string) =>
     useDialogStore()
-        .confirm({ message: t('orders-list-page.confirm-hard-delete'), color: 'error' })
+        .confirm({
+            message: t('orders-list-page.confirm-hard-delete', { id: orderId }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();

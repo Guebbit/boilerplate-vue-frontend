@@ -22,7 +22,7 @@
         "button-edit-named": "Modifica la sottoscrizione {url}",
         "button-delete": "Elimina",
         "button-delete-named": "Elimina la sottoscrizione {url}",
-        "confirm-delete": "Eliminare questa sottoscrizione? Ogni endpoint che dipende da essa smetterà di ricevere eventi.",
+        "confirm-delete": "Eliminare la sottoscrizione {url}? Ogni endpoint che dipende da essa smetterà di ricevere eventi.",
         "success-delete": "Sottoscrizione eliminata"
     },
     "webhooks-form": {
@@ -63,13 +63,13 @@
         "button-rotate-secret": "Ruota segreto",
         "button-remove-secret": "Rimuovi",
         "button-remove-secret-named": "Rimuovi il segreto {id}",
-        "confirm-remove-secret": "Rimuovere questo segreto? Ogni consegna che firma ancora con esso smetterà di essere verificata.",
+        "confirm-remove-secret": "Rimuovere il segreto {id}? Ogni consegna che firma ancora con esso smetterà di essere verificata.",
         "success-remove-secret": "Segreto rimosso",
         "button-go-to-edit": "Modifica sottoscrizione",
         "button-go-to-list": "Torna alle sottoscrizioni",
         "button-go-to-deliveries": "Visualizza le consegne",
         "button-delete": "Elimina sottoscrizione",
-        "confirm-delete": "Eliminare questa sottoscrizione? Ogni endpoint che dipende da essa smetterà di ricevere eventi.",
+        "confirm-delete": "Eliminare la sottoscrizione {url}? Ogni endpoint che dipende da essa smetterà di ricevere eventi.",
         "success-delete": "Sottoscrizione eliminata"
     },
     "webhook-edit-page": {

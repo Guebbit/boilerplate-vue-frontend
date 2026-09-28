@@ -23,7 +23,7 @@
         "status-revoked": "Revocata",
         "button-revoke": "Revoca",
         "button-revoke-named": "Revoca la credenziale {name}",
-        "confirm-revoke": "Revocare questa credenziale? Chi la sta ancora usando smetterà immediatamente di autenticarsi.",
+        "confirm-revoke": "Revocare {name}? Chi la sta ancora usando smetterà immediatamente di autenticarsi.",
         "success-revoke": "Credenziale revocata"
     },
     "api-key-create-page": {

@@ -164,7 +164,10 @@ const {
 const handleRemoveSecret = (secretId: string) => {
     if (!id) return;
     return useDialogStore()
-        .confirm({ message: t('webhook-target-page.confirm-remove-secret'), color: 'error' })
+        .confirm({
+            message: t('webhook-target-page.confirm-remove-secret', { id: secretId }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRemoveSecretError();
@@ -195,7 +198,12 @@ const {
 const handleDelete = () => {
     if (!id) return;
     return useDialogStore()
-        .confirm({ message: t('webhook-target-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('webhook-target-page.confirm-delete', {
+                url: currentSubscription.value?.url ?? id
+            }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearDeleteError();

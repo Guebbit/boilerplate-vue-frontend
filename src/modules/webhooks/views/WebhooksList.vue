@@ -164,7 +164,10 @@ const {
  */
 const handleDelete = (subscription: WebhookSubscription) =>
     useDialogStore()
-        .confirm({ message: t('webhooks-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('webhooks-list-page.confirm-delete', { url: subscription.url }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();

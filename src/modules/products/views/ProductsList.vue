@@ -215,12 +215,16 @@ const {
  * Deletes a product after an explicit confirmation.
  *
  * @param productId - Identifier of the product to delete.
+ * @param title - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleDelete = (productId: string) =>
+const handleDelete = (productId: string, title: string) =>
     useDialogStore()
-        .confirm({ message: t('products-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('products-list-page.confirm-delete', { name: title }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -250,12 +254,16 @@ const handleRestore = (productId: string) => {
  * bypasses the soft-delete and cannot be undone.
  *
  * @param productId - Identifier of the product to hard-delete.
+ * @param title - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleHardDelete = (productId: string) =>
+const handleHardDelete = (productId: string, title: string) =>
     useDialogStore()
-        .confirm({ message: t('products-list-page.confirm-hard-delete'), color: 'error' })
+        .confirm({
+            message: t('products-list-page.confirm-hard-delete', { name: title }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -487,7 +495,7 @@ const handleHardDelete = (productId: string) =>
                             t('products-list-page.button-delete-named', { name: item.title })
                         "
                         :disabled="loading"
-                        @click.stop="handleDelete(item.id)"
+                        @click.stop="handleDelete(item.id, item.title)"
                     >
                         {{ t('products-list-page.button-delete') }}
                     </v-btn>
@@ -501,7 +509,7 @@ const handleHardDelete = (productId: string) =>
                             t('products-list-page.button-hard-delete-named', { name: item.title })
                         "
                         :disabled="loading"
-                        @click.stop="handleHardDelete(item.id)"
+                        @click.stop="handleHardDelete(item.id, item.title)"
                     >
                         {{ t('products-list-page.button-hard-delete') }}
                     </v-btn>
