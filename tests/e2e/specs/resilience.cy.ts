@@ -1,32 +1,21 @@
 /**
- * The assertions that hold whatever the demo dataset happens to contain.
+ * The assertions that hold whatever a FOUNDATION page happens to render — the shell-generic half
+ * of what used to be one file (FA122). Every other spec asserts exact counts, titles and prices.
+ * Those are the right assertions for a fixed dataset, and they share a blind spot: they only look
+ * at the values they name. A page can render a broken image, log a TypeError on every load, or
+ * push a 300px-wide table off the viewport, and every one of them stays green.
  *
- * Every other spec asserts exact counts, titles and prices — "four public products", "food (1)",
- * "Premium Grain-Free Dog Food, 15kg". Those are the right assertions for a fixed dataset, and
- * they share a blind
- * spot: they only look at the values they name. A page can render a broken image, log a TypeError
- * on every load, or push a 300px-wide table off the viewport, and every one of them stays green.
- *
- * This file does the opposite on purpose. It names no value. It asserts that:
- *
- *   - every route a user can reach renders its page and logs nothing unexpected,
- *   - no page scrolls sideways,
- *   - a list with nothing in it renders an empty state rather than breaking,
- *   - the pagination control agrees with the number of rows actually on screen.
+ * This file does the opposite on purpose. It names no value. It asserts that every route a
+ * foundation module serves renders its page and logs nothing unexpected, and that no page scrolls
+ * sideways. `cart`, `orders` and `products` carry the SAME two assertions, plus their own
+ * dataset-shaped cases (empty lists, pagination, a sparse record) — see their own
+ * `tests/e2e/resilience.cy.ts`.
  *
  * ## Why this needs no random data
  *
  * "Does the app survive unusual data" sounds like it needs randomised data, and does not: a
  * console spy and `document.body.scrollWidth` answer the question against ANY dataset, and a
- * generated one would only make a failure unreproducible. The demo dataset already carries the
- * awkward records on purpose — one soft-deleted product, one inactive, one whose optional fields
- * are all at their schema defaults (empty description, no categories, no tags). The `barebones`
- * product in the backend's `src/modules/products/demo.ts` is the one that matters here: it is the
- * record a component assuming "every product has a description to truncate" falls over on, and
- * case 6 below opens its detail page like any other.
- *
- * What is deliberately NOT asserted: anything about how many of something there is. That belongs
- * in the specs that pin exact values, where a changed count is a signal rather than noise.
+ * generated one would only make a failure unreproducible.
  */
 
 /**
@@ -37,9 +26,6 @@
  * ignore it.
  */
 const MAX_HORIZONTAL_OVERFLOW_PX = 1;
-
-/** The default page size in `ProductsList.vue`'s `pageSizeOptions`. */
-const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * Console output that is known noise rather than a regression, filtered so it cannot mask a real
@@ -147,13 +133,15 @@ describe('Resilience', () => {
      * `products/:id/edit` and `error/:status/:message` too, which need parameters and a fixture to
      * be meaningful — this is the reachable-by-clicking set, and it is short enough to read.
      *
+     * FA122: every route below is FOUNDATION — a module every deployment of this boilerplate
+     * ships. `cart`, `orders` and `products` carry their own equivalent case in their own
+     * `tests/e2e/resilience.cy.ts`, so this file no longer depends on the shop being present.
      * `inventory` and `feedback` are absent deliberately: both belong to a feature still in
      * progress at the time of writing. Add them here when it lands.
      */
     describe('every route renders, quietly, inside the viewport', () => {
-        it('public routes: home, products, playground', () => {
+        it('public routes: home, playground', () => {
             assertRouteIsHealthy('/en', '#home-page');
-            assertRouteIsHealthy('/en/products', '#products-list-page');
             assertRouteIsHealthy('/en/playground', '#playground-page');
         });
 
@@ -162,10 +150,8 @@ describe('Resilience', () => {
             assertRouteIsHealthy('/en/signup', '#signup-page');
         });
 
-        it('authenticated routes: cart, orders, profile', () => {
+        it('authenticated routes: profile', () => {
             cy.loginAs('user');
-            assertRouteIsHealthy('/en/cart', '#cart-page');
-            assertRouteIsHealthy('/en/orders', '#orders-list-page');
             assertRouteIsHealthy('/en/profile', '#profile-page');
         });
 
@@ -173,83 +159,6 @@ describe('Resilience', () => {
             cy.loginAs('admin');
             assertRouteIsHealthy('/en/admin', '#admin-page');
             assertRouteIsHealthy('/en/users', '#users-list-page');
-        });
-    });
-
-    describe('the catalogue renders whatever the dataset holds', () => {
-        it('renders the public list without console noise or sideways scroll', () => {
-            assertRouteIsHealthy('/en/products', '#products-list-page');
-            cy.get('[data-test=list-row]').should('have.length.at.least', 1);
-        });
-
-        it('opens a detail page for every product an admin can see, including the sparse one', () => {
-            cy.loginAs('admin');
-            cy.visit('/en/products');
-            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
-
-            /*
-             * Every href collected upfront, then visited directly, rather than returning to the
-             * list between products: N page loads instead of 2N. The admin list is the one that
-             * matters — it is the only view carrying the inactive and soft-deleted rows, and the
-             * `barebones` product with no description, categories or tags.
-             */
-            cy.get('[data-test=row-view]')
-                .then((viewButtons) =>
-                    [...viewButtons].map((button) => button.getAttribute('href')!)
-                )
-                .then((hrefs) => {
-                    expect(hrefs.length, 'no product rows to open').to.be.greaterThan(0);
-
-                    for (const href of hrefs) {
-                        cy.visit(href);
-                        cy.get('#product-target').should('exist');
-                        assertNoHorizontalOverflow();
-                    }
-                });
-        });
-    });
-
-    describe('lists tolerate being empty', () => {
-        it('renders an empty catalogue rather than breaking when a search matches nothing', () => {
-            /*
-             * An empty list is a state the demo dataset cannot be in by standing still — every
-             * seeded collection has rows on purpose — so it is reached the way a user reaches it:
-             * by searching for something that is not there. That also makes this the only case
-             * here that exercises the list's own empty branch rather than the route's.
-             */
-            visitCapturingConsole('/en/products');
-            cy.get('#products-list-page').should('exist');
-
-            cy.get('[data-test=filter-text]')
-                .should('not.be.disabled')
-                .type('zzzz-no-such-product-zzzz');
-            cy.get('#products-list-page form [type=submit]').click();
-
-            cy.get('[data-test=list-row]').should('not.exist');
-            assertNoConsoleNoise();
-            assertNoHorizontalOverflow();
-        });
-    });
-
-    describe('pagination agrees with the rows actually rendered', () => {
-        it('shows the pagination control only when the catalogue does not fit on one page', () => {
-            cy.loginAs('admin');
-            cy.visit('/en/products');
-            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
-
-            /*
-             * Written as the agreement between two things on screen rather than as a fixed
-             * expectation, so it keeps meaning something as the demo catalogue grows: a full page
-             * means there may be more and the control must be there; a partial page means this is
-             * already everything and it must not be. `pageTotal` is server-reported
-             * (`useServerPageTotal`, `src/modules/products/store.ts`) — a local-only count would
-             * make this the branch that always takes the "not exist" path regardless of how many
-             * pages actually exist, which is the bug this test caught before that fix landed.
-             */
-            cy.get('[data-test=list-row]').then((rows) => {
-                if (rows.length >= DEFAULT_PAGE_SIZE) cy.get('.v-pagination').should('exist');
-                else cy.get('.v-pagination').should('not.exist');
-            });
         });
     });
 });

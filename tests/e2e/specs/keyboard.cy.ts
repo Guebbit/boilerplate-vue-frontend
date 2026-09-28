@@ -63,15 +63,17 @@ describe('keyboard', () => {
         cy.visit('/en');
         cy.get('h1').should('exist');
         cy.title().then((homeTitle) => {
-            // A real navigation by a real link, so the router's `afterEach` is what runs.
+            // A real navigation by a real link, so the router's `afterEach` is what runs. `about`
+            // is a shell-owned static page (`src/app/router/index.ts`), not a module route, so
+            // this holds whatever domain modules this build ships.
             // The drawer holds the same link, inert and hidden at this width: the visible one.
-            cy.get('nav a[href="/en/products"]').filter(':visible').first().click();
-            cy.location('pathname').should('eq', '/en/products');
+            cy.get('nav a[href="/en/about"]').filter(':visible').first().click();
+            cy.location('pathname').should('eq', '/en/about');
 
             cy.focused().should('have.attr', 'data-main-content');
             // The new page's title first, then the app's name — and not the previous page's.
             cy.title().should('not.eq', homeTitle);
-            cy.title().should('match', /^Products list — /);
+            cy.title().should('match', /^About this shop — /);
         });
     });
 
@@ -192,12 +194,12 @@ describe('keyboard', () => {
 
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {
         cy.loginAs('admin');
-        // By role: the admin's own pending order is the one the cancel button, and so the
-        // confirmation dialog this case is about, exist on.
-        cy.subjectId('order.ownerPending').then((id) => {
-            cy.visit(`/en/orders/${id}`);
-        });
-        cy.get('[data-test=order-cancel]').click();
+        // `useConfirm` (`DialogHost.vue`) is the one shared confirmation dialog every domain that
+        // has something destructive to confirm opens the same way — webhooks is foundation, not
+        // shop, so its subscription list's delete button exercises the exact same overlay a
+        // shop-owned delete would have.
+        cy.visit('/en/webhooks/subscriptions');
+        cy.get('[data-test=row-delete]').first().click();
         cy.get('[data-test=app-dialog-message]').should('be.visible');
 
         // Tab around more times than the dialog has controls: focus must wrap within the
@@ -209,20 +211,7 @@ describe('keyboard', () => {
 
         cy.realPress('Escape');
         cy.get('[data-test=app-dialog-message]').should('not.exist');
-        // Declined, not confirmed: the order is still pending and still cancellable.
-        cy.get('[data-test=order-cancel]').should('exist');
-    });
-
-    it('toggles a facet chip with Enter and with Space', () => {
-        cy.visit('/en/products');
-        cy.get('[data-test=category-chip]').should('exist');
-
-        cy.get('[data-test=category-chip]').first().focus();
-        cy.focused().realPress('Enter');
-        cy.get('[data-test=category-chip]').first().should('have.attr', 'aria-pressed', 'true');
-
-        cy.get('[data-test=category-chip]').first().focus();
-        cy.focused().realPress('Space');
-        cy.get('[data-test=category-chip]').first().should('have.attr', 'aria-pressed', 'false');
+        // Declined, not confirmed: the subscription is still on the list.
+        cy.get('[data-test=row-delete]').should('exist');
     });
 });
