@@ -13,6 +13,7 @@ export default {
  * `OrderReferenceSearch`, mounted here rather than reimplemented: the page stays a list.
  */
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -42,6 +43,20 @@ import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-opt
  * Generic translation and notification accessors.
  */
 const { t } = useI18n();
+
+/**
+ * Router instance, for the jump `handleReferenceFound` performs.
+ */
+const router = useRouter();
+
+/**
+ * `OrderReferenceSearch`'s own `@found` handler — that component names no route at all (FA86),
+ * so this page, which owns `OrderEdit` directly, is what turns a found order into a navigation.
+ *
+ * @param order - The order the reference search landed on.
+ */
+const handleReferenceFound = (order: Order) =>
+    router.push(routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } }));
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -271,7 +286,10 @@ const handleHardDelete = (orderId: string) =>
 
 <template>
     <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
-        <OrderReferenceSearch v-if="session.can('create', 'Payment')" />
+        <OrderReferenceSearch
+            v-if="session.can('create', 'Payment')"
+            @found="handleReferenceFound"
+        />
 
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">

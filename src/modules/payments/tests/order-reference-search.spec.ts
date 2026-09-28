@@ -1,34 +1,18 @@
 /**
  * @module
  * Mounts the real search component and spies on the store's own read, the same pattern
- * `record-offline-payment-form.spec.ts` uses: the field state and the navigation on success are
- * this component's job, the lookup itself is the store's, already proven in `store.spec.ts`.
+ * `record-offline-payment-form.spec.ts` uses: the field state and this component's job stop at
+ * EMITTING the found order — `payments` declares no `MODULE_EDGES` reach into `orders` (FA86), so
+ * navigating to `OrderEdit` is the host's job, proven separately in `orders-list-view.spec.ts`.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import OrderReferenceSearch from '@/modules/payments/components/OrderReferenceSearch.vue';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
-import { collectModuleRoutes } from '@/kernel/registry';
-import { enabledModules } from '@/modules';
-import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Order } from '@types';
-
-wireModulesIntoCore();
-
-/**
- * The real app router, scoped to the modules this test suite enables — needed for real, since the
- * component pushes to `OrderEdit` on a successful lookup.
- */
-const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
-    ]
-});
 
 const anOrder = (id: string): Order => ({
     id,
@@ -48,13 +32,11 @@ const anOrder = (id: string): Order => ({
 
 const mountSearch = () =>
     mount(OrderReferenceSearch, {
-        global: { plugins: [vuetify, i18n, router] }
+        global: { plugins: [vuetify, i18n] }
     });
 
 /**
- * Waits until the inline message renders — the eventual condition every refusal case has — rather
- * than sleeping a fixed time. Any navigation the handler wrongly made would have happened by then,
- * since both follow the same settled lookup.
+ * Waits until the inline message renders — the eventual condition every refusal case has.
  *
  * @param wrapper - The mounted search.
  * @returns Resolves once the message is in the DOM.
@@ -64,11 +46,11 @@ const inlineMessage = (wrapper: ReturnType<typeof mountSearch>) =>
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    return loadLocale('en').then(() => router.push('/en/orders').then(() => router.isReady()));
+    return loadLocale('en');
 });
 
 describe('OrderReferenceSearch', () => {
-    it('jumps to the found order edit page and clears the field', () => {
+    it('emits the found order and clears the field, navigating nowhere itself', () => {
         const payments = usePaymentsStore();
         vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(anOrder('order-1'));
         const wrapper = mountSearch();
@@ -77,21 +59,12 @@ describe('OrderReferenceSearch', () => {
             .get('[data-test=order-reference-search-input] input')
             .setValue('RF13 2EY8 H44V JAVZ KX80 JRL')
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
-            .then(() =>
-                // The route change is the eventual condition to poll for — `router.push`'s own
-                // promise takes more than one microtask/macrotask hop the first time this spec's
-                // lazily-imported `OrderEdit.vue` chunk resolves, which a fixed-length flush would
-                // either race or over-wait.
-                vi.waitFor(() => {
-                    if (router.currentRoute.value.fullPath === '/en/orders')
-                        throw new Error('still on /en/orders');
-                })
-            )
+            .then(() => vi.waitFor(() => expect(wrapper.emitted('found')).toBeDefined()))
             .then(() => {
                 expect(payments.findOrderByReference).toHaveBeenCalledWith(
                     'RF13 2EY8 H44V JAVZ KX80 JRL'
                 );
-                expect(router.currentRoute.value.fullPath).toBe('/en/orders/order-1/edit');
+                expect(wrapper.emitted('found')).toEqual([[anOrder('order-1')]]);
                 expect(
                     wrapper.get<HTMLInputElement>('[data-test=order-reference-search-input] input')
                         .element.value
@@ -110,7 +83,7 @@ describe('OrderReferenceSearch', () => {
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
             .then(() => inlineMessage(wrapper))
             .then(() => {
-                expect(router.currentRoute.value.fullPath).toBe('/en/orders');
+                expect(wrapper.emitted('found')).toBeUndefined();
                 expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
                     true
                 );
@@ -156,7 +129,7 @@ describe('OrderReferenceSearch', () => {
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
             .then(() => inlineMessage(wrapper))
             .then(() => {
-                expect(router.currentRoute.value.fullPath).toBe('/en/orders');
+                expect(wrapper.emitted('found')).toBeUndefined();
                 expect(wrapper.find('[data-test=order-reference-search-error]').exists()).toBe(
                     true
                 );

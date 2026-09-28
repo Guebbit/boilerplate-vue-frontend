@@ -8,9 +8,14 @@ export default {
 /**
  * @module
  * The admin's own way in when a bank statement line, not an order, is what they are holding: paste
- * the RF creditor reference and jump straight to that order's edit page, where
- * `RecordOfflinePaymentForm` already lives. Published only to an operator who could act on what it
- * finds — `payments.any.create`, the same key that gates recording the payment itself.
+ * the RF creditor reference and find the order it belongs to. Published only to an operator who
+ * could act on what it finds — `payments.any.create`, the same key that gates recording the
+ * payment itself.
+ *
+ * `payments` declares no `MODULE_EDGES` reach into `orders` (FA86) — this component is published
+ * for ANY host to mount, and a host is not guaranteed to have `orders` at all — so it emits the
+ * found order rather than navigating to its edit page itself; `OrdersList.vue`, which owns that
+ * route directly, does the jump.
  *
  * A miss and a real failure both block this search from completing, so both render through
  * `InlineErrorAlert` rather than a toast — see docs/theory/request-flow.md.
@@ -18,21 +23,21 @@ export default {
 
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { usePaymentsStore } from '../store.ts';
+import type { Order } from '@types';
+
+/**
+ * Fires once a reference search actually lands on an order — the host decides what "found" means
+ * for it (`OrdersList.vue` jumps to `OrderEdit`); this component names no route at all.
+ */
+const emit = defineEmits<{ found: [order: Order] }>();
 
 /**
  * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * Router instance, for the jump to the found order's edit page.
- */
-const router = useRouter();
 
 /**
  * The payments store, held for its one read.
@@ -57,9 +62,9 @@ const {
 } = useBlockingError();
 
 /**
- * Looks the reference up and jumps to the order it pays. A blank field or an in-flight search is
- * a no-op; a miss or any other failure blocks the search in place ({@link searchError}) rather
- * than navigating nowhere.
+ * Looks the reference up and emits the order it pays, for the host to act on. A blank field or an
+ * in-flight search is a no-op; a miss or any other failure blocks the search in place
+ * ({@link searchError}) rather than emitting nothing.
  *
  * @returns A promise resolving once the search has settled, one way or another.
  */
@@ -77,7 +82,7 @@ const search = () => {
                 return;
             }
             reference.value = '';
-            return router.push(routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } }));
+            emit('found', order);
         })
         .catch((error: unknown) => reportSearchError(error));
 };

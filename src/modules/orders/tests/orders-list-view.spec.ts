@@ -104,6 +104,25 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
 
         expect(wrapper.findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(true);
     });
+
+    it('jumps to OrderEdit when the lookup emits a found order — FA86: the lookup itself does not', () => {
+        // `payments` declares no MODULE_EDGES reach into `orders`, so `OrderReferenceSearch`
+        // emits rather than navigating; this page owns `OrderEdit` directly and is the one that
+        // turns a found order into a push.
+        signInAsPaymentRecorder();
+        const wrapper = mountList();
+
+        wrapper.findComponent({ name: 'OrderReferenceSearch' }).vm.$emit('found', anOrder());
+
+        return vi
+            .waitFor(() => {
+                if (router.currentRoute.value.fullPath === '/en/orders')
+                    throw new Error('still on /en/orders');
+            })
+            .then(() => {
+                expect(router.currentRoute.value.fullPath).toBe('/en/orders/o1/edit');
+            });
+    });
 });
 
 /** Grants the delete key the row actions are gated on. */

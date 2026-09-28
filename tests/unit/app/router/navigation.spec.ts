@@ -11,7 +11,12 @@
  * other reasons — and the error-page side was never one of them.
  */
 import { describe, expect, it } from 'vitest';
-import { loginContinueTo, SIGN_IN_ROUTE_NAME, signInLocation } from '@/app/router/navigation';
+import {
+    linkIfRouted,
+    loginContinueTo,
+    SIGN_IN_ROUTE_NAME,
+    signInLocation
+} from '@/app/router/navigation';
 
 describe('loginContinueTo', () => {
     it('remembers an ordinary target as a continue query', () => {
@@ -81,6 +86,38 @@ describe('signInLocation', () => {
         expect(signInLocation(routerWith([]), '/en/cart')).toEqual({
             name: 'Home',
             params: undefined
+        });
+    });
+});
+
+/**
+ * `linkIfRouted` — the general form of {@link signInLocation}'s own guard, for FA86's route names
+ * with no `MODULE_EDGES` coupling to back them.
+ */
+describe('linkIfRouted', () => {
+    it('returns undefined when this build ships no such route', () => {
+        expect(linkIfRouted(routerWith([]), 'OrderTarget', { id: 'o1' })).toBeUndefined();
+    });
+
+    it('returns a plain named location when the route resolves', () => {
+        expect(linkIfRouted(routerWith(['OrderTarget']), 'OrderTarget', { id: 'o1' })).toEqual({
+            name: 'OrderTarget',
+            params: { id: 'o1' }
+        });
+    });
+
+    it('omits params entirely when none are given', () => {
+        expect(linkIfRouted(routerWith(['ProductsList']), 'ProductsList')).toEqual({
+            name: 'ProductsList'
+        });
+    });
+
+    it('carries a query alongside, or instead of, params — AuditLog’s own shape', () => {
+        expect(
+            linkIfRouted(routerWith(['AuditLog']), 'AuditLog', undefined, { target: 'o1' })
+        ).toEqual({
+            name: 'AuditLog',
+            query: { target: 'o1' }
         });
     });
 });

@@ -10,11 +10,13 @@ export default {
  * Wishlist page. Renders the store's saved lines, joined against the cart store's
  * product-title cache, with the two exits: move-to-cart and remove.
  */
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Heart, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { linkIfRouted } from '@/app/router/navigation.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { useCartStore } from '@/modules/cart';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -28,6 +30,27 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  * id links to the product page, which is where the full record lives.
  */
 const { t } = useI18n();
+
+/**
+ * Router instance, for the `hasRoute` checks below — `products` is not a coupling this module's
+ * `MODULE_EDGES` entry declares, so both its route names are guarded rather than assumed (FA86).
+ */
+const router = useRouter();
+
+/**
+ * The catalogue link the empty state offers — `undefined`, hiding the button entirely, on a
+ * build with no `products` module.
+ */
+const productsListTo = computed(() => linkIfRouted(router, 'ProductsList'));
+
+/**
+ * A saved product's own page, or `undefined` when this build ships no `products` module — the
+ * title then renders as plain text instead of a dead link.
+ *
+ * @param productId - The saved product.
+ */
+const productTargetTo = (productId: string) =>
+    linkIfRouted(router, 'ProductTarget', { id: productId });
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -102,8 +125,8 @@ onMounted(() =>
             <template #media>
                 <Heart :size="64" class="text-secondary" aria-hidden="true" />
             </template>
-            <template #actions>
-                <v-btn color="primary" :to="routerLinkI18n({ name: 'ProductsList' })">
+            <template v-if="productsListTo" #actions>
+                <v-btn color="primary" :to="routerLinkI18n(productsListTo)">
                     {{ t('wishlist-page.button-go-to-products') }}
                 </v-btn>
             </template>
@@ -120,16 +143,13 @@ onMounted(() =>
             >
                 <h2 class="text-lg font-semibold">
                     <router-link
+                        v-if="productTargetTo(item.productId)"
                         class="underline"
-                        :to="
-                            routerLinkI18n({
-                                name: 'ProductTarget',
-                                params: { id: item.productId }
-                            })
-                        "
+                        :to="routerLinkI18n(productTargetTo(item.productId)!)"
                     >
                         {{ titleOf(item.productId) }}
                     </router-link>
+                    <span v-else>{{ titleOf(item.productId) }}</span>
                 </h2>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn

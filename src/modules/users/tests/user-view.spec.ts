@@ -103,4 +103,42 @@ describe('the "History" link', () => {
         const link = wrapper.get('[data-test=user-history]');
         expect(link.attributes('href')).toBe('/en/audit?target=u1');
     });
+
+    it('stays absent on a build with no admin module, even for a visitor who holds the ability (FA86)', () => {
+        // `admin` is not one of `users`' declared MODULE_EDGES reaches, so `AuditLog` is guarded
+        // by `router.hasRoute` rather than assumed — a build missing the module must not throw.
+        const noAdminRouter = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                {
+                    path: '/:locale',
+                    component: RouterView,
+                    children: collectModuleRoutes(
+                        enabledModules.filter((appModule) => appModule.name !== 'admin')
+                    )
+                }
+            ]
+        });
+
+        signIn(true);
+        const store = useUsersStore();
+        vi.spyOn(store, 'watchUser').mockImplementation(() => noopStopHandle);
+        store.addUser(A_USER);
+        store.selectedUserId = A_USER.id;
+
+        return noAdminRouter
+            .push('/en/users/u1')
+            .then(() => noAdminRouter.isReady())
+            .then(() => {
+                const wrapper = mount(User, {
+                    props: { id: A_USER.id },
+                    global: {
+                        plugins: [noAdminRouter, vuetify, i18n],
+                        stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                    }
+                });
+
+                expect(wrapper.find('[data-test=user-history]').exists()).toBe(false);
+            });
+    });
 });
