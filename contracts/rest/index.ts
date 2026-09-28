@@ -2545,7 +2545,7 @@ export interface CartSummaryResponse {
      */
     totalQuantity: number;
     /**
-     * Sum of item prices * quantity (before tax/shipping/discounts)
+     * Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out.
      * @minimum 0
      */
     itemsTotal: number;

@@ -6207,7 +6207,9 @@ export const GetCartResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(getCartResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(getCartResponseDataSummaryShippingCostMin)
@@ -6279,7 +6281,9 @@ export const UpsertCartItemResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(upsertCartItemResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(upsertCartItemResponseDataSummaryShippingCostMin)
@@ -6342,7 +6346,9 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(removeCartItemByBodyResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(removeCartItemByBodyResponseDataSummaryShippingCostMin)
@@ -6402,7 +6408,9 @@ export const ClearCartResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(clearCartResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(clearCartResponseDataSummaryShippingCostMin)
@@ -6478,7 +6486,9 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(updateCartItemByIdResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(updateCartItemByIdResponseDataSummaryShippingCostMin)
@@ -6541,7 +6551,9 @@ export const RemoveCartItemResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(removeCartItemResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(removeCartItemResponseDataSummaryShippingCostMin)
@@ -6609,7 +6621,9 @@ export const SetCartShippingMethodResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(setCartShippingMethodResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(setCartShippingMethodResponseDataSummaryShippingCostMin)
@@ -6661,7 +6675,9 @@ export const GetCartSummaryResponse = zod.strictObject({
         itemsTotal: zod
             .number()
             .min(getCartSummaryResponseDataItemsTotalMin)
-            .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            .describe(
+                "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+            ),
         shippingCost: zod
             .number()
             .min(getCartSummaryResponseDataShippingCostMin)
@@ -7103,7 +7119,9 @@ export const ReorderResponse = zod.strictObject({
             itemsTotal: zod
                 .number()
                 .min(reorderResponseDataSummaryItemsTotalMin)
-                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+                .describe(
+                    "Sum of item prices \* quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out."
+                ),
             shippingCost: zod
                 .number()
                 .min(reorderResponseDataSummaryShippingCostMin)
