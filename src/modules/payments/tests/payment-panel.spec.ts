@@ -201,4 +201,40 @@ describe('PaymentPanel', () => {
             });
         });
     });
+
+    /**
+     * FA24: the store's `payment` ref is shared across every order this panel instance is ever
+     * given — `Order.vue` reuses the same instance across orders (`watchOrder`, no remount on a
+     * route param change alone) — so it must both re-fetch on a new `orderId` and refuse to render
+     * a record left over from the order it just moved on from.
+     */
+    describe('re-checking the record belongs to this order (FA24)', () => {
+        it('re-fetches when orderId changes without a remount', () => {
+            const { store, wrapper } = mountPanel();
+            expect(store.fetchPaymentForOrder).toHaveBeenCalledWith('order-1');
+
+            return wrapper.setProps({ orderId: 'order-2' }).then(() => {
+                expect(store.fetchPaymentForOrder).toHaveBeenCalledWith('order-2');
+            });
+        });
+
+        it('stops showing a payment once orderId moves on, even before the new fetch resolves', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = { ...handPaidSucceededPayment };
+
+            return wrapper.vm
+                .$nextTick()
+                .then(() => {
+                    expect(wrapper.find('[data-test=payment-status]').exists()).toBe(true);
+                    // fetchPaymentForOrder is stubbed to resolve without touching store.payment,
+                    // so order-1's record is still the only thing in the store — a stand-in for a
+                    // slow response landing after the caller has already moved on.
+                    return wrapper.setProps({ orderId: 'order-2' });
+                })
+                .then(() => wrapper.vm.$nextTick())
+                .then(() => {
+                    expect(wrapper.find('[data-test=payment-status]').exists()).toBe(false);
+                });
+        });
+    });
 });

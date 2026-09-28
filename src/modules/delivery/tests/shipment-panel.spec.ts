@@ -271,3 +271,43 @@ describe('with a shipment already recorded', () => {
         });
     });
 });
+
+/**
+ * FA24: the store's `shipment` ref is shared across every order this panel instance is ever
+ * given — `Order.vue` reuses the same instance across orders (`watchOrder`, no remount on a route
+ * param change alone) — so it must both re-fetch on a new `orderId` and refuse to render a parcel
+ * left over from the order it just moved on from.
+ */
+describe('re-checking the record belongs to this order (FA24)', () => {
+    it('re-fetches when orderId changes without a remount', () => {
+        signIn();
+        const store = useDeliveryStore();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        expect(store.fetchShipmentForOrder).toHaveBeenCalledWith('o1');
+
+        return wrapper.setProps({ orderId: 'o2' }).then(() => {
+            expect(store.fetchShipmentForOrder).toHaveBeenCalledWith('o2');
+        });
+    });
+
+    it('stops showing a parcel once orderId moves on, even before the new fetch resolves', () => {
+        signIn();
+        const store = useDeliveryStore();
+        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        store.shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
+
+        return wrapper.vm
+            .$nextTick()
+            .then(() => {
+                expect(wrapper.find('[data-test=shipment-status]').exists()).toBe(true);
+                // fetchShipmentForOrder is stubbed to resolve without touching store.shipment, so
+                // order 'o1's record is still the only thing in the store — a stand-in for a slow
+                // response landing after the caller has already moved on.
+                return wrapper.setProps({ orderId: 'o2', orderStatus: 'shipped' });
+            })
+            .then(() => wrapper.vm.$nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=shipment-status]').exists()).toBe(false);
+            });
+    });
+});

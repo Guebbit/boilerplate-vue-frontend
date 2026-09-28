@@ -14,7 +14,7 @@ export default {
  * list.
  */
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -86,11 +86,21 @@ const session = useSessionStore();
 const deliveryStore = useDeliveryStore();
 
 /**
- * This order's parcel, reactive — `undefined` while nothing has shipped — plus whether a ship or
+ * The store's parcel, as last fetched for ANY order, plus the methods list and whether a ship or
  * deliver call is already in flight: both actions share this one flag, which is enough since the
- * two buttons are never offered at once.
+ * two buttons are never offered at once. `shipment` below is the guarded read.
  */
-const { shipment, methods, loading } = storeToRefs(deliveryStore);
+const { shipment: rawShipment, methods, loading } = storeToRefs(deliveryStore);
+
+/**
+ * This panel's own parcel, discarding a stale or mismatched record. The store's `shipment` is one
+ * shared ref: this page component reuses the same panel instance across orders (no remount on a
+ * route param change alone, per `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS
+ * order landing after `orderId` has already moved on must not render as this order's parcel (FA24).
+ */
+const shipment = computed(() =>
+    rawShipment.value?.orderId === orderId ? rawShipment.value : undefined
+);
 
 /**
  * The tracking code field, cleared once submitted.
@@ -239,10 +249,20 @@ const markDelivered = () => {
         .catch((error: unknown) => reportShipmentError(error));
 };
 
-onMounted(() => {
-    void deliveryStore.fetchMethods();
-    void deliveryStore.fetchShipmentForOrder(orderId);
-});
+/**
+ * The methods list is order-independent, so it loads once, at setup.
+ */
+void deliveryStore.fetchMethods();
+
+/**
+ * Fetches the shipment on mount AND whenever `orderId` changes — `immediate: true` covers the
+ * mount case, the watch covers navigating to a different order without a remount (FA24).
+ */
+watch(
+    () => orderId,
+    (newOrderId) => void deliveryStore.fetchShipmentForOrder(newOrderId),
+    { immediate: true }
+);
 </script>
 
 <template>
