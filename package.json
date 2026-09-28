@@ -110,6 +110,8 @@
         "cypress-axe": "^1.7.0",
         "cypress-real-events": "^1.15.0",
         "eslint": "^9.39.2",
+        "eslint-import-resolver-typescript": "^4.4.5",
+        "eslint-plugin-boundaries": "^7.2.0",
         "eslint-plugin-cypress": "^6.1.0",
         "eslint-plugin-jsdoc": "^64.3.6",
         "eslint-plugin-unicorn": "^63.0.0",

@@ -17,7 +17,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Wishlist from '@/modules/wishlist/views/Wishlist.vue';
-import { useWishlistStore } from '@/modules/wishlist';
+import { useWishlistStore } from '../store';
 import { useCartStore } from '@/modules/cart';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

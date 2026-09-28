@@ -75,9 +75,10 @@ back:
   developer's annotations agreed with each other — the actual proof still needed a spec scanning
   every `.ts` and `.vue` file for `@/modules/` strings.
 - **The enforcement that matters is structural and still there.** `eslint.config.ts` generates one
-  `no-restricted-imports` rule per module from a hand-maintained `MODULE_EDGES` map: a module may
-  reach only the siblings that map names for it, checked at the offending import on every
-  `npm run lint`. A new coupling fails immediately, at the line that adds it, rather than on a
+  `eslint-plugin-boundaries` policy per module from a hand-maintained `MODULE_EDGES` map: a module
+  may reach only the siblings that map names for it — and only through their `index.ts` barrel,
+  never an internal file — checked at the resolved import on every `npm run lint`, dynamic
+  `import()` included. A new coupling fails immediately, at the line that adds it, rather than on a
   separate spec run.
 
 ### The one worth still noticing

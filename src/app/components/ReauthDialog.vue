@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useAuthStore } from '@/modules/account';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**

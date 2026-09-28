@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
-import { useOrderRefund } from '@/modules/payments';
+import { useOrderRefund } from '../composables/use-order-refund';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     orvalEnvelope,

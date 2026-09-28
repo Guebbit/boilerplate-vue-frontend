@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/app/router/navigation.ts';
+import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.

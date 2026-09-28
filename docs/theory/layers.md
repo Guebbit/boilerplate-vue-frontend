@@ -23,7 +23,10 @@ There are two axes, and confusing them is the usual source of "where does this g
 | i18n           | `src/i18n`           | nothing about this app, not even infrastructure | the vue-i18n instance, locale load/activate/merge, locale-aware router links — extractable as its own package (FE-D5) |
 
 Dependencies point one way — `i18n → infrastructure → ui → kernel → modules → app` — and
-`eslint.config.ts` enforces it with one `no-restricted-imports` block per tier.
+`eslint.config.ts`'s `eslint-plugin-boundaries` config enforces it: every file under `src/` is
+classified into exactly one of these tiers (`boundaries/no-unknown-files`), and every edge between
+two tiers is denied by default until a policy names it allowed (`boundaries/dependencies`) — see
+FE-D2/FA96.
 
 `kernel` used to be allowed to read `@/modules` — the registry list — and that exemption is gone.
 The registry names every enabled domain, so anything reading it knows THIS application rather than
@@ -31,8 +34,8 @@ this kind of application, which is exactly what `src/app` is for. `src/app/route
 names no individual domain: it walks the registry.
 
 A module may import another module's **public barrel** — `@/modules/<name>` — and never its
-internals. That rule is generated per module from the contents of `src/modules/`, so adding a domain
-does not edit the lint config either.
+internals. That rule is generated per module from the contents of `src/modules/` as a
+`boundaries/dependencies` policy, so adding a domain does not edit the lint config either.
 
 Two modules that each need the other are not a dependency pair: either they are one module, or one
 of them is holding state that belongs to the other. A cycle anywhere in `MODULE_EDGES` fails every
