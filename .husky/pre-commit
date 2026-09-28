@@ -1,9 +1,14 @@
-# The full gate, and the only one: lint, openapi + asyncapi lint, format check, the cross-repo
-# contract check, build, and Cypress e2e against the demo dataset.
+# TEMPORARY (2026-09-28, until the backend's HANDOFF.md queue is done): the LIGHT gate,
+# `complete:light`. It keeps every static check (lint, format, both spec lints, generated-types
+# freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
 #
-# Several minutes, and that is accepted deliberately: the alternative is a lighter hook that lets a
-# broken e2e run reach a push, and Cypress is the only layer here that exercises the app as a user
-# meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+# Left out, so run the full `npm run complete` by hand before merging a lane and once on main after
+# each merge (CI still runs all of it):
+#
+# - the Vite build and Cypress e2e against the demo dataset — most of the full gate's minutes;
+# - unit coverage and its floors.
+#
+# Restoring the full gate: revert the commit that introduced this block.
 #
 # `test:e2e:live` is NOT here, and it is the gate that actually proves behaviour — it needs the
 # paired backend, a Mongo and a Redis, so it runs in CI as a required job instead. A green commit
@@ -35,4 +40,4 @@
 npm run regenerate
 git add contracts src/types/asyncapi.generated.ts
 
-npm run complete
+npm run complete:light

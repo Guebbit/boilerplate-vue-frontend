@@ -48,6 +48,7 @@
         "complete": "npm run lint && npm run prettier:check && npm run complete:gates",
         "complete:fix": "npm run lint:fix && npm run lint && npm run prettier:fix && npm run complete:gates",
         "complete:manual": "npm run test:e2e:visual && npm run test:e2e:live",
+        "complete:light": "npm run lint && npm run prettier:check && npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run check:spec-identity && npm run check:docs-references && npm run type-check-only && npm run test:unit",
         "prepare": "husky",
         "test:unit:report": "vitest run --reporter=json --outputFile=reports/test-report.json",
         "test:report": "tsx scripts/testing/report-results.ts",

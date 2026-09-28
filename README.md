@@ -104,8 +104,9 @@ Four ideas carry the whole repository:
 npm run complete    # lint + spec lint + contract identity + format + build + unit + e2e
 ```
 
-Exactly what the pre-commit hook runs. It takes **around ten minutes**, mostly Cypress — start it
-and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
+The full gate. For now the pre-commit hook runs a faster subset, `npm run complete:light` (no
+build, coverage or Cypress), so run this yourself before merging. It takes **around ten minutes**,
+mostly Cypress — start it and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
 rather than reported.
 
 Two suites sit outside it, in `npm run complete:manual`: pixel diffing, which answers to the

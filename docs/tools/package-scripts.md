@@ -25,18 +25,19 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 ## Build & validation scripts
 
-| Script                      | Job                                                                                                           | Read more                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `build`                     | `vue-tsc` type-check + Vite production build                                                                  | [Runtime](./runtime.md)                          |
-| `lint` / `lint:fix`         | ESLint check or autofix                                                                                       | [Testing](./testing-and-docs.md)                 |
-| `lint:openapi`              | Lint `openapi.yaml` with Spectral                                                                             | [OpenAPI Workflow](../api/openapi-workflow.md)   |
-| `lint:asyncapi`             | Validate `asyncapi.yaml` with `@asyncapi/parser`'s default ruleset                                            | [Testing](./testing-and-docs.md)                 |
-| `prettier` / `prettier:fix` | Prettier check or rewrite                                                                                     | [Testing](./testing-and-docs.md)                 |
-| `check:asyncapi-types`      | Fail if `src/types/asyncapi.generated.ts` is not what `asyncapi.yaml` generates; writes nothing               | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
-| `check:spec-identity`       | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI    | [Testing](./testing-and-docs.md)                 |
-| `complete`                  | the gate: lint + both spec lints + generated-types freshness + prettier:check + spec identity + build + tests | [Testing](./testing-and-docs.md)                 |
-| `complete:fix`              | the same gate, with lint and formatting fixed rather than reported                                            | [Testing](./testing-and-docs.md)                 |
-| `complete:manual`           | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live`                                         | [Testing](./testing-and-docs.md)                 |
+| Script                      | Job                                                                                                             | Read more                                        |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `build`                     | `vue-tsc` type-check + Vite production build                                                                    | [Runtime](./runtime.md)                          |
+| `lint` / `lint:fix`         | ESLint check or autofix                                                                                         | [Testing](./testing-and-docs.md)                 |
+| `lint:openapi`              | Lint `openapi.yaml` with Spectral                                                                               | [OpenAPI Workflow](../api/openapi-workflow.md)   |
+| `lint:asyncapi`             | Validate `asyncapi.yaml` with `@asyncapi/parser`'s default ruleset                                              | [Testing](./testing-and-docs.md)                 |
+| `prettier` / `prettier:fix` | Prettier check or rewrite                                                                                       | [Testing](./testing-and-docs.md)                 |
+| `check:asyncapi-types`      | Fail if `src/types/asyncapi.generated.ts` is not what `asyncapi.yaml` generates; writes nothing                 | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| `check:spec-identity`       | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI      | [Testing](./testing-and-docs.md)                 |
+| `complete`                  | the gate: lint + both spec lints + generated-types freshness + prettier:check + spec identity + build + tests   | [Testing](./testing-and-docs.md)                 |
+| `complete:fix`              | the same gate, with lint and formatting fixed rather than reported                                              | [Testing](./testing-and-docs.md)                 |
+| `complete:light`            | the fast subset pre-commit runs for now: every static check + `vue-tsc` + unit tests; no build, coverage or e2e | [Testing](./testing-and-docs.md)                 |
+| `complete:manual`           | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live`                                           | [Testing](./testing-and-docs.md)                 |
 
 ## Test scripts
 
