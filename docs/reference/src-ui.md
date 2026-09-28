@@ -57,7 +57,8 @@ translated, so the store holds a queue and the promises and nothing else.
 
 ## Vuetify
 
-| File                      | What it is                                                                                                                             | Read next                                                |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `src/ui/vuetify/index.ts` | The Vuetify instance: the theme, its accent colours, and the defaults every component inherits. Changing the palette is one edit here. | [Runtime](../tools/runtime.md)                           |
-| `src/ui/vuetify/icons.ts` | The icon set registration, kept apart so the icon library can be swapped without touching the theme.                                   | [Package Dependencies](../tools/package-dependencies.md) |
+| File                          | What it is                                                                                                                                                        | Read next                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `src/ui/vuetify/index.ts`     | The Vuetify instance: the theme, its accent colours, and the defaults every component inherits. Changing the palette is one edit here.                            | [Runtime](../tools/runtime.md)                           |
+| `src/ui/vuetify/icons.ts`     | The icon set registration, kept apart so the icon library can be swapped without touching the theme.                                                              | [Package Dependencies](../tools/package-dependencies.md) |
+| `src/ui/vuetify/selectors.ts` | CSS selectors describing Vuetify's own generated markup — `VUETIFY_INVALID_FIELD_SELECTOR`, the field `useStructureFormValidation` focuses after a failed submit. | [UI Kit](./src-ui.md)                                    |

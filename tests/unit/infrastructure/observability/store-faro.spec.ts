@@ -115,6 +115,25 @@ describe('initFaro', () => {
         expect(initializeFaro).toHaveBeenCalledOnce();
     });
 
+    /**
+     * `faroInitPromise` used to be cached even on a rejection — a transient failure (a flaky
+     * CDN serving either dynamic import) then refused every later `initFaro()` call for the rest
+     * of the session, never retrying something that was never permanent.
+     */
+    it('resolves false, does not throw, and retries on the next call after a failed attempt', async () => {
+        initializeFaro.mockImplementationOnce(() => {
+            throw new Error('CDN unreachable');
+        });
+        const store = useObservabilityStore();
+
+        await expect(store.initFaro()).resolves.toBe(false);
+        expect(store.faroReady).toBe(false);
+
+        await expect(store.initFaro()).resolves.toBe(true);
+        expect(store.faroReady).toBe(true);
+        expect(initializeFaro).toHaveBeenCalledTimes(2);
+    });
+
     it('resolves false and calls nothing when no collector is configured', async () => {
         vi.stubEnv('VITE_FARO_URL', '');
         const store = useObservabilityStore();
@@ -314,9 +333,9 @@ describe('captureException, once Faro is up', () => {
     });
 
     /**
-     * every failed API call throws this shape (`onResponseReject`, `http/interceptors.ts`).
-     * Before this fix it stringified to the same unreadable, ungroupable `Error: [object Object]`
-     * whatever the actual failure — this is the fix's whole point.
+     * every failed API call throws this shape (`onResponseReject`, `http/interceptors.ts`), and
+     * this is the one case `captureException` must NOT collapse into the same unreadable,
+     * ungroupable `Error: [object Object]` every other unrecognised value gets.
      */
     describe('given an API rejection envelope', () => {
         it('names the error by status, code, method and path', async () => {

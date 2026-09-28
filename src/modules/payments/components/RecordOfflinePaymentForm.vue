@@ -19,7 +19,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 

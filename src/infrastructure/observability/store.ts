@@ -101,9 +101,9 @@ const asApiRejectEnvelope = (error: unknown): ApiRejectEnvelope | undefined =>
         : undefined;
 
 /**
- * `HTTP 401 UNAUTHORIZED GET /account` reads as one failure in Faro's error list; every
- * envelope before this synthesized the SAME `Error: [object Object]`, which is unsearchable and
- * ungroupable — a dashboard with a thousand identical rows for a thousand different causes.
+ * Names an API rejection by its status, code and route — `HTTP 401 UNAUTHORIZED GET /account` —
+ * so Faro's error list groups it with every other failure of the same kind, rather than every
+ * envelope stringifying to the same unsearchable, ungroupable `Error: [object Object]`.
  *
  * @param envelope - The rejection {@link asApiRejectEnvelope} narrowed.
  * @returns A one-line name, missing pieces simply omitted rather than left blank.
@@ -187,43 +187,57 @@ export const useObservabilityStore = defineStore('observability', () => {
         faroInitPromise ??= Promise.all([
             import('@grafana/faro-web-sdk'),
             import('@grafana/faro-web-tracing')
-        ]).then(([{ initializeFaro, getWebInstrumentations }, { TracingInstrumentation }]) => {
-            faro = initializeFaro({
-                url: config.url,
-                app: {
-                    name: config.appName,
-                    version: config.appVersion,
-                    environment: config.environment
-                },
-                // Applies to the fetch/XHR instrumentations and to tracing: these URLs produce
-                // neither spans nor request events. See `FaroConfig.ignoreUrls`.
-                ignoreUrls: config.ignoreUrls,
-                // A one-time email token is the only credential for its action, and it arrives as
-                // a URL query param — this keeps it out of every page-meta and trace-span URL Faro
-                // ships. See `stripTokensFromTelemetry`.
-                beforeSend: stripTokensFromTelemetry,
-                instrumentations: [
-                    ...getWebInstrumentations(),
-                    new TracingInstrumentation({
-                        instrumentationOptions: {
-                            // Stitch FE traces onto BE traces: propagate `traceparent` to the API origin.
-                            propagateTraceHeaderCorsUrls: [originToRegExp(config.apiOrigin)]
-                        }
-                    })
-                ]
+        ])
+            .then(([{ initializeFaro, getWebInstrumentations }, { TracingInstrumentation }]) => {
+                faro = initializeFaro({
+                    url: config.url,
+                    app: {
+                        name: config.appName,
+                        version: config.appVersion,
+                        environment: config.environment
+                    },
+                    // Applies to the fetch/XHR instrumentations and to tracing: these URLs produce
+                    // neither spans nor request events. See `FaroConfig.ignoreUrls`.
+                    ignoreUrls: config.ignoreUrls,
+                    // A one-time email token is the only credential for its action, and it arrives as
+                    // a URL query param — this keeps it out of every page-meta and trace-span URL Faro
+                    // ships. See `stripTokensFromTelemetry`.
+                    beforeSend: stripTokensFromTelemetry,
+                    instrumentations: [
+                        ...getWebInstrumentations(),
+                        new TracingInstrumentation({
+                            instrumentationOptions: {
+                                // Stitch FE traces onto BE traces: propagate `traceparent` to the API origin.
+                                propagateTraceHeaderCorsUrls: [originToRegExp(config.apiOrigin)]
+                            }
+                        })
+                    ]
+                });
+
+                faroReady.value = true;
+                logger.debug(
+                    'observability',
+                    '[Faro] Initialized',
+                    config.environment,
+                    '→',
+                    config.url
+                );
+
+                return true;
+            })
+            .catch((error: unknown) => {
+                // A rejection (a flaky CDN, a dropped connection loading either dynamic import) must
+                // not stick around: `??=` above only re-runs the block while `faroInitPromise` is
+                // `undefined`, so a cached rejection would refuse every later `initFaro()` call
+                // forever, on every future page of the same session, for a failure that was never
+                // permanent. Chained onto the same promise the `??=` assigns, rather than reassigned
+                // afterwards, so every concurrent caller still shares the one attempt the docblock
+                // above promises — a second `.catch` bolted on separately would hand a later
+                // concurrent caller a different promise object each time.
+                faroInitPromise = undefined;
+                logger.debug('observability', '[Faro] Initialization failed', error);
+                return false;
             });
-
-            faroReady.value = true;
-            logger.debug(
-                'observability',
-                '[Faro] Initialized',
-                config.environment,
-                '→',
-                config.url
-            );
-
-            return true;
-        });
 
         return faroInitPromise;
     };
@@ -263,9 +277,9 @@ export const useObservabilityStore = defineStore('observability', () => {
      *
      * an {@link ApiRejectEnvelope} — what every failed API call actually throws — is named
      * by its status/code/route ({@link describeApiRejectError}) rather than stringified into the
-     * unreadable, ungroupable `Error: [object Object]` every rejection used to produce; its own
-     * correlation fields join whatever `hints.data` carried. Any other thrown value keeps the
-     * previous behaviour: itself, if already an `Error`, else its own string form.
+     * unreadable, ungroupable `Error: [object Object]`; its own correlation fields join whatever
+     * `hints.data` carried. Any other thrown value is reported as itself, if already an `Error`,
+     * else as its own string form.
      *
      * @param error - Thrown value; non-`Error` values are stringified into one, unless it is an
      *  API rejection.
