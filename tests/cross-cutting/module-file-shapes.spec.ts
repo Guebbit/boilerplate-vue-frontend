@@ -163,8 +163,10 @@ describe('the module file vocabulary', () => {
     /**
      * The guard on the guard: an empty sweep would satisfy the rule above by checking nothing,
      * and a broken `walk` or an emptied registry looks exactly like a clean codebase from here.
+     * A floor of 1 rather than this demo's file count — deleting a domain must not also delete
+     * the canary.
      */
     it('is sweeping the files it is meant to be sweeping', () => {
-        expect(filesInModules().length).toBeGreaterThan(100);
+        expect(filesInModules().length).toBeGreaterThan(0);
     });
 });

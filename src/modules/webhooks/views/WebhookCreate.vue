@@ -63,7 +63,8 @@ const {
     formErrors,
     showFormErrors: showErrors,
     isSubmitting,
-    handleSubmit
+    handleSubmit,
+    applyServerErrors
 } = useStructureFormValidation<{ url?: string; description?: string; eventTypes?: string[] }>(
     {},
     webhookCreateSchema,
@@ -119,7 +120,9 @@ const submitForm = () => {
             createdSubscriptionId.value = created.id;
             revealedSecret.value = created.secret;
         })
-    ).catch((error) => reportSubmitError(error));
+    ).catch((error: unknown) => {
+        if (!applyServerErrors(error)) reportSubmitError(error);
+    });
 };
 
 /**

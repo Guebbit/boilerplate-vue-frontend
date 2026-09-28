@@ -22,6 +22,7 @@ import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { OrderReferenceSearch } from '@/modules/payments';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
@@ -135,14 +136,38 @@ const statusColor = (status?: OrderStatus) => (status ? STATUS_COLORS[status] : 
 
 /**
  * The status select's options: every `OrderStatus`, plus "any", re-translated on locale change.
+ * The "any" row's value is `null`, not `undefined` (FA51) — Vuetify reads an `undefined` item
+ * value as "use the title", which would post the translated label instead of no filter at all.
  */
 const statusOptions = computed(() => [
-    { value: undefined, label: t('orders-list-page.filter-status-any') },
+    { value: null, label: t('orders-list-page.filter-status-any') },
     ...Object.values(OrderStatus).map((status) => ({
         value: status,
         label: t(`orders-form.status-${status}`)
     }))
 ]);
+
+/**
+ * The status select's model: `null` (the "any" row) on screen, no `status` filter in
+ * {@link filters}.
+ */
+const statusChoice = useAnyFilterChoice(
+    () => filters.value.status,
+    (value) => {
+        filters.value.status = value;
+    }
+);
+
+/**
+ * The "Deleted" select's model: `null` (the "any" row) on screen, no `deleted` filter in
+ * {@link filters}.
+ */
+const deletedChoice = useAnyFilterChoice(
+    () => filters.value.deleted,
+    (value) => {
+        filters.value.deleted = value;
+    }
+);
 
 /**
  * The "awaiting transfer" filter: a `pending` order placed with `bank_transfer`, the two fields
@@ -274,7 +299,7 @@ const handleHardDelete = (orderId: string) =>
                         hide-details
                     />
                     <v-select
-                        v-model="filters.status"
+                        v-model="statusChoice"
                         :label="t('orders-list-page.filter-status')"
                         :items="statusOptions"
                         item-title="label"
@@ -284,7 +309,7 @@ const handleHardDelete = (orderId: string) =>
                     />
                     <v-select
                         v-if="session.can('delete', 'Order')"
-                        v-model="filters.deleted"
+                        v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
                         item-title="label"

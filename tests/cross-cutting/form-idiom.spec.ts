@@ -111,8 +111,11 @@ describe('one form idiom', () => {
         expect(missing).toEqual([]);
     });
 
-    /** The guard on the guard: an empty population would satisfy all three. */
+    /**
+     * The guard on the guard: an empty population would satisfy all three. A floor of 1 rather
+     * than this demo's form count — deleting a domain must not also delete the canary.
+     */
     it('is checking the forms it is meant to be checking', () => {
-        expect(formComponents().length).toBeGreaterThan(10);
+        expect(formComponents().length).toBeGreaterThan(0);
     });
 });

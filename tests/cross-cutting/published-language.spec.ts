@@ -92,9 +92,11 @@ const consumedFromBarrels = (): Map<string, Set<string>> => {
 
 describe('a barrel publishes exactly what a sibling imports', () => {
     it('finds the barrels it is meant to check', () => {
-        // A canary: an empty sweep must mean "no module publishes anything", not "the sweep broke".
+        // A canary: an empty sweep must mean "no module publishes anything", not "the sweep
+        // broke". A floor of 1 rather than this demo's barrel count — deleting a domain must not
+        // also delete the canary.
         const withBarrels = moduleNames().filter((name) => publishedBy(name) !== undefined);
-        expect(withBarrels.length).toBeGreaterThanOrEqual(4);
+        expect(withBarrels.length).toBeGreaterThanOrEqual(1);
     });
 
     it('promises nothing to nobody', () => {

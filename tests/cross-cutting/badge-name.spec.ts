@@ -91,9 +91,10 @@ describe('a badge says what it counts', () => {
     /**
      * The guard on the guard. A scanner that silently stopped matching — a Vuetify rename, a
      * refactor moving badges behind a wrapper — would satisfy the assertion above by finding
-     * nothing at all, and report a rule it had stopped enforcing as kept.
+     * nothing at all, and report a rule it had stopped enforcing as kept. A floor of 1 rather
+     * than this demo's badge count — deleting a domain must not also delete the canary.
      */
     it('is checking the badges it is meant to be checking', () => {
-        expect(badgesInSource().length).toBeGreaterThanOrEqual(3);
+        expect(badgesInSource().length).toBeGreaterThanOrEqual(1);
     });
 });

@@ -8,6 +8,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
+import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import {
     createFeedbackRequest,
     deleteFeedbackRequest,
@@ -102,6 +103,12 @@ export const useFeedbackStore = defineStore('feedback', () => {
     const { pageTotal, captureTotal } = useServerPageTotal();
 
     /**
+     * `Idempotency-Key` for `submitContact` (B10) — a network error or a 5xx resends the SAME
+     * key, so a lost response never sends the message twice; any other outcome mints a fresh one.
+     */
+    const contactIdempotencyKey = useIdempotencyKey();
+
+    /**
      * Submits the public contact form. Through `fetchAny`, not `createOne`: the visitor never
      * reads the inbox, so there is nothing to cache the created ticket into.
      *
@@ -112,7 +119,17 @@ export const useFeedbackStore = defineStore('feedback', () => {
      * @returns A promise resolving once the API accepts it.
      */
     const submitContact = (message: CreateFeedbackRequest, options?: AxiosRequestConfig) =>
-        fetchAny(() => createFeedbackRequest(message, options));
+        fetchAny(() =>
+            createFeedbackRequest(message, contactIdempotencyKey.withKey(options))
+                .then((response) => {
+                    contactIdempotencyKey.settle();
+                    return response;
+                })
+                .catch((error: unknown) => {
+                    contactIdempotencyKey.settle(error);
+                    throw error;
+                })
+        );
 
     return {
         requests,

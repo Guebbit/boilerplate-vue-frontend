@@ -68,25 +68,32 @@ const formElement = ref<HTMLFormElement>();
 /**
  * Form state, validation and submit wiring, built on the schema below.
  */
-const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
-    useStructureFormValidation<ContactForm>(
-        { name: '', email: '', subject: '', message: '', website: '' },
-        z.object({
-            name: z.string().optional(),
-            email: z.email({ error: () => t('contact-page.email-invalid') }),
-            subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
-            message: z.string().min(10, { error: () => t('contact-page.message-min') }),
-            // Never shown to a visitor, so never validated — the BE decides what a filled value
-            // means; this form only has to carry it through unedited.
-            website: z.string().optional()
-        }),
-        {
-            formElement,
-            revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-            onInvalid: () => addMessage(t('generic.fix-errors'))
-        }
-    );
+const {
+    form,
+    formErrors,
+    showFormErrors,
+    isSubmitting,
+    handleSubmit,
+    resetForm,
+    applyServerErrors
+} = useStructureFormValidation<ContactForm>(
+    { name: '', email: '', subject: '', message: '', website: '' },
+    z.object({
+        name: z.string().optional(),
+        email: z.email({ error: () => t('contact-page.email-invalid') }),
+        subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
+        message: z.string().min(10, { error: () => t('contact-page.message-min') }),
+        // Never shown to a visitor, so never validated — the BE decides what a filled value
+        // means; this form only has to carry it through unedited.
+        website: z.string().optional()
+    }),
+    {
+        formElement,
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
+);
 
 /**
  * This form's own blocked state — the one dedicated submit button the visitor cannot proceed past
@@ -120,7 +127,9 @@ const submitForm = () =>
             addMessage(t('contact-page.success'));
             resetForm();
         });
-    }).catch((error) => reportSubmitError(error));
+    }).catch((error: unknown) => {
+        if (!applyServerErrors(error)) reportSubmitError(error);
+    });
 </script>
 
 <template>
@@ -186,6 +195,7 @@ const submitForm = () =>
                     class="mt-4"
                     data-test="contact-submit"
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                 >
                     {{ t('contact-page.button-submit') }}
                 </v-btn>

@@ -118,7 +118,8 @@ const {
     resetForm,
     validate,
     revealErrors,
-    setInitialData
+    setInitialData,
+    applyServerErrors
 } = useStructureFormValidation<ProfileForm>({}, usersSchema, {
     formElement,
     revalidateOn: locale,
@@ -191,6 +192,13 @@ const {
 } = useBlockingError();
 
 /**
+ * Whether a save is in flight — the submit button spins and refuses a second one (FA52): this
+ * form calls `validate`/`revealErrors` by hand instead of the toolkit's `handleSubmit`, which is
+ * where {@link isSubmitting} would otherwise come from.
+ */
+const savingProfile = ref(false);
+
+/**
  * Validates and saves the profile changes — the fields a user owns. Role and account state
  * belong to the admin endpoints, and the password to its own flow below.
  *
@@ -201,10 +209,11 @@ const {
 const submitForm = () => {
     // `revealErrors` is the whole of it: show the messages, focus the first bad field, say so.
     if (!validate()) return revealErrors();
-    // Valid but unchanged. There is nothing to save and nothing to complain about — the button
-    // is disabled in this state, so only a keyboard submit reaches here.
-    if (!isDirty.value) return;
+    // Valid but unchanged, or a save already in flight: nothing to do — the button is disabled in
+    // both states, so only a keyboard submit reaches here.
+    if (!isDirty.value || savingProfile.value) return;
     clearSaveError();
+    savingProfile.value = true;
     // Absent means "leave alone" on this PATCH (RFC 7396) — sent only when it actually moved, so
     // toggling it back to the baseline before saving reads as untouched, never as a fresh choice.
     const analyticsConsentChanged = form.value.analyticsConsent !== profile.value?.analyticsConsent;
@@ -232,7 +241,12 @@ const submitForm = () => {
             // preference the server actually accepted.
             return applyLanguagePreference(profile.value?.locale);
         })
-        .catch((error) => reportSaveError(error));
+        .catch((error: unknown) => {
+            if (!applyServerErrors(error)) reportSaveError(error);
+        })
+        .finally(() => {
+            savingProfile.value = false;
+        });
 };
 
 /**
@@ -383,7 +397,12 @@ const cancelPendingEmail = () => {
                 />
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" :disabled="!isDirty">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        :loading="savingProfile"
+                        :disabled="!isDirty || savingProfile"
+                    >
                         {{ t('profile-page.button-submit') }}
                     </v-btn>
                     <v-btn variant="tonal" @click="resetForm">

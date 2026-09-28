@@ -28,6 +28,7 @@ import {
 } from '@/modules/inventory/composables/use-product-picker.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { StockMovementReason } from '@types';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -116,23 +117,48 @@ const { query: productQuery, options: productSearchOptions, pin: pinProduct } = 
 useProductPickerPin(() => movementsProductId.value, pinProduct);
 
 /**
- * The product filter, with an "everything" row on top.
+ * The product filter, with an "everything" row on top. Its value is `null`, not `undefined`
+ * (FA51) — Vuetify reads an `undefined` item value as "use the title", which would post the
+ * translated label instead of no filter at all.
  */
 const productFilterOptions = computed(() => [
-    { value: undefined, title: t('inventory-page.filter-product-all') },
+    { value: null, title: t('inventory-page.filter-product-all') },
     ...productSearchOptions.value
 ]);
 
 /**
- * One row per transition, each labelled with what it does to the counters.
+ * The product select's model: `null` (the "everything" row) on screen, `undefined` in
+ * {@link movementsProductId}.
+ */
+const productFilterChoice = useAnyFilterChoice(
+    () => movementsProductId.value,
+    (value) => {
+        movementsProductId.value = value;
+    }
+);
+
+/**
+ * One row per transition, each labelled with what it does to the counters. Its "everything" row's
+ * value is `null`, not `undefined` — same reason as {@link productFilterOptions}.
  */
 const reasonFilterOptions = computed(() => [
-    { value: undefined, title: t('inventory-page.filter-reason-all') },
+    { value: null, title: t('inventory-page.filter-reason-all') },
     ...Object.values(StockMovementReason).map((reason) => ({
         value: reason,
         title: t(`inventory-page.reason-${reason}`)
     }))
 ]);
+
+/**
+ * The reason select's model: `null` (the "everything" row) on screen, `undefined` in
+ * {@link movementsReason}.
+ */
+const reasonFilterChoice = useAnyFilterChoice(
+    () => movementsReason.value,
+    (value) => {
+        movementsReason.value = value;
+    }
+);
 
 /**
  * How many pages the current filters span.
@@ -226,7 +252,7 @@ onMounted(() => {
             https://vuetifyjs.com/en/api/v-autocomplete/
         -->
         <v-autocomplete
-            v-model="movementsProductId"
+            v-model="productFilterChoice"
             v-model:search="productQuery"
             :items="productFilterOptions"
             item-title="title"
@@ -240,7 +266,7 @@ onMounted(() => {
             data-test="movements-filter-product"
         />
         <v-select
-            v-model="movementsReason"
+            v-model="reasonFilterChoice"
             :items="reasonFilterOptions"
             :label="t('inventory-page.column-reason')"
             class="max-w-52"

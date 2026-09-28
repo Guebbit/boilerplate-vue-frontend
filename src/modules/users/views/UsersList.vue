@@ -19,6 +19,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { User } from '@types';
@@ -80,15 +81,39 @@ const rowActionSize = useTouchFriendlySize();
 const deletedOptions = useDeletedFilterOptions();
 
 /**
- * Options of the "active" filter select.
+ * Options of the "active" filter select. The "all" row's value is `null`, not `undefined`
+ * (FA51) — Vuetify reads an `undefined` item value as "use the title", which would post the
+ * translated label instead of no filter at all.
  *
  * @returns The localized options, re-translated on locale change.
  */
 const activeOptions = computed(() => [
-    { value: undefined, label: t('users-list-page.filter-active-all') },
+    { value: null, label: t('users-list-page.filter-active-all') },
     { value: true, label: t('users-list-page.filter-active-yes') },
     { value: false, label: t('users-list-page.filter-active-no') }
 ]);
+
+/**
+ * The "active" select's model: `null` (the "all" row) on screen, no `active` filter in
+ * {@link filters}.
+ */
+const activeChoice = useAnyFilterChoice(
+    () => filters.value.active,
+    (value) => {
+        filters.value.active = value;
+    }
+);
+
+/**
+ * The "Deleted" select's model: `null` (the "any" row) on screen, no `deleted` filter in
+ * {@link filters}.
+ */
+const deletedChoice = useAnyFilterChoice(
+    () => filters.value.deleted,
+    (value) => {
+        filters.value.deleted = value;
+    }
+);
 
 /**
  * Selectable page sizes for the users table.
@@ -264,7 +289,7 @@ const handleHardDelete = (userId: string) =>
                         hide-details
                     />
                     <v-select
-                        v-model="filters.active"
+                        v-model="activeChoice"
                         :label="t('users-list-page.filter-active')"
                         :items="activeOptions"
                         item-title="label"
@@ -272,7 +297,7 @@ const handleHardDelete = (userId: string) =>
                         hide-details
                     />
                     <v-select
-                        v-model="filters.deleted"
+                        v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
                         item-title="label"
