@@ -1,12 +1,13 @@
 /**
  * @module
  * Route table mapping method+URL patterns to Zod response schemas, checked by exact regex match
- * against the request's pathname. Core rows are baked in; modules extend the table at boot via
- * `registerResponseSchemas`.
+ * against the request's pathname. Core rows and module rows both arrive through
+ * {@link loadResponseSchemas} — never a static import of `@api/schemas` — so the ~350 KB Zod
+ * contract (FA94) lands in its own lazy chunk instead of every entry bundle. See `main.ts` for
+ * where that load is kicked off.
  */
 
 import * as zod from 'zod';
-import * as schemas from '@api/schemas';
 import { toPathname } from './url.ts';
 
 /**
@@ -18,8 +19,9 @@ import { toPathname } from './url.ts';
  * the mechanism and the few rows belonging to no domain — so drift is structural, not clerical.
  *
  * `infrastructure` cannot import `@/modules`, so rows arrive by registration: `src/main.ts` calls
- * `registerResponseSchemas(collectModuleResponseSchemas(enabledModules))` before mount. Anything
- * exercising `orvalMutator` outside the app must do the same, or it measures an app nobody ships.
+ * `loadResponseSchemas(collectModuleResponseSchemas(enabledModules))` after mount, gated behind
+ * `shouldValidateResponses()`. Anything exercising `orvalMutator` outside the app must do the
+ * same, or it measures an app nobody ships.
  *
  * Hand-written rather than derived from `contracts/rest/index.ts`: an `AxiosRequestConfig` does not
  * carry which operation issued it, and parsing the generated client in the browser is not an option.
@@ -57,7 +59,9 @@ export interface ResponseSchemaRoute {
 }
 
 /**
- * The rows no module claims.
+ * The rows no module claims, built from the lazily-imported `@api/schemas` namespace once
+ * {@link loadResponseSchemas} resolves it — a function rather than a top-level constant so this
+ * file carries no static import of the schemas it names.
  *
  * `GET /`, `/locales*` and the session's three `/account` calls are infrastructure — the health
  * probe, the language manifest and overrides `i18n/locale-overrides.ts` fetches, and the
@@ -67,8 +71,10 @@ export interface ResponseSchemaRoute {
  * It is also the shelf for a contract endpoint no frontend domain has claimed yet, so its
  * responses are validated from the first request rather than from the day a module appears. A row
  * parked here belongs to whichever module eventually claims the endpoint, and moves out with it.
+ *
+ * @param schemas - the generated `@api/schemas` namespace, already resolved
  */
-const coreRouteSchemas: ResponseSchemaRoute[] = [
+const buildCoreRouteSchemas = (schemas: typeof import('@api/schemas')): ResponseSchemaRoute[] => [
     { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
     /*
      * Anti-automation, parked here because no frontend domain claims it yet: the challenge widget
@@ -165,22 +171,48 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
 ];
 
 /**
- * Core rows plus whatever the enabled modules last registered.
+ * Core rows plus whatever the enabled modules last registered. Empty until
+ * {@link loadResponseSchemas} resolves — `resolveResponseSchema` fails open (`undefined`) for
+ * that window, same as for any other unmapped route.
  */
-let routeSchemas: ResponseSchemaRoute[] = [...coreRouteSchemas];
+let routeSchemas: ResponseSchemaRoute[] = [];
 
 /**
- * Install the enabled modules' response schemas.
+ * Installs an already-resolved set of rows, replacing whatever was registered before.
  *
  * Replaces rather than appends, so calling it twice — a test re-wiring after `vi.resetModules()`,
  * a hot reload — leaves the table exactly as long as it should be instead of quietly doubling it.
- * The core rows are always kept.
+ * Exported mainly for tests; `loadResponseSchemas` is the door every real caller uses, since it is
+ * the one that also resolves the core rows.
  *
- * @param moduleRouteSchemas - every enabled module's rows, from `collectModuleResponseSchemas`
+ * @param rows - every row to install, core and module alike
  */
-export const registerResponseSchemas = (moduleRouteSchemas: ResponseSchemaRoute[]): void => {
-    routeSchemas = [...coreRouteSchemas, ...moduleRouteSchemas];
+export const registerResponseSchemas = (rows: ResponseSchemaRoute[]): void => {
+    routeSchemas = rows;
 };
+
+/**
+ * Resolves every response-schema row this app validates against — the core rows above plus each
+ * enabled module's own — and installs them.
+ *
+ * The one place `@api/schemas` (and the zod it pulls in, ~350 KB together — FA94/FA-D2) is
+ * imported: a single dynamic `import()`, shared by every module's own `response-schemas.ts`
+ * loader through Vite's normal chunk deduplication, so the contract is fetched once no matter how
+ * many rows need it. Callers gate this behind `shouldValidateResponses()` — there is no point
+ * downloading the chunk for a build that will never parse a response through it.
+ *
+ * @param moduleResponseSchemaLoaders - every enabled module's lazy row loader
+ *   (`collectModuleResponseSchemas`), not yet invoked
+ */
+export const loadResponseSchemas = (
+    moduleResponseSchemaLoaders: (() => Promise<ResponseSchemaRoute[]>)[]
+): Promise<void> =>
+    Promise.all([
+        import('@api/schemas').then(buildCoreRouteSchemas),
+        Promise.all(moduleResponseSchemaLoaders.map((loadRows) => loadRows())).then((rows) =>
+            rows.flat()
+        )
+    ]).then(([coreRows, moduleRows]) => registerResponseSchemas([...coreRows, ...moduleRows]));
 
 /**
  * Looks up the response schema for a request, or `undefined` when the route isn't registered

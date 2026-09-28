@@ -6,7 +6,6 @@
 
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
-import { deliveryResponseSchemas } from './response-schemas';
 
 /**
  * Shipping methods and shipments — components, not pages.
@@ -22,7 +21,7 @@ import { deliveryResponseSchemas } from './response-schemas';
 export default {
     name: 'delivery',
     routes: [],
-    responseSchemas: deliveryResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.deliveryResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

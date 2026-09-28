@@ -34,13 +34,14 @@ const loadHttp = () => {
     ]).then(
         ([
             httpModule,
-            { registerResponseSchemas },
+            { loadResponseSchemas },
             { collectModuleResponseSchemas },
             { enabledModules }
-        ]) => {
-            registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
-            return httpModule;
-        }
+        ]) =>
+            // Awaited: the rows load lazily now (FA94/FA-D2), so every test below must wait for
+            // them to be in place before it fires a request, exactly like `wireModulesIntoCore`
+            // waits when a spec actually stubs `VITE_VALIDATE_RESPONSES`.
+            loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).then(() => httpModule)
     );
 };
 

@@ -5,7 +5,6 @@
  */
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
-import { paymentsResponseSchemas } from './response-schemas';
 
 /**
  * The payment behind an order — a panel, not a page.
@@ -21,7 +20,7 @@ import { paymentsResponseSchemas } from './response-schemas';
 export default {
     name: 'payments',
     routes: [],
-    responseSchemas: paymentsResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.paymentsResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

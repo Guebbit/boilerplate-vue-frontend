@@ -3,7 +3,8 @@
  * The composition root's entry point: wires infrastructure (pinia, router, i18n, vuetify) to the
  * enabled modules' contributed data (response schemas, locale dictionaries), then boots the app
  * as one promise chain — remote-locale merge, mount, observability init, readiness signal — so
- * no step can race the one after it.
+ * no step can race the one after it. The response-schema contract loads lazily, after mount,
+ * instead of joining that chain (FA94/FA-D2).
  */
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -25,7 +26,8 @@ import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { registerResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
+import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
+import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { registerLocaleContributors } from '@/infrastructure/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry.ts';
 import { enabledModules } from '@/modules.ts';
@@ -33,15 +35,17 @@ import { enabledModules } from '@/modules.ts';
 /*
  * Close the one loop the tier rule cannot express.
  *
- * `infrastructure` owns the http client and the i18n runtime; the response-schema rows and the dictionaries
- * are domain knowledge. `infrastructure` may not import `@/modules` — it is the bottom tier — so the
- * composition root hands the data down instead of letting the bottom reach up.
+ * `infrastructure` owns the i18n runtime; the dictionaries are domain knowledge.
+ * `infrastructure` may not import `@/modules` — it is the bottom tier — so the composition root
+ * hands the data down instead of letting the bottom reach up.
  *
  * At module scope, not inside `bootstrapApplication`: the first thing bootstrap does is fetch
- * `/locales`, and the router's locale guard loads a dictionary on the very first navigation.
- * Both would otherwise run before the wiring was installed.
+ * `/locales`, and the router's locale guard loads a dictionary on the very first navigation. That
+ * would otherwise run before the wiring was installed.
+ *
+ * The response-schema rows are handed down the same way, but NOT here — see the lazy load after
+ * mount below (FA94/FA-D2).
  */
-registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
 registerLocaleContributors(collectModuleLocales(enabledModules));
 
 /**
@@ -85,6 +89,28 @@ const bootstrapApplication = () =>
         })
         .then((pinia) => {
             createApp(App).use(pinia).use(router).use(i18n).use(vuetify).mount('#app');
+
+            /*
+             * FA94/FA-D2: `@api/schemas` (Zod + ~1,700 generated schemas, ~350 KB) is the
+             * biggest single piece of the old entry chunk, and only response VALIDATION needs
+             * it — the generated client's request/response TYPES cost nothing at runtime. Kick
+             * off its chunk here, after the first paint above, not before: this call is
+             * deliberately not awaited, and never joins the boot chain.
+             *
+             * `validateResponseAgainstContract` fails open for a route with no schema mapped
+             * yet, so the handful of calls the app makes before this resolves are simply
+             * unvalidated for that window, exactly like an unmapped route always is.
+             */
+            if (shouldValidateResponses()) {
+                void loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).catch(
+                    (error: unknown) => {
+                        logger.error(
+                            '[Bootstrap] Failed to load response-validation schemas:',
+                            error
+                        );
+                    }
+                );
+            }
 
             // Obtain the observability store (Grafana Faro + Umami).
             const observability = useObservabilityStore();

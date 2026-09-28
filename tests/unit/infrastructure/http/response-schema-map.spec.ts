@@ -24,7 +24,7 @@ import path from 'node:path';
 import { parse } from 'yaml';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
-    registerResponseSchemas,
+    loadResponseSchemas,
     resolveResponseSchema
 } from '@/infrastructure/http/response-schema-map';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
@@ -40,8 +40,11 @@ import * as schemas from '@api/schemas';
  * file would pass by testing nothing. Assembling the real registry also means the openapi parity
  * check below now proves something stronger than it used to: that the enabled modules between them
  * still cover every documented operation.
+ *
+ * Awaited: the rows load lazily now (FA94/FA-D2), same as the real app does after first paint —
+ * `beforeAll` returning the promise is what makes every test below see them already installed.
  */
-beforeAll(() => registerResponseSchemas(collectModuleResponseSchemas(enabledModules)));
+beforeAll(() => loadResponseSchemas(collectModuleResponseSchemas(enabledModules)));
 
 /**
  * Looks a generated response schema up by its export name. Keeping the table string-only matters
@@ -369,8 +372,10 @@ const widgetRows: ResponseSchemaRoute[] = [
 
 describe('resolveResponseSchema', () => {
     // Replaces the module rows for this block only; the parity table above re-registers the real
-    // ones for itself.
-    beforeEach(() => registerResponseSchemas(widgetRows));
+    // ones for itself. Through `loadResponseSchemas`, not `registerResponseSchemas` directly, so
+    // the real core rows are still resolved and merged in — exactly what "keeps the core rows"
+    // below checks.
+    beforeEach(() => loadResponseSchemas([() => Promise.resolve(widgetRows)]));
 
     it('resolves a simple collection route', () => {
         expect(resolveResponseSchema('GET', '/widgets')).toBe(schemas.GetHealthResponse);
@@ -445,8 +450,9 @@ describe('resolveResponseSchema', () => {
     });
 
     it('keeps the core rows regardless of what the modules register', () => {
-        // `registerResponseSchemas` replaces the MODULE rows and keeps core's. `/locales` is
-        // core's, so it must still resolve even though only `/widgets` was just registered.
+        // `loadResponseSchemas` always resolves the real core rows alongside whatever module
+        // loaders it is given. `/locales` is core's, so it must still resolve even though only
+        // `/widgets` was just registered above.
         expect(resolveResponseSchema('GET', '/locales')).toBe(schemas.GetLocalesResponse);
     });
 });

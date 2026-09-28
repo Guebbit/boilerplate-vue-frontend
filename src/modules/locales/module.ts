@@ -7,7 +7,6 @@ import { Languages } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { localesResponseSchemas } from './response-schemas';
 
 /**
  * The translation admin surface: which languages exist, and what has been edited into them.
@@ -42,7 +41,7 @@ export default {
             icon: Languages
         }
     ],
-    responseSchemas: localesResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.localesResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

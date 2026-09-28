@@ -7,7 +7,6 @@ import { Webhook, History } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { webhooksResponseSchemas } from './response-schemas';
 
 /**
  * Webhook subscription management: who gets notified of what, the signing secret ring, and the
@@ -41,7 +40,7 @@ export default {
             icon: History
         }
     ],
-    responseSchemas: webhooksResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.webhooksResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

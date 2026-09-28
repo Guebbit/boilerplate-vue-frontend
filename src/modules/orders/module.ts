@@ -7,7 +7,6 @@ import { ReceiptText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { ordersResponseSchemas } from './response-schemas';
 import { useOrdersStore } from './store';
 
 /**
@@ -39,7 +38,7 @@ export default {
             icon: ReceiptText
         }
     ],
-    responseSchemas: ordersResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.ordersResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

@@ -8,7 +8,6 @@ import { IdCard } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { accountResponseSchemas } from './response-schemas';
 
 /**
  * The visitor's own account: login, signup, profile, password reset and account deletion.
@@ -44,7 +43,7 @@ export default {
             icon: IdCard
         }
     ],
-    responseSchemas: accountResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.accountResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

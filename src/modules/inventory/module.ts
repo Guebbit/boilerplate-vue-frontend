@@ -8,7 +8,6 @@ import { Warehouse } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { inventoryResponseSchemas } from './response-schemas';
 
 /**
  * The stock ledger, admin-side.
@@ -35,7 +34,7 @@ export default {
             icon: Warehouse
         }
     ],
-    responseSchemas: inventoryResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.inventoryResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
