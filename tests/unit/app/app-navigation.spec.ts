@@ -27,6 +27,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import { createPinia } from 'pinia';
+import { deleteCookie } from '@guebbit/js-toolkit';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import vuetify from '@/ui/vuetify';
 import type { RouteAccess, RoutePermission } from '@/app/guards/authentications';
@@ -562,5 +563,30 @@ describe('Navigation', () => {
                     vi.waitFor(() => expect(document.activeElement).toBe(hamburger.element))
                 )
         );
+    });
+
+    /**
+     * The toggle used to only ever flip `theme.global.name` in memory — a reload (or a second
+     * tab) always came back on `'system'`, no matter how many times a visitor had pinned dark.
+     * `theme-preference.ts` has its own full unit coverage; this is the one wiring check that the
+     * button in this component actually calls it.
+     */
+    describe('the theme toggle', () => {
+        beforeEach(() => deleteCookie('themePreference'));
+
+        it('persists the pinned theme, so a click survives a reload', () => {
+            const { wrapper } = mountNav();
+
+            return wrapper
+                .find('[data-test=theme-toggle]')
+                .trigger('click')
+                .then(() => {
+                    const cookie = document.cookie
+                        .split('; ')
+                        .find((pair) => pair.startsWith('themePreference='));
+
+                    expect(cookie).toBeDefined();
+                });
+        });
     });
 });
