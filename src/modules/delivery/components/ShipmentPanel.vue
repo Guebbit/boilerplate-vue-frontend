@@ -22,7 +22,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDeliveryStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@/types/enums.ts';
 
 /**
  * The order page's shipping corner: recording a handover and an arrival, one order at a time.
@@ -252,7 +252,7 @@ watch(
     <v-card class="p-4" data-test="shipment-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('shipment-panel.title') }}</h3>
 
-        <InlineErrorAlert :message="shipmentError" class="mb-3" test-id="shipment-panel-error" />
+        <InlineErrorAlert :message="shipmentError" class="mb-3" data-test="shipment-panel-error" />
 
         <template v-if="!shipment && canStart">
             <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.not-started-yet') }}</p>

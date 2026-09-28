@@ -23,7 +23,7 @@
         "kpi-latency-p50": "Latency p50",
         "kpi-latency-p95": "Latency p95",
         "section-auth": "Auth Events",
-        "section-business": "Business Events",
+        "section-business": "Commerce Events",
         "section-system": "System Info",
         "section-queues": "Parked Jobs",
         "label-login-success": "Login success",

@@ -110,7 +110,12 @@ const handleMakeDefault = (address: Address) => {
  */
 const handleRemove = (address: Address) =>
     useDialogStore()
-        .confirm({ message: t('profile-page.addresses-confirm-remove'), color: 'error' })
+        .confirm({
+            message: t('profile-page.addresses-confirm-remove', {
+                name: address.label || address.fullName
+            }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -144,7 +149,7 @@ onMounted(fetchAddresses);
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="address-row-action-error"
+            data-test="address-row-action-error"
         />
 
         <p v-if="addresses.length === 0" class="opacity-70" data-test="addresses-empty">

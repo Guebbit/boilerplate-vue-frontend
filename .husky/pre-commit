@@ -24,8 +24,8 @@
 # (needs the paired backend up).
 # Write the generated artefacts first, then verify them. Regenerating here rather than leaving it
 # to whoever remembers is what stops a commit failing the gate with "STALE" for a file no human
-# authors — `contracts/` and `src/types/asyncapi.generated.ts` are outputs of `openapi.yaml` and
-# `asyncapi.yaml`, so there is never a reason to want them out of date.
+# authors — everything under `contracts/`, including `contracts/asyncapi.generated.ts`, is an
+# output of `openapi.yaml` and `asyncapi.yaml`, so there is never a reason to want it out of date.
 #
 # `git add` is required: a file rewritten after staging is not in the commit, so the gate below
 # would pass against content that is not what gets committed. Note this widens a partial
@@ -38,6 +38,6 @@
 # `tests/cross-cutting/module-file-shapes.spec.ts` and `backend-pairing.spec.ts`, which run with
 # the rest of the suite below.
 npm run regenerate
-git add contracts src/types/asyncapi.generated.ts
+git add contracts
 
 npm run complete:light

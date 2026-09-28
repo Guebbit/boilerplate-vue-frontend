@@ -20,7 +20,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { webhookEditSchema } from '@/modules/webhooks/schemas.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Pencil, Webhook } from 'lucide-vue-next';
+import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -29,7 +29,7 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { emptyToNull } from '@/infrastructure/utils/forms.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
@@ -231,29 +231,29 @@ watchSubscription(() => id);
                         </v-btn>
                     </div>
 
-                    <InlineErrorAlert :message="formError" test-id="webhook-edit-form-error" />
+                    <InlineErrorAlert :message="formError" data-test="webhook-edit-form-error" />
                 </form>
             </CardDetail>
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
                         <template #icon><Webhook :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('webhook-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-created-at')"
                         :value="formatDateTime(currentSubscription?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-updated-at')"
                         :value="formatDateTime(currentSubscription?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

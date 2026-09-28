@@ -2,6 +2,7 @@
     "extends": "./tsconfig.app.json",
     "include": [
         "contracts/rest",
+        "contracts/asyncapi.generated.ts",
         "src/**/*",
         "src/**/*.vue",
         "tests/unit/**/*.ts",

@@ -102,7 +102,7 @@ Start here when you have landed on a filename rather than on a question.
 flowchart LR
     OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
     OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
-    AsyncSpec[asyncapi.yaml] --> Realtime[src/types/asyncapi.generated.ts]
+    AsyncSpec[asyncapi.yaml] --> Realtime[contracts/asyncapi.generated.ts]
 
     Client --> Stores[Pinia stores]
     Schemas --> Stores

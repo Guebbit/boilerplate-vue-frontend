@@ -109,7 +109,7 @@ const search = () => {
             :message="searchError"
             :type="searchErrorType"
             class="w-full"
-            test-id="order-reference-search-error"
+            data-test="order-reference-search-error"
         />
     </v-card>
 </template>

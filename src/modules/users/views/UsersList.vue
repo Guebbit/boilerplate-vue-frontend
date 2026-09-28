@@ -26,6 +26,7 @@ import type { User } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -116,15 +117,6 @@ const deletedChoice = useAnyFilterChoice(
 );
 
 /**
- * Selectable page sizes for the users table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
-
-/**
  * Columns of the users table.
  *
  * @returns The localized headers, re-translated on locale change.
@@ -194,13 +186,18 @@ const {
  * {@link handleRestore} reloads, so the active filter's view of this row matches the server again.
  *
  * @param userId - Identifier of the user to delete.
+ * @param username - The row's own display name, named in the confirmation so accepting or
+ *  declining is about a specific user rather than "the one I last clicked".
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  delete and the reload have finished; a failure blocks the list in place
  *  ({@link rowActionError}).
  */
-const handleDelete = (userId: string) =>
+const handleDelete = (userId: string, username: string) =>
     useDialogStore()
-        .confirm({ message: t('users-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('users-list-page.confirm-delete', { name: username }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -254,12 +251,16 @@ const handleManageAccess = (item: User) =>
  * bypasses the soft-delete and cannot be undone.
  *
  * @param userId - Identifier of the user to hard-delete.
+ * @param username - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleHardDelete = (userId: string) =>
+const handleHardDelete = (userId: string, username: string) =>
     useDialogStore()
-        .confirm({ message: t('users-list-page.confirm-hard-delete'), color: 'error' })
+        .confirm({
+            message: t('users-list-page.confirm-hard-delete', { name: username }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -313,14 +314,7 @@ const handleHardDelete = (userId: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <v-select
-                        v-model="pageSize"
-                        :label="t('generic.page-size')"
-                        :items="pageSizeOptions"
-                        item-title="label"
-                        item-value="value"
-                        hide-details
-                    />
+                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary" data-test="search-submit">
@@ -340,7 +334,7 @@ const handleHardDelete = (userId: string) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="users-list-row-action-error"
+            data-test="users-list-row-action-error"
         />
 
         <DataTable
@@ -451,7 +445,7 @@ const handleHardDelete = (userId: string) =>
                             t('users-list-page.button-delete-named', { name: item.username })
                         "
                         :disabled="loading"
-                        @click.stop="handleDelete(item.id!)"
+                        @click.stop="handleDelete(item.id!, item.username)"
                     >
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
@@ -464,7 +458,7 @@ const handleHardDelete = (userId: string) =>
                             t('users-list-page.button-hard-delete-named', { name: item.username })
                         "
                         :disabled="loading"
-                        @click.stop="handleHardDelete(item.id!)"
+                        @click.stop="handleHardDelete(item.id!, item.username)"
                     >
                         {{ t('users-list-page.button-hard-delete') }}
                     </v-btn>

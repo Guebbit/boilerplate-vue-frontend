@@ -16,10 +16,10 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { RecordOfflinePaymentRequestMethod } from '@types';
+import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -181,7 +181,7 @@ const submitForm = () =>
         <InlineErrorAlert
             :message="recordError"
             class="w-full"
-            test-id="record-offline-payment-error"
+            data-test="record-offline-payment-error"
         />
     </form>
 </template>

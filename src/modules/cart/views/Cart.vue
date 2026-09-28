@@ -407,7 +407,7 @@ onMounted(() =>
             <InlineErrorAlert
                 :message="lineActionError"
                 class="lg:col-span-2"
-                test-id="cart-line-action-error"
+                data-test="cart-line-action-error"
             />
 
             <div class="flex flex-col gap-4">
@@ -563,7 +563,7 @@ onMounted(() =>
                     <InlineErrorAlert
                         :message="checkoutError"
                         class="mt-2"
-                        test-id="cart-checkout-error"
+                        data-test="cart-checkout-error"
                     />
                     <v-btn
                         variant="text"

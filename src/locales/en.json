@@ -1,9 +1,5 @@
 {
     "generic": {
-        "increment": "increment | increments",
-        "count": "count | counts",
-        "user": "user | users",
-        "product": "product | products",
         "list": "list | lists",
         "loading": "loading {load}",
         "it": "italian",
@@ -16,8 +12,6 @@
         "details": "Details",
         "enabled": "Enabled",
         "disabled": "Disabled",
-        "administrator": "Administrator",
-        "standard-user": "Standard user",
         "no-data": "No data available",
         "cancel": "Cancel",
         "confirm": "Confirm",
@@ -28,6 +22,7 @@
         "secret-reveal-intro": "This is the only time this secret is shown.",
         "secret-reveal-button-copy": "Copy to clipboard",
         "secret-reveal-copied": "Copied to clipboard",
+        "secret-reveal-copy-failed": "Could not copy — select and copy the secret by hand.",
         "secret-reveal-confirm-saved": "I have saved this secret",
         "secret-reveal-button-continue": "Continue",
         "filter-deleted": "Deleted",

@@ -6,6 +6,11 @@
  * toast queue, which a screen reader has already moved past by the time someone looks back at
  * the form. Pairs with `useBlockingError`; see docs/theory/request-flow.md for which failures
  * belong here versus in a toast.
+ *
+ * No `testId` prop: `data-test` falls through to `<v-alert>` like any other attribute, since
+ * this component has exactly one root element to land on. A caller writes
+ * `<InlineErrorAlert data-test="…" />` directly, the same convention every other single-root
+ * molecule in this kit uses.
  */
 withDefaults(
     defineProps<{
@@ -19,22 +24,11 @@ withDefaults(
          * actual failure. Bind straight to `useBlockingError().type`.
          */
         type?: 'error' | 'warning';
-        /**
-         * `data-test` on the rendered alert, for the spec that asserts it appeared.
-         */
-        testId?: string;
     }>(),
     { type: 'error' }
 );
 </script>
 
 <template>
-    <v-alert
-        v-if="message"
-        :type="type"
-        density="compact"
-        role="alert"
-        :text="message"
-        :data-test="testId"
-    />
+    <v-alert v-if="message" :type="type" density="compact" role="alert" :text="message" />
 </template>

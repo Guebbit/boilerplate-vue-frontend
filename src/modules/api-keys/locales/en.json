@@ -23,7 +23,7 @@
         "status-revoked": "Revoked",
         "button-revoke": "Revoke",
         "button-revoke-named": "Revoke credential {name}",
-        "confirm-revoke": "Revoke this credential? Anything still using it will stop authenticating immediately.",
+        "confirm-revoke": "Revoke {name}? Anything still using it will stop authenticating immediately.",
         "success-revoke": "Credential revoked"
     },
     "api-key-create-page": {

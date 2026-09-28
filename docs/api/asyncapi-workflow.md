@@ -44,7 +44,8 @@ reaches this file.
 
 ## Generated TypeScript types
 
-Types are generated from `asyncapi.yaml` into `src/types/asyncapi.generated.ts`:
+Types are generated from `asyncapi.yaml` into `contracts/asyncapi.generated.ts`, next to the REST
+client's own generated output:
 
 ```bash
 npm run gen:asyncapi
@@ -52,9 +53,9 @@ npm run gen:asyncapi
 
 The file is named after the spec it comes from, which is also what the backend calls its own.
 
-Import from `@types` — `src/types/index.ts` re-exports the generated file alongside
-`src/types/realtime.ts`, the thin app helper holding the shapes the contract does not describe
-(`RealtimeMetricsEntry`, `RealtimeConnectionStatus`):
+Import from `@types` — `src/types/index.ts` re-exports the generated file. The shapes the
+contract does not describe (`RealtimeMetricsEntry`, `RealtimeConnectionStatus`) are the
+`realtime` module's own, in `src/modules/realtime/types.ts`:
 
 ```ts
 import type { SseEventName, SseEventPayload, MetricsSnapshotEvent } from '@types';
@@ -75,21 +76,24 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 ```bash
 npm run lint:asyncapi         # validate asyncapi.yaml
-npm run gen:asyncapi          # regenerate src/types/asyncapi.generated.ts
+npm run gen:asyncapi          # regenerate contracts/asyncapi.generated.ts
 npm run check:asyncapi-types  # fail if the committed types are not what asyncapi.yaml generates
 ```
 
 ## Shared with the backend
 
 `scripts/contracts/generate-asyncapi-types.ts` **started** byte-identical to the one in
-`boilerplate-node-backend`, and both still write the same path — but it is NOT byte-identical any
-more: this copy also emits an inlined-JSON-Schema map for `create-sse-client.ts`'s runtime
-SSE-frame validation, which the backend copy has no use for and emits queue-payload Zod validators
-instead. What both copies still share is the input format and the channel/message-naming machinery.
+`boilerplate-node-backend` — but it is NOT byte-identical any more: this copy also emits an
+inlined-JSON-Schema map for `create-sse-client.ts`'s runtime SSE-frame validation, which the
+backend copy has no use for and emits queue-payload Zod validators instead. What both copies
+still share is the input format, the channel/message-naming machinery, and `--out` being a
+required argument, not a hardcoded default — which is why the two repos are free to write it to
+different paths: this repo's copy sits next to its own generated REST client, the backend's
+alongside its own.
 
 | Repo     | Command                                                                                  | Reads                                         |
 | -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Frontend | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
+| Frontend | `tsx scripts/contracts/generate-asyncapi-types.ts --out contracts/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
 | Backend  | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel       |
 
 The INPUT still differs the way it always did: only the backend's output carries `EmailJobPayload`,
@@ -134,7 +138,7 @@ alias, so it cannot be left pointing at one the loop dropped.
 flowchart LR
     Backend[backend asyncapi.public.yaml] --> Spec[asyncapi.yaml]
     Spec --> Gen[npm run gen:asyncapi]
-    Gen --> Types[src/types/asyncapi.generated.ts]
+    Gen --> Types[contracts/asyncapi.generated.ts]
     Types --> Clients[createSseClient]
     Clients --> Stores[realtimeObservability store]
     Stores --> View[RealtimePlayground view]

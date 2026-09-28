@@ -11,6 +11,7 @@ import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { Search } from 'lucide-vue-next';
 import {
@@ -195,11 +196,10 @@ void fetchPage({ ...filters });
                         :label="t('admin-page.audit-filter-since')"
                         hide-details
                     />
-                    <v-select
+                    <PageSizeSelect
                         v-model="filters.pageSize"
-                        :items="pageSizeOptions"
+                        :sizes="pageSizeOptions"
                         :label="t('generic.page-size')"
-                        hide-details
                         @update:model-value="handleSearch"
                     />
                 </div>

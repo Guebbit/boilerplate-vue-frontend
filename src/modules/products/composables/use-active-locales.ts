@@ -10,9 +10,8 @@
  * than needing a new `MODULE_EDGES` entry.
  */
 import { ref } from 'vue';
-import { getLocales } from '@api';
+import { getLocales, LocaleDirection, LocaleSource } from '@api';
 import { runtimeValue } from '@/infrastructure/runtime-config';
-import { LocaleDirection, LocaleSource } from '@types';
 import type { LocaleCapability } from '@types';
 
 /**

@@ -16,11 +16,7 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import {
-    useNotificationsStore,
-    useStructureFormValidation,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import {
     productsSchema,
@@ -37,11 +33,11 @@ import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -216,21 +212,7 @@ watch(
 /**
  * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
-
-/**
- * Runs an API call with upload progress attached, and returns to idle however it ends.
- */
-const trackUpload = <T,>(
-    file: File | undefined,
-    send: (options?: AxiosRequestConfig) => Promise<T>
-) => track(send, { enabled: !!file });
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * This form's own blocked state — a create that failed blocks the visitor from proceeding past
@@ -437,7 +419,7 @@ const submitForm = () => {
                 data-test="product-requires-shipping-field"
             />
 
-            <InlineErrorAlert :message="submitError" test-id="product-create-submit-error" />
+            <InlineErrorAlert :message="submitError" data-test="product-create-submit-error" />
         </FormCard>
     </LayoutDefault>
 </template>

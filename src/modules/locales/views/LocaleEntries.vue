@@ -401,7 +401,7 @@ const handleExport = () => {
             </v-btn>
         </div>
 
-        <InlineErrorAlert :message="exportError" class="mb-4" test-id="entries-export-error" />
+        <InlineErrorAlert :message="exportError" class="mb-4" data-test="entries-export-error" />
 
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
@@ -432,7 +432,7 @@ const handleExport = () => {
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="entries-row-action-error"
+            data-test="entries-row-action-error"
         />
 
         <v-empty-state
@@ -545,7 +545,7 @@ const handleExport = () => {
             @save="handleAdd"
         >
             <template #error>
-                <InlineErrorAlert :message="addError" test-id="entry-form-error" />
+                <InlineErrorAlert :message="addError" data-test="entry-form-error" />
             </template>
         </EntryFormDialog>
         <EntriesImportDialog
@@ -555,7 +555,7 @@ const handleExport = () => {
             @import="handleImport"
         >
             <template #error>
-                <InlineErrorAlert :message="importError" test-id="entries-import-error" />
+                <InlineErrorAlert :message="importError" data-test="entries-import-error" />
             </template>
         </EntriesImportDialog>
     </LayoutDefault>

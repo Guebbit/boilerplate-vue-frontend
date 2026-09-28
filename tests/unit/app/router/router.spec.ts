@@ -113,6 +113,28 @@ describe('document title and announcer', () => {
                 ).toBeTruthy();
             })
     );
+
+    /**
+     * A navigation that never lands must not overwrite the title of the page the visitor is
+     * still actually looking at.
+     */
+    it('leaves the tab title and the announcer alone when the navigation is aborted', () =>
+        loadRouter().then((router) => {
+            const titleBefore = document.title;
+            // A guard that blocks only the target route, so the block is scoped to this test.
+            const unregister = router.beforeEach((to) =>
+                to.name === 'Playground' ? false : undefined
+            );
+
+            return router.push('/en/playground').then((failure) =>
+                import('@/app/router/announcer.ts').then(({ routeAnnouncement }) => {
+                    unregister();
+                    expect(failure).toBeTruthy();
+                    expect(document.title).toBe(titleBefore);
+                    expect(routeAnnouncement.value).not.toBe('playground-page.page-title');
+                })
+            );
+        }));
 });
 
 describe('locale handling', () => {

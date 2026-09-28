@@ -17,7 +17,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -157,7 +157,7 @@ const submitForm = () => {
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
-                    test-id="account-delete-confirm-error"
+                    data-test="account-delete-confirm-error"
                 />
             </form>
 

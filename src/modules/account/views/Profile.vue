@@ -31,7 +31,7 @@ import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAcco
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -361,7 +361,7 @@ const cancelPendingEmail = () => {
                 <InlineErrorAlert
                     :message="pendingEmailError"
                     class="mb-2"
-                    test-id="pending-email-error"
+                    data-test="pending-email-error"
                 />
                 <v-text-field
                     v-model="form.phone"
@@ -413,7 +413,7 @@ const cancelPendingEmail = () => {
                     :message="saveError"
                     :type="saveErrorType"
                     class="mt-4"
-                    test-id="profile-form-error"
+                    data-test="profile-form-error"
                 />
             </form>
 

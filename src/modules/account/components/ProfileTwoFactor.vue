@@ -391,7 +391,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                     </form>
                     <InlineErrorAlert
                         :message="codePromptError"
-                        test-id="two-factor-code-prompt-error"
+                        data-test="two-factor-code-prompt-error"
                     />
                 </v-card-text>
                 <v-card-actions>

@@ -1,10 +1,9 @@
 /**
  * @module
- * Types for the realtime observability feed: the shape of one rendered SSE entry, and the
- * possible lifecycle states of the connection feeding it.
+ * View-only types for the realtime module — the shape of one rendered SSE feed entry and the
+ * connection's own lifecycle, not part of the API contract (`@types`) or the store's own state.
  */
-
-import type { ObservabilityMetricsPayload } from './asyncapi.generated';
+import type { ObservabilityMetricsPayload } from '@types';
 
 /**
  * A single observability SSE event rendered as a feed entry.

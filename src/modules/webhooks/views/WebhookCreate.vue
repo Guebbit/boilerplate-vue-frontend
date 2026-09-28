@@ -24,7 +24,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
@@ -188,7 +188,7 @@ const handleSecretDone = () => {
                 :error-messages="showErrors ? formErrors.eventTypes : []"
             />
 
-            <InlineErrorAlert :message="submitError" test-id="webhook-create-error" />
+            <InlineErrorAlert :message="submitError" data-test="webhook-create-error" />
         </FormCard>
     </LayoutDefault>
 </template>

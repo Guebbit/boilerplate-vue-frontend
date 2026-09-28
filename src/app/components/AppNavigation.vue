@@ -35,6 +35,7 @@ import {
 } from '@/app/router/navigation.ts';
 import { canAccess } from '@/app/guards/authentications.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { writeThemePreference } from '@/infrastructure/theme-preference.ts';
 import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@/kernel/registry';
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
@@ -235,11 +236,13 @@ const logout = () => router.push(routerLinkI18n({ name: 'Logout' }));
 const theme = useTheme();
 
 /**
- * Light/dark toggle. The default follows the OS ("system"); the first click pins
- * an explicit theme.
+ * Light/dark toggle. The default follows the OS ("system"); the first click pins an explicit
+ * theme, persisted so it survives a reload rather than reverting to "system" every time.
  */
 const toggleTheme = () => {
-    theme.global.name.value = theme.current.value.dark ? 'light' : 'dark';
+    const next = theme.current.value.dark ? 'light' : 'dark';
+    theme.global.name.value = next;
+    writeThemePreference(next);
 };
 </script>
 

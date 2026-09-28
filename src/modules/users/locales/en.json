@@ -1,14 +1,17 @@
 {
+    "users": {
+        "user": "user | users"
+    },
     "users-list-page": {
         "page-title": "Users list",
         "button-create-user": "Create user",
         "button-view": "View",
         "button-edit": "Edit",
         "button-delete": "Delete",
-        "confirm-delete": "Are you sure you want to delete this user?",
+        "confirm-delete": "Are you sure you want to delete {name}?",
         "success-delete": "User deleted successfully",
         "button-hard-delete": "Hard delete",
-        "confirm-hard-delete": "This will permanently delete this user. This cannot be undone. Continue?",
+        "confirm-hard-delete": "This will permanently delete {name}. This cannot be undone. Continue?",
         "success-hard-delete": "User permanently deleted",
         "column-id": "ID",
         "column-username": "Username",
@@ -72,7 +75,7 @@
         "label-updated-at": "Updated at",
         "image-alt": "Profile picture of {name}",
         "button-disable-two-factor": "Strip two-factor authentication",
-        "confirm-disable-two-factor": "Remove every second factor and backup code from this account, without proof from its owner? Every call is audited.",
+        "confirm-disable-two-factor": "Remove every second factor and backup code from {name}'s account, without proof from its owner? Every call is audited.",
         "success-disable-two-factor": "Two-factor authentication removed from this account.",
         "button-manage-access": "Manage access",
         "success-access-update": "User access updated",
@@ -123,6 +126,6 @@
         "warning-self-deactivate": "This is your own account — you will be logged out immediately, and cannot undo this yourself once it happens."
     },
     "navigation": {
-        "label-users-list": "@:generic.user @:generic.list"
+        "label-users-list": "@:users.user @:generic.list"
     }
 }

@@ -26,6 +26,7 @@ import type { Product } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -117,15 +118,6 @@ const deletedChoice = useAnyFilterChoice(
 );
 
 /**
- * Selectable page sizes for the products table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
-
-/**
  * Columns of the products table.
  *
  * @returns The localized headers, re-translated on locale change.
@@ -215,12 +207,16 @@ const {
  * Deletes a product after an explicit confirmation.
  *
  * @param productId - Identifier of the product to delete.
+ * @param title - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleDelete = (productId: string) =>
+const handleDelete = (productId: string, title: string) =>
     useDialogStore()
-        .confirm({ message: t('products-list-page.confirm-delete'), color: 'error' })
+        .confirm({
+            message: t('products-list-page.confirm-delete', { name: title }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -250,12 +246,16 @@ const handleRestore = (productId: string) => {
  * bypasses the soft-delete and cannot be undone.
  *
  * @param productId - Identifier of the product to hard-delete.
+ * @param title - The row's own display name, named in the confirmation.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleHardDelete = (productId: string) =>
+const handleHardDelete = (productId: string, title: string) =>
     useDialogStore()
-        .confirm({ message: t('products-list-page.confirm-hard-delete'), color: 'error' })
+        .confirm({
+            message: t('products-list-page.confirm-hard-delete', { name: title }),
+            color: 'error'
+        })
         .then((accepted) => {
             if (!accepted) return;
             clearRowActionError();
@@ -360,14 +360,7 @@ const handleHardDelete = (productId: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <v-select
-                        v-model="pageSize"
-                        :label="t('generic.page-size')"
-                        :items="pageSizeOptions"
-                        item-title="label"
-                        item-value="value"
-                        hide-details
-                    />
+                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary">
@@ -392,7 +385,7 @@ const handleHardDelete = (productId: string) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="products-list-row-action-error"
+            data-test="products-list-row-action-error"
         />
 
         <DataTable
@@ -487,7 +480,7 @@ const handleHardDelete = (productId: string) =>
                             t('products-list-page.button-delete-named', { name: item.title })
                         "
                         :disabled="loading"
-                        @click.stop="handleDelete(item.id)"
+                        @click.stop="handleDelete(item.id, item.title)"
                     >
                         {{ t('products-list-page.button-delete') }}
                     </v-btn>
@@ -501,7 +494,7 @@ const handleHardDelete = (productId: string) =>
                             t('products-list-page.button-hard-delete-named', { name: item.title })
                         "
                         :disabled="loading"
-                        @click.stop="handleHardDelete(item.id)"
+                        @click.stop="handleHardDelete(item.id, item.title)"
                     >
                         {{ t('products-list-page.button-hard-delete') }}
                     </v-btn>

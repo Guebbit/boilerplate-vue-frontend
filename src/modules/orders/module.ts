@@ -7,7 +7,6 @@ import { ReceiptText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { useOrdersStore } from './store';
 
 /**
  * Orders: a customer's own order history, and the admin screens that edit an order's status.
@@ -44,7 +43,13 @@ export default {
         it: () => import('./locales/it.json').then(dictionary)
     },
     // Every cached order embeds its lines' resolved, language-dependent product text, so a
-    // language switch has to wipe it. `useOrdersStore()` runs inside the callback, never at
-    // module scope: Pinia is not installed yet when this manifest is evaluated.
-    resetOnLocaleChange: () => useOrdersStore().resetForLocaleChange()
+    // language switch has to wipe it. A dynamic `import('./store')` rather than a top-level one:
+    // this manifest is evaluated eagerly for every enabled module, and a static import would
+    // pull the whole store into that same eager chunk for a callback that only fires after a
+    // real switch.
+    resetOnLocaleChange: () => {
+        void import('./store').then(({ useOrdersStore }) =>
+            useOrdersStore().resetForLocaleChange()
+        );
+    }
 } satisfies AppModule;

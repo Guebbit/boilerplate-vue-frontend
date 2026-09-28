@@ -20,6 +20,13 @@ export interface DialogRequest {
     title?: string;
     /**
      * The question. Required: a confirmation with nothing to confirm is a bug.
+     *
+     * For a `color: 'error'` confirm about ONE row from a list — a delete, a revoke, a
+     * removal — this MUST name that row: `t('…-page.confirm-delete', { name: item.title })`,
+     * never a bare "delete this item?". Two rows in a list share a component; they do not share
+     * an identity, and "this one" answers a question the visitor did not ask. A bulk or
+     * self-only action (clear every expired token, delete YOUR OWN account) has nothing else to
+     * name and is the one exception.
      */
     message: string;
     /**

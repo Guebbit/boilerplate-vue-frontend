@@ -22,7 +22,7 @@ import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/
 import { usePaymentsStore } from '../store.ts';
 import { classifyPaymentError } from '@/modules/payments/domain';
 import type { UnavailableOrderLine } from '@/modules/payments/domain';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@/types/enums.ts';
 
 /**
  * The order page's payment corner: a method picker while the order is payable, the payment's fate
@@ -261,7 +261,7 @@ watch(
             {{ t('payments-panel.label-deadline', { payBy: formatDateTime(payBy) }) }}
         </p>
 
-        <InlineErrorAlert :message="paymentError" class="mb-3" test-id="payment-panel-error" />
+        <InlineErrorAlert :message="paymentError" class="mb-3" data-test="payment-panel-error" />
 
         <!--
             The picker's hint is the field's own `hint`, so it is wired as the field's description

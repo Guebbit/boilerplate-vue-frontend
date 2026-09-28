@@ -22,7 +22,8 @@ import {
     replaceLocaleEntries,
     mergeLocaleEntries,
     getEntityTranslations,
-    upsertEntityTranslations as apiUpsertEntityTranslations
+    upsertEntityTranslations as apiUpsertEntityTranslations,
+    LocaleTenantKind
 } from '@api';
 import type {
     LocaleCapability,
@@ -40,7 +41,6 @@ import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
 import { localeTenant } from '@/infrastructure/i18n/locale-overrides.ts';
 import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
-import { LocaleTenantKind } from '@types';
 
 /**
  * Search criteria for one language's entries.

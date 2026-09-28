@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale, i18n } from '@/infrastructure/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { StockMovementReason } from '@types';
+import { StockMovementReason } from '@api';
 
 /**
  * Switches the active i18n locale and waits for the DOM-facing reactivity to settle.

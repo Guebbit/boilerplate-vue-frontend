@@ -17,6 +17,7 @@ import { createVuetify } from 'vuetify';
 import type { ThemeDefinition } from 'vuetify';
 import { en, it } from 'vuetify/locale';
 import { lucideAliases, lucideIconSet } from './icons.ts';
+import { readThemePreference } from '@/infrastructure/theme-preference.ts';
 
 /**
  * Light theme.
@@ -126,7 +127,9 @@ export default createVuetify({
     },
 
     theme: {
-        defaultTheme: 'system',
+        // A visitor who has explicitly toggled the theme before gets that choice back on the
+        // next visit; nobody who hasn't stays on Vuetify's own 'system' — the OS preference.
+        defaultTheme: readThemePreference() ?? 'system',
         themes: { light, dark },
         // generates primary-darken-1 … used by gradients and hover states
         variations: {

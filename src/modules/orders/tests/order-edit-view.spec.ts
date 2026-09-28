@@ -26,7 +26,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@api';
 import type { Order, OrderActions } from '@types';
 
 wireModulesIntoCore();

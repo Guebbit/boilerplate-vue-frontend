@@ -24,7 +24,7 @@ import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
 import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -239,7 +239,7 @@ const submitPasswordChange = () =>
             <InlineErrorAlert
                 :message="passwordChangeError"
                 class="mt-2"
-                test-id="password-change-error"
+                data-test="password-change-error"
             />
         </form>
     </v-expand-transition>

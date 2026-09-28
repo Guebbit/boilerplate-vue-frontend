@@ -1,9 +1,5 @@
 {
     "generic": {
-        "increment": "incremento | incrementi",
-        "count": "conto | conti",
-        "user": "utente | utenti",
-        "product": "prodotto | prodotti",
         "list": "lista | liste",
         "loading": "caricamento {load}",
         "it": "italiano",
@@ -16,8 +12,6 @@
         "details": "Dettagli",
         "enabled": "Attivo",
         "disabled": "Disattivato",
-        "administrator": "Amministratore",
-        "standard-user": "Utente standard",
         "no-data": "Nessun dato disponibile",
         "cancel": "Annulla",
         "confirm": "Conferma",
@@ -28,6 +22,7 @@
         "secret-reveal-intro": "Questa è l'unica volta in cui questo segreto viene mostrato.",
         "secret-reveal-button-copy": "Copia negli appunti",
         "secret-reveal-copied": "Copiato negli appunti",
+        "secret-reveal-copy-failed": "Copia non riuscita — seleziona e copia il segreto manualmente.",
         "secret-reveal-confirm-saved": "Ho salvato questo segreto",
         "secret-reveal-button-continue": "Continua",
         "filter-deleted": "Eliminati",

@@ -16,7 +16,7 @@ import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleCapability, LocaleDirection } from '@types';
 
 /**

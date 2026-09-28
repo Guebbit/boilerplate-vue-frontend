@@ -9,6 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     MAIN_CONTENT,
+    announceRouteChange,
     consumeMainFocus,
     requestMainFocus,
     routeAnnouncement
@@ -37,6 +38,37 @@ beforeEach(() => {
 describe('routeAnnouncement', () => {
     it('starts empty, so the live region says nothing before the first navigation', () => {
         expect(routeAnnouncement.value).toBe('');
+    });
+});
+
+describe('announceRouteChange', () => {
+    it('clears the live region synchronously, then sets the title once the clear has flushed', () => {
+        routeAnnouncement.value = 'Home';
+
+        const settled = announceRouteChange('Home');
+        expect(routeAnnouncement.value).toBe('');
+
+        return settled.then(() => {
+            expect(routeAnnouncement.value).toBe('Home');
+        });
+    });
+
+    // The bug this guards: a same-value ref assignment is a no-op in Vue's reactivity, so setting
+    // the announcement straight to a repeated title would never mutate the live region a second
+    // time, and a screen reader would stay silent on the second of two same-titled pages.
+    it('mutates the live region twice even when the new title repeats the last one', () => {
+        const seen: string[] = [];
+        return announceRouteChange('Products')
+            .then(() => {
+                seen.push(routeAnnouncement.value);
+                const settled = announceRouteChange('Products');
+                seen.push(routeAnnouncement.value);
+                return settled;
+            })
+            .then(() => {
+                seen.push(routeAnnouncement.value);
+                expect(seen).toEqual(['Products', '', 'Products']);
+            });
     });
 });
 

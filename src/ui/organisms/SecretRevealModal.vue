@@ -15,7 +15,8 @@ export default {
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { IToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { copyToClipboard } from '@guebbit/js-toolkit';
 import { Copy } from 'lucide-vue-next';
 
 /**
@@ -68,13 +69,20 @@ watch(
 );
 
 /**
- * Copies the secret to the clipboard and confirms it with a toast.
+ * Copies the secret to the clipboard, and toasts either way: the secret shown here is only ever
+ * shown once, so a visitor who thinks they copied it and did not has no way back to it.
  *
- * https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText — requires a secure
- * context, which every deployment of this app already is (the app itself is https-only).
+ * `@guebbit/js-toolkit`'s `copyToClipboard` tries the async Clipboard API first (which the
+ * browser can still refuse — a denied permission, a non-secure embed) and falls back to a hidden
+ * textarea + `execCommand('copy')` when that API is unavailable at all; it never rejects, only
+ * resolves `false` on failure. https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
  */
 const copySecret = () =>
-    navigator.clipboard.writeText(secret).then(() => addMessage(t('generic.secret-reveal-copied')));
+    copyToClipboard(secret).then((succeeded) =>
+        succeeded
+            ? addMessage(t('generic.secret-reveal-copied'))
+            : addMessage(t('generic.secret-reveal-copy-failed'), IToastType.DANGER)
+    );
 </script>
 
 <template>

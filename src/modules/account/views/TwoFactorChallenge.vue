@@ -211,7 +211,7 @@ onUnmounted(twoFactor.clearChallenge);
                     :message="sendError"
                     :type="sendErrorType"
                     class="mb-4"
-                    test-id="two-factor-challenge-send-error"
+                    data-test="two-factor-challenge-send-error"
                 />
             </template>
 
@@ -256,7 +256,7 @@ onUnmounted(twoFactor.clearChallenge);
                     :message="submitError"
                     :type="submitErrorType"
                     class="mt-4"
-                    test-id="two-factor-challenge-submit-error"
+                    data-test="two-factor-challenge-submit-error"
                 />
             </form>
 

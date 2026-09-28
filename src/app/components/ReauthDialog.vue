@@ -13,6 +13,7 @@ import { useDisplay } from 'vuetify';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Translation function.
@@ -86,9 +87,10 @@ const isOpen = computed({
 /**
  * Proves the password and, on success, tells the interceptor a fresh session exists.
  *
- * @returns A promise resolving once the attempt settles. A wrong password is shown inline and the
- *  prompt stays open; any other failure (network, 5xx) does the same, since the parked requests
- *  are still worth retrying once the visitor can.
+ * @returns A promise resolving once the attempt settles. The prompt stays open either way, since
+ *  the parked requests are still worth retrying once the visitor can — but a wrong password (401)
+ *  and any other failure (network, 5xx) are told apart: retyping the same password again is never
+ *  the right next step for a failure the password had nothing to do with.
  */
 const submit = () => {
     if (!password.value) return;
@@ -97,8 +99,10 @@ const submit = () => {
         .then(() => {
             reauthDialog.resolveStepUp();
         })
-        .catch(() => {
-            errorMessage.value = t('reauth-dialog.error-wrong-password');
+        .catch((error: unknown) => {
+            errorMessage.value = absentIs(error, 401)
+                ? t('reauth-dialog.error-wrong-password')
+                : getErrorMessage(error);
             password.value = '';
         });
 };

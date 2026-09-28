@@ -23,7 +23,7 @@ import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Pencil, ShoppingCart } from 'lucide-vue-next';
+import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -36,7 +36,7 @@ import {
     formatDateTime,
     formatCurrency
 } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -407,7 +407,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         </v-btn>
                     </div>
 
-                    <InlineErrorAlert :message="formError" test-id="order-edit-form-error" />
+                    <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
                 </form>
 
                 <!--
@@ -427,7 +427,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <InlineErrorAlert
                         :message="offlinePaymentRefreshError"
                         class="mt-3"
-                        test-id="order-edit-offline-payment-error"
+                        data-test="order-edit-offline-payment-error"
                     />
                 </div>
 
@@ -474,7 +474,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <InlineErrorAlert
                         :message="actionsError"
                         class="mt-3"
-                        test-id="order-edit-actions-error"
+                        data-test="order-edit-actions-error"
                     />
                 </div>
 
@@ -515,30 +515,30 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <InlineErrorAlert
                         :message="overrideError"
                         class="mt-3"
-                        test-id="order-edit-override-error"
+                        data-test="order-edit-override-error"
                     />
                 </div>
             </CardDetail>
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="tertiary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
                         <template #icon><ShoppingCart :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"
                         :value="formatDateTime(currentOrder?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-items')"
                         :value="currentOrder?.items?.length ?? 0"
-                        icon="📦"
+                        :icon="Package"
                     />
                 </CardDetail>
             </template>

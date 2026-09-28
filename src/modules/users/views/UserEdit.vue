@@ -19,11 +19,8 @@ import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import {
-    useNotificationsStore,
-    useStructureFormValidation,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
@@ -31,7 +28,7 @@ import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Pencil, User } from 'lucide-vue-next';
+import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -46,11 +43,10 @@ import {
     formatDateTime,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * Generic i18n/notifications helpers.
@@ -143,21 +139,7 @@ const {
 /**
  * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
-
-/**
- * Runs an API call with upload progress attached, and returns to idle however it ends.
- */
-const trackUpload = <T,>(
-    file: File | undefined,
-    send: (options?: AxiosRequestConfig) => Promise<T>
-) => track(send, { enabled: !!file });
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to
@@ -427,7 +409,7 @@ watchUser(() => id);
                         :disabled="isSubmitting"
                     />
 
-                    <InlineErrorAlert :message="submitError" test-id="user-edit-submit-error" />
+                    <InlineErrorAlert :message="submitError" data-test="user-edit-submit-error" />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
@@ -442,23 +424,23 @@ watchUser(() => id);
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
                         <template #icon><User :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('user-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

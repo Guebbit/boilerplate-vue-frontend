@@ -44,8 +44,12 @@ describe('InlineErrorAlert — the pass-through props', () => {
         expect(wrapper.find('.v-alert').classes()).toContain('text-warning');
     });
 
-    it('carries the given data-test onto the rendered alert', () => {
-        const wrapper = mountAlert({ message: 'Save failed.', testId: 'save-error' });
+    it('falls a given data-test through to the rendered alert, like any other attribute', () => {
+        const wrapper = mount(InlineErrorAlert, {
+            props: { message: 'Save failed.' },
+            attrs: { 'data-test': 'save-error' },
+            global: { plugins: [vuetify] }
+        });
 
         expect(wrapper.find('[data-test=save-error]').exists()).toBe(true);
     });

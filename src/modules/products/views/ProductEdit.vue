@@ -17,11 +17,7 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import {
-    useNotificationsStore,
-    useStructureFormValidation,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
@@ -33,7 +29,7 @@ import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-ord
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Languages, Package, Pencil } from 'lucide-vue-next';
+import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -48,11 +44,11 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -180,21 +176,7 @@ const {
 /**
  * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
-
-/**
- * Runs an API call with upload progress attached, and returns to idle however it ends.
- */
-const trackUpload = <T,>(
-    file: File | undefined,
-    send: (options?: AxiosRequestConfig) => Promise<T>
-) => track(send, { enabled: !!file });
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * Auto-hydrate the form from the fetched admin record once it resolves.
@@ -586,7 +568,10 @@ const submitForm = () => {
                         :disabled="isSubmitting"
                     />
 
-                    <InlineErrorAlert :message="submitError" test-id="product-edit-submit-error" />
+                    <InlineErrorAlert
+                        :message="submitError"
+                        data-test="product-edit-submit-error"
+                    />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn
@@ -605,23 +590,23 @@ const submitForm = () => {
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
                         <template #icon><Package :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('product-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(adminProduct?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-updated-at')"
                         :value="formatDateTime(adminProduct?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

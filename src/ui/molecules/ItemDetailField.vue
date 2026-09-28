@@ -4,7 +4,7 @@
  * Atomic read-only field used by detail pages to render one label/value pair.
  * The icon tile follows the page accent (--detail-accent, set by the view).
  */
-import { computed } from 'vue';
+import { computed, type Component } from 'vue';
 import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 
 /**
@@ -21,9 +21,13 @@ const props = defineProps<{
      */
     value?: string | number | null;
     /**
-     * Icon glyph shown in the accent tile beside the label/value.
+     * Icon component shown in the accent tile beside the label/value — a `lucide-vue-next`
+     * import, the same icon vocabulary every other component in this kit renders. Not a glyph
+     * string: an emoji is a font-dependent picture, invisible to a screen reader and rendered
+     * differently per platform, where every other icon in the app is a real, sized, `aria-hidden`
+     * SVG.
      */
-    icon?: string;
+    icon?: Component;
     /**
      * Whether the field spans the full width of its containing grid.
      */
@@ -48,10 +52,10 @@ const displayValue = computed(() => {
         :class="props.fullWidth && 'col-span-full'"
     >
         <div
-            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl text-xl"
+            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl"
             aria-hidden="true"
         >
-            {{ props.icon ?? '' }}
+            <component :is="props.icon" v-if="props.icon" :size="20" />
         </div>
         <div class="min-w-0">
             <p class="text-xs uppercase tracking-[0.08em] opacity-80">{{ props.label }}</p>

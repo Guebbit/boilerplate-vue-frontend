@@ -17,7 +17,7 @@
  * The plan lists this component under "pagination boundaries, empty, single page, overflow", and
  * the boundaries are the entire reason it is on the list rather than its size.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import vuetify from '@/ui/vuetify';
@@ -106,5 +106,56 @@ describe('ListPagination — the name', () => {
         await wrapper.vm.$nextTick();
 
         expect(wrapper.find('nav').attributes('aria-label')).toBe('Ledger pages');
+    });
+});
+
+/**
+ * `attachTo: document.body` is required for the whole focus-fallback block below:
+ * `document.activeElement` only ever points inside a tree that is actually attached to the
+ * document, and the component's own guard (`root.value?.contains(document.activeElement)`)
+ * depends on that being true.
+ */
+const mountAttached = (props: Record<string, unknown>) =>
+    mount(ListPagination, { props, attachTo: document.body, global: { plugins: [vuetify] } });
+
+describe('ListPagination — the focus fallback', () => {
+    it('defaults to the plain <main> landmark — a ui-kit molecule names no app-specific selector', () => {
+        document.body.innerHTML = '<main tabindex="-1"></main>';
+        const wrapper = mountAttached({ length: 2 });
+
+        (wrapper.find('.v-pagination__item button').element as HTMLElement).focus();
+
+        return wrapper
+            .setProps({ length: 1 })
+            .then(() =>
+                vi.waitFor(() => {
+                    if (document.activeElement !== document.querySelector('main'))
+                        throw new Error('focus has not moved to <main> yet');
+                })
+            )
+            .then(() => {
+                expect(document.activeElement).toBe(document.querySelector('main'));
+                wrapper.unmount();
+            });
+    });
+
+    it('moves focus to a caller-given selector instead, when one is passed', () => {
+        document.body.innerHTML = '<div data-test="target" tabindex="-1"></div>';
+        const wrapper = mountAttached({ length: 2, focusFallback: '[data-test=target]' });
+
+        (wrapper.find('.v-pagination__item button').element as HTMLElement).focus();
+
+        return wrapper
+            .setProps({ length: 1 })
+            .then(() =>
+                vi.waitFor(() => {
+                    if (document.activeElement !== document.querySelector('[data-test=target]'))
+                        throw new Error('focus has not moved to the custom target yet');
+                })
+            )
+            .then(() => {
+                expect(document.activeElement).toBe(document.querySelector('[data-test=target]'));
+                wrapper.unmount();
+            });
     });
 });

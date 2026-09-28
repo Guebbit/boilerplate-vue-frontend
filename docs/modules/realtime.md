@@ -69,7 +69,7 @@ subscription and the feed.
 
 ::: tip The types come from a contract, not from a hand-written interface
 `asyncapi.yaml` describes the event names and payload shapes, and
-`src/types/asyncapi.generated.ts` is generated from it. A payload this module misreads is a build
+`contracts/asyncapi.generated.ts` is generated from it. A payload this module misreads is a build
 error rather than an empty panel.
 :::
 

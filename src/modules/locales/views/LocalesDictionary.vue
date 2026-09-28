@@ -563,7 +563,7 @@ onMounted(() => {
 
         <LanguageFormDialog v-model="languageFormOpen" @save="handleCreateLanguage">
             <template #error>
-                <InlineErrorAlert :message="createLanguageError" test-id="language-form-error" />
+                <InlineErrorAlert :message="createLanguageError" data-test="language-form-error" />
             </template>
         </LanguageFormDialog>
     </LayoutDefault>

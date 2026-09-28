@@ -23,7 +23,7 @@
         "kpi-latency-p50": "Latenza p50",
         "kpi-latency-p95": "Latenza p95",
         "section-auth": "Autenticazione",
-        "section-business": "Metriche business",
+        "section-business": "Eventi commercio",
         "section-system": "Sistema",
         "section-queues": "Job in coda",
         "label-login-success": "Login riusciti",

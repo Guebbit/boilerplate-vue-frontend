@@ -52,9 +52,9 @@ const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map(
  * the API says it offers. A language added by a translator therefore appears in the switcher
  * without a frontend deploy.
  *
- * There is deliberately no env list any more. Naming a language in `.env` claimed it was supported
- * without supplying anything able to render it — the folder knows what shipped and the API knows
- * what has been translated since, and a third list could only disagree with both.
+ * Deliberately no env list: naming a language in `.env` would claim it is supported without
+ * supplying anything able to render it — the folder knows what shipped and the API knows what
+ * has been translated, and a third list could only disagree with both.
  *
  * Mutable, because `mergeRemoteLocales` pushes onto it: a dozen modules import this binding by
  * value, and reassigning it would leave them all on the boot-time list.
@@ -392,13 +392,12 @@ export function getDefaultLocale() {
 export const getCurrentLocale = () => i18n.global.locale.value;
 
 /*
- * There is no `api.*` namespace, and there was one until this app started downloading its OWN
- * dictionary from the API.
+ * There is no `api.*` namespace.
  *
  * The API resolves its own keys and puts finished text on the wire, so a response arrives already
- * translated and nothing here looks it up. The one case that needed this app's own words — no
+ * translated and nothing here looks it up. The one case that needs this app's own words — no
  * response at all, a 401 with an empty body, a bare 502 — is answered by `api-errors.*` in the
- * dictionaries, and those keys are now translatable for EVERY language, including the ones this
- * build does not bundle, because `locale-overrides.ts` fetches them. Reserving a root for the
- * backend's keyspace bought nothing after that, and cost a namespace nobody could author under.
+ * dictionaries, translatable for EVERY language, including the ones this build does not bundle,
+ * because `locale-overrides.ts` fetches them. Reserving a root for the backend's keyspace would
+ * buy nothing over that, and would cost a namespace nobody here could author under.
  */

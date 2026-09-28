@@ -2,12 +2,15 @@
 /*
  * Generates the TypeScript realtime contract types from `asyncapi.yaml`.
  *
- * SHARED SCRIPT — started byte-identical in both repos of the pair, and both write
- * `src/types/asyncapi.generated.ts`. NOT byte-identical any more: this copy also emits an
- * inlined-JSON-Schema map for `create-sse-client.ts`'s runtime SSE-frame validation, which the
- * backend copy has no use for and emits queue-payload Zod validators instead. What both copies
- * still share is the input format and the channel/message-naming machinery — keep a fix to either
- * half in step across both copies by hand until this generator gets its own shared package.
+ * SHARED SCRIPT — started byte-identical in both repos of the pair. NOT byte-identical any more:
+ * this copy also emits an inlined-JSON-Schema map for `create-sse-client.ts`'s runtime SSE-frame
+ * validation, which the backend copy has no use for and emits queue-payload Zod validators
+ * instead. `--out` is a required argument rather than a hardcoded default, so the two repos are
+ * also free to write it to different paths — this copy's caller points it at
+ * `contracts/asyncapi.generated.ts`, next to the generated REST client; the backend's own caller
+ * decides its own. What both copies still share is the input format and the
+ * channel/message-naming machinery — keep a fix to either half in step across both copies by hand
+ * until this generator gets its own shared package.
  * What differs at the INPUT is unchanged: the backend generates from the whole contract, this
  * repo from the public subset, so only the backend's output carries the queue payloads.
  *

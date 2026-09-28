@@ -22,7 +22,7 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -214,7 +214,7 @@ const submitForm = () => {
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
-                    test-id="password-reset-confirm-error"
+                    data-test="password-reset-confirm-error"
                 />
             </form>
 

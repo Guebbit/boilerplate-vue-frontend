@@ -19,9 +19,9 @@ import {
 } from '@api';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
-import { createMongoAbility, type MongoAbility } from '@casl/ability';
-import { unpackRules } from '@casl/ability/extra';
-import type { Abilities } from '@types';
+import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
+import { unpackRules, type PackRule } from '@casl/ability/extra';
+import type { Abilities, PackedRules } from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -44,6 +44,23 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
     const status = (error as AxiosError | undefined)?.response?.status;
     return status === 401 || status === 403;
 };
+
+/**
+ * Turns one scope's packed rules — `GET /account/abilities`'s own wire shape — into the CASL
+ * rule objects {@link createMongoAbility} builds an ability from.
+ *
+ * The cast is the one place this file trusts the contract rather than the compiler: OpenAPI/JSON
+ * Schema cannot express CASL's discriminated `[action, subject, conditions?, fields?, inverted?,
+ * reason?]` tuple, so the generated `PackedRules` type is the loose `unknown[][]` shape Orval
+ * falls back to. `unpackRules`'s own `PackRule<T>` is exactly that tuple, which is what the
+ * backend actually sends — a single, named cast to it, rather than laundering the value through
+ * `never` twice.
+ *
+ * @param packed - One scope's rules exactly as the ability endpoint returns them.
+ * @returns Unpacked CASL rules, ready for {@link createMongoAbility}.
+ */
+const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
+    unpackRules(packed as PackRule<RawRuleOf<MongoAbility>>[]);
 
 /**
  * The concrete actions a screen may ask about — CASL's own vocabulary, as
@@ -237,12 +254,8 @@ export const useSessionStore = defineStore('session', () => {
     const setAbilities = (
         rules: Pick<Partial<Abilities>, 'tenant' | 'platform' | 'subjects'> = {}
     ) => {
-        tenantAbility.value = createMongoAbility(
-            unpackRules((rules.tenant ?? []) as never) as never
-        );
-        platformAbility.value = createMongoAbility(
-            unpackRules((rules.platform ?? []) as never) as never
-        );
+        tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
+        platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
         if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
     };
 
