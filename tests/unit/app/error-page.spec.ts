@@ -6,8 +6,8 @@
  * the same fold before pushing here, so this is the view's own defence, not the only one — plus a
  * locale-prefixed way back Home.
  *
- * `LayoutDefault` is stubbed — it is the whole app shell (nav, banners, the reauth dialog), and
- * none of that is this page's own behaviour.
+ * `LayoutDefault` mounts as the route's own layout now (FA70), not by this view — nothing here
+ * stubs it, since this view no longer renders it at all.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -28,10 +28,7 @@ const mountError = (query: Record<string, string>) => {
     return router.push({ name: 'ErrorPage', params: { locale: 'en' }, query }).then(() =>
         mount(ErrorPage, {
             props: { status: query.status, message: query.message },
-            global: {
-                plugins: [vuetify, i18n, router],
-                stubs: { LayoutDefault: { template: '<div><slot name="header" /><slot /></div>' } }
-            }
+            global: { plugins: [vuetify, i18n, router] }
         })
     );
 };
@@ -39,6 +36,11 @@ const mountError = (query: Record<string, string>) => {
 beforeEach(() => loadLocale('en'));
 
 describe('Error page', () => {
+    it('carries its own id on its own root, not through LayoutDefault’s $attrs (FA70)', () =>
+        mountError({ status: '404' }).then((wrapper) => {
+            expect(wrapper.attributes('id')).toBe('error-page');
+        }));
+
     it('shows the status in the title', () =>
         mountError({ status: '404' }).then((wrapper) => {
             expect(wrapper.get('h1').text()).toContain('404');

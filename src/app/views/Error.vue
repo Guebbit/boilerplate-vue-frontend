@@ -14,7 +14,7 @@ export default {
  * Generic error page: shows the status/message the router redirected with (either an i18n key
  * or router-supplied free text), with a way back Home.
  */
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { SearchX } from 'lucide-vue-next';
@@ -51,12 +51,14 @@ const normalizedMessage = computed(() =>
 </script>
 
 <template>
-    <LayoutDefault id="error-page" centered>
-        <template #header>
+    <div id="error-page">
+        <!-- `meta.customHero` on this route (router/index.ts) tells LayoutDefault to render no
+             hero of its own — the status makes this one richer than a plain translated key. -->
+        <PageHeader>
             <h1 class="text-3xl font-bold tracking-tight lg:text-4xl">
                 {{ t('error-page.page-title') }} {{ status }}
             </h1>
-        </template>
+        </PageHeader>
 
         <v-empty-state :title="status" :text="normalizedMessage">
             <template #media>
@@ -68,5 +70,5 @@ const normalizedMessage = computed(() =>
                 </v-btn>
             </template>
         </v-empty-state>
-    </LayoutDefault>
+    </div>
 </template>
