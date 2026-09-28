@@ -68,10 +68,10 @@ const {
  * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear (FA39): both
  * write endpoints, so a double-click before the first request answers must not fire a second one.
  */
-const { cart, cartItems, cartSummary, needsShipping, loading } = storeToRefs(useCartStore());
+const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useCartStore());
 
 /**
- * The chosen shipping method — mirrors `cart.value?.shippingMethodId` (see the `watch` below that
+ * The chosen shipping method — mirrors `cart.value?.shipping.selected` (see the `watch` below that
  * loads it once the cart resolves), and drives `PUT /cart/shipping-method` on every change the
  * shopper makes through {@link ShippingSelector}.
  */
@@ -86,7 +86,7 @@ const shippingMethodId = ref<string | undefined>();
 watch(
     cart,
     (loaded) => {
-        if (loaded) shippingMethodId.value = loaded.shippingMethodId;
+        if (loaded) shippingMethodId.value = loaded.shipping.selected ?? undefined;
     },
     { once: true }
 );
@@ -98,7 +98,7 @@ watch(
  * picker to its previous choice rather than leaving a selection the server rejected.
  */
 watch(shippingMethodId, (chosen, previous) => {
-    if (chosen === cart.value?.shippingMethodId) return;
+    if (chosen === (cart.value?.shipping.selected ?? undefined)) return;
     void setShippingMethod(chosen ?? null).catch((error: unknown) => {
         const verdict = classifyCheckoutError(error);
         addMessage(
@@ -144,11 +144,11 @@ const notes = ref('');
 
 /**
  * Whether checkout may run yet: a physical basket needs a method, and — only when that method
- * demands it — an address, mirroring the backend's own `evaluateShippingRequirement`
- * (`cart/domain/rules.ts` in the API repo). A digital-only basket needs neither.
+ * demands it — an address. Reads the cart's own `shipping.required` flag (FA-D6/B3) rather than
+ * re-deriving it from the lines: the server already decided.
  */
 const canCheckout = computed(() => {
-    if (!needsShipping.value) return true;
+    if (!cartShipping.value?.required) return true;
     if (shippingMethodId.value === undefined) return false;
     return !shippingMethodRequiresAddress.value || addressId.value !== undefined;
 });
@@ -507,7 +507,8 @@ onMounted(() =>
                         v-model="shippingMethodId"
                         v-model:requires-address="shippingMethodRequiresAddress"
                         v-model:ship-to-countries="shipToCountries"
-                        :items-total="cartSummary.itemsTotal"
+                        :options="cartShipping?.options ?? []"
+                        :currency="cartSummary.currency"
                     />
                     <!--
                         Only asked when the chosen method actually needs one — a digital-only

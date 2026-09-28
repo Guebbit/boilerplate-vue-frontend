@@ -7,9 +7,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Single-file component: `<script setup>` reads the delivery store's methods (fetching them
- * once on mount if empty) and drives a radio group bound to `defineModel`; pricing math is
- * delegated to the store so the template only formats and displays it.
+ * Single-file component: `<script setup>` drives a radio group bound to `defineModel`, one radio
+ * per fitting, already-priced `options` entry (FA-D6/B3) — the cart's own answer, not a client
+ * computation. `shipToCountries` still comes from the delivery store's unfiltered catalogue, the
+ * one fact `options` does not carry.
  */
 
 import { onMounted, watch, useId } from 'vue';
@@ -17,17 +18,22 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useDeliveryStore } from '../store.ts';
+import type { CartShippingOption } from '@types';
 
 /**
- * The cart's shipping choice: one radio per method, priced against the basket being bought so
- * the free-above rule is visible while it is being earned. Selecting nothing is allowed —
- * shipping is not required to buy, and the checkout sends no method for `undefined`.
+ * The cart's shipping choice: one radio per fitting method, already priced by the server against
+ * the basket being bought. Selecting nothing is allowed — shipping is not required to buy, and
+ * the checkout sends no method for `undefined`.
  */
-const { itemsTotal } = defineProps<{
+const { options, currency } = defineProps<{
     /**
-     * The cart's lines total, the number free-above thresholds compare against.
+     * The cart's own `shipping.options` — every method that currently fits the basket, priced.
      */
-    itemsTotal: number;
+    options: CartShippingOption[];
+    /**
+     * The shop's currency, for formatting each option's price.
+     */
+    currency: string;
 }>();
 
 /**
@@ -60,34 +66,44 @@ const { t } = useI18n();
 const titleId = useId();
 
 /**
- * Delivery store, for the methods list.
+ * Delivery store, for the ship-to list and each method's `freeAbove` — display-only lookups
+ * against the unfiltered catalogue. The price itself is never re-derived here: {@link options}
+ * already carries what the server computed.
  */
 const deliveryStore = useDeliveryStore();
 
 /**
- * The available shipping methods, and the ship-to list fetched alongside them — both reactive.
+ * The unfiltered methods catalogue and the ship-to list fetched alongside it — both reactive.
  */
 const { methods, shipToCountries: storeShipToCountries } = storeToRefs(deliveryStore);
 
 /*
- * Fetches on mount. The list is the same unfiltered catalogue everywhere it's read (the order
- * page's `ShipmentPanel` also calls `fetchMethods()`), so there is nothing left to re-fetch for —
- * weight-fit is now checked server-side, at the point of choosing, not by filtering this list.
+ * Fetches on mount, for `shipToCountries` and {@link freeAboveOf} below — the radios themselves
+ * render straight off {@link options}, the caller's own priced, fitting list.
  */
 onMounted(() => {
     void deliveryStore.fetchMethods();
 });
 
+/**
+ * Whether `id` carries a free-above threshold at all, off the unfiltered catalogue —
+ * {@link options} carries no `freeAbove`, only the price already computed against it, so this is
+ * what tells "free because the threshold was met" apart from a method that is simply always free
+ * (`pickup`).
+ * @param id - the option's id
+ */
+const freeAboveOf = (id: string) => methods.value.find((method) => method.id === id)?.freeAbove;
+
 /*
- * Keeps `requiresAddress` in step with the chosen method, including a method that vanishes from
- * the list (a re-fetch by weight can drop the one already picked) — `find` then answers
- * `undefined`, the same "nothing chosen" state `methodId` itself would need clearing to reach.
+ * Keeps `requiresAddress` in step with the chosen method, off `options` itself — the same fitting
+ * list the radios render, so a method that stops fitting (and drops out of `options`) clears this
+ * the same way `methodId` itself would need clearing to reach.
  */
 watch(
-    [methodId, methods],
+    [methodId, () => options],
     () => {
-        requiresAddress.value = methods.value.find(
-            (method) => method.id === methodId.value
+        requiresAddress.value = options.find(
+            (option) => option.id === methodId.value
         )?.requiresAddress;
     },
     { immediate: true }
@@ -113,27 +129,19 @@ watch(
         </h3>
         <v-radio-group v-model="methodId" :aria-labelledby="titleId">
             <v-radio
-                v-for="method in methods"
-                :key="method.id"
-                :value="method.id"
-                :data-test="'shipping-method-' + method.id"
+                v-for="option in options"
+                :key="option.id"
+                :value="option.id"
+                :data-test="'shipping-method-' + option.id"
             >
                 <template #label>
                     <span class="flex items-baseline gap-2">
-                        {{ t(`shipping-selector.method-${method.id}`) }}
+                        {{ t(`shipping-selector.method-${option.id}`) }}
                         <strong data-test="shipping-price">
-                            {{
-                                formatCurrency(
-                                    deliveryStore.effectivePrice(method, itemsTotal),
-                                    method.currency
-                                )
-                            }}
+                            {{ formatCurrency(option.price, currency) }}
                         </strong>
                         <span
-                            v-if="
-                                method.freeAbove !== undefined &&
-                                deliveryStore.effectivePrice(method, itemsTotal) === 0
-                            "
+                            v-if="freeAboveOf(option.id) !== undefined && option.price === 0"
                             class="text-xs opacity-75"
                         >
                             {{ t('shipping-selector.free-earned') }}

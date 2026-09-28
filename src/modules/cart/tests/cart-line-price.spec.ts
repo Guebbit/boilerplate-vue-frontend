@@ -53,7 +53,8 @@ const CART: CartResponse = {
         shippingCost: 0,
         totalPrice: 29.97,
         currency: 'GBP'
-    }
+    },
+    shipping: { required: false, selected: null, options: [] }
 };
 
 const mountCart = () => {
