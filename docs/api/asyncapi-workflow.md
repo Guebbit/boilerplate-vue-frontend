@@ -81,23 +81,26 @@ npm run check:asyncapi-types  # fail if the committed types are not what asyncap
 
 ## Shared with the backend
 
-`scripts/contracts/generate-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
-both write the same path:
+`scripts/contracts/generate-asyncapi-types.ts` **started** byte-identical to the one in
+`boilerplate-node-backend`, and both still write the same path — but it is NOT byte-identical any
+more: this copy also emits an inlined-JSON-Schema map for `create-sse-client.ts`'s runtime
+SSE-frame validation, which the backend copy has no use for and emits queue-payload Zod validators
+instead. What both copies still share is the input format and the channel/message-naming machinery.
 
 | Repo     | Command                                                                                  | Reads                                         |
 | -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Frontend | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
 | Backend  | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel       |
 
-The script is the same, the INPUT is not — so the two outputs differ, and are meant to: only the
-backend's carries `EmailJobPayload`, `PdfJobPayload` and `WORKER_CHANNELS`. Everything this repo's
-does carry, it carries identically, because the shared half of the spec is one document copied
-across.
+The INPUT still differs the way it always did: only the backend's output carries `EmailJobPayload`,
+`PdfJobPayload` and `WORKER_CHANNELS`, because only it generates from the whole contract rather than
+the public subset it hands this repo.
 
 `asyncapi.yaml` is in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
 `check:spec-identity` fails on the commit that forks it. **This script is not, and neither are the
-generated outputs.** The script is held identical by hand — nothing fails if the two copies drift,
-so compare them with `diff` when you change one. The outputs are off the list for a different
+generated outputs.** The script is held to the same shared machinery by hand, not to identical
+bytes — nothing fails if the two drift further, so compare them with `diff` when you change one.
+The outputs are off the list for a different
 reason, and
 deliberately: they legitimately differ now, and even where they overlap a cross-repo comparison
 would only re-ask a question the two entries above already answer, at the price of carrying another

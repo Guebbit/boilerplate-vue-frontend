@@ -6,10 +6,12 @@ entry, and none of it ships in the bundle. `.husky/` holds the git hooks.
 Every script's user-facing name and when to run it is on
 [Package Scripts](../tools/package-scripts.md). This page says what each _file_ is.
 
-Several of these have a **counterpart in the backend**, and each one says in its header which kind
-it is: byte-identical (`contracts/generate-asyncapi-types.ts`, `testing/report-results.ts`), or the
-same shape with stated differences (everything under `pairing/` and `mutation/`). Nothing enforces
-either — `diff` is the tool, and changing one copy without the other is how the two repos drift.
+Several of these have a **counterpart in the backend**, and each one says in its header what still
+matches and what doesn't: `contracts/generate-asyncapi-types.ts` and `testing/report-results.ts`
+started byte-identical and share their core machinery still, but each has since picked up its own
+repo-specific differences; everything under `pairing/` and `mutation/` was never meant to match
+byte for byte, only in shape. Nothing enforces any of it — `diff` is the tool, and changing one copy
+without the other is how the two repos drift.
 
 ## How these are organised
 
