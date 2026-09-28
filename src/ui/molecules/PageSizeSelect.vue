@@ -33,6 +33,7 @@ const modelValue = defineModel<number | undefined>({ required: true });
         :items="sizes.map((value) => ({ value, label: String(value) }))"
         item-title="label"
         item-value="value"
+        data-test="page-size"
         hide-details
     />
 </template>

@@ -49,6 +49,12 @@ describe('PageSizeSelect — the label', () => {
     });
 });
 
+describe('PageSizeSelect — the test hook', () => {
+    it('carries data-test="page-size" itself, so every caller gets it for free', () => {
+        expect(mountSelect().findComponent(VSelect).attributes('data-test')).toBe('page-size');
+    });
+});
+
 describe('PageSizeSelect — the model', () => {
     it('forwards the given modelValue onto the underlying v-select', () => {
         const select = mountSelect({ modelValue: 25 }).findComponent(VSelect);
