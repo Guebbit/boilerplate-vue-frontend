@@ -338,10 +338,20 @@ describe('onError redirects', () => {
             expect(router.currentRoute.value.params.message).toBe('navigation.error-forbidden');
         }));
 
-    it('shows the error’s own message for other client statuses', () =>
+    it('folds an error message this app does not own into the generic key (FA74)', () =>
+        // 'teapot' is free-form text a caught error happened to carry, not one of THIS app's own
+        // `error-page.*`/`navigation.*` dictionary keys — showing it verbatim would leak
+        // implementation detail into the page, the URL and Umami's pageview.
         failNavigationWith(Object.assign(new Error('teapot'), { status: 418 })).then((router) => {
             expect(router.currentRoute.value.params.status).toBe('418');
-            expect(router.currentRoute.value.params.message).toBe('teapot');
+            expect(router.currentRoute.value.params.message).toBe('error-page.unexpected');
+        }));
+
+    it('keeps an error message that IS one of this app’s own dictionary keys', () =>
+        failNavigationWith(
+            Object.assign(new Error('error-page.rate-limited'), { status: 418 })
+        ).then((router) => {
+            expect(router.currentRoute.value.params.message).toBe('error-page.rate-limited');
         }));
 
     it('collapses a 5xx status to a plain 500', () =>
@@ -363,6 +373,23 @@ describe('onError redirects', () => {
             expect(router.currentRoute.value.name).toBe('Error');
             expect(router.currentRoute.value.params.status).toBe('500');
         }));
+});
+
+describe('stale-deploy recovery (FA74)', () => {
+    it('arms Vite’s own preload-error signal as soon as the router module loads', () => {
+        // `stale-deploy.spec.ts` proves the recovery logic itself (exactly one reload, to the
+        // failed navigation's own target) against injected fakes — jsdom's `location` cannot be
+        // stubbed the same way `Storage` can. What belongs at THIS level is that the router
+        // actually wires the listener up, not a second copy of the logic it wires in.
+        const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener');
+
+        return loadRouter().then(() => {
+            expect(addEventListenerSpy).toHaveBeenCalledWith(
+                'vite:preloadError',
+                expect.any(Function)
+            );
+        });
+    });
 });
 
 /**

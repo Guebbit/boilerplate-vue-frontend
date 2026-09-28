@@ -16,7 +16,7 @@ export default {
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import PageHeader from '@/ui/molecules/PageHeader.vue';
 import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
 
 /**
@@ -51,7 +51,11 @@ const heroTitle = computed(() =>
 </script>
 
 <template>
-    <LayoutDefault id="audit-log-page" :title="heroTitle">
+    <div id="audit-log-page">
+        <!-- `meta.customHero` on this route (observability/routes.ts) tells LayoutDefault to render no
+             hero of its own — the title depends on `?target=`, which a static meta key cannot
+             carry. -->
+        <PageHeader :title="heroTitle" />
         <AdminAuditTab endpoint="shop" :target="target" />
-    </LayoutDefault>
+    </div>
 </template>

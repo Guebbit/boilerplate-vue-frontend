@@ -143,7 +143,8 @@
         "expires-in": "Questo codice scade tra {seconds}s.",
         "expired": "Questa richiesta è scaduta. Effettua di nuovo il login.",
         "link-use-backup-code": "Usa un codice di backup",
-        "link-use-code": "Usa un codice metodo"
+        "link-use-code": "Usa un codice metodo",
+        "link-back-to-login": "Torna al login"
     },
     "password-reset-request-page": {
         "page-title": "Reimposta password",

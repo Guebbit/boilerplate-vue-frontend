@@ -14,7 +14,9 @@ export default {
  * without opening the full edit form.
  */
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { linkIfRouted } from '@/app/router/navigation.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -23,7 +25,6 @@ import { useUserAccessDialog } from '@/modules/users/composables/use-user-access
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -59,9 +60,28 @@ const { watchUser } = useUsersStore();
 const session = useSessionStore();
 
 /**
+ * Router instance, for the `hasRoute` check below — `admin` is not a coupling this module's
+ * `MODULE_EDGES` entry declares, so the history button's link is guarded rather than assumed
+ * (FA86).
+ */
+const router = useRouter();
+
+/**
  * The user being displayed.
  */
 const { currentUser } = storeToRefs(useUsersStore());
+
+/**
+ * The audit-log link the history button offers, for the user currently shown — `undefined`,
+ * hiding the button entirely, on a build with no `admin` module. The button's own
+ * `session.can('read', 'AuditLog')` check stays alongside it — one answers "does this build even
+ * have an audit log", the other "may THIS visitor see it".
+ */
+const auditLogTo = computed(() =>
+    currentUser.value
+        ? linkIfRouted(router, 'AuditLog', undefined, { target: currentUser.value.id })
+        : undefined
+);
 
 /**
  * Hero heading.
@@ -201,7 +221,7 @@ const handleDisableTwoFactor = () => {
 </script>
 
 <template>
-    <LayoutDefault id="user-target" :title="t('user-target-page.page-title')">
+    <div id="user-target">
         <ItemDetailLayout accent="secondary">
             <template #hero>
                 <ItemDetailHero
@@ -301,10 +321,10 @@ const handleDisableTwoFactor = () => {
                     {{ t('user-target-page.button-go-to-list') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentUser && session.can('read', 'AuditLog')"
+                    v-if="auditLogTo && session.can('read', 'AuditLog')"
                     variant="tonal"
                     data-test="user-history"
-                    :to="routerLinkI18n({ name: 'AuditLog', query: { target: currentUser.id } })"
+                    :to="routerLinkI18n(auditLogTo)"
                 >
                     {{ t('user-target-page.button-history') }}
                 </v-btn>
@@ -348,5 +368,5 @@ const handleDisableTwoFactor = () => {
             @confirm="confirmAccessChange"
             @cancel="cancelAccessChange"
         />
-    </LayoutDefault>
+    </div>
 </template>

@@ -160,13 +160,20 @@ vi.mock('vue-i18n', async (importOriginal) => {
     };
 });
 
+/**
+ * `router.push` calls the nav makes, shared across `useRouter()` calls the same way the real
+ * router instance is — a fresh `vi.fn()` per call would leave the click tests below with no
+ * handle on what the component actually invoked.
+ */
+const pushSpy = vi.fn();
+
 vi.mock('vue-router', () => ({
     RouterLink: {
         template: '<a><slot /></a>'
     },
     useRoute: () => ({ ...currentRoute.value, params: {}, query: {} }),
     useRouter: () => ({
-        push: vi.fn(),
+        push: pushSpy,
         replace: vi.fn(),
         resolve: ({ name }: { name: string }) => ({
             meta: { access: routeAccess[name], can: routePermission[name] }
@@ -232,6 +239,7 @@ describe('Navigation', () => {
         pinnedCount.value = 0;
         pinnedDetail.value = undefined;
         document.body.innerHTML = '';
+        pushSpy.mockClear();
     });
 
     it('shows a guest only the public entries', () => {
@@ -475,6 +483,28 @@ describe('Navigation', () => {
             'navigation.label-member:1',
             'navigation.label-logout'
         ]);
+    });
+
+    it('sends the signed-in visitor to Logout on click', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+        registeredRoutes.value = ['Login', 'Signup', 'Logout'];
+
+        void mountNav().wrapper.find('[data-test="logout"]').trigger('click');
+
+        expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'Logout' }));
+    });
+
+    it('sends the signed-in visitor Home instead, on a build with no Logout route (FA71)', () => {
+        // Same reasoning as the sign-in/sign-up links above: a route name is a string nothing
+        // type-checks, so a build missing the account module must not throw on logout either.
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+        registeredRoutes.value = [];
+
+        void mountNav().wrapper.find('[data-test="logout"]').trigger('click');
+
+        expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
     });
 
     it('offers no user menu to a guest', () => {

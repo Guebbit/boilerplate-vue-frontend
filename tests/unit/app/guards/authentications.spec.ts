@@ -52,6 +52,12 @@ const visitor = (isAuth: boolean, ...rules: string[]) => ({
     can: (action: PermissionAction, subject: string) => rules.includes(`${action} ${subject}`)
 });
 
+/** A minimal router stub — only `hasRoute`, which is all `enforceRouteAccess` reads off it. */
+const routerWithLogin = { hasRoute: (name: string) => name === 'Login' };
+
+/** A build with no `account` module: `Login` does not resolve. */
+const routerWithoutLogin = { hasRoute: () => false };
+
 const guest = visitor(false);
 const customer = visitor(true);
 const editor = visitor(true, 'update Product', 'read Translation');
@@ -101,12 +107,12 @@ describe('enforceRouteAccess', () => {
     });
 
     it('lets a permitted navigation through without notifying anything', () => {
-        expect(enforceRouteAccess(route())).toBeUndefined();
+        expect(enforceRouteAccess(route(), routerWithLogin)).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
     });
 
     it('sends a guest to login, remembering where they were going', () => {
-        const result = enforceRouteAccess(route('auth'));
+        const result = enforceRouteAccess(route('auth'), routerWithLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');
         expect(result).toEqual(
@@ -116,15 +122,23 @@ describe('enforceRouteAccess', () => {
 
     it('keeps the blocked path as the login continue target', () => {
         // The point of redirecting rather than 403-ing: logging in must land them where they aimed.
-        expect(JSON.stringify(enforceRouteAccess(route('auth', ['read', 'User'])))).toContain(
-            '/en/target'
-        );
+        expect(
+            JSON.stringify(enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin))
+        ).toContain('/en/target');
+    });
+
+    it('sends a guest to Home when this build has no Login route to resolve', () => {
+        // A product shipping no `account` module still must not throw here — see FA71.
+        const result = enforceRouteAccess(route('auth'), routerWithoutLogin);
+
+        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');
+        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
     });
 
     it('sends an authenticated visitor without the rule home, with no continue target', () => {
         visitorStanding.isAuth.value = true;
 
-        const result = enforceRouteAccess(route('auth', ['read', 'User']));
+        const result = enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
         // Logging in again cannot grant a permission, so offering to continue would loop them.
@@ -134,7 +148,7 @@ describe('enforceRouteAccess', () => {
     it('sends an authenticated visitor away from a guest-only route', () => {
         visitorStanding.isAuth.value = true;
 
-        const result = enforceRouteAccess(route('guest'));
+        const result = enforceRouteAccess(route('guest'), routerWithLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-already-logged');
         expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
@@ -144,7 +158,9 @@ describe('enforceRouteAccess', () => {
         visitorStanding.isAuth.value = true;
         held.add('read User');
 
-        expect(enforceRouteAccess(route('auth', ['read', 'User']))).toBeUndefined();
+        expect(
+            enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin)
+        ).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
     });
 
@@ -154,7 +170,7 @@ describe('enforceRouteAccess', () => {
         visitorStanding.isAuth.value = true;
         held.add('read User');
 
-        expect(enforceRouteAccess(route('auth', ['update', 'User']))).toEqual({
+        expect(enforceRouteAccess(route('auth', ['update', 'User']), routerWithLogin)).toEqual({
             name: 'Home',
             params: { locale: 'en' }
         });

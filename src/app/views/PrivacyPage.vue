@@ -14,16 +14,15 @@ export default {
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 import { staticPageParagraphs } from '@/app/utils/static-pages.ts';
 
 /**
- * Translation helpers: `t` for plain strings, `tm`/`rt` for the raw paragraph list resolved by
+ * Translation helpers: `tm`/`rt` for the raw paragraph list resolved by
  * {@link staticPageParagraphs}.
  */
 // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n's documented destructuring; the composer binds these itself
-const { t, tm, rt } = useI18n();
+const { tm, rt } = useI18n();
 
 /**
  * The page's prose, one string per paragraph.
@@ -32,7 +31,7 @@ const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.pri
 </script>
 
 <template>
-    <LayoutDefault id="static-page-privacy" :title="t('static-pages.privacy.title')">
+    <div id="static-page-privacy">
         <v-card class="mx-auto mt-10 w-full max-w-2xl p-8">
             <p v-for="(paragraph, index) in paragraphs" :key="'p-' + index" class="mb-4">
                 {{ paragraph }}
@@ -40,5 +39,5 @@ const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.pri
 
             <StaticPageLinks current="privacy" />
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

@@ -3,9 +3,11 @@
  * @module
  * A thin wrapper over `v-data-table`: translates this app's `CoreDataTableHeader<T>` shape into
  * Vuetify's headers, forwards `header.*`/`item.*` slots the caller actually provided, swaps in
- * the accessible `TableLoadingBar`, and adds optional single-row selection through `v-model`
- * (detected from whether a listener for `update:modelValue` is bound, since pagination here is
- * server-side and the footer stays hidden).
+ * the accessible `TableLoadingBar`, and adds two OPT-IN behaviours through a `v-model`, each
+ * detected from whether its own `update:*` listener is actually bound rather than from the
+ * model's value: single-row selection (`v-model`) and client-side sorting (`v-model:sort-by`,
+ * FA75) — pagination here is server-side for every real caller today, so a header is sortable
+ * only for the one caller that opts in, and the footer stays hidden either way.
  */
 import { computed, getCurrentInstance, useSlots } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
@@ -20,8 +22,8 @@ const {
     caption,
     itemValue = 'id',
     loading,
-    loadingText = 'Loading...',
-    noDataText = 'No data available',
+    loadingText,
+    noDataText,
     rowTest = 'list-row'
 } = defineProps<{
     headers: CoreDataTableHeader<T>[];
@@ -34,7 +36,16 @@ const {
     caption: string;
     itemValue?: string;
     loading?: boolean;
+    /**
+     * Overrides Vuetify's own localised "Loading items..." — most callers pass this app's own
+     * `generic.loading` key instead (FA75); left unset, Vuetify's bundled locale answers rather
+     * than a component-level English default that would out-rank it.
+     */
     loadingText?: string;
+    /**
+     * Overrides Vuetify's own localised "No data available" — same reasoning as
+     * {@link loadingText}.
+     */
     noDataText?: string;
     /**
      * `data-test` put on every row. Defaults to `list-row`, which is what a page with one table
@@ -51,6 +62,13 @@ const {
  * Selected row's `itemValue`, or `undefined` when the table is unbound / nothing is selected.
  */
 const modelValue = defineModel<unknown>();
+
+/**
+ * Vuetify's own sort state (`{ key, order }[]`), bound only by a caller that wants CLIENT-side
+ * sorting on this table — a short, unpaginated list, not the paginated fetches every other view
+ * makes. `v-data-table`'s own shape, passed straight through via `v-model:sort-by` below.
+ */
+const sortBy = defineModel<{ key: string; order?: boolean | 'asc' | 'desc' }[]>('sortBy');
 
 /**
  * This component's slots, read to compute {@link customHeaders}.
@@ -79,6 +97,19 @@ const isSelectable = computed(
 );
 
 /**
+ * Whether the caller wants CLIENT-side sorting at all, same detection trick as
+ * {@link isSelectable}: a `v-model:sort-by` listener is evidence a caller actually bound
+ * {@link sortBy}, which an unbound `defineModel` alone cannot tell apart from a local ref.
+ *
+ * Pagination here is server-side for every real caller today (stores own `pageSize`/
+ * `pageCurrent`), so a header sortable with nothing bound would only reorder the one PAGE this
+ * table holds, not the catalogue behind it (FA75) — hence the default of `false` below.
+ */
+const isSortable = computed(
+    () => vnodeProps !== null && vnodeProps !== undefined && 'onUpdate:sortBy' in vnodeProps
+);
+
+/**
  * The columns whose head the view renders itself.
  */
 const customHeaders = computed(() => headers.filter((header) => `header.${header.key}` in slots));
@@ -86,11 +117,9 @@ const customHeaders = computed(() => headers.filter((header) => `header.${header
 /**
  * Headers in the shape `v-data-table` expects.
  *
- * Pagination is server-side (stores own `pageSize`/`pageCurrent`), so the table
- * renders whatever it is given: sorting stays enabled, footer is hidden.
- *
- * A `synthetic` column reads no field, so there is nothing to sort it by: Vuetify would still
- * render its `<th>` focusable with a sort icon, a control that does nothing — so it is told not to.
+ * A `synthetic` column reads no field, so there is nothing to sort it by regardless of
+ * {@link isSortable}: Vuetify would still render its `<th>` focusable with a sort icon, a control
+ * that does nothing — so it is told not to.
  *
  * @returns The column definitions, stripped of any extra property.
  */
@@ -99,7 +128,7 @@ const vuetifyHeaders = computed(() =>
         title: header.title,
         key: header.key,
         width: header.width,
-        sortable: !('synthetic' in header)
+        sortable: isSortable.value && !('synthetic' in header)
     }))
 );
 
@@ -173,6 +202,7 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
             it to its built-in stacked card-per-row layout below 600px ('sm').
         -->
         <v-data-table
+            v-model:sort-by="sortBy"
             :headers="vuetifyHeaders"
             :items="items"
             :item-value="itemValue"

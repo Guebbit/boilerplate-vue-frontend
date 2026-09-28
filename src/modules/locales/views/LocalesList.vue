@@ -16,7 +16,6 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { deactivateThenDelete } from '@/modules/locales/domain/deactivate-then-delete.ts';
@@ -209,7 +208,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="locales-list-page" :title="t('locales-list-page.page-title')">
+    <div id="locales-list-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <p class="max-w-2xl text-sm opacity-70">{{ t('locales-list-page.intro') }}</p>
             <v-spacer />
@@ -371,5 +370,5 @@ onMounted(() => {
                 <InlineErrorAlert :message="saveError" data-test="language-form-error" />
             </template>
         </LanguageFormDialog>
-    </LayoutDefault>
+    </div>
 </template>

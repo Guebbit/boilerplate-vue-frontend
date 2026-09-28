@@ -15,7 +15,6 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -128,10 +127,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault
-        id="account-delete-confirm-page"
-        :title="t('account-delete-confirm-page.page-title')"
-    >
+    <div id="account-delete-confirm-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <v-alert type="warning" class="mb-6">
                 {{ t('account-delete-confirm-page.warning-message') }}
@@ -167,5 +163,5 @@ const submitForm = () => {
                 </v-btn>
             </div>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

@@ -17,7 +17,6 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
@@ -160,10 +159,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault
-        id="password-reset-confirm-page"
-        :title="t('password-reset-confirm-page.page-title')"
-    >
+    <div id="password-reset-confirm-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
@@ -224,5 +220,5 @@ const submitForm = () => {
                 </v-btn>
             </div>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

@@ -359,9 +359,12 @@ ones a sweep cannot express:
     invented schemas, and the per-domain facts live in `src/modules/<name>/tests/`.
 
 What the suite does cover is the neighbouring ground: `registry.spec.ts` sweeps every enabled module
-for the invariants — every navigation entry points at a route that module declares, the registry is
-a DAG with no unknown or duplicate name, every module ships the same set of locales — without ever
-naming a domain. That is not a substitute for actually deleting a folder.
+for the invariants — every navigation entry points at a route that module declares, every module
+ships the same set of locales — without ever naming a domain. Two DAG-shaped checks run alongside
+it rather than inside it, both at every `npm run lint`, not only in a test run: `collectModuleRoutes`
+(`kernel/registry.ts`) refuses two routes sharing a name or a normalised path, at any depth; a
+top-level check in `eslint.config.ts` refuses a cycle in `MODULE_EDGES` itself, or a key naming a
+module already deleted. That is not a substitute for actually deleting a folder.
 
 ## Related pages
 

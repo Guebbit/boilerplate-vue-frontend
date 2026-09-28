@@ -22,7 +22,6 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import {
     Calendar,
     Circle,
@@ -239,7 +238,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="product-target" :title="t('product-target-page.page-title')">
+    <div id="product-target">
         <ItemDetailLayout accent="primary">
             <template #hero>
                 <ItemDetailHero
@@ -406,5 +405,5 @@ onMounted(() => {
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

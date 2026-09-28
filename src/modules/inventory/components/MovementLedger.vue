@@ -13,6 +13,7 @@ export default {
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -20,6 +21,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { linkIfRouted } from '@/app/router/navigation.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
 import {
@@ -39,6 +41,22 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  * write into this same ledger, so the button that drives it lives beside what it explains.
  */
 const { t } = useI18n();
+
+/**
+ * Router instance, for the `hasRoute` check below — `orders` is not a coupling this module's
+ * `MODULE_EDGES` entry declares, so the reference column's link is guarded rather than assumed
+ * (FA86).
+ */
+const router = useRouter();
+
+/**
+ * A movement's own order page, or `undefined` when this build ships no `orders` module — the
+ * reference then renders as plain text instead of a dead link.
+ *
+ * @param reference - The movement's own reference, an order id, when it has one at all.
+ */
+const orderTargetTo = (reference: string | null | undefined) =>
+    reference ? linkIfRouted(router, 'OrderTarget', { id: reference }) : undefined;
 
 /**
  * Toast dispatcher for the sweep action's outcome.
@@ -339,20 +357,16 @@ onMounted(() => {
 
         <template v-slot:[`item.reference`]="{ item }">
             <span class="text-xs opacity-75">
-                <!-- A reference is an order id, so it links to the order it explains. -->
+                <!-- A reference is an order id, so it links to the order it explains — when this
+                     build actually ships one to link to. -->
                 <router-link
-                    v-if="item.reference"
-                    :to="
-                        routerLinkI18n({
-                            name: 'OrderTarget',
-                            params: { id: item.reference }
-                        })
-                    "
+                    v-if="orderTargetTo(item.reference)"
+                    :to="routerLinkI18n(orderTargetTo(item.reference)!)"
                     class="underline"
                 >
                     {{ item.reference }}
                 </router-link>
-                <span v-else>{{ EMPTY_VALUE }}</span>
+                <span v-else>{{ item.reference ?? EMPTY_VALUE }}</span>
             </span>
         </template>
 

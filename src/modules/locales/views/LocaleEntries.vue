@@ -19,7 +19,6 @@ import { omit } from 'lodash-es';
 import { ArrowLeft, BookOpenText, Check, Download, Plus, Search, Upload } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { downloadBlob } from '@guebbit/js-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { refreshRunningLocale } from '@/infrastructure/locale-overrides.ts';
@@ -360,7 +359,7 @@ const handleExport = () => {
 </script>
 
 <template>
-    <LayoutDefault id="locale-entries-page" :title="t('locale-entries-page.page-title')">
+    <div id="locale-entries-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <v-btn
                 variant="text"
@@ -558,5 +557,5 @@ const handleExport = () => {
                 <InlineErrorAlert :message="importError" data-test="entries-import-error" />
             </template>
         </EntriesImportDialog>
-    </LayoutDefault>
+    </div>
 </template>

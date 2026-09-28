@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { linkIfRouted } from '@/app/router/navigation.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
@@ -28,7 +29,6 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
 import type { CartItem, PaymentMethodId } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
@@ -208,10 +208,14 @@ const runCheckout = () =>
             // against a client-side navigation to `/orders/undefined` either way.
             if (!result?.order.id) return;
             addMessage(t('cart-page.success-checkout'));
+            // `orders` is not one of cart's declared MODULE_EDGES reaches (FA86) — a build
+            // shipping no orders module still completes the checkout, just with nowhere to SHOW
+            // the order it just placed, so it lands Home instead of throwing.
+            const target = linkIfRouted(router, 'OrderTarget', { id: result.order.id }) ?? {
+                name: 'Home'
+            };
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
-            void router.push(
-                routerLinkI18n({ name: 'OrderTarget', params: { id: result.order.id } })
-            );
+            void router.push(routerLinkI18n(target));
         })
         .catch((error: unknown) => {
             const verdict = classifyCheckoutError(error);
@@ -339,7 +343,7 @@ onMounted(() =>
 </script>
 
 <template>
-    <LayoutDefault id="cart-page" :title="t('cart-page.page-title')">
+    <div id="cart-page">
         <v-empty-state v-if="cartItems.length === 0" :title="t('cart-page.empty-cart')">
             <template #media>
                 <ShoppingCart :size="64" class="text-secondary" aria-hidden="true" />
@@ -578,5 +582,5 @@ onMounted(() =>
                 </v-card>
             </div>
         </div>
-    </LayoutDefault>
+    </div>
 </template>

@@ -8,7 +8,7 @@ import { storeToRefs } from 'pinia';
 import { useSessionStore, type PermissionAction } from '@/infrastructure/session';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
-import { loginContinueTo } from '@/app/router/navigation';
+import { signInLocation } from '@/app/router/navigation';
 import { translate } from '@/i18n';
 import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
 
@@ -62,10 +62,23 @@ declare module 'vue-router' {
         can?: RoutePermission;
         /**
          * Dictionary key of the page's title, resolved into `document.title` after every
-         * navigation (WCAG 2.4.2) and read out by the route announcer. Absent on the redirect
-         * shells that never render a page.
+         * navigation (WCAG 2.4.2), read out by the route announcer, and translated by
+         * `LayoutDefault` (the route's own layout, FA70) as the default page hero. Absent on the
+         * redirect shells that never render a page.
          */
         title?: string;
+        /**
+         * Whether `LayoutDefault` renders its own generic hero for this route at all — `false`,
+         * the default, everywhere the page hero is just `title` translated. A route whose hero
+         * needs something a static key cannot give (a dynamic title, richer markup) sets this
+         * and renders its own `ui/molecules/PageHeader.vue` instead, at the top of its own body.
+         */
+        customHero?: boolean;
+        /**
+         * Whether `LayoutDefault` centers its content column instead of the ordinary left-aligned
+         * flow — `Error.vue`'s own case, a full-height centered empty state.
+         */
+        centered?: boolean;
     }
 }
 
@@ -152,10 +165,16 @@ export const tryRestoreAuth = (): Promise<void> => {
  *
  * @param to - Route being entered; supplies the requirement, the login `continue` target and the
  *  locale any redirect keeps.
+ * @param router - The active router, so a redirect to sign-in can check `hasRoute` first —
+ *  see {@link signInLocation}. A product with no `account` module ships no `Login` route, and
+ *  pushing an unresolvable name throws inside vue-router instead of landing anywhere.
  * @returns `undefined` to let the navigation through, or the location to redirect to. A blocked
  *  visitor is always told why — silently bouncing someone reads as a broken link.
  */
-export const enforceRouteAccess = (to: RouteLocationNormalized) => {
+export const enforceRouteAccess = (
+    to: RouteLocationNormalized,
+    router: { hasRoute: (name: string) => boolean }
+) => {
     const session = useSessionStore();
     const { isAuth } = storeToRefs(session);
     // `can` is a plain function on the store, not a ref — `storeToRefs` drops actions, so it is
@@ -172,10 +191,11 @@ export const enforceRouteAccess = (to: RouteLocationNormalized) => {
         return { name: 'Home', params: { locale } };
     }
 
-    // Anonymous: recoverable by logging in, so keep where they were going.
+    // Anonymous: recoverable by logging in, so keep where they were going — or Home, on a
+    // build with no `account` module at all.
     if (!visitor.isAuth) {
         addMessage(translate('navigation.error-not-logged'));
-        return loginContinueTo(to.fullPath, locale);
+        return signInLocation(router, to.fullPath, locale);
     }
 
     // Authenticated but not permitted: logging in again cannot help, so no `continue` target.

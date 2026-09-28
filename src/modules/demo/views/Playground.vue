@@ -18,7 +18,6 @@ import { storeToRefs } from 'pinia';
 
 import { useDemoStore } from '@/modules/demo/store.ts';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCounterInput from '@/ui/molecules/FormCounterInput.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import ProvidedVariableCard from '@/modules/demo/components/ProvidedVariableCard.vue';
@@ -96,7 +95,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="playground-page" :title="t('playground-page.page-title')">
+    <div id="playground-page">
         <section class="mb-10 flex flex-wrap items-stretch justify-center gap-6">
             <CardMaterialStat
                 :title="t('playground-page.label-count')"
@@ -131,5 +130,5 @@ onMounted(() => {
                 {{ t('playground-page.button-test-alert') }}
             </v-btn>
         </section>
-    </LayoutDefault>
+    </div>
 </template>

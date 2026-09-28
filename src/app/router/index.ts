@@ -7,16 +7,18 @@
  */
 import { nextTick } from 'vue';
 import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-router';
-import type { RouteLocationNormalized } from 'vue-router';
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { getDefaultLocale, translate } from '@/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
 import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
+import { registerStaleDeployRecovery, recoverFromStaleDeploy } from '@/app/router/stale-deploy.ts';
+import { GENERIC_ERROR_KEY, isKnownErrorMessage } from '@/app/utils/error-messages.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
-import { collectModuleRoutes } from '@/kernel/registry';
+import { assertUniqueRoutes, collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { staticPageRouteName } from '@/app/utils/static-pages.ts';
 import { runtimeValue } from '@/infrastructure/runtime-config';
@@ -28,9 +30,67 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
  *
  * A module reaching a sibling it has no coupling rule for is checked by `eslint.config.ts`'s
  * generated `moduleCouplingRules`, so a misconfigured coupling fails on `npm run lint` rather than
- * here.
+ * here. `collectModuleRoutes` itself refuses two modules sharing a name or path (FA72); the check
+ * below widens that to the shell's own routes, right before the router is built from both.
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
+
+/**
+ * The shop's own routes under `/:locale` — Home, the four prose pages, and the Error shell —
+ * named separately from `moduleRoutes` so {@link assertUniqueRoutes} can check both against each
+ * other below, and shared with `router.spec.ts`'s "app + module" duplicate-route cases.
+ */
+const shellChildRoutes: RouteRecordRaw[] = [
+    {
+        path: '',
+        name: 'Home',
+        meta: { title: 'home-page.page-title' },
+        component: () => import('@/app/views/Home.vue')
+    },
+    /*
+     * The shop's prose pages, one component each — every word comes from the dictionary, the
+     * structure (feature grid, FAQ topics, legal clauses) from the component. Declared by the
+     * shell rather than a module because they are about the SHOP, not a domain.
+     */
+    {
+        path: 'about',
+        name: staticPageRouteName('about'),
+        meta: { title: 'static-pages.about.title' },
+        component: () => import('@/app/views/AboutPage.vue')
+    },
+    {
+        path: 'faq',
+        name: staticPageRouteName('faq'),
+        meta: { title: 'static-pages.faq.title' },
+        component: () => import('@/app/views/FaqPage.vue')
+    },
+    {
+        path: 'terms',
+        name: staticPageRouteName('terms'),
+        meta: { title: 'static-pages.terms.title' },
+        component: () => import('@/app/views/TermsPage.vue')
+    },
+    {
+        path: 'privacy',
+        name: staticPageRouteName('privacy'),
+        meta: { title: 'static-pages.privacy.title' },
+        component: () => import('@/app/views/PrivacyPage.vue')
+    },
+    {
+        path: 'error/:status/:message?',
+        name: 'Error',
+        // `customHero`: the title carries the HTTP-like status beside it, richer than a plain
+        // translated key — `Error.vue` renders its own `PageHeader`. `centered`: a full-height
+        // centered empty state, not the ordinary left-aligned page flow.
+        meta: { title: 'error-page.page-title', customHero: true, centered: true },
+        component: () => import('@/app/views/Error.vue'),
+        props: true
+    }
+];
+
+// Runs at import time, before `createRouter` below: a module colliding with a sibling OR with one
+// of the shell's own names/paths must fail the build rather than silently losing a route.
+assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes]);
 
 /**
  * The name that follows every page title in the browser tab, and stands alone on a route that
@@ -100,60 +160,32 @@ const router = createRouter({
             component: RouterView,
             children: [
                 {
+                    // Empty path: matches `/:locale` exactly, adding nothing of its own — the
+                    // nested-layout pattern vue-router itself documents. `LayoutDefault` becomes
+                    // the actual rendered component for every real page (FA70), mounted once
+                    // rather than by each view individually, with its OWN `<RouterView />` for
+                    // whichever child below actually matched. Lazy, same as every route below it:
+                    // it pulls in the nav, both banners and the dialog hosts, and an eager import
+                    // here would put all of that in the entry chunk instead of a route chunk
+                    // (FA94's own budget, `entry-chunk-budget.spec.ts`).
                     path: '',
-                    name: 'Home',
-                    meta: { title: 'home-page.page-title' },
-                    component: () => import('@/app/views/Home.vue')
-                },
-                /*
-                 * The shop's prose pages, one component each — every word comes from the
-                 * dictionary, the structure (feature grid, FAQ topics, legal clauses) from the
-                 * component. Declared by the shell rather than a module because they are about
-                 * the SHOP, not a domain.
-                 */
-                {
-                    path: 'about',
-                    name: staticPageRouteName('about'),
-                    meta: { title: 'static-pages.about.title' },
-                    component: () => import('@/app/views/AboutPage.vue')
-                },
-                {
-                    path: 'faq',
-                    name: staticPageRouteName('faq'),
-                    meta: { title: 'static-pages.faq.title' },
-                    component: () => import('@/app/views/FaqPage.vue')
-                },
-                {
-                    path: 'terms',
-                    name: staticPageRouteName('terms'),
-                    meta: { title: 'static-pages.terms.title' },
-                    component: () => import('@/app/views/TermsPage.vue')
-                },
-                {
-                    path: 'privacy',
-                    name: staticPageRouteName('privacy'),
-                    meta: { title: 'static-pages.privacy.title' },
-                    component: () => import('@/app/views/PrivacyPage.vue')
-                },
-                {
-                    path: 'error/:status/:message?',
-                    name: 'Error',
-                    meta: { title: 'error-page.page-title' },
-                    component: () => import('@/app/views/Error.vue'),
-                    props: true
-                },
-                ...moduleRoutes,
+                    component: () => import('@/app/layouts/LayoutDefault.vue'),
+                    children: [
+                        ...shellChildRoutes,
+                        ...moduleRoutes,
 
-                {
-                    path: ':catchAll(.*)',
-                    redirect: (to) => ({
-                        name: 'Error',
-                        params: {
-                            locale: to.params.locale as string,
-                            status: 404,
-                            message: 'error-page.not-found'
+                        {
+                            path: ':catchAll(.*)',
+                            redirect: (to) => ({
+                                name: 'Error',
+                                params: {
+                                    locale: to.params.locale as string,
+                                    status: 404,
+                                    message: 'error-page.not-found'
+                                }
+                            })
                         }
-                    })
+                    ]
                 }
             ]
         },
@@ -192,6 +224,10 @@ const readLocaleParameter = ({ params }: RouteLocationNormalized): string | unde
  *  left — which sent people back where they already were after logging in.
  * @returns The `router.push` promise for the chosen redirect.
  */
+// Vite: registered once, at module load, so it is armed before the very first lazy route import
+// can fail. See `stale-deploy.ts` for why the actual reload happens in `onError` below instead.
+registerStaleDeployRecovery(globalThis);
+
 router.onError((error: Error, to: RouteLocationNormalized) => {
     // Report unhandled router errors to Grafana Faro (if initialised) so they
     // are visible in the error dashboard rather than silently swallowed.
@@ -201,6 +237,12 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     } catch {
         // Store may not be initialised yet in edge cases — ignore.
     }
+
+    // A stale chunk from a deploy that has since moved on: reload once, to the SAME target, and
+    // stop here — an open tab should recover silently rather than show an error a fresh load
+    // would not have hit at all.
+    if (recoverFromStaleDeploy(to.fullPath, (url) => location.assign(url), sessionStorage))
+        return Promise.resolve();
 
     // The aborted target first, then the route being left, then the default. The second step
     // matters when the failure came from a route that carries no `:locale` param of its own.
@@ -222,15 +264,22 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     // than whatever `error.message` holds. An absent or >=500 status collapses to a plain 500.
     const isClientError = status !== undefined && status < 500;
 
+    // Only a message THIS app's own dictionary owns reaches the page, the URL and Umami's
+    // pageview — anything else (a caught fetch failure's text, a stale chunk's own URL) folds
+    // into the generic key instead of leaking verbatim (FA74).
+    const message =
+        status === 403
+            ? 'navigation.error-forbidden'
+            : error.message && isKnownErrorMessage(error.message)
+              ? error.message
+              : GENERIC_ERROR_KEY;
+
     return router.push({
         name: 'Error',
         params: {
             locale,
             status: isClientError ? status : 500,
-            message:
-                status === 403
-                    ? 'navigation.error-forbidden'
-                    : error.message || 'error-page.unexpected'
+            message
         }
     });
 });
@@ -252,7 +301,7 @@ router.beforeEach((to, from) => {
     logger.debug('router', `Navigating from ${from.path} to ${to.path}`);
     // Silently restore token + profile on every navigation so that public pages
     // (e.g. ProductsList) render the correct admin controls after a page reload.
-    return tryRestoreAuth().then(() => enforceRouteAccess(to));
+    return tryRestoreAuth().then(() => enforceRouteAccess(to, router));
 });
 
 /**
@@ -291,9 +340,9 @@ router.afterEach((to, from, failure) => {
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
     if (!isPageChange) return;
 
-    // The new view mounts its own layout, and that layout consumes the request on mount. The
-    // tick below covers the other case — a navigation that kept the same view (detail → detail),
-    // where nothing remounts and nobody else would consume it.
+    // `LayoutDefault` mounts once for the whole session (FA70), not per view, so its own
+    // `onMounted` can no longer consume this — this is the SOLE place that does, on every page
+    // change. The tick waits for the new page's own content to actually be in the DOM first.
     requestMainFocus();
     void nextTick(consumeMainFocus);
 });

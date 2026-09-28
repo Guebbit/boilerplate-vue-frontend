@@ -31,7 +31,6 @@ import {
     isSameOriginPath
 } from '@/modules/account/composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -205,7 +204,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault id="login-page" :title="t('login-page.page-title')">
+    <div id="login-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
@@ -291,5 +290,5 @@ const submitForm = () => {
                 </v-btn>
             </template>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

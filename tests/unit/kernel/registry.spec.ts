@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import {
+    assertUniqueRoutes,
     collectLocaleSensitiveResets,
     collectModuleNavigation,
     collectModuleRoutes,
@@ -40,6 +41,49 @@ describe('collectModuleRoutes', () => {
         const routes = collectModuleRoutes([makeModule('products'), makeModule('cart')]);
 
         expect(routes.map((route) => route.name)).toEqual(['products', 'cart']);
+    });
+
+    it('refuses two modules declaring the same route name', () => {
+        // Both `makeModule` calls below happen to reuse 'cart' as both name and path — the bug
+        // is exactly that vue-router would keep only the later one, silently.
+        expect(() =>
+            collectModuleRoutes([makeModule('cart'), makeModule('wishlist'), makeModule('cart')])
+        ).toThrow('Two routes declare the same name: "cart".');
+    });
+});
+
+describe('assertUniqueRoutes', () => {
+    it('passes routes through unremarked when every name and path is unique', () => {
+        expect(() => assertUniqueRoutes([makeRoute('products'), makeRoute('cart')])).not.toThrow();
+    });
+
+    it('refuses two routes sharing a name even with different paths', () => {
+        const clashing: RouteRecordRaw = { ...makeRoute('cart'), path: 'basket' };
+
+        expect(() => assertUniqueRoutes([makeRoute('cart'), clashing])).toThrow(
+            'Two routes declare the same name: "cart".'
+        );
+    });
+
+    it('refuses two routes sharing a normalised path even with different names', () => {
+        const clashing: RouteRecordRaw = { ...makeRoute('basket'), path: '/cart/' };
+
+        expect(() => assertUniqueRoutes([makeRoute('cart'), clashing])).toThrow(
+            'Two routes declare the same path: "cart".'
+        );
+    });
+
+    it('checks a nested route against its ancestors and its siblings, by full path', () => {
+        const parent: RouteRecordRaw = {
+            path: 'account',
+            name: 'Account',
+            component: { template: '<div />' },
+            children: [makeRoute('profile'), { ...makeRoute('billing'), path: 'profile' }]
+        };
+
+        expect(() => assertUniqueRoutes([parent])).toThrow(
+            'Two routes declare the same path: "account/profile".'
+        );
     });
 });
 

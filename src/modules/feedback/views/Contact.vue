@@ -14,7 +14,6 @@ import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -133,7 +132,7 @@ const submitForm = () =>
 </script>
 
 <template>
-    <LayoutDefault id="contact-page" :title="t('contact-page.page-title')">
+    <div id="contact-page">
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <p class="mb-4 opacity-80">{{ t('contact-page.intro') }}</p>
             <form ref="formElement" novalidate @submit.prevent="submitForm">
@@ -206,5 +205,5 @@ const submitForm = () =>
                 />
             </form>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

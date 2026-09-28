@@ -20,7 +20,6 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { webhookCreateSchema } from '@/modules/webhooks/schemas.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -138,7 +137,7 @@ const handleSecretDone = () => {
 </script>
 
 <template>
-    <LayoutDefault id="webhook-create-page" :title="t('webhook-create-page.page-title')">
+    <div id="webhook-create-page">
         <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
             <SecretRevealModal
                 v-if="revealedSecret"
@@ -190,5 +189,5 @@ const handleSecretDone = () => {
 
             <InlineErrorAlert :message="submitError" data-test="webhook-create-error" />
         </FormCard>
-    </LayoutDefault>
+    </div>
 </template>

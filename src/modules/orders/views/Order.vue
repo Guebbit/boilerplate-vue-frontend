@@ -15,6 +15,7 @@ export default {
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { linkIfRouted } from '@/app/router/navigation.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -22,7 +23,6 @@ import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import {
     Calendar,
     Circle,
@@ -108,6 +108,19 @@ const { loading: reorderLoading } = storeToRefs(useCartStore());
  * Router instance, for the navigations this file performs.
  */
 const router = useRouter();
+
+/**
+ * The audit-log link the history button offers, for the order currently shown — `undefined`,
+ * hiding the button entirely, on a build with no `admin` module: `admin` is not a coupling this
+ * module's `MODULE_EDGES` entry declares, so it is guarded rather than assumed (FA86). The
+ * button's own `session.can('read', 'AuditLog')` check stays alongside it — one answers "does
+ * this build even have an audit log", the other "may THIS visitor see it".
+ */
+const auditLogTo = computed(() =>
+    currentOrder.value
+        ? linkIfRouted(router, 'AuditLog', undefined, { target: currentOrder.value.id })
+        : undefined
+);
 
 /**
  * Whether the cancel is still open, as the SERVER answers it for this caller.
@@ -320,7 +333,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
-    <LayoutDefault id="order-target" :title="t('order-target-page.page-title')">
+    <div id="order-target">
         <ItemDetailLayout accent="tertiary">
             <template #hero>
                 <ItemDetailHero
@@ -665,14 +678,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     {{ t('order-target-page.button-go-to-list') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentOrder && session.can('read', 'AuditLog')"
+                    v-if="auditLogTo && session.can('read', 'AuditLog')"
                     variant="tonal"
                     data-test="order-history"
-                    :to="routerLinkI18n({ name: 'AuditLog', query: { target: currentOrder.id } })"
+                    :to="routerLinkI18n(auditLogTo)"
                 >
                     {{ t('order-target-page.button-history') }}
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

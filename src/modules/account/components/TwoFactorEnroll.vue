@@ -23,7 +23,10 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import QRCode from 'qrcode';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
+import {
+    useExpiryCountdown,
+    useCountdownAnnouncement
+} from '@/modules/account/composables/use-countdown.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -126,6 +129,16 @@ const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(
 );
 
 /**
+ * The delivered code's OWN screen-reader announcement (FA82) — 60/30/10s and expired only, never
+ * every tick. The visible ticking number beside it is not itself a live region.
+ */
+const { announcement: setupExpiryAnnouncement } = useCountdownAnnouncement(
+    secondsUntilSetupExpires,
+    (seconds) => t('two-factor.code-expires-in', { seconds }),
+    () => t('two-factor.code-expired')
+);
+
+/**
  * The code being typed, proved by {@link handleConfirm}.
  */
 const code = ref('');
@@ -188,7 +201,10 @@ const handleConfirm = () => {
                 <p class="mb-2">
                     {{ t('two-factor.setup-email-intro', { target: setup.sentTo }) }}
                 </p>
-                <p v-if="delivery" role="status" class="mb-2 text-sm opacity-70">
+                <!-- Ticking countdown, NOT a live region — re-rendering `role="status"` every
+                     second is what used to flood a screen reader with "59… 58… 57…" (FA82). The
+                     paired live region right below speaks only at 60/30/10s and expired. -->
+                <p v-if="delivery" class="mb-1 text-sm opacity-70">
                     {{
                         secondsUntilSetupExpires > 0
                             ? t('two-factor.code-expires-in', {
@@ -196,6 +212,9 @@ const handleConfirm = () => {
                               })
                             : t('two-factor.code-expired')
                     }}
+                </p>
+                <p v-if="delivery" role="status" class="sr-only mb-1">
+                    {{ setupExpiryAnnouncement }}
                 </p>
                 <v-btn
                     variant="text"

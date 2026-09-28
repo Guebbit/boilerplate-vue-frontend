@@ -13,9 +13,7 @@ export default {
  * the board's `history` emit into the ledger's exposed `focusProduct`.
  */
 import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
 import StockBoard from '@/modules/inventory/components/StockBoard.vue';
 import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
@@ -32,8 +30,6 @@ import { useProductsStore } from '@/modules/products';
  * disagree. `StockBoard` and `MovementLedger` both read `useInventoryStore()` directly, so that
  * reactivity carries the write from one to the other with no wiring of this page's own.
  */
-const { t } = useI18n();
-
 /**
  * The ledger child instance, so its exposed `focusProduct` can be called from the board's emit.
  */
@@ -57,7 +53,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="inventory-page" :title="t('inventory-page.page-title')">
+    <div id="inventory-page">
         <div class="mb-6 grid gap-4 lg:grid-cols-2">
             <StockMovementForm mode="receipt" />
             <StockMovementForm mode="adjust" />
@@ -66,5 +62,5 @@ onMounted(() => {
         <StockBoard @history="(productId) => movementLedger?.focusProduct(productId)" />
 
         <MovementLedger ref="movementLedger" />
-    </LayoutDefault>
+    </div>
 </template>

@@ -19,7 +19,6 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { webhookEditSchema } from '@/modules/webhooks/schemas.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -167,7 +166,7 @@ watchSubscription(() => id);
 </script>
 
 <template>
-    <LayoutDefault id="webhook-edit-page" :title="t('webhook-edit-page.page-title')">
+    <div id="webhook-edit-page">
         <ItemDetailLayout accent="secondary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -271,5 +270,5 @@ watchSubscription(() => id);
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

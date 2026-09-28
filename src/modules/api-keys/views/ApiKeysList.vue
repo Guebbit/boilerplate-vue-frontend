@@ -24,7 +24,6 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDate, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { ApiKey } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -150,7 +149,7 @@ const handleRevoke = (apiKey: ApiKey) =>
 </script>
 
 <template>
-    <LayoutDefault id="api-keys-list-page" :title="t('api-keys-list-page.page-title')">
+    <div id="api-keys-list-page">
         <div class="mb-6 flex flex-wrap items-center gap-2">
             <PageSizeSelect
                 v-model="pageSize"
@@ -246,5 +245,5 @@ const handleRevoke = (apiKey: ApiKey) =>
         </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
-    </LayoutDefault>
+    </div>
 </template>

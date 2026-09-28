@@ -18,7 +18,6 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useApiKeysStore } from '@/modules/api-keys/store';
 import { apiKeyCreateSchema } from '@/modules/api-keys/schemas.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -151,7 +150,7 @@ const handleSecretDone = () => {
 </script>
 
 <template>
-    <LayoutDefault id="api-key-create-page" :title="t('api-key-create-page.page-title')">
+    <div id="api-key-create-page">
         <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
             <SecretRevealModal
                 v-if="revealedSecret"
@@ -202,5 +201,5 @@ const handleSecretDone = () => {
 
             <InlineErrorAlert :message="submitError" data-test="api-key-create-error" />
         </FormCard>
-    </LayoutDefault>
+    </div>
 </template>

@@ -82,3 +82,65 @@ export const useCountdown = (deadline: Ref<number | undefined>) => {
  */
 export const useExpiryCountdown = (expiresAt: Ref<string | undefined>) =>
     useCountdown(computed(() => (expiresAt.value ? Date.parse(expiresAt.value) : undefined)));
+
+/**
+ * Whole-second marks {@link useCountdownAnnouncement} speaks at — not every tick, which is what
+ * floods a screen reader (FA82). `0` doubles as "expired".
+ *
+ * Ascending, not the 60/30/10/expired order a reader hears them in: the lookup below wants the
+ * TIGHTEST mark still `>=` the current second count, which `Array#find`'s first-match semantics
+ * only give straight from an ascending list — descending would match 60 for every value down to
+ * 31, never reaching 30 at all.
+ */
+const ANNOUNCEMENT_THRESHOLDS = [0, 10, 30, 60] as const;
+
+/**
+ * A countdown's own text for a screen reader, updated only at {@link ANNOUNCEMENT_THRESHOLDS}
+ * rather than every tick.
+ *
+ * A `role="status"` region re-rendered every second reads "expires in 299… 298… 297…"
+ * continuously to anyone using one — this is meant for a SEPARATE region from the visible
+ * ticking number, which stays outside any live region. Bands rather than exact hits: `secondsLeft`
+ * dropping straight from 65 to 25 (a stalled tab, a GC pause skipping a tick) still announces the
+ * 30s mark once, rather than staying silent because the tick that would have hit it exactly never
+ * happened.
+ *
+ * @param secondsLeft - {@link useCountdown}'s own return, ticking every second.
+ * @param message - Renders the seconds remaining into copy, e.g. "expires in {seconds}s" — called
+ *  with the THRESHOLD crossed (60/30/10), not the exact second.
+ * @param expiredMessage - Announced once `secondsLeft` reaches `0` — a getter, like `message`, so
+ *  a locale switch mid-countdown is read at the moment it actually fires rather than captured
+ *  once from whatever locale was active when this composable was set up.
+ * @returns `announcement`, holding its text between threshold crossings — an emptied live region
+ *  announces nothing, so the last threshold's text stays put until the next one, or forever once
+ *  expired.
+ */
+export const useCountdownAnnouncement = (
+    secondsLeft: Ref<number>,
+    message: (seconds: number) => string,
+    expiredMessage: () => string
+) => {
+    const announcement = ref<string>();
+
+    /**
+     * The threshold last announced — read alongside the watcher below so a threshold already
+     * spoken is never repeated while `secondsLeft` sits inside its band.
+     */
+    let announcedThreshold: number | undefined;
+
+    // `flush: 'sync'` for the same reason `useCountdown`'s own deadline watch uses it: the
+    // announcement should update in step with `secondsLeft`, not one flush cycle behind it.
+    watch(
+        secondsLeft,
+        (seconds) => {
+            const threshold = ANNOUNCEMENT_THRESHOLDS.find((mark) => seconds <= mark);
+            if (threshold === undefined || threshold === announcedThreshold) return;
+
+            announcedThreshold = threshold;
+            announcement.value = threshold > 0 ? message(threshold) : expiredMessage();
+        },
+        { immediate: true, flush: 'sync' }
+    );
+
+    return { announcement };
+};

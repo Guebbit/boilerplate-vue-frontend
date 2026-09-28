@@ -23,7 +23,6 @@ import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages, translate } from '@/i18n';
 import { z } from 'zod';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -193,7 +192,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
+    <div id="user-create-page">
         <FormCard
             ref="card"
             :submit-label="t('user-create-page.button-submit')"
@@ -263,5 +262,5 @@ const submitForm = () => {
 
             <InlineErrorAlert :message="submitError" data-test="user-create-submit-error" />
         </FormCard>
-    </LayoutDefault>
+    </div>
 </template>

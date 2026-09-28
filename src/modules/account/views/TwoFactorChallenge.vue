@@ -13,17 +13,19 @@ export default {
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
-import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.ts';
+import {
+    useExpiryCountdown,
+    useCountdownAnnouncement
+} from '@/modules/account/composables/use-countdown.ts';
 import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
 /**
  * Translation function.
@@ -67,6 +69,16 @@ const { redirectAfterLogin } = usePostLoginRedirect();
  */
 const { secondsLeft: secondsUntilChallengeExpires } = useExpiryCountdown(
     computed(() => challenge.value?.expiresAt)
+);
+
+/**
+ * The challenge countdown's OWN screen-reader announcement (FA82) — 60/30/10s and expired only,
+ * never every tick. The visible ticking number beside it is not itself a live region.
+ */
+const { announcement: challengeExpiryAnnouncement } = useCountdownAnnouncement(
+    secondsUntilChallengeExpires,
+    (seconds) => t('two-factor-challenge-page.expires-in', { seconds }),
+    () => t('two-factor-challenge-page.expired')
 );
 
 /**
@@ -163,11 +175,7 @@ onUnmounted(twoFactor.clearChallenge);
 </script>
 
 <template>
-    <LayoutDefault
-        v-if="challenge"
-        id="two-factor-challenge-page"
-        :title="t('two-factor-challenge-page.page-title')"
-    >
+    <div v-if="challenge" id="two-factor-challenge-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <p class="mb-4 opacity-80">{{ t('two-factor-challenge-page.intro') }}</p>
 
@@ -229,9 +237,11 @@ onUnmounted(twoFactor.clearChallenge);
                     data-test="two-factor-challenge-code"
                 />
 
-                <!-- Live region: the challenge's own countdown, distinct from the resend cooldown
-                     above. Announces politely rather than interrupting typing. -->
-                <p role="status" class="mb-4 text-sm opacity-70">
+                <!-- The challenge's own ticking countdown, distinct from the resend cooldown
+                     above — NOT a live region: re-rendering `role="status"` every second is what
+                     used to flood a screen reader with "299… 298… 297…" (FA82). The paired live
+                     region right below speaks only at 60/30/10s and expired. -->
+                <p class="mb-1 text-sm opacity-70">
                     {{
                         secondsUntilChallengeExpires > 0
                             ? t('two-factor-challenge-page.expires-in', {
@@ -240,6 +250,15 @@ onUnmounted(twoFactor.clearChallenge);
                             : t('two-factor-challenge-page.expired')
                     }}
                 </p>
+                <p role="status" class="sr-only">{{ challengeExpiryAnnouncement }}</p>
+
+                <RouterLink
+                    v-if="secondsUntilChallengeExpires <= 0"
+                    :to="routerLinkI18n({ name: 'Login' })"
+                    class="text-link mb-4 block text-sm hover:underline"
+                >
+                    {{ t('two-factor-challenge-page.link-back-to-login') }}
+                </RouterLink>
 
                 <v-btn
                     type="submit"
@@ -274,5 +293,5 @@ onUnmounted(twoFactor.clearChallenge);
                 </v-btn>
             </div>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

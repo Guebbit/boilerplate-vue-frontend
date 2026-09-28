@@ -14,7 +14,6 @@ export default {
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { usersSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -104,10 +103,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault
-        id="password-reset-request-page"
-        :title="t('password-reset-request-page.page-title')"
-    >
+    <div id="password-reset-request-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
@@ -142,5 +138,5 @@ const submitForm = () => {
                 </v-btn>
             </div>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

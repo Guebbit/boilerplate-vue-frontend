@@ -226,9 +226,16 @@ const menuItems = computed(() => ({
 const accountBadge = computed(() => menuItems.value.account.find((item) => item.badge)?.badge);
 
 /**
- * Navigates to the logout route, ending the session.
+ * Navigates to the logout route, ending the session — or Home when this build carries no
+ * `account` module at all, same reasoning as {@link hasSignIn}: an unresolvable route name
+ * throws inside vue-router rather than landing anywhere.
  */
-const logout = () => router.push(routerLinkI18n({ name: 'Logout' }));
+const logout = () =>
+    router.push(
+        router.hasRoute('Logout')
+            ? routerLinkI18n({ name: 'Logout' })
+            : routerLinkI18n({ name: 'Home' })
+    );
 
 /**
  * Vuetify theme controller, used to read/toggle light vs dark.

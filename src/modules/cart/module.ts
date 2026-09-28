@@ -23,12 +23,18 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
  * move itself is a wishlist endpoint, and this store is only asked to refetch. Either way the cart
  * is the one publishing a store, while the modules it depends on publish components and schemas.
  *
- * Three arrows go out, all `published-language`: `delivery`, whose `ShippingSelector` the checkout
- * mounts without ever learning what a shipping rate is; `payments`, whose
+ * Four arrows go out. Three are `published-language`: `delivery`, whose `ShippingSelector` the
+ * checkout mounts without ever learning what a shipping rate is; `payments`, whose
  * `PaymentMethodSelector` the checkout mounts the same way — this store never learns what a
  * payment method costs to offer, only which ids exist; and `account`, whose `AddressPicker` the
  * checkout mounts when the chosen method needs an address, reusing that module's own add-address
  * dialog rather than knowing anything about the address book itself.
+ *
+ * The fourth, `products`, is the one real cycle in `MODULE_EDGES` today: `store.ts`'s
+ * `getProductById` reads a line's current title/price, read-only, against `products`'s own
+ * arrow into this module for "add to cart" — a genuine two-way coupling, not an oversight, and
+ * grandfathered past `assertAcyclicModuleEdges` (`scripts/module-edges.ts`) until it is either
+ * merged into one module or split by which side owns the state, per `docs/theory/layers.md`.
  *
  * Checkout is the one screen where price, stock, address and shipping have to agree at once,
  * and the only place this client holds a multi-step flow of its own. Every other module points

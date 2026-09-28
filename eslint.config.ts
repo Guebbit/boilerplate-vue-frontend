@@ -13,7 +13,7 @@ import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
-import { MODULE_EDGES } from './scripts/module-edges';
+import { assertAcyclicModuleEdges, KNOWN_CYCLE_EDGES, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
 
 /**
@@ -41,47 +41,54 @@ const shopModuleNames = Object.entries(MODULE_GROUPS)
  * block negates the module's own path, because a module reaches its own files by the same absolute
  * `@/` spelling used everywhere else in this codebase.
  */
-const moduleBoundaryRules = readdirSync(fileURLToPath(new URL('src/modules', import.meta.url)), {
+const moduleFolderNames = readdirSync(fileURLToPath(new URL('src/modules', import.meta.url)), {
     withFileTypes: true
 })
     .filter((entry) => entry.isDirectory())
-    .map(({ name }) => {
-        const reaches = MODULE_EDGES[name] ?? [];
-        const isFoundation = MODULE_GROUPS[name] === 'foundation';
-        return {
-            files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
-            rules: {
-                'no-restricted-imports': [
-                    'error',
-                    {
-                        patterns: [
-                            {
-                                group: ['@/modules/*/*', `!@/modules/${name}/**`],
-                                message:
-                                    'Import a sibling module through its public barrel (@/modules/<name>), never its internals.'
-                            },
-                            {
-                                group: [
-                                    '@/modules/*',
-                                    `!@/modules/${name}`,
-                                    ...reaches.map((reach) => `!@/modules/${reach}`)
-                                ],
-                                message: `${name} may reach ${reaches.join(', ') || 'no sibling'}. A new one is a new coupling: add it to MODULE_EDGES in eslint.config.ts and say in this module's docblock what it reaches for and why — or find a way not to need it.`
-                            },
-                            ...(isFoundation && shopModuleNames.length > 0
-                                ? [
-                                      {
-                                          group: shopModuleNames.map((shop) => `@/modules/${shop}`),
-                                          message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
-                                      }
-                                  ]
-                                : [])
-                        ]
-                    }
-                ]
-            }
-        };
-    });
+    .map(({ name }) => name);
+
+// A cycle, or a key naming a module already deleted, must fail every `npm run lint` — see FA73.
+// `moduleBoundaryRules` below only ever checks a module against its OWN `MODULE_EDGES` entry, so
+// this is the one place the graph is walked as a whole.
+assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames, KNOWN_CYCLE_EDGES);
+
+const moduleBoundaryRules = moduleFolderNames.map((name) => {
+    const reaches = MODULE_EDGES[name] ?? [];
+    const isFoundation = MODULE_GROUPS[name] === 'foundation';
+    return {
+        files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['@/modules/*/*', `!@/modules/${name}/**`],
+                            message:
+                                'Import a sibling module through its public barrel (@/modules/<name>), never its internals.'
+                        },
+                        {
+                            group: [
+                                '@/modules/*',
+                                `!@/modules/${name}`,
+                                ...reaches.map((reach) => `!@/modules/${reach}`)
+                            ],
+                            message: `${name} may reach ${reaches.join(', ') || 'no sibling'}. A new one is a new coupling: add it to MODULE_EDGES in eslint.config.ts and say in this module's docblock what it reaches for and why — or find a way not to need it.`
+                        },
+                        ...(isFoundation && shopModuleNames.length > 0
+                            ? [
+                                  {
+                                      group: shopModuleNames.map((shop) => `@/modules/${shop}`),
+                                      message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
+                                  }
+                              ]
+                            : [])
+                    ]
+                }
+            ]
+        }
+    };
+});
 
 /**
  * The domain layer: `src/modules/<name>/domain/**` — pure rules.

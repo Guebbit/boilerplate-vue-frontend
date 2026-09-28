@@ -23,7 +23,6 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { supportedLanguages } from '@/i18n';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
 import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue';
@@ -308,7 +307,7 @@ const cancelPendingEmail = () => {
 </script>
 
 <template>
-    <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
+    <div id="profile-page">
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <ProfileAvatar />
 
@@ -427,5 +426,5 @@ const cancelPendingEmail = () => {
             <ProfileExportData />
             <ProfileDeleteAccount />
         </div>
-    </LayoutDefault>
+    </div>
 </template>

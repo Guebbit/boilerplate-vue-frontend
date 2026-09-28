@@ -28,7 +28,6 @@ import {
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -396,7 +395,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault id="product-edit-page" :title="t('product-edit-page.page-title')">
+    <div id="product-edit-page">
         <ItemDetailLayout accent="primary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -624,5 +623,5 @@ const submitForm = () => {
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

@@ -25,7 +25,11 @@ export default [
         meta: {
             access: 'auth',
             can: ['read', 'AuditLog'],
-            title: 'audit-log-page.page-title'
+            title: 'audit-log-page.page-title',
+            // The rendered title carries a scoped record's own id when `?target=` is set — richer
+            // than the static key above, which `document.title` still uses. AuditLog.vue renders
+            // its own `PageHeader` for it.
+            customHero: true
         },
         component: () => import('@/modules/observability/views/AuditLog.vue')
     },

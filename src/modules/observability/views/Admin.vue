@@ -12,7 +12,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/modules/observability/composables/use-admin-observability.ts';
 import type { AdminTabKey } from '@/modules/observability/types.ts';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/modules/observability/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -82,7 +81,7 @@ const confirmClearExpiredTokens = () =>
 </script>
 
 <template>
-    <LayoutDefault id="admin-page" :title="t('admin-page.page-title')">
+    <div id="admin-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <v-tabs v-model="activeTab" color="primary">
                 <v-tab value="overview">{{ t('admin-page.tab-overview') }}</v-tab>
@@ -115,5 +114,5 @@ const confirmClearExpiredTokens = () =>
                 <AdminAuditTab endpoint="platform" />
             </v-tabs-window-item>
         </v-tabs-window>
-    </LayoutDefault>
+    </div>
 </template>

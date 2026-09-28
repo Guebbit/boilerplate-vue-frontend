@@ -16,7 +16,6 @@ export default {
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
@@ -119,7 +118,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="oauth-callback-page" :title="t('oauth.callback-page.page-title')">
+    <div id="oauth-callback-page">
         <v-card v-if="errorMessage" class="mx-auto mt-16 w-full max-w-md p-8 text-center">
             <p class="mb-4">{{ errorMessage }}</p>
             <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="text-link hover:underline">
@@ -129,5 +128,5 @@ onMounted(() => {
         <div v-else class="mx-auto mt-16 flex w-full max-w-md justify-center p-8">
             <v-progress-circular indeterminate color="primary" />
         </div>
-    </LayoutDefault>
+    </div>
 </template>
