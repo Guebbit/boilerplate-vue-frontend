@@ -21,6 +21,7 @@ import {
 } from '@api';
 import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { useProfileStore } from './profile.ts';
 
 /**
@@ -154,6 +155,13 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const reauthing = computed(() => getLoading(`${loadingKey}:reauth`));
 
     /**
+     * `Idempotency-Key` for `signup` (B10) — a network error or a 5xx during the round trip
+     * resends the SAME key on retry, so a lost response never creates two accounts; any other
+     * outcome (success, or a 422 like "email taken") mints a fresh one for the next attempt.
+     */
+    const signupIdempotencyKey = useIdempotencyKey();
+
+    /**
      * Registers a new user account, as multipart when a profile image is attached
      * and as plain JSON otherwise.
      *
@@ -207,7 +215,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                           analyticsConsent,
                           imageUpload
                       },
-                      options
+                      signupIdempotencyKey.withKey(options)
                   )
                 : apiSignup(
                       {
@@ -218,9 +226,17 @@ export const useAuthStore = defineStore('accountAuth', () => {
                           termsAccepted,
                           analyticsConsent
                       },
-                      options
+                      signupIdempotencyKey.withKey(options)
                   )
-            ).then(() => undefined)
+            )
+                .then(() => {
+                    signupIdempotencyKey.settle();
+                    return undefined;
+                })
+                .catch((error: unknown) => {
+                    signupIdempotencyKey.settle(error);
+                    throw error;
+                })
         );
 
     /**

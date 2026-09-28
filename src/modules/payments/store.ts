@@ -20,6 +20,7 @@ import {
 } from '@api';
 import type { Order, Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
+import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 
 /**
  * The payment behind an order — one record, mirrored from whatever the API last said.
@@ -50,6 +51,30 @@ export const usePaymentsStore = defineStore('payments', () => {
      * The current order's payment, or undefined while none exists (no intent yet, or a guest).
      */
     const payment = ref<Payment | undefined>();
+
+    /**
+     * `Idempotency-Key` for the intent/confirm pair `payForOrder` sends (B10) — the contract
+     * declares the header on both `POST /payments/intent` and `POST /payments/{id}/confirm`, so
+     * both keys settle together: a retry after a network error or a 5xx at EITHER step resends
+     * both unchanged, and any other outcome (success, or a decline the visitor answers with a
+     * different method) mints a fresh pair for whatever `payForOrder` is called with next.
+     */
+    const intentIdempotencyKey = useIdempotencyKey();
+
+    /**
+     * `Idempotency-Key` for `confirmPayment`, settled alongside {@link intentIdempotencyKey}.
+     */
+    const confirmIdempotencyKey = useIdempotencyKey();
+
+    /**
+     * `Idempotency-Key` for `refundForOrder`'s `POST /payments/order/{orderId}/refund`.
+     */
+    const refundIdempotencyKey = useIdempotencyKey();
+
+    /**
+     * `Idempotency-Key` for `recordOfflinePayment`'s `POST /payments/order/{orderId}/offline`.
+     */
+    const offlineIdempotencyKey = useIdempotencyKey();
 
     /**
      * The methods this deployment offers — `card` always, `bank_transfer` once the deployment has
@@ -118,13 +143,24 @@ export const usePaymentsStore = defineStore('payments', () => {
         confirmOptions?: AxiosRequestConfig
     ) =>
         fetchAny(() =>
-            createPaymentIntent({ orderId })
+            createPaymentIntent({ orderId }, intentIdempotencyKey.withKey())
                 .then((intentResponse) =>
-                    confirmPayment(intentResponse.data.id, { paymentMethodRef }, confirmOptions)
+                    confirmPayment(
+                        intentResponse.data.id,
+                        { paymentMethodRef },
+                        confirmIdempotencyKey.withKey(confirmOptions)
+                    )
                 )
                 .then((response) => {
+                    intentIdempotencyKey.settle();
+                    confirmIdempotencyKey.settle();
                     payment.value = response.data;
                     return payment.value;
+                })
+                .catch((error: unknown) => {
+                    intentIdempotencyKey.settle(error);
+                    confirmIdempotencyKey.settle(error);
+                    throw error;
                 })
         );
 
@@ -158,10 +194,16 @@ export const usePaymentsStore = defineStore('payments', () => {
      */
     const refundForOrder = (orderId: string) =>
         fetchAny(() =>
-            refundPaymentByOrder(orderId).then((response) => {
-                payment.value = response.data;
-                return payment.value;
-            })
+            refundPaymentByOrder(orderId, refundIdempotencyKey.withKey())
+                .then((response) => {
+                    refundIdempotencyKey.settle();
+                    payment.value = response.data;
+                    return payment.value;
+                })
+                .catch((error: unknown) => {
+                    refundIdempotencyKey.settle(error);
+                    throw error;
+                })
         );
 
     /**
@@ -178,10 +220,16 @@ export const usePaymentsStore = defineStore('payments', () => {
      */
     const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) =>
         fetchAny(() =>
-            recordOfflinePaymentRequest(orderId, body).then((response) => {
-                payment.value = response.data;
-                return payment.value;
-            })
+            recordOfflinePaymentRequest(orderId, body, offlineIdempotencyKey.withKey())
+                .then((response) => {
+                    offlineIdempotencyKey.settle();
+                    payment.value = response.data;
+                    return payment.value;
+                })
+                .catch((error: unknown) => {
+                    offlineIdempotencyKey.settle(error);
+                    throw error;
+                })
         );
 
     /**
