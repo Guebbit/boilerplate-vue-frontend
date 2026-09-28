@@ -14,6 +14,7 @@ name: CI
 #                     current, and the paired backend still agrees with it
 #   - correctness     typecheck, build, test-unit, test-e2e
 #   - supply chain    audit
+#   - adoption        demo-strip-measure — report-only, like audit (FE-D4)
 #
 # The slow and non-hermetic suites live elsewhere on a nightly schedule: e2e-live.yml (against a
 # real backend) and mutation.yml.
@@ -305,6 +306,37 @@ jobs:
 
             - name: Audit production dependencies
               run: npm audit --omit=dev --audit-level=high
+
+    demo-strip-measure:
+        # FE-D4 step 1 (the backend's G-D2 twin): how far "the demo shop is removable" actually
+        # is, measured rather than assumed. Deletes every module src/demo-modules.ts names from a
+        # scratch copy and runs type-check-only, lint and build-only against what's left.
+        #
+        # Deliberately NOT in the `ci` gate's `needs:` below, the same reasoning as `audit`: this
+        # is not expected to be green on its own — it does not edit src/modules.ts, so the
+        # dangling imports it leaves behind ARE the measurement, the same punch list `npm run
+        # demo:remove` (which DOES edit it) clears. A red square here is a signal to look, not a
+        # blocked PR.
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+            - name: Setup Node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Measure the demo-shop strip
+              run: npm run measure:demo-strip
 
     api-freshness:
         # Verify the committed generated API client is up-to-date with openapi.yaml.
@@ -650,6 +682,8 @@ jobs:
             - test-e2e
             - test-e2e-live
             - spec-identity
+            # `audit` and `demo-strip-measure` are deliberately excluded — see their own comments
+            # above.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:

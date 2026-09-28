@@ -21,14 +21,14 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEMO_MODULE_NAMES } from '../../src/demo-modules';
+import { readDemoModuleNames } from './demo-module-names';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** Delete every demo module's own folder under `src/modules/`. */
-const removeModuleFolders = (): void => {
-    for (const name of DEMO_MODULE_NAMES) {
+const removeModuleFolders = (names: readonly string[]): void => {
+    for (const name of names) {
         const folder = path.join(REPO_ROOT, 'src', 'modules', name);
         rmSync(folder, { recursive: true, force: true });
         console.info(`  src/modules/${name}/ — deleted`);
@@ -40,11 +40,11 @@ const removeModuleFolders = (): void => {
  * Every demo module name is a single word, so an import (`import cart from …`) and an array
  * element (`    cart,`) both spell it the same bare way — one filter catches both shapes.
  */
-const stripModuleRegistry = (): void => {
+const stripModuleRegistry = (names: readonly string[]): void => {
     const file = path.join(REPO_ROOT, 'src', 'modules.ts');
     const before = readFileSync(file, 'utf8');
-    const importPattern = new RegExp(`from '@/modules/(?:${DEMO_MODULE_NAMES.join('|')})/module'`);
-    const entryPattern = new RegExp(String.raw`^\s*(?:${DEMO_MODULE_NAMES.join('|')}),?\s*$`);
+    const importPattern = new RegExp(`from '@/modules/(?:${names.join('|')})/module'`);
+    const entryPattern = new RegExp(String.raw`^\s*(?:${names.join('|')}),?\s*$`);
 
     const after = before
         .split('\n')
@@ -53,10 +53,14 @@ const stripModuleRegistry = (): void => {
         .join('\n');
 
     writeFileSync(file, after);
-    console.info(`  src/modules.ts — removed ${DEMO_MODULE_NAMES.join(', ')}`);
+    console.info(`  src/modules.ts — removed ${names.join(', ')}`);
 };
 
-/** Delete `src/demo-modules.ts` itself — its whole job was naming modules that no longer exist. */
+/**
+ * Delete `src/demo-modules.ts` and its reader — their whole job was naming modules that no longer
+ * exist. `scripts/demo/demo-module-names.ts` stays: `measure-demo-strip.ts` still needs it for
+ * whatever this build's module set becomes next.
+ */
 const removeManifest = (): void => {
     rmSync(path.join(REPO_ROOT, 'src', 'demo-modules.ts'), { force: true });
     rmSync(path.join(REPO_ROOT, 'tests', 'unit', 'demo-modules.spec.ts'), { force: true });
@@ -68,10 +72,8 @@ const removeManifest = (): void => {
  * module's path, via `git grep` — same technique, same reasoning, as the backend's own
  * `demo-remove.ts`.
  */
-const findResidueTests = (): string[] => {
-    const pattern = DEMO_MODULE_NAMES.map((name) => `@/modules/${name}/|modules/${name}/`).join(
-        '|'
-    );
+const findResidueTests = (names: readonly string[]): string[] => {
+    const pattern = names.map((name) => `@/modules/${name}/|modules/${name}/`).join('|');
     try {
         // `git grep`: -l file names only, -E extended regex, -I skip binary. Exit 1 = no matches.
         // https://git-scm.com/docs/git-grep
@@ -88,21 +90,22 @@ const findResidueTests = (): string[] => {
     }
 };
 
+const demoModuleNames = readDemoModuleNames(REPO_ROOT);
 console.info(
-    `[demo-remove] removing ${DEMO_MODULE_NAMES.length} demo module(s): ${DEMO_MODULE_NAMES.join(', ')}`
+    `[demo-remove] removing ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
 );
 console.info('\n[demo-remove] module folders:');
-removeModuleFolders();
+removeModuleFolders(demoModuleNames);
 
 console.info('\n[demo-remove] the module registry:');
-stripModuleRegistry();
+stripModuleRegistry(demoModuleNames);
 removeManifest();
 
 console.info('\n[demo-remove] done. Next:');
 console.info('  1. npm run type-check-only   — the module-owned specs are already gone');
 console.info('  2. npm run lint              — catches an import eslint-plugin-boundaries refused');
 
-const residue = findResidueTests();
+const residue = findResidueTests(demoModuleNames);
 if (residue.length > 0) {
     console.info('\n[demo-remove] candidates, from a grep for the deleted modules:');
     for (const file of residue) console.info(`  ${file}`);
