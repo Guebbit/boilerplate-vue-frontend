@@ -143,7 +143,8 @@
         "expires-in": "This code expires in {seconds}s.",
         "expired": "This challenge has expired. Please log in again.",
         "link-use-backup-code": "Use a backup code instead",
-        "link-use-code": "Use a method code instead"
+        "link-use-code": "Use a method code instead",
+        "link-back-to-login": "Back to login"
     },
     "password-reset-request-page": {
         "page-title": "Reset password",
