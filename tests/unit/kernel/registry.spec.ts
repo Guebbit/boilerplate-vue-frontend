@@ -25,6 +25,9 @@ const makeRoute = (name: string): RouteRecordRaw => ({
     component: { template: '<div />' }
 });
 
+/** A placeholder for `AppNavigationEntry.icon`, required and otherwise irrelevant here. */
+const STUB_ICON = { template: '<svg />' };
+
 const makeModule = (name: string): AppModule => ({
     name,
     routes: [makeRoute(name)]
@@ -90,8 +93,10 @@ describe('assertUniqueRoutes', () => {
 describe('collectModuleNavigation', () => {
     it('concatenates the navigation entries of every enabled module', () => {
         const entries = collectModuleNavigation([
-            withNav('products', [{ name: 'ProductsList', label: 'products', order: 60 }]),
-            withNav('cart', [{ name: 'Cart', label: 'cart', order: 80 }])
+            withNav('products', [
+                { name: 'ProductsList', label: 'products', order: 60, icon: STUB_ICON }
+            ]),
+            withNav('cart', [{ name: 'Cart', label: 'cart', order: 80, icon: STUB_ICON }])
         ]);
 
         expect(entries.map(({ name }) => name)).toEqual(['ProductsList', 'Cart']);
@@ -100,7 +105,7 @@ describe('collectModuleNavigation', () => {
     it('skips a module that contributes none, rather than yielding a hole', () => {
         const entries = collectModuleNavigation([
             makeModule('orders'),
-            withNav('cart', [{ name: 'Cart', label: 'cart' }])
+            withNav('cart', [{ name: 'Cart', label: 'cart', icon: STUB_ICON }])
         ]);
 
         expect(entries).toHaveLength(1);
@@ -115,9 +120,9 @@ describe('collectModuleNavigation', () => {
 describe('sortNavigation', () => {
     it('ranks by order regardless of module registration order', () => {
         const sorted = sortNavigation([
-            { name: 'Cart', label: 'cart', order: 80 },
-            { name: 'Home', label: 'home', order: 10 },
-            { name: 'Admin', label: 'admin', order: 40 }
+            { name: 'Cart', label: 'cart', order: 80, icon: STUB_ICON },
+            { name: 'Home', label: 'home', order: 10, icon: STUB_ICON },
+            { name: 'Admin', label: 'admin', order: 40, icon: STUB_ICON }
         ]);
 
         expect(sorted.map(({ name }) => name)).toEqual(['Home', 'Admin', 'Cart']);
@@ -125,8 +130,8 @@ describe('sortNavigation', () => {
 
     it('puts an entry with no order last, so an unconsidered module cannot jump the menu', () => {
         const sorted = sortNavigation([
-            { name: 'Unranked', label: 'unranked' },
-            { name: 'Home', label: 'home', order: 10 }
+            { name: 'Unranked', label: 'unranked', icon: STUB_ICON },
+            { name: 'Home', label: 'home', order: 10, icon: STUB_ICON }
         ]);
 
         expect(sorted.map(({ name }) => name)).toEqual(['Home', 'Unranked']);
@@ -134,8 +139,8 @@ describe('sortNavigation', () => {
 
     it('does not mutate its argument', () => {
         const entries: AppNavigationEntry[] = [
-            { name: 'Cart', label: 'cart', order: 80 },
-            { name: 'Home', label: 'home', order: 10 }
+            { name: 'Cart', label: 'cart', order: 80, icon: STUB_ICON },
+            { name: 'Home', label: 'home', order: 10, icon: STUB_ICON }
         ];
 
         sortNavigation(entries);
@@ -166,9 +171,9 @@ describe('collectLocaleSensitiveResets', () => {
 describe('groupNavigation', () => {
     it('buckets entries by section, defaulting an unplaced one to main', () => {
         const groups = groupNavigation([
-            { name: 'Profile', label: 'profile', order: 70, section: 'account' },
-            { name: 'Home', label: 'home', order: 10 },
-            { name: 'Admin', label: 'admin', order: 40, section: 'admin' }
+            { name: 'Profile', label: 'profile', order: 70, section: 'account', icon: STUB_ICON },
+            { name: 'Home', label: 'home', order: 10, icon: STUB_ICON },
+            { name: 'Admin', label: 'admin', order: 40, section: 'admin', icon: STUB_ICON }
         ]);
 
         expect(groups.main.map(({ name }) => name)).toEqual(['Home']);
@@ -182,9 +187,9 @@ describe('groupNavigation', () => {
 
     it('ranks inside each section by order, not by registration order', () => {
         const groups = groupNavigation([
-            { name: 'Cart', label: 'cart', order: 80, section: 'account' },
-            { name: 'Profile', label: 'profile', order: 70, section: 'account' },
-            { name: 'Unranked', label: 'unranked', section: 'account' }
+            { name: 'Cart', label: 'cart', order: 80, section: 'account', icon: STUB_ICON },
+            { name: 'Profile', label: 'profile', order: 70, section: 'account', icon: STUB_ICON },
+            { name: 'Unranked', label: 'unranked', section: 'account', icon: STUB_ICON }
         ]);
 
         expect(groups.account.map(({ name }) => name)).toEqual(['Profile', 'Cart', 'Unranked']);
@@ -192,8 +197,8 @@ describe('groupNavigation', () => {
 
     it('does not mutate its argument', () => {
         const entries: AppNavigationEntry[] = [
-            { name: 'Cart', label: 'cart', order: 80 },
-            { name: 'Home', label: 'home', order: 10 }
+            { name: 'Cart', label: 'cart', order: 80, icon: STUB_ICON },
+            { name: 'Home', label: 'home', order: 10, icon: STUB_ICON }
         ];
 
         groupNavigation(entries);

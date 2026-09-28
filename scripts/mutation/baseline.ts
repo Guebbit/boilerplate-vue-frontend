@@ -200,6 +200,29 @@ export const nextBaseline = (
     return { generatedAt: new Date().toISOString(), files };
 };
 
+/**
+ * Human-readable summary of files with no baseline entry at all. Empty string when there are none.
+ *
+ * A `new` verdict is silence, not success: nothing has ever measured whether this file's tests
+ * catch anything. `--update` is the only way to accept that silence into the record — a plain
+ * check refuses to let it pass unremarked, which is the fix for FA125 (a file could otherwise sit
+ * at zero mutation coverage forever, because nothing ever asked).
+ */
+export const formatUnrecorded = (comparisons: FileComparison[]): string => {
+    const unrecorded = comparisons.filter(({ verdict }) => verdict === 'new');
+    if (unrecorded.length === 0) return '';
+
+    const lines = unrecorded.map(({ file, current }) => `  ${file}  (${current!.toFixed(2)}%)`);
+
+    return (
+        `${unrecorded.length} file(s) have no entry in ${MUTATION_BASELINE_PATH}:\n${lines.join('\n')}\n\n` +
+        `  Each one has run through Stryker with nothing checking whether its score holds — a file\n` +
+        `  can sit at 0% forever this way. Read the score above; if it is real coverage, record it\n` +
+        `  deliberately with \`npm run test:mutation:baseline\`, in the same commit that added the\n` +
+        `  file to the mutate scope, and say why in the commit message if the score is low.`
+    );
+};
+
 /** Human-readable summary. Empty string when nothing regressed. */
 export const formatRegressions = (comparisons: FileComparison[]): string => {
     const regressed = comparisons.filter(({ verdict }) => verdict === 'regressed');

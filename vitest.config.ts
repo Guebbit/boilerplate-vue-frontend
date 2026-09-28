@@ -131,27 +131,11 @@ export default mergeConfig(
                     // `defineStore` under `src/modules/` sits in one of exactly these two.
                     'src/modules/*/store.ts': COVERAGE_FLOOR,
                     'src/modules/*/stores/*.ts': COVERAGE_FLOOR,
-                    // Everything under guards EXCEPT authentications.ts, which is written down
-                    // below. The extglob negation is required rather than cosmetic: a file
-                    // matching two glob keys lands in BOTH groups, so an exemption listed
-                    // alongside the broad glob would still be failed by the broad glob. An
-                    // exemption has to leave the glob to be one.
-                    'src/app/guards/!(authentications).ts': COVERAGE_FLOOR,
-                    // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
-                    // pooled guards group passed 70 across the board while this file sat at 50%
-                    // branches and 55% functions, carried by its neighbours at 100%.
-                    //
-                    // Floored at the measured value rounded down, NOT at an aspiration — this is
-                    // a record of where it is, so a drop fails and an improvement can ratchet it
-                    // up. It is the guard layer, so it is also the most valuable of the three to
-                    // finish testing: the uncovered half is the failure paths of `tryRestoreAuth`
-                    // and the admin branch of `isAdmin`.
-                    'src/app/guards/authentications.ts': {
-                        statements: 75,
-                        branches: 50,
-                        functions: 55,
-                        lines: 80
-                    },
+                    // Every file under guards, `authentications.ts` included: `canAccess` gates
+                    // on `meta.can`, not on a hand-kept role flag, and both branches are exercised
+                    // (FA125 — the `isAdmin`-era exemption this glob used to carve out for it is
+                    // gone along with `isAdmin` itself).
+                    'src/app/guards/*.ts': COVERAGE_FLOOR,
                     'src/infrastructure/http/**': COVERAGE_FLOOR,
 
                     // FA131: the rest of `src/infrastructure/` had no floor at all — `session.ts`,

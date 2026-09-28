@@ -38,7 +38,9 @@ jobs:
         # that it is allowed to be slow. It should never be trimmed by narrowing `mutate`.
         timeout-minutes: 60
         permissions:
-            contents: read
+            # write: this job commits `mutation-baseline.json` back to main — see "Record this
+            # run's baseline" below (FA125).
+            contents: write
         steps:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -76,10 +78,31 @@ jobs:
             - name: Check the per-file baseline
               # The real gate. Stryker's thresholds are global — a strong file carries a weak one
               # — so this compares every file against `mutation-baseline.json` and fails naming
-              # the ones that dropped. See scripts/mutation/baseline.ts for why it is a ratchet.
+              # the ones that dropped, and now also fails naming any file the baseline has never
+              # seen at all (FA125 — a missing entry used to print "recorded" and exit 0, so a
+              # file could sit at zero mutation coverage forever without anything failing).
               id: baseline
               continue-on-error: true
               run: npm run test:mutation:check
+
+            - name: Record this run's baseline
+              # FA125's other half: the check above never had anywhere to WRITE a new or improved
+              # score, because this job had no push permission and no commit step. `--update`
+              # never lowers a regressed file (see scripts/mutation/baseline.ts's `nextBaseline`),
+              # so running it regardless of the check's outcome is safe — a regression stays
+              # failing above, it just also gets an honest, committed record of tonight's number.
+              if: always()
+              run: |
+                  npm run test:mutation:baseline
+                  git config user.name 'github-actions[bot]'
+                  git config user.email 'github-actions[bot]@users.noreply.github.com'
+                  if git diff --quiet -- mutation-baseline.json; then
+                    echo "no change to mutation-baseline.json"
+                    exit 0
+                  fi
+                  git add mutation-baseline.json
+                  git commit -m "chore(mutation): fold tonight's sweep into the baseline"
+                  git push
 
             - name: Upload mutation report
               # Uploaded even on failure: a run that trips the break threshold is exactly the

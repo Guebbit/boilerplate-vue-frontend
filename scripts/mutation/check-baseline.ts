@@ -3,19 +3,21 @@
  * CLI for the per-file mutation ratchet.
  *
  *   npm run test:mutation:check      compare the last run against mutation-baseline.json
- *   npm run test:mutation:baseline   record the last run (improvements only — see the module)
+ *   npm run test:mutation:baseline   record the last run (new and improved files — see the module)
  *
  * Reads `reports/mutation/mutation.json`, written by the `json` reporter in
  * `stryker.config.json`. Run `npm run test:mutation` first; this does not run Stryker itself,
  * deliberately, so the check is cheap enough to run twice and so a CI job can split the run and
  * the gate across steps.
  *
- * Exit codes: 0 fine, 1 a file regressed, 2 no report to read.
+ * Exit codes: 0 fine, 1 a file regressed or (without `--update`) has no baseline entry at all,
+ * 2 no report to read.
  */
 import {
     compareToBaseline,
     missingFromReport,
     formatRegressions,
+    formatUnrecorded,
     nextBaseline,
     readBaseline,
     readReport,
@@ -77,12 +79,9 @@ const counts = {
 };
 
 /*
- * New and improved files are printed even on a passing run. The ratchet is only trustworthy if
- * people can see it moving: a silent pass looks identical to a check that is not running.
+ * Improved and removed files are printed even on a passing run. The ratchet is only trustworthy
+ * if people can see it moving: a silent pass looks identical to a check that is not running.
  */
-for (const { file, current: score } of comparisons.filter(({ verdict }) => verdict === 'new'))
-    console.log(`[mutation-baseline] new file recorded: ${file} at ${score!.toFixed(2)}%`);
-
 for (const { file, baseline: before, current: after } of comparisons.filter(
     ({ verdict }) => verdict === 'improved'
 ))
@@ -93,10 +92,18 @@ for (const { file, baseline: before, current: after } of comparisons.filter(
 for (const { file } of comparisons.filter(({ verdict }) => verdict === 'removed'))
     console.log(`[mutation-baseline] no longer mutated: ${file}`);
 
-const regressions = formatRegressions(comparisons);
+// A `new` file is only ever "recorded" by `--update` — see `formatUnrecorded` for why a plain
+// check refuses to let one pass silently instead (FA125).
+if (update)
+    for (const { file, current: score } of comparisons.filter(({ verdict }) => verdict === 'new'))
+        console.log(`[mutation-baseline] new file recorded: ${file} at ${score!.toFixed(2)}%`);
 
-if (regressions) {
-    console.error(`\n[mutation-baseline] ${regressions}\n`);
+const regressions = formatRegressions(comparisons);
+const unrecorded = update ? '' : formatUnrecorded(comparisons);
+
+if (regressions || unrecorded) {
+    if (regressions) console.error(`\n[mutation-baseline] ${regressions}\n`);
+    if (unrecorded) console.error(`\n[mutation-baseline] ${unrecorded}\n`);
     // `--update` still rewrites the file, but `nextBaseline` keeps the higher of the two scores,
     // so a regressed file keeps its old baseline and stays failing until it is fixed.
     if (update) writeBaseline(nextBaseline(current, baseline));
@@ -108,7 +115,7 @@ if (update) {
     console.log(`[mutation-baseline] ${MUTATION_BASELINE_PATH} updated.`);
 }
 
-// Reached only past the `regressions` exit above, so the regressed count is zero by construction.
+// Reached only past the exit above, so nothing here is unrecorded or regressed.
 console.log(
     `[mutation-baseline] ${counts.held} held, ${counts.improved} improved, ` +
         `${counts.added} new, ${counts.removed} removed, 0 regressed.`
