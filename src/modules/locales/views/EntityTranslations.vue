@@ -24,7 +24,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { ArrowLeft } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';

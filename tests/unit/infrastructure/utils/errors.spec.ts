@@ -6,7 +6,7 @@ import {
     isTransportFailure,
     notifyErrorMessages
 } from '@/infrastructure/utils/errors.ts';
-import { loadLocale } from '@/infrastructure/i18n';
+import { loadLocale } from '@/i18n';
 import enMessages from '@/locales/en.json';
 
 /**

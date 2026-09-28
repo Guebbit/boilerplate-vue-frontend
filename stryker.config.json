@@ -15,6 +15,7 @@
     "coverageAnalysis": "perTest",
     "incremental": true,
     "mutate": [
+        "src/i18n/**/*.ts",
         "src/infrastructure/**/*.ts",
         "src/ui/dialog.ts",
         "src/app/**/*.ts",

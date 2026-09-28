@@ -13,7 +13,7 @@ export default {
  * `OrderReferenceSearch`, mounted here rather than reimplemented: the page stays a list.
  */
 import { computed } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search } from 'lucide-vue-next';

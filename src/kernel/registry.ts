@@ -19,7 +19,7 @@
 import type { Component, Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
-import type { TranslationDictionaries } from '@/infrastructure/i18n';
+import type { TranslationDictionaries } from '@/i18n';
 
 /**
  * Where an entry lives in the shell's chrome.

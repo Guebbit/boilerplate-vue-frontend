@@ -9,8 +9,8 @@ import type { ComponentPublicInstance } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';
-import { supportedLanguages } from '@/infrastructure/i18n';
-import { languageLabel } from '@/infrastructure/i18n/language-label.ts';
+import { supportedLanguages } from '@/i18n';
+import { languageLabel } from '@/i18n/language-label.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**

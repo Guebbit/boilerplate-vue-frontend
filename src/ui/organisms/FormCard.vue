@@ -16,7 +16,7 @@
  */
 import { ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * Whether the card's submit is in flight, which disables its actions.

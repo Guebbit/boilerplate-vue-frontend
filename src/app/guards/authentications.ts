@@ -9,7 +9,7 @@ import { useSessionStore, type PermissionAction } from '@/infrastructure/session
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
 import { loginContinueTo } from '@/app/router/navigation';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
 
 /**

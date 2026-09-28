@@ -9,7 +9,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
 import * as schemas from '@api/schemas';
 import AdminAuditTab from '@/modules/admin/components/AdminAuditTab.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';

@@ -11,7 +11,7 @@ import {
     formatCurrency as formatCurrencyBase,
     formatFlag as formatFlagBase
 } from '@guebbit/js-toolkit';
-import { getCurrentLocale } from '@/infrastructure/i18n';
+import { getCurrentLocale } from '@/i18n';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**

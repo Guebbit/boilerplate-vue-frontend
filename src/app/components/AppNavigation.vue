@@ -27,7 +27,7 @@ import AppNavMenu from '@/app/components/AppNavMenu.vue';
 import type { AppNavItem } from '@/app/components/AppNavMenu.vue';
 import AppNavBarLink from '@/app/components/AppNavBarLink.vue';
 import AppNavPinnedButton from '@/app/components/AppNavPinnedButton.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import {
     loginContinueTo,
     SIGN_IN_ROUTE_NAME,

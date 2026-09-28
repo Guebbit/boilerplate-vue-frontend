@@ -16,7 +16,7 @@ import type { LocaleCapability } from '@types';
 
 /**
  * `GET /locales` is 404 once `locales` is uninstalled (LOCALES_OPTIONAL_0925) — the same
- * fallback-locale-only resolution `@infrastructure/i18n`'s own `i18n` instance falls back to,
+ * fallback-locale-only resolution `@/i18n`'s own `i18n` instance falls back to,
  * so the one tab this offers names the language the UI is actually rendered in.
  */
 const configuredFallbackLocale = (): string =>
@@ -27,7 +27,7 @@ const configuredFallbackLocale = (): string =>
 /**
  * A single-tab manifest good enough for `TranslationTabs` to render a form with — everything a
  * real manifest row carries, filled with the least assuming values: this deployment can only
- * confirm the language exists (`@infrastructure/i18n` has it bundled), not what tenants or rows
+ * confirm the language exists (`@/i18n` has it bundled), not what tenants or rows
  * the (unreachable) `locales` collection would otherwise report.
  */
 const fallbackOnlyManifest = (tag: string): LocaleCapability => ({

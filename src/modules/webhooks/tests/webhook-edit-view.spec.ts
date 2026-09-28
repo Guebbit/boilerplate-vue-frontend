@@ -12,7 +12,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import WebhookEdit from '@/modules/webhooks/views/WebhookEdit.vue';
 import { useWebhooksStore } from '@/modules/webhooks/store';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

@@ -1,15 +1,45 @@
 /**
  * @module
  * Core i18n runtime: which languages exist, which are loaded, and the load/activate/merge
- * pipeline every locale switch funnels through. Bundled dictionaries are code-split per locale;
- * `locale-overrides.ts` layers the API's edited overrides on top at the edges (main.ts, router
- * guard), never here.
+ * pipeline every locale switch funnels through. Bundled dictionaries are code-split per locale.
+ *
+ * Self-contained by design (FE-D5): everything under `src/i18n/` is meant to be lifted out into
+ * its own package with minimal further work, so it knows nothing about this app — no module, no
+ * Pinia, no generated API client. `src/infrastructure/locale-overrides.ts` layers the
+ * contract-specific, API-stored overrides on top at the edges (main.ts, the router guard); that
+ * loader stays in this app because it depends on `@api`, which this package cannot.
  */
 
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { mergeWith } from 'lodash-es';
-import { runtimeValue } from '@/infrastructure/runtime-config';
+
+/**
+ * The two locale defaults a container may override after the image is built.
+ *
+ * Read straight from `window.__APP_CONFIG` — the same global `@/infrastructure/runtime-config`
+ * populates — rather than importing that module: this package is meant to be lifted out of the
+ * app whole, and that module's other keys (`API_URL`, `FARO_*`, `UMAMI_*`, …) are none of this
+ * file's business. Duplicating its two-line read is what keeps `src/i18n` from reaching into the
+ * rest of the app for a dependency that only exists because it currently lives inside it.
+ */
+interface I18nRuntimeConfig {
+    APP_DEFAULT_LOCALE?: string;
+    APP_FALLBACK_LOCALE?: string;
+}
+
+/**
+ * Reads one of {@link I18nRuntimeConfig}'s keys, trimmed, `undefined` when unset or blank — same
+ * contract as `@/infrastructure/runtime-config`'s `runtimeValue`, kept local; see there.
+ *
+ * @param name - The config key to read.
+ * @returns The trimmed value, or `undefined` when `config.js` never loaded or left it unset.
+ */
+function runtimeLocaleValue(name: keyof I18nRuntimeConfig): string | undefined {
+    const value = (globalThis as { __APP_CONFIG?: I18nRuntimeConfig }).__APP_CONFIG?.[name];
+    const trimmed = value?.trim();
+    return trimmed || undefined;
+}
 
 /**
  * Shape of one locale's message tree: nested groups of strings, with array leaves for the static
@@ -117,9 +147,10 @@ export const registerLocaleContributors = (
 export const i18n = createI18n({
     // MUST be false to use the composition API.
     legacy: false,
-    locale: runtimeValue('APP_DEFAULT_LOCALE') ?? import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
+    locale:
+        runtimeLocaleValue('APP_DEFAULT_LOCALE') ?? import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
     fallbackLocale:
-        runtimeValue('APP_FALLBACK_LOCALE') ??
+        runtimeLocaleValue('APP_FALLBACK_LOCALE') ??
         (import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined) ??
         'en',
     modifiers: {
@@ -378,7 +409,7 @@ export function getDefaultLocale() {
     // default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
     // unsupported browser language, regardless of what a deployment set it to.
     return (
-        runtimeValue('APP_DEFAULT_LOCALE') ??
+        runtimeLocaleValue('APP_DEFAULT_LOCALE') ??
         (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ??
         (i18n.global.fallbackLocale as WritableComputedRef<string>).value
     );

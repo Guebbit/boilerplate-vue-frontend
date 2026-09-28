@@ -34,7 +34,7 @@ import {
 } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { SIGN_UP_ROUTE_NAME } from '@/app/router/navigation.ts';
 import { staticPageParagraphs, staticPageRouteName } from '@/app/utils/static-pages.ts';
 

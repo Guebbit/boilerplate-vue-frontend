@@ -21,7 +21,7 @@ import { ref, nextTick } from 'vue';
 import OrderEdit from '@/modules/orders/views/OrderEdit.vue';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

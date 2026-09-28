@@ -11,7 +11,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import EntriesImportDialog from '@/modules/locales/components/EntriesImportDialog.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { LocaleTenantDescriptor } from '@types';
 import { LocaleTenantKind } from '@api';

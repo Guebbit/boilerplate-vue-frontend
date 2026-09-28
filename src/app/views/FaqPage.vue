@@ -22,7 +22,7 @@ import { useRouter } from 'vue-router';
 import { MessageSquare } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * Translation helpers: `t` for plain strings, `tm`/`rt` for the raw entry lists.

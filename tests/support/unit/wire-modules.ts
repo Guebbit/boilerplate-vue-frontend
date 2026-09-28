@@ -25,7 +25,7 @@
  */
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map';
 import { shouldValidateResponses } from '@/infrastructure/http/validate';
-import { registerLocaleContributors } from '@/infrastructure/i18n';
+import { registerLocaleContributors } from '@/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 

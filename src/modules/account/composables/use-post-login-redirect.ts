@@ -7,8 +7,8 @@
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { supportedLanguages } from '@/infrastructure/i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { supportedLanguages } from '@/i18n';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * a same-origin, relative path only — the one shape `?continue=` is ever meant to carry.

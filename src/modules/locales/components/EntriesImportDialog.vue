@@ -13,7 +13,7 @@ import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
-import type { TranslationDictionaries } from '@/infrastructure/i18n';
+import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
 import { useDialogStore } from '@/ui/dialog.ts';
 

@@ -69,7 +69,7 @@ const RUN = { seed: 20_260_808, numRuns: 200, endOnFailure: true } as const;
 const nullish = () => fc.constantFrom(null, undefined);
 
 /** The locale the formatters read. Pinned so a machine's locale cannot decide the assertions. */
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/i18n', () => ({
     getCurrentLocale: () => 'en'
 }));
 

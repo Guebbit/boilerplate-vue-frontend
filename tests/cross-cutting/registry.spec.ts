@@ -18,7 +18,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
-import type { TranslationDictionaries } from '@/infrastructure/i18n';
+import type { TranslationDictionaries } from '@/i18n';
 import { NAVIGATION_SECTIONS } from '@/kernel/registry';
 
 /** Every route name a record tree declares, at any depth. */

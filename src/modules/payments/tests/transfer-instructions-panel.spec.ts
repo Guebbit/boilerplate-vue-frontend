@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TransferInstructionsPanel from '@/modules/payments/components/TransferInstructionsPanel.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { OrderTransferInstructions } from '@types';
 

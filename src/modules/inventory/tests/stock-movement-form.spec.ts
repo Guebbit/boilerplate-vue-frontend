@@ -10,7 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 

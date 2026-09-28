@@ -12,7 +12,7 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 
-import { loadLocale } from '@/infrastructure/i18n';
+import { loadLocale } from '@/i18n';
 import {
     ACCEPTED_IMAGE_TYPES,
     ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE,

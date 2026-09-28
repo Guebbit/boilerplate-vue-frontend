@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils';
 import { IToastType } from '@guebbit/vue-toolkit';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import vuetify from '@/ui/vuetify';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import enMessages from '@/locales/en.json';
 
 // `vi.hoisted` rather than a plain top-level `const`: `@guebbit/vue-toolkit`'s own import graph

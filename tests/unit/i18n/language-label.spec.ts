@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { localeNativeNames } from '@/infrastructure/i18n';
-import { languageLabel } from '@/infrastructure/i18n/language-label.ts';
+import { localeNativeNames } from '@/i18n';
+import { languageLabel } from '@/i18n/language-label.ts';
 
 /**
  * `languageLabel` — FA27: a language the API added at runtime, which this build has no

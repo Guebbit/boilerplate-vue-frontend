@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type {

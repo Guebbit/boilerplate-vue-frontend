@@ -3,6 +3,10 @@
  * Fetch layer for the runtime half of the dictionaries: manifest + per-locale overrides, each
  * function resolving to a safe default (never rejecting) so the offline-bundled files remain the
  * floor the app always renders from.
+ *
+ * Lives in this app rather than in `@/i18n` (FE-D5) because it is contract-specific: it calls
+ * `@api`, the client generated from this app's own OpenAPI bundle, which the extractable runtime
+ * must not depend on.
  */
 
 import { getLocales, getLocaleMessages } from '@api';
@@ -15,7 +19,7 @@ import {
     supportedLanguages,
     updateLocale,
     type TranslationDictionaries
-} from './index.ts';
+} from '@/i18n';
 
 /**
  * The runtime half of this app's dictionaries: which languages exist, and what has been edited.

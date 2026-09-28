@@ -219,7 +219,7 @@ describe('the app-shaped bindings', () => {
 
     afterEach(() => {
         vi.unstubAllEnvs();
-        vi.doUnmock('@/infrastructure/i18n');
+        vi.doUnmock('@/i18n');
     });
 
     it('falls back to an em dash when VITE_APP_EMPTY_VALUE is unset', async () => {
@@ -241,7 +241,7 @@ describe('the app-shaped bindings', () => {
     it('passes undefined rather than an empty string when no locale is active', async () => {
         // `Intl` treats `undefined` as "use the runtime default" and `''` as a RangeError, so the
         // `|| undefined` is what keeps a locale-less boot from throwing on the first date.
-        vi.doMock('@/infrastructure/i18n', () => ({ getCurrentLocale: () => '' }));
+        vi.doMock('@/i18n', () => ({ getCurrentLocale: () => '' }));
 
         const { formatDateTime: withoutLocale } = await import('@/infrastructure/utils/formatters');
 

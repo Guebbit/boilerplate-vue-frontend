@@ -14,7 +14,7 @@ import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Heart, ShoppingCart } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { useCartStore } from '@/modules/cart';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

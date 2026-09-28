@@ -13,7 +13,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { useCoreStore } from '@guebbit/vue-toolkit';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

@@ -10,7 +10,7 @@ import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-
 import type { RouteLocationNormalized } from 'vue-router';
 import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
-import { getDefaultLocale, translate } from '@/infrastructure/i18n';
+import { getDefaultLocale, translate } from '@/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
 import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';

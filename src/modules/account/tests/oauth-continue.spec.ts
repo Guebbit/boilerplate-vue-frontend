@@ -12,7 +12,7 @@ import { createPinia } from 'pinia';
 import Login from '@/modules/account/views/Login.vue';
 import Signup from '@/modules/account/views/Signup.vue';
 import type { Component } from 'vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';

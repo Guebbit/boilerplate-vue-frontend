@@ -8,7 +8,7 @@ import { computed, ref, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useLocalesStore } from '@/modules/locales/store.ts';
-import { refreshRunningLocale } from '@/infrastructure/i18n/locale-overrides.ts';
+import { refreshRunningLocale } from '@/infrastructure/locale-overrides.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { LocaleTenantKind } from '@api';
 import type { LocaleEntry } from '@types';

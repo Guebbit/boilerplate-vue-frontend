@@ -42,7 +42,7 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
 
 // `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
 // mock without it throws before the refresh logic is ever reached.
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/i18n', () => ({
     getCurrentLocale: () => 'it',
     translate: (key: string) => key,
     i18n: { global: { t: (key: string) => key } }

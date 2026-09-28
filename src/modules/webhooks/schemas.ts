@@ -9,7 +9,7 @@
  * plain rule: the generated bodies have no bound constant for it (`.min(1)` inline).
  */
 import { z } from 'zod';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import { createWebhookSubscriptionBodyUrlRegExp } from '@api/schemas';
 
 /**

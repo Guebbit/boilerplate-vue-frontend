@@ -1,6 +1,6 @@
 /**
  * @module
- * Demo router guard — `src/modules/demo/guards.ts` — mocking `@/infrastructure/i18n` directly
+ * Demo router guard — `src/modules/demo/guards.ts` — mocking `@/i18n` directly
  * (translations aren't loaded yet when this guard runs), while leaving Pinia real.
  *
  * A teaching guard, scoped to the Playground route, but two of its properties are real Vue Router
@@ -34,7 +34,7 @@ const translateMock = vi.fn((key: string) => key);
  */
 const localeRef = { value: 'en' };
 
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/i18n', () => ({
     i18n: {
         global: {
             get t() {

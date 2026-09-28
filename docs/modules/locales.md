@@ -37,7 +37,7 @@ costs that one guarded link, checked rather than assumed.
 This module is the **author** half of a two-half feature, and reading it without that split is how
 you misunderstand it.
 
-The **consumer** half lives in `infrastructure/i18n/locale-overrides.ts` and needs no module at all:
+The **consumer** half lives in `infrastructure/locale-overrides.ts` and needs no module at all:
 every visitor's locale switch reads it, on every page, whether or not anyone can edit a translation.
 This module is the screens an editor edits the dictionary _through_.
 
