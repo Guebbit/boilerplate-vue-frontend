@@ -1,9 +1,5 @@
 {
     "generic": {
-        "increment": "increment | increments",
-        "count": "count | counts",
-        "user": "user | users",
-        "product": "product | products",
         "list": "list | lists",
         "loading": "loading {load}",
         "it": "italian",
@@ -16,8 +12,6 @@
         "details": "Details",
         "enabled": "Enabled",
         "disabled": "Disabled",
-        "administrator": "Administrator",
-        "standard-user": "Standard user",
         "no-data": "No data available",
         "cancel": "Cancel",
         "confirm": "Confirm",

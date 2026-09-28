@@ -128,7 +128,7 @@ describe('SHARED_FILES', () => {
     it('excludes anything this repo regenerates from a file already in the list', () => {
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
-        expect(frontendPaths).not.toContain('src/types/asyncapi.generated.ts');
+        expect(frontendPaths).not.toContain('contracts/asyncapi.generated.ts');
     });
 
     it('holds at least one pair whose paths differ between the repos', () => {

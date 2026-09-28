@@ -1,4 +1,7 @@
 {
+    "users": {
+        "user": "user | users"
+    },
     "users-list-page": {
         "page-title": "Users list",
         "button-create-user": "Create user",
@@ -123,6 +126,6 @@
         "warning-self-deactivate": "This is your own account — you will be logged out immediately, and cannot undo this yourself once it happens."
     },
     "navigation": {
-        "label-users-list": "@:generic.user @:generic.list"
+        "label-users-list": "@:users.user @:generic.list"
     }
 }

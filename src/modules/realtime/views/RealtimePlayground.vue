@@ -12,7 +12,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useRealtimeObservability } from '@/modules/realtime/use-realtime-observability';
 import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
-import type { RealtimeMetricsEntry } from '@types';
+import type { RealtimeMetricsEntry } from '@/modules/realtime/types.ts';
 
 /**
  * Localized dictionary helper.

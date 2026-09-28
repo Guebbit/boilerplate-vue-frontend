@@ -1,9 +1,5 @@
 {
     "generic": {
-        "increment": "incremento | incrementi",
-        "count": "conto | conti",
-        "user": "utente | utenti",
-        "product": "prodotto | prodotti",
         "list": "lista | liste",
         "loading": "caricamento {load}",
         "it": "italiano",
@@ -16,8 +12,6 @@
         "details": "Dettagli",
         "enabled": "Attivo",
         "disabled": "Disattivato",
-        "administrator": "Amministratore",
-        "standard-user": "Utente standard",
         "no-data": "Nessun dato disponibile",
         "cancel": "Annulla",
         "confirm": "Conferma",

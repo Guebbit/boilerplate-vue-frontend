@@ -1,7 +1,8 @@
 /**
  * @module
- * Barrel aggregating this app's types — the generated REST client's, the generated AsyncAPI
- * types, and `realtime` — behind one import path, `@/types`.
+ * Barrel aggregating this app's generated types — the REST client's and the AsyncAPI feed's —
+ * behind one import path, `@/types`. View-only types a single module owns (`realtime`,
+ * `webhooks`) live in that module's own `types.ts` instead; nothing here is module-owned.
  */
 
 // The Orval-generated REST types, re-exported so consumers import from `@/types` rather than
@@ -11,10 +12,9 @@
 // The one runtime enum a template legitimately needs lives in `./enums.ts` instead.
 export type * from '@api';
 
-// Re-export generated AsyncAPI types so consumers use a single import path. The file is named
-// after the spec it comes from — `npm run gen:asyncapi` writes it from `asyncapi.yaml` — and the
-// paired backend names its own the same way, from the full contract this repo's copy is a subset
-// of. Same generator, different input: the queue channels stay over there.
-export * from './asyncapi.generated';
-
-export * from './realtime';
+// Re-export generated AsyncAPI types so consumers use a single import path. The generated file
+// itself lives next to the REST client's output, `contracts/asyncapi.generated.ts` — both are
+// codegen output this repo commits, not source this module owns — and `npm run gen:asyncapi`
+// writes it from `asyncapi.yaml`. Same generator as the paired backend, different input: the
+// queue channels stay over there.
+export * from '../../contracts/asyncapi.generated';

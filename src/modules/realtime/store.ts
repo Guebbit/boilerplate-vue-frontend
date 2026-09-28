@@ -6,7 +6,8 @@
  */
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { RealtimeConnectionStatus, MetricsSnapshotEvent, RealtimeMetricsEntry } from '@types';
+import type { MetricsSnapshotEvent } from '@types';
+import type { RealtimeConnectionStatus, RealtimeMetricsEntry } from './types.ts';
 
 /**
  * Holds the live state of the observability metrics stream (SSE): connection

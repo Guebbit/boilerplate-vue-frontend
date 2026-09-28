@@ -33,8 +33,8 @@ connection, so everything client → server goes through the REST API instead.
 | SSE client factory              | `src/infrastructure/create-sse-client.ts`            |
 | SSE composable                  | `src/modules/realtime/use-realtime-observability.ts` |
 | Observability SSE store + state | `src/modules/realtime/store.ts`                      |
-| Generated realtime types        | `src/types/asyncapi.generated.ts` (DO NOT edit)      |
-| App-level type helpers          | `src/types/realtime.ts`                              |
+| Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)      |
+| Module-level type helpers       | `src/modules/realtime/types.ts`                      |
 | Route                           | `src/modules/realtime/views/RealtimePlayground.vue`  |
 | Route definition                | `src/modules/realtime/routes.ts`                     |
 
@@ -59,7 +59,7 @@ sequenceDiagram
 
 ## Observability event contract
 
-Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `src/types/asyncapi.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `SseEventPayload<TEventName>` narrows the payload to the matching contract type.
+Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `contracts/asyncapi.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `SseEventPayload<TEventName>` narrows the payload to the matching contract type.
 
 **Server → Client**
 

@@ -1,4 +1,7 @@
 {
+    "users": {
+        "user": "utente | utenti"
+    },
     "users-list-page": {
         "page-title": "Lista utenti",
         "button-create-user": "Crea utente",
@@ -123,6 +126,6 @@
         "warning-self-deactivate": "Questo è il tuo account — verrai disconnesso immediatamente e non potrai annullare tu stesso questa operazione una volta eseguita."
     },
     "navigation": {
-        "label-users-list": "@:generic.list @:generic.user"
+        "label-users-list": "@:generic.list @:users.user"
     }
 }

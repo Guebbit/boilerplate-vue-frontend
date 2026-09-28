@@ -1,7 +1,6 @@
 {
     "products-list-page": {
         "page-title": "Products list",
-        "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
         "button-view": "View",
         "button-edit": "Edit",
         "button-delete": "Delete",

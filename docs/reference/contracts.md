@@ -20,7 +20,7 @@ flowchart LR
     O --> Orval["npm run gen:api"]
     Orval --> C["contracts/rest/"]
     A --> Gen["npm run gen:asyncapi"]
-    Gen --> T["src/types/<br/>asyncapi.generated.ts"]
+    Gen --> T["contracts/<br/>asyncapi.generated.ts"]
     C --> Map["response-schema-map.ts"]
 
     classDef ext fill:#dcfce7,stroke:#16a34a,color:#111827;
