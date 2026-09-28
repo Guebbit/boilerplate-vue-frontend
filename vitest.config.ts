@@ -153,8 +153,72 @@ export default mergeConfig(
                         lines: 80
                     },
                     'src/infrastructure/http/**': COVERAGE_FLOOR,
-                    'src/infrastructure/utils/errors.ts': COVERAGE_FLOOR,
-                    'src/infrastructure/utils/formatters.ts': COVERAGE_FLOOR
+
+                    // FA131: the rest of `src/infrastructure/` had no floor at all — `session.ts`,
+                    // i18n and observability could regress to nothing and nothing here would say
+                    // so. `utils/**` folds in the two files that used to be listed on their own
+                    // (`errors.ts`, `formatters.ts`); both already clear 70, so nothing narrows.
+                    'src/infrastructure/*.ts': COVERAGE_FLOOR,
+                    'src/infrastructure/i18n/!(country-label).ts': COVERAGE_FLOOR,
+                    'src/infrastructure/observability/**': COVERAGE_FLOOR,
+                    'src/infrastructure/utils/**': COVERAGE_FLOOR,
+                    // Same "measured, not aspirational" record as `authentications.ts` above —
+                    // this composable's country <select> options are exercised, the sparse
+                    // "unrecognised code" branch is not.
+                    'src/infrastructure/i18n/country-label.ts': {
+                        statements: 75,
+                        branches: 50,
+                        functions: 100,
+                        lines: 75
+                    },
+
+                    // FA131: the kernel — the module registry every domain wires itself into —
+                    // had no floor either. One file today; the glob still covers whatever joins it.
+                    'src/kernel/**': COVERAGE_FLOOR,
+
+                    // FA131: pure client-side rules (`domain/`) and the store-to-component tier
+                    // (`composables/`) — the two shapes `module-file-shapes.spec.ts` already
+                    // reserves for exactly this kind of logic — carried no floor of their own.
+                    // No `domain/` file sits below 70 today, so one blanket glob covers all of them.
+                    'src/modules/*/domain/**': COVERAGE_FLOOR,
+                    // Three modules' composables sit below 70 on at least one metric; each is
+                    // excluded from the blanket below and given its own measured floor, the same
+                    // split `guards/!(authentications).ts` uses for its one exception.
+                    'src/modules/!(account|payments|products)/composables/**': COVERAGE_FLOOR,
+                    'src/modules/account/composables/!(use-method-label).ts': COVERAGE_FLOOR,
+                    'src/modules/payments/composables/!(use-order-refund).ts': COVERAGE_FLOOR,
+                    'src/modules/products/composables/!(translation-tab-errors|use-active-locales).ts':
+                        COVERAGE_FLOOR,
+                    // Only the happy path (a label already on the map) is exercised.
+                    'src/modules/account/composables/use-method-label.ts': {
+                        statements: 100,
+                        branches: 50,
+                        functions: 100,
+                        lines: 100
+                    },
+                    // The refund dialog's own error branches (an already-refunded order, a
+                    // network failure) are the uncovered half.
+                    'src/modules/payments/composables/use-order-refund.ts': {
+                        statements: 83,
+                        branches: 66,
+                        functions: 71,
+                        lines: 81
+                    },
+                    // The least-tested file this sweep found: only the single-error-per-tab case
+                    // is covered, not the multi-tab or multi-error paths.
+                    'src/modules/products/composables/translation-tab-errors.ts': {
+                        statements: 53,
+                        branches: 30,
+                        functions: 57,
+                        lines: 60
+                    },
+                    // Only the "some locale is active" branch is exercised, not "none are".
+                    'src/modules/products/composables/use-active-locales.ts': {
+                        statements: 100,
+                        branches: 66,
+                        functions: 100,
+                        lines: 100
+                    }
                 }
             }
         }
