@@ -47,15 +47,17 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
 
 /**
  * The concrete actions a screen may ask about — CASL's own vocabulary, as
- * `shared/authorization-keys.yaml` declares it. `checkout` is the one addition beyond CRUD,
- * `cart.checkout`'s action and nowhere else.
+ * `shared/authorization-keys.yaml` declares it. Beyond CRUD: `checkout` (`cart.self.checkout`),
+ * `override` (`orders.any.override`), `sweep` (`inventory.any.sweep`) and `start`
+ * (`delivery.any.start`) — one action per non-CRUD write the contract actually exposes.
  *
  * `manage` is deliberately absent from what a CLIENT may ask for: no key in the shared file
  * declares that action, and there is no wildcard of any kind to expand into one — every key
  * spells out its own concrete action, so asking for `manage` always answers no. A screen asks for
  * the action it actually performs.
  */
-export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'checkout' | 'override';
+export type PermissionAction =
+    'read' | 'create' | 'update' | 'delete' | 'checkout' | 'override' | 'sweep' | 'start';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
