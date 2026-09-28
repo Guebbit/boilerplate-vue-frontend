@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import type { StaticPageName } from '@/app/utils/static-pages.ts';
 

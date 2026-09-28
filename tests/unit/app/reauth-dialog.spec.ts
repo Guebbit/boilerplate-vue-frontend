@@ -19,7 +19,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
 const reauth = vi.fn();

@@ -8,8 +8,8 @@
  */
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { i18n } from '@/infrastructure/i18n';
-import { mergeRemoteLocales } from '@/infrastructure/i18n/locale-overrides.ts';
+import { i18n } from '@/i18n';
+import { mergeRemoteLocales } from '@/infrastructure/locale-overrides.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 import App from './App.vue';
@@ -28,7 +28,7 @@ import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
-import { registerLocaleContributors } from '@/infrastructure/i18n';
+import { registerLocaleContributors } from '@/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry.ts';
 import { enabledModules } from '@/modules.ts';
 

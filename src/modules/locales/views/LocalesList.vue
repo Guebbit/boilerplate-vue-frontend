@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia';
 import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { deactivateThenDelete } from '@/modules/locales/domain/deactivate-then-delete.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';

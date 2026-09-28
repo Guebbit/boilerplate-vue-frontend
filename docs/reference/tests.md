@@ -78,8 +78,7 @@ reconciled against a manifest field here. See
 | `tests/unit/infrastructure/http/http-validate-responses.spec.ts` | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary.                        | [OpenAPI Workflow](../api/openapi-workflow.md)   |
 | `tests/unit/infrastructure/http/url.spec.ts`                     | Query strings, absolute URLs and the leading slash — the normalisation both the schema table and the refresh exclusion list match against. | [Contracts](./contracts.md)                      |
 | `tests/unit/infrastructure/http/response-schema-map.spec.ts`     | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated.                               | [Contracts](./contracts.md)                      |
-| `tests/unit/infrastructure/i18n/i18n.spec.ts`                    | Dictionary resolution, including the array messages `tm()` and `rt()` render.                                                              | [App, Kernel & Types](./src-app.md)              |
-| `tests/unit/infrastructure/i18n/locale-overrides.spec.ts`        | Admin-edited copy overlays the bundled defaults, and removing an override restores the default.                                            | [Admin Dashboard](../tools/admin-dashboard.md)   |
+| `tests/unit/infrastructure/locale-overrides.spec.ts`             | Admin-edited copy overlays the bundled defaults, and removing an override restores the default.                                            | [Admin Dashboard](../tools/admin-dashboard.md)   |
 | `tests/unit/infrastructure/session.spec.ts`                      | The session store: what is held, what is cleared, and when.                                                                                | [Security](../tools/security.md)                 |
 | `tests/unit/infrastructure/observability.spec.ts`                | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash.                                       | [Observability](../tools/observability.md)       |
 | `tests/unit/infrastructure/create-sse-client.spec.ts`            | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount.                                                                     | [Realtime](../tools/realtime.md)                 |
@@ -88,6 +87,13 @@ reconciled against a manifest field here. See
 | `tests/unit/infrastructure/utils/formatters.property.spec.ts`    | The same, as **properties** over generated inputs rather than examples.                                                                    | [Property Testing](../tools/property-testing.md) |
 | `tests/unit/infrastructure/utils/logger.spec.ts`                 | The one module allowed to touch `console` behaves as the rest of the app assumes.                                                          | [Observability](../tools/observability.md)       |
 | `tests/unit/infrastructure/utils/uploads.spec.ts`                | The client-side limits, so a rejection happens before the request.                                                                         | [Security](../tools/security.md)                 |
+
+### `tests/unit/i18n/` — the extractable runtime (FE-D5)
+
+| File                                     | What it guarantees                                                            | Read next                           |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------- |
+| `tests/unit/i18n/i18n.spec.ts`           | Dictionary resolution, including the array messages `tm()` and `rt()` render. | [App, Kernel & Types](./src-app.md) |
+| `tests/unit/i18n/language-label.spec.ts` | A language's display name, falling through translated → native → `Intl` name. | [App, Kernel & Types](./src-app.md) |
 
 ### `tests/unit/ui/` and `tests/unit/scripts/`
 

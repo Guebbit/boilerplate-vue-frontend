@@ -16,7 +16,7 @@ export default {
  * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
  */
 import { computed, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -25,7 +25,7 @@ import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
-import { supportedLanguages } from '@/infrastructure/i18n';
+import { supportedLanguages } from '@/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';

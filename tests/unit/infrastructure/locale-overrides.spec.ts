@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as schemas from '@api/schemas';
-import { contractResponse } from '../http/orval-fixture-schema.ts';
+import { contractResponse } from './http/orval-fixture-schema.ts';
 
 /**
- * Runtime locale discovery and the override tier — `src/infrastructure/i18n/locale-overrides.ts`.
+ * Runtime locale discovery and the override tier — `src/infrastructure/locale-overrides.ts`.
  *
  * The property every test here defends is the same one: **none of this may ever be load-bearing**.
  * The bundled `src/locales/*.json` is the floor, and every function below must degrade to it — so
@@ -34,8 +34,8 @@ const {
     mergeRemoteLocales,
     withLocaleOverrides,
     refreshRunningLocale
-} = await import('@/infrastructure/i18n/locale-overrides.ts');
-const { i18n, supportedLanguages } = await import('@/infrastructure/i18n');
+} = await import('@/infrastructure/locale-overrides.ts');
+const { i18n, supportedLanguages } = await import('@/i18n');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */
 let snapshot: string[] = [];

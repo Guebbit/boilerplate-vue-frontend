@@ -5,7 +5,7 @@
  * the schema was created.
  */
 import { z } from 'zod';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 
 /**
  * Validation schemas for the locale admin's two forms.

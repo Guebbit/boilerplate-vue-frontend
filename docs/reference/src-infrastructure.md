@@ -18,7 +18,7 @@ store sits with the concern it serves, under the name of the job it does.
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
 flowchart LR
     Http["http/<br/><i>one axios instance</i>"] --> Session["session.ts<br/><i>token + viewer</i>"]
-    I18n["i18n/<br/><i>dictionaries</i>"]
+    LocaleOverrides["locale-overrides.ts<br/><i>admin-edited copy</i>"]
     Obs["observability/<br/><i>Faro · Umami</i>"]
     Sse["create-sse-client.ts<br/><i>typed EventSource</i>"]
     Utils["utils/<br/><i>errors · formatters · logger</i>"]
@@ -27,7 +27,7 @@ flowchart LR
     classDef b fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef c fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class Http,Session a;
-    class I18n,Sse b;
+    class LocaleOverrides,Sse b;
     class Obs,Utils c;
 ```
 
@@ -48,13 +48,10 @@ never build a request themselves.
 | `src/infrastructure/http/url.ts`                 | The one rule for turning a request URL into the pathname the layer matches on, so the route-schema table and the refresh exclusion list cannot recognise different sets of URLs. | [OpenAPI Workflow](../api/openapi-workflow.md)                               |
 | `src/infrastructure/http/types.ts`               | The transport's own types — the request payload shape the generated clients hand over.                                                                                           | [App, Kernel & Types](./src-app.md)                                          |
 
-## `i18n/`
-
-| File                                          | What it is                                                                                                                                                                                | Read next                                        |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `src/infrastructure/i18n/index.ts`            | The vue-i18n instance and the app's translation entry point.                                                                                                                              | [App, Kernel & Types](./src-app.md)              |
-| `src/infrastructure/i18n/locale-overrides.ts` | The runtime half of the dictionaries: which languages exist, and what an admin has edited. The bundled files are defaults; this is what lets copy change without a deploy.                | [Admin Dashboard](../tools/admin-dashboard.md)   |
-| `src/infrastructure/i18n/router-link.ts`      | The locale-aware link helper. Imported from its own path rather than re-exported by the barrel, because a barrel re-export would pull the router into every consumer of the dictionaries. | [State & Routing](../tools/state-and-routing.md) |
+The i18n runtime itself — the vue-i18n instance, locale loading, the locale-aware link helper —
+does not live here. It is `src/i18n/`, a separate, extractable tier below this one (FE-D5): see
+[Layers](../theory/layers.md#tiers). Only `locale-overrides.ts`, below, stays in `infrastructure`,
+because it is the one piece that calls the generated `@api` client.
 
 ## `observability/`
 
@@ -68,12 +65,13 @@ reports product analytics. A caller emits and never learns which one answered.
 
 ## Single-file concerns
 
-Neither has earned a folder: one file, one job, at the tier root.
+None has earned a folder: one file, one job, at the tier root.
 
 | File                                      | What it is                                                                                                                                                                                                           | Read next                                                                           |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `src/infrastructure/session.ts`           | The visitor's session: a token, and the least the app must know about whoever holds it. A Pinia store, filed under what it holds rather than under what it is built with.                                            | [Security](../tools/security.md) · [State & Routing](../tools/state-and-routing.md) |
 | `src/infrastructure/create-sse-client.ts` | The typed `EventSource` wrapper: subscribes to a stream, decodes each event against the generated realtime types, and reconnects. `EventSource` cannot set headers, which is why the stream authenticates by cookie. | [Realtime](../tools/realtime.md)                                                    |
+| `src/infrastructure/locale-overrides.ts`  | The runtime half of the dictionaries: which languages exist, and what an admin has edited. The bundled files (`src/i18n/`) are defaults; this is what lets copy change without a deploy.                             | [Admin Dashboard](../tools/admin-dashboard.md)                                      |
 
 ## `utils/`
 

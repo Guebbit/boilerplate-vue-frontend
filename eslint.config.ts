@@ -129,17 +129,29 @@ const domainPurityRules = [
 /**
  * Tier boundaries.
  *
- * The tiers are ordered `infrastructure → ui → kernel → modules`, and every arrow points one way: a
- * tier may import the ones below it and never the ones above. What each one is allowed to know:
+ * The tiers are ordered `i18n → infrastructure → ui → kernel → modules`, and every arrow points one
+ * way: a tier may import the ones below it and never the ones above. What each one is allowed to
+ * know:
  *
- *   infrastructure  nothing about this app        http client, i18n runtime, errors, formatters,
- *                                                 uploads, logger, session, observability
+ *   i18n            nothing about this app,       locale load/activate/merge, dictionary types,
+ *                   not even infrastructure       `<html lang/dir>`, locale-aware router links
+ *   infrastructure  nothing about this app        http client, errors, formatters, uploads,
+ *                                                 logger, session, observability
  *   ui              the design system, no domain  tokens, icons, and the components built on them
  *   kernel          this KIND of app, no domain   the module registry — and nothing else
  *   modules         one domain each, top to bottom
  *
- * Written out rather than generated, unlike `moduleBoundaryRules` above: there are four tiers and
+ * Written out rather than generated, unlike `moduleBoundaryRules` above: there are five tiers and
  * they are named in the architecture, so a new one is a decision rather than a folder appearing.
+ *
+ * `i18n` sits below `infrastructure` rather than beside it because `infrastructure` calls INTO it
+ * (`errors.ts`, `formatters.ts`, `uploads.ts`, the http layer — all translate a message), never the
+ * other way. It lives at `src/i18n/`, a dedicated top-level directory rather than
+ * `src/infrastructure/i18n/`, on purpose (FE-D5): the runtime is copy-pasted into two sibling
+ * repos, and a directory with no imports reaching up is what makes lifting it into its own package
+ * later a copy rather than a rewrite. `src/infrastructure/locale-overrides.ts` is the one file that
+ * stays behind — it calls `@api`, the client generated from this app's own contract, which the
+ * extractable runtime must not depend on.
  *
  * One allowance is deliberate and load-bearing: `kernel` may import `@/modules` (the singular
  * file listing which domains are in this build) but never `@/modules/<name>` — the registry is the
@@ -147,6 +159,32 @@ const domainPurityRules = [
  * route without naming one.
  */
 const tierBoundaryRules = [
+    {
+        files: ['src/i18n/**/*.{ts,mts,tsx,vue}'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                '@/infrastructure/**',
+                                '@/ui/**',
+                                '@/kernel/**',
+                                '@/app/**',
+                                '@/modules',
+                                '@/modules/**',
+                                '@api',
+                                '@api/**'
+                            ],
+                            message:
+                                'src/i18n is the extractable i18n runtime (FE-D5): it knows nothing about this app, not even infrastructure or the generated API client. A dependency that only exists because this currently lives inside the app belongs in src/infrastructure/locale-overrides.ts instead.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
     {
         files: ['src/infrastructure/**/*.{ts,mts,tsx,vue}'],
         rules: {

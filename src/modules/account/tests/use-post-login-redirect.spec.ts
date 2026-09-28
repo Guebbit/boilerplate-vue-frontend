@@ -27,12 +27,12 @@ vi.mock('vue-i18n', () => ({
     useI18n: () => ({ locale: { value: 'en' } })
 }));
 
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/i18n', () => ({
     changeLanguage: changeLanguageMock,
     supportedLanguages: ['en', 'it']
 }));
 
-vi.mock('@/infrastructure/i18n/router-link.ts', () => ({
+vi.mock('@/i18n/router-link.ts', () => ({
     routerLinkI18n: (location: unknown) => location
 }));
 

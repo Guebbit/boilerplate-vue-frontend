@@ -12,7 +12,7 @@ export default {
  */
 import { computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';

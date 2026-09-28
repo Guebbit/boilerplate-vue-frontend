@@ -5,7 +5,7 @@
  */
 
 import { storeToRefs } from 'pinia';
-import { translate, getCurrentLocale } from '@/infrastructure/i18n';
+import { translate, getCurrentLocale } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     useAnalyticsConsentStore,

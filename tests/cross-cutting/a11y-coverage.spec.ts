@@ -28,7 +28,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { supportedLanguages } from '@/infrastructure/i18n';
+import { supportedLanguages } from '@/i18n';
 
 const ROOT = process.cwd();
 const MODULES_ROOT = path.resolve(ROOT, 'src/modules');

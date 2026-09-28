@@ -11,7 +11,7 @@ import { ref, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
 import { getObservabilityHealth, getObservabilityMetricsOverview, deleteExpiredTokens } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 
 /**
  * Shape returned by {@link useAdminObservability}: the two panels' payloads and per-call

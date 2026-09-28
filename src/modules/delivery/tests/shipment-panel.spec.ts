@@ -14,7 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useCoreStore } from '@guebbit/vue-toolkit';
 import ShipmentPanel from '@/modules/delivery/components/ShipmentPanel.vue';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import { OrderStatus } from '@api';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

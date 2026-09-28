@@ -27,7 +27,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import vuetify from '@/ui/vuetify';
-import { i18n } from '@/infrastructure/i18n';
+import { i18n } from '@/i18n';
 import { ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE } from '@/infrastructure/utils/uploads';
 import { instance } from '@/infrastructure/http/client';
 

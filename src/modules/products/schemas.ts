@@ -11,7 +11,7 @@
  * which language tab owes an error badge.
  */
 import { z } from 'zod';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import { createProductBodyPriceMin } from '@api/schemas';
 
 /**

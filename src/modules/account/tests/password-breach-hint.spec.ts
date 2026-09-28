@@ -13,7 +13,7 @@ import Signup from '@/modules/account/views/Signup.vue';
 import PasswordResetConfirm from '@/modules/account/views/PasswordResetConfirm.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
 import { orvalMutator } from '@/infrastructure/http';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

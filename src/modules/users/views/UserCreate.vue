@@ -15,13 +15,13 @@ export default {
  */
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
-import { supportedLanguages, translate } from '@/infrastructure/i18n';
+import { supportedLanguages, translate } from '@/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';

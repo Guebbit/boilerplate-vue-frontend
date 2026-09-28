@@ -5,7 +5,7 @@
  * isn't) reachable this early in navigation.
  */
 import { storeToRefs } from 'pinia';
-import { i18n } from '@/infrastructure/i18n';
+import { i18n } from '@/i18n';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useDemoStore } from '@/modules/demo/store.ts';
 

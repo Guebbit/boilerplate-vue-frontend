@@ -10,7 +10,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import axe from 'axe-core';
 import vuetify from '@/ui/vuetify';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 
 const LOCALES = [

@@ -11,7 +11,7 @@ import { useAsyncAction } from '@guebbit/vue-toolkit';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
 import type { AuditEntryItem, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 
 /**
  * Which trail to read: `platform` is the installation-wide log (`GET /observability/audit`,

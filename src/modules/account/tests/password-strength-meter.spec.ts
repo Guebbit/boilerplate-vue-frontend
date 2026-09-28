@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

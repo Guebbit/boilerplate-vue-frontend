@@ -26,7 +26,7 @@ import {
     replayWebhookDelivery,
     listWebhookEvents
 } from '@api';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import type { AxiosRequestConfig } from 'axios';
 import type {
     WebhookSubscription,

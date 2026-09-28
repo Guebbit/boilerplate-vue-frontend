@@ -12,7 +12,7 @@ export default {
  * its fields plus the secret-ring actions (rotate/remove) and delete.
  */
 import { computed, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';

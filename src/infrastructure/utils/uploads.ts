@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { formatFileSize, isAcceptedFileType, isWithinFileSize } from '@guebbit/js-toolkit';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**

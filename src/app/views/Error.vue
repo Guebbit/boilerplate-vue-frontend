@@ -18,7 +18,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { SearchX } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * Params supplied by the route: the HTTP-like status shown in the title, and the message —

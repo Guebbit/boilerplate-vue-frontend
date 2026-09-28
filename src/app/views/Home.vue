@@ -24,7 +24,7 @@ import type { Component } from 'vue';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * Translation function for the page copy.

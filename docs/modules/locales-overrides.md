@@ -50,10 +50,10 @@ translated yet.
 
 ## Author and consumer are different halves
 
-| Half         | Where                                     | Needed by                    |
-| ------------ | ----------------------------------------- | ---------------------------- |
-| **Consumer** | `infrastructure/i18n/locale-overrides.ts` | every visitor, on every page |
-| **Author**   | this module's two screens                 | an admin, occasionally       |
+| Half         | Where                                | Needed by                    |
+| ------------ | ------------------------------------ | ---------------------------- |
+| **Consumer** | `infrastructure/locale-overrides.ts` | every visitor, on every page |
+| **Author**   | this module's two screens            | an admin, occasionally       |
 
 ::: tip Which is why deleting this module costs so little
 The two admin screens go. **Every language already translated keeps rendering**, because rendering

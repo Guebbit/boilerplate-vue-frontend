@@ -14,7 +14,7 @@ export default {
  */
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';

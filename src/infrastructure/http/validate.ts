@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 import { isResponseSchemaTableLoading, resolveResponseSchema } from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type { AxiosResponseErrorData } from './types.ts';

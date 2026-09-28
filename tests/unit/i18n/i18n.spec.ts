@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
-import type { TranslationDictionaries } from '@/infrastructure/i18n';
+import type { TranslationDictionaries } from '@/i18n';
 import {
     getCurrentLocale,
     getDefaultLocale,
@@ -14,8 +14,8 @@ import {
     i18n,
     loadBundledDictionary,
     registerLocaleContributors
-} from '@/infrastructure/i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+} from '@/i18n';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import enMessages from '@/locales/en.json';
 import itMessages from '@/locales/it.json';
 
@@ -23,7 +23,7 @@ import itMessages from '@/locales/it.json';
  * The locale machinery itself, against a REAL vue-i18n instance.
  *
  * The other locale spec, `tests/unit/app/guards/locale-choice.spec.ts`, mocks
- * `@/infrastructure/i18n` wholesale: it asserts that `changeLanguage` *was called with* `'it'` and
+ * `@/i18n` wholesale: it asserts that `changeLanguage` *was called with* `'it'` and
  * never that anything became Italian. That is the right way to test a router guard, and it leaves
  * everything underneath to this file.
  *
@@ -53,7 +53,7 @@ describe('supportedLanguages', () => {
      */
     it('is every dictionary in src/locales, and nothing else', () => {
         vi.resetModules();
-        return import('@/infrastructure/i18n').then((reloaded) => {
+        return import('@/i18n').then((reloaded) => {
             // The glob sees the real directory: en.json and it.json ship, es.json deliberately
             // does not — it is the language the API supplies at runtime.
             expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
@@ -67,7 +67,7 @@ describe('supportedLanguages', () => {
      */
     it('accepts a locale with no local dictionary being added at runtime', () => {
         vi.resetModules();
-        return import('@/infrastructure/i18n').then((reloaded) => {
+        return import('@/i18n').then((reloaded) => {
             reloaded.supportedLanguages.push('es');
             expect(reloaded.supportedLanguages).toContain('es');
         });
@@ -322,7 +322,7 @@ describe('getDefaultLocale', () => {
      */
     it('matches a browser language whose dictionary is not loaded yet', () => {
         vi.resetModules();
-        return import('@/infrastructure/i18n').then((reloaded) => {
+        return import('@/i18n').then((reloaded) => {
             // As `mergeRemoteLocales` would have left it after a boot against a live API.
             reloaded.supportedLanguages.push('es');
             vi.stubGlobal('navigator', { language: 'es-ES' });
@@ -415,7 +415,7 @@ describe('module-load configuration', () => {
      */
     it('discovers the bundled locales from the folder', () => {
         vi.resetModules();
-        return import('@/infrastructure/i18n').then((reloaded) => {
+        return import('@/i18n').then((reloaded) => {
             expect(reloaded.supportedLanguages).toContain('en');
             expect(reloaded.supportedLanguages).toContain('it');
             expect(reloaded.supportedLanguages).not.toContain('es');
@@ -428,11 +428,11 @@ describe('module-load configuration', () => {
      */
     it('hands out a list that can be extended without affecting the next import', () => {
         vi.resetModules();
-        return import('@/infrastructure/i18n')
+        return import('@/i18n')
             .then((first) => {
                 first.supportedLanguages.push('es');
                 vi.resetModules();
-                return import('@/infrastructure/i18n');
+                return import('@/i18n');
             })
             .then((second) => {
                 expect(second.supportedLanguages).not.toContain('es');

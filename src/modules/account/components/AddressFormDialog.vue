@@ -22,7 +22,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { emptyToNull } from '@/infrastructure/utils/forms.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
-import { countryLabel } from '@/infrastructure/i18n/country-label.ts';
+import { countryLabel } from '@/i18n/country-label.ts';
 import type { Address, AddressInput, UpdateAddressRequest } from '@types';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 

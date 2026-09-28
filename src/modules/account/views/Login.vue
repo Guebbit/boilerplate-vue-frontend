@@ -37,7 +37,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
 
 /**

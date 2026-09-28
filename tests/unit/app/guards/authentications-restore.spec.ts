@@ -28,7 +28,7 @@ vi.mock('@guebbit/vue-toolkit', () => ({ useNotificationsStore: () => ({ addMess
 vi.mock('pinia', () => ({
     storeToRefs: () => ({ isAuth: { value: false } })
 }));
-vi.mock('@/infrastructure/i18n', () => ({ translate: (key: string) => key }));
+vi.mock('@/i18n', () => ({ translate: (key: string) => key }));
 
 import { tryRestoreAuth } from '@/app/guards/authentications';
 

@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
-import { loadLocale, i18n } from '@/infrastructure/i18n';
+import { loadLocale, i18n } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { StockMovementReason } from '@api';
 

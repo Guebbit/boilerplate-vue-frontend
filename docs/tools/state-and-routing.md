@@ -122,7 +122,7 @@ src/modules/<name>/locales/       ← one domain's pages, forms and its own navi
 ```
 
 A module declares its dictionaries in `module.ts` (`locales: { en: () => import(…) }`);
-`src/main.ts` hands them to `registerLocaleContributors` because `infrastructure/i18n/index.ts` may not import
+`src/main.ts` hands them to `registerLocaleContributors` because `src/i18n/index.ts` may not import
 `@/modules`. Deleting a domain removes its copy with it, rather than leaving orphan keys in a file
 nobody dares prune.
 

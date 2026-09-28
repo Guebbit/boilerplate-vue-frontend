@@ -10,7 +10,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AddressFormDialog from '@/modules/account/components/AddressFormDialog.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

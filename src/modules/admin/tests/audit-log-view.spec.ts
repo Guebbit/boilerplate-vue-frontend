@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import AuditLog from '@/modules/admin/views/AuditLog.vue';
 import AdminAuditTab from '@/modules/admin/components/AdminAuditTab.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

@@ -13,7 +13,7 @@ export default {
  * / "Revoked" / "Expired" is derived client-side from `revokedAt`/`expiresAt`.
  */
 import { computed } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Plus } from 'lucide-vue-next';

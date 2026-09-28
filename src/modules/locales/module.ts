@@ -11,7 +11,7 @@ import routes from './routes';
 /**
  * The translation admin surface: which languages exist, and what has been edited into them.
  *
- * The CONSUMER half of the dynamic tier lives in `infrastructure/i18n/locale-overrides.ts` and
+ * The CONSUMER half of the dynamic tier lives in `infrastructure/locale-overrides.ts` and
  * needs no module — every visitor's locale switch reads it. This module is the AUTHOR half: the
  * screens a translator edits through. Deleting it removes the screens and nothing else; every
  * language already translated keeps rendering, because rendering never depended on it.

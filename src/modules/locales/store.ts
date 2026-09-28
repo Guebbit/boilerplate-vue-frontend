@@ -38,8 +38,8 @@ import type {
     UpsertTranslationsRequest
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
-import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
-import { localeTenant } from '@/infrastructure/i18n/locale-overrides.ts';
+import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
+import { localeTenant } from '@/infrastructure/locale-overrides.ts';
 import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 
 /**

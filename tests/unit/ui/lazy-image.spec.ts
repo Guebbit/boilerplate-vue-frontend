@@ -23,7 +23,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import vuetify from '@/ui/vuetify';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import { instance } from '@/infrastructure/http/client';
 import enMessages from '@/locales/en.json';
 

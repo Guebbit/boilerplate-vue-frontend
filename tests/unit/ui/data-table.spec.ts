@@ -12,7 +12,7 @@ import { mount } from '@vue/test-utils';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import vuetify from '@/ui/vuetify';
-import { i18n } from '@/infrastructure/i18n';
+import { i18n } from '@/i18n';
 
 interface Row {
     id: string;

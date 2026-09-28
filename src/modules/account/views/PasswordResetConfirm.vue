@@ -26,7 +26,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * Form state: the one-time token (prefilled from the email link) plus the new

@@ -32,7 +32,7 @@ vi.mock('@guebbit/vue-toolkit', () => ({
     })
 }));
 
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/i18n', () => ({
     // Identity, so the assertions below read the dictionary KEY rather than a translation that
     // would change with the locale.
     translate: (key: string) => key

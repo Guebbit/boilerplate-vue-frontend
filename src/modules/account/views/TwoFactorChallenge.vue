@@ -22,7 +22,7 @@ import { useExpiryCountdown } from '@/modules/account/composables/use-countdown.
 import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
 /**

@@ -25,7 +25,7 @@ import {
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
 import { RouterLink, useRoute } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import {
     usePostLoginRedirect,
     isSameOriginPath

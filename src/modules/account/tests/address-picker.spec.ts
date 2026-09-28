@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AddressPicker from '@/modules/account/components/AddressPicker.vue';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Address } from '@types';

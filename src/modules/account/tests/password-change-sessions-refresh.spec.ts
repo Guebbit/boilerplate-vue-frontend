@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
 const changePassword = vi.fn(() => Promise.resolve());

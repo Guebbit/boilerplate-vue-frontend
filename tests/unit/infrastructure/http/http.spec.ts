@@ -18,12 +18,12 @@ vi.mock('pinia', () => ({
  * the real vue-i18n instance: these assertions are about what a user is shown when the API sent
  * no message of its own, and a stubbed translator would make every language look the same.
  */
-vi.mock('@/infrastructure/i18n', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/infrastructure/i18n')>()),
+vi.mock('@/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/i18n')>()),
     getCurrentLocale: vi.fn(() => 'en')
 }));
 
-beforeAll(() => import('@/infrastructure/i18n').then(({ loadLocale }) => loadLocale('en')));
+beforeAll(() => import('@/i18n').then(({ loadLocale }) => loadLocale('en')));
 
 const makeAxiosError = (status: number, data: unknown, headers: Record<string, string> = {}) => ({
     response: { status, statusText: 'Error', data, headers },

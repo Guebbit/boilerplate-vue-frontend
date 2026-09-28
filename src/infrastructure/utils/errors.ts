@@ -11,7 +11,7 @@
 
 import { extractErrorMessage } from '@guebbit/js-toolkit';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
-import { translate } from '@/infrastructure/i18n';
+import { translate } from '@/i18n';
 
 /**
  * The app's fallback wording, bound onto the toolkit's `extractErrorMessage`.

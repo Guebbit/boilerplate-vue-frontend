@@ -13,7 +13,7 @@ export default {
  * same split `users` keeps its irreversible/audited actions off the plain field-edit form.
  */
 import { computed, onMounted, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';

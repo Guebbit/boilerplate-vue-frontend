@@ -159,13 +159,16 @@ export default mergeConfig(
                     // so. `utils/**` folds in the two files that used to be listed on their own
                     // (`errors.ts`, `formatters.ts`); both already clear 70, so nothing narrows.
                     'src/infrastructure/*.ts': COVERAGE_FLOOR,
-                    'src/infrastructure/i18n/!(country-label).ts': COVERAGE_FLOOR,
+                    // The i18n runtime (FE-D5): extractable, so it lives at `src/i18n/`, not
+                    // under `src/infrastructure/`. `locale-overrides.ts` stays behind — it's the
+                    // contract-specific consumer of `@api` — and is covered by the glob above.
+                    'src/i18n/!(country-label).ts': COVERAGE_FLOOR,
                     'src/infrastructure/observability/**': COVERAGE_FLOOR,
                     'src/infrastructure/utils/**': COVERAGE_FLOOR,
                     // Same "measured, not aspirational" record as `authentications.ts` above —
                     // this composable's country <select> options are exercised, the sparse
                     // "unrecognised code" branch is not.
-                    'src/infrastructure/i18n/country-label.ts': {
+                    'src/i18n/country-label.ts': {
                         statements: 75,
                         branches: 50,
                         functions: 100,
