@@ -261,4 +261,43 @@ describe('orvalMutator contract validation', () => {
                 warnSpy.mockRestore();
             });
     });
+
+    /**
+     * The regression `resilience.cy.ts` caught: a request that lands before the lazy schema
+     * chunk (FA94/FA-D2) resolves reads as "unmapped" too, for a route that DOES have a row —
+     * the table is just still empty. Unlike a genuinely unmapped route, that must stay quiet.
+     */
+    it('stays quiet for a mapped route while the lazy schema chunk is still loading', () => {
+        server.use(http.get(`${API}/locales`, () => HttpResponse.json({ languages: ['en'] })));
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+            /* no-op */
+        });
+
+        vi.resetModules();
+        vi.stubEnv('VITE_API_URL', API);
+        return Promise.all([
+            import('@/infrastructure/http'),
+            import('@/infrastructure/http/response-schema-map'),
+            import('@/kernel/registry'),
+            import('@/modules')
+        ]).then(
+            ([
+                { orvalMutator },
+                { loadResponseSchemas },
+                { collectModuleResponseSchemas },
+                { enabledModules }
+            ]) => {
+                // Deliberately NOT awaited — the request below fires into the same race window
+                // `main.ts` leaves after mount, before this resolves.
+                const loading = loadResponseSchemas(collectModuleResponseSchemas(enabledModules));
+                return orvalMutator({ url: '/locales', method: 'GET' })
+                    .then((response) => {
+                        expect(response).toMatchObject({ languages: ['en'] });
+                        expect(warnSpy).not.toHaveBeenCalled();
+                    })
+                    .finally(() => loading.then(() => warnSpy.mockRestore()));
+            }
+        );
+    });
 });

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/infrastructure/i18n';
-import { resolveResponseSchema } from './response-schema-map.ts';
+import { isResponseSchemaTableLoading, resolveResponseSchema } from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type { AxiosResponseErrorData } from './types.ts';
 
@@ -73,9 +73,14 @@ export const validateResponseAgainstContract = (
 ): void => {
     const mappedSchema = resolveResponseSchema(config.method, config.url);
     if (!mappedSchema) {
-        logger.warn(
-            `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
-        );
+        // The lazy schema chunk (FA94/FA-D2) is still loading: every route reads as unmapped
+        // during this window, not just the ones that genuinely have no row — stay quiet rather
+        // than warn about a gap that closes itself in a moment.
+        if (!isResponseSchemaTableLoading()) {
+            logger.warn(
+                `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
+            );
+        }
         return;
     }
 
