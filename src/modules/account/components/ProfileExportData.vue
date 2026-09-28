@@ -68,6 +68,10 @@ const handleExport = () => {
             {{ t('profile-page.button-export-data') }}
         </v-btn>
 
-        <InlineErrorAlert :message="exportError" class="mt-2" test-id="profile-export-data-error" />
+        <InlineErrorAlert
+            :message="exportError"
+            class="mt-2"
+            data-test="profile-export-data-error"
+        />
     </v-card>
 </template>

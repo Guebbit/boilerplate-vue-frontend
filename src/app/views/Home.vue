@@ -59,26 +59,26 @@ const featuredProducts = computed<
     {
         title: string;
         description: string;
-        variant: ThemeAccent;
+        accent: ThemeAccent;
         icon: Component;
     }[]
 >(() => [
     {
         title: t('home-page.featured-product-1-title'),
         description: t('home-page.featured-product-1-description'),
-        variant: 'primary',
+        accent: 'primary',
         icon: Package
     },
     {
         title: t('home-page.featured-product-2-title'),
         description: t('home-page.featured-product-2-description'),
-        variant: 'secondary',
+        accent: 'secondary',
         icon: Tag
     },
     {
         title: t('home-page.featured-product-3-title'),
         description: t('home-page.featured-product-3-description'),
-        variant: 'tertiary',
+        accent: 'tertiary',
         icon: Star
     }
 ]);
@@ -113,7 +113,7 @@ const featuredProducts = computed<
                     :key="product.title"
                     :title="product.title"
                     :description="product.description"
-                    :variant="product.variant"
+                    :accent="product.accent"
                 >
                     <template #icon>
                         <component :is="product.icon" :size="28" />

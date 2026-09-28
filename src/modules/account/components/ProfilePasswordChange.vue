@@ -239,7 +239,7 @@ const submitPasswordChange = () =>
             <InlineErrorAlert
                 :message="passwordChangeError"
                 class="mt-2"
-                test-id="password-change-error"
+                data-test="password-change-error"
             />
         </form>
     </v-expand-transition>

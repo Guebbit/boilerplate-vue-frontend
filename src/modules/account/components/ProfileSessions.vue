@@ -139,7 +139,7 @@ onMounted(fetchSessions);
         <InlineErrorAlert
             :message="sessionsActionError"
             class="mb-4"
-            test-id="sessions-action-error"
+            data-test="sessions-action-error"
         />
 
         <v-list v-if="sessions.length > 0" density="compact" data-test="sessions-list">

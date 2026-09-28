@@ -281,7 +281,11 @@ const handleSave = () =>
                     density="compact"
                     hide-details
                 />
-                <InlineErrorAlert :message="saveError" class="mb-2" test-id="address-save-error" />
+                <InlineErrorAlert
+                    :message="saveError"
+                    class="mb-2"
+                    data-test="address-save-error"
+                />
                 <div class="mt-4 flex justify-end gap-2">
                     <v-btn variant="text" @click="open = false">
                         {{ t('generic.cancel') }}

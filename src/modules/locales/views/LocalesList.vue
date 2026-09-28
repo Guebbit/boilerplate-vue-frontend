@@ -227,7 +227,11 @@ onMounted(() => {
             </v-btn>
         </div>
 
-        <InlineErrorAlert :message="deleteError" class="mb-4" test-id="locales-list-delete-error" />
+        <InlineErrorAlert
+            :message="deleteError"
+            class="mb-4"
+            data-test="locales-list-delete-error"
+        />
 
         <v-empty-state
             v-if="!loading && capabilities.length === 0"
@@ -364,7 +368,7 @@ onMounted(() => {
 
         <LanguageFormDialog v-model="formOpen" :language="editing" @save="handleSave">
             <template #error>
-                <InlineErrorAlert :message="saveError" test-id="language-form-error" />
+                <InlineErrorAlert :message="saveError" data-test="language-form-error" />
             </template>
         </LanguageFormDialog>
     </LayoutDefault>

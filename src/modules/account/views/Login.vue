@@ -266,7 +266,7 @@ const submitForm = () => {
                     :message="loginError"
                     :type="loginErrorType"
                     class="mt-4"
-                    test-id="login-error"
+                    data-test="login-error"
                 />
             </form>
             <template v-if="oauthProviders.length > 0">

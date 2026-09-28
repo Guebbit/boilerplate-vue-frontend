@@ -24,7 +24,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { User } from 'lucide-vue-next';
+import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -234,24 +234,24 @@ const handleDisableTwoFactor = () => {
                     <ItemDetailField
                         :label="t('user-target-page.label-id')"
                         :value="currentUser.id"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-username')"
                         :value="currentUser.username"
-                        icon="🙂"
+                        :icon="User"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-email')"
                         :value="currentUser.email"
-                        icon="✉"
+                        :icon="Mail"
                     />
-                    <ItemDetailField :label="t('user-target-page.label-role')" icon="🛡">
+                    <ItemDetailField :label="t('user-target-page.label-role')" :icon="Shield">
                         <v-chip variant="tonal" color="secondary" class="font-semibold">
                             {{ userRole }}
                         </v-chip>
                     </ItemDetailField>
-                    <ItemDetailField :label="t('user-target-page.label-active')" icon="●">
+                    <ItemDetailField :label="t('user-target-page.label-active')" :icon="Circle">
                         <v-chip variant="tonal" color="secondary" class="font-semibold">
                             {{ userStatus }}
                         </v-chip>
@@ -259,7 +259,7 @@ const handleDisableTwoFactor = () => {
                     <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser.updatedAt)"
-                        icon="🕒"
+                        :icon="Clock"
                         full-width
                     />
                 </div>
@@ -268,18 +268,18 @@ const handleDisableTwoFactor = () => {
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
                         <template #icon><User :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>
@@ -312,7 +312,7 @@ const handleDisableTwoFactor = () => {
                     >
                         {{ t('user-target-page.button-manage-access') }}
                     </v-btn>
-                    <InlineErrorAlert :message="accessError" test-id="user-manage-access-error" />
+                    <InlineErrorAlert :message="accessError" data-test="user-manage-access-error" />
 
                     <!--
                         B9: a user with no second factor has nothing to strip — showing this
@@ -330,7 +330,7 @@ const handleDisableTwoFactor = () => {
                     </v-btn>
                     <InlineErrorAlert
                         :message="disableTwoFactorError"
-                        test-id="user-disable-two-factor-error"
+                        data-test="user-disable-two-factor-error"
                     />
                 </div>
             </template>

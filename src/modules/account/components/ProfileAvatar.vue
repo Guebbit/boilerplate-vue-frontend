@@ -166,6 +166,6 @@ const handleRemove = () =>
             {{ t('profile-page.avatar-button-remove') }}
         </v-btn>
 
-        <InlineErrorAlert :message="avatarError" class="mt-2" test-id="profile-avatar-error" />
+        <InlineErrorAlert :message="avatarError" class="mt-2" data-test="profile-avatar-error" />
     </div>
 </template>

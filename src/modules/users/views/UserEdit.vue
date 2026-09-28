@@ -31,7 +31,7 @@ import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages } from '@/infrastructure/i18n';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Pencil, User } from 'lucide-vue-next';
+import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -425,7 +425,7 @@ watchUser(() => id);
                         :disabled="isSubmitting"
                     />
 
-                    <InlineErrorAlert :message="submitError" test-id="user-edit-submit-error" />
+                    <InlineErrorAlert :message="submitError" data-test="user-edit-submit-error" />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
@@ -440,23 +440,23 @@ watchUser(() => id);
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
                         <template #icon><User :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('user-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

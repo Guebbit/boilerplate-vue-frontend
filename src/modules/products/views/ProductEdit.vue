@@ -33,7 +33,7 @@ import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-ord
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Languages, Package, Pencil } from 'lucide-vue-next';
+import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -586,7 +586,10 @@ const submitForm = () => {
                         :disabled="isSubmitting"
                     />
 
-                    <InlineErrorAlert :message="submitError" test-id="product-edit-submit-error" />
+                    <InlineErrorAlert
+                        :message="submitError"
+                        data-test="product-edit-submit-error"
+                    />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn
@@ -605,23 +608,23 @@ const submitForm = () => {
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
                         <template #icon><Package :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('product-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(adminProduct?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-updated-at')"
                         :value="formatDateTime(adminProduct?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

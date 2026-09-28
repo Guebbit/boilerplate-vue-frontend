@@ -270,7 +270,7 @@ const handleDelete = (requestId: string, subject: string) => {
         </v-empty-state>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
-            <InlineErrorAlert :message="rowActionError" test-id="feedback-row-action-error" />
+            <InlineErrorAlert :message="rowActionError" data-test="feedback-row-action-error" />
 
             <v-card
                 v-for="request in pageItemList"

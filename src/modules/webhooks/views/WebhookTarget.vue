@@ -23,7 +23,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { Webhook } from 'lucide-vue-next';
+import { Ban, Calendar, Clock, FileText, Hash, Link, Webhook, Zap } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -252,23 +252,23 @@ const handleDelete = () => {
                     <ItemDetailField
                         :label="t('webhook-target-page.label-id')"
                         :value="currentSubscription.id"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-url')"
                         :value="currentSubscription.url"
-                        icon="🔗"
+                        :icon="Link"
                         full-width
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-description')"
                         :value="formatText(currentSubscription.description)"
-                        icon="📝"
+                        :icon="FileText"
                         full-width
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-event-types')"
-                        icon="⚡"
+                        :icon="Zap"
                         full-width
                     >
                         <div class="flex flex-wrap gap-1">
@@ -287,7 +287,7 @@ const handleDelete = () => {
                         v-if="currentSubscription.disabledAt"
                         :label="t('webhook-target-page.label-disabled-at')"
                         :value="formatDateTime(currentSubscription.disabledAt)"
-                        icon="⛔"
+                        :icon="Ban"
                     />
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('generic.loading-state') }}</p>
@@ -301,7 +301,7 @@ const handleDelete = () => {
                     <InlineErrorAlert
                         :message="removeSecretError"
                         class="mb-3"
-                        test-id="webhook-target-remove-secret-error"
+                        data-test="webhook-target-remove-secret-error"
                     />
 
                     <v-table density="comfortable">
@@ -348,25 +348,25 @@ const handleDelete = () => {
                     <InlineErrorAlert
                         :message="rotateSecretError"
                         class="mt-3"
-                        test-id="webhook-target-rotate-secret-error"
+                        data-test="webhook-target-rotate-secret-error"
                     />
                 </div>
             </CardDetail>
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
                         <template #icon><Webhook :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('webhook-target-page.label-created-at')"
                         :value="formatDateTime(currentSubscription?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('webhook-target-page.label-updated-at')"
                         :value="formatDateTime(currentSubscription?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>
@@ -403,7 +403,7 @@ const handleDelete = () => {
                 <InlineErrorAlert
                     :message="deleteError"
                     class="w-full"
-                    test-id="webhook-target-delete-error"
+                    data-test="webhook-target-delete-error"
                 />
             </template>
         </ItemDetailLayout>

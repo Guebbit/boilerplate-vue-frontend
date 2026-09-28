@@ -180,7 +180,7 @@ const handleRevoke = (apiKey: ApiKey) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="api-keys-list-row-action-error"
+            data-test="api-keys-list-row-action-error"
         />
 
         <DataTable

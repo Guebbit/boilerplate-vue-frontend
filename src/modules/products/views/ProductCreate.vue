@@ -437,7 +437,7 @@ const submitForm = () => {
                 data-test="product-requires-shipping-field"
             />
 
-            <InlineErrorAlert :message="submitError" test-id="product-create-submit-error" />
+            <InlineErrorAlert :message="submitError" data-test="product-create-submit-error" />
         </FormCard>
     </LayoutDefault>
 </template>

@@ -224,7 +224,7 @@ const handleConfirm = () => {
                 />
             </form>
 
-            <InlineErrorAlert :message="codeError" test-id="two-factor-enroll-error" />
+            <InlineErrorAlert :message="codeError" data-test="two-factor-enroll-error" />
         </v-card-text>
         <v-card-actions>
             <v-spacer />

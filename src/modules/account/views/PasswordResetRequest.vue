@@ -133,7 +133,7 @@ const submitForm = () => {
                     :message="requestError"
                     :type="requestErrorType"
                     class="mt-4"
-                    test-id="password-reset-request-error"
+                    data-test="password-reset-request-error"
                 />
             </form>
             <div class="mt-4 flex justify-center">

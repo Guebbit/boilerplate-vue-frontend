@@ -215,7 +215,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="webhooks-list-row-action-error"
+            data-test="webhooks-list-row-action-error"
         />
 
         <DataTable

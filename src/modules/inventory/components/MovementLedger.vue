@@ -295,7 +295,7 @@ onMounted(() => {
         </v-btn>
     </div>
 
-    <InlineErrorAlert :message="sweepError" class="mb-4" test-id="sweep-error" />
+    <InlineErrorAlert :message="sweepError" class="mb-4" data-test="sweep-error" />
 
     <v-empty-state v-if="movements.length === 0" :title="t('inventory-page.empty')">
         <template #media>

@@ -202,7 +202,7 @@ const submitForm = () =>
                 <InlineErrorAlert
                     :message="submitError"
                     class="mt-2"
-                    test-id="contact-submit-error"
+                    data-test="contact-submit-error"
                 />
             </form>
         </v-card>

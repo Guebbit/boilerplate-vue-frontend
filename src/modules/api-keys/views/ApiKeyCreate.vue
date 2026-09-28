@@ -197,7 +197,7 @@ const handleSecretDone = () => {
                 :error-messages="showFormErrors ? formErrors.expiresAt : []"
             />
 
-            <InlineErrorAlert :message="submitError" test-id="api-key-create-error" />
+            <InlineErrorAlert :message="submitError" data-test="api-key-create-error" />
         </FormCard>
     </LayoutDefault>
 </template>

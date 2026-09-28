@@ -23,7 +23,21 @@ import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-a
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Download, Eye, ShoppingCart } from 'lucide-vue-next';
+import {
+    Calendar,
+    Circle,
+    Clock,
+    CreditCard,
+    Download,
+    Euro,
+    Eye,
+    FileText,
+    Hash,
+    Mail,
+    MapPin,
+    ShoppingCart,
+    Truck
+} from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -339,9 +353,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ItemDetailField
                         :label="t('order-target-page.label-order-id')"
                         :value="currentOrder.id"
-                        icon="#"
+                        :icon="Hash"
                     />
-                    <ItemDetailField :label="t('order-target-page.label-status')" icon="●">
+                    <ItemDetailField :label="t('order-target-page.label-status')" :icon="Circle">
                         <v-chip variant="tonal" color="tertiary" class="font-semibold">
                             {{ orderStatus }}
                         </v-chip>
@@ -349,24 +363,24 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ItemDetailField
                         :label="t('order-target-page.label-total')"
                         :value="formatCurrency(currentOrder.totalPrice, orderCurrency)"
-                        icon="💶"
+                        :icon="Euro"
                     />
                     <ItemDetailField
                         :label="t('orders-list-page.filter-email')"
                         :value="formatText(currentOrder.email)"
-                        icon="✉"
+                        :icon="Mail"
                     />
                     <ItemDetailField
                         v-if="currentOrder.paymentMethod"
                         :label="t('order-target-page.label-payment-method')"
                         :value="t(`payment-method-selector.method-${currentOrder.paymentMethod}`)"
-                        icon="💳"
+                        :icon="CreditCard"
                         data-test="order-payment-method"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-notes')"
                         :value="formatText(currentOrder.notes)"
-                        icon="📝"
+                        :icon="FileText"
                         full-width
                     />
                 </div>
@@ -375,7 +389,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="tertiary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
                         <template #icon><ShoppingCart :size="28" /></template>
                     </CardInfo>
                     <!-- The money and the parcel: each panel re-reads the order when its module
@@ -407,27 +421,27 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         v-if="currentOrder?.shippingMethod"
                         :label="t('order-target-page.label-shipping')"
                         :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0, orderCurrency)}`"
-                        icon="🚚"
+                        :icon="Truck"
                         data-test="order-shipping"
                     />
                     <ItemDetailField
                         v-if="shippingAddressText"
                         :label="t('order-target-page.label-shipping-address')"
                         :value="shippingAddressText"
-                        icon="📍"
+                        :icon="MapPin"
                         full-width
                         data-test="order-shipping-address"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"
                         :value="formatDateTime(currentOrder?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
 
                     <div>
@@ -580,7 +594,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <InlineErrorAlert
                     :message="reorderError"
                     class="w-full"
-                    test-id="order-reorder-error"
+                    data-test="order-reorder-error"
                 />
                 <v-btn
                     v-if="cancellable"
@@ -595,7 +609,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <InlineErrorAlert
                     :message="cancelError"
                     class="w-full"
-                    test-id="order-cancel-error"
+                    data-test="order-cancel-error"
                 />
                 <v-btn
                     v-if="currentOrder"
@@ -631,7 +645,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <InlineErrorAlert
                     :message="invoiceError"
                     class="w-full"
-                    test-id="order-invoice-error"
+                    data-test="order-invoice-error"
                 />
                 <span
                     v-if="currentOrder?.orderNumber"

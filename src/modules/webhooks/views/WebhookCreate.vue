@@ -188,7 +188,7 @@ const handleSecretDone = () => {
                 :error-messages="showErrors ? formErrors.eventTypes : []"
             />
 
-            <InlineErrorAlert :message="submitError" test-id="webhook-create-error" />
+            <InlineErrorAlert :message="submitError" data-test="webhook-create-error" />
         </FormCard>
     </LayoutDefault>
 </template>

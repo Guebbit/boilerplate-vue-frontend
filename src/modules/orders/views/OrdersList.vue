@@ -346,7 +346,7 @@ const handleHardDelete = (orderId: string) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="orders-list-row-action-error"
+            data-test="orders-list-row-action-error"
         />
 
         <v-empty-state v-if="ordersList.length === 0" :title="t('orders-list-page.empty-orders')">

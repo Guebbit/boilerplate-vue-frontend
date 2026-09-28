@@ -303,7 +303,7 @@ const handleSave = () => {
             <InlineErrorAlert
                 :message="saveError"
                 class="mt-3"
-                test-id="entity-translations-save-error"
+                data-test="entity-translations-save-error"
             />
         </v-card>
     </LayoutDefault>

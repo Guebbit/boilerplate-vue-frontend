@@ -73,7 +73,7 @@ const handleDeleteAccount = () =>
         <InlineErrorAlert
             :message="deleteError"
             class="mt-2"
-            test-id="profile-delete-account-error"
+            data-test="profile-delete-account-error"
         />
     </v-card>
 </template>

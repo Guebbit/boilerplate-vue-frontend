@@ -181,7 +181,7 @@ const submitForm = () =>
         <InlineErrorAlert
             :message="recordError"
             class="w-full"
-            test-id="record-offline-payment-error"
+            data-test="record-offline-payment-error"
         />
     </form>
 </template>

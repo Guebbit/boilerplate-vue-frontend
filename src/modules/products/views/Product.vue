@@ -23,7 +23,18 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Heart, Package, ShoppingCart } from 'lucide-vue-next';
+import {
+    Calendar,
+    Circle,
+    Clock,
+    Euro,
+    FileText,
+    Hash,
+    Heart,
+    Package,
+    ShoppingCart,
+    Tag
+} from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -290,7 +301,7 @@ onMounted(() => {
                                 : t('product-target-page.button-add-to-cart')
                         }}
                     </v-btn>
-                    <InlineErrorAlert :message="addToCartError" test-id="add-to-cart-error" />
+                    <InlineErrorAlert :message="addToCartError" data-test="add-to-cart-error" />
                 </div>
                 <div v-if="isAuth" class="flex flex-col gap-2">
                     <v-btn
@@ -317,7 +328,7 @@ onMounted(() => {
                                 : t('product-target-page.button-save-wishlist')
                         }}
                     </v-btn>
-                    <InlineErrorAlert :message="wishlistError" test-id="wishlist-toggle-error" />
+                    <InlineErrorAlert :message="wishlistError" data-test="wishlist-toggle-error" />
                 </div>
                 <p v-if="!isAuth" class="text-sm opacity-70">
                     {{ t('product-target-page.login-to-buy') }}
@@ -331,19 +342,19 @@ onMounted(() => {
                     <ItemDetailField
                         :label="t('product-target-page.label-id')"
                         :value="currentProduct.id"
-                        icon="#"
+                        :icon="Hash"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-title')"
                         :value="currentProduct.title"
-                        icon="🏷"
+                        :icon="Tag"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-price')"
                         :value="formatCurrency(currentProduct.price, currentProduct.currency)"
-                        icon="💶"
+                        :icon="Euro"
                     />
-                    <ItemDetailField :label="t('product-target-page.label-active')" icon="●">
+                    <ItemDetailField :label="t('product-target-page.label-active')" :icon="Circle">
                         <v-chip variant="tonal" color="primary" class="font-semibold">
                             {{ productStatus }}
                         </v-chip>
@@ -351,13 +362,13 @@ onMounted(() => {
                     <ItemDetailField
                         :label="t('product-target-page.label-description')"
                         :value="formatText(currentProduct.description)"
-                        icon="📝"
+                        :icon="FileText"
                         full-width
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-updated-at')"
                         :value="formatDateTime(currentProduct.updatedAt)"
-                        icon="🕒"
+                        :icon="Clock"
                         full-width
                     />
                 </div>
@@ -366,18 +377,18 @@ onMounted(() => {
 
             <template #aside>
                 <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
                         <template #icon><Package :size="28" /></template>
                     </CardInfo>
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(currentProduct?.createdAt)"
-                        icon="📅"
+                        :icon="Calendar"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-updated-at')"
                         :value="formatDateTime(currentProduct?.updatedAt)"
-                        icon="🕘"
+                        :icon="Clock"
                     />
                 </CardDetail>
             </template>

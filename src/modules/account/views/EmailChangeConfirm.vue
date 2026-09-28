@@ -149,7 +149,7 @@ const submitForm = () => {
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
-                    test-id="email-change-confirm-error"
+                    data-test="email-change-confirm-error"
                 />
             </form>
         </v-card>

@@ -332,7 +332,7 @@ const handleHardDelete = (userId: string) =>
         <InlineErrorAlert
             :message="rowActionError"
             class="mb-4"
-            test-id="users-list-row-action-error"
+            data-test="users-list-row-action-error"
         />
 
         <DataTable

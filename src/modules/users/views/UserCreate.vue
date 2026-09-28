@@ -279,7 +279,7 @@ const submitForm = () => {
                 <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
             </div>
 
-            <InlineErrorAlert :message="submitError" test-id="user-create-submit-error" />
+            <InlineErrorAlert :message="submitError" data-test="user-create-submit-error" />
         </FormCard>
     </LayoutDefault>
 </template>

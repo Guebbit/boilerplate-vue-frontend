@@ -157,7 +157,7 @@ const submitForm = () => {
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
-                    test-id="account-delete-confirm-error"
+                    data-test="account-delete-confirm-error"
                 />
             </form>
 

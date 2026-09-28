@@ -110,7 +110,7 @@ onMounted(() =>
         </v-empty-state>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
-            <InlineErrorAlert :message="lineActionError" test-id="wishlist-line-action-error" />
+            <InlineErrorAlert :message="lineActionError" data-test="wishlist-line-action-error" />
 
             <v-card
                 v-for="item in items"

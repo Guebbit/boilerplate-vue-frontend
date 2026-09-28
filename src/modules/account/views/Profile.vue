@@ -361,7 +361,7 @@ const cancelPendingEmail = () => {
                 <InlineErrorAlert
                     :message="pendingEmailError"
                     class="mb-2"
-                    test-id="pending-email-error"
+                    data-test="pending-email-error"
                 />
                 <v-text-field
                     v-model="form.phone"
@@ -413,7 +413,7 @@ const cancelPendingEmail = () => {
                     :message="saveError"
                     :type="saveErrorType"
                     class="mt-4"
-                    test-id="profile-form-error"
+                    data-test="profile-form-error"
                 />
             </form>
 

@@ -261,7 +261,7 @@ watch(
             {{ t('payments-panel.label-deadline', { payBy: formatDateTime(payBy) }) }}
         </p>
 
-        <InlineErrorAlert :message="paymentError" class="mb-3" test-id="payment-panel-error" />
+        <InlineErrorAlert :message="paymentError" class="mb-3" data-test="payment-panel-error" />
 
         <!--
             The picker's hint is the field's own `hint`, so it is wired as the field's description

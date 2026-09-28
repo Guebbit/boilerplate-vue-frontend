@@ -214,7 +214,7 @@ const submitForm = () => {
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
-                    test-id="password-reset-confirm-error"
+                    data-test="password-reset-confirm-error"
                 />
             </form>
 

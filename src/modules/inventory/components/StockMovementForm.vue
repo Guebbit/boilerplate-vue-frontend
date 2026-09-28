@@ -232,7 +232,7 @@ const submitForm = () =>
             <InlineErrorAlert
                 :message="submitError"
                 class="w-full"
-                :test-id="isReceipt ? 'receipt-error' : 'adjust-error'"
+                :data-test="isReceipt ? 'receipt-error' : 'adjust-error'"
             />
         </form>
     </v-card>

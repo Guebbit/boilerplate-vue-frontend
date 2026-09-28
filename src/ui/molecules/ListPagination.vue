@@ -2,14 +2,19 @@
 /**
  * @module
  * Wraps Vuetify's `v-pagination`: hides itself entirely for a one-page list, names itself for
- * assistive tech via `ariaLabel`, and moves focus to `<main>` when it unmounts out from under it.
+ * assistive tech via `ariaLabel`, and moves focus to a fallback landmark when it unmounts out
+ * from under it.
  */
 import { ref, watch, nextTick } from 'vue';
 
 /**
  * Component props — see each field's own doc comment below.
  */
-const { length = 0, ariaLabel } = defineProps<{
+const {
+    length = 0,
+    ariaLabel,
+    focusFallback = 'main'
+} = defineProps<{
     /**
      * Total number of pages
      */
@@ -20,6 +25,12 @@ const { length = 0, ariaLabel } = defineProps<{
      * landmarks with one name are one landmark to a screen reader.
      */
     ariaLabel?: string;
+    /**
+     * Selector for where focus goes when the pager unmounts out from under it. Defaults to the
+     * plain `<main>` landmark every layout has — a ui-kit molecule has no business knowing an
+     * app's own layout markup, so a caller with a more specific target overrides this instead.
+     */
+    focusFallback?: string;
 }>();
 
 /**
@@ -42,9 +53,7 @@ watch(
     (rendered, wasRendered) => {
         if (rendered || !wasRendered) return;
         if (!root.value?.contains(document.activeElement)) return;
-        void nextTick(() =>
-            document.querySelector<HTMLElement>('main[data-main-content]')?.focus()
-        );
+        void nextTick(() => document.querySelector<HTMLElement>(focusFallback)?.focus());
     }
 );
 </script>
