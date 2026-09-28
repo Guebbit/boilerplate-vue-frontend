@@ -12,6 +12,7 @@
  * the store and about which of them is skipped, so the store is a double that records both.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { getCookie } from '@guebbit/js-toolkit';
 
 const sessionStore = {
     accessToken: undefined as string | undefined,
@@ -20,7 +21,9 @@ const sessionStore = {
     loadViewer: vi.fn()
 };
 
-const getCookieMock = vi.fn();
+// Typed against the real `getCookie` so the mock factory below returns a properly-typed value
+// instead of `vi.fn()`'s untyped default.
+const getCookieMock = vi.fn<typeof getCookie>();
 
 vi.mock('@/infrastructure/session', () => ({ useSessionStore: () => sessionStore }));
 vi.mock('@guebbit/js-toolkit', () => ({ getCookie: (name: string) => getCookieMock(name) }));

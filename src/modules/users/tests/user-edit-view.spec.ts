@@ -18,6 +18,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
@@ -158,8 +159,8 @@ describe('UserEdit', () => {
                 const roleSelect = wrapper
                     .findAllComponents(VSelect)
                     .find((select) => select.attributes('data-test') === 'user-edit-role');
-                roleSelect?.vm.$emit('update:modelValue', 'manager');
-                return wrapper.vm.$nextTick();
+                if (roleSelect) emitOn(roleSelect, 'update:modelValue', 'manager');
+                return nextRenderTick(wrapper);
             })
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
@@ -172,7 +173,7 @@ describe('UserEdit', () => {
                     skipPicker: true,
                     chosenRole: 'manager'
                 });
-                dialog.vm.$emit('confirm', { role: 'manager' });
+                emitOn(dialog, 'confirm', { role: 'manager' });
             })
             .then(flushPromises)
             .then(() => {
@@ -189,7 +190,7 @@ describe('UserEdit', () => {
             .then(() => wrapper.get('[data-test=user-edit-active] input').setValue(false))
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
-            .then(() => wrapper.findComponent(UserAccessDialog).vm.$emit('cancel'))
+            .then(() => emitOn(wrapper.findComponent(UserAccessDialog), 'cancel'))
             .then(flushPromises)
             .then(() => {
                 expect(lastPatchBody()).toBeUndefined();

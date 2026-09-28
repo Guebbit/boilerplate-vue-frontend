@@ -16,6 +16,7 @@ import vuetify from '@/ui/vuetify';
 import type { LocaleTenantDescriptor } from '@types';
 import { LocaleTenantKind } from '@api';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
@@ -69,7 +70,7 @@ describe('a replace-mode import', () => {
                 void wrapper.get('form').trigger('submit');
                 return Promise.resolve().then(() => {
                     useDialogStore().answer(false);
-                    return wrapper.vm.$nextTick().then(() => {
+                    return nextRenderTick(wrapper).then(() => {
                         expect(wrapper.emitted('import')).toBeUndefined();
                     });
                 });
@@ -84,9 +85,8 @@ describe('a replace-mode import', () => {
                     useDialogStore().answer(true);
                     // Two hops: `confirm()`'s promise resolving, then `handleImport`'s own
                     // `.then()` that emits — one `$nextTick()` lands between them, not after both.
-                    return wrapper.vm
-                        .$nextTick()
-                        .then(() => wrapper.vm.$nextTick())
+                    return nextRenderTick(wrapper)
+                        .then(() => nextRenderTick(wrapper))
                         .then(() => {
                             const emitted = wrapper.emitted('import');
                             expect(emitted).toHaveLength(1);

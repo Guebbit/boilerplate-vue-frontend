@@ -17,6 +17,7 @@ describe('useAxiosUploadProgress — trackUpload', () => {
         return trackUpload(new File(['x'], 'x.png'), send).then((options) => {
             expect(send).toHaveBeenCalledOnce();
             expect(options).toEqual(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.any()` as `any`, since it is a placeholder matcher usable against anything
                 expect.objectContaining({ onUploadProgress: expect.any(Function) })
             );
         });

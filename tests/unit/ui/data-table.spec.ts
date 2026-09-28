@@ -10,6 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextRenderTick } from '../../support/unit/mounted-vm';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import vuetify from '@/ui/vuetify';
@@ -142,7 +143,7 @@ describe('DataTable — keyboard selection', () => {
 
     it('marks the selected row', async () => {
         const wrapper = mountTable({ modelValue: 'b' }, selectable);
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.findAll('[data-test=list-row]')[1].attributes('aria-selected')).toBe('true');
     });

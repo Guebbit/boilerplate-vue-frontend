@@ -14,11 +14,14 @@ import { createPinia, setActivePinia } from 'pinia';
 import { signInLocation } from '@/app/router/navigation.ts';
 
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
-// Returns nothing, i.e. "let the navigation through".
+// Returns nothing, i.e. "let the navigation through". Left untyped against the real
+// `enforceRouteAccess`: this suite calls it with only the one argument it cares about
+// (`mockImplementationOnce(() => order.push(...))`), which the real 2-argument signature refuses.
 const enforceRouteAccess = vi.fn();
 
 vi.mock('@/app/guards/authentications.ts', () => ({
     tryRestoreAuth: () => tryRestoreAuth(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     enforceRouteAccess: (to: unknown) => enforceRouteAccess(to)
 }));
 

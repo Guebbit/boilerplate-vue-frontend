@@ -2,13 +2,18 @@ import eslint from '@eslint/js';
 import globals from 'globals';
 import pluginUnicorn from 'eslint-plugin-unicorn';
 import { globalIgnores } from 'eslint/config';
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import {
+    configureVueProject,
+    defineConfigWithVueTs,
+    vueTsConfigs
+} from '@vue/eslint-config-typescript';
 import pluginVue from 'eslint-plugin-vue';
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility';
 import pluginVitest from '@vitest/eslint-plugin';
 import pluginCypress from 'eslint-plugin-cypress';
 import pluginJsdoc from 'eslint-plugin-jsdoc';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import boundaries from 'eslint-plugin-boundaries';
 import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -48,240 +53,272 @@ const moduleFolderNames = readdirSync(fileURLToPath(new URL('src/modules', impor
     .map(({ name }) => name);
 
 // A cycle, or a key naming a module already deleted, must fail every `npm run lint` — see FA73.
-// `moduleBoundaryRules` below only ever checks a module against its OWN `MODULE_EDGES` entry, so
-// this is the one place the graph is walked as a whole.
+// `moduleDependencyPolicies` below only ever checks a module against its OWN `MODULE_EDGES`
+// entry, so this is the one place the graph is walked as a whole.
 assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames, KNOWN_CYCLE_EDGES);
 
-const moduleBoundaryRules = moduleFolderNames.map((name) => {
-    const reaches = MODULE_EDGES[name] ?? [];
+/**
+ * The "one door" and `MODULE_EDGES` coupling, as `eslint-plugin-boundaries` policies — one array
+ * per module, generated the same way the old `no-restricted-imports` blocks were (FE-D2).
+ *
+ * Two things per module: it may reach a listed sibling's `index.ts` and nothing else of it
+ * (reaching `@/modules/<name>/store` directly is what makes a module stop being deletable), and if
+ * it is `foundation` (`MODULE_GROUPS`) it may not reach a `shop` module even one `MODULE_EDGES`
+ * would otherwise allow — `shop` is the removable demo domain, so `foundation` cannot depend on it.
+ *
+ * `MODULE_EDGES`' values are BACKEND module names (see that file's own docblock): a value with no
+ * matching FE folder — `addresses`, `audit-logs`, `invoicing` — never resolves to an import
+ * `boundaries/dependencies` could see, so it is filtered out here rather than left to name an
+ * element pattern nothing under `src/modules` will ever match.
+ */
+const moduleDependencyPolicies = moduleFolderNames.flatMap((name) => {
+    const reaches = (MODULE_EDGES[name] ?? []).filter((reach) => moduleFolderNames.includes(reach));
     const isFoundation = MODULE_GROUPS[name] === 'foundation';
-    return {
-        files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: ['@/modules/*/*', `!@/modules/${name}/**`],
-                            message:
-                                'Import a sibling module through its public barrel (@/modules/<name>), never its internals.'
-                        },
-                        {
-                            group: [
-                                '@/modules/*',
-                                `!@/modules/${name}`,
-                                ...reaches.map((reach) => `!@/modules/${reach}`)
-                            ],
-                            message: `${name} may reach ${reaches.join(', ') || 'no sibling'}. A new one is a new coupling: add it to MODULE_EDGES in eslint.config.ts and say in this module's docblock what it reaches for and why — or find a way not to need it.`
-                        },
-                        ...(isFoundation && shopModuleNames.length > 0
-                            ? [
-                                  {
-                                      group: shopModuleNames.map((shop) => `@/modules/${shop}`),
-                                      message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
-                                  }
-                              ]
-                            : [])
-                    ]
-                }
-            ]
-        }
-    };
+    return [
+        ...(reaches.length > 0
+            ? [
+                  {
+                      from: { element: { type: 'module', captured: { module: name } } },
+                      allow: {
+                          to: {
+                              element: {
+                                  type: 'module',
+                                  fileInternalPath: 'index.ts',
+                                  captured: { module: reaches }
+                              }
+                          }
+                      }
+                  }
+              ]
+            : []),
+        ...(isFoundation && shopModuleNames.length > 0
+            ? [
+                  {
+                      from: { element: { type: 'module', captured: { module: name } } },
+                      disallow: {
+                          to: { element: { type: 'module', captured: { module: shopModuleNames } } }
+                      },
+                      message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
+                  }
+              ]
+            : [])
+    ];
 });
 
 /**
- * The domain layer: `src/modules/<name>/domain/**` — pure rules.
+ * Where every tier lives, for `boundaries/elements`. `capture` reads the module name out of the
+ * path so one `module`/`domain` descriptor covers every domain, present or future, the way the old
+ * `moduleFolderNames.map` did.
  *
- * The only rule here about what a file may TOUCH rather than which tier it may reach. Plain
- * TypeScript over plain data: no framework, no tier, no sibling, and no `../`.
- *
- * Thin on a frontend by design — prices, totals and eligibility come from the API. What belongs
- * here is what the UI needs before it calls. Most modules have no `domain/` at all.
- * See `docs/theory/domain-layer.md`.
+ * ORDER IS SIGNIFICANT: the first descriptor to match a path wins, so `domain` — a module's own
+ * subfolder — must come before the `module` pattern that would otherwise claim it too.
+ * `partialMatch: false` anchors each pattern at the repo root rather than matching any suffix, so
+ * `src/ui` cannot also claim `src/infrastructure/ui-adjacent-thing`.
  */
-const domainPurityRules = [
-    {
-        files: ['src/modules/*/domain/**/*.{ts,mts,tsx}'],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    paths: [
-                        {
-                            name: 'vue',
-                            message:
-                                'The domain layer may not know it is rendered. Return a value; the component decides what to draw with it.'
-                        },
-                        {
-                            name: 'pinia',
-                            message:
-                                'The domain layer may not hold state. Take the data as an argument and let the store own the reactivity.'
-                        },
-                        {
-                            name: 'axios',
-                            message:
-                                'The domain layer may not talk to the API. A rule decides; the store fetches.'
-                        },
-                        {
-                            name: 'vue-router',
-                            message: 'The domain layer may not know about routes.'
-                        },
-                        {
-                            name: 'vue-i18n',
-                            message:
-                                'The domain layer may not produce user-facing copy. Return a verdict the caller translates.'
-                        }
-                    ],
-                    patterns: [
-                        {
-                            group: [
-                                '@/infrastructure/**',
-                                '@/kernel/**',
-                                '@/app/**',
-                                '@/ui/**',
-                                '@/modules/**',
-                                '../*',
-                                '../../*'
-                            ],
-                            message:
-                                'The domain layer imports nothing but plain TypeScript — no tier, no sibling module, and none of the outer files of its own module. If a rule needs i18n it is returning a message where it should return a verdict; if it needs the store it is doing the job of the store.'
-                        }
-                    ]
-                }
-            ]
-        }
-    }
+const boundariesElements = [
+    { type: 'domain', pattern: 'src/modules/*/domain', capture: ['module'], partialMatch: false },
+    { type: 'module', pattern: 'src/modules/*', capture: ['module'], partialMatch: false },
+    { type: 'kernel', pattern: 'src/kernel', partialMatch: false },
+    { type: 'ui', pattern: 'src/ui', partialMatch: false },
+    { type: 'infrastructure', pattern: 'src/infrastructure', partialMatch: false },
+    { type: 'i18n', pattern: 'src/i18n', partialMatch: false },
+    { type: 'app', pattern: 'src/app', partialMatch: false },
+    { type: 'types', pattern: 'src/types', partialMatch: false }
 ];
 
 /**
- * Tier boundaries.
+ * The handful of files that are a tier of their own, or a narrower slice of one — an element
+ * descriptor matches a FOLDER, so these need `boundaries/files` instead. Named one by one, never a
+ * wildcard: the whole point of `boundaries/no-unknown-files` is that a new file has to be
+ * classified before it can import anything, and a wildcard here would wave the next one through.
  *
- * The tiers are ordered `i18n → infrastructure → ui → kernel → modules`, and every arrow points one
- * way: a tier may import the ones below it and never the ones above. What each one is allowed to
- * know:
- *
- *   i18n            nothing about this app,       locale load/activate/merge, dictionary types,
- *                   not even infrastructure       `<html lang/dir>`, locale-aware router links
- *   infrastructure  nothing about this app        http client, errors, formatters, uploads,
- *                                                 logger, session, observability
- *   ui              the design system, no domain  tokens, icons, and the components built on them
- *   kernel          this KIND of app, no domain   the module registry — and nothing else
- *   modules         one domain each, top to bottom
- *
- * Written out rather than generated, unlike `moduleBoundaryRules` above: there are five tiers and
- * they are named in the architecture, so a new one is a decision rather than a folder appearing.
- *
- * `i18n` sits below `infrastructure` rather than beside it because `infrastructure` calls INTO it
- * (`errors.ts`, `formatters.ts`, `uploads.ts`, the http layer — all translate a message), never the
- * other way. It lives at `src/i18n/`, a dedicated top-level directory rather than
- * `src/infrastructure/i18n/`, on purpose (FE-D5): the runtime is copy-pasted into two sibling
- * repos, and a directory with no imports reaching up is what makes lifting it into its own package
- * later a copy rather than a rewrite. `src/infrastructure/locale-overrides.ts` is the one file that
- * stays behind — it calls `@api`, the client generated from this app's own contract, which the
- * extractable runtime must not depend on.
- *
- * One allowance is deliberate and load-bearing: `kernel` may import `@/modules` (the singular
- * file listing which domains are in this build) but never `@/modules/<name>` — the registry is the
- * only channel between the shell and a domain, and it is what lets the router splice every domain
- * route without naming one.
+ * `session.ts` and `observability/**` are also `infrastructure` by folder — both classifications
+ * apply at once, which is what lets `ui`'s policy below allow `infrastructure` in general and then
+ * disallow these two specifically, in that order.
  */
-const tierBoundaryRules = [
+const boundariesFiles = [
+    { pattern: 'src/main.ts', category: 'composition-root' },
+    { pattern: 'src/App.vue', category: 'composition-root' },
+    { pattern: 'src/modules.ts', category: 'registry' },
+    { pattern: 'src/globals.d.ts', category: 'ambient' },
+    { pattern: 'src/vite-env.d.ts', category: 'ambient' },
+    { pattern: 'src/demo-modules.ts', category: 'demo-manifest' },
+    { pattern: 'src/modules/*/tests/**/*.ts', category: 'spec' },
+    { pattern: 'src/infrastructure/session.ts', category: 'infra-app-state' },
+    { pattern: 'src/infrastructure/observability/**/*.ts', category: 'infra-app-state' }
+];
+
+/**
+ * The tier ladder and the module system's own rules, as `boundaries/dependencies` policies.
+ *
+ * `default: 'disallow'` in the rule config below means every edge starts refused; each entry here
+ * OPENS one. Read top to bottom — the LAST matching policy wins, so a later, narrower entry (the
+ * barrel-only door, `ui`'s carve-out of `session.ts`/`observability`) overrides a broader one
+ * stated earlier for the same edge.
+ *
+ * The ladder, bottom to top: `i18n → infrastructure → ui → kernel → modules(+domain) → app`. A
+ * tier may import the ones below it and never the ones above — see `docs/theory/layers.md`. `app`
+ * is the one exception worth naming: nothing may reach it, including a module, which is exactly
+ * the gap FA-D2/FA96 closes — `src/kernel/route-link.ts` exists because of it (see its own
+ * docblock). `types` is erased at compile time, so every tier may reach it; a resolved import
+ * outside `src/` (`@api`, `contracts/`, `tests/support/`) matches no element or file here and is
+ * invisible to this rule the same way it is to the old `no-restricted-imports` patterns — narrower
+ * than that is a separate concern from FE-D2/FA96, not this change's job.
+ */
+const layerDependencyPolicies = [
+    // npm. The graph being described is this repository's; a package belongs to no tier of it.
+    { allow: { to: { module: { origin: 'external' } } } },
+
+    // `types` is erased at compile time: every tier may read it, including `domain`.
+    { allow: { to: { element: { type: 'types' } } } },
+
+    // i18n knows nothing about this app — not even infrastructure — so it may only reach itself.
     {
-        files: ['src/i18n/**/*.{ts,mts,tsx,vue}'],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: [
-                                '@/infrastructure/**',
-                                '@/ui/**',
-                                '@/kernel/**',
-                                '@/app/**',
-                                '@/modules',
-                                '@/modules/**',
-                                '@api',
-                                '@api/**'
-                            ],
-                            message:
-                                'src/i18n is the extractable i18n runtime (FE-D5): it knows nothing about this app, not even infrastructure or the generated API client. A dependency that only exists because this currently lives inside the app belongs in src/infrastructure/locale-overrides.ts instead.'
-                        }
-                    ]
+        from: { element: { type: 'i18n' } },
+        allow: { to: { element: { type: 'i18n' } } }
+    },
+
+    // infrastructure calls INTO i18n to translate (errors.ts, formatters.ts, uploads.ts, http) —
+    // never the other way — plus its own files.
+    {
+        from: { element: { type: 'infrastructure' } },
+        allow: { to: { element: { type: ['infrastructure', 'i18n'] } } }
+    },
+
+    // ui may use infrastructure (and i18n through it) in general, but not the app-stateful parts:
+    // a design-system component that reads who is signed in cannot be reused. Stated after the
+    // general allow above so it overrides it for exactly these two files.
+    {
+        from: { element: { type: 'ui' } },
+        allow: { to: { element: { type: ['ui', 'infrastructure', 'i18n'] } } }
+    },
+    {
+        from: { element: { type: 'ui' } },
+        disallow: { to: { file: { categories: ['infra-app-state'] } } },
+        message:
+            'ui may use infrastructure, but not the app-stateful parts of it. Session and observability are read by the caller and passed in — a design-system component that reads who is signed in cannot be reused.'
+    },
+
+    // kernel may use infrastructure and i18n, plus its own files. NOT ui, despite ui sitting
+    // "below" it on the ladder: the kernel assembles modules, it does not render — see the
+    // disallow below, stated after this allow so it overrides it for `ui` specifically.
+    {
+        from: { element: { type: 'kernel' } },
+        allow: { to: { element: { type: ['kernel', 'infrastructure', 'i18n'] } } }
+    },
+    {
+        from: { element: { type: 'kernel' } },
+        disallow: { to: { element: { type: ['ui', 'module', 'domain', 'app'] } } },
+        message:
+            'the kernel is the module system: it assembles modules, it does not render, and it never knows which domains exist. A component belongs in @/ui (survives a copy-paste into another product), src/app (knows this app) or src/modules/<name> (knows one domain); a module or the registry belongs in src/app or src/modules.ts, never here.'
+    },
+
+    // A module reaches its own files (any tier, including its own `domain/`) and kernel/ui/infra/
+    // i18n freely; the one door into a SIBLING is the barrel policy generated above.
+    {
+        from: { element: { type: 'module' } },
+        allow: {
+            to: [
+                { element: { captured: { module: '{{ from.element.captured.module }}' } } },
+                { element: { type: ['kernel', 'ui', 'infrastructure', 'i18n'] } }
+            ]
+        }
+    },
+    // A module never imports its own barrel — the export is one relative import away from the
+    // real file, and importing it back risks a load-order cycle under `export *`. Stated after
+    // the self-reach allow above so it overrides that allow for this one path; a SIBLING's
+    // `index.ts` stays reachable, since this only matches the module's OWN captured name.
+    {
+        from: { element: { type: 'module' } },
+        disallow: {
+            to: {
+                element: {
+                    type: 'module',
+                    fileInternalPath: 'index.ts',
+                    captured: { module: '{{ from.element.captured.module }}' }
                 }
+            }
+        },
+        message:
+            'A module does not import its own barrel — the export is one relative import away from the real file.'
+    },
+
+    // The domain layer: plain TypeScript over plain data, reaching only its own folder (`types`
+    // above already covers the one thing outside it this codebase lets it take).
+    {
+        from: { element: { type: 'domain' } },
+        allow: {
+            to: {
+                element: {
+                    type: 'domain',
+                    captured: { module: '{{ from.element.captured.module }}' }
+                }
+            }
+        }
+    },
+    {
+        from: { element: { type: 'domain' } },
+        disallow: {
+            to: {
+                element: { type: ['infrastructure', 'kernel', 'app', 'ui', 'i18n', 'module'] }
+            }
+        },
+        message:
+            'The domain layer imports nothing but plain TypeScript — no tier, no sibling module, and none of the outer files of its own module. If a rule needs i18n it is returning a message where it should return a verdict; if it needs the store it is doing the job of the store.'
+    },
+
+    // app assembles the application: every domain's barrel (never an internal), plus kernel, ui,
+    // infrastructure, i18n and its own files.
+    {
+        from: { element: { type: 'app' } },
+        allow: {
+            to: [
+                { element: { type: 'app' } },
+                { element: { type: 'module', fileInternalPath: 'index.ts' } },
+                { element: { type: ['kernel', 'ui', 'infrastructure', 'i18n'] } },
+                { file: { categories: ['registry'] } }
+            ]
+        }
+    },
+    // …and never the other way. This is the specific gap FA-D2/FA96 closes: nothing below `app`
+    // may reach it, a module included — see `src/kernel/route-link.ts` for where that logic moved.
+    {
+        from: {
+            element: { type: ['module', 'domain', 'kernel', 'ui', 'infrastructure', 'i18n'] }
+        },
+        disallow: { to: { element: { type: 'app' } } },
+        message:
+            'Nothing below src/app may reach it — app assembles the application and is the one tier allowed to know every domain. A helper a module needs that only cares about the module SYSTEM (not this app specifically) belongs in src/kernel; see src/kernel/route-link.ts.'
+    },
+
+    // The composition root (`main.ts`, `App.vue`) and the registry (`src/modules.ts`) are trusted
+    // to assemble everything; each also reaches the other's file category directly, since neither
+    // has an element type of its own to match against `type: '*'`.
+    {
+        from: { file: { categories: ['composition-root'] } },
+        allow: {
+            to: [
+                { element: { type: '*' } },
+                { file: { categories: ['composition-root', 'registry'] } }
             ]
         }
     },
     {
-        files: ['src/infrastructure/**/*.{ts,mts,tsx,vue}'],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: [
-                                '@/ui/**',
-                                '@/kernel/**',
-                                '@/app/**',
-                                '@/modules',
-                                '@/modules/**'
-                            ],
-                            message:
-                                'infrastructure is the bottom tier: it knows nothing about this app. It may not import ui, kernel, app or a module.'
-                        }
-                    ]
-                }
+        from: { file: { categories: ['registry'] } },
+        allow: {
+            to: [
+                { element: { type: 'kernel' } },
+                { element: { type: 'module', fileInternalPath: 'module.ts' } }
             ]
         }
     },
+
+    // A module's own spec reaches `@/modules` (the registry) the way `app` does, to mount the
+    // real app in a component test — everything else it needs (its own module, kernel, ui,
+    // infra, i18n) is already open via the `module` element it also carries (FA96).
     {
-        files: ['src/ui/**/*.{ts,mts,tsx,vue}'],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: ['@/kernel/**', '@/app/**', '@/modules', '@/modules/**'],
-                            message:
-                                'ui is the design system: it may not import kernel, app or a module. A component that needs domain data takes it as a prop.'
-                        },
-                        {
-                            group: [
-                                '@/infrastructure/session.ts',
-                                '@/infrastructure/observability/**'
-                            ],
-                            message:
-                                'ui may use infrastructure, but not the app-stateful parts of it. Session and observability are read by the caller and passed in — a design-system component that reads who is signed in cannot be reused.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/kernel/**/*.{ts,mts,tsx,vue}'],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: ['@/modules', '@/modules/*', '@/modules/*/**', '@/app/**'],
-                            message:
-                                'the kernel knows this KIND of app, never this one: it may not import a module, nor `@/modules` — the registry names every enabled domain, which is what `src/app` is for.'
-                        },
-                        {
-                            group: ['@/ui/**'],
-                            message:
-                                'the kernel is the module system: it assembles modules, it does not render. A component belongs in @/ui (survives a copy-paste into another product), src/app (knows this app) or src/modules/<name> (knows one domain).'
-                        }
-                    ]
-                }
-            ]
-        }
+        from: { file: { categories: ['spec'] } },
+        allow: { to: { file: { categories: ['registry'] } } }
     }
 ];
 
@@ -603,6 +640,17 @@ const namingConventionRule = {
     ]
 };
 
+/**
+ * FA95: the preset's own default (`allowComponentTypeUnsafety: true`) turns off
+ * `no-unsafe-argument`/`-assignment`/`-return`/`-call`/`-member-access` for every `.ts` AND `.vue`
+ * file, to paper over Vue component operations TypeScript-ESLint cannot fully type. This repo
+ * bans `any` outright (CLAUDE.md), so those five rules stay on; the rare genuine case (Vue's own
+ * generated/framework types producing an `any` the code cannot avoid) gets a line `eslint-disable`
+ * with a description instead of a blanket carve-out. Must run before `defineConfigWithVueTs`
+ * below — it configures shared, module-level state the preset reads when building its configs.
+ */
+configureVueProject({ allowComponentTypeUnsafety: false });
+
 export default defineConfigWithVueTs(
     {
         files: ['**/*.{ts,mts,tsx,vue}']
@@ -735,15 +783,45 @@ export default defineConfigWithVueTs(
         }
     },
 
-    ...tierBoundaryRules,
-
-    ...moduleBoundaryRules,
-
-    /*
-     * After the module rules, deliberately: `domain/` is inside a module, so this block has to be
-     * the later word on those files or the module block would be the only one applied.
+    /**
+     * The tier ladder and the module system, as `eslint-plugin-boundaries` (FE-D2/FA96): deny by
+     * default, an explicit `boundaries/dependencies` policy per allowed edge, and
+     * `boundaries/no-unknown-files` refuses a FILE under `src/` that no descriptor above claims —
+     * the same fail-closed shape the paired backend uses (`eslint.config.ts:665-800` there).
+     *
+     * Checked against the RESOLVED file via `eslint-import-resolver-typescript`, not the import
+     * STRING — a `.vue` file's `<script>` block, a relative `../../` path, a re-export and a
+     * dynamic `import()` are all covered the same way a `@/modules/x` specifier is (FA96 #1–2);
+     * `eslint-plugin-vue`'s `<script>` parsing plus this resolver's `alwaysTryTypes` is what a
+     * half-day spike confirmed before this landed on option A over the fallback (FE-D2).
      */
-    ...domainPurityRules,
+    {
+        files: ['src/**/*.{ts,vue}'],
+        plugins: { boundaries },
+        settings: {
+            'import/resolver': {
+                typescript: { alwaysTryTypes: true, project: './tsconfig.app.json' }
+            },
+            'boundaries/elements': boundariesElements,
+            'boundaries/files': boundariesFiles
+        },
+        rules: {
+            'boundaries/no-unknown-files': 'error',
+            'boundaries/dependencies': [
+                'error',
+                {
+                    default: 'disallow',
+                    message:
+                        '{{from.element.type}} may not depend on {{to.element.type}} — see docs/theory/layers.md.',
+                    // Without this, same-element imports are skipped entirely (the plugin's own
+                    // `isInternalDependency` default), so the own-barrel disallow and the
+                    // spec-vs-own-index split above would never run — both are same-module edges.
+                    checkInternals: true,
+                    policies: [...layerDependencyPolicies, ...moduleDependencyPolicies]
+                }
+            ]
+        }
+    },
 
     /**
      * Component discipline: a `.vue` file wires, it does not call the API.

@@ -91,8 +91,11 @@ const asUnavailableLine = (value: unknown): UnavailableCartLine | undefined => {
 const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } | undefined => {
     if (typeof error !== 'object' || error === null) return undefined;
     const items = (error as { errors?: unknown }).errors;
+    // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
+    // quirk, not a real `any` — so `items` is re-read through an `unknown` cast rather than
+    // destructured straight off the narrowed array.
     if (!Array.isArray(items) || items.length === 0) return undefined;
-    const [item] = items;
+    const item: unknown = (items as unknown[])[0];
     return typeof item === 'object' && item !== null ? item : undefined;
 };
 

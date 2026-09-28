@@ -18,6 +18,7 @@ import { i18n, loadLocale } from '@/i18n';
 import { OrderStatus } from '@api';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
@@ -117,7 +118,7 @@ describe('the digital-fulfilment door', () => {
         return wrapper
             .find('[data-test=mark-fulfilled]')
             .trigger('click')
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
                     'not digital-only'
@@ -163,7 +164,7 @@ describe('with no shipment yet', () => {
         return wrapper
             .find('[data-test=mark-shipped]')
             .trigger('click')
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
                     'already shipped'
@@ -177,7 +178,7 @@ describe('with a shipment already recorded', () => {
         const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(wrapper.find('[data-test=mark-delivered]').exists()).toBe(true);
         });
     });
@@ -186,7 +187,7 @@ describe('with a shipment already recorded', () => {
         const wrapper = mountPanel({ orderId: 'o1', canDeliver: false, override: [] });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'delivered' };
 
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(wrapper.find('[data-test=mark-delivered]').exists()).toBe(false);
             expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
         });
@@ -200,10 +201,9 @@ describe('with a shipment already recorded', () => {
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
         vi.spyOn(useDeliveryStore(), 'deliver').mockRejectedValue(new Error('already delivered'));
 
-        return wrapper.vm
-            .$nextTick()
+        return nextRenderTick(wrapper)
             .then(() => wrapper.find('[data-test=mark-delivered]').trigger('click'))
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.find('[data-test=shipment-panel-error]').text()).toContain(
                     'already delivered'
@@ -219,12 +219,12 @@ describe('with a shipment already recorded', () => {
         const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(
                 wrapper.find('[data-test=mark-delivered]').attributes('disabled')
             ).toBeUndefined();
             useCoreStore().setLoading('delivery', true);
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(
                     wrapper.find('[data-test=mark-delivered]').attributes('disabled')
                 ).toBeDefined();
@@ -255,8 +255,7 @@ describe('re-checking the record belongs to this order (FA24)', () => {
         const wrapper = mountPanel({ orderId: 'o1' });
         store.shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
-        return wrapper.vm
-            .$nextTick()
+        return nextRenderTick(wrapper)
             .then(() => {
                 expect(wrapper.find('[data-test=shipment-status]').exists()).toBe(true);
                 // fetchShipmentForOrder is stubbed to resolve without touching store.shipment, so
@@ -264,7 +263,7 @@ describe('re-checking the record belongs to this order (FA24)', () => {
                 // response landing after the caller has already moved on.
                 return wrapper.setProps({ orderId: 'o2' });
             })
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.find('[data-test=shipment-status]').exists()).toBe(false);
             });

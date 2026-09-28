@@ -15,7 +15,7 @@ export default {
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/app/router/navigation.ts';
+import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

@@ -89,6 +89,7 @@ const bootstrapApplication = () =>
             return mergeRemoteLocales().then(() => pinia);
         })
         .then((pinia) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- createApp(App) is TypeScript-ESLint's own documented case: it cannot fully resolve a .vue SFC's component type
             const app = createApp(App).use(pinia).use(router).use(i18n).use(vuetify);
 
             // Anything a component's render/setup/watcher throws with nothing downstream to

@@ -59,6 +59,7 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
         {},
         apiKeyCreateSchema,
         {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
             formElement: () => card.value?.formElement,
             revalidateOn: locale,
             invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,

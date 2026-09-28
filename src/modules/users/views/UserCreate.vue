@@ -120,6 +120,7 @@ const {
 } = useStructureFormValidation<UserCreateForm>({}, createSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
     formElement: () => card.value?.formElement,
     revalidateOn: locale,
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,

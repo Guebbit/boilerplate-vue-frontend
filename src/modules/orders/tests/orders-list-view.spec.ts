@@ -23,6 +23,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -112,7 +113,7 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         signInAsPaymentRecorder();
         const wrapper = mountList();
 
-        wrapper.findComponent({ name: 'OrderReferenceSearch' }).vm.$emit('found', anOrder());
+        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', anOrder());
 
         return vi
             .waitFor(() => {

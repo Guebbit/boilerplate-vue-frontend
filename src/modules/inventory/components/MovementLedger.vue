@@ -21,7 +21,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/app/router/navigation.ts';
+import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
 import {

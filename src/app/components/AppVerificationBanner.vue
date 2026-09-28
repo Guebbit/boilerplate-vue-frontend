@@ -16,7 +16,7 @@ import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { useProfileStore, emailVerifyResendRetryAfter } from '@/modules/account/stores/profile.ts';
+import { emailVerifyResendRetryAfter, useProfileStore } from '@/modules/account';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**

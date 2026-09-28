@@ -14,6 +14,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { Payment } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
@@ -75,7 +76,7 @@ describe('PaymentPanel', () => {
             });
             store.payment = { ...handPaidSucceededPayment };
 
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-deadline]').exists()).toBe(false);
             });
         });
@@ -104,8 +105,8 @@ describe('PaymentPanel', () => {
         return wrapper
             .get('form')
             .trigger('submit')
-            .then(() => wrapper.vm.$nextTick())
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 const lines = wrapper.findAll('[data-test=payment-unavailable-line]');
                 expect(lines).toHaveLength(1);
@@ -140,14 +141,14 @@ describe('PaymentPanel', () => {
         return wrapper
             .get('form')
             .trigger('submit')
-            .then(() => wrapper.vm.$nextTick())
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.findAll('[data-test=payment-unavailable-line]')).toHaveLength(1);
                 return wrapper.get('form').trigger('submit');
             })
-            .then(() => wrapper.vm.$nextTick())
-            .then(() => wrapper.vm.$nextTick())
+            .then(() => nextRenderTick(wrapper))
+            .then(() => nextRenderTick(wrapper))
             .then(() => {
                 expect(wrapper.findAll('[data-test=payment-unavailable-line]')).toHaveLength(0);
             });
@@ -163,7 +164,7 @@ describe('PaymentPanel', () => {
             const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
             store.payment = { ...handPaidSucceededPayment };
 
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(true);
                 expect(wrapper.find('[data-test=payment-refunded-by-hand]').exists()).toBe(false);
             });
@@ -177,7 +178,7 @@ describe('PaymentPanel', () => {
                 refundedByHand: true
             };
 
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
                 expect(wrapper.find('[data-test=payment-refunded-by-hand]').exists()).toBe(true);
             });
@@ -187,7 +188,7 @@ describe('PaymentPanel', () => {
             const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
             store.payment = { ...handPaidSucceededPayment, provider: 'fake', method: 'card' };
 
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
             });
         });
@@ -196,7 +197,7 @@ describe('PaymentPanel', () => {
             const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
             store.payment = { ...handPaidSucceededPayment };
 
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
             });
         });
@@ -222,8 +223,7 @@ describe('PaymentPanel', () => {
             const { store, wrapper } = mountPanel();
             store.payment = { ...handPaidSucceededPayment };
 
-            return wrapper.vm
-                .$nextTick()
+            return nextRenderTick(wrapper)
                 .then(() => {
                     expect(wrapper.find('[data-test=payment-status]').exists()).toBe(true);
                     // fetchPaymentForOrder is stubbed to resolve without touching store.payment,
@@ -231,7 +231,7 @@ describe('PaymentPanel', () => {
                     // slow response landing after the caller has already moved on.
                     return wrapper.setProps({ orderId: 'order-2' });
                 })
-                .then(() => wrapper.vm.$nextTick())
+                .then(() => nextRenderTick(wrapper))
                 .then(() => {
                     expect(wrapper.find('[data-test=payment-status]').exists()).toBe(false);
                 });

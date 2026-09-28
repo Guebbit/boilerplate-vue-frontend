@@ -19,6 +19,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { Order as OrderType } from '@types';
 
 wireModulesIntoCore();
@@ -283,7 +284,7 @@ describe('the reorder button (FA39)', () => {
         expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeUndefined();
 
         useCoreStore().setLoading('cart', true);
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeDefined();
         });
     });

@@ -17,6 +17,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import {
     orvalEnvelope,
@@ -138,7 +139,7 @@ describe('User (detail page)', () => {
                 });
                 // Only `active` "changed" here — `UserAccessDialog` itself is what decides which
                 // fields to include; this stub simulates it having decided `active: false`.
-                dialog.vm.$emit('confirm', { active: false });
+                emitOn(dialog, 'confirm', { active: false });
             })
             .then(flushPromises)
             .then(() => {
@@ -157,7 +158,7 @@ describe('User (detail page)', () => {
         return flushPromises()
             .then(() => wrapper.get('[data-test=user-manage-access]').trigger('click'))
             .then(flushPromises)
-            .then(() => wrapper.getComponent(UserAccessDialog).vm.$emit('cancel'))
+            .then(() => emitOn(wrapper.getComponent(UserAccessDialog), 'cancel'))
             .then(flushPromises)
             .then(() => {
                 expect(

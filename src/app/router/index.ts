@@ -96,8 +96,7 @@ assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes]);
  * The name that follows every page title in the browser tab, and stands alone on a route that
  * declares none. An env value so a derived project renames the tab without touching the router.
  */
-const appName =
-    runtimeValue('APP_NAME') || (import.meta.env.VITE_APP_NAME as string | undefined) || 'Guebbit';
+const appName = runtimeValue('APP_NAME') || import.meta.env.VITE_APP_NAME || 'Guebbit';
 
 /**
  * Whether the visitor asked the OS for less motion; read per call, since the setting can change.

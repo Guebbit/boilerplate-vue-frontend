@@ -9,11 +9,14 @@
  * Only `@api` is mocked, at the network boundary.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { contractResponse } from './http/orval-fixture-schema.ts';
 import { aUser } from '../../support/unit/fixtures.ts';
 
+// `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
+// the real generated envelope types would refuse, and that looseness is the point of a mock.
 const updateAccountMock = vi.fn();
 const getAccountMock = vi.fn();
 const getMyAbilitiesMock = vi.fn();
@@ -21,12 +24,21 @@ const refreshTokenMock = vi.fn();
 const logoutMock = vi.fn();
 const logoutAllMock = vi.fn();
 
+// Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
+// `any` — one disable per line rather than retyping the mocks against the full generated
+// envelope shapes these fixtures intentionally only build part of.
 vi.mock('@api', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getAccount: () => getAccountMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getMyAbilities: () => getMyAbilitiesMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     refreshToken: () => refreshTokenMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logout: () => logoutMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
@@ -168,7 +180,9 @@ describe('setAccessToken — the isAuth/rememberMe cookie pair', () => {
      */
     describe('the Secure attribute follows the page scheme', () => {
         const nativeSetter = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')!.set!;
-        let setterSpy: ReturnType<typeof vi.spyOn>;
+        // `vi.spyOn`'s bare `ReturnType` picks the wrong overload for a "set" accessor spy —
+        // named explicitly against the "set" overload's own `Mock<(arg: T[G]) => void>` shape.
+        let setterSpy: Mock<(value: string) => void>;
 
         beforeEach(() => {
             setterSpy = vi.spyOn(Document.prototype, 'cookie', 'set').mockImplementation(function (

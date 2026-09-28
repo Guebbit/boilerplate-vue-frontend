@@ -14,6 +14,7 @@
  * would assert against whatever happens to be in that file rather than against the fallback.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /** Imports a fresh logger with the given environment. */
 const loadLogger = (environment: Record<string, unknown>) => {
@@ -22,7 +23,7 @@ const loadLogger = (environment: Record<string, unknown>) => {
     return import('@/infrastructure/utils/logger');
 };
 
-let spies: Record<'debug' | 'info' | 'warn' | 'error', ReturnType<typeof vi.spyOn>>;
+let spies: Record<'debug' | 'info' | 'warn' | 'error', Mock<(...arguments_: unknown[]) => void>>;
 
 beforeEach(() => {
     spies = {

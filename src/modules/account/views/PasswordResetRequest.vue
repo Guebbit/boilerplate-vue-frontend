@@ -91,6 +91,7 @@ const {
 const submitForm = () => {
     clearRequestError();
     return handleSubmit(() =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
         requestPasswordReset(form.value.email!, withAntibotToken(humanCheck.value?.token)).then(
             () => {
                 addMessage(t('password-reset-request-page.success'));

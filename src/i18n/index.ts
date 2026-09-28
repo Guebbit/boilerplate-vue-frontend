@@ -151,7 +151,7 @@ export const i18n = createI18n({
         runtimeLocaleValue('APP_DEFAULT_LOCALE') ?? import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
     fallbackLocale:
         runtimeLocaleValue('APP_FALLBACK_LOCALE') ??
-        (import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined) ??
+        import.meta.env.VITE_APP_FALLBACK_LOCALE ??
         'en',
     modifiers: {
         customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
@@ -410,7 +410,7 @@ export function getDefaultLocale() {
     // unsupported browser language, regardless of what a deployment set it to.
     return (
         runtimeLocaleValue('APP_DEFAULT_LOCALE') ??
-        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ??
+        import.meta.env.VITE_APP_DEFAULT_LOCALE ??
         (i18n.global.fallbackLocale as WritableComputedRef<string>).value
     );
 }

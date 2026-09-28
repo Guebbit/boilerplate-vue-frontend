@@ -168,6 +168,7 @@ describe('orvalMutator contract validation', () => {
             .then(() => {
                 expect(captureException).toHaveBeenCalledWith(
                     expect.objectContaining({
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types expect.stringContaining() as any, since it is a placeholder matcher usable against anything
                         message: expect.stringContaining(
                             '[contract] response for GET /account does not match the OpenAPI schema'
                         )
@@ -234,6 +235,7 @@ describe('orvalMutator contract validation', () => {
             .then(() => {
                 expect(captureException).toHaveBeenCalledWith(
                     expect.objectContaining({
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types expect.stringContaining() as any, since it is a placeholder matcher usable against anything
                         message: expect.stringContaining('does not match the OpenAPI schema')
                     })
                 );

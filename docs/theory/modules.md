@@ -44,8 +44,11 @@ flowchart TD
     class C core;
 ```
 
-**Every arrow points down and none points back.** `eslint.config.ts` enforces each edge in both
-directions, one `no-restricted-imports` block per tier.
+**Every arrow points down and none points back.** `eslint.config.ts`'s `eslint-plugin-boundaries`
+config enforces each edge in both directions — deny by default, an explicit policy per allowed
+edge, an unclassified file refused outright (FE-D2/FA96). `src/i18n` sits below this table's
+`infrastructure`, its own tier again: nothing above it, not even infrastructure, may skip it — see
+the "extractable i18n runtime" note under [Layers](./layers.md) and FE-D5.
 
 | Tier               | Folder               | Knows about                                                      | May import                 |
 | ------------------ | -------------------- | ---------------------------------------------------------------- | -------------------------- |
@@ -92,21 +95,21 @@ where it is. The one thing it may never contain is the knowledge that a module s
 
 Being domain-free is **not enough** to earn a place in `kernel` — most of `infrastructure` and all
 of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modules do. By that test
-`kernel` holds exactly one thing:
+`kernel` holds exactly two things:
 
-| File          | Why it cannot be infrastructure                                            |
-| ------------- | -------------------------------------------------------------------------- |
-| `registry.ts` | it _is_ the module system — `AppModule`, the nav entries, the route splice |
+| File            | Why it cannot be infrastructure                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registry.ts`   | it _is_ the module system — `AppModule`, the nav entries, the route splice                                                                              |
+| `route-link.ts` | its whole reason to exist is a route that may not resolve because the module owning it may not be in this build — meaningless in an app with no modules |
 
-That is literally the whole tier: **one file**. Three near misses show where the line falls, because
-each survives perfectly well in an app with no modules and none is imported by the registry:
-`src/ui/molecules/FormCounterInput.vue` imports nothing at all,
-`src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and drives its
-locale-prefixed routes, and `src/modules/demo/store.ts` is Pinia demo scaffolding for the
-Playground rather than shared state. None of the three belongs to the module system; each belongs
-to the tier its dependencies name.
+Three near misses show where the line falls, because each survives perfectly well in an app with no
+modules and none is imported by the registry: `src/ui/molecules/FormCounterInput.vue` imports
+nothing at all, `src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and
+drives its locale-prefixed routes, and `src/modules/demo/store.ts` is Pinia demo scaffolding for
+the Playground rather than shared state. None of the three belongs to the module system; each
+belongs to the tier its dependencies name.
 
-One file is the honest size of a module system in a frontend, and it is deliberate: the tier earns
+Two files is the honest size of a module system in a frontend, and it is deliberate: the tier earns
 its place by being unambiguous, not by being large. Everything domain-free that is _not_ the module
 system has two better homes already — `ui` for anything with a template, `infrastructure` for the
 rest.

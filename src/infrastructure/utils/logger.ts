@@ -65,9 +65,7 @@ export type LogScope = keyof LogScopes;
  * typo in an env var must not be the reason an error went unseen.
  */
 const resolveLevel = (): LogLevel => {
-    const configured =
-        runtimeValue('APP_LOG_LEVEL') ??
-        (import.meta.env.VITE_APP_LOG_LEVEL as string | undefined)?.trim();
+    const configured = runtimeValue('APP_LOG_LEVEL') ?? import.meta.env.VITE_APP_LOG_LEVEL?.trim();
     if (configured && (LEVELS as readonly string[]).includes(configured))
         return configured as LogLevel;
     return import.meta.env.DEV ? 'debug' : 'warn';
@@ -79,8 +77,7 @@ const resolveLevel = (): LogLevel => {
  */
 const resolveScopes = (): Set<string> => {
     const configured =
-        runtimeValue('APP_LOG_SCOPES') ??
-        (import.meta.env.VITE_APP_LOG_SCOPES as string | undefined)?.trim();
+        runtimeValue('APP_LOG_SCOPES') ?? import.meta.env.VITE_APP_LOG_SCOPES?.trim();
     if (!configured) return new Set();
     // `filter(Boolean)` is what makes a trailing comma or a stray space harmless in an .env file.
     return new Set(

@@ -24,7 +24,7 @@ import {
 } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
 import AppNavMenu from '@/app/components/AppNavMenu.vue';
-import type { AppNavItem } from '@/app/components/AppNavMenu.vue';
+import type { AppNavItem } from '@/app/components/app-nav-item.ts';
 import AppNavBarLink from '@/app/components/AppNavBarLink.vue';
 import AppNavPinnedButton from '@/app/components/AppNavPinnedButton.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';

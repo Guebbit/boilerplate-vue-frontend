@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextRenderTick } from '../../support/unit/mounted-vm';
 import FormCounterInput from '@/ui/molecules/FormCounterInput.vue';
 import vuetify from '@/ui/vuetify';
 
@@ -37,7 +38,7 @@ describe('CounterInput component UNIT TEST', () => {
             button
                 .trigger('pointerdown')
                 .then(() => button.trigger('pointerup'))
-                .then(() => mountedComponent.vm.$nextTick());
+                .then(() => nextRenderTick(mountedComponent));
 
         // Start adding and subtracting
         expect(inputElement.value).toBe('8');
@@ -55,7 +56,7 @@ describe('CounterInput component UNIT TEST', () => {
                 // set value to 3
                 return mountedComponent.setProps({ modelValue: 3 });
             })
-            .then(() => mountedComponent.vm.$nextTick())
+            .then(() => nextRenderTick(mountedComponent))
             .then(() => {
                 expect(inputElement.value).toBe('3');
 

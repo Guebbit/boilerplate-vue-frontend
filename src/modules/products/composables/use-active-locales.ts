@@ -20,9 +20,7 @@ import type { LocaleCapability } from '@types';
  * so the one tab this offers names the language the UI is actually rendered in.
  */
 const configuredFallbackLocale = (): string =>
-    runtimeValue('APP_FALLBACK_LOCALE') ??
-    (import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined) ??
-    'en';
+    runtimeValue('APP_FALLBACK_LOCALE') ?? import.meta.env.VITE_APP_FALLBACK_LOCALE ?? 'en';
 
 /**
  * A single-tab manifest good enough for `TranslationTabs` to render a form with — everything a

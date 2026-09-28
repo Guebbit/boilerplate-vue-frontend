@@ -277,7 +277,9 @@ describe('useOrdersStore', () => {
                     // every search, no matter which page the user is on.
                     expect(searchOrders).toHaveBeenCalledWith(
                         expect.objectContaining({
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.any()` as `any`, since it is a placeholder matcher usable against anything
                             page: expect.any(Number),
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.any()` as `any`, since it is a placeholder matcher usable against anything
                             pageSize: expect.any(Number)
                         })
                     );

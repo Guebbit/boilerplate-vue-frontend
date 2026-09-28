@@ -15,6 +15,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextRenderTick } from '../../support/unit/mounted-vm';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
@@ -54,7 +55,7 @@ describe('ReauthDialog', () => {
         // Never awaited in this case — settling it is what the OTHER cases below assert on.
         void useReauthPromptStore().requestStepUp();
 
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(true);
             expect(
                 wrapper.find('[data-test="reauth-dialog-submit"]').attributes('disabled')
@@ -67,7 +68,7 @@ describe('ReauthDialog', () => {
         const wrapper = mountDialog();
         const stepUp = useReauthPromptStore().requestStepUp();
 
-        return wrapper.vm.$nextTick().then(() =>
+        return nextRenderTick(wrapper).then(() =>
             wrapper
                 .get('[data-test="reauth-dialog-password"] input')
                 .setValue('correct horse')
@@ -89,12 +90,12 @@ describe('ReauthDialog', () => {
         // than rejecting the caller's promise.
         void useReauthPromptStore().requestStepUp();
 
-        return wrapper.vm.$nextTick().then(() =>
+        return nextRenderTick(wrapper).then(() =>
             wrapper
                 .get('[data-test="reauth-dialog-password"] input')
                 .setValue('wrong guess')
                 .then(() => wrapper.get('[data-test="reauth-dialog-submit"]').trigger('click'))
-                .then(() => wrapper.vm.$nextTick())
+                .then(() => nextRenderTick(wrapper))
                 .then(() => {
                     expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(
                         true
@@ -108,8 +109,7 @@ describe('ReauthDialog', () => {
         const wrapper = mountDialog();
         const stepUp = useReauthPromptStore().requestStepUp();
 
-        return wrapper.vm
-            .$nextTick()
+        return nextRenderTick(wrapper)
             .then(() => wrapper.get('[data-test="reauth-dialog-cancel"]').trigger('click'))
             .then(() => expect(stepUp).rejects.toThrow('REAUTH_CANCELLED'));
     });

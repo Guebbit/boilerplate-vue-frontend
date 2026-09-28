@@ -68,7 +68,10 @@ const POLL_INTERVAL_MS = 1000;
 const umamiSession = (): Cypress.Chainable<UmamiSession> =>
     cy
         .env(['umamiUrl', 'umamiWebsiteId', 'umamiUser', 'umamiPassword'])
-        .then(({ umamiUrl, umamiWebsiteId, umamiUser, umamiPassword }) =>
+        // Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes
+        // back `any` regardless of what the config actually holds — so the callback's own
+        // parameter is typed honestly instead of carrying that `any` into the request body.
+        .then(({ umamiUrl, umamiWebsiteId, umamiUser, umamiPassword }: Record<string, string>) =>
             cy
                 .request<{ token: string }>({
                     method: 'POST',
@@ -76,8 +79,8 @@ const umamiSession = (): Cypress.Chainable<UmamiSession> =>
                     body: { username: umamiUser, password: umamiPassword }
                 })
                 .then(({ body }) => ({
-                    url: umamiUrl as string,
-                    websiteId: umamiWebsiteId as string,
+                    url: umamiUrl,
+                    websiteId: umamiWebsiteId,
                     token: body.token
                 }))
         );

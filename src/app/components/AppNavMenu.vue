@@ -6,43 +6,9 @@
  */
 import { ref } from 'vue';
 import type { Component, ComponentPublicInstance } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import AppNavIconButton from '@/app/components/AppNavIconButton.vue';
-
-/**
- * One navigation entry, resolved for the current visitor: translated, locale-prefixed, counted.
- */
-export interface AppNavItem {
-    /**
-     * Route name, stable across locales — the `key` of every render.
-     */
-    name: string;
-    /**
-     * Translated label.
-     */
-    title: string;
-    /**
-     * Locale-prefixed destination.
-     */
-    to: RouteLocationRaw;
-    /**
-     * Lucide icon shown before the label; entries with none render no icon slot.
-     */
-    icon?: Component;
-    /**
-     * Live count; `undefined` renders no badge.
-     */
-    badge?: number;
-    /**
-     * Live text beside the icon of a pinned entry; `undefined` renders none.
-     */
-    detail?: string;
-    /**
-     * Lifted out of its section's menu onto the bar, beside the account menu.
-     */
-    pinned?: boolean;
-}
+import type { AppNavItem } from '@/app/components/app-nav-item.ts';
 
 /**
  * A dropdown of navigation entries behind one icon button.

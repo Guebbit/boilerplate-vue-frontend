@@ -952,8 +952,11 @@ Cypress.Commands.add('settleNetwork', () => {
 Cypress.Commands.add('compareSnapshot', (name: string) => {
     cy.screenshot(name, { overwrite: true, capture: 'viewport' });
 
+    // Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes back
+    // `any` regardless of what the config actually holds — so the callback's own parameter is
+    // typed honestly instead of carrying that `any` into the task payload below.
     cy.env(['visualDiffDirectory', 'updateSnapshots']).then(
-        ({ visualDiffDirectory, updateSnapshots }) => {
+        ({ visualDiffDirectory, updateSnapshots }: Record<string, string | boolean>) => {
             /*
              * Cypress writes screenshots as `<screenshotsFolder>/<spec relative path>/<name>.png`
              * — the WHOLE path, not the file name. Take only the basename and the read fails with
