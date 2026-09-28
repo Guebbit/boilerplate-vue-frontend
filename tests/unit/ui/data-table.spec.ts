@@ -3,9 +3,10 @@
  *
  * Every list page hands this component its rows and trusts it for three things no page checks
  * itself: that the table has a NAME (a page with two tables announces two nameless ones
- * otherwise), that an actions column is not a focusable sort control that sorts nothing, and
- * that a selectable row is reachable by keyboard — `@click:row` is mouse-only, and the
- * products/orders/users pages select through it.
+ * otherwise), that a header is not a focusable sort control unless the caller actually bound one
+ * — sorting a header that only reorders the one PAGE this table holds, not the catalogue behind
+ * it, is FA75 — and that a selectable row is reachable by keyboard — `@click:row` is mouse-only,
+ * and the products/orders/users pages select through it.
  */
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -32,6 +33,10 @@ const items: Row[] = [
 /** The listener `v-model` passes — the evidence the table reads selectability from. */
 // eslint-disable-next-line @typescript-eslint/naming-convention -- Vue's own listener name
 const selectable = { 'onUpdate:modelValue': () => {} };
+
+/** The listener `v-model:sort-by` passes — the evidence the table reads sortability from. */
+// eslint-disable-next-line @typescript-eslint/naming-convention -- Vue's own listener name
+const sortBound = { 'onUpdate:sortBy': () => {} };
 
 /*
  * `headers` is typed on the row; the generic component's mount signature only knows `object`,
@@ -68,13 +73,31 @@ describe('DataTable — the name and the busy flag', () => {
 });
 
 describe('DataTable — the headers', () => {
-    it('keeps a field column sortable and makes a synthetic one inert', () => {
+    it('leaves every header inert when no caller bound a sort model (FA75)', () => {
         const heads = mountTable().findAll('th');
+
+        expect(heads[0].classes()).not.toContain('v-data-table__th--sortable');
+        expect(heads[0].attributes('tabindex')).toBeUndefined();
+        expect(heads[1].classes()).not.toContain('v-data-table__th--sortable');
+        expect(heads[1].attributes('tabindex')).toBeUndefined();
+    });
+
+    it('makes a field column sortable, and a synthetic one still inert, once a caller opts in', () => {
+        const heads = mountTable({ sortBy: [] }, sortBound).findAll('th');
 
         expect(heads[0].classes()).toContain('v-data-table__th--sortable');
         expect(heads[0].attributes('tabindex')).toBe('0');
         expect(heads[1].classes()).not.toContain('v-data-table__th--sortable');
         expect(heads[1].attributes('tabindex')).toBeUndefined();
+    });
+
+    it('shows Vuetify’s own localised text when the caller overrides neither', () => {
+        const text = mountTable({ loading: true }).text();
+
+        // Not asserting the exact English string, which would just restate Vuetify's own copy —
+        // the point is that SOMETHING renders, rather than this component's own hard-coded
+        // English default that used to out-rank it regardless of locale.
+        expect(text.trim().length).toBeGreaterThan(0);
     });
 });
 
