@@ -85,3 +85,28 @@ export const contractResponse = (schema: ZodType, data?: unknown): Record<string
     if (!result.success) throw result.error;
     return envelope;
 };
+
+/**
+ * FA123: the request-body half of the same proof — a spec asserting on what `orvalMutator` was
+ * CALLED WITH (`lastPatchBody()`-style helpers reading `config.data` off a mock's call list)
+ * proves the app built the shape the test author expected, never that the shape is one the real
+ * endpoint accepts. A spec that quietly drifts from the contract's own request schema — a
+ * `zod.strictObject` refusing a stray key, a `minLength: 1` refusing `''` — passes here forever
+ * with nothing to catch it, the same gap {@link parseOrvalFixture} closes for responses.
+ *
+ * No route table: unlike a response, a request body's operation is exactly the one the spec is
+ * already testing, so the caller just names that operation's own `<Operation>Body` schema from
+ * `@api/schemas` — mirroring {@link contractResponse}'s same choice, for the same reason.
+ *
+ * Not wrapped in an envelope — a request body is the payload itself, never `{ success, data }`.
+ *
+ * @param schema - the operation's request-body schema, e.g. `schemas.UpdateUserByIdBody`
+ * @param data - the body a call under test actually sent
+ * @returns `data`, unchanged, once it has been proven against `schema`
+ * @throws {import('zod').ZodError} When `data` does not match `schema`
+ */
+export const contractRequest = (schema: ZodType, data: unknown): unknown => {
+    const result = schema.safeParse(data);
+    if (!result.success) throw result.error;
+    return data;
+};

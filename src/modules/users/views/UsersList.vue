@@ -188,9 +188,15 @@ const {
 /**
  * Deletes a user after an explicit confirmation.
  *
+ * A soft delete, not a removal: the row is expected to stay visible (with its `row-deleted`
+ * badge) under the "All"/"Deleted only" filter. `deleteOne`'s own optimism drops the row from
+ * local state outright, same as a hard delete would — reloaded afterwards for the same reason
+ * {@link handleRestore} reloads, so the active filter's view of this row matches the server again.
+ *
  * @param userId - Identifier of the user to delete.
  * @returns A promise settling once the viewer has answered and, if they accepted, the
- *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
+ *  delete and the reload have finished; a failure blocks the list in place
+ *  ({@link rowActionError}).
  */
 const handleDelete = (userId: string) =>
     useDialogStore()
@@ -200,6 +206,7 @@ const handleDelete = (userId: string) =>
             clearRowActionError();
             return deleteUser(userId)
                 .then(() => addMessage(t('users-list-page.success-delete')))
+                .then(() => search(true))
                 .catch((error: unknown) => reportRowActionError(error));
         });
 
@@ -286,6 +293,7 @@ const handleHardDelete = (userId: string) =>
                     <v-text-field
                         v-model="filters.username"
                         :label="t('users-list-page.filter-username')"
+                        data-test="filter-username"
                         hide-details
                     />
                     <v-select
@@ -315,7 +323,7 @@ const handleHardDelete = (userId: string) =>
                     />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary">
+                    <v-btn type="submit" color="primary" data-test="search-submit">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>

@@ -173,6 +173,7 @@ const handleSecretDone = () => {
             <v-text-field
                 v-model="form.name"
                 type="text"
+                data-test="api-key-name"
                 :label="t('api-key-create-page.label-name')"
                 :error-messages="showFormErrors ? formErrors.name : []"
                 class="mb-2"
@@ -182,6 +183,7 @@ const handleSecretDone = () => {
                 multiple
                 chips
                 closable-chips
+                data-test="api-key-permissions"
                 :label="t('api-key-create-page.label-permissions')"
                 :hint="t('api-key-create-page.hint-permissions')"
                 persistent-hint
@@ -191,6 +193,7 @@ const handleSecretDone = () => {
             <v-text-field
                 v-model="form.expiresAt"
                 type="datetime-local"
+                data-test="api-key-expires-at"
                 :label="t('api-key-create-page.label-expires-at')"
                 :hint="t('api-key-create-page.hint-expires-at')"
                 persistent-hint

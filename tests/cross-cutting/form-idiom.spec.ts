@@ -28,6 +28,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const MODULES_ROOT = path.join(REPO_ROOT, 'src/modules');
@@ -69,15 +70,68 @@ const formValidationCallsOf = (source: string): string[] => {
     return calls;
 };
 
+/**
+ * The real property names an object literal declares — `key: value`, `key` shorthand and
+ * `key() {}` method shorthand all count; a `...spread` cannot be resolved statically and is
+ * skipped rather than guessed at.
+ *
+ * @param objectLiteral - an object-literal AST node
+ * @returns every statically known property name it declares
+ */
+const propertyNamesOf = (objectLiteral: ts.ObjectLiteralExpression): string[] =>
+    objectLiteral.properties
+        .filter(
+            (
+                property
+            ): property is
+                ts.PropertyAssignment | ts.ShorthandPropertyAssignment | ts.MethodDeclaration =>
+                ts.isPropertyAssignment(property) ||
+                ts.isShorthandPropertyAssignment(property) ||
+                ts.isMethodDeclaration(property)
+        )
+        .map((property) => property.name)
+        .filter((name): name is ts.Identifier => ts.isIdentifier(name))
+        .map((name) => name.text);
+
+/**
+ * FA127: the real property names of a `useStructureFormValidation(...)` call's OPTIONS argument
+ * — the composable's own last positional argument, per `IStructureFormValidationOptions` — parsed
+ * as an AST rather than matched as a substring of the call's source text.
+ *
+ * A substring check (`call.includes('revalidateOn')`) passes for that word sitting in a comment
+ * or inside an unrelated string in the same call, and would keep passing even if the toolkit
+ * renamed every OTHER option to something that happens to contain the same text. Parsing the
+ * options object's actual keys cannot be fooled either way.
+ *
+ * Each call snippet is valid standalone TypeScript (already isolated by
+ * {@link formValidationCallsOf}'s balanced-paren scan), so it parses as its own tiny source file
+ * without needing the surrounding `.vue` SFC or component.
+ *
+ * @param call - one call's source text, as `formValidationCallsOf` extracts it
+ * @returns the options argument's property names, or `[]` when there is no object-literal options
+ *  argument to read (an omitted options argument, or one passed as a bare variable)
+ */
+const optionKeysOf = (call: string): string[] => {
+    const sourceFile = ts.createSourceFile('call.ts', `${call};`, ts.ScriptTarget.Latest, true);
+    const [statement] = sourceFile.statements;
+    if (!statement || !ts.isExpressionStatement(statement)) return [];
+    const { expression } = statement;
+    if (!ts.isCallExpression(expression)) return [];
+    const options = expression.arguments.at(-1);
+    return options && ts.isObjectLiteralExpression(options) ? propertyNamesOf(options) : [];
+};
+
 describe('one form idiom', () => {
     it('gives every form the same three toolkit answers', () => {
         const incomplete = formComponents().filter((file) =>
-            formValidationCallsOf(sourceOf(file)).some(
-                (call) =>
-                    !call.includes('revalidateOn') ||
-                    !call.includes('invalidFieldSelector') ||
-                    !call.includes('onInvalid')
-            )
+            formValidationCallsOf(sourceOf(file)).some((call) => {
+                const keys = optionKeysOf(call);
+                return (
+                    !keys.includes('revalidateOn') ||
+                    !keys.includes('invalidFieldSelector') ||
+                    !keys.includes('onInvalid')
+                );
+            })
         );
 
         expect(incomplete).toEqual([]);
@@ -104,7 +158,7 @@ describe('one form idiom', () => {
             .filter(
                 (file) =>
                     !formValidationCallsOf(sourceOf(file)).some((call) =>
-                        call.includes('formElement')
+                        optionKeysOf(call).includes('formElement')
                     )
             );
 
@@ -117,5 +171,37 @@ describe('one form idiom', () => {
      */
     it('is checking the forms it is meant to be checking', () => {
         expect(formComponents().length).toBeGreaterThan(0);
+    });
+});
+
+describe('optionKeysOf — FA127: real keys, not a substring match', () => {
+    it('reads every key style the options object can use', () => {
+        const call = `useStructureFormValidation(data, schema, {
+            revalidateOn: locale,
+            formElement,
+            onInvalid() { doSomething(); },
+            ...rest
+        })`;
+
+        expect(optionKeysOf(call)).toEqual(['revalidateOn', 'formElement', 'onInvalid']);
+    });
+
+    it('is not fooled by the word sitting in a comment or an unrelated string', () => {
+        // The pre-FA127 substring check (`call.includes('revalidateOn')`) would have read this
+        // as complete; nothing here actually supplies it.
+        const call = `useStructureFormValidation(data, schema, {
+            // revalidateOn: locale, — deliberately left out for now
+            label: 'no revalidateOn here either',
+            invalidFieldSelector: '[aria-invalid]',
+            onInvalid: noop
+        })`;
+
+        expect(optionKeysOf(call)).not.toContain('revalidateOn');
+    });
+
+    it('reads nothing from a call whose options are a bare variable, not an object literal', () => {
+        const call = 'useStructureFormValidation(data, schema, sharedOptions)';
+
+        expect(optionKeysOf(call)).toEqual([]);
     });
 });

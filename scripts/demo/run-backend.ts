@@ -4,15 +4,33 @@
  * never silently disagree about which API the suite is talking to.
  *
  * A thin exec wrapper because `start-server-and-test` (and a human) wants one command with the
- * path already resolved: `npm run backend:demo`. `NODE_PORT` passes through.
+ * path already resolved: `npm run backend:demo`.
  *
  * WHICH command is `BACKEND_DEMO_COMMAND`'s to say — the two paired backends do not expose the
  * demo profile through the same runner, and with the variable unset this boots nothing at all.
  * See `resolveBackendDemoCommand`.
+ *
+ * FA130: pinned to {@link SINGLE_PROCESS_DEMO_PORT}, never whatever `NODE_PORT` happened to be
+ * set to. `start-server-and-test`'s readiness probe is a bare `GET` — it cannot tell "the demo
+ * backend I just spawned" from "someone's `npm run host -- start` already sitting on :3000", and
+ * the wrong one answering first makes the whole suite run against a live, unseeded backend
+ * instead of failing loudly. See `package.json`'s `test:e2e:serial`/`:visual`/`:dev`/`:spec`,
+ * which point their own `CYPRESS_apiUrl` and readiness probe at the same port.
  */
 import { spawn } from 'node:child_process';
 import { resolveBackendDemoCommand } from '../pairing/paired-backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from './scratch-directory';
+
+/**
+ * The port every single-process e2e npm script (serial, visual, dev, spec — everything that is
+ * NOT `run-shards.ts`'s sharded demo pool) boots its throwaway demo backend on.
+ *
+ * Deliberately not :3000, which is this pairing's conventional dev-backend port and the one most
+ * likely to already have something listening on it, and deliberately below `run-shards.ts`'s
+ * `DEMO_PORT_BASE` (3101+) so the two schemes can never collide even if both happened to run at
+ * once.
+ */
+export const SINGLE_PROCESS_DEMO_PORT = 3100;
 
 /*
  * `.env` into `process.env` before the command is resolved — Node's own loader, as
@@ -42,7 +60,16 @@ const boot = (argv: readonly string[]) => {
             // baseUrl), never the backend's own `.env` default of :8080 — without this the OAuth
             // callback and any emailed link redirect the browser at a port nothing is listening
             // on here.
-            NODE_FRONTEND_URL: 'http://localhost:8085'
+            NODE_FRONTEND_URL: 'http://localhost:8085',
+            // FA130: this repo's own port, not whatever NODE_PORT happened to inherit from the
+            // shell or `.env` — see SINGLE_PROCESS_DEMO_PORT's docstring. NODE_PORT: the Node
+            // twin's own `demo` script. SERVER_PORT: Laravel's `artisan serve`, the same pairing
+            // `run-shards.ts` already forwards both of for the sharded case.
+            NODE_PORT: String(SINGLE_PROCESS_DEMO_PORT),
+            SERVER_PORT: String(SINGLE_PROCESS_DEMO_PORT),
+            // Marks this as a throwaway demo instance, same as `run-shards.ts`'s per-shard
+            // backends set it — kept symmetric with that file rather than read by anything here.
+            NODE_DEMO: 'true'
         }
     });
 
@@ -70,6 +97,9 @@ else {
      * reads a start command that exits as a server that died, and would abort before ever waiting
      * on the backend somebody has up. Idling lets that wait succeed, or time out saying so.
      */
-    console.log('[backend:demo] BACKEND_DEMO_COMMAND is unset — booting nothing');
+    console.log(
+        `[backend:demo] BACKEND_DEMO_COMMAND is unset — booting nothing; expecting a backend ` +
+            `already on :${SINGLE_PROCESS_DEMO_PORT}`
+    );
     setInterval(() => undefined, 60_000);
 }

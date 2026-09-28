@@ -48,6 +48,7 @@ import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
+import { readSpecDurations } from './spec-durations';
 
 /*
  * Two levels: this file is `scripts/e2e/run-shards.ts`, so one `..` reaches `scripts/`, where
@@ -82,12 +83,34 @@ const shardCount = positiveInteger(process.env.E2E_SHARDS) ?? 4;
 
 // Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
 // one stops being scheduled without anyone editing this file.
+//
+// Keyed by the full relative path, not the basename (FA126): every module ships its own
+// `a11y.cy.ts`, and a basename key would look up the SAME measured duration for all of them
+// regardless of how much that module's sweep actually costs.
 const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
     // Cypress' `--spec` wants posix separators whatever the platform globbed with, and the sort
     // keeps a run's shard assignment stable rather than at the mercy of directory order.
     .map((entry) => entry.split(path.sep).join('/'))
     .toSorted()
-    .map((file) => ({ file, key: path.basename(file, '.cy.ts') }));
+    .map((file) => ({ file, key: file }));
+
+/*
+ * One real number per spec, preferring what was actually measured over the hand-written table.
+ * `cypress.config.ts`'s `after:spec` hook appends to `spec-durations.ts`'s report every run, so
+ * these numbers improve on their own; a spec with no recording yet falls back to `SECONDS`' entry
+ * for its basename (the pre-FA126 table, still a reasonable first guess), and a spec in neither —
+ * new file, no runs recorded — is left out entirely so `weighSpecs` schedules it at the mean
+ * instead of at a false zero.
+ */
+const recordedDurations = readSpecDurations();
+const durations: Record<string, number> = Object.fromEntries(
+    specs
+        .map(({ file }): [string, number | undefined] => [
+            file,
+            recordedDurations[file] ?? SECONDS[path.basename(file, '.cy.ts')]
+        ])
+        .filter((entry): entry is [string, number] => entry[1] !== undefined)
+);
 
 /*
  * An empty match is a broken runner, never an empty suite — this repo always has specs. Without
@@ -105,7 +128,7 @@ if (specs.length === 0) {
     process.exit(2);
 }
 
-const weighted = weighSpecs(specs, SECONDS);
+const weighted = weighSpecs(specs, durations);
 const shards = balanceShards(weighted, shardCount);
 
 const active = shards.filter((shard) => shard.files.length > 0);
