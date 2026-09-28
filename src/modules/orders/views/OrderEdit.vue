@@ -21,8 +21,7 @@ import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { z } from 'zod';
-import { OrderStatus } from '@types';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import type { OrderStatus } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -62,24 +61,6 @@ const { id } = defineProps<{
  * Orders store APIs and references.
  */
 const { watchOrder, fetchOrder, updateOrder, cancelOrder, overrideStatus } = useOrdersStore();
-
-/**
- * `orders.any.override` gate — the only correction door onto `processing`/`shipped`/`delivered`,
- * since `PUT /orders/:id` carries no `status` field at all.
- */
-const session = useSessionStore();
-const canOverride = computed(() => session.can('override', 'Order'));
-
-/**
- * The three destinations `POST /orders/{id}/status-override` accepts. Not filtered to "forward of
- * the order's current status" here: that rule lives in the API, and a copy here is how the two
- * come to disagree. An illegal pick surfaces inline, as {@link overrideError}, not a toast.
- */
-const overrideStatusOptions = [
-    OrderStatus.processing,
-    OrderStatus.shipped,
-    OrderStatus.delivered
-].map((value) => ({ value, label: t(`orders-form.status-${value}`) }));
 
 /**
  * Correct-status form state, cleared after every submit.
@@ -122,6 +103,26 @@ const runOverride = () => {
  * The order being displayed, and whether it is in flight.
  */
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
+
+/**
+ * The order's own `actions.override` — every status `POST /orders/{id}/status-override` would
+ * currently accept for this caller. Empty for anyone without `orders.any.override`, or once the
+ * order has left every overridable status — the server's answer, not a locally filtered copy.
+ */
+const overrideTargets = computed(() => currentOrder.value?.actions?.override ?? []);
+
+/**
+ * Whether the correction door renders at all.
+ */
+const canOverride = computed(() => overrideTargets.value.length > 0);
+
+/**
+ * The select's own options, off {@link overrideTargets} directly — no status this caller could not
+ * actually reach is ever offered.
+ */
+const overrideStatusOptions = computed(() =>
+    overrideTargets.value.map((value) => ({ value, label: t(`orders-form.status-${value}`) }))
+);
 
 /**
  * The money half of the operator's actions — `payments` answers for it, this page only asks.

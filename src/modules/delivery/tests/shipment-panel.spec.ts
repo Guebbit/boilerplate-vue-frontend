@@ -1,42 +1,25 @@
 /**
  * @module
  * `ShipmentPanel.vue` — the order page's ship/deliver corner. Mounts the real component with the
- * delivery/session stores stubbed, the same template `order-edit-view.spec.ts` uses for
- * `session.can`: a real `createMongoAbility` rather than a boolean flag, so the panel's own
- * `session.can('update', 'Shipment')`/`session.can('override', 'Order')` reads exercise the real
- * CASL check.
+ * delivery store's own fetches stubbed.
  *
- * Scoped to what is this component's own logic: which of the four template branches renders, and
- * the override-forward gate `canOverrideTo` — not `deliveryStore.start`/`.ship`/`.deliver`
- * themselves, which `delivery/tests/store.spec.ts` already covers.
+ * Scoped to what is this component's own logic: which of the four template branches renders off
+ * the `canShip`/`canDeliver`/`override` props (FA36/B3) — not `deliveryStore.start`/`.ship`/
+ * `.deliver` themselves, which `delivery/tests/store.spec.ts` already covers, and not the server's
+ * own eligibility rules behind those props, which `orders`' own suites cover.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { createMongoAbility } from '@casl/ability';
 import { useCoreStore } from '@guebbit/vue-toolkit';
 import ShipmentPanel from '@/modules/delivery/components/ShipmentPanel.vue';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
+import { OrderStatus } from '@types';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();
-
-/**
- * Signs a session in, holding exactly the rules `rules` grants — `'override'`/`'Order'` for a
- * force-capable admin, empty for an ordinary operator.
- */
-const signIn = (rules: { action: string; subject: string }[] = []) => {
-    const session = useSessionStore();
-    session.accessToken = 'test-token';
-    session.viewer = { id: 'u1', email: 'operator@example.com', role: 'admin' };
-    session.tenantAbility = createMongoAbility([
-        { action: 'update', subject: 'Shipment' },
-        ...rules
-    ]);
-};
 
 /**
  * Mounts the panel with the delivery store's own fetches stubbed — spied BEFORE mounting, the
@@ -47,10 +30,12 @@ const signIn = (rules: { action: string; subject: string }[] = []) => {
  */
 const mountPanel = (props: {
     orderId: string;
-    orderStatus?: string;
     shippingMethodId?: string;
     canStart?: boolean;
     canFulfill?: boolean;
+    canShip?: boolean;
+    canDeliver?: boolean;
+    override?: OrderStatus[];
 }) => {
     const store = useDeliveryStore();
     vi.spyOn(store, 'fetchMethods').mockResolvedValue(undefined);
@@ -68,25 +53,22 @@ beforeEach(() => {
 });
 
 describe('the start-fulfilment door (Q6)', () => {
-    it('offers "Start fulfilment" on a paid order when `actions.start` says so', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: true });
+    it('offers "Start fulfilment" when `actions.start` says so', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canStart: true });
 
         expect(wrapper.find('[data-test=mark-started]').exists()).toBe(true);
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
     });
 
-    it('never offers it when `actions.start` is false, even on a paid order', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: false });
+    it('never offers it when `actions.start` is false', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canStart: false });
 
         expect(wrapper.find('[data-test=mark-started]').exists()).toBe(false);
     });
 
     it('calls the delivery store and emits `moved` on click', () => {
-        signIn();
         const start = vi.spyOn(useDeliveryStore(), 'start').mockResolvedValue(undefined);
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid', canStart: true });
+        const wrapper = mountPanel({ orderId: 'o1', canStart: true });
 
         return wrapper
             .get('[data-test=mark-started]')
@@ -99,25 +81,22 @@ describe('the start-fulfilment door (Q6)', () => {
 });
 
 describe('the digital-fulfilment door', () => {
-    it('offers "Mark fulfilled" on a processing, digital-only order when `actions.fulfill` says so', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+    it('offers "Mark fulfilled" when `actions.fulfill` says so', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canFulfill: true });
 
         expect(wrapper.find('[data-test=mark-fulfilled]').exists()).toBe(true);
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
     });
 
-    it('never offers it when `actions.fulfill` is false, even while processing', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: false });
+    it('never offers it when `actions.fulfill` is false', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canFulfill: false });
 
         expect(wrapper.find('[data-test=mark-fulfilled]').exists()).toBe(false);
     });
 
     it('calls the delivery store and emits `moved` on click', () => {
-        signIn();
         const fulfill = vi.spyOn(useDeliveryStore(), 'fulfill').mockResolvedValue(undefined);
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+        const wrapper = mountPanel({ orderId: 'o1', canFulfill: true });
 
         return wrapper
             .get('[data-test=mark-fulfilled]')
@@ -132,8 +111,7 @@ describe('the digital-fulfilment door', () => {
      * The same catch FA35 gave `markShipped`/`markDelivered`, covered for `markFulfilled` too.
      */
     it('shows a 409 as the inline error, instead of silently doing nothing', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing', canFulfill: true });
+        const wrapper = mountPanel({ orderId: 'o1', canFulfill: true });
         vi.spyOn(useDeliveryStore(), 'fulfill').mockRejectedValue(new Error('not digital-only'));
 
         return wrapper
@@ -149,38 +127,26 @@ describe('the digital-fulfilment door', () => {
 });
 
 describe('with no shipment yet', () => {
-    it('offers the ordinary ship form once the order reaches processing', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing' });
+    it('offers the ordinary ship form when `actions.ship` says so', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canShip: true });
 
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(true);
         expect(wrapper.find('[data-test=force-ship-toggle]').exists()).toBe(false);
     });
 
-    it('stays a plain "not shipped yet" notice before processing, with no override permission', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid' });
+    it('stays a plain "not shipped yet" notice with neither `actions.ship` nor an override target', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canShip: false, override: [] });
 
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
         expect(wrapper.text()).toContain('Not shipped yet');
     });
 
-    /**
-     * The bug this file exists to catch: an override holder used to see a shippable form on ANY
-     * status without a shipment — pending, cancelled, delivered — even though the backend's own
-     * `canOverrideTo` refuses `cancelled` outright (not in the overridable sequence at all).
-     */
-    it('hides the force-ship form for a cancelled order even with the override permission', () => {
-        signIn([{ action: 'override', subject: 'Order' }]);
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'cancelled' });
-
-        expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(false);
-        expect(wrapper.find('[data-test=force-ship-toggle]').exists()).toBe(false);
-    });
-
-    it('offers the force-ship form for a paid order — earlier than shipped in the sequence', () => {
-        signIn([{ action: 'override', subject: 'Order' }]);
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'paid' });
+    it("offers the force-ship form once the caller's own `actions.override` reaches `shipped`", () => {
+        const wrapper = mountPanel({
+            orderId: 'o1',
+            canShip: false,
+            override: [OrderStatus.shipped]
+        });
 
         expect(wrapper.find('[data-test=mark-shipped]').exists()).toBe(true);
         expect(wrapper.find('[data-test=force-ship-toggle]').exists()).toBe(true);
@@ -191,8 +157,7 @@ describe('with no shipment yet', () => {
      * required), a 409 (someone shipped it first) or a step-up failure showed nothing.
      */
     it('shows a 409 on ship as the inline error, instead of silently doing nothing', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'processing' });
+        const wrapper = mountPanel({ orderId: 'o1', canShip: true });
         vi.spyOn(useDeliveryStore(), 'ship').mockRejectedValue(new Error('already shipped'));
 
         return wrapper
@@ -208,9 +173,8 @@ describe('with no shipment yet', () => {
 });
 
 describe('with a shipment already recorded', () => {
-    it('offers mark-delivered once the parcel is shipped', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+    it('offers mark-delivered when `actions.deliver` says so', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
         return wrapper.vm.$nextTick().then(() => {
@@ -218,9 +182,8 @@ describe('with a shipment already recorded', () => {
         });
     });
 
-    it('offers no further action once delivered', () => {
-        signIn([{ action: 'override', subject: 'Order' }]);
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'delivered' });
+    it('offers no further action with neither `actions.deliver` nor an override target', () => {
+        const wrapper = mountPanel({ orderId: 'o1', canDeliver: false, override: [] });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'delivered' };
 
         return wrapper.vm.$nextTick().then(() => {
@@ -233,8 +196,7 @@ describe('with a shipment already recorded', () => {
      * The same catch `markShipped` already has, covered for `markDelivered` too.
      */
     it('shows a 409 on deliver as the inline error, instead of silently doing nothing', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
         vi.spyOn(useDeliveryStore(), 'deliver').mockRejectedValue(new Error('already delivered'));
 
@@ -254,8 +216,7 @@ describe('with a shipment already recorded', () => {
      * requests while the first was still out.
      */
     it('disables mark-delivered while a deliver call is in flight', () => {
-        signIn();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
         return wrapper.vm.$nextTick().then(() => {
@@ -280,9 +241,8 @@ describe('with a shipment already recorded', () => {
  */
 describe('re-checking the record belongs to this order (FA24)', () => {
     it('re-fetches when orderId changes without a remount', () => {
-        signIn();
         const store = useDeliveryStore();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        const wrapper = mountPanel({ orderId: 'o1' });
         expect(store.fetchShipmentForOrder).toHaveBeenCalledWith('o1');
 
         return wrapper.setProps({ orderId: 'o2' }).then(() => {
@@ -291,9 +251,8 @@ describe('re-checking the record belongs to this order (FA24)', () => {
     });
 
     it('stops showing a parcel once orderId moves on, even before the new fetch resolves', () => {
-        signIn();
         const store = useDeliveryStore();
-        const wrapper = mountPanel({ orderId: 'o1', orderStatus: 'shipped' });
+        const wrapper = mountPanel({ orderId: 'o1' });
         store.shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
         return wrapper.vm
@@ -303,7 +262,7 @@ describe('re-checking the record belongs to this order (FA24)', () => {
                 // fetchShipmentForOrder is stubbed to resolve without touching store.shipment, so
                 // order 'o1's record is still the only thing in the store — a stand-in for a slow
                 // response landing after the caller has already moved on.
-                return wrapper.setProps({ orderId: 'o2', orderStatus: 'shipped' });
+                return wrapper.setProps({ orderId: 'o2' });
             })
             .then(() => wrapper.vm.$nextTick())
             .then(() => {

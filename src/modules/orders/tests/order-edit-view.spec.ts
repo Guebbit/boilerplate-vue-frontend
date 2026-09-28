@@ -18,7 +18,6 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { ref, nextTick } from 'vue';
-import { createMongoAbility } from '@casl/ability';
 import OrderEdit from '@/modules/orders/views/OrderEdit.vue';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -76,8 +75,8 @@ const signInAsAdmin = () => {
 
 /**
  * `OrderActions`, defaulted to "nothing" — each case overrides only the fields its own scenario
- * is about, rather than restating `start`/`ship`/`deliver`/`override` (never this suite's
- * concern) at every call site.
+ * is about, rather than restating `start`/`ship`/`deliver`/`override` (this suite's concern only
+ * in "the correct-status door" below) at every call site.
  */
 const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     transitions: [],
@@ -262,10 +261,12 @@ describe('cancelling', () => {
 });
 
 describe('the correct-status door', () => {
-    it('stays hidden without the override permission', () => {
+    it('stays hidden with an empty actions.override', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
+            // `override` left at `anAction`'s empty default — no permission, or nothing left
+            // overridable, read the same way here: the server already decided.
             actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
         });
 
@@ -278,13 +279,16 @@ describe('the correct-status door', () => {
             });
     });
 
-    it('submits the picked status and reason once an override holder confirms', () => {
+    it('submits the picked status and reason once actions.override names a destination', () => {
         signInAsAdmin();
-        const session = useSessionStore();
-        session.tenantAbility = createMongoAbility([{ action: 'override', subject: 'Order' }]);
         const detail = anOrder({
             status: OrderStatus.shipped,
-            actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
+            actions: anAction({
+                transitions: [OrderStatus.delivered],
+                cancel: true,
+                pay: false,
+                override: [OrderStatus.delivered]
+            })
         });
         // Spied BEFORE mounting: the component destructures `overrideStatus` off the store at
         // setup time, so a spy attached after mount would replace the store's own method while

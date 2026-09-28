@@ -7,53 +7,67 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Single-file component: `<script setup>` wires session/delivery-store state, the template
- * renders one of five states off the order's own status and shipment — not yet started, digital
- * and awaiting fulfilment, not yet shippable, ready to ship, or in transit/arrived — with the
- * tracking-code field gated on the chosen method's `tracked` flag, read live from the methods
- * list.
+ * Single-file component: `<script setup>` renders one of five states off the order's own
+ * `actions` and shipment — not yet started, digital and awaiting fulfilment, not yet shippable,
+ * ready to ship, or in transit/arrived. Every write control gates on the order's own `actions`
+ * (FA36/B3), never a locally re-derived status or permission check — the tracking-code field is
+ * the one exception, reading `tracked` live off `GET /delivery/methods` (a published fact, not a
+ * lifecycle rule).
  */
 
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeliveryStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { OrderStatus } from '@types';
 
 /**
  * The order page's shipping corner: recording a handover and an arrival, one order at a time.
  */
-const { orderId, orderStatus, shippingMethodId, canStart } = defineProps<{
-    /**
-     * The order whose parcel this shows.
-     */
-    orderId: string;
-    /**
-     * The order's current status — decides whether "mark shipped" is offered at all.
-     */
-    orderStatus?: string;
-    /**
-     * The method frozen on the order at checkout — looked up against the methods list to know
-     * whether a tracking code is required.
-     */
-    shippingMethodId?: string;
-    /**
-     * The order's own `actions.start` — whether `POST /delivery/order/{id}/start` would be
-     * accepted right now. The server's answer, not re-derived here: unlike ship/deliver's
-     * `processing`/`shipped` gate, who may start fulfilment (`delivery.any.start`) is a different
-     * key than who may write a shipment (`delivery.any.update`).
-     */
-    canStart?: boolean;
-    /**
-     * The order's own `actions.fulfill` — whether `POST /delivery/order/{id}/fulfill` would be
-     * accepted right now. `true` only once a digital-only order is `processing`: it never gets a
-     * parcel, so `ship`/`deliver` are never offered for it.
-     */
-    canFulfill?: boolean;
-}>();
+const { orderId, shippingMethodId, canStart, canFulfill, canShip, canDeliver, override } =
+    defineProps<{
+        /**
+         * The order whose parcel this shows.
+         */
+        orderId: string;
+        /**
+         * The method frozen on the order at checkout — looked up against the methods list to know
+         * whether a tracking code is required.
+         */
+        shippingMethodId?: string;
+        /**
+         * The order's own `actions.start` — whether `POST /delivery/order/{id}/start` would be
+         * accepted right now. The server's answer, not re-derived here: unlike ship/deliver's
+         * `processing`/`shipped` gate, who may start fulfilment (`delivery.any.start`) is a different
+         * key than who may write a shipment (`delivery.any.update`).
+         */
+        canStart?: boolean;
+        /**
+         * The order's own `actions.fulfill` — whether `POST /delivery/order/{id}/fulfill` would be
+         * accepted right now. `true` only once a digital-only order is `processing`: it never gets a
+         * parcel, so `ship`/`deliver` are never offered for it.
+         */
+        canFulfill?: boolean;
+        /**
+         * The order's own `actions.ship` — whether `POST /delivery/order/{id}/ship` would be
+         * accepted right now through the ordinary door (no `forced` flag).
+         */
+        canShip?: boolean;
+        /**
+         * The order's own `actions.deliver` — whether `POST /delivery/order/{id}/deliver` would be
+         * accepted right now through the ordinary door.
+         */
+        canDeliver?: boolean;
+        /**
+         * The order's own `actions.override` — every status this caller's forced ship/deliver may
+         * currently land on. Empty for anyone without `orders.any.override`, or once the order has
+         * left every overridable status — the one source this panel's force controls read from.
+         */
+        override?: OrderStatus[];
+    }>();
 
 /**
  * Emitted once this panel moves the parcel, so the owning page can reload the order.
@@ -74,11 +88,6 @@ const { t } = useI18n();
  * Toast notifications.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * Whether the current session may see the write actions below.
- */
-const session = useSessionStore();
 
 /**
  * Delivery store, for the methods list and the two write actions.
@@ -117,42 +126,16 @@ const trackingRequired = computed(
 );
 
 /**
- * May this session actually write, not just read, a shipment.
+ * Whether an override holder may force this order to `shipped` right now — straight off the
+ * order's own `actions.override` (FA36/B3), never a locally mirrored sequence: the server already
+ * excludes `cancelled` and any status the order has left behind.
  */
-const canWrite = computed(() => session.can('update', 'Shipment'));
+const canOverrideShip = computed(() => (override ?? []).includes(OrderStatus.shipped));
 
 /**
- * May this session force a move through `orders.any.override` — skipping the ordinary
- * `processing`/`shipped` gate. Same key `StatusOverrideDialog`-equivalent flows in `orders` ask
- * for; declared here as `'Order'` because the permission is `orders.any.override`, not a delivery
- * one, even though this panel is where the forced ship/deliver actually happens.
+ * Same as {@link canOverrideShip}, for the `delivered` destination.
  */
-const canOverride = computed(() => session.can('override', 'Order'));
-
-/**
- * The forward sequence an override may move an order along — mirrors the backend's own
- * `OVERRIDABLE_SEQUENCE` in `orders/domain/lifecycle.ts` exactly: never `cancelled` (not in the
- * sequence at all — a cancelled order accepts no override) and never backward. A small, closed,
- * rarely-changing set, unlike the ordinary transitions list the server computes per caller — worth
- * mirroring here so this panel doesn't offer a force action the server can only ever refuse.
- */
-const OVERRIDABLE_SEQUENCE: readonly string[] = [
-    'pending',
-    'paid',
-    'processing',
-    'shipped',
-    'delivered'
-];
-
-/**
- * Whether an override holder may force this order toward `to` from its current status.
- *
- * @param to - The forced destination being considered (`shipped` or `delivered`).
- */
-const canOverrideTo = (to: string) => {
-    const fromIndex = OVERRIDABLE_SEQUENCE.indexOf(orderStatus ?? '');
-    return fromIndex !== -1 && OVERRIDABLE_SEQUENCE.indexOf(to) > fromIndex;
-};
+const canOverrideDeliver = computed(() => (override ?? []).includes(OrderStatus.delivered));
 
 /**
  * Force toggle, visible only to an override holder. Bypasses the status gate on the next
@@ -314,7 +297,7 @@ watch(
                     {{ shipment.trackingCode }}
                 </span>
             </div>
-            <template v-if="canOverride && shipment.status !== 'delivered'">
+            <template v-if="canOverrideDeliver">
                 <v-checkbox
                     v-model="force"
                     :label="t('shipment-panel.label-force')"
@@ -332,7 +315,7 @@ watch(
                 />
             </template>
             <v-btn
-                v-if="canWrite && (shipment.status === 'shipped' || (canOverride && force))"
+                v-if="canDeliver || (canOverrideDeliver && force)"
                 class="mt-3"
                 color="secondary"
                 variant="tonal"
@@ -345,12 +328,7 @@ watch(
             </v-btn>
         </template>
 
-        <template
-            v-else-if="
-                canWrite &&
-                (orderStatus === 'processing' || (canOverride && canOverrideTo('shipped')))
-            "
-        >
+        <template v-else-if="canShip || canOverrideShip">
             <p class="m-0 mb-2 text-sm opacity-75">{{ t('shipment-panel.not-shipped-yet') }}</p>
             <v-text-field
                 v-model="trackingCode"
@@ -360,7 +338,7 @@ watch(
                 density="compact"
                 data-test="tracking-code-input"
             />
-            <template v-if="canOverride && orderStatus !== 'processing'">
+            <template v-if="!canShip && canOverrideShip">
                 <v-checkbox
                     v-model="force"
                     :label="t('shipment-panel.label-force')"
@@ -386,7 +364,7 @@ watch(
                 :disabled="
                     loading ||
                     (trackingRequired && !trackingCode) ||
-                    (orderStatus !== 'processing' && (!force || !forceReason)) ||
+                    (!canShip && (!force || !forceReason)) ||
                     (force && !forceReason)
                 "
                 @click="markShipped"
