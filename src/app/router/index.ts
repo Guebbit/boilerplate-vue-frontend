@@ -7,7 +7,7 @@
  */
 import { nextTick } from 'vue';
 import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-router';
-import type { RouteLocationNormalized } from 'vue-router';
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { getDefaultLocale, translate } from '@/infrastructure/i18n';
@@ -16,7 +16,7 @@ import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/r
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
-import { collectModuleRoutes } from '@/kernel/registry';
+import { assertUniqueRoutes, collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { staticPageRouteName } from '@/app/utils/static-pages.ts';
 import { runtimeValue } from '@/infrastructure/runtime-config';
@@ -28,9 +28,64 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
  *
  * A module reaching a sibling it has no coupling rule for is checked by `eslint.config.ts`'s
  * generated `moduleCouplingRules`, so a misconfigured coupling fails on `npm run lint` rather than
- * here.
+ * here. `collectModuleRoutes` itself refuses two modules sharing a name or path (FA72); the check
+ * below widens that to the shell's own routes, right before the router is built from both.
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
+
+/**
+ * The shop's own routes under `/:locale` — Home, the four prose pages, and the Error shell —
+ * named separately from `moduleRoutes` so {@link assertUniqueRoutes} can check both against each
+ * other below, and shared with `router.spec.ts`'s "app + module" duplicate-route cases.
+ */
+const shellChildRoutes: RouteRecordRaw[] = [
+    {
+        path: '',
+        name: 'Home',
+        meta: { title: 'home-page.page-title' },
+        component: () => import('@/app/views/Home.vue')
+    },
+    /*
+     * The shop's prose pages, one component each — every word comes from the dictionary, the
+     * structure (feature grid, FAQ topics, legal clauses) from the component. Declared by the
+     * shell rather than a module because they are about the SHOP, not a domain.
+     */
+    {
+        path: 'about',
+        name: staticPageRouteName('about'),
+        meta: { title: 'static-pages.about.title' },
+        component: () => import('@/app/views/AboutPage.vue')
+    },
+    {
+        path: 'faq',
+        name: staticPageRouteName('faq'),
+        meta: { title: 'static-pages.faq.title' },
+        component: () => import('@/app/views/FaqPage.vue')
+    },
+    {
+        path: 'terms',
+        name: staticPageRouteName('terms'),
+        meta: { title: 'static-pages.terms.title' },
+        component: () => import('@/app/views/TermsPage.vue')
+    },
+    {
+        path: 'privacy',
+        name: staticPageRouteName('privacy'),
+        meta: { title: 'static-pages.privacy.title' },
+        component: () => import('@/app/views/PrivacyPage.vue')
+    },
+    {
+        path: 'error/:status/:message?',
+        name: 'Error',
+        meta: { title: 'error-page.page-title' },
+        component: () => import('@/app/views/Error.vue'),
+        props: true
+    }
+];
+
+// Runs at import time, before `createRouter` below: a module colliding with a sibling OR with one
+// of the shell's own names/paths must fail the build rather than silently losing a route.
+assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes]);
 
 /**
  * The name that follows every page title in the browser tab, and stands alone on a route that
@@ -99,49 +154,7 @@ const router = createRouter({
             path: '/:locale',
             component: RouterView,
             children: [
-                {
-                    path: '',
-                    name: 'Home',
-                    meta: { title: 'home-page.page-title' },
-                    component: () => import('@/app/views/Home.vue')
-                },
-                /*
-                 * The shop's prose pages, one component each — every word comes from the
-                 * dictionary, the structure (feature grid, FAQ topics, legal clauses) from the
-                 * component. Declared by the shell rather than a module because they are about
-                 * the SHOP, not a domain.
-                 */
-                {
-                    path: 'about',
-                    name: staticPageRouteName('about'),
-                    meta: { title: 'static-pages.about.title' },
-                    component: () => import('@/app/views/AboutPage.vue')
-                },
-                {
-                    path: 'faq',
-                    name: staticPageRouteName('faq'),
-                    meta: { title: 'static-pages.faq.title' },
-                    component: () => import('@/app/views/FaqPage.vue')
-                },
-                {
-                    path: 'terms',
-                    name: staticPageRouteName('terms'),
-                    meta: { title: 'static-pages.terms.title' },
-                    component: () => import('@/app/views/TermsPage.vue')
-                },
-                {
-                    path: 'privacy',
-                    name: staticPageRouteName('privacy'),
-                    meta: { title: 'static-pages.privacy.title' },
-                    component: () => import('@/app/views/PrivacyPage.vue')
-                },
-                {
-                    path: 'error/:status/:message?',
-                    name: 'Error',
-                    meta: { title: 'error-page.page-title' },
-                    component: () => import('@/app/views/Error.vue'),
-                    props: true
-                },
+                ...shellChildRoutes,
                 ...moduleRoutes,
 
                 {

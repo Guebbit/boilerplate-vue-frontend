@@ -204,6 +204,57 @@ export const dictionary = ({
 }): TranslationDictionaries => value;
 
 /**
+ * Strip a leading/trailing slash, so `'products'` and `'/products/'` compare equal.
+ *
+ * @param path - one route record's own `path`, not yet joined to its ancestors'.
+ */
+const normalisedSegment = (path: string): string => path.replaceAll(/^\/+|\/+$/g, '');
+
+/**
+ * Every named route's identity — its name, and its full path joined from its ancestors' — at any
+ * depth. No route record in this repo nests `children` today, but a future one that does must not
+ * sneak a name or a path past {@link assertUniqueRoutes} by nesting it.
+ *
+ * @param routes - a route record tree
+ * @param parentPath - the already-normalised path of every ancestor, joined
+ */
+const routeIdentitiesOf = (
+    routes: RouteRecordRaw[],
+    parentPath = ''
+): { name: string; path: string }[] =>
+    routes.flatMap((route) => {
+        const path = [parentPath, normalisedSegment(route.path)].filter(Boolean).join('/');
+        return [
+            ...(typeof route.name === 'string' ? [{ name: route.name, path }] : []),
+            ...routeIdentitiesOf(route.children ?? [], path)
+        ];
+    });
+
+/**
+ * Refuses two routes sharing a name or a normalised path.
+ *
+ * vue-router keeps only the later route of a duplicate name and warns to the console rather than
+ * failing — easy to miss until the earlier one's link silently stops navigating. Mirrors the
+ * backend's `uniqueEntries`: a boot-time throw beats a page that renders wrong.
+ *
+ * @param routes - every route record this build assembles — the shell's own plus every enabled
+ *  module's, so a module cannot collide with either a sibling or the shell itself.
+ * @throws {Error} naming the first duplicate name or path found.
+ */
+export const assertUniqueRoutes = (routes: RouteRecordRaw[]): void => {
+    const seenNames = new Set<string>();
+    const seenPaths = new Set<string>();
+
+    for (const { name, path } of routeIdentitiesOf(routes)) {
+        if (seenNames.has(name)) throw new Error(`Two routes declare the same name: "${name}".`);
+        seenNames.add(name);
+
+        if (seenPaths.has(path)) throw new Error(`Two routes declare the same path: "${path}".`);
+        seenPaths.add(path);
+    }
+};
+
+/**
  * Collect every enabled module's route records.
  *
  * An unknown or cyclic module coupling, and a stray reach into a sibling's internals, fail on
@@ -212,10 +263,17 @@ export const dictionary = ({
  * couplings, and it is enforced there rather than declared here — see
  * `docs/theory/strategic-ddd.md` §2.
  *
+ * What IS enforced here is {@link assertUniqueRoutes} across every module's own routes: two
+ * modules picking the same name or path is not an import a lint rule can see.
+ *
  * @param appModules - the enabled module list
+ * @throws {Error} when two modules declare the same route name or normalised path.
  */
-export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] =>
-    appModules.flatMap((appModule) => appModule.routes);
+export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] => {
+    const routes = appModules.flatMap((appModule) => appModule.routes);
+    assertUniqueRoutes(routes);
+    return routes;
+};
 
 /**
  * Collect every enabled module's navigation entries, in `order`.
