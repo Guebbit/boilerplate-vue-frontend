@@ -34,8 +34,12 @@ internals. That rule is generated per module from the contents of `src/modules/`
 does not edit the lint config either.
 
 Two modules that each need the other are not a dependency pair: either they are one module, or one
-of them is holding state that belongs to the other. Nothing here enforces that at build or boot
-time today — it is a rule for review, not a running check.
+of them is holding state that belongs to the other. A cycle anywhere in `MODULE_EDGES` fails every
+`npm run lint` — a top-level check in `eslint.config.ts`, `scripts/module-edges.ts`'s
+`assertAcyclicModuleEdges` — so this is a rule for review at the moment a new edge is proposed, not
+only after the fact. One real cycle predates the check and is grandfathered by name
+(`KNOWN_CYCLE_EDGES`) rather than hidden: `cart` and `products` do need each other today, for two
+different reasons, and resolving that for real still means one of the two outcomes above.
 
 The sixteen modules in this build are `account`, `admin`, `api-keys`, `cart`, `delivery`, `demo`,
 `feedback`, `inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users`,
