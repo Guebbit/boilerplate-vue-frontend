@@ -33,6 +33,7 @@ import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
+import { recordSpecDuration } from './scripts/e2e/spec-durations';
 
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
@@ -103,6 +104,16 @@ export default defineConfig({
                 // `results` is undefined when the spec never ran — nothing to record then.
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Cypress types it as always present, but documents it as absent for a skipped spec
                 if (results) recordFlakyTests(flakyTestsIn(spec.relative, results.tests));
+                // FA126: the shard balancer's real per-file weight, refreshed on every run instead
+                // of frozen at whatever was measured once by hand — see `spec-durations.ts`.
+                // `stats.duration` is typed optional even though `after:spec` always provides it
+                // for a spec that ran; the fallback is unreachable in practice, not a real 0s spec.
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- same absent-on-skip case as above
+                if (results)
+                    recordSpecDuration({
+                        spec: spec.relative,
+                        seconds: Math.round((results.stats.duration ?? 0) / 1000)
+                    });
             });
 
             on('task', {
