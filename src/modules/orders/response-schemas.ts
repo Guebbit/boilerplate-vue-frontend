@@ -1,56 +1,22 @@
 /**
  * @module
- * Declares the response-envelope schema for every orders endpoint, keyed by method + URL
- * pattern, so `infrastructure/http` can validate a response against its contract by matching the
- * request that produced it.
+ * This module's response-schema rows (FA55) — every operation the generated table
+ * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend
+ * `orders` or `invoicing`, the latter owning no frontend module of its own (invoice/credit-note
+ * downloads live here). {@link ResponseSchemaRoute}'s own docblock states the two rules every row
+ * obeys.
  */
 import * as schemas from '@api/schemas';
+import { routesForModules } from '@/infrastructure/http/response-schema-map';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
- * Response-envelope schemas for every orders endpoint this module calls.
+ * Response-envelope schemas for every orders (and invoicing) endpoint this module calls.
  *
  * Registered through the module manifest, so enabling the domain turns its contract validation on
- * and deleting the folder turns it off. Both rules every row obeys are stated once on
- * {@link ResponseSchemaRoute}.
+ * and deleting the folder turns it off.
  */
-export const ordersResponseSchemas: ResponseSchemaRoute[] = [
-    { method: 'GET', pattern: /^\/orders$/, schema: schemas.ListOrdersResponse },
-    { method: 'POST', pattern: /^\/orders$/, schema: schemas.CreateOrderResponse },
-    { method: 'DELETE', pattern: /^\/orders$/, schema: schemas.DeleteOrderResponse },
-    { method: 'POST', pattern: /^\/orders\/search$/, schema: schemas.SearchOrdersResponse },
-    {
-        method: 'GET',
-        pattern: /^\/orders\/[^/]+\/invoice$/,
-        schema: schemas.GetOrderInvoiceResponse
-    },
-    {
-        method: 'GET',
-        pattern: /^\/orders\/[^/]+\/credit-note$/,
-        schema: schemas.GetOrderCreditNoteResponse
-    },
-    { method: 'GET', pattern: /^\/orders\/[^/]+$/, schema: schemas.GetOrderByIdResponse },
-    { method: 'PUT', pattern: /^\/orders\/[^/]+$/, schema: schemas.ReplaceOrderByIdResponse },
-    { method: 'PATCH', pattern: /^\/orders\/[^/]+$/, schema: schemas.UpdateOrderByIdResponse },
-    { method: 'DELETE', pattern: /^\/orders\/[^/]+$/, schema: schemas.DeleteOrderByIdResponse },
-    {
-        method: 'DELETE',
-        pattern: /^\/orders\/[^/]+\/hard$/,
-        schema: schemas.HardDeleteOrderByIdResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/orders\/[^/]+\/restore$/,
-        schema: schemas.RestoreOrderByIdResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/orders\/[^/]+\/cancel$/,
-        schema: schemas.CancelOrderByIdResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/orders\/[^/]+\/status-override$/,
-        schema: schemas.OverrideOrderStatusResponse
-    }
-];
+export const ordersResponseSchemas: ResponseSchemaRoute[] = routesForModules(schemas, [
+    'orders',
+    'invoicing'
+]);

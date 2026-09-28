@@ -80,13 +80,14 @@ export default defineConfig(({ mode }) => ({
         alias: {
             '@': fileURLToPath(new URL('src', import.meta.url)),
             '@types': fileURLToPath(new URL('src/types', import.meta.url)),
-            // '@api/schemas' and '@api/error-codes' must both be declared before '@api': Vite
-            // matches a string alias against both the exact key and `key + '/'` as a prefix, in
-            // declaration order, so the shorter '@api' would otherwise shadow either one.
+            // '@api/schemas', '@api/error-codes' and '@api/routes' must all be declared before
+            // '@api': Vite matches a string alias against both the exact key and `key + '/'` as a
+            // prefix, in declaration order, so the shorter '@api' would otherwise shadow any of them.
             '@api/schemas': fileURLToPath(new URL('contracts/rest/schemas.zod', import.meta.url)),
             '@api/error-codes': fileURLToPath(
                 new URL('contracts/rest/error-codes', import.meta.url)
             ),
+            '@api/routes': fileURLToPath(new URL('contracts/rest/routes', import.meta.url)),
             '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url))
         }
     },

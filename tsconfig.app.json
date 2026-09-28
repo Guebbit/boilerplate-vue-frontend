@@ -24,7 +24,8 @@
             // entry here is what makes regenerating them somewhere else a one-line change.
             "@api": ["./contracts/rest/index"],
             "@api/schemas": ["./contracts/rest/schemas.zod"],
-            "@api/error-codes": ["./contracts/rest/error-codes"]
+            "@api/error-codes": ["./contracts/rest/error-codes"],
+            "@api/routes": ["./contracts/rest/routes"]
         }
     }
 }

@@ -1,39 +1,17 @@
 /**
  * @module
- * Declares the response-envelope schema for every cart endpoint, keyed by method + URL
- * pattern, so `infrastructure/http` can validate a response against its contract by matching the
- * request that produced it.
+ * This module's response-schema rows (FA55) — every operation the generated table
+ * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend
+ * `cart`. {@link ResponseSchemaRoute}'s own docblock states the two rules every row obeys.
  */
 import * as schemas from '@api/schemas';
+import { routesForModules } from '@/infrastructure/http/response-schema-map';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
  * Response-envelope schemas for every cart endpoint this module calls.
  *
  * Registered through the module manifest, so enabling the domain turns its contract validation on
- * and deleting the folder turns it off. Both rules every row obeys are stated once on
- * {@link ResponseSchemaRoute}.
+ * and deleting the folder turns it off.
  */
-export const cartResponseSchemas: ResponseSchemaRoute[] = [
-    { method: 'GET', pattern: /^\/cart$/, schema: schemas.GetCartResponse },
-    { method: 'POST', pattern: /^\/cart$/, schema: schemas.UpsertCartItemResponse },
-    { method: 'DELETE', pattern: /^\/cart$/, schema: schemas.RemoveCartItemByBodyResponse },
-    { method: 'GET', pattern: /^\/cart\/summary$/, schema: schemas.GetCartSummaryResponse },
-    { method: 'POST', pattern: /^\/cart\/checkout$/, schema: schemas.CheckoutResponse },
-    /* Before the `[^/]+` by-id row: `find()` returns the first match, and `all` is a static
-     * segment the wildcard would otherwise swallow — the same order rule the products/categories
-     * row follows. */
-    { method: 'DELETE', pattern: /^\/cart\/all$/, schema: schemas.ClearCartResponse },
-    {
-        method: 'PUT',
-        pattern: /^\/cart\/shipping-method$/,
-        schema: schemas.SetCartShippingMethodResponse
-    },
-    { method: 'PUT', pattern: /^\/cart\/[^/]+$/, schema: schemas.UpdateCartItemByIdResponse },
-    { method: 'DELETE', pattern: /^\/cart\/[^/]+$/, schema: schemas.RemoveCartItemResponse },
-    {
-        method: 'POST',
-        pattern: /^\/cart\/reorder\/[^/]+$/,
-        schema: schemas.ReorderResponse
-    }
-];
+export const cartResponseSchemas: ResponseSchemaRoute[] = routesForModules(schemas, ['cart']);
