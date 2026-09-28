@@ -82,7 +82,10 @@ const UNSAFE_SPECIFIERS = [
     // exponentially many equivalent ways (CodeQL js/redos). Requiring every consumed character to
     // fail a `*/` lookahead first makes each comment's extent unique, so there is nothing left to
     // backtrack over.
-    { kind: 'dynamic import template', pattern: /\bimport\s*\(\s*(?:\/\*(?:(?!\*\/)[\S\s])*\*\/\s*)*`/g }
+    {
+        kind: 'dynamic import template',
+        pattern: /\bimport\s*\(\s*(?:\/\*(?:(?!\*\/)[\S\s])*\*\/\s*)*`/g
+    }
 ] as const;
 
 interface Specifier {
