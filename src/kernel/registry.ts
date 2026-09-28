@@ -115,11 +115,12 @@ export interface AppNavigationEntry {
     /**
      * The glyph the entry wears, a lucide component. The desktop bar shows `main` entries as icon
      * plus label, the menus and the drawer prefix each entry with it, and a `pinned` entry is the
-     * icon with its count — so in practice every entry needs one; the cross-cutting spec enforces
-     * it. Typed as a Vue component rather than a lucide type so the kernel owes the icon library
-     * nothing.
+     * icon with its count — so every entry needs one. Required rather than optional so a missing
+     * icon is a compile error where the entry is declared, instead of a `registry.spec.ts`
+     * failure discovered later. Typed as a Vue component rather than a lucide type so the kernel
+     * owes the icon library nothing.
      */
-    icon?: Component;
+    icon: Component;
 }
 
 /**

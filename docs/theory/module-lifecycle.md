@@ -51,13 +51,14 @@ in this repository that names a domain on the other side.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
 flowchart LR
-    A["1 · mkdir src/modules/&lt;name&gt;/<br/>write module.ts"] --> B["2 · one line in<br/>src/modules.ts"]
-    B --> P["3 · write docs/modules/&lt;name&gt;.md"]
-    P --> C["4 · npm run build<br/>npm run test:unit"]
-    C --> D["✅ routed · navigated · translated<br/>· validated · documented"]
+    A["1 · mkdir src/modules/&lt;name&gt;/<br/>write module.ts + routes.ts"] --> B["2 · one line in<br/>src/modules.ts"]
+    B --> S["3 · tests/e2e/a11y.cy.ts<br/>if the module has routes"]
+    S --> P["4 · write docs/modules/&lt;name&gt;.md<br/>+ pairing row + sidebar line"]
+    P --> C["5 · npm run build<br/>npm run test:unit"]
+    C --> D["✅ routed · navigated · translated<br/>· validated · documented · audited"]
     classDef s fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef d fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    class A,B,C,D s;
+    class A,B,S,C,D s;
     class P d;
 ```
 
@@ -78,6 +79,7 @@ src/modules/<name>/
     locales/{en,it}.json       its dictionaries
     tests/*.spec.ts            unit specs — co-located, deleted with the module
     tests/e2e/*.cy.ts          Cypress specs for THIS domain only — likewise
+    tests/e2e/a11y.cy.ts       MANDATORY once routes.ts exists — see step 4
 ```
 
 A domain's e2e specs live inside it for the same reason its unit specs do. A spec that walks one
@@ -102,6 +104,7 @@ in one typed object:
 
 ```ts
 // src/modules/<name>/module.ts
+import { Puzzle } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { widgetsResponseSchemas } from './response-schemas';
@@ -115,7 +118,15 @@ import { widgetsResponseSchemas } from './response-schemas';
 export default {
     name: 'widgets',
     routes,
-    navigation: [{ name: 'WidgetsList', label: 'navigation.label-widgets', plural: 2, order: 40 }],
+    navigation: [
+        {
+            name: 'WidgetsList',
+            label: 'navigation.label-widgets',
+            plural: 2,
+            order: 40,
+            icon: Puzzle
+        }
+    ],
     responseSchemas: widgetsResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
@@ -124,12 +135,13 @@ export default {
 } satisfies AppModule;
 ```
 
-Two fields need care:
+Three fields need care:
 
-| Field               | Rule                                                                   |
-| ------------------- | ---------------------------------------------------------------------- |
-| `name`              | must match the folder name under `src/modules/`                        |
-| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts` |
+| Field               | Rule                                                                     |
+| ------------------- | ------------------------------------------------------------------------ |
+| `name`              | must match the folder name under `src/modules/`                          |
+| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`   |
+| `navigation[].icon` | required, not optional — every surface an entry renders on leads with it |
 
 Two more things need care that are not fields at all:
 
@@ -158,12 +170,24 @@ export const enabledModules: AppModule[] = [account, admin, cart /* … */, widg
 Keep the array alphabetical. Order only decides the sequence route records are spliced in, which
 vue-router's own ranking makes irrelevant for distinct paths.
 
-### 4 · The page
+### 4 · The a11y sweep
+
+Skip this step only when the module has no `routes.ts` at all (`delivery` and `payments` are the
+two examples — reached through the cart and the order flow, never their own page).
+
+Otherwise write `tests/e2e/a11y.cy.ts`: an axe run that visits every `path` the module's `routes.ts`
+declares, at whatever authentication level that route needs. `tests/cross-cutting/a11y-coverage.spec.ts`
+reads both files and fails on any route its sweep does not reach — a routed page with no sweep
+cannot merge, and a sweep that outlives its module's routes cannot either. `feedback` is a short
+reference: one public route, one `auth` route, one file.
+
+### 5 · The page
 
 Write `docs/modules/<name>.md`. Copy the section order from a page of a domain the same size —
-**The map**, **State**, **Screens**, **Wiring**, **Files** — and fill it from the manifest, the
-route records, the store and the response-schema rows. The two sections worth the most are the ones
-only you can write:
+**At a glance**, **The map**, **The story**, **State**, **Screens**, **Wiring**, **Files**,
+**Working on it**, **Related pages** — and fill it from the manifest, the route records, the store
+and the response-schema rows. Every block is hand-written — nothing generates any part of this page
+from the code. The two sections worth the most care are the ones only you can write:
 
 - the **At a glance** box — what it owns, what it depends on, what breaks if you change it
 - **The story** — why the domain exists, the decisions that are not obvious from the code, the traps
@@ -176,7 +200,7 @@ If the domain carries a file shape no other module has, add one line to
 `tests/cross-cutting/module-file-shapes.spec.ts` describing it — that spec fails on a shape nothing
 documents.
 
-### 5 · Check
+### 6 · Check
 
 ```bash
 npm run build          # vue-tsc + vite build
@@ -197,13 +221,13 @@ wiring silently measures an app with no domain vocabulary and no contract valida
 
 A scaffold `events` module, measured:
 
-|                                                  |                                                                                   |
-| ------------------------------------------------ | --------------------------------------------------------------------------------- |
-| files added                                      | 5 (`module.ts`, `routes.ts`, one view, `locales/{en,it}.json`)                    |
-| lines changed elsewhere                          | 2, both in `src/modules.ts` (the import and the array entry)                      |
-| documentation written by hand                    | two sections of one page — the other eight blocks are generated                   |
-| existing files needing an edit to accommodate it | **0**                                                                             |
-| result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk |
+|                                                  |                                                                                                                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| files added                                      | 8 — `module.ts`, `routes.ts`, one view, `locales/{en,it}.json`, `tests/routes.spec.ts`, `tests/e2e/a11y.cy.ts`, its `docs/modules/` page                                       |
+| lines, across those 8 files                      | ~196                                                                                                                                                                           |
+| existing files needing an edit to accommodate it | **3** — `src/modules.ts` (the import and the array entry), `tests/cross-cutting/backend-pairing.spec.ts` (the pairing row), the sidebar config in `docs/.vitepress/config.mts` |
+| documentation written by hand                    | the whole page — every block, per step 5 above                                                                                                                                 |
+| result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk                                                                                              |
 
 ---
 
