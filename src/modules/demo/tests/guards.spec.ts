@@ -21,6 +21,7 @@
 
 import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { RouteLocationNormalized } from 'vue-router';
 
@@ -66,7 +67,7 @@ const routeTo = (path = '/en/products') =>
 /**
  * Holds the per-test `console.log` spy so `afterEach` can restore it.
  */
-let consoleSpy: ReturnType<typeof vi.spyOn>;
+let consoleSpy: Mock<typeof console.log>;
 
 beforeEach(() => {
     setActivePinia(createPinia());

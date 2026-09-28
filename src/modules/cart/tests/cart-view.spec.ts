@@ -8,6 +8,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { useCoreStore } from '@guebbit/vue-toolkit';
@@ -18,6 +19,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse } from '@types';
 
 wireModulesIntoCore();
@@ -94,18 +96,24 @@ const mountCart = () => {
     vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
     const checkoutSpy = vi.spyOn(cart, 'checkout');
 
+    // `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint cannot
+    // fully resolve `this.$emit`'s type when the call is nested straight inside the object
+    // literal `mount()`'s own contextual typing flows through.
+    const ShippingSelectorStub = defineComponent({
+        emits: ['update:modelValue', 'update:requiresAddress'],
+        template: '<div />',
+        mounted() {
+            this.$emit('update:modelValue', 'pickup');
+            this.$emit('update:requiresAddress', false);
+        }
+    });
+
     const wrapper = mount(Cart, {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
-                ShippingSelector: {
-                    template: '<div />',
-                    mounted() {
-                        this.$emit('update:modelValue', 'pickup');
-                        this.$emit('update:requiresAddress', false);
-                    }
-                },
+                ShippingSelector: ShippingSelectorStub,
                 PaymentMethodSelector: { template: '<div />' }
             }
         }
@@ -289,10 +297,9 @@ describe('the checkout refusals', () => {
         // selector's own uniqueness (one match) is what the object-selector overload would
         // otherwise prove for us, same reasoning `order-edit-view.spec.ts` documents.
         const selector = wrapper.getComponent('[data-test=shipping-selector-stub]') as VueWrapper;
-        selector.vm.$emit('update:modelValue', 'express');
+        emitOn(selector, 'update:modelValue', 'express');
 
-        return wrapper.vm
-            .$nextTick()
+        return nextRenderTick(wrapper)
             .then(() => {
                 expect(
                     wrapper.get('[data-test=shipping-selector-stub]').attributes('data-selected')
@@ -324,28 +331,35 @@ describe('the checkout payload', () => {
         vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
 
+        // `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint
+        // cannot fully resolve `this.$emit`'s type when the call is nested straight inside the
+        // object literal `mount()`'s own contextual typing flows through.
+        const ShippingSelectorStub = defineComponent({
+            props: ['modelValue', 'requiresAddress'],
+            emits: ['update:modelValue', 'update:requiresAddress'],
+            template: '<div data-test="shipping-selector-stub" />',
+            mounted() {
+                this.$emit('update:modelValue', 'courier');
+                this.$emit('update:requiresAddress', true);
+            }
+        });
+
+        const AddressPickerStub = defineComponent({
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+            template: '<div />',
+            mounted() {
+                this.$emit('update:modelValue', 'addr-1');
+            }
+        });
+
         const wrapper = mount(Cart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
                     LayoutDefault: { template: '<div><slot /></div>' },
-                    ShippingSelector: {
-                        props: ['modelValue', 'requiresAddress'],
-                        emits: ['update:modelValue', 'update:requiresAddress'],
-                        template: '<div data-test="shipping-selector-stub" />',
-                        mounted() {
-                            this.$emit('update:modelValue', 'courier');
-                            this.$emit('update:requiresAddress', true);
-                        }
-                    },
-                    AddressPicker: {
-                        props: ['modelValue'],
-                        emits: ['update:modelValue'],
-                        template: '<div />',
-                        mounted() {
-                            this.$emit('update:modelValue', 'addr-1');
-                        }
-                    },
+                    ShippingSelector: ShippingSelectorStub,
+                    AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }
                 }
             }
@@ -359,9 +373,9 @@ describe('the checkout payload', () => {
                 ) as VueWrapper;
                 // The shopper switches to a method needing no address. `AddressPicker` unmounts;
                 // `addressId` itself is untouched, still 'addr-1'.
-                selector.vm.$emit('update:modelValue', 'pickup');
-                selector.vm.$emit('update:requiresAddress', false);
-                return wrapper.vm.$nextTick();
+                emitOn(selector, 'update:modelValue', 'pickup');
+                emitOn(selector, 'update:requiresAddress', false);
+                return nextRenderTick(wrapper);
             })
             .then(() => wrapper.get('[data-test=cart-checkout]').trigger('click'))
             .then(flushPromises)
@@ -381,7 +395,7 @@ describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
             // Both buttons share the cart store's own `loading` — the same flag `checkout` and
             // `clearCart` run under — so either write in flight has to block the other one too.
             useCoreStore().setLoading('cart', true);
-            return wrapper.vm.$nextTick().then(() => {
+            return nextRenderTick(wrapper).then(() => {
                 expect(
                     wrapper.get('[data-test=cart-checkout]').attributes('disabled')
                 ).toBeDefined();

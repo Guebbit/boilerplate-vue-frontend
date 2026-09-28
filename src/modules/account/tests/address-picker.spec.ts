@@ -12,6 +12,7 @@ import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { Address } from '@types';
 
 wireModulesIntoCore();
@@ -53,7 +54,7 @@ const mountPicker = (addresses: Address[], modelValue?: string) => {
  * The most recent id the picker settled `addressId` on, read off its last `update:modelValue`
  * emit — `undefined` when the watcher never touched it.
  */
-const lastChosen = (wrapper: ReturnType<typeof mount>) => {
+const lastChosen = (wrapper: ReturnType<typeof mountPicker>['wrapper']) => {
     const emitted = wrapper.emitted<[string | undefined]>('update:modelValue');
     return emitted?.at(-1)?.[0];
 };
@@ -102,7 +103,7 @@ describe('AddressPicker — the pre-select watcher', () => {
         // watcher is reading the STORE's list, not a stale local copy of it.
         store.addresses = [anAddress({ id: 'a2', default: true })];
 
-        return wrapper.vm.$nextTick().then(() => {
+        return nextRenderTick(wrapper).then(() => {
             expect(lastChosen(wrapper)).toBe('a2');
         });
     });

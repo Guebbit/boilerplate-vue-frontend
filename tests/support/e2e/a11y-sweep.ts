@@ -71,8 +71,16 @@ type A11ySweepEntry = readonly [name: string, route: A11ySweepRoute] | A11ySweep
 /** Selector of the app bar's theme toggle — `data-test`, so the `/it/` sweep finds it too. */
 const THEME_TOGGLE = '[data-test=theme-toggle]';
 
-const toCase = (entry: A11ySweepEntry): A11ySweepCase =>
-    Array.isArray(entry) ? { name: entry[0], route: entry[1] } : (entry as A11ySweepCase);
+const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
+    // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
+    // quirk, not a real `any` — so the tuple shape is restored by a cast rather than read
+    // straight off the narrowed array.
+    if (Array.isArray(entry)) {
+        const [name, route] = entry as readonly [string, A11ySweepRoute];
+        return { name, route };
+    }
+    return entry as A11ySweepCase;
+};
 
 /** A literal path passes straight through; a lookup is run now, inside the test. */
 const resolveRoute = (route: A11ySweepRoute): Cypress.Chainable<string> =>

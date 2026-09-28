@@ -56,7 +56,9 @@ const auditTablist = (root: Element) =>
 describe('TranslationTabs — the tablist shape axe cares about', () => {
     it('nests no focusable control inside a tab, and puts no stray child inside the tablist', () => {
         wrapper = mountTabs();
-        return auditTablist(wrapper.element).then((results) => {
+        // `wrapper.element` resolves through `TranslationTabs.vue`'s own unresolved SFC type —
+        // TypeScript-ESLint's usual `.vue` limitation — so it is cast to the real DOM type here.
+        return auditTablist(wrapper.element as Element).then((results) => {
             expect(results.violations).toEqual([]);
         });
     });

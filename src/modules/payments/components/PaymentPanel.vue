@@ -202,26 +202,29 @@ const requiresHumanCheck = ref(false);
 const submitPayment = () => {
     unavailableLines.value = [];
     clearPaymentError();
-    return paymentsStore
-        .payForOrder(orderId, paymentMethodRef.value, withAntibotToken(humanCheck.value?.token))
-        .then(() => {
-            requiresHumanCheck.value = false;
-            announceIfSettled();
-        })
-        .catch((error: unknown) => {
-            if (isAntibotVerificationFailed(error)) {
-                requiresHumanCheck.value = true;
+    return (
+        paymentsStore
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
+            .payForOrder(orderId, paymentMethodRef.value, withAntibotToken(humanCheck.value?.token))
+            .then(() => {
+                requiresHumanCheck.value = false;
+                announceIfSettled();
+            })
+            .catch((error: unknown) => {
+                if (isAntibotVerificationFailed(error)) {
+                    requiresHumanCheck.value = true;
+                    reportPaymentError(error);
+                    return;
+                }
+                const verdict = classifyPaymentError(error);
+                if (verdict.kind === 'product-unavailable') {
+                    unavailableLines.value = verdict.lines;
+                    addMessage(t('payments-panel.error-product-unavailable'));
+                    return;
+                }
                 reportPaymentError(error);
-                return;
-            }
-            const verdict = classifyPaymentError(error);
-            if (verdict.kind === 'product-unavailable') {
-                unavailableLines.value = verdict.lines;
-                addMessage(t('payments-panel.error-product-unavailable'));
-                return;
-            }
-            reportPaymentError(error);
-        });
+            })
+    );
 };
 
 /**

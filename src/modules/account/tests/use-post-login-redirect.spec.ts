@@ -100,6 +100,7 @@ describe('redirectAfterLogin', () => {
             .then(() => {
                 expect(push).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
                 expect(push).not.toHaveBeenCalledWith(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types a nested `expect.objectContaining()` as `any`, since it is a placeholder matcher usable against anything
                     expect.objectContaining({ params: expect.objectContaining({ locale: 'it' }) })
                 );
             });

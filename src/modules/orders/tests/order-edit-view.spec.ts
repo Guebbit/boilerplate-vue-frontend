@@ -26,6 +26,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { OrderStatus } from '@api';
 import type { Order, OrderActions } from '@types';
 
@@ -430,7 +431,7 @@ describe('recording a payment by hand', () => {
         return nextTick()
             .then(() => nextTick())
             .then(() =>
-                wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }).vm.$emit('recorded')
+                emitOn(wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }), 'recorded')
             )
             .then(() => nextTick())
             .then(() => {
@@ -463,7 +464,7 @@ describe('recording a payment by hand', () => {
         return nextTick()
             .then(() => nextTick())
             .then(() =>
-                wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }).vm.$emit('recorded')
+                emitOn(wrapper.findComponent({ name: 'RecordOfflinePaymentForm' }), 'recorded')
             )
             .then(() => nextTick())
             .then(() => nextTick())

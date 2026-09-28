@@ -89,6 +89,7 @@ describe('useAuditTrail — platform endpoint', () => {
 
         return fetchPage().then(() => {
             expect(getObservabilityAuditLogs).toHaveBeenCalledWith(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.anything()` as `any`, since it is a placeholder matcher usable against anything
                 expect.not.objectContaining({ target: expect.anything() })
             );
         });

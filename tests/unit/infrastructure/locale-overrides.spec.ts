@@ -16,6 +16,8 @@ import { contractResponse } from './http/orval-fixture-schema.ts';
  * `@api` is mocked at the network boundary; everything else is real.
  */
 
+// `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
+// the real generated envelope types would refuse, and that looseness is the point of a mock.
 const getLocalesMock = vi.fn();
 const getLocaleMessagesMock = vi.fn();
 
@@ -23,8 +25,10 @@ vi.mock('@api', async (importOriginal) => ({
     // The generated const objects are not network calls — the module under test may compare
     // against them, so the real ones have to survive the mock.
     ...(await importOriginal<Record<string, unknown>>()),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getLocales: (options?: { timeout?: number }) => getLocalesMock(options),
     getLocaleMessages: (locale: string, parameters?: { tenant?: string }) =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
         getLocaleMessagesMock(locale, parameters)
 }));
 
@@ -140,6 +144,7 @@ describe('fetchRemoteLocales', () => {
         void fetchRemoteLocales();
 
         expect(getLocalesMock).toHaveBeenCalledWith(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.any()` as `any`, since it is a placeholder matcher usable against anything
             expect.objectContaining({ timeout: expect.any(Number) })
         );
         const [{ timeout }] = getLocalesMock.mock.calls.at(-1) as [{ timeout: number }];

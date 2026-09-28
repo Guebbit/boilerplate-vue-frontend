@@ -65,8 +65,7 @@ export function originToRegExp(origin: string): RegExp {
  */
 export function readUmamiConfig(): UmamiConfig | undefined {
     const websiteId =
-        runtimeValue('UMAMI_WEBSITE_ID') ??
-        (import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined)?.trim();
+        runtimeValue('UMAMI_WEBSITE_ID') ?? import.meta.env.VITE_UMAMI_WEBSITE_ID?.trim();
 
     // The website id is the whole switch: no id, no analytics, and the script is never injected.
     if (!websiteId) {
@@ -77,7 +76,7 @@ export function readUmamiConfig(): UmamiConfig | undefined {
     return {
         src:
             runtimeValue('UMAMI_SRC') ||
-            (import.meta.env.VITE_UMAMI_SRC as string | undefined)?.trim() ||
+            import.meta.env.VITE_UMAMI_SRC?.trim() ||
             'http://localhost:3080/script.js',
         websiteId
     };
@@ -106,8 +105,7 @@ function umamiOriginPattern(): RegExp[] {
  *  entirely. Missing optional values fall back to sensible defaults.
  */
 export function readFaroConfig(): FaroConfig | undefined {
-    const url =
-        runtimeValue('FARO_URL') ?? (import.meta.env.VITE_FARO_URL as string | undefined)?.trim();
+    const url = runtimeValue('FARO_URL') ?? import.meta.env.VITE_FARO_URL?.trim();
 
     if (!url) {
         return undefined;
@@ -117,20 +115,20 @@ export function readFaroConfig(): FaroConfig | undefined {
         url,
         appName:
             runtimeValue('FARO_APP_NAME') ||
-            (import.meta.env.VITE_FARO_APP_NAME as string | undefined)?.trim() ||
+            import.meta.env.VITE_FARO_APP_NAME?.trim() ||
             'frontend',
         appVersion:
             runtimeValue('FARO_APP_VERSION') ||
-            (import.meta.env.VITE_FARO_APP_VERSION as string | undefined)?.trim() ||
+            import.meta.env.VITE_FARO_APP_VERSION?.trim() ||
             __APP_VERSION__,
         environment:
             runtimeValue('FARO_ENVIRONMENT') ||
-            (import.meta.env.VITE_FARO_ENVIRONMENT as string | undefined)?.trim() ||
+            import.meta.env.VITE_FARO_ENVIRONMENT?.trim() ||
             import.meta.env.MODE,
         // Reuse the API origin so browser fetch/XHR traces get stitched onto BE traces.
         apiOrigin:
             runtimeValue('API_URL') ||
-            (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+            import.meta.env.VITE_API_URL?.trim() ||
             'http://localhost:3000',
         /*
          * Telemetry transports must not be traced. Faro instruments every fetch/XHR, including

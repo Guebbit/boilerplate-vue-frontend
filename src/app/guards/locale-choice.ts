@@ -46,7 +46,10 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
         // `import("")` that Vite cannot statically analyse, so the whole module fails to
         // transform and every suite errors out instead of one mutant surviving.
         import(`@/locales/${locale}.json`)
-            .then((module) => module.default as TranslationDictionaries)
+            // A dynamic import with a template-string specifier resolves to `any` — TypeScript
+            // cannot statically know which module it names — so the callback's own parameter is
+            // typed honestly instead of accessing `.default` on that `any`.
+            .then((module: { default: unknown }) => module.default as TranslationDictionaries)
             // A language this build bundles no file for has nothing to import: an empty base is
             // the correct result, not an error. Its overrides become the whole dictionary.
             .catch((): TranslationDictionaries => ({}))

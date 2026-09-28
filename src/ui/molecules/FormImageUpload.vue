@@ -76,7 +76,10 @@ const pickedFile = defineModel<File | undefined>();
  * @returns The single picked `File`, or `undefined`.
  */
 const normaliseSelection = (value: unknown): File | undefined => {
-    if (Array.isArray(value)) return value[0];
+    // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
+    // quirk, not a real `any` — so the element is cast back to what this component actually
+    // models rather than returned straight off the narrowed array.
+    if (Array.isArray(value)) return (value as unknown[])[0] as File | undefined;
     return value instanceof File ? value : undefined;
 };
 

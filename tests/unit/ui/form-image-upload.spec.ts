@@ -23,6 +23,7 @@
  * every `imageUpload` field in the contract declares a single file.
  */
 import { asStub } from '../../support/stub';
+import { nextRenderTick } from '../../support/unit/mounted-vm';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -81,7 +82,7 @@ describe('FormImageUpload — the object-URL resource', () => {
         const wrapper = mountUpload();
 
         await wrapper.setProps({ modelValue: makeFile() });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(created).toHaveLength(1);
     });
@@ -91,9 +92,9 @@ describe('FormImageUpload — the object-URL resource', () => {
         const wrapper = mountUpload();
 
         await wrapper.setProps({ modelValue: makeFile('first.png') });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
         await wrapper.setProps({ modelValue: makeFile('second.png') });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(created).toHaveLength(2);
         expect(revoked).toContain(created[0]);
@@ -103,9 +104,9 @@ describe('FormImageUpload — the object-URL resource', () => {
         const wrapper = mountUpload();
 
         await wrapper.setProps({ modelValue: makeFile() });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
         await wrapper.setProps({ modelValue: undefined });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(revoked).toContain(created[0]);
     });
@@ -114,7 +115,7 @@ describe('FormImageUpload — the object-URL resource', () => {
         const wrapper = mountUpload();
 
         await wrapper.setProps({ modelValue: makeFile() });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
         wrapper.unmount();
 
         expect(revoked).toContain(created[0]);
@@ -140,7 +141,7 @@ describe('FormImageUpload — the preview', () => {
         const wrapper = mountUpload({ currentImageUrl: '/images/existing.png' });
 
         await wrapper.setProps({ modelValue: makeFile() });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('img').attributes('src')).toBe(created[0]);
     });
@@ -153,9 +154,9 @@ describe('FormImageUpload — the preview', () => {
         const wrapper = mountUpload({ currentImageUrl: '/images/existing.png' });
 
         await wrapper.setProps({ modelValue: makeFile() });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
         await wrapper.setProps({ modelValue: undefined });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('img').attributes('src')).toBe(served('/images/existing.png'));
     });
@@ -175,14 +176,14 @@ describe('FormImageUpload — the progress bar', () => {
         // The distinction the component exists to make: `undefined` is idle, `0` is a request
         // that has started and sent nothing yet. A truthiness check collapses the two.
         const wrapper = mountUpload({ progress: 0 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('[data-testid=upload-progress]').exists()).toBe(true);
     });
 
     it('is shown while an upload is in flight', async () => {
         const wrapper = mountUpload({ progress: 42 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('[data-testid=upload-progress]').exists()).toBe(true);
     });
@@ -192,7 +193,7 @@ describe('FormImageUpload — the progress bar', () => {
         // what a screen reader actually announces, and the label is an i18n message whose
         // dictionary is lazily loaded, so in a unit test it renders as the raw key.
         const wrapper = mountUpload({ progress: 42.6 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('[data-testid=upload-progress]').attributes('aria-valuenow')).toBe(
             '43'
@@ -201,7 +202,7 @@ describe('FormImageUpload — the progress bar', () => {
 
     it('reports the exact percentage when it is already whole', async () => {
         const wrapper = mountUpload({ progress: 42 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('[data-testid=upload-progress]').attributes('aria-valuenow')).toBe(
             '42'
@@ -220,7 +221,7 @@ describe('FormImageUpload — the field', () => {
 
     it('surfaces validation errors passed by the form', async () => {
         const wrapper = mountUpload({ errorMessages: ['File is too large'] });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.text()).toContain('File is too large');
     });
@@ -239,7 +240,7 @@ describe('FormImageUpload — the field', () => {
         const file = makeFile();
 
         await wrapper.setProps({ modelValue: asStub<File>([file]) });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         const emitted = wrapper.emitted('update:modelValue');
         expect(emitted?.at(-1)?.[0]).toBe(file);

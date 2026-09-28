@@ -71,10 +71,10 @@ beforeEach(() => {
     return loadLocale('en');
 });
 
-describe.each([
+describe.each<[string, Component]>([
     ['Login', Login],
     ['Signup', Signup]
-] as const)('%s: the OAuth button href', (_name, View) => {
+])('%s: the OAuth button href', (_name, View) => {
     it('carries a same-origin ?continue= from the page query', () => {
         currentQuery = { continue: '/cart' };
         return mountView(View).then((wrapper) => {

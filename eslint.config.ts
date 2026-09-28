@@ -2,7 +2,11 @@ import eslint from '@eslint/js';
 import globals from 'globals';
 import pluginUnicorn from 'eslint-plugin-unicorn';
 import { globalIgnores } from 'eslint/config';
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import {
+    configureVueProject,
+    defineConfigWithVueTs,
+    vueTsConfigs
+} from '@vue/eslint-config-typescript';
 import pluginVue from 'eslint-plugin-vue';
 import pluginVueA11y from 'eslint-plugin-vuejs-accessibility';
 import pluginVitest from '@vitest/eslint-plugin';
@@ -635,6 +639,17 @@ const namingConventionRule = {
         }
     ]
 };
+
+/**
+ * FA95: the preset's own default (`allowComponentTypeUnsafety: true`) turns off
+ * `no-unsafe-argument`/`-assignment`/`-return`/`-call`/`-member-access` for every `.ts` AND `.vue`
+ * file, to paper over Vue component operations TypeScript-ESLint cannot fully type. This repo
+ * bans `any` outright (CLAUDE.md), so those five rules stay on; the rare genuine case (Vue's own
+ * generated/framework types producing an `any` the code cannot avoid) gets a line `eslint-disable`
+ * with a description instead of a blanket carve-out. Must run before `defineConfigWithVueTs`
+ * below — it configures shared, module-level state the preset reads when building its configs.
+ */
+configureVueProject({ allowComponentTypeUnsafety: false });
 
 export default defineConfigWithVueTs(
     {

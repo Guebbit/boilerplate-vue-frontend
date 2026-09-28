@@ -23,6 +23,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { Product as ProductType } from '@types';
 
 wireModulesIntoCore();
@@ -228,7 +229,7 @@ describe('the shelf', () => {
         // The cart store's own `loading` — the flag `upsertCartItem` runs under — not a local
         // one, so a double-click while the first request is still out cannot fire a second.
         useCoreStore().setLoading('cart', true);
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
     });

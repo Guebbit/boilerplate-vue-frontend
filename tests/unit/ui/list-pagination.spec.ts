@@ -19,6 +19,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextRenderTick } from '../../support/unit/mounted-vm';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import vuetify from '@/ui/vuetify';
 
@@ -74,14 +75,14 @@ describe('ListPagination — the model', () => {
 
     it('reflects the page it is given', async () => {
         const wrapper = mountPager({ length: 5, modelValue: 3 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('.v-pagination__item--is-active').text()).toBe('3');
     });
 
     it('emits the page the user clicked', async () => {
         const wrapper = mountPager({ length: 5, modelValue: 1 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         // The second page button — index 0 is the "previous" arrow in Vuetify's markup.
         const pageButtons = wrapper.findAll('.v-pagination__item button');
@@ -94,7 +95,7 @@ describe('ListPagination — the model', () => {
         // `total-visible="7"`. Without it a 500-page list renders 500 buttons, which is a real
         // layout and performance problem on the admin lists.
         const wrapper = mountPager({ length: 500 });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.findAll('.v-pagination__item').length).toBeLessThanOrEqual(9);
     });
@@ -103,7 +104,7 @@ describe('ListPagination — the model', () => {
 describe('ListPagination — the name', () => {
     it('forwards the label a page with two pagers needs', async () => {
         const wrapper = mountPager({ length: 5, ariaLabel: 'Ledger pages' });
-        await wrapper.vm.$nextTick();
+        await nextRenderTick(wrapper);
 
         expect(wrapper.find('nav').attributes('aria-label')).toBe('Ledger pages');
     });

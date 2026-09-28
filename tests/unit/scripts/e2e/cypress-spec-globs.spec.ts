@@ -33,8 +33,13 @@ const resolve = (globs: string[]): string[] =>
         .map((entry) => entry.split(path.sep).join('/'))
         .toSorted();
 
-const scripts = (): Record<string, string> =>
-    JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')).scripts;
+const scripts = (): Record<string, string> => {
+    // `JSON.parse` returns `any` unconditionally — cast to the one shape this file reads off it.
+    const packageJson = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
+        scripts: Record<string, string>;
+    };
+    return packageJson.scripts;
+};
 
 /**
  * The `--spec` argument of an npm script, as the globs it names.

@@ -12,16 +12,20 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createRouter, createMemoryHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 import ErrorPage from '@/app/views/Error.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
+const routes: RouteRecordRaw[] = [
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- TypeScript-ESLint cannot fully resolve ErrorPage's own .vue SFC type; an explicit RouteRecordRaw[] target does not rescue it
+    { path: '/:locale/error', name: 'ErrorPage', component: ErrorPage, props: true },
+    { path: '/:locale', name: 'Home', component: { template: '<div>home</div>' } }
+];
+
 const router = createRouter({
     history: createMemoryHistory(),
-    routes: [
-        { path: '/:locale/error', name: 'ErrorPage', component: ErrorPage, props: true },
-        { path: '/:locale', name: 'Home', component: { template: '<div>home</div>' } }
-    ]
+    routes
 });
 
 const mountError = (query: Record<string, string>) => {

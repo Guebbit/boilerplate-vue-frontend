@@ -45,6 +45,7 @@ const mountCard = () =>
  * breaks.
  */
 const exposedFormOf = (wrapper: ReturnType<typeof mountCard>) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a .vue SFC's own instance type, and `.$` is the internal instance below that anyway — the one escape hatch this test needs, deliberately, per the comment above
     (wrapper.vm.$.exposed as { formElement?: Ref<HTMLFormElement | undefined> } | null)?.formElement
         ?.value;
 

@@ -121,6 +121,7 @@ const submitForm = () =>
                 message: form.value.message ?? '',
                 website: form.value.website || undefined
             },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
             withAntibotToken(humanCheck.value?.token)
         ).then(() => {
             addMessage(t('contact-page.success'));
