@@ -30,6 +30,11 @@ know _which domain_, the third line is the one.
 | `test:mutation`                    | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
 | `complete`                         | All of the gate, in CI's order                            | ~7m     | —                 |
 
+`test:unit:ci` is what the `test-unit` CI job actually runs — `test:unit:coverage` and
+`test:unit:report` in one vitest invocation (two reporters, one `--coverage`), not two full suite
+runs. Reach for the individual commands above locally; this one exists so the job doesn't pay for
+the suite twice (FA99).
+
 ## Running one thing
 
 **One module's unit tests** — the path is the filter:

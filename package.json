@@ -1,6 +1,6 @@
 {
     "name": "boilerplate-vue-frontend",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "private": true,
     "type": "module",
     "license": "AGPL-3.0-or-later",
@@ -25,6 +25,7 @@
         "test": "npm run test:unit:coverage && npm run test:e2e",
         "test:unit": "vitest run",
         "test:unit:coverage": "vitest run --coverage",
+        "test:unit:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile=reports/test-report.json",
         "test:mutation": "tsx scripts/mutation/run-tests.ts",
         "test:mutation:check": "tsx scripts/mutation/check-baseline.ts",
         "test:mutation:baseline": "tsx scripts/mutation/check-baseline.ts --update",

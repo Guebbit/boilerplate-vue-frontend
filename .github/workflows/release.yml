@@ -1,0 +1,121 @@
+name: Release
+
+# release-please: reads Conventional Commits (already enforced by commitlint) since the last
+# release, keeps a PR open proposing the next version bump + CHANGELOG.md entry, and — once that
+# PR is merged — tags the commit and publishes a GitHub Release. FA97: this repo's version
+# (`package.json`) and its only git tag had already drifted apart with nothing keeping them in
+# step; this is that.
+# https://github.com/googleapis/release-please
+
+on:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    release-please:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: write
+            pull-requests: write
+        outputs:
+            release_created: ${{ steps.release.outputs.release_created }}
+            tag_name: ${{ steps.release.outputs.tag_name }}
+        steps:
+            # On a mutable major-version tag, not a pinned SHA like every other action in this
+            # repo's workflows (`ci.yml`, `image-scan.yml`): this session had no way to verify a
+            # real, current commit SHA for either action introduced in this file offline. Pin both
+            # to a real SHA the next time this workflow is touched.
+            - name: Open or update the release PR, or tag+publish a merged one
+              id: release
+              uses: googleapis/release-please-action@v4
+              with:
+                  config-file: release-please-config.json
+                  manifest-file: .release-please-manifest.json
+
+    # Runs only the push that MERGES a release PR — every ordinary commit to main updates the
+    # open release PR above and stops there, same as release-please's own manifest-releaser design.
+    publish-image:
+        needs: release-please
+        if: needs.release-please.outputs.release_created == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: write
+            packages: write
+        steps:
+            - name: Checkout the tagged release
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+              with:
+                  ref: ${{ needs.release-please.outputs.tag_name }}
+
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
+
+            # A plain `npm run build` (never `docker build`) is the ONLY place this repo's own
+            # sourcemaps exist outside a developer's machine: `Dockerfile.production` deletes its
+            # own copy before the image is built (see that file's own comment) — nginx has no rule
+            # blocking `.map` requests, so a map left in a served image is one guessed URL away
+            # from handing out unminified source.
+            #
+            # Published as a release ASSET rather than pushed to a specific APM's sourcemap API:
+            # this repo ships against a SELF-HOSTED Grafana Alloy Faro receiver
+            # (`VITE_FARO_URL`, `.env-example`), which only RECEIVES telemetry — it has no
+            # sourcemap store of its own the way Grafana Cloud's managed Frontend Observability
+            # does. A deployment's own Faro/Sentry/error-tracker (whichever it runs) downloads
+            # this asset and uploads it with that tool's own CLI; the boilerplate names no vendor.
+            - name: Build (for sourcemaps only — the shipped image carries none)
+              run: npm run build
+
+            - name: Package the sourcemaps as a release asset
+              # `tar -c` does not glob its own file-list arguments (that quietly fails closed —
+              # verified: a quoted `'*.map'` errors "Cannot stat", it is not silently expanded by
+              # the shell either) — `find -print0` lists the real, null-separated paths first, and
+              # `--files-from` reads exactly that list.
+              # https://www.gnu.org/software/tar/manual/html_node/files.html
+              run: |
+                  find dist -name '*.map' -type f -print0 > /tmp/sourcemap-paths
+                  tar --null --files-from=/tmp/sourcemap-paths \
+                    -czf sourcemaps-${{ needs.release-please.outputs.tag_name }}.tar.gz
+
+            - name: Attach the sourcemaps to the GitHub Release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release upload ${{ needs.release-please.outputs.tag_name }} \
+                    sourcemaps-${{ needs.release-please.outputs.tag_name }}.tar.gz
+
+            - name: Log in to GHCR
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ github.token }}
+
+            # GHCR (like every OCI registry) refuses an uppercase image name, and a fork's own
+            # `owner/repo` is not guaranteed to be all-lowercase the way this one is.
+            - name: Resolve the (lowercase) image name
+              id: image
+              run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+            # `docker build`, not `docker/build-push-action`: this repo's other image jobs
+            # (`ci.yml`'s `docker-image`, `image-scan.yml`) already invoke Docker directly, and a
+            # single tagged build here does not need that action's cache/multi-platform machinery.
+            - name: Build the production image
+              run: docker build -f docker/Dockerfile.production -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
+              env:
+                  IMAGE: ${{ steps.image.outputs.name }}
+                  TAG: ${{ needs.release-please.outputs.tag_name }}
+
+            - name: Push the release image
+              run: |
+                  docker push "${{ steps.image.outputs.name }}:${{ needs.release-please.outputs.tag_name }}"
+                  docker push "${{ steps.image.outputs.name }}:latest"
