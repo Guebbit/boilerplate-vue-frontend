@@ -318,10 +318,9 @@ flowchart TD
 
 For an API-backed storefront or admin — which is what this boilerplate produces — the answer is the
 left branch. Going right means maintaining a client model _and_ keeping it reconciled with the
-server's.
-
-`TACTICAL_DDD_PLAN.md` (workspace root, beside this repo) prices the right branch in full for the <!-- doc-paths:ignore -->
-backend, and says why this repo stays out of its scope.
+server's — worth it only for a real core domain the paired backend's own tactical patterns (see its
+`Tactical DDD` theory page) can no longer keep straight, which is why this repo stays out of scope
+for it.
 
 ## Related pages
 
