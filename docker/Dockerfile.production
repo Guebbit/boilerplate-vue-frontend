@@ -50,6 +50,15 @@ ENV VITE_APP_BASE_URL=$VITE_APP_BASE_URL
 # evidence that this compiles.
 RUN npm run build
 
+# `vite.config.ts` sets `build.sourcemap: 'hidden'` (FA97): a map is written next to every chunk,
+# but no chunk carries the `//# sourceMappingURL` comment pointing a browser at it. `hidden` means
+# "for a crash reporter to fetch privately", never "safe to serve" — nginx has no rule blocking
+# `.map` requests below, so a map left in `dist/` is one guessed URL away from handing out
+# unminified source. Deleted here, before the copy into the runtime stage, rather than relying on
+# a server-side block: the release workflow already pulled its own copy of these out of a plain
+# `npm run build` before this image is ever built, to publish alongside the GitHub Release instead.
+RUN find dist -name '*.map' -type f -delete
+
 # ────────────────────────────────────────────────────────────────────────────────────────────────
 # Stage 2 — serve: nginx and a directory of files. No Node, no npm, no source.
 # ────────────────────────────────────────────────────────────────────────────────────────────────
