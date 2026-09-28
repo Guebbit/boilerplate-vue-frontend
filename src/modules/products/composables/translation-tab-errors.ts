@@ -86,11 +86,17 @@ export const translationTabErrorCountsFromZodError = (error: ZodError): Translat
 export const translationTabErrorCountsFromServerError = (
     error: unknown
 ): TranslationTabErrorCounts => {
+    // Every candidate envelope is a record (an object rejection always is), so picking the
+    // first RECORD would just answer `error` itself every time — the point is picking the first
+    // one that actually CARRIES an `errors` array, same as vue-toolkit's own `findErrorCollection`.
     const container = [
         error,
         isRecord(error) ? error.data : undefined,
         ...(isRecord(error) && isRecord(error.response) ? [error.response.data] : [])
-    ].find((candidate): candidate is Record<string, unknown> => isRecord(candidate));
+    ].find(
+        (candidate): candidate is Record<string, unknown> =>
+            isRecord(candidate) && Array.isArray(candidate.errors)
+    );
 
     const items = isRecord(container) && Array.isArray(container.errors) ? container.errors : [];
 
