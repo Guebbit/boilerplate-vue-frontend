@@ -7,19 +7,23 @@
  * two module maps drift apart over months, and the first person to notice is whoever is trying to
  * find out where a feature actually lives.
  *
- * Three rules, and the second is the one that does the work:
+ * Four rules, and the second is the one that does the work:
  *
  *   1. Every enabled module has an entry. A new domain here cannot be merged without someone
  *      saying what answers it.
- *   2. An entry whose counterpart is not simply the same name must give a reason. Twelve of
- *      sixteen pair one-to-one and need no prose; the interesting four are `account` (the address
- *      book lives here, not in its own module), `admin` (one screen over two backend domains),
- *      `realtime` (consumes a stream `observability` serves) and `demo` (no backend domain at
- *      all). Those are exactly the facts that are invisible from either repo alone.
+ *   2. An entry whose counterpart is not simply the same name must give a reason. Most modules
+ *      pair one-to-one and need no prose; the interesting three are `account` (the address book
+ *      and the account of record both live here, not in their own modules), `observability` (one
+ *      set of screens over three backend domains — the console, the shop's audit trail and the
+ *      realtime playground, all reading the same stream) and `demo` (no backend domain at all).
+ *      Those are exactly the facts that are invisible from either repo alone.
  *   3. No entry names a module that is not enabled, so a deleted domain takes its row with it.
+ *   4. Every backend module this repo can see has a home in some entry's counterparts, or a
+ *      reason in `UNPAIRED_BACKEND_MODULES` — the direction the first three rules never checked:
+ *      a backend domain with no frontend counterpart at all used to go unnoticed here.
  *
- * Stated rather than derived, deliberately: a name matcher would call `admin` unpaired, which is
- * the wrong answer rather than a missing one.
+ * Stated rather than derived, deliberately: a name matcher would call `observability` unpaired,
+ * which is the wrong answer rather than a missing one.
  *
  * ── Why the table lives in a spec ────────────────────────────────────────────────────────────
  * These are rules, not documentation, so they live with the rules and fail a test run when they
@@ -47,12 +51,8 @@ interface Pairing {
 
 const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     account: {
-        counterparts: ['account', 'addresses'],
-        why: 'The address book lives inside this module as `AddressPicker`, not its own — the backend keeps it a separate domain.'
-    },
-    admin: {
-        counterparts: ['observability', 'audit-logs'],
-        why: 'The dashboard is one screen over two backend domains: `observability` serves health and the metrics overview, `audit-logs` owns the trail behind its audit table.'
+        counterparts: ['account', 'addresses', 'users'],
+        why: 'The address book lives inside this module as `AddressPicker`, and it reads `users` for the account of record — the backend keeps both a separate domain.'
     },
     'api-keys': { counterparts: ['api-keys'] },
     cart: { counterparts: ['cart'] },
@@ -64,16 +64,29 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     feedback: { counterparts: ['feedback'] },
     inventory: { counterparts: ['inventory'] },
     locales: { counterparts: ['locales'] },
+    observability: {
+        counterparts: ['observability', 'audit-logs', 'account'],
+        why: 'One set of screens over three backend domains: `observability` serves health, the metrics overview and the SSE stream, `audit-logs` owns the trail behind the audit table, and the token-purge action reaches `account`.'
+    },
     orders: { counterparts: ['orders'] },
     payments: { counterparts: ['payments'] },
     products: { counterparts: ['products'] },
-    realtime: {
-        counterparts: ['observability'],
-        why: 'It consumes `GET /observability/events`, the SSE stream that module serves. There is no backend `realtime` module because the stream is one route on a dashboard, not a domain.'
-    },
     users: { counterparts: ['users'] },
     webhooks: { counterparts: ['webhooks'] },
     wishlist: { counterparts: ['wishlist'] }
+};
+
+/**
+ * A backend module with no frontend counterpart at all, and why — the direction the three rules
+ * above never checked: they only ever verify `BACKEND_PAIRING` against itself, so a backend
+ * domain nobody on this side named would pass silently forever.
+ */
+const UNPAIRED_BACKEND_MODULES: Readonly<Partial<Record<string, string>>> = {
+    access: 'Roles and permission checks are read through `GET /account/abilities`, not a module of their own on this side.',
+    antibot:
+        'A shared widget (`infrastructure/http/antibot.ts` + `ui/organisms/HumanCheck.vue`), used by account, feedback and payments — not a screen of its own.',
+    invoicing:
+        "The backend issues the PDF; this frontend reads it through the `orders` module's own download link, not a module of its own."
 };
 
 /** Whether an entry pairs one-to-one with a backend module of the same name. */
@@ -187,6 +200,57 @@ describe('the cross-repository pairing', () => {
         'read a real, non-empty module list from the sibling checkout',
         () => {
             expect(backendModuleNames?.length).toBeGreaterThan(0);
+        }
+    );
+
+    /**
+     * Rule 4 — the reverse direction. Everything above only ever checks `BACKEND_PAIRING`
+     * against itself or against the sibling's names; none of it notices a real backend module
+     * that no entry's `counterparts` names at all. Skipped, not failed, for the same reason as
+     * FA128: no sibling checkout, nothing to compare against.
+     */
+    it.skipIf(backendModuleNames === undefined)(
+        'gives a reason for every backend module this client has no home for',
+        () => {
+            const paired = new Set(
+                Object.values(BACKEND_PAIRING).flatMap((pairing) => pairing?.counterparts ?? [])
+            );
+            const unaccounted = (backendModuleNames ?? [])
+                .filter((name) => !paired.has(name) && !UNPAIRED_BACKEND_MODULES[name])
+                .map(
+                    (name) =>
+                        `Backend module "${name}" has no frontend counterpart and no entry in UNPAIRED_BACKEND_MODULES explaining why.`
+                );
+
+            expect(unaccounted).toEqual([]);
+        }
+    );
+
+    /**
+     * The guard on the guard: emptying `UNPAIRED_BACKEND_MODULES` would still pass the check
+     * above as long as every backend module happened to be paired, which is exactly the state
+     * that made the gap invisible before this file added rule 4.
+     */
+    it('is checking a table that still names at least one unhomed backend module', () => {
+        expect(Object.keys(UNPAIRED_BACKEND_MODULES).length).toBeGreaterThan(0);
+    });
+
+    /** `UNPAIRED_BACKEND_MODULES` names no module `BACKEND_PAIRING` already homes — same "no
+     * stale row" discipline as rule 3, mirrored onto the reverse table. */
+    it.skipIf(backendModuleNames === undefined)(
+        'names no backend module that already has a frontend counterpart',
+        () => {
+            const paired = new Set(
+                Object.values(BACKEND_PAIRING).flatMap((pairing) => pairing?.counterparts ?? [])
+            );
+            const redundant = Object.keys(UNPAIRED_BACKEND_MODULES)
+                .filter((name) => paired.has(name))
+                .map(
+                    (name) =>
+                        `UNPAIRED_BACKEND_MODULES names "${name}", which BACKEND_PAIRING already homes.`
+                );
+
+            expect(redundant).toEqual([]);
         }
     );
 });
