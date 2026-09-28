@@ -192,17 +192,20 @@ export const registerResponseSchemas = (rows: ResponseSchemaRoute[]): void => {
 };
 
 /**
- * Whether {@link loadResponseSchemas} has been kicked off and hasn't resolved yet — the boot
- * window where `resolveResponseSchema` legitimately answers `undefined` for every route, not
- * because a route is unmapped. `validate.ts` reads this to skip its "no schema mapped" warning
- * during that window without silencing it for a route that is genuinely never registered.
+ * Whether {@link loadResponseSchemas} has resolved — starts `false`, same as {@link routeSchemas}
+ * starts empty, since a request can reach `validateResponseAgainstContract` before `main.ts` ever
+ * calls {@link loadResponseSchemas} (`mergeRemoteLocales()` fires its own `/locales` GET before
+ * mount, well before the post-mount, not-awaited load below). Every route legitimately reads as
+ * unmapped for that whole stretch, not because a route is unmapped — `validate.ts` reads this to
+ * skip its "no schema mapped" warning until the table is actually in place, without silencing it
+ * for a route that is genuinely never registered.
  */
-let schemasLoading = false;
+let schemasReady = false;
 
 /**
- * @returns whether {@link loadResponseSchemas} is still in flight.
+ * @returns whether {@link loadResponseSchemas} has resolved and installed its rows yet.
  */
-export const isResponseSchemaTableLoading = (): boolean => schemasLoading;
+export const isResponseSchemaTableLoading = (): boolean => !schemasReady;
 
 /**
  * Resolves every response-schema row this app validates against — the core rows above plus each
@@ -219,18 +222,16 @@ export const isResponseSchemaTableLoading = (): boolean => schemasLoading;
  */
 export const loadResponseSchemas = (
     moduleResponseSchemaLoaders: (() => Promise<ResponseSchemaRoute[]>)[]
-): Promise<void> => {
-    schemasLoading = true;
-    return Promise.all([
+): Promise<void> =>
+    Promise.all([
         import('@api/schemas').then(buildCoreRouteSchemas),
         Promise.all(moduleResponseSchemaLoaders.map((loadRows) => loadRows())).then((rows) =>
             rows.flat()
         )
     ]).then(([coreRows, moduleRows]) => {
         registerResponseSchemas([...coreRows, ...moduleRows]);
-        schemasLoading = false;
+        schemasReady = true;
     });
-};
 
 /**
  * Looks up the response schema for a request, or `undefined` when the route isn't registered
