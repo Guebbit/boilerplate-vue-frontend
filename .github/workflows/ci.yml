@@ -43,9 +43,10 @@ env:
 
 jobs:
     commitlint:
-        # Lint pushed commit messages against the conventional-commit rules in .commitlintrc.cjs.
-        # Only meaningful on push (needs the before/after SHAs from the push event).
-        if: github.event_name == 'push'
+        # Lint commit messages against the conventional-commit rules in .commitlintrc.cjs, over
+        # the PR's own base..head range on a pull request, or the pushed range on a direct push to
+        # main. FA129: linting only on push let a badly-worded commit sit on a PR unnoticed until
+        # AFTER it merged into main — this job now runs where a PR author can still see it fail.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         permissions:
@@ -54,7 +55,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
               with:
-                  # Need full history to walk the pushed commit range.
+                  # Need full history to walk the commit range below.
                   fetch-depth: 0
 
             - name: Setup Node
@@ -68,7 +69,13 @@ jobs:
               run: npm ci
 
             - name: Lint commit messages
-              run: npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose
+              # A pull_request event carries no before/after SHAs — base/head is its own pair, and
+              # the range a reviewer actually sees. A push event (direct to main) keeps before/after.
+              run: |
+                  npx commitlint \
+                    --from ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }} \
+                    --to ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }} \
+                    --verbose
 
     lint:
         # ESLint over src, tests and scripts.
@@ -661,10 +668,8 @@ jobs:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
         if: always()
-        # Every job above belongs in this list. `commitlint` only runs on push
-        # (see its `if:`), so on pull requests it reports `skipped` — which is
-        # neither `failure` nor `cancelled`, so listing it here is safe and does
-        # not block PRs.
+        # Every job above belongs in this list, `commitlint` included — it now runs on both
+        # pull_request and push (see its own comment), so it is always a real pass/fail here.
         needs:
             - commitlint
             - lint
