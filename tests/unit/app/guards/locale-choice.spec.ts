@@ -363,23 +363,27 @@ describe('localeChoice — locale-sensitive resets', () => {
         i18nState.currentLocale = 'en';
 
         let resolveReset!: () => void;
-        resetAlphaDomain.mockReturnValueOnce(new Promise<void>((resolve) => (resolveReset = resolve)));
+        resetAlphaDomain.mockReturnValueOnce(
+            new Promise<void>((resolve) => (resolveReset = resolve))
+        );
 
         let settled = false;
         const navigation = localeChoice(routeTo({ params: { locale: 'it' } })).then(() => {
             settled = true;
         });
 
-        return Promise.resolve()
-            // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- deliberate: returning a THENABLE here (not a plain value) adds an extra microtask hop, which is the point — it lets every microtask this test's mocked reset already queued run first
-            .then(() => Promise.resolve())
-            .then(() => {
-                expect(settled).toBe(false);
-                resolveReset();
-                return navigation;
-            })
-            .then(() => {
-                expect(settled).toBe(true);
-            });
+        return (
+            Promise.resolve()
+                // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- deliberate: returning a THENABLE here (not a plain value) adds an extra microtask hop, which is the point — it lets every microtask this test's mocked reset already queued run first
+                .then(() => Promise.resolve())
+                .then(() => {
+                    expect(settled).toBe(false);
+                    resolveReset();
+                    return navigation;
+                })
+                .then(() => {
+                    expect(settled).toBe(true);
+                })
+        );
     });
 });

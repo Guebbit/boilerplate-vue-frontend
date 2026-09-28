@@ -291,7 +291,9 @@ export const collectModuleResponseSchemas = (
  *
  * @param appModules - the enabled module list
  */
-export const collectLocaleSensitiveResets = (appModules: AppModule[]): (() => void | Promise<void>)[] =>
+export const collectLocaleSensitiveResets = (
+    appModules: AppModule[]
+): (() => void | Promise<void>)[] =>
     appModules.flatMap((appModule) =>
         appModule.resetOnLocaleChange ? [appModule.resetOnLocaleChange] : []
     );
