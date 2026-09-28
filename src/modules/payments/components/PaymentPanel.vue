@@ -10,7 +10,7 @@ export default {
  * Order-page panel component: renders the payment form or the payment's fate, delegating the
  * intent/confirm/sync sequence to the payments store.
  */
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -84,9 +84,20 @@ const { addMessage } = useNotificationsStore();
 const paymentsStore = usePaymentsStore();
 
 /**
- * The order's payment, and whether a call is in flight.
+ * The order's payment, as the store last fetched it for ANY order, and whether a call is in
+ * flight. `payment` below is the guarded read.
  */
-const { payment, loading } = storeToRefs(paymentsStore);
+const { payment: rawPayment, loading } = storeToRefs(paymentsStore);
+
+/**
+ * This panel's own payment, discarding a stale or mismatched record. The store's `payment` is one
+ * shared ref: this page component reuses the same panel instance across orders (no remount on a
+ * route param change alone, per `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS
+ * order landing after `orderId` has already moved on must not render as this order's chip (FA24).
+ */
+const payment = computed(() =>
+    rawPayment.value?.orderId === orderId ? rawPayment.value : undefined
+);
 
 /**
  * The method references the demo's fake provider recognises — this panel's stand-in for a real
@@ -227,9 +238,15 @@ const finishAtProvider = () => {
         .catch((error: unknown) => reportPaymentError(error));
 };
 
-onMounted(() => {
-    void paymentsStore.fetchPaymentForOrder(orderId);
-});
+/**
+ * Fetches the payment on mount AND whenever `orderId` changes — `immediate: true` covers the
+ * mount case, the watch covers navigating to a different order without a remount (FA24).
+ */
+watch(
+    () => orderId,
+    (newOrderId) => void paymentsStore.fetchPaymentForOrder(newOrderId),
+    { immediate: true }
+);
 </script>
 
 <template>
