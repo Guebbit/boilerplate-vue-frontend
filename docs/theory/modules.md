@@ -210,13 +210,17 @@ what the exercise taught.
 Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
 in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`
 **and `account`** together — four folders, five lines, and `account` is the hard one because the app
-shell shows who is signed in — left `src/` type-checking, lint clean, the production build
-succeeding and the app shell intact: no menu entry, no sign-in button, no dead link. The only
-failures were 34 unit specs, all in one file: the openapi parity table.
+shell shows who is signed in — left the app shell intact (no menu entry, no sign-in button, no dead
+link) but neither `src/` type-checking nor the production build clean: 12 type errors, 4 of them in
+the shell (`AppVerificationBanner.vue` and `ReauthDialog.vue` importing `account`'s stores
+directly), the rest in `inventory` (which reaches `products`) and `wishlist` (which reaches `cart`);
+`vite build` then fails outright on `InventoryLedger.vue`'s static import of the now-missing
+`@/modules/products` — real coupling the deletion makes visible, not a flaw in the procedure.
 
-**Everything that can be fixed inside this repo has been.** The one remaining failure is
-`response-schema-map.spec.ts` reporting `expected [ 'GET /products', …(25) ] to deeply equal []` —
-26 operations that `openapi.yaml` documents and no enabled module covers.
+**None of this is fixable inside this repo alone.** The type errors and the failed build name
+`inventory`'s and `wishlist`'s direct imports of `products`/`cart` — the coupling the procedure
+exists to surface — and `response-schema-map.spec.ts` reports `expected [ 'GET /products', …(25) ]
+to deeply equal []` — operations that `openapi.yaml` documents and no enabled module covers.
 
 That is the parity gate working exactly as intended. Deleting a domain from the frontend does not
 delete it from a contract shared byte-identically with the backend, so trimming it is a two-repo
