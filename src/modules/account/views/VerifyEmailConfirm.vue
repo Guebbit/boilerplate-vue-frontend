@@ -16,7 +16,6 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -124,10 +123,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault
-        id="verify-email-confirm-page"
-        :title="t('verify-email-confirm-page.page-title')"
-    >
+    <div id="verify-email-confirm-page">
         <v-card class="mx-auto mt-10 w-full max-w-md p-8">
             <p class="mb-4 opacity-80">{{ t('verify-email-confirm-page.intro') }}</p>
             <form ref="formElement" novalidate @submit.prevent="submitForm">
@@ -156,5 +152,5 @@ const submitForm = () => {
                 />
             </form>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

@@ -26,7 +26,6 @@ import { useMethodLabel } from '@/modules/account/composables/use-method-label.t
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
 /**
  * Translation function.
@@ -176,11 +175,7 @@ onUnmounted(twoFactor.clearChallenge);
 </script>
 
 <template>
-    <LayoutDefault
-        v-if="challenge"
-        id="two-factor-challenge-page"
-        :title="t('two-factor-challenge-page.page-title')"
-    >
+    <div v-if="challenge" id="two-factor-challenge-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
             <p class="mb-4 opacity-80">{{ t('two-factor-challenge-page.intro') }}</p>
 
@@ -298,5 +293,5 @@ onUnmounted(twoFactor.clearChallenge);
                 </v-btn>
             </div>
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

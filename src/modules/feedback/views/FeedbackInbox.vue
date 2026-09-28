@@ -15,7 +15,6 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -206,7 +205,7 @@ const handleDelete = (requestId: string, subject: string) => {
 </script>
 
 <template>
-    <LayoutDefault id="feedback-inbox-page" :title="t('feedback-inbox-page.page-title')">
+    <div id="feedback-inbox-page">
         <v-card class="mx-auto mb-6 w-full max-w-3xl p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -353,5 +352,5 @@ const handleDelete = (requestId: string, subject: string) => {
 
             <ListPagination v-model="pageCurrent" :length="pageTotal" />
         </div>
-    </LayoutDefault>
+    </div>
 </template>

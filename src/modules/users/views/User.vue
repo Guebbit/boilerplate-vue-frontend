@@ -25,7 +25,6 @@ import { useUserAccessDialog } from '@/modules/users/composables/use-user-access
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -222,7 +221,7 @@ const handleDisableTwoFactor = () => {
 </script>
 
 <template>
-    <LayoutDefault id="user-target" :title="t('user-target-page.page-title')">
+    <div id="user-target">
         <ItemDetailLayout accent="secondary">
             <template #hero>
                 <ItemDetailHero
@@ -369,5 +368,5 @@ const handleDisableTwoFactor = () => {
             @confirm="confirmAccessChange"
             @cancel="cancelAccessChange"
         />
-    </LayoutDefault>
+    </div>
 </template>

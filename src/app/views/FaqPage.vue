@@ -20,7 +20,6 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { MessageSquare } from 'lucide-vue-next';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
@@ -83,7 +82,7 @@ const hasContact = computed(() => router.hasRoute('Contact'));
 </script>
 
 <template>
-    <LayoutDefault id="static-page-faq" :title="t('static-pages.faq.title')">
+    <div id="static-page-faq">
         <div class="mx-auto mt-10 grid w-full max-w-3xl gap-8">
             <p class="m-0 text-lg opacity-80">{{ t('static-pages.faq.intro') }}</p>
 
@@ -128,5 +127,5 @@ const hasContact = computed(() => router.hasRoute('Contact'));
                 <StaticPageLinks current="faq" />
             </v-card>
         </div>
-    </LayoutDefault>
+    </div>
 </template>

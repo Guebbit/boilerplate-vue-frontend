@@ -20,7 +20,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { Ban, Calendar, Clock, FileText, Hash, Link, Webhook, Zap } from 'lucide-vue-next';
@@ -218,7 +217,7 @@ const handleDelete = () => {
 </script>
 
 <template>
-    <LayoutDefault id="webhook-target" :title="t('webhook-target-page.page-title')">
+    <div id="webhook-target">
         <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
             <SecretRevealModal
                 v-if="revealedSecret"
@@ -415,5 +414,5 @@ const handleDelete = () => {
                 />
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

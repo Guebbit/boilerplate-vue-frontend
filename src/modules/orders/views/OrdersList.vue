@@ -29,7 +29,6 @@ import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts
 import type { Order } from '@types';
 import { OrderStatus } from '@/types/enums.ts';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -285,7 +284,7 @@ const handleHardDelete = (orderId: string) =>
 </script>
 
 <template>
-    <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
+    <div id="orders-list-page">
         <OrderReferenceSearch
             v-if="session.can('create', 'Payment')"
             @found="handleReferenceFound"
@@ -464,5 +463,5 @@ const handleHardDelete = (orderId: string) =>
         </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
-    </LayoutDefault>
+    </div>
 </template>

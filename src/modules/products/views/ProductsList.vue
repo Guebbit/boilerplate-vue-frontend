@@ -24,7 +24,6 @@ import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Product } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -266,7 +265,7 @@ const handleHardDelete = (productId: string, title: string) =>
 </script>
 
 <template>
-    <LayoutDefault id="products-list-page" :title="t('products-list-page.page-title')">
+    <div id="products-list-page">
         <div
             v-if="facets && (facets.categories.length > 0 || facets.tags.length > 0)"
             class="mb-4"
@@ -503,5 +502,5 @@ const handleHardDelete = (productId: string, title: string) =>
         </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
-    </LayoutDefault>
+    </div>
 </template>

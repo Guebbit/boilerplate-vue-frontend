@@ -22,7 +22,6 @@ import { useCartStore } from '@/modules/cart';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -120,7 +119,7 @@ onMounted(() =>
 </script>
 
 <template>
-    <LayoutDefault id="wishlist-page" :title="t('wishlist-page.page-title')">
+    <div id="wishlist-page">
         <v-empty-state v-if="items.length === 0" :title="t('wishlist-page.empty')">
             <template #media>
                 <Heart :size="64" class="text-secondary" aria-hidden="true" />
@@ -184,5 +183,5 @@ onMounted(() =>
                 </div>
             </v-card>
         </div>
-    </LayoutDefault>
+    </div>
 </template>

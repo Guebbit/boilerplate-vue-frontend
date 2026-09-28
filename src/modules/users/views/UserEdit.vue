@@ -27,7 +27,6 @@ import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages } from '@/infrastructure/i18n';
 import { z } from 'zod';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -307,7 +306,7 @@ watchUser(() => id);
 </script>
 
 <template>
-    <LayoutDefault id="user-edit-page" :title="t('user-edit-page.page-title')">
+    <div id="user-edit-page">
         <ItemDetailLayout accent="secondary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -466,5 +465,5 @@ watchUser(() => id);
             @confirm="confirmAccessChange"
             @cancel="cancelAccessChange"
         />
-    </LayoutDefault>
+    </div>
 </template>

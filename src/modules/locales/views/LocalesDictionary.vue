@@ -17,7 +17,6 @@ import { useI18n } from 'vue-i18n';
 import { debounce } from 'lodash-es';
 import { ArrowLeft, Check, Plus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
@@ -336,7 +335,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutDefault id="locales-dictionary-page" :title="t('locales-dictionary-page.page-title')">
+    <div id="locales-dictionary-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <v-btn
                 variant="text"
@@ -566,7 +565,7 @@ onMounted(() => {
                 <InlineErrorAlert :message="createLanguageError" data-test="language-form-error" />
             </template>
         </LanguageFormDialog>
-    </LayoutDefault>
+    </div>
 </template>
 
 <style scoped>

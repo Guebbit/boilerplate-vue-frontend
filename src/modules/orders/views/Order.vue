@@ -23,7 +23,6 @@ import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import {
     Calendar,
     Circle,
@@ -334,7 +333,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
-    <LayoutDefault id="order-target" :title="t('order-target-page.page-title')">
+    <div id="order-target">
         <ItemDetailLayout accent="tertiary">
             <template #hero>
                 <ItemDetailHero
@@ -688,5 +687,5 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>

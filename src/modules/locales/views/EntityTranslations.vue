@@ -23,7 +23,6 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { ArrowLeft } from 'lucide-vue-next';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -228,7 +227,7 @@ const handleSave = () => {
 </script>
 
 <template>
-    <LayoutDefault id="entity-translations-page" :title="t('entity-translations-page.page-title')">
+    <div id="entity-translations-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <v-btn
                 variant="text"
@@ -306,5 +305,5 @@ const handleSave = () => {
                 data-test="entity-translations-save-error"
             />
         </v-card>
-    </LayoutDefault>
+    </div>
 </template>

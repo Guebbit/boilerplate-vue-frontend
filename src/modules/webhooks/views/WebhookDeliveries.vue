@@ -19,7 +19,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useQuerySyncedFilters } from '@/ui/composables/use-query-synced-filters.ts';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import WebhookDeliveriesFilters from '@/modules/webhooks/components/WebhookDeliveriesFilters.vue';
 import type { WebhookDeliveryFilters } from '@/modules/webhooks/types.ts';
 import type { WebhookDeliveryStatus } from '@types';
@@ -130,7 +129,7 @@ void search();
 </script>
 
 <template>
-    <LayoutDefault id="webhook-deliveries-page" :title="t('webhook-deliveries-page.page-title')">
+    <div id="webhook-deliveries-page">
         <WebhookDeliveriesFilters
             :deliveries="deliveryPageItemList"
             :total="deliveriesTotalItems"
@@ -142,5 +141,5 @@ void search();
             @search="handleSearch"
             @replay="handleReplay"
         />
-    </LayoutDefault>
+    </div>
 </template>

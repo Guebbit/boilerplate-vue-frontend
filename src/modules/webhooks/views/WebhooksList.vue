@@ -22,7 +22,6 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { WebhookSubscription } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -170,7 +169,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
 </script>
 
 <template>
-    <LayoutDefault id="webhooks-list-page" :title="t('webhooks-list-page.page-title')">
+    <div id="webhooks-list-page">
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -283,5 +282,5 @@ const handleDelete = (subscription: WebhookSubscription) =>
         </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
-    </LayoutDefault>
+    </div>
 </template>

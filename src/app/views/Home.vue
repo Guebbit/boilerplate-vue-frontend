@@ -22,7 +22,6 @@ import { useRouter } from 'vue-router';
 import { ArrowRight, Package, Tag, Star } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
@@ -85,7 +84,7 @@ const featuredProducts = computed<
 </script>
 
 <template>
-    <LayoutDefault id="home-page" :title="t('home-page.page-title')">
+    <div id="home-page">
         <section class="mb-8 flex justify-center">
             <v-card class="hero-card w-full max-w-3xl p-8 text-center sm:text-left">
                 <h2 class="text-2xl font-bold sm:text-3xl">{{ t('home-page.hero-title') }}</h2>
@@ -121,7 +120,7 @@ const featuredProducts = computed<
                 </CardInfo>
             </div>
         </section>
-    </LayoutDefault>
+    </div>
 </template>
 
 <style scoped>

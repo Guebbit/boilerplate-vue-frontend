@@ -30,7 +30,6 @@ import {
 } from '@/modules/products/composables/translation-tab-errors.ts';
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -270,7 +269,7 @@ const submitForm = () => {
 </script>
 
 <template>
-    <LayoutDefault id="product-create-page" :title="t('product-create-page.page-title')">
+    <div id="product-create-page">
         <!--
             No form until the language manifest has landed. `GET /locales` names the fallback
             locale, and the watcher above seeds ITS tab — so until both have happened the form has
@@ -421,5 +420,5 @@ const submitForm = () => {
 
             <InlineErrorAlert :message="submitError" data-test="product-create-submit-error" />
         </FormCard>
-    </LayoutDefault>
+    </div>
 </template>

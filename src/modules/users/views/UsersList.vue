@@ -24,7 +24,6 @@ import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { User } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -271,7 +270,7 @@ const handleHardDelete = (userId: string, username: string) =>
 </script>
 
 <template>
-    <LayoutDefault id="users-list-page" :title="t('users-list-page.page-title')">
+    <div id="users-list-page">
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -475,5 +474,5 @@ const handleHardDelete = (userId: string, username: string) =>
             @confirm="confirmAccessChange"
             @cancel="cancelAccessChange"
         />
-    </LayoutDefault>
+    </div>
 </template>

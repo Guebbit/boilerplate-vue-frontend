@@ -29,7 +29,6 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
 import type { CartItem, PaymentMethodId } from '@types';
 
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
@@ -344,7 +343,7 @@ onMounted(() =>
 </script>
 
 <template>
-    <LayoutDefault id="cart-page" :title="t('cart-page.page-title')">
+    <div id="cart-page">
         <v-empty-state v-if="cartItems.length === 0" :title="t('cart-page.empty-cart')">
             <template #media>
                 <ShoppingCart :size="64" class="text-secondary" aria-hidden="true" />
@@ -583,5 +582,5 @@ onMounted(() =>
                 </v-card>
             </div>
         </div>
-    </LayoutDefault>
+    </div>
 </template>

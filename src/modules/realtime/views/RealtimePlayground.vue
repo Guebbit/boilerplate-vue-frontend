@@ -8,7 +8,6 @@
 import { computed, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useRealtimeObservability } from '@/modules/realtime/use-realtime-observability';
 import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
@@ -61,7 +60,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
 </script>
 
 <template>
-    <LayoutDefault id="realtime-playground-page" :title="t('realtime-playground-page.page-title')">
+    <div id="realtime-playground-page">
         <section class="grid gap-6">
             <v-card class="flex flex-col gap-4 p-6">
                 <div>
@@ -245,5 +244,5 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                 </div>
             </v-card>
         </section>
-    </LayoutDefault>
+    </div>
 </template>

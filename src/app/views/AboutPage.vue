@@ -32,7 +32,6 @@ import {
     ShoppingCart,
     SunMoon
 } from 'lucide-vue-next';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { SIGN_UP_ROUTE_NAME } from '@/app/router/navigation.ts';
@@ -99,7 +98,7 @@ const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
 </script>
 
 <template>
-    <LayoutDefault id="static-page-about" :title="t('static-pages.about.title')">
+    <div id="static-page-about">
         <div class="mx-auto mt-10 grid w-full max-w-4xl gap-8">
             <!-- Intro -->
             <v-card class="p-8">
@@ -198,5 +197,5 @@ const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
                 <StaticPageLinks current="about" />
             </v-card>
         </div>
-    </LayoutDefault>
+    </div>
 </template>

@@ -22,7 +22,6 @@ import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-a
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
-import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -351,7 +350,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
-    <LayoutDefault id="order-edit-page" :title="t('order-edit-page.page-title')">
+    <div id="order-edit-page">
         <ItemDetailLayout accent="tertiary">
             <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
@@ -556,5 +555,5 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 </v-btn>
             </template>
         </ItemDetailLayout>
-    </LayoutDefault>
+    </div>
 </template>
