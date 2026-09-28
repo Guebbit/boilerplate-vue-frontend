@@ -19,6 +19,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -61,15 +62,26 @@ const statusOptions = computed(() =>
 
 /**
  * The search form's own status choices — {@link statusOptions} plus a leading "any status" entry,
- * since `undefined` (not filtering) is a real choice here that a per-row status select never
- * offers.
+ * since not filtering is a real choice here that a per-row status select never offers. The "any"
+ * row's value is `null`, not `undefined` (FA51) — Vuetify reads an `undefined` item value as "use
+ * the title", which would post the translated label instead of no filter at all.
  *
  * @returns The filter's select items, re-translated on locale change.
  */
 const filterStatusOptions = computed(() => [
-    { value: undefined, title: t('feedback-inbox-page.filter-status-any') },
+    { value: null, title: t('feedback-inbox-page.filter-status-any') },
     ...statusOptions.value
 ]);
+
+/**
+ * The status select's model: `null` (the "any" row) on screen, no `status` filter in the store.
+ */
+const statusChoice = useAnyFilterChoice(
+    () => filters.value.status,
+    (value) => {
+        filters.value.status = value;
+    }
+);
 
 /**
  * Whether any filter is narrowing the inbox — picks the empty state's wording.
@@ -218,7 +230,7 @@ const handleDelete = (requestId: string, subject: string) => {
                         hide-details
                     />
                     <v-select
-                        v-model="filters.status"
+                        v-model="statusChoice"
                         :label="t('feedback-inbox-page.filter-status')"
                         :items="filterStatusOptions"
                         item-title="title"

@@ -120,7 +120,8 @@ const {
     formErrors,
     showFormErrors: showErrors,
     isSubmitting,
-    handleSubmit
+    handleSubmit,
+    applyServerErrors
 } = useStructureFormValidation<UserCreateForm>({}, createSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
@@ -203,7 +204,9 @@ const submitForm = () => {
             // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
         })
-    ).catch((error) => reportSubmitError(error));
+    ).catch((error: unknown) => {
+        if (!applyServerErrors(error)) reportSubmitError(error);
+    });
 };
 </script>
 

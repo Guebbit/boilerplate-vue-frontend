@@ -13,6 +13,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import type { WebhookDeliveryFilters } from '@/modules/webhooks/types.ts';
 import type { WebhookDelivery, WebhookDeliveryStatus, WebhookSubscription } from '@types';
 
@@ -65,12 +66,14 @@ const filters = reactive<WebhookDeliveryFilters>({
 
 /**
  * Options of the subscription select — every known subscription, by URL rather than by its
- * (meaningless to a reader) id.
+ * (meaningless to a reader) id. The "all" row's value is `null`, not `undefined` (FA51) —
+ * Vuetify reads an `undefined` item value as "use the title", which would post the translated
+ * label instead of no filter at all.
  *
  * @returns The "all subscriptions" option first, then one per subscription in the cache.
  */
 const subscriptionOptions = computed(() => [
-    { value: undefined, label: t('webhook-deliveries-page.filter-subscription-all') },
+    { value: null, label: t('webhook-deliveries-page.filter-subscription-all') },
     ...props.subscriptions.map((subscription) => ({
         value: subscription.id,
         label: subscription.url
@@ -78,17 +81,40 @@ const subscriptionOptions = computed(() => [
 ]);
 
 /**
- * Options of the status select.
+ * The subscription select's model: `null` (the "all" row) on screen, no `subscriptionId` filter
+ * in {@link filters}.
+ */
+const subscriptionChoice = useAnyFilterChoice(
+    () => filters.subscriptionId,
+    (value) => {
+        filters.subscriptionId = value;
+    }
+);
+
+/**
+ * Options of the status select. The "all" row's value is `null`, not `undefined` — same reason as
+ * {@link subscriptionOptions}.
  *
  * @returns The localized "all statuses" choice plus one per {@link WebhookDeliveryStatus}.
  */
 const statusOptions = computed(() => [
-    { value: undefined, label: t('webhook-deliveries-page.filter-status-all') },
+    { value: null, label: t('webhook-deliveries-page.filter-status-all') },
     { value: 'pending', label: t('webhook-deliveries-page.status-pending') },
     { value: 'in-flight', label: t('webhook-deliveries-page.status-in-flight') },
     { value: 'succeeded', label: t('webhook-deliveries-page.status-succeeded') },
     { value: 'exhausted', label: t('webhook-deliveries-page.status-exhausted') }
 ]);
+
+/**
+ * The status select's model: `null` (the "all" row) on screen, no `status` filter in
+ * {@link filters}.
+ */
+const statusChoice = useAnyFilterChoice(
+    () => filters.status,
+    (value) => {
+        filters.status = value;
+    }
+);
 
 /**
  * Columns of the deliveries table.
@@ -165,7 +191,7 @@ const handlePageChange = (page: number) => {
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
                     <v-select
-                        v-model="filters.subscriptionId"
+                        v-model="subscriptionChoice"
                         :items="subscriptionOptions"
                         item-title="label"
                         item-value="value"
@@ -174,7 +200,7 @@ const handlePageChange = (page: number) => {
                         @update:model-value="handleSearch"
                     />
                     <v-select
-                        v-model="filters.status"
+                        v-model="statusChoice"
                         :items="statusOptions"
                         item-title="label"
                         item-value="value"
