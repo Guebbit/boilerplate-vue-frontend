@@ -18,17 +18,14 @@ export default {
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import {
-    useNotificationsStore,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 
 /**
  * Translation function.
@@ -71,11 +68,7 @@ const errorMessage = ref<string>();
 /**
  * Upload progress, shown by `FormImageUpload` while the multipart request is in flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * Whether either avatar action is in flight — both the picker and the remove button are disabled
@@ -112,7 +105,7 @@ watch(pickedFile, (file) => {
         return;
     }
 
-    track((options) => updateProfile({ imageUpload: file }, options), { enabled: true })
+    trackUpload(file, (options) => updateProfile({ imageUpload: file }, options))
         .then(() => addMessage(t('profile-page.avatar-success-update')))
         .catch((error) => reportAvatarError(error))
         .finally(() => {

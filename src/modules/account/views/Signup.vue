@@ -16,11 +16,8 @@ import { computed, ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import {
-    useNotificationsStore,
-    useStructureFormValidation,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import {
     useOAuthProvidersStore,
@@ -44,7 +41,6 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * UI logics
@@ -167,21 +163,7 @@ watch(
  * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
  * flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
-
-/**
- * Runs an API call with upload progress attached, and returns to idle however it ends.
- */
-const trackUpload = <T,>(
-    file: File | undefined,
-    send: (options?: AxiosRequestConfig) => Promise<T>
-) => track(send, { enabled: !!file });
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * Creates the account.

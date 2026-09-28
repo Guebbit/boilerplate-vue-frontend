@@ -30,6 +30,7 @@ import { OrderStatus } from '@/types/enums.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -81,15 +82,6 @@ const session = useSessionStore();
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
-
-/**
- * Selectable page sizes for the orders table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
 
 /**
  * Columns of the orders table.
@@ -323,14 +315,7 @@ const handleHardDelete = (orderId: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <v-select
-                        v-model="pageSize"
-                        :label="t('generic.page-size')"
-                        :items="pageSizeOptions"
-                        item-title="label"
-                        item-value="value"
-                        hide-details
-                    />
+                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <v-checkbox
                     v-model="awaitingTransferOnly"

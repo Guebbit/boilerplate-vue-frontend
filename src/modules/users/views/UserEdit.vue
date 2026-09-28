@@ -19,11 +19,8 @@ import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import {
-    useNotificationsStore,
-    useStructureFormValidation,
-    useUploadProgress as useToolkitUploadProgress
-} from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
@@ -50,7 +47,6 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * Generic i18n/notifications helpers.
@@ -143,21 +139,7 @@ const {
 /**
  * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
  */
-const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
-    (onProgress) => ({
-        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
-        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
-        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
-    })
-);
-
-/**
- * Runs an API call with upload progress attached, and returns to idle however it ends.
- */
-const trackUpload = <T,>(
-    file: File | undefined,
-    send: (options?: AxiosRequestConfig) => Promise<T>
-) => track(send, { enabled: !!file });
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to

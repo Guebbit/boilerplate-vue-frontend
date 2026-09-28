@@ -26,6 +26,7 @@ import type { ApiKey } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -65,15 +66,6 @@ const { pageItemList, pageCurrent, pageSize, pageTotal, loading } = storeToRefs(
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
-
-/**
- * Selectable page sizes for the credentials table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
 
 /**
  * Columns of the credentials table.
@@ -160,13 +152,9 @@ const handleRevoke = (apiKey: ApiKey) =>
 <template>
     <LayoutDefault id="api-keys-list-page" :title="t('api-keys-list-page.page-title')">
         <div class="mb-6 flex flex-wrap items-center gap-2">
-            <v-select
+            <PageSizeSelect
                 v-model="pageSize"
                 :label="t('generic.page-size')"
-                :items="pageSizeOptions"
-                item-title="label"
-                item-value="value"
-                hide-details
                 style="max-width: 160px"
             />
             <v-spacer />

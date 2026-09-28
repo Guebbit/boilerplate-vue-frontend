@@ -26,6 +26,7 @@ import type { User } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -114,15 +115,6 @@ const deletedChoice = useAnyFilterChoice(
         filters.value.deleted = value;
     }
 );
-
-/**
- * Selectable page sizes for the users table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
 
 /**
  * Columns of the users table.
@@ -314,14 +306,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <v-select
-                        v-model="pageSize"
-                        :label="t('generic.page-size')"
-                        :items="pageSizeOptions"
-                        item-title="label"
-                        item-value="value"
-                        hide-details
-                    />
+                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary">

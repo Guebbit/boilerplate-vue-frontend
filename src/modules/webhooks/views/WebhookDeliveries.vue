@@ -13,12 +13,12 @@ export default {
  * rather than a tab, see `docs/modules/webhooks.md`.
  */
 import { onMounted, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '@/modules/webhooks/store';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useQuerySyncedFilters } from '@/ui/composables/use-query-synced-filters.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import WebhookDeliveriesFilters from '@/modules/webhooks/components/WebhookDeliveriesFilters.vue';
 import type { WebhookDeliveryFilters } from '@/modules/webhooks/types.ts';
@@ -33,13 +33,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report every outcome to the visitor.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * Current route, read for its query string on load, and the router, to keep it in sync with
- * every search this page runs.
- */
-const route = useRoute();
-const router = useRouter();
 
 /**
  * Webhooks store actions.
@@ -64,17 +57,24 @@ onMounted(() => void fetchAllSubscriptions());
 
 /**
  * The filters this page loaded with, read once from the URL query so a deep link (a bookmark, or
- * the "view deliveries" link off a subscription's detail page) renders pre-filtered.
+ * the "view deliveries" link off a subscription's detail page) renders pre-filtered, and the call
+ * that mirrors a later search back into it.
  */
-const initialFilters: Partial<WebhookDeliveryFilters> = {
-    subscriptionId:
-        typeof route.query.subscriptionId === 'string' ? route.query.subscriptionId : undefined,
-    status:
-        typeof route.query.status === 'string'
-            ? (route.query.status as WebhookDeliveryStatus)
-            : undefined,
-    page: Number(route.query.page) > 0 ? Number(route.query.page) : 1
-};
+const { initial: initialFilters, syncToQuery } = useQuerySyncedFilters<
+    Partial<WebhookDeliveryFilters>
+>(
+    (query) => ({
+        subscriptionId: typeof query.subscriptionId === 'string' ? query.subscriptionId : undefined,
+        status:
+            typeof query.status === 'string' ? (query.status as WebhookDeliveryStatus) : undefined,
+        page: Number(query.page) > 0 ? Number(query.page) : 1
+    }),
+    (filters) => ({
+        ...(filters.subscriptionId && { subscriptionId: filters.subscriptionId }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.page && filters.page > 1 && { page: filters.page })
+    })
+);
 
 /**
  * Search function bound to the store's reactive `filters`/pagination, reporting a failed request
@@ -94,13 +94,7 @@ const { search } = watchDeliveriesSearch({
 const handleSearch = (filters: WebhookDeliveryFilters) => {
     deliveryFilters.value = { subscriptionId: filters.subscriptionId, status: filters.status };
     deliveryPageCurrent.value = filters.page;
-    void router.replace({
-        query: {
-            ...(filters.subscriptionId && { subscriptionId: filters.subscriptionId }),
-            ...(filters.status && { status: filters.status }),
-            ...(filters.page > 1 && { page: filters.page })
-        }
-    });
+    syncToQuery(filters);
     return search();
 };
 

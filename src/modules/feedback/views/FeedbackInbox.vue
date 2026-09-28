@@ -24,6 +24,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { FeedbackRequestStatus } from '@/types/enums.ts';
 import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
@@ -87,15 +88,6 @@ const statusChoice = useAnyFilterChoice(
  * Whether any filter is narrowing the inbox — picks the empty state's wording.
  */
 const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
-
-/**
- * Selectable page sizes for the inbox.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
 
 /**
  * Search function bound to the store's reactive `filters`/pagination, reporting a failed request
@@ -237,14 +229,7 @@ const handleDelete = (requestId: string, subject: string) => {
                         item-value="value"
                         hide-details
                     />
-                    <v-select
-                        v-model="pageSize"
-                        :label="t('generic.page-size')"
-                        :items="pageSizeOptions"
-                        item-title="label"
-                        item-value="value"
-                        hide-details
-                    />
+                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary" :loading="loading">
