@@ -77,11 +77,12 @@ describe('where a module keeps its stores', () => {
 
     /**
      * The guard on the guard. If the search stopped finding stores — a changed layout, a renamed
-     * root — every assertion above would pass over an empty list and report nothing.
+     * root — every assertion above would pass over an empty list and report nothing. A floor of 1
+     * rather than this demo's module count — deleting a domain must not also delete the canary.
      */
     it('finds the stores it is meant to be checking', () => {
         const withStores = moduleNames().filter((name) => storeFilesOf(name).length > 0);
 
-        expect(withStores.length).toBeGreaterThan(10);
+        expect(withStores.length).toBeGreaterThan(0);
     });
 });

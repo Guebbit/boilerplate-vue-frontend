@@ -113,8 +113,11 @@ describe('the cross-repository pairing', () => {
         expect(stale).toEqual([]);
     });
 
-    /** The guard on the guard: an empty registry would satisfy all three rules above. */
+    /**
+     * The guard on the guard: an empty registry would satisfy all three rules above. A floor of 1
+     * rather than this demo's module count — deleting a domain must not also delete the canary.
+     */
     it('is checking the modules it is meant to be checking', () => {
-        expect(enabledModules.length).toBeGreaterThanOrEqual(10);
+        expect(enabledModules.length).toBeGreaterThanOrEqual(1);
     });
 });
