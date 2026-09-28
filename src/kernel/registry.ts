@@ -150,11 +150,15 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
 
     /**
-     * Response-envelope schemas for the endpoints this domain calls, keyed by method + path
-     * pattern. Contributed here rather than held in one shared table so that a domain's contract
-     * validation arrives and leaves with its folder.
+     * Lazy loader for the response-envelope schemas of the endpoints this domain calls, keyed by
+     * method + path pattern. Contributed here rather than held in one shared table so that a
+     * domain's contract validation arrives and leaves with its folder.
+     *
+     * A loader, not the rows themselves: each one imports its `response-schemas.ts`, which pulls
+     * in `@api/schemas` — invoking it is what triggers that ~350 KB chunk to download (FA94), so
+     * it stays unopened until `loadResponseSchemas` decides validation is actually running.
      */
-    responseSchemas?: ResponseSchemaRoute[];
+    responseSchemas?: () => Promise<ResponseSchemaRoute[]>;
 
     /**
      * This domain's translation dictionaries, one lazy loader per locale code.
@@ -261,15 +265,21 @@ export const groupNavigation = (
 };
 
 /**
- * Collect every enabled module's response schemas, for `registerResponseSchemas`.
+ * Collect every enabled module's response-schema loader, for `loadResponseSchemas`.
  *
- * Order does not matter: every pattern is anchored at both ends, so at most one row can match a
- * given method and pathname.
+ * Returns the loaders themselves, uninvoked — collecting them imports no schema and downloads no
+ * chunk; only calling one does (see {@link AppModule.responseSchemas}). Order does not matter:
+ * every pattern is anchored at both ends, so at most one row can match a given method and
+ * pathname.
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleResponseSchemas = (appModules: AppModule[]): ResponseSchemaRoute[] =>
-    appModules.flatMap((appModule) => appModule.responseSchemas ?? []);
+export const collectModuleResponseSchemas = (
+    appModules: AppModule[]
+): (() => Promise<ResponseSchemaRoute[]>)[] =>
+    appModules
+        .map((appModule) => appModule.responseSchemas)
+        .filter((loader): loader is () => Promise<ResponseSchemaRoute[]> => loader !== undefined);
 
 /**
  * Collect every enabled module's locale-reset callback, for the locale guard to run after an

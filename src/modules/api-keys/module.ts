@@ -7,7 +7,6 @@ import { KeyRound } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { apiKeysResponseSchemas } from './response-schemas';
 
 /**
  * Machine-to-machine credential management: minting and revoking `sk_...` keys a caller uses in
@@ -30,7 +29,7 @@ export default {
             icon: KeyRound
         }
     ],
-    responseSchemas: apiKeysResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.apiKeysResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

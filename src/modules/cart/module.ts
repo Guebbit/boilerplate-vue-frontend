@@ -10,7 +10,6 @@ import { ShoppingCart } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { cartResponseSchemas } from './response-schemas';
 import { useCartStore } from './store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -84,7 +83,7 @@ export default {
             }
         }
     ],
-    responseSchemas: cartResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.cartResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

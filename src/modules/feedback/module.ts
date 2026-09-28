@@ -7,7 +7,6 @@ import { Inbox, Mail } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { feedbackResponseSchemas } from './response-schemas';
 
 /**
  * The contact form and its admin inbox.
@@ -40,7 +39,7 @@ export default {
             icon: Inbox
         }
     ],
-    responseSchemas: feedbackResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.feedbackResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

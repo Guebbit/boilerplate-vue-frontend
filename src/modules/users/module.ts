@@ -7,7 +7,6 @@ import { Users } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { usersResponseSchemas } from './response-schemas';
 
 /**
  * User administration: the admin-only list, detail, create and edit screens.
@@ -32,7 +31,7 @@ export default {
             icon: Users
         }
     ],
-    responseSchemas: usersResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.usersResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

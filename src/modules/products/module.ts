@@ -7,7 +7,6 @@ import { Package } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { productsResponseSchemas } from './response-schemas';
 import { useProductsStore } from './store';
 
 /**
@@ -35,7 +34,7 @@ export default {
             icon: Package
         }
     ],
-    responseSchemas: productsResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.productsResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

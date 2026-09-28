@@ -8,7 +8,6 @@ import { LayoutDashboard, ScrollText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { adminResponseSchemas } from './response-schemas';
 
 /**
  * The admin observability console (service health, KPIs, the platform's own audit log) plus the
@@ -44,7 +43,7 @@ export default {
             icon: ScrollText
         }
     ],
-    responseSchemas: adminResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.adminResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

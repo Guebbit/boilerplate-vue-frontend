@@ -7,7 +7,6 @@ import { Heart } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { wishlistResponseSchemas } from './response-schemas';
 
 /**
  * The visitor's saved products.
@@ -33,7 +32,7 @@ export default {
             icon: Heart
         }
     ],
-    responseSchemas: wishlistResponseSchemas,
+    responseSchemas: () => import('./response-schemas').then((m) => m.wishlistResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
