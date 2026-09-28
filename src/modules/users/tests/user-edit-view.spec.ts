@@ -20,9 +20,11 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -104,11 +106,44 @@ describe('UserEdit', () => {
             .then(flushPromises)
             .then(() => {
                 expect(wrapper.findComponent(UserAccessDialog).props('target')).toBeUndefined();
-                expect(lastPatchBody()).toMatchObject({
+                const body = lastPatchBody();
+                // FA123: proves the PATCH is a shape the real endpoint accepts, not just the
+                // shape this test expected — `UpdateUserByIdBody` is a `strictObject`, so a stray
+                // key this assertion never thought to name would fail it too.
+                expect(contractRequest(schemas.UpdateUserByIdBody, body)).toMatchObject({
                     username: 'ada2',
                     role: undefined,
                     active: undefined
                 });
+            });
+    });
+
+    /**
+     * The bug e2e's users.cy.ts (FA123) caught: a record loaded with no phone/website/locale
+     * defaults those fields to `''` (see the form's own initial-value note), and sending `''`
+     * back trips the contract's own `minLength`/pattern with a live 422 — every edit of a user
+     * who has never set any of the three failed, unrelated to what was actually being changed.
+     * `contractRequest` (also FA123) is what actually caught it: the old `toMatchObject` here
+     * only checked the fields it named, and `locale: ''` slipped past that unnoticed.
+     */
+    it('omits phone, website and locale from the PATCH when the record has none set', () => {
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-username] input').setValue('ada2'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const body = lastPatchBody();
+                // Proves the PATCH is a shape the real endpoint accepts — a `strictObject` schema
+                // that also enforces `minLength`/pattern per field, not just the shape this test
+                // expected.
+                expect(contractRequest(schemas.UpdateUserByIdBody, body)).toMatchObject({
+                    username: 'ada2'
+                });
+                expect(body?.locale).toBeUndefined();
+                expect(body?.phone).toBeUndefined();
+                expect(body?.website).toBeUndefined();
             });
     });
 

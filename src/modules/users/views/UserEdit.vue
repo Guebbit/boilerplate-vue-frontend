@@ -296,9 +296,11 @@ const submitForm = () => {
                         password: password || undefined,
                         role: roleChanged ? role : undefined,
                         active: activeChanged ? active : undefined,
-                        locale,
-                        phone,
-                        website,
+                        // The contract's own pattern/minLength refuse `''` with a live 422 — same
+                        // reason `password` above only ever sends a real value or omits the key.
+                        locale: locale || undefined,
+                        phone: phone || undefined,
+                        website: website || undefined,
                         imageUpload
                     },
                     options
