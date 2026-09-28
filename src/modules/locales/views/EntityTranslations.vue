@@ -33,7 +33,7 @@ import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-ord
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Translation, UpsertTranslationsRequest } from '@types';
-import { TranslationOrigin } from '@types';
+import { TranslationOrigin } from '@/types/enums.ts';
 
 /**
  * Localized dictionary helper.

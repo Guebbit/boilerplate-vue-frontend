@@ -22,7 +22,7 @@ import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/
 import { usePaymentsStore } from '../store.ts';
 import { classifyPaymentError } from '@/modules/payments/domain';
 import type { UnavailableOrderLine } from '@/modules/payments/domain';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@/types/enums.ts';
 
 /**
  * The order page's payment corner: a method picker while the order is payable, the payment's fate

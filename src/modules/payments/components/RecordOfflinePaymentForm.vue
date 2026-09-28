@@ -16,7 +16,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { RecordOfflinePaymentRequestMethod } from '@types';
+import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';

@@ -706,6 +706,13 @@ export default defineConfigWithVueTs(
      * Type imports stay legal (`allowTypeImports`). `import type { LoginRequest } from '@api'` is a
      * component naming the shape of a form it submits, which is vocabulary rather than behaviour —
      * and the generated types are the only honest place that shape is written down.
+     *
+     * `@types` gets the same treatment. `src/types/index.ts` re-exports `@api` as `export type *`
+     * — a runtime value never reaches `@types` at all — so this rule exists for the day someone
+     * widens that back to `export *` without reading why. The one runtime exception, a generated
+     * enum a template branches on (a status badge's color, a select's options), is named in
+     * `src/types/enums.ts` and reached as `@/types/enums.ts` — a plain `@/*` path the group below
+     * does not match.
      */
     /*
      * The base `no-restricted-imports` is deliberately NOT switched off here, though pairing the
@@ -726,6 +733,12 @@ export default defineConfigWithVueTs(
                             allowTypeImports: true,
                             message:
                                 'A component wires, it does not call the API. Put the call in the module’s store or composables/, or in src/infrastructure if no domain owns it, and call that from here. Importing a TYPE from @api is fine.'
+                        },
+                        {
+                            group: ['@types', '@types/*'],
+                            allowTypeImports: true,
+                            message:
+                                'A component reads generated shapes, not values, through @types. A runtime enum a template branches on lives in @/types/enums.ts; a live call still belongs in the module’s store or composables/.'
                         }
                     ]
                 }

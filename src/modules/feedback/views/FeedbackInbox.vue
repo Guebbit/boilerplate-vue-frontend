@@ -24,7 +24,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
-import { FeedbackRequestStatus } from '@types';
+import { FeedbackRequestStatus } from '@/types/enums.ts';
 import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
 /**

@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@api';
 
 /**
  * Validation schemas for the order forms.

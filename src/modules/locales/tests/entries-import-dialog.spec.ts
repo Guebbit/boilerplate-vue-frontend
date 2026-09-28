@@ -14,7 +14,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
 import type { LocaleTenantDescriptor } from '@types';
-import { LocaleTenantKind } from '@types';
+import { LocaleTenantKind } from '@api';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

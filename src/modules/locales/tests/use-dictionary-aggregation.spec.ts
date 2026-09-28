@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useDictionaryAggregation } from '@/modules/locales/composables/use-dictionary-aggregation.ts';
-import { LocaleTenantKind } from '@types';
+import { LocaleTenantKind } from '@api';
 import type { LocaleEntry } from '@types';
 
 /**

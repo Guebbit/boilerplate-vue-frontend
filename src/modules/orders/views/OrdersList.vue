@@ -26,7 +26,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@/types/enums.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';

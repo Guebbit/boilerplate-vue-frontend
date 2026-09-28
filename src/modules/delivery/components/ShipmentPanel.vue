@@ -22,7 +22,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDeliveryStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { OrderStatus } from '@types';
+import { OrderStatus } from '@/types/enums.ts';
 
 /**
  * The order page's shipping corner: recording a handover and an arrival, one order at a time.
