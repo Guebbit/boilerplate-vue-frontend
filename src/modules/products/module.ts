@@ -8,7 +8,6 @@ import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { productsResponseSchemas } from './response-schemas';
-import { useProductsStore } from './store';
 
 /**
  * The product catalogue: a public list and detail, plus admin create and edit.
@@ -42,7 +41,12 @@ export default {
     },
     // The dictionary is keyed by product id alone, and every cached record's title/description
     // is resolved server-side in whatever language the request carried, so a language switch has
-    // to wipe it. `useProductsStore()` is called INSIDE the callback, never at module scope,
-    // since Pinia is not installed yet when this manifest is evaluated.
-    resetOnLocaleChange: () => useProductsStore().resetForLocaleChange()
+    // to wipe it. A dynamic `import('./store')` rather than a top-level one: this manifest is
+    // evaluated eagerly for every enabled module, and a static import would pull the whole
+    // store into that same eager chunk for a callback that only fires after a real switch.
+    resetOnLocaleChange: () => {
+        void import('./store').then(({ useProductsStore }) =>
+            useProductsStore().resetForLocaleChange()
+        );
+    }
 } satisfies AppModule;
