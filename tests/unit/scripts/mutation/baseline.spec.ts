@@ -17,6 +17,7 @@ import {
     compareToBaseline,
     missingFromReport,
     formatRegressions,
+    formatUnrecorded,
     nextBaseline,
     scoresFromReport,
     type MutationBaseline
@@ -207,6 +208,27 @@ describe('formatRegressions', () => {
         );
 
         expect(message).toContain('reports/mutation/index.html');
+        expect(message).toContain('test:mutation:baseline');
+    });
+});
+
+describe('formatUnrecorded — FA125, a missing entry is not a pass', () => {
+    it('says nothing when every file has a baseline entry', () => {
+        expect(
+            formatUnrecorded(compareToBaseline(scores([FILE, 95]), baselineOf([FILE, 90])))
+        ).toBe('');
+    });
+
+    it('names a file the baseline has never seen, and its measured score', () => {
+        const message = formatUnrecorded(compareToBaseline(scores([NEWCOMER, 0]), baselineOf()));
+
+        expect(message).toContain(NEWCOMER);
+        expect(message).toContain('0.00');
+    });
+
+    it('points at the escape hatch, so a genuine addition is not stuck failing forever', () => {
+        const message = formatUnrecorded(compareToBaseline(scores([NEWCOMER, 80]), baselineOf()));
+
         expect(message).toContain('test:mutation:baseline');
     });
 });
