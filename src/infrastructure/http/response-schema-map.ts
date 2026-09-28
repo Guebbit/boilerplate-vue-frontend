@@ -9,38 +9,37 @@
 
 import * as zod from 'zod';
 import { toPathname } from './url.ts';
+import { ROUTES } from '@api/routes';
 
 /**
  * Maps every `orvalMutator` call site (method + URL) to the Zod schema validating its response, so
  * a live contract violation is caught without the mutator knowing which operation it serves.
  *
  * A row names a URL, so it is domain knowledge: each module declares its own in
- * `src/modules/<name>/response-schemas.ts` and contributes them through its manifest. This file owns
- * the mechanism and the few rows belonging to no domain — so drift is structural, not clerical.
+ * `src/modules/<name>/response-schemas.ts` and contributes them through its manifest, by filtering
+ * {@link routesForModules} down to the backend `x-module` name(s) it owns (FA55) — `orders` also
+ * claims backend `invoicing`, `account` also claims backend `addresses`, since neither owns an FE
+ * module of its own; see each module's own file for its exact list. This file owns the mechanism
+ * and the few rows no domain claims — so drift is structural, not clerical.
  *
  * `infrastructure` cannot import `@/modules`, so rows arrive by registration: `src/main.ts` calls
  * `loadResponseSchemas(collectModuleResponseSchemas(enabledModules))` after mount, gated behind
  * `shouldValidateResponses()`. Anything exercising `orvalMutator` outside the app must do the
  * same, or it measures an app nobody ships.
  *
- * Hand-written rather than derived from `contracts/rest/index.ts`: an `AxiosRequestConfig` does not
- * carry which operation issued it, and parsing the generated client in the browser is not an option.
+ * The method+pattern+schema-name triple is generated (`scripts/contracts/generate-route-table.ts`
+ * → `contracts/rest/routes.ts` → `npm run gen:api`) straight from `openapi.yaml`: an
+ * `AxiosRequestConfig` does not carry which operation issued it, so the SCHEMA still has to be
+ * resolved here at runtime, but the METHOD, PATTERN and WHICH SCHEMA are no longer hand-typed,
+ * and so can no longer drift out of step with the contract the way two hand copies once did.
  *
  * A missing row is not fatal — `resolveResponseSchema` returns `undefined` and the caller warns in
  * dev, because an unmapped route is a maintenance gap, not proof the response is wrong.
  *
- * ── The two rules every row obeys, wherever it lives ─────────────────────────────────────────
- *
- * 1. **Anchor both ends.** `^…$` is what stops a `[^/]+` segment absorbing an adjacent literal
- *    one: `^/orders/[^/]+$` must not match `/orders/abc/invoice`, or an invoice response is
- *    validated against the ORDER schema and fails on a perfectly valid body. Anchoring is also
- *    why the order rows are registered in does not matter.
- * 2. **Mirror one call site.** Each row corresponds to one `orvalMutator<…>(…)` in
- *    `contracts/rest/index.ts`, and `schema` is that operation's
- *    `<PascalCase-operationId>Response` export from `@api/schemas` — so the table and the client
- *    can be diffed by eye when an endpoint is added or removed.
- *
- * Both are checked by `tests/unit/infrastructure/http/response-schema-map.spec.ts`.
+ * Every pattern is anchored at both ends (`^…$`) — what stops a `[^/]+` segment absorbing an
+ * adjacent literal one, so `^/orders/[^/]+$` cannot also match `/orders/abc/invoice` — which is
+ * also why registration order never matters. Checked by
+ * `tests/unit/infrastructure/http/response-schema-map.spec.ts`.
  */
 export interface ResponseSchemaRoute {
     /**
@@ -59,116 +58,90 @@ export interface ResponseSchemaRoute {
 }
 
 /**
+ * Backend `x-module` names with no owning frontend module at all (FA55) — `antibot`'s public
+ * config/challenge (rendered by whichever form is being guarded, not a module of its own) and
+ * `audit-logs`' shop-scoped trail (`GET /audit`; no frontend screen reads it yet — deferred, see
+ * the backend's own DECISIONS.md, "Frontend admin screen for webhooks" — audit-logs shares that
+ * same deferred slot). A row here moves out the day some module's own file starts claiming it.
+ */
+const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set(['antibot', 'audit-logs']);
+
+/**
+ * Response schemas kept on the core shelf despite belonging to a module that DOES exist —
+ * `infrastructure/session.ts` and the i18n boot path both need these validated before any module
+ * is known to be enabled, so `account`'s and `locales`' own `response-schemas.ts` explicitly
+ * exclude these same names rather than duplicating them.
+ */
+const SESSION_AND_BOOT_SCHEMA_NAMES: ReadonlySet<string> = new Set([
+    'GetAccountResponse',
+    'GetMyAbilitiesResponse',
+    'RefreshTokenResponse',
+    'LogoutAllResponse',
+    'GetLocalesResponse',
+    'GetLocaleTenantsResponse',
+    'GetLocaleMessagesResponse',
+    'GetLocaleDictionaryResponse'
+]);
+
+/**
+ * Resolves a generated row's `schemaName` against the real, already-loaded schemas namespace.
+ *
+ * `schemaName` is a generated STRING key into `schemas` — a runtime lookup the compiler cannot
+ * narrow on its own, since not every export on that namespace is a schema (a handful of generated
+ * regex constants live alongside them). Two single casts, each narrowing what it alone can see:
+ * the namespace to a generic index (every property IS at least an unknown value), then that one
+ * indexed lookup to the `zod.ZodType` every `<Name>Response` export actually is.
+ *
+ * @param schemas - the generated `@api/schemas` namespace, already resolved
+ * @param route - one row from {@link ROUTES}
+ */
+const resolveGeneratedSchema = (
+    schemas: typeof import('@api/schemas'),
+    route: (typeof ROUTES)[number]
+): ResponseSchemaRoute => ({
+    method: route.method,
+    pattern: route.pattern,
+    schema: (schemas as Record<string, unknown>)[route.schemaName] as zod.ZodType
+});
+
+/**
+ * A module's own rows: every generated row whose backend `x-module` is in `ownedBackendModules`,
+ * resolved against the real schemas namespace. The one call every `src/modules/<name>/
+ * response-schemas.ts` makes (FA55) — see this file's own header for which modules own more than
+ * their own name, and {@link SESSION_AND_BOOT_SCHEMA_NAMES} for the handful excluded even so.
+ *
+ * @param schemas - the generated `@api/schemas` namespace, already resolved
+ * @param ownedBackendModules - every backend `x-module` name this frontend module claims
+ */
+export const routesForModules = (
+    schemas: typeof import('@api/schemas'),
+    ownedBackendModules: readonly string[]
+): ResponseSchemaRoute[] =>
+    ROUTES.filter(
+        (route) =>
+            route.module !== undefined &&
+            ownedBackendModules.includes(route.module) &&
+            !SESSION_AND_BOOT_SCHEMA_NAMES.has(route.schemaName)
+    ).map((route) => resolveGeneratedSchema(schemas, route));
+
+/**
  * The rows no module claims, built from the lazily-imported `@api/schemas` namespace once
  * {@link loadResponseSchemas} resolves it — a function rather than a top-level constant so this
  * file carries no static import of the schemas it names.
  *
- * `GET /`, `/locales*` and the session's three `/account` calls are infrastructure — the health
- * probe, the language manifest and overrides `i18n/locale-overrides.ts` fetches, and the
- * whoami/refresh/logout-all that `infrastructure/session.ts` needs — so they live at the
- * bottom tier with the code that calls them.
- *
- * It is also the shelf for a contract endpoint no frontend domain has claimed yet, so its
- * responses are validated from the first request rather than from the day a module appears. A row
- * parked here belongs to whichever module eventually claims the endpoint, and moves out with it.
+ * Three groups: `GET /` (the health probe, owned by no backend module at all); every operation
+ * under {@link UNCLAIMED_BACKEND_MODULES}; and {@link SESSION_AND_BOOT_SCHEMA_NAMES}, reserved
+ * here on purpose even though their own backend module exists.
  *
  * @param schemas - the generated `@api/schemas` namespace, already resolved
  */
-const buildCoreRouteSchemas = (schemas: typeof import('@api/schemas')): ResponseSchemaRoute[] => [
-    { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
-    /*
-     * Anti-automation, parked here because no frontend domain claims it yet: the challenge widget
-     * is rendered by whichever form is being guarded, not by a module of its own. Both are public
-     * and both are read before a session exists, so validating them cannot wait for a module.
-     */
-    { method: 'GET', pattern: /^\/antibot\/config$/, schema: schemas.GetAntibotConfigResponse },
-    {
-        method: 'GET',
-        pattern: /^\/antibot\/challenge$/,
-        schema: schemas.GetAntibotChallengeResponse
-    },
-    /*
-     * The session's own three. `infrastructure/session.ts` calls them to restore or end a session before any
-     * domain is involved, so their validation cannot depend on a module being enabled — the account
-     * module owns every OTHER `/account/*` route.
-     */
-    { method: 'GET', pattern: /^\/account$/, schema: schemas.GetAccountResponse },
-    /*
-     * The caller's own rules. Infrastructure like the three below it: the session store fetches
-     * these for every identified viewer, and the shell greys out from them whether or not any
-     * particular module is enabled.
-     */
-    { method: 'GET', pattern: /^\/account\/abilities$/, schema: schemas.GetMyAbilitiesResponse },
-    { method: 'GET', pattern: /^\/account\/refresh$/, schema: schemas.RefreshTokenResponse },
-    { method: 'POST', pattern: /^\/account\/logout-all$/, schema: schemas.LogoutAllResponse },
-    /*
-     * The locale reads the BOOT PATH makes: the manifest and the per-language overrides
-     * `i18n/locale-overrides.ts` fetches before any domain is involved, plus the API's own
-     * dictionary — the offline-fallback read nothing calls yet. The admin surface over the same
-     * endpoints belongs to the `locales` module and its rows live there: this shelf holds only
-     * what no module claims.
-     *
-     * The `{locale}` segment is a language tag rather than an ObjectId, which changes nothing:
-     * every pattern matches a SEGMENT, not a name. What does matter is the `$` on the
-     * single-segment row — without it `/locales/[^/]+` would swallow `/locales/es/entries` and
-     * validate an entries page against the dictionary schema.
-     */
-    { method: 'GET', pattern: /^\/locales$/, schema: schemas.GetLocalesResponse },
-    // A static segment the by-tag wildcard below would otherwise swallow: before it, always.
-    { method: 'GET', pattern: /^\/locales\/tenants$/, schema: schemas.GetLocaleTenantsResponse },
-    {
-        method: 'GET',
-        pattern: /^\/locales\/[^/]+\/messages$/,
-        schema: schemas.GetLocaleMessagesResponse
-    },
-    {
-        method: 'GET',
-        pattern: /^\/locales\/[^/]+$/,
-        schema: schemas.GetLocaleDictionaryResponse
-    },
-    /*
-     * The shop-scoped audit trail (`GET /observability/audit`'s counterpart for a shop role
-     * rather than a platform one) — no module reads it yet, so it sits here until one does.
-     */
-    { method: 'GET', pattern: /^\/audit$/, schema: schemas.ListAuditEntriesResponse },
-    /*
-     * Outbound webhooks: subscriptions, the delivery log, replay, and the public event catalogue.
-     * The backend admin surface is complete; no frontend module claims it yet (deferred — see the
-     * backend's DECISIONS.md, "Frontend admin screen for webhooks"), so these rows sit on this
-     * shelf until one does.
-     */
-    {
-        method: 'GET',
-        pattern: /^\/webhooks\/subscriptions$/,
-        schema: schemas.ListWebhookSubscriptionsResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/webhooks\/subscriptions$/,
-        schema: schemas.CreateWebhookSubscriptionResponse
-    },
-    {
-        method: 'PATCH',
-        pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
-        schema: schemas.UpdateWebhookSubscriptionResponse
-    },
-    {
-        method: 'DELETE',
-        pattern: /^\/webhooks\/subscriptions\/[^/]+$/,
-        schema: schemas.DeleteWebhookSubscriptionResponse
-    },
-    {
-        method: 'GET',
-        pattern: /^\/webhooks\/deliveries$/,
-        schema: schemas.ListWebhookDeliveriesResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/webhooks\/deliveries\/[^/]+\/replay$/,
-        schema: schemas.ReplayWebhookDeliveryResponse
-    },
-    { method: 'GET', pattern: /^\/webhooks\/events$/, schema: schemas.ListWebhookEventsResponse }
-];
+const buildCoreRouteSchemas = (schemas: typeof import('@api/schemas')): ResponseSchemaRoute[] =>
+    ROUTES.filter(
+        (route) =>
+            route.module === undefined ||
+            UNCLAIMED_BACKEND_MODULES.has(route.module) ||
+            SESSION_AND_BOOT_SCHEMA_NAMES.has(route.schemaName)
+    ).map((route) => resolveGeneratedSchema(schemas, route));
 
 /**
  * Core rows plus whatever the enabled modules last registered. Empty until

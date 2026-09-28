@@ -30,7 +30,7 @@
         "page-title": "Nuova chiave API",
         "label-name": "Nome",
         "label-permissions": "Permessi",
-        "hint-permissions": "Digita una chiave di permesso e premi invio, es. products.read. Deve essere una chiave che possiedi attualmente.",
+        "hint-permissions": "Digita una chiave di permesso e premi invio, es. products.any.read. Deve essere una chiave che possiedi attualmente.",
         "label-expires-at": "Scade il",
         "hint-expires-at": "Facoltativo. Lascia vuoto per una credenziale che non scade mai.",
         "button-submit": "Genera credenziale",

@@ -30,7 +30,7 @@
         "page-title": "New API key",
         "label-name": "Name",
         "label-permissions": "Permissions",
-        "hint-permissions": "Type a permission key and press enter, e.g. products.read. Must be a key you currently hold.",
+        "hint-permissions": "Type a permission key and press enter, e.g. products.any.read. Must be a key you currently hold.",
         "label-expires-at": "Expires at",
         "hint-expires-at": "Optional. Leave blank for a credential that never expires.",
         "button-submit": "Mint credential",

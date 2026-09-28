@@ -9,9 +9,11 @@
  *   matching `/orders/abc/invoice`, so an invoice response gets validated against the
  *   *order* schema — which fails, loudly, on a perfectly valid response.
  *
- *   **Order.** `find()` returns the first match, so `/orders/:id/invoice` must be listed before
- *   `/orders/:id`. Reordering the array is a plausible, well-intentioned edit (alphabetising it,
- *   say) that would break exactly one endpoint.
+ *   **Order.** `find()` returns the first match, so a literal sibling (`/products/categories`)
+ *   must be listed before a same-depth `{param}` one (`/products/{id}`) that would otherwise
+ *   absorb it. Generated now (`scripts/contracts/generate-route-table.ts`, FA55), sorted by
+ *   ascending param count — this file no longer has to re-prove that ordering by hand, only that
+ *   `resolveResponseSchema` still respects whatever order it is given.
  *
  * Neither is visible in a code review of the table itself, which is what these tests are for.
  * The existing `http-validate-responses.spec.ts` covers the mutator's *behaviour*; this covers the
@@ -19,7 +21,7 @@
  */
 
 import { asStub } from '../../../support/stub';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { parse } from 'yaml';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -28,6 +30,7 @@ import {
     resolveResponseSchema
 } from '@/infrastructure/http/response-schema-map';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
+import { ROUTES as GENERATED_ROUTES } from '@api/routes';
 import { collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import * as schemas from '@api/schemas';
@@ -57,243 +60,119 @@ const schemaByName = (name: string) => asStub<Record<string, unknown>>(schemas)[
 const ID = '65dc8a99604c307b702b5ccc';
 
 /**
- * Every row of `routeSchemas`, in the same order as the source.
- *
- * The table is the module's whole contract — "each row mirrors one `orvalMutator<...>(...)` call
- * in `contracts/rest/index.ts`" — so it is asserted row by row rather than sampled. Spot-checking
- * a handful of routes leaves the other forty free to rot: a wrong schema on a rarely-hit endpoint
- * produces a contract error only for the user who happens to hit it.
+ * `contracts/rest/index.ts`'s own function name for one response schema's operation
+ * (FA55) — the inverse of `generate-route-table.ts`'s `schemaNameFor`. Not exact for the seven
+ * operations orval splits on content type (`generate-operation-modules.ts`'s
+ * `contentTypeOperationNames`): {@link isImportedByApp} checks both spellings for those.
  */
-const ROUTES: [method: string, path: string, name: string][] = [
-    ['GET', '/', 'GetHealthResponse'],
-    ['GET', '/antibot/config', 'GetAntibotConfigResponse'],
-    ['GET', '/antibot/challenge', 'GetAntibotChallengeResponse'],
-    ['GET', '/locales', 'GetLocalesResponse'],
-    ['GET', '/locales/tenants', 'GetLocaleTenantsResponse'],
-    ['GET', '/locales/en', 'GetLocaleDictionaryResponse'],
-    ['POST', '/locales', 'CreateLocaleResponse'],
-    ['PUT', '/locales/es', 'ReplaceLocaleResponse'],
-    ['PATCH', '/locales/es', 'UpdateLocaleResponse'],
-    ['DELETE', '/locales/es', 'DeleteLocaleResponse'],
-    ['GET', '/locales/es/messages', 'GetLocaleMessagesResponse'],
-    ['GET', '/locales/es/entries', 'ListLocaleEntriesResponse'],
-    ['POST', '/locales/es/entries', 'CreateLocaleEntryResponse'],
-    ['PUT', '/locales/es/entries', 'ReplaceLocaleEntriesResponse'],
-    ['PATCH', '/locales/es/entries', 'MergeLocaleEntriesResponse'],
-    ['PUT', '/locales/es/entries/cart.title', 'UpdateLocaleEntryResponse'],
-    ['DELETE', '/locales/es/entries/cart.title', 'DeleteLocaleEntryResponse'],
-    // Both `{entityType}` and `{id}` are `{...}` placeholders, so the spec-parity substitution
-    // below replaces each with the same `ID` constant — this row has to match that, not a real
-    // entity type, or `has one table row per declared operation` mismatches by shape.
-    ['GET', `/locales/translations/${ID}/${ID}`, 'GetEntityTranslationsResponse'],
-    ['PUT', `/locales/translations/${ID}/${ID}`, 'ReplaceEntityTranslationsResponse'],
-    ['PATCH', `/locales/translations/${ID}/${ID}`, 'UpsertEntityTranslationsResponse'],
-    ['GET', '/observability/events', 'GetObservabilityEventsResponse'],
-    ['GET', '/observability/health', 'GetObservabilityHealthResponse'],
-    ['GET', '/observability/metrics', 'GetObservabilityMetricsResponse'],
-    ['GET', '/observability/metrics/overview', 'GetObservabilityMetricsOverviewResponse'],
-    ['GET', '/observability/audit', 'GetObservabilityAuditLogsResponse'],
-    ['GET', '/audit', 'ListAuditEntriesResponse'],
-    ['GET', '/account', 'GetAccountResponse'],
-    ['GET', '/account/abilities', 'GetMyAbilitiesResponse'],
-    ['DELETE', '/account', 'RequestAccountDeleteResponse'],
-    ['DELETE', '/account/delete-confirm', 'ConfirmAccountDeleteResponse'],
-    ['POST', '/account/login', 'LoginResponse'],
-    ['POST', '/account/signup', 'SignupResponse'],
-    ['POST', '/account/reset', 'RequestPasswordResetResponse'],
-    ['POST', '/account/reset-confirm', 'ConfirmPasswordResetResponse'],
-    ['GET', '/account/refresh', 'RefreshTokenResponse'],
-    ['PUT', '/account', 'ReplaceAccountResponse'],
-    ['PATCH', '/account', 'UpdateAccountResponse'],
-    ['DELETE', '/account/pending-email', 'CancelPendingEmailChangeResponse'],
-    ['POST', '/account/password', 'ChangePasswordResponse'],
-    ['POST', '/account/password/check', 'CheckPasswordBreachedResponse'],
-    ['POST', '/account/logout', 'LogoutResponse'],
-    ['GET', '/account/sessions', 'GetSessionsResponse'],
-    ['DELETE', `/account/sessions/${ID}`, 'RevokeSessionResponse'],
-    ['POST', '/account/verify-request', 'RequestEmailVerificationResponse'],
-    ['POST', '/account/verify-confirm', 'ConfirmEmailVerificationResponse'],
-    ['POST', '/account/email-change-confirm', 'ConfirmEmailChangeResponse'],
-    ['GET', '/account/addresses', 'GetAddressesResponse'],
-    ['POST', '/account/addresses', 'AddAddressResponse'],
-    ['PUT', `/account/addresses/${ID}`, 'ReplaceAddressResponse'],
-    ['PATCH', `/account/addresses/${ID}`, 'UpdateAddressResponse'],
-    ['DELETE', `/account/addresses/${ID}`, 'RemoveAddressResponse'],
-    ['POST', '/account/logout-all', 'LogoutAllResponse'],
-    ['DELETE', '/account/tokens/expired', 'DeleteExpiredTokensResponse'],
-    ['POST', '/account/reauth', 'ReauthResponse'],
-    ['POST', '/account/export', 'ExportAccountDataResponse'],
-    ['POST', '/account/login/2fa/send', 'SendTwoFactorCodeResponse'],
-    ['POST', '/account/login/2fa', 'LoginTwoFactorResponse'],
-    ['GET', '/account/2fa', 'GetTwoFactorStatusResponse'],
-    ['DELETE', '/account/2fa', 'DisableTwoFactorResponse'],
-    ['POST', '/account/2fa/backup-codes', 'RegenerateBackupCodesResponse'],
-    ['POST', `/account/2fa/methods/${ID}/setup`, 'SetupTwoFactorMethodResponse'],
-    ['POST', `/account/2fa/methods/${ID}/confirm`, 'ConfirmTwoFactorMethodResponse'],
-    ['DELETE', `/account/2fa/methods/${ID}`, 'RemoveTwoFactorMethodResponse'],
-    ['GET', '/account/oauth/providers', 'ListOAuthProvidersResponse'],
-    ['GET', `/account/oauth/${ID}`, 'StartOAuthLoginResponse'],
-    ['GET', `/account/oauth/${ID}/callback`, 'CompleteOAuthLoginResponse'],
-    ['GET', '/users', 'ListUsersResponse'],
-    ['POST', '/users', 'CreateUserResponse'],
-    ['DELETE', '/users', 'DeleteUserResponse'],
-    ['POST', '/users/search', 'SearchUsersResponse'],
-    ['GET', `/users/${ID}`, 'GetUserByIdResponse'],
-    ['PUT', `/users/${ID}`, 'ReplaceUserByIdResponse'],
-    ['PATCH', `/users/${ID}`, 'UpdateUserByIdResponse'],
-    ['DELETE', `/users/${ID}`, 'DeleteUserByIdResponse'],
-    ['DELETE', `/users/${ID}/hard`, 'HardDeleteUserByIdResponse'],
-    ['POST', `/users/${ID}/restore`, 'RestoreUserByIdResponse'],
-    ['DELETE', `/users/${ID}/2fa`, 'AdminDisableUserTwoFactorResponse'],
-    ['POST', '/feedback/contact', 'CreateFeedbackRequestResponse'],
-    ['GET', '/feedback', 'ListFeedbackRequestsResponse'],
-    ['POST', '/feedback/search', 'SearchFeedbackRequestsResponse'],
-    ['PUT', `/feedback/${ID}`, 'ReplaceFeedbackRequestStatusResponse'],
-    ['PATCH', `/feedback/${ID}`, 'UpdateFeedbackRequestStatusResponse'],
-    ['DELETE', `/feedback/${ID}`, 'DeleteFeedbackRequestResponse'],
-    ['GET', '/products', 'ListProductsResponse'],
-    ['POST', '/products', 'CreateProductResponse'],
-    ['DELETE', '/products', 'DeleteProductResponse'],
-    ['POST', '/products/search', 'SearchProductsResponse'],
-    ['GET', `/products/${ID}`, 'GetProductByIdResponse'],
-    ['PUT', `/products/${ID}`, 'ReplaceProductByIdResponse'],
-    ['PATCH', `/products/${ID}`, 'UpdateProductByIdResponse'],
-    ['DELETE', `/products/${ID}`, 'DeleteProductByIdResponse'],
-    ['GET', `/products/${ID}/admin`, 'GetProductAdminResponse'],
-    ['DELETE', `/products/${ID}/hard`, 'HardDeleteProductByIdResponse'],
-    ['POST', `/products/${ID}/restore`, 'RestoreProductByIdResponse'],
-    ['GET', '/cart', 'GetCartResponse'],
-    ['POST', '/cart', 'UpsertCartItemResponse'],
-    ['DELETE', '/cart', 'RemoveCartItemByBodyResponse'],
-    ['DELETE', '/cart/all', 'ClearCartResponse'],
-    ['PUT', '/cart/shipping-method', 'SetCartShippingMethodResponse'],
-    ['GET', '/cart/summary', 'GetCartSummaryResponse'],
-    ['POST', '/cart/checkout', 'CheckoutResponse'],
-    ['PUT', `/cart/${ID}`, 'UpdateCartItemByIdResponse'],
-    ['DELETE', `/cart/${ID}`, 'RemoveCartItemResponse'],
-    ['POST', `/cart/reorder/${ID}`, 'ReorderResponse'],
-    ['GET', '/wishlist', 'GetWishlistResponse'],
-    ['POST', '/wishlist', 'AddWishlistItemResponse'],
-    ['DELETE', `/wishlist/${ID}`, 'RemoveWishlistItemResponse'],
-    ['POST', `/wishlist/${ID}/move-to-cart`, 'MoveWishlistItemToCartResponse'],
-    ['GET', '/payments/methods', 'ListPaymentMethodsResponse'],
-    ['POST', '/payments/intent', 'CreatePaymentIntentResponse'],
-    ['GET', `/payments/order/${ID}`, 'GetPaymentByOrderResponse'],
-    ['GET', '/payments/order-by-reference', 'GetOrderByReferenceResponse'],
-    ['POST', `/payments/order/${ID}/refund`, 'RefundPaymentByOrderResponse'],
-    ['POST', `/payments/order/${ID}/offline`, 'RecordOfflinePaymentResponse'],
-    ['POST', `/payments/${ID}/confirm`, 'ConfirmPaymentResponse'],
-    ['POST', `/payments/${ID}/sync`, 'SyncPaymentResponse'],
-    ['GET', '/delivery/methods', 'ListShippingMethodsResponse'],
-    ['GET', `/delivery/order/${ID}`, 'GetShipmentByOrderResponse'],
-    ['POST', `/delivery/order/${ID}/start`, 'StartFulfilmentResponse'],
-    ['POST', `/delivery/order/${ID}/ship`, 'ShipOrderResponse'],
-    ['POST', `/delivery/order/${ID}/deliver`, 'DeliverOrderResponse'],
-    ['POST', `/delivery/order/${ID}/fulfill`, 'FulfillOrderResponse'],
-    ['GET', '/inventory/levels', 'ListInventoryLevelsResponse'],
-    ['GET', '/inventory/movements', 'ListStockMovementsResponse'],
-    ['POST', '/inventory/receipts', 'ReceiveStockResponse'],
-    ['POST', '/inventory/adjustments', 'AdjustStockResponse'],
-    ['POST', '/inventory/reservations/sweep', 'SweepReservationsResponse'],
-    ['GET', '/orders', 'ListOrdersResponse'],
-    ['POST', '/orders', 'CreateOrderResponse'],
-    ['DELETE', '/orders', 'DeleteOrderResponse'],
-    ['POST', '/orders/search', 'SearchOrdersResponse'],
-    ['GET', `/orders/${ID}/invoice`, 'GetOrderInvoiceResponse'],
-    ['GET', `/orders/${ID}/credit-note`, 'GetOrderCreditNoteResponse'],
-    ['GET', `/orders/${ID}`, 'GetOrderByIdResponse'],
-    ['PUT', `/orders/${ID}`, 'ReplaceOrderByIdResponse'],
-    ['PATCH', `/orders/${ID}`, 'UpdateOrderByIdResponse'],
-    ['DELETE', `/orders/${ID}`, 'DeleteOrderByIdResponse'],
-    ['DELETE', `/orders/${ID}/hard`, 'HardDeleteOrderByIdResponse'],
-    ['POST', `/orders/${ID}/restore`, 'RestoreOrderByIdResponse'],
-    ['POST', `/orders/${ID}/cancel`, 'CancelOrderByIdResponse'],
-    ['POST', `/orders/${ID}/status-override`, 'OverrideOrderStatusResponse'],
-    ['GET', '/products/categories', 'GetCatalogueFacetsResponse'],
-    ['GET', '/webhooks/subscriptions', 'ListWebhookSubscriptionsResponse'],
-    ['POST', '/webhooks/subscriptions', 'CreateWebhookSubscriptionResponse'],
-    ['PUT', `/webhooks/subscriptions/${ID}`, 'ReplaceWebhookSubscriptionResponse'],
-    ['PATCH', `/webhooks/subscriptions/${ID}`, 'UpdateWebhookSubscriptionResponse'],
-    ['DELETE', `/webhooks/subscriptions/${ID}`, 'DeleteWebhookSubscriptionResponse'],
-    [
-        'POST',
-        `/webhooks/subscriptions/${ID}/rotate-secret`,
-        'RotateWebhookSubscriptionSecretResponse'
-    ],
-    [
-        'DELETE',
-        `/webhooks/subscriptions/${ID}/secrets/${ID}`,
-        'RemoveWebhookSubscriptionSecretResponse'
-    ],
-    ['GET', '/webhooks/deliveries', 'ListWebhookDeliveriesResponse'],
-    ['POST', `/webhooks/deliveries/${ID}/replay`, 'ReplayWebhookDeliveryResponse'],
-    ['GET', '/webhooks/events', 'ListWebhookEventsResponse'],
-    ['GET', '/api-keys', 'ListApiKeysResponse'],
-    ['POST', '/api-keys', 'MintApiKeyResponse'],
-    ['DELETE', `/api-keys/${ID}`, 'RevokeApiKeyResponse']
-];
-
-/**
- * Every operation `openapi.yaml` declares, as `METHOD /path` with the spec's `{param}`
- * placeholders substituted for a concrete value.
- *
- * Read from the spec rather than counted by hand. A hardcoded total only catches a table that
- * shrank, and says nothing about *which* operation is missing — an operation absent from the map
- * is one the generated client happily calls with its response left unvalidated.
- */
-/**
- * Operations this client is not the caller of, and so has no response to validate.
- *
- * A list rather than a filter on some property of the spec, because "nobody in a browser calls
- * this" is not something OpenAPI states — it is a fact about who the endpoint is for, and every
- * entry here is a decision worth reading. Kept short on purpose: the default is that a declared
- * operation IS called and DOES need its envelope checked.
- */
-const NOT_CALLED_BY_THIS_CLIENT: Record<string, string> = {
-    'POST /payments/webhook':
-        "the payment provider's own callback to the API — a machine-to-machine route, authenticated by a signature rather than a session, that no browser ever calls",
-    'GET /readyz':
-        'a load balancer / orchestrator readiness probe (200 or 503, empty body) — infrastructure polls it, this SPA never does'
+const operationIdFromSchemaName = (schemaName: string): string => {
+    const bare = schemaName.slice(0, -'Response'.length);
+    return `${bare.charAt(0).toLowerCase()}${bare.slice(1)}`;
 };
 
-const SPEC_OPERATIONS: string[] = (() => {
+/** Every `.ts`/`.vue` file below `directory`, recursively, specs excluded. */
+const listSourceFiles = (directory: string): string[] =>
+    readdirSync(directory).flatMap((entry) => {
+        const entryPath = path.join(directory, entry);
+        if (statSync(entryPath).isDirectory()) return listSourceFiles(entryPath);
+        if (entryPath.includes(`${path.sep}tests${path.sep}`)) return [];
+        return /\.(ts|vue)$/.test(entryPath) ? [entryPath] : [];
+    });
+
+/** The names in one `{ … }` import clause, `type` prefixes and `as` aliases dropped. */
+const importClauseNames = (clause: string): string[] =>
+    clause
+        .split(',')
+        .map((name) => name.trim().replace(/^type\s+/, ''))
+        .filter(Boolean)
+        .map((name) => name.split(/\s+as\s+/)[0].trim());
+
+/**
+ * Every name `src/` imports from `@api` anywhere — the generated REST client's function barrel —
+ * specs excluded (a spec exercising the contract directly is not a real call site). Mirrors
+ * `tests/cross-cutting/module-coupling.spec.ts`'s own scan of the same import shape.
+ */
+const importedApiFunctionNames = (): Set<string> => {
+    const names = new Set<string>();
+    for (const file of listSourceFiles(path.resolve(process.cwd(), 'src')))
+        for (const match of readFileSync(file, 'utf8').matchAll(
+            /import\s+(?:type\s+)?{([^}]*)}\s+from\s+["']@api["']/g
+        ))
+            for (const name of importClauseNames(match[1])) names.add(name);
+    return names;
+};
+
+const IMPORTED_API_FUNCTION_NAMES = importedApiFunctionNames();
+
+/**
+ * Whether the app actually calls this schema's own operation anywhere, under either spelling a
+ * content-type split might have given it.
+ */
+const isImportedByApp = (schemaName: string): boolean => {
+    const operationId = operationIdFromSchemaName(schemaName);
+    return (
+        IMPORTED_API_FUNCTION_NAMES.has(operationId) ||
+        IMPORTED_API_FUNCTION_NAMES.has(`${operationId}WithMultipart`)
+    );
+};
+
+/** Every `method`+`pattern` this generated table declares, without its two duplicates (FA55). */
+const ROUTE_KEYS = GENERATED_ROUTES.map((route) => `${route.method} ${route.pattern.source}`);
+
+/**
+ * Every operation `openapi.yaml` declares, as `[method, path, schemaName]` with the spec's
+ * `{param}` placeholders substituted for the same representative `ID` — generated from the spec
+ * (FA55), not hand-copied, so it cannot drift from the table under test the way a hand-typed
+ * mirror already had.
+ *
+ * No "not called by this client" exclusion list any more: {@link routesForModules} claims a row
+ * for every operation its `x-module` names, whether or not any frontend code calls it yet (the
+ * payment provider's own webhook callback included) — coverage below is complete BY
+ * CONSTRUCTION, not by a hand-kept exception list staying in sync with reality.
+ */
+const SPEC_OPERATIONS: [method: string, path: string, name: string][] = (() => {
     // `process.cwd()` is the project root under vitest; `import.meta.url` is not a file URL once
     // the suite has been through the jsdom transform.
     const spec = parse(readFileSync(path.resolve(process.cwd(), 'openapi.yaml'), 'utf8')) as {
-        paths: Record<string, Record<string, unknown>>;
+        paths: Record<string, Record<string, { operationId?: string }>>;
     };
     const methods = new Set(['get', 'post', 'put', 'delete', 'patch']);
 
-    return Object.entries(spec.paths).flatMap(([path, item]) =>
-        Object.keys(item)
-            .filter((method) => methods.has(method))
-            // `{id}`, `{productId}`, `{locale}` — the map matches a segment, not a name.
-            .map((method) => `${method.toUpperCase()} ${path}`)
-            .filter((operation) => !(operation in NOT_CALLED_BY_THIS_CLIENT))
-            // `{id}`, `{productId}`, `{locale}` — the map matches a segment, not a name.
-            .map((operation) => operation.replaceAll(/{[^}]+}/g, ID))
+    return Object.entries(spec.paths).flatMap(([specPath, item]) =>
+        Object.entries(item)
+            .filter(
+                (entry): entry is [string, { operationId: string }] =>
+                    methods.has(entry[0]) && typeof entry[1].operationId === 'string'
+            )
+            .map(([method, operation]): [string, string, string] => [
+                method.toUpperCase(),
+                // `{id}`, `{productId}`, `{locale}` — the map matches a SEGMENT, not a name.
+                specPath.replaceAll(/{[^}]+}/g, ID),
+                `${operation.operationId.charAt(0).toUpperCase()}${operation.operationId.slice(1)}Response`
+            ])
     );
 })();
 
 describe('routeSchemas table', () => {
     it('covers every operation declared in openapi.yaml', () => {
-        // `{locale}` is a language tag, not an ObjectId, but the pattern is `[^/]+` either way,
-        // so substituting ID uniformly is enough to exercise the lookup.
-        const unmapped = SPEC_OPERATIONS.filter((operation) => {
-            const [method, path] = operation.split(' ');
-            return !resolveResponseSchema(method, path);
-        });
+        const unmapped = SPEC_OPERATIONS.filter(
+            ([method, path]) => !resolveResponseSchema(method, path)
+        );
 
         // Named, not counted: the failure message is the list of operations whose responses go
         // unvalidated, which is the thing someone has to act on.
         expect(unmapped).toEqual([]);
     });
 
-    it('has one table row per declared operation', () => {
-        expect(ROUTES).toHaveLength(SPEC_OPERATIONS.length);
+    it('has no two generated rows for the same method and pattern', () => {
+        // The regression this generator exists to prevent (FA55): the 7 webhooks rows used to be
+        // registered TWICE, once on the core shelf and once in `webhooks/response-schemas.ts` —
+        // `find()` silently returned whichever was listed first, and nothing caught the other
+        // becoming dead weight.
+        expect(new Set(ROUTE_KEYS).size).toBe(ROUTE_KEYS.length);
     });
 
-    it.each(ROUTES)('%s %s resolves to %s', (method, path, name) => {
+    it.each(SPEC_OPERATIONS)('%s %s resolves to %s', (method, path, name) => {
         expect(resolveResponseSchema(method, path)).toBe(schemaByName(name));
     });
 
@@ -309,11 +188,11 @@ describe('routeSchemas table', () => {
      * Asserting one representative route per anchor would leave the other fifty unguarded, so
      * both are asserted for every row.
      */
-    it.each(ROUTES)('%s %s does not also claim a deeper path', (method, path, name) => {
+    it.each(SPEC_OPERATIONS)('%s %s does not also claim a deeper path', (method, path, name) => {
         expect(resolveResponseSchema(method, `${path}/deeper`)).not.toBe(schemaByName(name));
     });
 
-    it.each(ROUTES)('%s %s does not also claim a prefixed path', (method, path, name) => {
+    it.each(SPEC_OPERATIONS)('%s %s does not also claim a prefixed path', (method, path, name) => {
         expect(resolveResponseSchema(method, `/prefixed${path}`)).not.toBe(schemaByName(name));
     });
 
@@ -322,7 +201,7 @@ describe('routeSchemas table', () => {
      * slash, which browsers and proxies produce readily) would resolve to the by-id schema and
      * validate a 404 body against it.
      */
-    it.each(ROUTES.filter(([, path]) => path.includes(ID)))(
+    it.each(SPEC_OPERATIONS.filter(([, path]) => path.includes(ID)))(
         '%s %s requires a non-empty id segment',
         (method, path, name) => {
             expect(resolveResponseSchema(method, path.replace(ID, ''))).not.toBe(
@@ -330,14 +209,34 @@ describe('routeSchemas table', () => {
             );
         }
     );
+});
 
-    it('maps no two rows to the same schema', () => {
-        // Each response schema belongs to exactly one operation. A duplicate means a row was
-        // copy-pasted and its schema never updated — the request would be validated against a
-        // sibling endpoint's shape, which usually still parses and so fails silently.
-        const names = ROUTES.map((route) => route[2]);
+/**
+ * FA55's own narrower parity claim: not "every declared operation has a row" (true unconditionally
+ * above, by construction) but "every operation the app actually CALLS resolves correctly" — a
+ * second, independent signal computed straight from `src/`'s own imports, so a real call site
+ * missing its validation fails here even in the (today, hypothetical) case a module's ownership
+ * list ever fell out of step with the contract.
+ */
+describe('operations this app actually imports', () => {
+    it('finds a real, partial subset — not every declared operation, and not none', () => {
+        // A canary: an empty set would make every assertion below vacuous; a full set would mean
+        // the import scan silently matched everything, not just real call sites.
+        const importedCount = SPEC_OPERATIONS.filter((operation) =>
+            isImportedByApp(operation[2])
+        ).length;
 
-        expect(new Set(names).size).toBe(names.length);
+        expect(importedCount).toBeGreaterThan(0);
+        expect(importedCount).toBeLessThan(SPEC_OPERATIONS.length);
+    });
+
+    it('resolves correctly for every operation actually imported', () => {
+        const unresolved = SPEC_OPERATIONS.filter(
+            ([method, path, name]) =>
+                isImportedByApp(name) && resolveResponseSchema(method, path) !== schemaByName(name)
+        );
+
+        expect(unresolved.map(([method, path]) => `${method} ${path}`)).toEqual([]);
     });
 });
 
