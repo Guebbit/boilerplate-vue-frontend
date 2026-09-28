@@ -252,7 +252,7 @@ router.beforeEach((to, from) => {
     logger.debug('router', `Navigating from ${from.path} to ${to.path}`);
     // Silently restore token + profile on every navigation so that public pages
     // (e.g. ProductsList) render the correct admin controls after a page reload.
-    return tryRestoreAuth().then(() => enforceRouteAccess(to));
+    return tryRestoreAuth().then(() => enforceRouteAccess(to, router));
 });
 
 /**
