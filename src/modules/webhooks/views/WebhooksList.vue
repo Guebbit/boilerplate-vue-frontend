@@ -194,11 +194,12 @@ const handleDelete = (subscription: WebhookSubscription) =>
                         :items="pageSizeOptions"
                         item-title="label"
                         item-value="value"
+                        data-test="page-size"
                         hide-details
                     />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary">
+                    <v-btn type="submit" color="primary" data-test="search-submit">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
