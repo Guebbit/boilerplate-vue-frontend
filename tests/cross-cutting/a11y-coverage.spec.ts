@@ -28,6 +28,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { supportedLanguages } from '@/infrastructure/i18n';
 
 const ROOT = process.cwd();
 const MODULES_ROOT = path.resolve(ROOT, 'src/modules');
@@ -73,13 +74,27 @@ const routePathsIn = (source: string): string[] => {
 };
 
 /**
+ * The locale segment a sweep's own visited paths open with — built from `supportedLanguages`
+ * (FA127) rather than a hardcoded `en|it`, so a bundled language added or removed changes what
+ * this scans for without anyone remembering to edit this file too.
+ */
+const LOCALE_PREFIX = supportedLanguages
+    .map((locale) => locale.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`))
+    .join('|');
+
+/**
  * Every locale-prefixed path a sweep visits, with the prefix and any query string removed —
  * so `/en/users/create` and `/it/locales/it?x=1` become `users/create` and `locales/it`.
  */
 const sweptPathsIn = (source: string): string[] =>
-    [...source.matchAll(/["'`]\/(?:en|it)(?:\/([^\s"#'?`]*))?(?:[#?][^"'`]*)?["'`]/g)].map(
-        ([, rest]) => rest ?? ''
-    );
+    [
+        ...source.matchAll(
+            new RegExp(
+                `["'\`]/(?:${LOCALE_PREFIX})(?:/([^\\s"#'?\`]*))?(?:[#?][^"'\`]*)?["'\`]`,
+                'g'
+            )
+        )
+    ].map(([, rest]) => rest ?? '');
 
 /**
  * A vue-router path as a regular expression over a swept path: `:id` matches one segment, a
@@ -159,6 +174,10 @@ describe('accessibility coverage', () => {
         expect(routedModules.flatMap(({ routes }) => routes).length).toBeGreaterThan(0);
         expect(shell.routes).toContain('error/:status/:message?');
         expect(shell.routes).toContain('about');
+        // An empty supportedLanguages would make LOCALE_PREFIX's alternation an empty group,
+        // which matches ANY leading slash rather than none — every quoted path in a source file
+        // would misread as "swept", not just the locale-prefixed ones.
+        expect(supportedLanguages.length).toBeGreaterThan(0);
     });
 
     it('gives every routed module its own a11y sweep', () => {
