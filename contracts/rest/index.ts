@@ -2583,11 +2583,42 @@ export interface CartSummaryResponse {
     currency: string;
 }
 
+/**
+ * One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET /delivery/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits.
+ */
+export interface CartShippingOption {
+    /** Matches a `ShippingMethod.id` from `GET /delivery/methods`. */
+    id: string;
+    /**
+     * What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen.
+     * @minimum 0
+     */
+    price: number;
+    /** Whether choosing this method requires a shipping address. */
+    requiresAddress: boolean;
+    /** Whether a parcel sent by this method carries a tracking code. */
+    tracked: boolean;
+}
+
+/**
+ * What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET /delivery/methods` catalogue.
+ */
+export interface CartShipping {
+    /** Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`). */
+    required: boolean;
+    /**
+     * The cart's chosen shipping method (`PUT /cart/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).
+     * @nullable
+     */
+    selected: string | null;
+    /** Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET /delivery/methods` remains the full, unfiltered catalogue this is drawn from. */
+    options: CartShippingOption[];
+}
+
 export interface CartResponse {
     items: CartItem[];
     summary: CartSummaryResponse;
-    /** The cart's chosen shipping method (`PUT /cart/shipping-method`), so a client can pre-select it on load. Absent when none is chosen. */
-    shippingMethodId?: string;
+    shipping: CartShipping;
 }
 
 export interface CartResponseEnvelope {

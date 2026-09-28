@@ -6256,6 +6256,8 @@ export const getCartResponseDataSummaryShippingCostMin = 0;
 
 export const getCartResponseDataSummaryTotalPriceMin = 0;
 
+export const getCartResponseDataShippingOptionsItemPriceMin = 0;
+
 export const GetCartResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6294,11 +6296,55 @@ export const GetCartResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(getCartResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6329,6 +6375,8 @@ export const upsertCartItemResponseDataSummaryItemsTotalMin = 0;
 export const upsertCartItemResponseDataSummaryShippingCostMin = 0;
 
 export const upsertCartItemResponseDataSummaryTotalPriceMin = 0;
+
+export const upsertCartItemResponseDataShippingOptionsItemPriceMin = 0;
 
 export const UpsertCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6368,11 +6416,55 @@ export const UpsertCartItemResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(upsertCartItemResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6394,6 +6486,8 @@ export const removeCartItemByBodyResponseDataSummaryItemsTotalMin = 0;
 export const removeCartItemByBodyResponseDataSummaryShippingCostMin = 0;
 
 export const removeCartItemByBodyResponseDataSummaryTotalPriceMin = 0;
+
+export const removeCartItemByBodyResponseDataShippingOptionsItemPriceMin = 0;
 
 export const RemoveCartItemByBodyResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6433,11 +6527,57 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(
+                                        removeCartItemByBodyResponseDataShippingOptionsItemPriceMin
+                                    )
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6456,6 +6596,8 @@ export const clearCartResponseDataSummaryItemsTotalMin = 0;
 export const clearCartResponseDataSummaryShippingCostMin = 0;
 
 export const clearCartResponseDataSummaryTotalPriceMin = 0;
+
+export const clearCartResponseDataShippingOptionsItemPriceMin = 0;
 
 export const ClearCartResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6495,11 +6637,55 @@ export const ClearCartResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(clearCartResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6534,6 +6720,8 @@ export const updateCartItemByIdResponseDataSummaryItemsTotalMin = 0;
 export const updateCartItemByIdResponseDataSummaryShippingCostMin = 0;
 
 export const updateCartItemByIdResponseDataSummaryTotalPriceMin = 0;
+
+export const updateCartItemByIdResponseDataShippingOptionsItemPriceMin = 0;
 
 export const UpdateCartItemByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6573,11 +6761,55 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(updateCartItemByIdResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6599,6 +6831,8 @@ export const removeCartItemResponseDataSummaryItemsTotalMin = 0;
 export const removeCartItemResponseDataSummaryShippingCostMin = 0;
 
 export const removeCartItemResponseDataSummaryTotalPriceMin = 0;
+
+export const removeCartItemResponseDataShippingOptionsItemPriceMin = 0;
 
 export const RemoveCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6638,11 +6872,55 @@ export const RemoveCartItemResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(removeCartItemResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -6669,6 +6947,8 @@ export const setCartShippingMethodResponseDataSummaryItemsTotalMin = 0;
 export const setCartShippingMethodResponseDataSummaryShippingCostMin = 0;
 
 export const setCartShippingMethodResponseDataSummaryTotalPriceMin = 0;
+
+export const setCartShippingMethodResponseDataShippingOptionsItemPriceMin = 0;
 
 export const SetCartShippingMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6708,11 +6988,57 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(
+                                        setCartShippingMethodResponseDataShippingOptionsItemPriceMin
+                                    )
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
@@ -7174,6 +7500,8 @@ export const reorderResponseDataSummaryShippingCostMin = 0;
 
 export const reorderResponseDataSummaryTotalPriceMin = 0;
 
+export const reorderResponseDataShippingOptionsItemPriceMin = 0;
+
 export const ReorderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7212,11 +7540,55 @@ export const ReorderResponse = zod.strictObject({
                 .describe('itemsTotal + shippingCost'),
             currency: zod.string().describe('ISO-4217 currency code (e.g. USD)')
         }),
-        shippingMethodId: zod
-            .string()
-            .optional()
+        shipping: zod
+            .strictObject({
+                required: zod
+                    .boolean()
+                    .describe(
+                        'Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT \/cart\/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).'
+                    ),
+                selected: zod
+                    .string()
+                    .nullable()
+                    .describe(
+                        'The cart\'s chosen shipping method (`PUT \/cart\/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket\'s weight — the same \"reads as none\" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).'
+                    ),
+                options: zod
+                    .array(
+                        zod
+                            .strictObject({
+                                id: zod
+                                    .string()
+                                    .describe(
+                                        'Matches a `ShippingMethod.id` from `GET \/delivery\/methods`.'
+                                    ),
+                                price: zod
+                                    .number()
+                                    .min(reorderResponseDataShippingOptionsItemPriceMin)
+                                    .describe(
+                                        'What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT \/cart\/shipping-method` would freeze into `summary.shippingCost` if chosen.'
+                                    ),
+                                requiresAddress: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether choosing this method requires a shipping address.'
+                                    ),
+                                tracked: zod
+                                    .boolean()
+                                    .describe(
+                                        'Whether a parcel sent by this method carries a tracking code.'
+                                    )
+                            })
+                            .describe(
+                                "One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET \/delivery\/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits."
+                            )
+                    )
+                    .describe(
+                        'Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET \/delivery\/methods` remains the full, unfiltered catalogue this is drawn from.'
+                    )
+            })
             .describe(
-                "The cart's chosen shipping method (`PUT \/cart\/shipping-method`), so a client can pre-select it on load. Absent when none is chosen."
+                'What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET \/delivery\/methods` catalogue.'
             )
     })
 });
