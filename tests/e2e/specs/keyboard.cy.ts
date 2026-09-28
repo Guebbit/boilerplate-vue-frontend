@@ -35,7 +35,72 @@ const PHONE = [390, 844] as const;
  */
 const SHOWN_TOOLTIP = '.v-tooltip.v-overlay--active .v-overlay__content';
 
+// TEMPORARY DIAGNOSTIC PROBE for the keyboard-tooltip flake — remove before commit.
+// Buffers focus/blur DOM events and class/style mutations on any `.v-overlay*` element into
+// `window.__probeEvents`, flushed to the shard's own log via `cy.task('warn', ...)` in afterEach.
+Cypress.on('window:before:load', (win) => {
+    const probeWindow = win as Cypress.AUTWindow & { __probeEvents?: unknown[] };
+    probeWindow.__probeEvents = [];
+    // Captured before `matches` is patched below, so `record`'s own focus-visible read always
+    // goes through the ORIGINAL implementation — otherwise it recurses into its own patch.
+    const nativeMatches = win.Element.prototype.matches;
+    const record = (type: string, target: EventTarget | null) => {
+        const element = target as HTMLElement | null;
+        probeWindow.__probeEvents?.push({
+            type,
+            ts: Math.round(win.performance.now() * 100) / 100,
+            tag: element?.tagName,
+            dataTest: element?.getAttribute?.('data-test'),
+            focusVisible: element ? nativeMatches.call(element, ':focus-visible') : null
+        });
+    };
+    win.document.addEventListener('focus', (event) => record('focus', event.target), true);
+    win.document.addEventListener('blur', (event) => record('blur', event.target), true);
+    // Wraps the exact call Vuetify's own `onFocus` handler makes
+    // (`matchesSelector(e.target, ':focus-visible')` in `useActivator.js`), so the probe sees the
+    // SAME result Vuetify saw, at the SAME instant — not a separate, later re-check.
+    win.Element.prototype.matches = function (selector: string) {
+        const result = nativeMatches.call(this, selector);
+        if (selector === ':focus-visible') record(`matches(:focus-visible)=${result}`, this);
+        return result;
+    };
+    const observer = new win.MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            const element = mutation.target as HTMLElement;
+            if (element.classList?.contains('v-overlay') || element.classList?.contains('v-overlay__content')) {
+                record(
+                    `mutate:${mutation.attributeName}=${element.getAttribute(mutation.attributeName ?? '') ?? ''}`,
+                    element
+                );
+            }
+        }
+    });
+    win.addEventListener('DOMContentLoaded', () => {
+        observer.observe(win.document.body, {
+            attributes: true,
+            attributeFilter: ['class', 'style'],
+            subtree: true
+        });
+    });
+});
+
 describe('keyboard', () => {
+    afterEach(function () {
+        cy.window().then((win) => {
+            const events = (win as Cypress.AUTWindow & { __probeEvents?: unknown[] }).__probeEvents;
+            if (events?.length)
+                cy.task(
+                    'probeLog',
+                    JSON.stringify({
+                        test: Cypress.currentTest.title,
+                        state: this.currentTest?.state,
+                        retry: Cypress.currentRetry,
+                        events
+                    })
+                );
+        });
+    });
+
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();

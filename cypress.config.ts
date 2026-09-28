@@ -21,7 +21,7 @@ import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
 // The live profile's description file, read by the `readScenarioFile` task below.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'node:fs';
 import {
     LIVE_SCENARIO_FILE,
     resolveBackendPath,
@@ -150,6 +150,16 @@ export default defineConfig({
                  */
                 warn: (message: string) => {
                     console.warn(`[e2e] ${message}`);
+                    return null;
+                },
+
+                // TEMPORARY DIAGNOSTIC PROBE for the keyboard-tooltip flake — remove before commit.
+                // Writes straight to a file, unlike `warn` above, since a shard's buffered stdout
+                // is discarded entirely when that shard exits 0 (see run-shards.ts), which is
+                // exactly the case that needs capturing: the retry passing hides the flake.
+                probeLog: (line: string) => {
+                    mkdirSync('reports/probe-keyboard-flake', { recursive: true });
+                    appendFileSync('reports/probe-keyboard-flake/log.ndjson', `${line}\n`);
                     return null;
                 },
 
