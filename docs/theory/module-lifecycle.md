@@ -23,14 +23,13 @@ flowchart LR
     REG --> N["AppNavigation<br/><i>renders entries</i>"]
     REG --> S["responseSchemaMap<br/><i>validates responses</i>"]
     REG --> I["i18n<br/><i>merges dictionaries</i>"]
-    REG --> M["analytics<br/><i>event names</i>"]
     classDef reg fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef out fill:#dbeafe,stroke:#2563eb,color:#111827;
     class REG reg;
-    class R,N,S,I,M out;
+    class R,N,S,I out;
 ```
 
-Every one of those five reads the registry and never names an entry, so none of them appears in
+Every one of those four reads the registry and never names an entry, so none of them appears in
 either checklist. **`src/modules.ts` is the whole runtime registry on this side** — unlike the
 backend, which also owns the contract fragments and their section lists. Here the contract is
 _consumed_:

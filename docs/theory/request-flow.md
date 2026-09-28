@@ -111,9 +111,13 @@ Route guards run on every navigation. A `401` during a guarded navigation redire
 
 All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `IResponseReject` envelope. Views and stores never parse raw axios errors.
 
-### Analytics always async
+### Analytics is not this repo's call to make
 
-`track()` calls are fire-and-forget. Never `await` them. They are no-ops if Umami is not configured.
+There is no `track()` here. Pageviews are Umami's own script, automatic; everything with a request
+behind it is reported by the backend handler that decided it happened, not by a client-side call
+this repo would have to remember to make. This repo's own part is consent: `analytics-consent.ts`
+persists the visitor's choice, and `http/interceptors.ts`'s `onRequest` forwards it as
+`X-Analytics-Consent` on every request that qualifies.
 
 ### Blocked vs ambient failures
 
