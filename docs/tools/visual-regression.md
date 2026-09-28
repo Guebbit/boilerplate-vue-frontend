@@ -183,7 +183,7 @@ A visual suite that is silently photographing blank pages passes forever and cat
 
 ```bash
 # inject a layout shift
-#   <LayoutDefault style="padding-top:120px" id="home-page" …>
+#   LayoutDefault.vue's own <v-main style="padding-top:120px" …>
 npm run test:e2e:visual
 #   home: 45043 of 921600 pixels differ (4.887%, budget 0.200%)  ← 1 failing
 #   the other three screens still pass    ← proves run-to-run stability at the same time

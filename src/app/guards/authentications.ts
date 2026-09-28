@@ -62,10 +62,23 @@ declare module 'vue-router' {
         can?: RoutePermission;
         /**
          * Dictionary key of the page's title, resolved into `document.title` after every
-         * navigation (WCAG 2.4.2) and read out by the route announcer. Absent on the redirect
-         * shells that never render a page.
+         * navigation (WCAG 2.4.2), read out by the route announcer, and translated by
+         * `LayoutDefault` (the route's own layout, FA70) as the default page hero. Absent on the
+         * redirect shells that never render a page.
          */
         title?: string;
+        /**
+         * Whether `LayoutDefault` renders its own generic hero for this route at all — `false`,
+         * the default, everywhere the page hero is just `title` translated. A route whose hero
+         * needs something a static key cannot give (a dynamic title, richer markup) sets this
+         * and renders its own `ui/molecules/PageHeader.vue` instead, at the top of its own body.
+         */
+        customHero?: boolean;
+        /**
+         * Whether `LayoutDefault` centers its content column instead of the ordinary left-aligned
+         * flow — `Error.vue`'s own case, a full-height centered empty state.
+         */
+        centered?: boolean;
     }
 }
 

@@ -43,9 +43,11 @@ export const MAIN_CONTENT = 'main[data-main-content]';
 /**
  * Whether a page change is still waiting to hand focus to the main landmark.
  *
- * The router asks for the move in `afterEach`, but every view renders its own `LayoutDefault`,
- * so the `<v-main>` that exists at that moment is the OLD page's — about to unmount and take the
- * focus with it. The flag survives that swap: the layout that mounts next consumes it.
+ * The router asks for the move in `afterEach`, right after the new route resolves — before the
+ * matched view's own content has actually rendered into `<v-main>` (FA70: `LayoutDefault` mounts
+ * once for the session, and its `<v-main>` never unmounts between pages, but the child content
+ * inside it still needs a tick to update). The flag survives that gap: `consumeMainFocus`, called
+ * a tick later, is what actually moves focus once there is somewhere real to move it to.
  */
 let mainFocusPending = false;
 

@@ -79,7 +79,10 @@ const shellChildRoutes: RouteRecordRaw[] = [
     {
         path: 'error/:status/:message?',
         name: 'Error',
-        meta: { title: 'error-page.page-title' },
+        // `customHero`: the title carries the HTTP-like status beside it, richer than a plain
+        // translated key — `Error.vue` renders its own `PageHeader`. `centered`: a full-height
+        // centered empty state, not the ordinary left-aligned page flow.
+        meta: { title: 'error-page.page-title', customHero: true, centered: true },
         component: () => import('@/app/views/Error.vue'),
         props: true
     }
@@ -156,19 +159,33 @@ const router = createRouter({
             path: '/:locale',
             component: RouterView,
             children: [
-                ...shellChildRoutes,
-                ...moduleRoutes,
-
                 {
-                    path: ':catchAll(.*)',
-                    redirect: (to) => ({
-                        name: 'Error',
-                        params: {
-                            locale: to.params.locale as string,
-                            status: 404,
-                            message: 'error-page.not-found'
+                    // Empty path: matches `/:locale` exactly, adding nothing of its own — the
+                    // nested-layout pattern vue-router itself documents. `LayoutDefault` becomes
+                    // the actual rendered component for every real page (FA70), mounted once
+                    // rather than by each view individually, with its OWN `<RouterView />` for
+                    // whichever child below actually matched. Lazy, same as every route below it:
+                    // it pulls in the nav, both banners and the dialog hosts, and an eager import
+                    // here would put all of that in the entry chunk instead of a route chunk
+                    // (FA94's own budget, `entry-chunk-budget.spec.ts`).
+                    path: '',
+                    component: () => import('@/app/layouts/LayoutDefault.vue'),
+                    children: [
+                        ...shellChildRoutes,
+                        ...moduleRoutes,
+
+                        {
+                            path: ':catchAll(.*)',
+                            redirect: (to) => ({
+                                name: 'Error',
+                                params: {
+                                    locale: to.params.locale as string,
+                                    status: 404,
+                                    message: 'error-page.not-found'
+                                }
+                            })
                         }
-                    })
+                    ]
                 }
             ]
         },
@@ -323,9 +340,9 @@ router.afterEach((to, from, failure) => {
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
     if (!isPageChange) return;
 
-    // The new view mounts its own layout, and that layout consumes the request on mount. The
-    // tick below covers the other case — a navigation that kept the same view (detail → detail),
-    // where nothing remounts and nobody else would consume it.
+    // `LayoutDefault` mounts once for the whole session (FA70), not per view, so its own
+    // `onMounted` can no longer consume this — this is the SOLE place that does, on every page
+    // change. The tick waits for the new page's own content to actually be in the DOM first.
     requestMainFocus();
     void nextTick(consumeMainFocus);
 });

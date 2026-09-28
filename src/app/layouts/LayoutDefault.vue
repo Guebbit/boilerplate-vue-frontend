@@ -1,12 +1,17 @@
 <script setup lang="ts">
 /**
  * @module
- * The one page shell every view renders through: skip link, health banner, nav, page hero,
- * footer, confirmation dialog host, toast stack and loading indicators. Preloads nothing
- * domain-specific — see the note near the end of this block.
+ * The one page shell the router mounts once, for every route under `/:locale` (FA70) — skip link,
+ * health banner, nav, page hero, footer, confirmation dialog host, toast stack and loading
+ * indicators, with `<RouterView />` in the middle for whichever page actually matched. Preloads
+ * nothing domain-specific — see the note near the end of this block.
+ *
+ * Being mounted once, not per view, is what moved the focus handoff out of here: `onMounted`
+ * would now fire only on the very first navigation, never again. `router/index.ts`'s `afterEach`
+ * is the sole place that still runs it, on every page change.
  */
-import { computed, onMounted, useSlots, watch } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, watch } from 'vue';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
@@ -19,41 +24,40 @@ import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanner.vue';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
+import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { consumeMainFocus, MAIN_CONTENT } from '@/app/router/announcer.ts';
+import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 
 /**
- * Attrs fall through to `<v-main>` explicitly (`v-bind="$attrs"`), not to the root
- * `<v-app>` — see the `data-main-content` note in the template.
+ * The active route, read for `meta.title`/`meta.customHero`/`meta.centered` — the three things a
+ * view used to pass this layout as props, now that there is no view-to-layout slot or prop to
+ * pass them through at all.
  */
-defineOptions({ inheritAttrs: false });
+const route = useRoute();
 
 /**
- * Component props — see each field's own doc comment below.
+ * Translation function and the active locale, the latter watched below to keep Vuetify in sync.
  */
-defineProps<{
-    /**
-     * Default page title rendered in the hero (overridable via #header slot)
-     */
-    title?: string;
-    /**
-     * If the content should be minimum full page and centered
-     */
-    centered?: boolean;
-}>();
+const { t, locale } = useI18n();
 
 /**
- * Slots
- * - default
- * - header (replaces the default hero title)
- * - navigation
+ * The hero's own title, translated from the matched route's own `meta.title` — absent on the
+ * redirect shells that never render a page, and on a route that opted out entirely
+ * (see `customHero` below).
  */
-const slots = useSlots();
+const heroTitle = computed(() => (route.meta.title ? t(route.meta.title) : ''));
 
 /**
- * A page change asked the router for focus on `<v-main>`; this layout is the one that has it.
+ * Whether this route renders its own hero (a dynamic title, or richer markup) instead of the
+ * generic one below — `RouteMeta.customHero`.
  */
-onMounted(consumeMainFocus);
+const customHero = computed(() => route.meta.customHero === true);
+
+/**
+ * Whether this route's content column centers instead of the ordinary left-aligned flow —
+ * `RouteMeta.centered`, `Error.vue`'s own case.
+ */
+const centered = computed(() => route.meta.centered === true);
 
 /**
  * The skip link, by hand: a bare `href` is a hash navigation to the router, which
@@ -61,11 +65,6 @@ onMounted(consumeMainFocus);
  */
 const skipToContent = () =>
     document.querySelector<HTMLElement>(MAIN_CONTENT)?.focus({ preventScroll: false });
-
-/**
- * Translation function and the active locale, the latter watched below to keep Vuetify in sync.
- */
-const { t, locale } = useI18n();
 
 /**
  * Keep Vuetify's internal strings (data-table, pagination, aria-labels…)
@@ -200,20 +199,15 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
              VITE_ANALYTICS_GUEST_CONSENT is on. -->
         <AppAnalyticsConsentBanner />
 
-        <AppNavigation>
-            <slot name="navigation" />
-        </AppNavigation>
+        <AppNavigation />
 
         <!--
             `tabindex="-1"` makes the main region focusable by script and the skip link without
             adding it to the tab order; the router moves focus here after every page change.
+            An id here, not `data-main-content` fed by `$attrs`: this element no longer changes
+            per view (FA70), so the CURRENT page's own id lives on ITS OWN root instead.
         -->
-        <!--
-            `data-main-content`, not an id: the view's own id arrives through `$attrs`
-            (`id="cart-page"`) and would replace one — which is how the skip link once pointed at
-            nothing on most pages.
-        -->
-        <v-main v-bind="$attrs" tabindex="-1" data-main-content>
+        <v-main tabindex="-1" data-main-content>
             <!--
                 Rides every page on purpose: the checkout is too late to learn the address is
                 unproved. Inside `<v-main>`, not beside the app bar: a plain alert is not part of
@@ -222,20 +216,10 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
             -->
             <AppVerificationBanner />
 
-            <!-- Page hero: every view gets a consistent, accessible title area -->
-            <header v-if="slots.header || title" class="page-hero py-8 lg:py-10">
-                <div class="mx-auto w-full max-w-[1280px] px-4">
-                    <slot name="header">
-                        <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">
-                            {{ title }}
-                        </h1>
-                        <div
-                            class="mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-primary to-tertiary"
-                            aria-hidden="true"
-                        />
-                    </slot>
-                </div>
-            </header>
+            <!-- Page hero: every view gets a consistent, accessible title area, unless its own
+                 route opted out (`meta.customHero`) to render `ui/molecules/PageHeader.vue`
+                 itself, further down in its own body. -->
+            <PageHeader v-if="!customHero && heroTitle" :title="heroTitle" />
 
             <div
                 class="mx-auto w-full max-w-[1280px] px-4 pb-12"
@@ -243,7 +227,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
                     centered && 'flex min-h-[60vh] flex-col items-center justify-center text-center'
                 "
             >
-                <slot />
+                <RouterView />
             </div>
         </v-main>
 
