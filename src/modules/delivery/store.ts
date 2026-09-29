@@ -7,7 +7,8 @@
 
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listShippingMethods,
     getShipmentByOrder,
@@ -28,17 +29,11 @@ import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
  */
 export const useDeliveryStore = defineStore('delivery', () => {
     /**
-     * The app-wide loading-flag accessor pair, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * Toolkit REST wrapper: `loading` is this store's flag, `fetchAny` wraps every call below.
      */
     const { loading, fetchAny } = useStructureRestApi<Shipment, string>({
-        loadingKey: 'delivery',
-        getLoading,
-        setLoading
+        resourceKey: 'delivery',
+        queryClient
     });
 
     /**

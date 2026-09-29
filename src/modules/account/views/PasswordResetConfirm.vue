@@ -153,7 +153,7 @@ const submitForm = () => {
             // the router's own `onError` to report rather than this form's.
             .then(() => undefined)
     ).catch((error) => {
-        if (!applyServerErrors(error)) reportConfirmError(error);
+        applyServerErrors(error, { onUnmapped: () => reportConfirmError(error) });
     });
 };
 </script>

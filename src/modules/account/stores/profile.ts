@@ -7,8 +7,9 @@
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { ERROR_CODES } from '@api/error-codes';
 import type { AxiosRequestConfig } from 'axios';
@@ -35,17 +36,17 @@ import {
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 
 /**
- * Which loading key `updateProfile` runs under: one per avatar path, none for an ordinary field
- * save, which has no button of its own to spin.
+ * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, none for an
+ * ordinary field save, which has no button of its own to spin.
  *
  * @param imageUpload - The picked file, when the call carries one.
  * @param imageUrl - The record's picture field, `null` when the call is a removal.
- * @returns The postfix appended to the store's loading key, or `''` for a plain save.
+ * @returns The bucket key, or `undefined` for a plain save (matches the whole-resource `loading`).
  */
-const avatarLoadingPostfix = (imageUpload?: File, imageUrl?: string | null) => {
-    if (imageUpload) return ':avatar-upload';
+const avatarLoadingKey = (imageUpload?: File, imageUrl?: string | null): string[] | undefined => {
+    if (imageUpload) return ['avatar-upload'];
     // `null` is the removal — the contract's `minLength: 1` refuses `''`.
-    return imageUrl === null ? ':avatar-remove' : '';
+    return imageUrl === null ? ['avatar-remove'] : undefined;
 };
 
 /**
@@ -80,27 +81,21 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const session = useSessionStore();
 
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice, with `selectedRecord` renamed to `profile`: there is only ever
-     * one record here, and it is the visitor's own.
+     * one record here, and it is the visitor's own. `isLoading` backs the two avatar computeds.
      */
     const {
-        loadingKey,
         selectedIdentifier,
         resetAll,
         selectedRecord: profile,
         loading,
+        isLoading,
         fetchAny,
         fetchTarget,
         updateTarget
     } = useStructureRestApi<User, string>({
-        loadingKey: 'accountProfile',
-        getLoading,
-        setLoading
+        resourceKey: 'accountProfile',
+        queryClient
     });
 
     /**
@@ -247,9 +242,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
             // refetch right below corrects the visible state within one round trip regardless.
             { ...userData, imageUrl: userData.imageUrl ?? undefined },
             selectedIdentifier.value,
-            // One action, two avatar buttons: each path gets its own loading key so the picker
+            // One action, two avatar buttons: each path gets its own bucket key so the picker
             // and the remove button spin one at a time. `imageUrl: null` is the removal.
-            { loadingKey: avatarLoadingPostfix(imageUpload, userData.imageUrl) }
+            { key: avatarLoadingKey(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
              * Refetch rather than trust the local patch: `updateTarget` merges what was SENT, and
@@ -453,12 +448,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * Whether a picked avatar is being uploaded.
      */
-    const uploadingAvatar = computed(() => getLoading(`${loadingKey}:avatar-upload`));
+    const uploadingAvatar = computed(() => isLoading(['avatar-upload']));
 
     /**
      * Whether the stored avatar is being removed.
      */
-    const removingAvatar = computed(() => getLoading(`${loadingKey}:avatar-remove`));
+    const removingAvatar = computed(() => isLoading(['avatar-remove']));
 
     return {
         profile,

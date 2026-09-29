@@ -330,7 +330,7 @@ const submitForm = () => {
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) reportFormError(error);
+        applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
 

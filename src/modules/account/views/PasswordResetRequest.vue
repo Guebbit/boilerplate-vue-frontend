@@ -98,7 +98,7 @@ const submitForm = () => {
             }
         )
     ).catch((error) => {
-        if (!applyServerErrors(error)) reportRequestError(error);
+        applyServerErrors(error, { onUnmapped: () => reportRequestError(error) });
     });
 };
 </script>

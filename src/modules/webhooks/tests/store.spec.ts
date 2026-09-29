@@ -281,7 +281,7 @@ describe('useWebhooksStore', () => {
             const store = useWebhooksStore();
             // Seeded by hand rather than via a list call: the store's own cache, pre-populated
             // the way a prior list load would leave it.
-            store.subscriptions[SUBSCRIPTION.id] = { ...SUBSCRIPTION };
+            store.addSubscriptionRecord({ ...SUBSCRIPTION });
 
             const stop = store.watchSubscription(() => SUBSCRIPTION.id);
 

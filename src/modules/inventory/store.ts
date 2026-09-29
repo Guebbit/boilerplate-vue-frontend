@@ -6,7 +6,8 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     adjustStock,
     listInventoryLevels,
@@ -45,17 +46,11 @@ import type {
  */
 export const useInventoryStore = defineStore('inventory', () => {
     /**
-     * This store's slice of the app-wide loading registry.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * Shared loading flag plus the request runner every read/write below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<StockMovement, string>({
-        loadingKey: 'inventory',
-        getLoading,
-        setLoading
+        resourceKey: 'inventory',
+        queryClient
     });
 
     /**

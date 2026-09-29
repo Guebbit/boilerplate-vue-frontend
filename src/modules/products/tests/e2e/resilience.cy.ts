@@ -106,10 +106,11 @@ describe('pagination agrees with the rows actually rendered', () => {
          * Written as the agreement between two things on screen rather than as a fixed
          * expectation, so it keeps meaning something as the demo catalogue grows: a full page
          * means there may be more and the control must be there; a partial page means this is
-         * already everything and it must not be. `pageTotal` is server-reported
-         * (`useServerPageTotal`, `src/modules/products/store.ts`) — a local-only count would
-         * make this the branch that always takes the "not exist" path regardless of how many
-         * pages actually exist, which is the bug this test caught before that fix landed.
+         * already everything and it must not be. `pageTotal` is server-reported — vue-toolkit's
+         * own `useStructureCrudApi` stores the search response's `totalItems` alongside the page
+         * that produced it — a local-only count would make this the branch that always takes the
+         * "not exist" path regardless of how many pages actually exist, which is the bug this
+         * test caught before that fix landed.
          */
         cy.get('[data-test=list-row]').then((rows) => {
             if (rows.length >= DEFAULT_PAGE_SIZE) cy.get('.v-pagination').should('exist');

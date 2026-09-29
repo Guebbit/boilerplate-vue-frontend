@@ -11,16 +11,27 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { useCoreStore } from '@guebbit/vue-toolkit';
 import ShipmentPanel from '@/modules/delivery/components/ShipmentPanel.vue';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
 import { i18n, loadLocale } from '@/i18n';
-import { OrderStatus } from '@api';
+import { OrderStatus, deliverOrder } from '@api';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
+
+/**
+ * `deliverOrder` alone is wrapped, real implementation and all (`vi.fn(actual.deliverOrder)`
+ * calls through unless a test overrides it): every other case in this file spies on the STORE's
+ * own `deliver` action instead, which never reaches this. Only the in-flight-guard test below
+ * needs a controllable, genuinely pending API call — the delivery store's `loading` is real,
+ * TanStack-tracked state now, so nothing short of an actual in-flight request can make it true.
+ */
+vi.mock('@api', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@api')>();
+    return { ...actual, deliverOrder: vi.fn(actual.deliverOrder) };
+});
 
 /**
  * Mounts the panel with the delivery store's own fetches stubbed — spied BEFORE mounting, the
@@ -219,17 +230,29 @@ describe('with a shipment already recorded', () => {
         const wrapper = mountPanel({ orderId: 'o1', canDeliver: true });
         useDeliveryStore().shipment = { id: 's1', orderId: 'o1', status: 'shipped' };
 
-        return nextRenderTick(wrapper).then(() => {
-            expect(
-                wrapper.find('[data-test=mark-delivered]').attributes('disabled')
-            ).toBeUndefined();
-            useCoreStore().setLoading('delivery', true);
-            return nextRenderTick(wrapper).then(() => {
+        // A genuinely pending API call — the delivery store's `loading` is real, TanStack-tracked
+        // state now, so nothing short of an actual in-flight `deliverOrder` request moves it.
+        let release: ((error: Error) => void) | undefined;
+        const gate = new Promise<never>((_resolve, reject) => {
+            release = reject;
+        });
+        vi.mocked(deliverOrder).mockReturnValueOnce(gate);
+
+        return nextRenderTick(wrapper)
+            .then(() => {
+                expect(
+                    wrapper.find('[data-test=mark-delivered]').attributes('disabled')
+                ).toBeUndefined();
+                return wrapper.find('[data-test=mark-delivered]').trigger('click');
+            })
+            .then(() => nextRenderTick(wrapper))
+            .then(() => {
                 expect(
                     wrapper.find('[data-test=mark-delivered]').attributes('disabled')
                 ).toBeDefined();
+                release?.(new Error('network down'));
+                return nextRenderTick(wrapper);
             });
-        });
     });
 });
 

@@ -6,7 +6,8 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     getAddresses as apiGetAddresses,
     addAddress as apiAddAddress,
@@ -28,18 +29,12 @@ import type {
  */
 export const useAddressesStore = defineStore('accountAddresses', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<Address, string>({
-        loadingKey: 'accountAddresses',
-        getLoading,
-        setLoading
+        resourceKey: 'accountAddresses',
+        queryClient
     });
 
     /**

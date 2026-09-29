@@ -6,10 +6,11 @@
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getWishlist, addWishlistItem, removeWishlistItem, moveWishlistItemToCart } from '@api';
 import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
+import { queryClient } from '@/infrastructure/query-client.ts';
 
 /**
  * The visitor's saved products — ids only, like the cart's lines: the view joins them against
@@ -21,18 +22,12 @@ import { useCartStore } from '@/modules/cart';
  */
 export const useWishlistStore = defineStore('wishlist', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<WishlistItem, string>({
-        loadingKey: 'wishlist',
-        getLoading,
-        setLoading
+        resourceKey: 'wishlist',
+        queryClient
     });
 
     /**

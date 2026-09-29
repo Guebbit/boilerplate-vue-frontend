@@ -11,9 +11,9 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import { useCoreStore } from '@guebbit/vue-toolkit';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
+import { checkout as apiCheckout } from '@api';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -23,6 +23,18 @@ import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-v
 import type { CartResponse } from '@types';
 
 wireModulesIntoCore();
+
+/**
+ * `checkout` alone is wrapped, real implementation and all (`vi.fn(actual.checkout)` calls
+ * through unless a test overrides it): every other case in this file spies on the STORE's own
+ * `checkout` method instead, which never reaches this. Only the in-flight-guard test below needs
+ * a controllable, genuinely pending API call — `cart.loading` is real, TanStack-tracked state
+ * now, so nothing short of an actual in-flight request can make it true.
+ */
+vi.mock('@api', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@api')>();
+    return { ...actual, checkout: vi.fn(actual.checkout) };
+});
 
 /**
  * The real app router, scoped to the modules this test suite enables.
@@ -392,14 +404,41 @@ describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
             expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
             expect(wrapper.get('[data-test=cart-clear]').attributes('disabled')).toBeUndefined();
 
-            // Both buttons share the cart store's own `loading` — the same flag `checkout` and
-            // `clearCart` run under — so either write in flight has to block the other one too.
-            useCoreStore().setLoading('cart', true);
-            return nextRenderTick(wrapper).then(() => {
-                expect(
-                    wrapper.get('[data-test=cart-checkout]').attributes('disabled')
-                ).toBeDefined();
-                expect(wrapper.get('[data-test=cart-clear]').attributes('disabled')).toBeDefined();
+            // A genuinely pending API call — `cart.loading` is real, TanStack-tracked state now,
+            // so nothing short of an actual in-flight request moves it. Both buttons share the
+            // cart store's own `loading`, the same flag `checkout` and `clearCart` run under, so
+            // either write in flight has to block the other one too.
+            // Rejected, not resolved, once released: a resolved checkout empties the cart (FA33)
+            // and the buttons this test reads unmount along with it — a rejection settles the
+            // mutation without disturbing the cart this test asserts against afterwards.
+            let release: ((error: Error) => void) | undefined;
+            const gate = new Promise<never>((_resolve, reject) => {
+                release = reject;
             });
+            vi.mocked(apiCheckout).mockReturnValueOnce(gate);
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(
+                        wrapper.get('[data-test=cart-checkout]').attributes('disabled')
+                    ).toBeDefined();
+                    expect(
+                        wrapper.get('[data-test=cart-clear]').attributes('disabled')
+                    ).toBeDefined();
+                    release?.(new Error('network down'));
+                    return flushPromises();
+                })
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(
+                        wrapper.get('[data-test=cart-checkout]').attributes('disabled')
+                    ).toBeUndefined();
+                    expect(
+                        wrapper.get('[data-test=cart-clear]').attributes('disabled')
+                    ).toBeUndefined();
+                });
         }));
 });

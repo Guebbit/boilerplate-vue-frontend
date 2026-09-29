@@ -6,9 +6,10 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getSessions as apiGetSessions, revokeSession as apiRevokeSession } from '@api';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import type { Session } from '@types';
 
 /**
@@ -18,18 +19,12 @@ import type { Session } from '@types';
  */
 export const useAccountSessionsStore = defineStore('accountSessions', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<Session, string>({
-        loadingKey: 'accountSessions',
-        getLoading,
-        setLoading
+        resourceKey: 'accountSessions',
+        queryClient
     });
 
     /**

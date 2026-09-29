@@ -15,7 +15,7 @@ export default {
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { copyToClipboard } from '@guebbit/js-toolkit';
 import { Copy } from 'lucide-vue-next';
 
@@ -81,7 +81,7 @@ const copySecret = () =>
     copyToClipboard(secret).then((succeeded) =>
         succeeded
             ? addMessage(t('generic.secret-reveal-copied'))
-            : addMessage(t('generic.secret-reveal-copy-failed'), IToastType.DANGER)
+            : addMessage(t('generic.secret-reveal-copy-failed'), EToastType.DANGER)
     );
 </script>
 

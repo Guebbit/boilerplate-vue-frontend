@@ -147,7 +147,7 @@ describe('useApiKeysStore', () => {
             const store = useApiKeysStore();
             // Seeded by hand rather than via search: the store's own cache, pre-populated the way
             // a prior list load would leave it.
-            store.apiKeys[API_KEY.id] = { ...API_KEY };
+            store.addApiKeyRecord({ ...API_KEY });
 
             return store.revokeCredential(API_KEY.id).then(() => {
                 expect(store.apiKeys[API_KEY.id]?.revokedAt).toEqual(expect.any(String));

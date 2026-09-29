@@ -205,8 +205,8 @@ describe('useProductsStore', () => {
                 }));
 
         /**
-         * `ProductCreate.vue` passes `onUploadProgress` through the second argument to drive its
-         * progress bar. `createProduct` had no `options` parameter until that view existed.
+         * `ProductCreate.vue` passes `onUploadProgress` through `createOne`'s `requestOptions` to
+         * drive its progress bar.
          */
         it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
@@ -214,7 +214,7 @@ describe('useProductsStore', () => {
             return useProductsStore()
                 .createProduct(
                     { price: 49.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
-                    { onUploadProgress }
+                    { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
                     expect(orvalMutator).toHaveBeenCalledWith(
@@ -345,7 +345,7 @@ describe('useProductsStore', () => {
 
         /**
          * The reason `orvalMutator` takes a second argument at all — `ProductEdit.vue` passes
-         * `onUploadProgress` through it to drive its progress bar.
+         * `onUploadProgress` through `updateOne`'s `requestOptions` to drive its progress bar.
          */
         it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
@@ -354,7 +354,7 @@ describe('useProductsStore', () => {
                 .updateProduct(
                     'p1',
                     { price: 9.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
-                    { onUploadProgress }
+                    { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
                     expect(orvalMutator).toHaveBeenCalledWith(
@@ -617,7 +617,7 @@ describe('useProductsStore', () => {
     });
 
     /*
-     * There is deliberately NO test for the five-minute `TTL`.
+     * There is deliberately NO test for the five-minute `staleTime`.
      *
      * It is one number handed to `useStructureCrudApi`, and the only way to observe it is to drive
      * the toolkit's cache: fetch twice and count requests, or move the clock and count again. Both

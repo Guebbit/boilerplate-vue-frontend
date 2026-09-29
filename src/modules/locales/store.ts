@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     getLocales,
     getLocaleDictionary,
@@ -40,7 +40,7 @@ import type {
 import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
 import { localeTenant } from '@/infrastructure/locale-overrides.ts';
-import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
+import { queryClient as sharedQueryClient } from '@/infrastructure/query-client.ts';
 
 /**
  * Search criteria for one language's entries.
@@ -111,29 +111,22 @@ const fetchBundledDictionary = (tag: string): Promise<Record<string, string>> =>
  */
 export const useLocalesStore = defineStore('locales', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
-     * The toolkit's CRUD slice for locale entries, with the local-only `pageTotal` renamed out
-     * of the way — see the comment inside.
+     * The toolkit's CRUD slice for locale entries. `queryClient`/`resourceKey` back
+     * {@link invalidateEntrySearches} — the entries cache holds every language visited this
+     * session, so a search page (unlike a record) is never patched locally, only invalidated.
      */
     const {
         filters,
         loading,
         pageCurrent,
         pageSize,
-        // Local-only: counts whatever this store already holds, wrong for a server-paginated
-        // search — the cache holds every language visited this session, so after browsing
-        // Spanish, a two-row French search reported two pages, the second of them empty.
-        // Shadowed below by useServerPageTotal's, built from the response's own count.
-        pageTotal: _localOnlyPageTotal,
+        pageTotal: entriesPageTotal,
         pageItemList,
         watchList: watchSearchEntries,
         addRecord,
         deleteTarget,
-        resetSearches,
+        queryClient,
+        resourceKey,
         fetchAny
     } = useStructureCrudApi<LocaleEntry, string, LocaleEntriesFilters>(
         {
@@ -143,20 +136,28 @@ export const useLocalesStore = defineStore('locales', () => {
                     pageSize: size,
                     text: searchFilters.text,
                     tenant: searchFilters.tenant
-                }).then((response) => {
-                    captureEntriesTotal(response.data.meta.totalPages);
-                    return response.data.items;
-                })
+                }).then((response) => ({
+                    items: response.data.items,
+                    totalItems: response.data.meta.totalItems
+                }))
         },
-        { loadingKey: 'locales', getLoading, setLoading }
+        { resourceKey: 'locales', queryClient: sharedQueryClient }
     );
 
     /**
-     * Pages in the CURRENT search, as the server counted them (`useServerPageTotal`) —
-     * `captureEntriesTotal` is called from `search:` above, once its response's
-     * `meta.totalPages` is in.
+     * Marks every cached search page stale, so an active {@link watchSearchEntries} refetches and
+     * anything else re-asks the server next time it's read.
+     *
+     * `addRecord`/bulk imports write straight into the cache rather than through `createTarget`
+     * (there is no matching CRUD `create`), so they skip the automatic list invalidation a real
+     * mutation gets — this is that invalidation, done by hand.
+     *
+     * TanStack: {@link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientinvalidatequeries}
+     * `invalidateQueries` matches by key PREFIX, so `[resourceKey, 'search']` reaches every search
+     * page of every language without touching the manifest's own `fetchAny` cache entries.
      */
-    const { pageTotal: entriesPageTotal, captureTotal: captureEntriesTotal } = useServerPageTotal();
+    const invalidateEntrySearches = () =>
+        queryClient.invalidateQueries({ queryKey: [resourceKey, 'search'] });
 
     /**
      * The manifest: every language, both tiers merged, as last fetched.
@@ -289,7 +290,7 @@ export const useLocalesStore = defineStore('locales', () => {
             createLocaleEntry(tag, body).then((response) => {
                 addRecord(response.data);
                 // The new row's page position is the server's call, so cached pages are stale.
-                resetSearches();
+                void invalidateEntrySearches();
                 return response.data;
             })
         );
@@ -345,7 +346,7 @@ export const useLocalesStore = defineStore('locales', () => {
                 : mergeLocaleEntries(tag, { tenant, entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
-                resetSearches();
+                void invalidateEntrySearches();
                 return response.data;
             })
         );

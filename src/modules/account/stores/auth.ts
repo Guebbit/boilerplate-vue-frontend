@@ -6,9 +6,10 @@
  */
 import { computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
@@ -59,18 +60,12 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const session = useSessionStore();
 
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
+     * The toolkit's REST slice for this store: `isLoading` backs {@link reauthing}, and every
+     * action below goes through `fetchAny`.
      */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
-     * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
-     * every action below goes through.
-     */
-    const { loadingKey, fetchAny } = useStructureRestApi({
-        loadingKey: 'accountAuth',
-        getLoading,
-        setLoading
+    const { isLoading, fetchAny } = useStructureRestApi({
+        resourceKey: 'accountAuth',
+        queryClient
     });
 
     /**
@@ -90,8 +85,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
      *  refusal (rung 3 only engages once the per-identity failure budget is mostly spent).
      * @returns A promise resolving with the {@link LoginOutcome}.
      * @throws {Error} If `fetchAny` ever resolves without a value. It can't for this call — that
-     *  only happens on its `lastUpdateKey` cache path, and this call passes none — but if it ever
-     *  did, failing loudly beats a caller silently treating a missing outcome as `'session'`.
+     *  only happens on its cached (`key`) path, and this call passes none — but if it ever did,
+     *  failing loudly beats a caller silently treating a missing outcome as `'session'`.
      */
     const login = (
         email: string,
@@ -145,14 +140,14 @@ export const useAuthStore = defineStore('accountAuth', () => {
                 apiReauth({ password }).then((data) => {
                     session.setAccessToken(getTokenFromResponse(data));
                 }),
-            { loadingKey: ':reauth' }
+            { key: ['reauth'] }
         );
 
     /**
      * Whether a re-proof is in flight — the step-up dialog's own spinner, so it does not answer
      * to a login or a signup running behind it.
      */
-    const reauthing = computed(() => getLoading(`${loadingKey}:reauth`));
+    const reauthing = computed(() => isLoading(['reauth']));
 
     /**
      * `Idempotency-Key` for `signup` (B10) — a network error or a 5xx during the round trip

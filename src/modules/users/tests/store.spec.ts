@@ -89,7 +89,8 @@ const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).
 
 /**
  * Number of GET requests sent so far — used to prove `adminDisableTwoFactor` bypasses the
- * toolkit's target cache (`TTL`, one hour) instead of handing back a stale, still-enabled record.
+ * toolkit's target cache (`staleTime`, one hour) instead of handing back a stale, still-enabled
+ * record.
  */
 const getRequestCount = () =>
     vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.method === 'GET').length;
@@ -258,7 +259,7 @@ describe('useUsersStore', () => {
 
         /**
          * The reason `orvalMutator` takes a second argument at all — `UserEdit.vue` passes
-         * `onUploadProgress` through it to drive its progress bar.
+         * `onUploadProgress` through `updateOne`'s `requestOptions` to drive its progress bar.
          */
         it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
@@ -267,7 +268,7 @@ describe('useUsersStore', () => {
                 .updateUser(
                     'u1',
                     { username: 'ada2', imageUpload: new Blob(['x']) },
-                    { onUploadProgress }
+                    { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
                     expect(orvalMutator).toHaveBeenCalledWith(
