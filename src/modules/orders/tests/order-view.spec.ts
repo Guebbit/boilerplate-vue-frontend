@@ -70,7 +70,8 @@ const mountOrder = (order: OrderType) => {
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
                 PaymentPanel: true,
-                ShipmentPanel: true
+                ShipmentPanel: true,
+                WithdrawalPanel: true
             }
         }
     });
@@ -98,6 +99,9 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     shippingNetAmount: 0,
     shippingTaxAmount: 0,
     taxSummary: [],
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'unfulfilled',
+    returnStatus: 'none',
     actions: {
         transitions: [],
         cancel: false,
@@ -107,7 +111,8 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         deliver: false,
         fulfill: false,
         override: [],
-        invoice: false
+        invoice: false,
+        withdraw: false
     }
 };
 
@@ -139,7 +144,8 @@ describe('the invoice buttons', () => {
                 deliver: false,
                 fulfill: false,
                 override: [],
-                invoice: true
+                invoice: true,
+                withdraw: false
             }
         });
 
@@ -315,5 +321,89 @@ describe('the reorder button (FA39)', () => {
                 release?.(new Error('network down'));
                 return nextRenderTick(wrapper);
             });
+    });
+});
+
+describe('the three statuses beside the order status', () => {
+    it('shows the payment and fulfilment state, and no return chip while none is open', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.get('[data-test=order-payment-status]').text()).toBe('Unpaid');
+        expect(wrapper.get('[data-test=order-fulfillment-status]').text()).toBe('Not started');
+        expect(wrapper.find('[data-test=order-return-status]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('shows a partial refund and a return in progress as the server reports them', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [lineWith(null)],
+            paymentStatus: 'partially_refunded',
+            fulfillmentStatus: 'fulfilled',
+            returnStatus: 'partially_returned'
+        });
+
+        expect(wrapper.get('[data-test=order-payment-status]').text()).toBe('Partially refunded');
+        expect(wrapper.get('[data-test=order-fulfillment-status]').text()).toBe('Delivered');
+        expect(wrapper.get('[data-test=order-return-status]').text()).toBe('Partly returned');
+
+        wrapper.unmount();
+    });
+});
+
+describe('the withdrawal panel', () => {
+    it('is handed what the server said about the button, never a computed deadline', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [lineWith(null)],
+            actions: {
+                ...BASE_ORDER.actions!,
+                withdraw: true,
+                withdrawUntil: '2026-10-01T10:00:00Z'
+            }
+        });
+
+        expect(wrapper.findComponent({ name: 'WithdrawalPanel' }).props()).toMatchObject({
+            orderId: 'o1',
+            canWithdraw: true,
+            withdrawUntil: '2026-10-01T10:00:00Z'
+        });
+
+        wrapper.unmount();
+    });
+});
+
+describe('goods with no right of withdrawal', () => {
+    it('are marked on their line', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [
+                {
+                    ...lineWith(null),
+                    product: {
+                        id: 'p1',
+                        title: 'Engraved mug',
+                        price: 9.99,
+                        taxRate: 0,
+                        noWithdrawal: true
+                    }
+                }
+            ]
+        });
+
+        expect(wrapper.get('[data-test=order-item-no-withdrawal]').text()).toContain(
+            'No right of withdrawal'
+        );
+
+        wrapper.unmount();
+    });
+
+    it('carry no note on an ordinary line', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-item-no-withdrawal]').exists()).toBe(false);
+
+        wrapper.unmount();
     });
 });

@@ -71,6 +71,7 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     orders: { counterparts: ['orders'] },
     payments: { counterparts: ['payments'] },
     products: { counterparts: ['products'] },
+    returns: { counterparts: ['returns'] },
     users: { counterparts: ['users'] },
     webhooks: { counterparts: ['webhooks'] },
     wishlist: { counterparts: ['wishlist'] }

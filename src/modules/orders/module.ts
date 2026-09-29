@@ -19,7 +19,9 @@ import routes from './routes';
  * without this module ever touching a shipment or a provider. `OrderEdit.vue` mounts
  * `RecordOfflinePaymentForm` and `OrdersList.vue` mounts `OrderReferenceSearch` on the same terms:
  * the RF-reference lookup and the 404 it has to read are the component's own business, on
- * `payments`' side of the barrel, so this module gains no edge to that endpoint.
+ * `payments`' side of the barrel, so this module gains no edge to that endpoint. The withdrawal
+ * button is the same shape again: `Order.vue` mounts `returns`' `WithdrawalPanel`, which owns the
+ * confirmation and the order's returns list, so `orders` never calls a returns operation itself.
  *
  * The customer’s history and the admin status screens. Where the shop’s outcome becomes
  * visible — but the invariants that decide a status live behind the API, not here.

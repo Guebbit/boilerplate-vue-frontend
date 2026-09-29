@@ -2,22 +2,22 @@
 
 ::: tip At a glance
 **Owns** — a customer's order history, the detail screen, and the admin status edit.
-**Depends on** — three modules, and two of those are components it mounts rather than state it reads.
+**Depends on** — four modules, and three of those are components it mounts rather than state it reads.
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
-| Fact                    | This module                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.        |
-| **Screens**             | 3 — `OrdersList` · `OrderTarget` · `OrderEdit`                                  |
-| **Store**               | `orders`                                                                        |
-| **Menu entries**        | `OrdersList`                                                                    |
-| **API calls**           | 11                                                                              |
-| **Depends on**          | [`cart`](./cart.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) |
-| **Depended on by**      | _nothing_                                                                       |
-| **Languages**           | `en` · `it`                                                                     |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                              |
-| **Backend counterpart** | `orders` in `boilerplate-node-backend`                                          |
+| Fact                    | This module                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                    |
+| **Screens**             | 3 — `OrdersList` · `OrderTarget` · `OrderEdit`                                                              |
+| **Store**               | `orders`                                                                                                    |
+| **Menu entries**        | `OrdersList`                                                                                                |
+| **API calls**           | 11                                                                                                          |
+| **Depends on**          | [`cart`](./cart.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`returns`](./returns.md) |
+| **Depended on by**      | _nothing_                                                                                                   |
+| **Languages**           | `en` · `it`                                                                                                 |
+| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                          |
+| **Backend counterpart** | `orders` in `boilerplate-node-backend`                                                                      |
 
 ## The map
 
@@ -66,6 +66,15 @@ Reads are scoped: a customer sees only their own orders, an admin reaches all of
 write screens. That scoping is enforced server-side — this client renders whatever the endpoint
 answers, which is what [Domain layer](../theory/domain-layer.md) means by the domain living behind
 the API.
+
+## The statuses beside `status`, and the withdrawal button
+
+The detail page shows three read-only words next to the order's own status, each straight from the
+server: `paymentStatus` (`unpaid` · `paid` · `partially_refunded` · `refunded`), `fulfillmentStatus`
+and `returnStatus`. None is derived here. The withdrawal control is [`returns`](./returns.md)'
+`WithdrawalPanel`, handed `actions.withdraw` and `actions.withdrawUntil` untouched; a line whose
+product carries `noWithdrawal` says so on the page. The operator's "Refund payment" button takes an
+optional amount for a partial refund — empty still means everything still refundable.
 
 ## State
 

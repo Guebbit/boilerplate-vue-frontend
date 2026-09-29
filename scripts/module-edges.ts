@@ -24,7 +24,7 @@ export const MODULE_EDGES: Record<string, string[]> = {
     cart: ['delivery', 'payments', 'account', 'products'],
     inventory: ['products'],
     observability: ['account', 'audit-logs'],
-    orders: ['cart', 'delivery', 'payments', 'invoicing'],
+    orders: ['cart', 'delivery', 'payments', 'invoicing', 'returns'],
     products: ['cart', 'wishlist', 'locales'],
     wishlist: ['cart']
 };

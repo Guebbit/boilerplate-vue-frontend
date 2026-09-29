@@ -11,31 +11,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import * as schemas from '@api/schemas';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
 /**
  * Fixture order returned by the mocked override endpoint.
  */
-const ORDER = {
-    id: 'o1',
-    userId: 'u1',
-    email: 'ada@example.com',
-    items: [],
-    totalItems: 0,
-    totalQuantity: 0,
-    totalPrice: 0,
-    netTotal: 0,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
-    taxSummary: [],
-    status: 'shipped'
-};
+const ORDER = anOrder({ status: 'shipped' });
 
 /**
  * Canned response bodies keyed by `METHOD url`, read by the `orvalMutator` mock.
@@ -68,7 +57,10 @@ describe('overrideStatus', () => {
     it('sends the target status and reason in the body', () => {
         const store = useOrdersStore();
         return store.overrideStatus('o1', 'shipped', 'carrier scan never arrived').then(() => {
-            expect(sent[0]?.data).toEqual({ to: 'shipped', reason: 'carrier scan never arrived' });
+            expect(contractRequest(schemas.OverrideOrderStatusBody, sent[0]?.data)).toEqual({
+                to: 'shipped',
+                reason: 'carrier scan never arrived'
+            });
         });
     });
 

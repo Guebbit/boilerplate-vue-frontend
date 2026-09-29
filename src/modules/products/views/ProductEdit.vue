@@ -147,6 +147,7 @@ interface ProductEditForm {
     price?: number;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     weight?: number;
     // `null` clears the class back to the shop's standard rate — always sent on submit, unlike
     // `translations`, which is the one field this PATCH merges instead of replacing.
@@ -202,6 +203,7 @@ activateAutoHydrate(
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
+                  noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
                   taxClass: adminProduct.value.taxClass ?? null,
                   // Fresh arrays too, same reason as `translations` below: a chip added then
@@ -365,6 +367,7 @@ const submitForm = () => {
             price,
             active,
             requiresShipping,
+            noWithdrawal,
             weight,
             taxClass,
             categories,
@@ -379,6 +382,7 @@ const submitForm = () => {
             price,
             active,
             requiresShipping,
+            noWithdrawal,
             weight,
             taxClass,
             categories,
@@ -574,6 +578,13 @@ const submitForm = () => {
                         v-model="form.requiresShipping"
                         :label="t('product-edit-page.label-requires-shipping')"
                         data-test="product-requires-shipping-field"
+                    />
+                    <v-switch
+                        v-model="form.noWithdrawal"
+                        :label="t('product-edit-page.label-no-withdrawal')"
+                        :hint="t('product-edit-page.hint-no-withdrawal')"
+                        persistent-hint
+                        data-test="product-no-withdrawal-field"
                     />
                     <FormImageUpload
                         v-model="form.imageUpload"

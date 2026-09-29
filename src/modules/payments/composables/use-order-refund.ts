@@ -58,12 +58,13 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         /**
          * Returns the money without touching the order's status.
          *
+         * @param amount - A partial refund; absent returns everything still refundable.
          * @returns A promise resolving once the refreshed payment has replaced the cached one,
          *  which is what withdraws `canRefund`.
          */
-        refund: () =>
+        refund: (amount?: number) =>
             orderId.value
-                ? paymentsStore.refundForOrder(orderId.value).then(() => undefined)
+                ? paymentsStore.refundForOrder(orderId.value, amount).then(() => undefined)
                 : Promise.resolve(),
         /**
          * Re-reads the payment against the current order id, forced past the cache.

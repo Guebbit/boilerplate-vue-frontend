@@ -25,7 +25,8 @@ const NO_MOVES: OrderActions = {
     deliver: false,
     fulfill: false,
     override: [],
-    invoice: false
+    invoice: false,
+    withdraw: false
 };
 
 /** A live order with a move available. */

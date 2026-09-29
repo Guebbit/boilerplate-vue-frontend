@@ -1,0 +1,61 @@
+{
+    "navigation": {
+        "label-returns": "Resi"
+    },
+    "returns-form": {
+        "status-requested": "Richiesto",
+        "status-approved": "Approvato",
+        "status-declined": "Rifiutato",
+        "status-received": "Ricevuto",
+        "status-closed": "Chiuso",
+        "reason-withdrawal": "Recesso",
+        "reason-defective": "Merce difettosa",
+        "reason-wrong_item": "Articolo sbagliato",
+        "reason-other": "Altro"
+    },
+    "returns-list-page": {
+        "page-title": "Resi",
+        "empty": "Ancora nessun reso",
+        "empty-search": "Nessun reso corrisponde alla ricerca",
+        "filter-status": "Stato",
+        "filter-status-any": "Qualsiasi stato",
+        "filter-reason": "Motivo",
+        "filter-reason-any": "Qualsiasi motivo",
+        "button-open": "Apri"
+    },
+    "return-target-page": {
+        "page-title": "Dettagli del reso",
+        "label-status": "Stato",
+        "label-postage": "Spese di spedizione del reso",
+        "postage-consumer": "A tuo carico",
+        "postage-shop": "A carico del negozio",
+        "label-created": "Aperto il",
+        "label-received": "Merce ricevuta il",
+        "label-refund": "Rimborso",
+        "label-deduction": "Trattenuto per la gestione",
+        "label-decline-reason": "Perché è stato rifiutato",
+        "label-lines": "Cosa torna indietro",
+        "button-order": "Vai all'ordine",
+        "button-list": "Torna ai resi"
+    },
+    "return-staff-actions": {
+        "button-approve": "Approva il reso",
+        "button-decline": "Rifiuta il reso",
+        "button-receive": "Merce ricevuta",
+        "label-reason": "Motivo comunicato al cliente",
+        "label-deduction": "Danno di gestione da trattenere ({currency}, facoltativo)",
+        "error-reason-required": "Il motivo è obbligatorio",
+        "error-deduction-invalid": "Inserisci zero o un importo positivo",
+        "success-approve": "Reso approvato.",
+        "success-decline": "Reso rifiutato.",
+        "success-receive": "Merce ricevuta e cliente rimborsato."
+    },
+    "withdrawal-panel": {
+        "title": "Diritto di recesso",
+        "until": "Puoi recedere da questo contratto fino al {date}.",
+        "until-delivery": "Puoi recedere da questo contratto. Il periodo di recesso inizia alla consegna della merce.",
+        "button": "Recedi dal contratto qui",
+        "confirm": "Recedere dall'ordine {id}? Riceverai una conferma scritta con data e ora.",
+        "success": "Recesso ricevuto. Una conferma sta arrivando alla tua email."
+    }
+}

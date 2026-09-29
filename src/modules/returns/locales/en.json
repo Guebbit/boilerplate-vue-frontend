@@ -1,0 +1,61 @@
+{
+    "navigation": {
+        "label-returns": "Returns"
+    },
+    "returns-form": {
+        "status-requested": "Requested",
+        "status-approved": "Approved",
+        "status-declined": "Declined",
+        "status-received": "Received",
+        "status-closed": "Closed",
+        "reason-withdrawal": "Withdrawal",
+        "reason-defective": "Defective goods",
+        "reason-wrong_item": "Wrong item",
+        "reason-other": "Other"
+    },
+    "returns-list-page": {
+        "page-title": "Returns",
+        "empty": "No returns yet",
+        "empty-search": "No returns match this search",
+        "filter-status": "Status",
+        "filter-status-any": "Any status",
+        "filter-reason": "Reason",
+        "filter-reason-any": "Any reason",
+        "button-open": "Open"
+    },
+    "return-target-page": {
+        "page-title": "Return details",
+        "label-status": "Status",
+        "label-postage": "Return postage",
+        "postage-consumer": "Paid by you",
+        "postage-shop": "Paid by the shop",
+        "label-created": "Opened",
+        "label-received": "Goods received",
+        "label-refund": "Refund",
+        "label-deduction": "Kept back for handling",
+        "label-decline-reason": "Why it was declined",
+        "label-lines": "What comes back",
+        "button-order": "Go to the order",
+        "button-list": "Back to returns"
+    },
+    "return-staff-actions": {
+        "button-approve": "Approve return",
+        "button-decline": "Decline return",
+        "button-receive": "Goods received",
+        "label-reason": "Reason the customer is told",
+        "label-deduction": "Handling damage to keep back ({currency}, optional)",
+        "error-reason-required": "A reason is required",
+        "error-deduction-invalid": "Enter zero or a positive amount",
+        "success-approve": "Return approved.",
+        "success-decline": "Return declined.",
+        "success-receive": "Goods received and the customer paid back."
+    },
+    "withdrawal-panel": {
+        "title": "Right of withdrawal",
+        "until": "You may withdraw from this contract until {date}.",
+        "until-delivery": "You may withdraw from this contract. The withdrawal period starts when the goods are delivered.",
+        "button": "Withdraw from contract here",
+        "confirm": "Withdraw from order {id}? You will receive a written confirmation with the date and time.",
+        "success": "Withdrawal received. A confirmation is on its way to your email."
+    }
+}

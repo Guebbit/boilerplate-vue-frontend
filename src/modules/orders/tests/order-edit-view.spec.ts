@@ -34,13 +34,14 @@ import type { Order, OrderActions } from '@types';
 wireModulesIntoCore();
 
 const refreshPayment = vi.fn(() => Promise.resolve());
+const refund = vi.fn((_amount?: number) => Promise.resolve());
 const mockCanRefund = ref(false);
 const mockRefundLoading = ref(false);
 
 vi.mock('@/modules/payments', () => ({
     useOrderRefund: () => ({
         canRefund: mockCanRefund,
-        refund: () => Promise.resolve(),
+        refund,
         refreshPayment,
         refundLoading: mockRefundLoading
     }),
@@ -85,6 +86,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     fulfill: false,
     override: [],
     invoice: false,
+    withdraw: false,
     ...overrides
 });
 
@@ -105,6 +107,9 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     shippingTaxAmount: 0,
     taxSummary: [],
     status: OrderStatus.pending,
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'unfulfilled',
+    returnStatus: 'none',
     ...overrides
 });
 
@@ -145,6 +150,7 @@ const mountFromListCache = (detailOrder: Order) => {
 beforeEach(() => {
     setActivePinia(createPinia());
     refreshPayment.mockClear();
+    refund.mockClear();
     mockCanRefund.value = false;
     mockRefundLoading.value = false;
     return loadLocale('en').then(() =>
@@ -228,6 +234,55 @@ describe('refunding', () => {
                 ).not.toBe(undefined);
             });
     });
+});
+
+/** An admin's order with an open refund, mounted and settled. */
+const mountRefundable = () => {
+    signInAsAdmin();
+    mockCanRefund.value = true;
+    const detail = anOrder({
+        status: OrderStatus.pending,
+        actions: anAction({ transitions: [], cancel: true, pay: false })
+    });
+    const { wrapper } = mountFromListCache(detail);
+    return nextTick()
+        .then(() => nextTick())
+        .then(() => wrapper);
+};
+
+describe('a partial refund', () => {
+    it('refunds everything when the amount is left empty', () =>
+        mountRefundable()
+            .then((wrapper) => wrapper.get('[data-test=button-refund-only]').trigger('click'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(refund).toHaveBeenCalledWith(undefined);
+            }));
+
+    it('refunds the typed amount', () =>
+        mountRefundable().then((wrapper) =>
+            wrapper
+                .get('[data-test=refund-amount] input')
+                .setValue('12.5')
+                .then(() => wrapper.get('[data-test=button-refund-only]').trigger('click'))
+                .then(() => nextTick())
+                .then(() => {
+                    expect(refund).toHaveBeenCalledWith(12.5);
+                })
+        ));
+
+    it('refuses an amount that is not a positive number', () =>
+        mountRefundable().then((wrapper) =>
+            wrapper
+                .get('[data-test=refund-amount] input')
+                .setValue('-3')
+                .then(() => nextTick())
+                .then(() => {
+                    expect(
+                        wrapper.get('[data-test=button-refund-only]').attributes('disabled')
+                    ).not.toBe(undefined);
+                })
+        ));
 });
 
 describe('cancelling', () => {

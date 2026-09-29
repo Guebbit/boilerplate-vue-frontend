@@ -212,14 +212,39 @@ const runCancel = (withRefund: boolean) => {
 };
 
 /**
- * Returns the money without touching the order's status.
+ * The partial-refund field's raw text. Empty means "everything still refundable"; a number is a
+ * goodwill amount in the payment's own currency.
+ */
+const refundAmountText = ref('');
+
+/**
+ * The partial amount typed, or `undefined` for a full refund; `NaN` marks text that is not a
+ * positive number so the field can say so instead of sending it.
+ */
+const refundAmount = computed(() => {
+    const text = refundAmountText.value.trim();
+    if (text === '') return undefined;
+    const amount = Number(text);
+    return amount > 0 ? amount : Number.NaN;
+});
+
+/**
+ * Whether the typed amount is unusable — blocks the refund button and shows the field's error.
+ */
+const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
+
+/**
+ * Returns the money without touching the order's status — all of it, or the typed part.
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
 const runRefund = () => {
     clearActionsError();
-    return refund()
-        .then(() => addMessage(t('order-edit-page.refund-done')))
+    return refund(refundAmount.value)
+        .then(() => {
+            refundAmountText.value = '';
+            return addMessage(t('order-edit-page.refund-done'));
+        })
         .catch((error: unknown) => reportActionsError(error));
 };
 
@@ -440,6 +465,21 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <h3 class="text-lg font-semibold">{{ t('order-edit-page.actions-title') }}</h3>
                     <p class="mt-1 mb-3 opacity-75">{{ t('order-edit-page.actions-hint') }}</p>
 
+                    <v-text-field
+                        v-model="refundAmountText"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        :label="t('order-edit-page.label-refund-amount')"
+                        :hint="t('order-edit-page.hint-refund-amount')"
+                        :error-messages="
+                            refundAmountInvalid ? [t('order-edit-page.error-refund-amount')] : []
+                        "
+                        persistent-hint
+                        class="mb-3 max-w-72"
+                        data-test="refund-amount"
+                    />
+
                     <div class="flex flex-wrap gap-2">
                         <v-btn
                             variant="tonal"
@@ -454,7 +494,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             variant="tonal"
                             color="warning"
                             data-test="button-refund-only"
-                            :disabled="!canRefund || loading || refundLoading"
+                            :disabled="
+                                !canRefund || loading || refundLoading || refundAmountInvalid
+                            "
                             @click="runRefund"
                         >
                             {{ t('order-edit-page.button-refund-only') }}

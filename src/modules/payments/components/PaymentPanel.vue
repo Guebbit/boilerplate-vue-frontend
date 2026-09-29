@@ -363,6 +363,18 @@ watch(
                 </template>
             </p>
             <p
+                v-if="payment.amountRefunded > 0 && payment.status !== 'refunded'"
+                class="mt-2 mb-0 text-sm"
+                data-test="payment-partially-refunded"
+            >
+                {{
+                    t('payments-panel.partially-refunded', {
+                        refunded: formatCurrency(payment.amountRefunded, payment.currency),
+                        total: formatCurrency(payment.amount, payment.currency)
+                    })
+                }}
+            </p>
+            <p
                 v-if="payment.refundedByHand"
                 class="mt-2 mb-0 text-sm"
                 data-test="payment-refunded-by-hand"

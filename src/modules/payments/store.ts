@@ -185,11 +185,17 @@ export const usePaymentsStore = defineStore('payments', () => {
      * greys the control out afterwards.
      *
      * @param orderId - The order whose payment is being returned.
+     * @param amount - A partial refund, a decimal in the payment's own currency. Absent returns
+     *  everything still refundable.
      * @returns A promise resolving with the refunded payment.
      */
-    const refundForOrder = (orderId: string) =>
+    const refundForOrder = (orderId: string, amount?: number) =>
         fetchAny(() =>
-            refundPaymentByOrder(orderId, refundIdempotencyKey.withKey())
+            refundPaymentByOrder(
+                orderId,
+                amount === undefined ? undefined : { amount },
+                refundIdempotencyKey.withKey()
+            )
                 .then((response) => {
                     refundIdempotencyKey.settle();
                     payment.value = response.data;

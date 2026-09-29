@@ -14,7 +14,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import * as schemas from '@api/schemas';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -29,7 +31,9 @@ const PAYMENT = {
     currency: 'EUR',
     status: 'requires_confirmation',
     provider: 'fake',
-    method: 'card'
+    method: 'card',
+    amountRefunded: 0,
+    refunds: []
 };
 
 let responses: Record<string, unknown>;
@@ -150,7 +154,9 @@ describe('payForOrder', () => {
                 .mock.calls.map((call) => call[0] as { url: string; data?: unknown })
                 .find(({ url }) => url.endsWith('/confirm'));
 
-            expect(confirm?.data).toEqual({ paymentMethodRef: 'pm_card_visa' });
+            expect(contractRequest(schemas.ConfirmPaymentBody, confirm?.data)).toEqual({
+                paymentMethodRef: 'pm_card_visa'
+            });
         });
     });
 
@@ -228,7 +234,10 @@ describe('recordOfflinePayment', () => {
                     .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
                     .find(({ url }) => url.endsWith('/offline'));
 
-                expect(call?.data).toEqual({ method: 'cash', reference: 'till-42' });
+                expect(contractRequest(schemas.RecordOfflinePaymentBody, call?.data)).toEqual({
+                    method: 'cash',
+                    reference: 'till-42'
+                });
                 expect(store.payment).toMatchObject({ provider: 'manual', method: 'cash' });
             });
     });
@@ -310,6 +319,45 @@ describe('findOrderByReference', () => {
             store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
         ).rejects.toMatchObject({
             status: 500
+        });
+    });
+});
+
+/** The refund call `orvalMutator` was last asked to make. */
+const refundCall = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
+        .find(({ url }) => url.endsWith('/refund'));
+
+describe('refundForOrder', () => {
+    it('sends no body for a full refund, so everything still refundable goes back', () => {
+        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'refunded',
+            amountRefunded: 50
+        });
+
+        return usePaymentsStore()
+            .refundForOrder('order-1')
+            .then(() => {
+                expect(refundCall()?.data).toBeUndefined();
+            });
+    });
+
+    it('sends the amount for a partial refund, and keeps the running total', () => {
+        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'succeeded',
+            amountRefunded: 12.5
+        });
+        const store = usePaymentsStore();
+
+        return store.refundForOrder('order-1', 12.5).then(() => {
+            expect(contractRequest(schemas.RefundPaymentByOrderBody, refundCall()?.data)).toEqual({
+                amount: 12.5
+            });
+            expect(store.payment?.amountRefunded).toBe(12.5);
         });
     });
 });

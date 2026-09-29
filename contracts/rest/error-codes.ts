@@ -82,7 +82,7 @@ export const ERROR_CODES = {
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
     NOT_FOUND: 'NOT_FOUND',
-    /** 404 — The order exists but no credit note has been issued for it yet. */
+    /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
@@ -114,10 +114,12 @@ export const ERROR_CODES = {
     PAYMENT_IN_FLIGHT: 'PAYMENT_IN_FLIGHT',
     /** 409 — The payment is not in a state this confirmation can apply to. */
     PAYMENT_NOT_CONFIRMABLE: 'PAYMENT_NOT_CONFIRMABLE',
-    /** 409 — The payment is not in a state that can still be refunded. */
+    /** 409 — The payment is not in a state that can still be refunded, or nothing of it is left to refund. */
     PAYMENT_NOT_REFUNDABLE: 'PAYMENT_NOT_REFUNDABLE',
     /** 409 — The order is not in a state that can still accept a payment. */
     PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
+    /** 422 — The refund asks for more than the payment still has left to give back. */
+    PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. */
@@ -126,6 +128,18 @@ export const ERROR_CODES = {
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
     /** 400 — A 4xx with no more specific code of its own. */
     REQUEST_ERROR: 'REQUEST_ERROR',
+    /** 422 — The handling deduction is more than the refund is worth. */
+    RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
+    /** 422 — A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return. */
+    RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
+    /** 409 — The return has already been decided. */
+    RETURN_NOT_DECIDABLE: 'RETURN_NOT_DECIDABLE',
+    /** 409 — The return is not an approved one awaiting its goods. */
+    RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
+    /** 409 — The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands. */
+    RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
+    /** 409 — The withdrawal period for this order has ended. */
+    RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */

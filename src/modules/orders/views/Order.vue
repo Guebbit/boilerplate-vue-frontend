@@ -36,7 +36,8 @@ import {
     Mail,
     MapPin,
     ShoppingCart,
-    Truck
+    Truck,
+    Undo2
 } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
@@ -55,6 +56,7 @@ import {
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel, TransferInstructionsPanel } from '@/modules/payments';
+import { WithdrawalPanel } from '@/modules/returns';
 import { ShipmentPanel } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -382,6 +384,37 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :icon="Euro"
                     />
                     <ItemDetailField
+                        :label="t('order-target-page.label-payment-status')"
+                        :icon="CreditCard"
+                    >
+                        <v-chip variant="tonal" data-test="order-payment-status">
+                            {{
+                                t(`order-target-page.payment-status-${currentOrder.paymentStatus}`)
+                            }}
+                        </v-chip>
+                    </ItemDetailField>
+                    <ItemDetailField
+                        :label="t('order-target-page.label-fulfillment-status')"
+                        :icon="Truck"
+                    >
+                        <v-chip variant="tonal" data-test="order-fulfillment-status">
+                            {{
+                                t(
+                                    `order-target-page.fulfillment-status-${currentOrder.fulfillmentStatus}`
+                                )
+                            }}
+                        </v-chip>
+                    </ItemDetailField>
+                    <ItemDetailField
+                        v-if="currentOrder.returnStatus !== 'none'"
+                        :label="t('order-target-page.label-return-status')"
+                        :icon="Undo2"
+                    >
+                        <v-chip variant="tonal" data-test="order-return-status">
+                            {{ t(`order-target-page.return-status-${currentOrder.returnStatus}`) }}
+                        </v-chip>
+                    </ItemDetailField>
+                    <ItemDetailField
                         :label="t('orders-list-page.filter-email')"
                         :value="formatText(currentOrder.email)"
                         :icon="Mail"
@@ -433,6 +466,13 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :can-deliver="currentOrder.actions?.deliver ?? false"
                         :override="currentOrder.actions?.override ?? []"
                         @moved="fetchOrder(currentOrder.id, { forced: true })"
+                    />
+                    <WithdrawalPanel
+                        v-if="currentOrder"
+                        :order-id="currentOrder.id"
+                        :can-withdraw="currentOrder.actions?.withdraw ?? false"
+                        :withdraw-until="currentOrder.actions?.withdrawUntil"
+                        @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
@@ -498,6 +538,13 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                                 × {{ item.quantity }}
                                             </v-chip>
                                         </div>
+                                        <p
+                                            v-if="item.product.noWithdrawal"
+                                            class="m-0 mb-2 text-sm opacity-75"
+                                            data-test="order-item-no-withdrawal"
+                                        >
+                                            {{ t('order-target-page.no-withdrawal') }}
+                                        </p>
                                         <div class="flex items-center justify-between gap-3">
                                             <p class="m-0 opacity-75">
                                                 {{ t('order-target-page.label-product-id') }}

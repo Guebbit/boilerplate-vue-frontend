@@ -27,7 +27,10 @@ const anOrder = (id: string): Order => ({
     shippingNetAmount: 0,
     shippingTaxAmount: 0,
     taxSummary: [],
-    status: 'pending'
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'unfulfilled',
+    returnStatus: 'none'
 });
 
 const mountSearch = () =>
