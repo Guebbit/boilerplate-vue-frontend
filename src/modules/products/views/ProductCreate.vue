@@ -37,6 +37,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
+import { toCreateTranslations } from '@/modules/products/composables/translations-body.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -247,7 +248,7 @@ const submitForm = () => {
                     onHand: form.value.onHand,
                     categories: form.value.categories,
                     tags: form.value.tags,
-                    translations: form.value.translations,
+                    translations: toCreateTranslations(form.value.translations),
                     imageUpload: form.value.imageUpload
                 },
                 { requestOptions: options }

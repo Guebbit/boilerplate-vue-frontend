@@ -282,12 +282,13 @@ export const useLocalesStore = defineStore('locales', () => {
      * rethrown untouched so the view can show it verbatim.
      *
      * @param tag - Which language.
-     * @param body - Tenant, key and value of the new row.
+     * @param tenant - Whose dictionary the row belongs to — a path segment, not a body field.
+     * @param body - Key and value of the new row.
      * @returns A promise resolving with the created entry.
      */
-    const addEntry = (tag: string, body: CreateLocaleEntryRequest) =>
+    const addEntry = (tag: string, tenant: string, body: CreateLocaleEntryRequest) =>
         fetchAny(() =>
-            createLocaleEntry(tag, body).then((response) => {
+            createLocaleEntry(tag, tenant, body).then((response) => {
                 addRecord(response.data);
                 // The new row's page position is the server's call, so cached pages are stale.
                 void invalidateEntrySearches();
@@ -342,8 +343,8 @@ export const useLocalesStore = defineStore('locales', () => {
     ): Promise<LocaleImportResult | undefined> =>
         fetchAny(() =>
             (mode === 'replace'
-                ? replaceLocaleEntries(tag, { tenant, entries })
-                : mergeLocaleEntries(tag, { tenant, entries })
+                ? replaceLocaleEntries(tag, tenant, { entries })
+                : mergeLocaleEntries(tag, tenant, { entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
                 void invalidateEntrySearches();

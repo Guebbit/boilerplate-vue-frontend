@@ -1016,11 +1016,10 @@ export interface LocaleEntryInput {
 }
 
 /**
- * The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
- * The tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
+ * The COMPLETE set of entries for this language IN THE TENANT the URI names. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
+ * The tenant is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
-    tenant: LocaleTenant;
     entries: LocaleEntryInput[];
 }
 
@@ -1046,7 +1045,6 @@ export interface LocaleImportResultEnvelope {
 }
 
 export interface CreateLocaleEntryRequest {
-    tenant: LocaleTenant;
     /** @minLength 1 */
     key: string;
     value: string;
@@ -1060,10 +1058,9 @@ export interface LocaleEntryEnvelope {
 }
 
 /**
- * Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.
+ * Entries to upsert into the tenant the URI names. Anything already stored is left exactly as it was.
  */
 export interface MergeLocaleEntriesRequest {
-    tenant: LocaleTenant;
     /** @minItems 1 */
     entries: LocaleEntryInput[];
 }
@@ -1131,7 +1128,7 @@ export interface EntityTranslationsEnvelope {
 }
 
 /**
- * Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates.
+ * The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale.
  */
 export type UpsertTranslationRequestFields = { [key: string]: string };
 
@@ -1139,16 +1136,37 @@ export type UpsertTranslationRequestFields = { [key: string]: string };
  * One locale's words for one entity. `origin` defaults to `human` — the door this write shape is exposed on is the `translator`'s, and a machine-produced draft is the exception, not the rule.
  */
 export interface UpsertTranslationRequest {
-    /** Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. */
+    /** The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale. */
     fields: UpsertTranslationRequestFields;
     origin?: TranslationOrigin;
 }
 
 /**
- * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean for the verb in use.
+ * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
  */
 export interface UpsertTranslationsRequest {
     [key: string]: UpsertTranslationRequest | null;
+}
+
+/**
+ * Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time.
+ */
+export type MergeTranslationRequestFields = { [key: string]: string | null };
+
+/**
+ * One locale's changes for one entity. `origin` defaults to `human`, as it does on `PUT`.
+ */
+export interface MergeTranslationRequest {
+    /** Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time. */
+    fields: MergeTranslationRequestFields;
+    origin?: TranslationOrigin;
+}
+
+/**
+ * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
+ */
+export interface MergeTranslationsRequest {
+    [key: string]: MergeTranslationRequest | null;
 }
 
 /**
@@ -1584,7 +1602,8 @@ export interface ReplaceAccountRequest {
     email: Email;
     /** @minLength 3 */
     username: string;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
@@ -1596,14 +1615,15 @@ export interface ReplaceAccountRequest {
      * @nullable
      */
     website?: string | null;
-    analyticsConsent?: boolean;
+    analyticsConsent: boolean;
 }
 
 export interface ReplaceAccountRequestMultipart {
     email: Email;
     /** @minLength 3 */
     username: string;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /** Optional user profile image */
     imageUpload?: Blob;
     /**
@@ -1616,14 +1636,15 @@ export interface ReplaceAccountRequestMultipart {
      * @nullable
      */
     website?: string | null;
-    analyticsConsent?: boolean;
+    analyticsConsent: boolean;
 }
 
 export interface UpdateAccountRequest {
     email?: Email;
     /** @minLength 3 */
     username?: string;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
@@ -1642,7 +1663,8 @@ export interface UpdateAccountRequestMultipart {
     email?: Email;
     /** @minLength 3 */
     username?: string;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /** Optional user profile image */
     imageUpload?: Blob;
     /**
@@ -1749,6 +1771,7 @@ export interface AddressesEnvelope {
 }
 
 export interface AddressInput {
+    /** @minLength 1 */
     label?: string;
     /** @minLength 1 */
     fullName: string;
@@ -1759,8 +1782,16 @@ export interface AddressInput {
     /** @minLength 1 */
     zip: string;
     country: CountryCode;
+    /** @minLength 1 */
     phone?: string;
     default?: boolean;
+}
+
+export interface AddressEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Address;
 }
 
 export interface ReplaceAddressRequest {
@@ -1783,7 +1814,6 @@ export interface ReplaceAddressRequest {
      * @nullable
      */
     phone?: string | null;
-    default?: boolean;
 }
 
 export interface UpdateAddressRequest {
@@ -1806,7 +1836,6 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     phone?: string | null;
-    default?: boolean;
 }
 
 export interface EmailVerificationRequested {
@@ -1822,12 +1851,18 @@ export interface EmailVerificationRequestedEnvelope {
 }
 
 export interface VerifyEmailConfirmRequest {
-    /** One-time email verification token (NOT a JWT). */
+    /**
+     * One-time email verification token (NOT a JWT).
+     * @minLength 1
+     */
     token: string;
 }
 
 export interface AccountDeleteConfirmRequest {
-    /** One-time account deletion token (NOT a JWT). */
+    /**
+     * One-time account deletion token (NOT a JWT).
+     * @minLength 1
+     */
     token: string;
 }
 
@@ -1906,7 +1941,10 @@ export interface PasswordResetRequest {
 }
 
 export interface PasswordResetConfirmRequest {
-    /** One-time password reset token (NOT a JWT). */
+    /**
+     * One-time password reset token (NOT a JWT).
+     * @minLength 1
+     */
     token: string;
     password: PasswordNew;
     passwordConfirm: Password;
@@ -1929,14 +1967,20 @@ export interface RefreshTokenEnvelope {
 }
 
 export interface LoginTwoFactorRequest {
-    /** The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead. */
+    /**
+     * The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
+     * @minLength 1
+     */
     challenge?: string;
     /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
     code: string;
 }
 
 export interface TwoFactorSendRequest {
-    /** The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge. */
+    /**
+     * The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
+     * @minLength 1
+     */
     challenge?: string;
     /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
     method: string;
@@ -2068,9 +2112,11 @@ export interface UsersResponseEnvelope {
 
 export interface CreateUserRequest {
     email: Email;
+    /** @minLength 3 */
     username: string;
     password?: PasswordNew;
     sendSetupEmail?: boolean;
+    /** @minLength 1 */
     role?: string;
     active?: boolean;
     imageUrl?: ImageRemoval | null;
@@ -2079,9 +2125,11 @@ export interface CreateUserRequest {
 
 export interface CreateUserRequestMultipart {
     email: Email;
+    /** @minLength 3 */
     username: string;
     password?: PasswordNew;
     sendSetupEmail?: boolean;
+    /** @minLength 1 */
     role?: string;
     active?: boolean;
     /** Optional user profile image */
@@ -2097,12 +2145,14 @@ export interface DeleteUserRequest {
 export interface ReplaceUserByIdRequest {
     email: Email;
     password?: PasswordNew;
-    /** @minLength 1 */
+    /** @minLength 3 */
     username: string;
+    /** @minLength 1 */
     role: string;
     active: boolean;
     imageUrl?: ImageRemoval | null;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /**
      * @minLength 1
      * @nullable
@@ -2118,13 +2168,15 @@ export interface ReplaceUserByIdRequest {
 export interface ReplaceUserByIdRequestMultipart {
     email: Email;
     password?: PasswordNew;
-    /** @minLength 1 */
+    /** @minLength 3 */
     username: string;
+    /** @minLength 1 */
     role: string;
     active: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /**
      * @minLength 1
      * @nullable
@@ -2140,12 +2192,14 @@ export interface ReplaceUserByIdRequestMultipart {
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: PasswordNew;
-    /** @minLength 1 */
+    /** @minLength 3 */
     username?: string;
+    /** @minLength 1 */
     role?: string;
     active?: boolean;
     imageUrl?: ImageRemoval | null;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /**
      * @minLength 1
      * @nullable
@@ -2161,13 +2215,15 @@ export interface UpdateUserByIdRequest {
 export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: PasswordNew;
-    /** @minLength 1 */
+    /** @minLength 3 */
     username?: string;
+    /** @minLength 1 */
     role?: string;
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
-    locale?: Locale | null;
+    /** @nullable */
+    locale?: string | null;
     /**
      * @minLength 1
      * @nullable
@@ -2196,7 +2252,10 @@ export interface SearchUsersRequest {
 }
 
 export interface CreateFeedbackRequest {
-    /** @maxLength 120 */
+    /**
+     * @minLength 1
+     * @maxLength 120
+     */
     name?: string;
     email: Email;
     /** @maxLength 200 */
@@ -2264,6 +2323,7 @@ export interface ReplaceFeedbackRequestStatusRequest {
     status: FeedbackRequestStatus;
     /**
      * @minLength 1
+     * @maxLength 5000
      * @nullable
      */
     adminNotes?: string | null;
@@ -2273,6 +2333,7 @@ export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
     /**
      * @minLength 1
+     * @maxLength 5000
      * @nullable
      */
     adminNotes?: string | null;
@@ -2290,16 +2351,17 @@ export interface ProductsResponseEnvelope {
     data: ProductsResponse;
 }
 
-export interface ProductTranslationFields {
+export interface ProductTranslationFieldsWrite {
     title: string;
+    /** @minLength 1 */
     description?: string;
 }
 
 /**
- * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.
+ * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`.
  */
 export interface ProductTranslationsWrite {
-    [key: string]: ProductTranslationFields | null;
+    [key: string]: ProductTranslationFieldsWrite | null;
 }
 
 export interface CreateProductRequest {
@@ -2322,7 +2384,9 @@ export interface CreateProductRequest {
      */
     weight?: number;
     imageUrl?: ImageRemoval | null;
+    /** @items.minLength 1 */
     categories?: string[];
+    /** @items.minLength 1 */
     tags?: string[];
 }
 
@@ -2348,7 +2412,9 @@ export interface CreateProductRequestMultipart {
     weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
+    /** @items.minLength 1 */
     categories?: string[];
+    /** @items.minLength 1 */
     tags?: string[];
 }
 
@@ -2389,9 +2455,12 @@ export interface ReplaceProductRequest {
      * @minimum 0
      */
     price: number;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
+    /** @nullable */
+    taxClass?: string | null;
+    /** @nullable */
+    rateType?: string | null;
+    /** @nullable */
+    sku?: string | null;
     active: boolean;
     requiresShipping: boolean;
     /**
@@ -2401,7 +2470,9 @@ export interface ReplaceProductRequest {
      */
     weight?: number | null;
     imageUrl?: ImageRemoval | null;
+    /** @items.minLength 1 */
     categories: string[];
+    /** @items.minLength 1 */
     tags: string[];
 }
 
@@ -2413,9 +2484,12 @@ export interface ReplaceProductRequestMultipart {
      * @minimum 0
      */
     price: number;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
+    /** @nullable */
+    taxClass?: string | null;
+    /** @nullable */
+    rateType?: string | null;
+    /** @nullable */
+    sku?: string | null;
     active: boolean;
     requiresShipping: boolean;
     /**
@@ -2426,20 +2500,43 @@ export interface ReplaceProductRequestMultipart {
     weight?: number | null;
     /** Optional product image */
     imageUpload?: Blob;
+    /** @items.minLength 1 */
     categories: string[];
+    /** @items.minLength 1 */
     tags: string[];
 }
 
+export interface ProductTranslationFieldsPatch {
+    /** A title is never cleared — an empty locale is deleted with the locale's own `null`. */
+    title?: string;
+    /**
+     * A string sets the description, `null` clears it, absent keeps it. `""` is a 422.
+     * @minLength 1
+     * @nullable
+     */
+    description?: string | null;
+}
+
+/**
+ * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null.
+ */
+export interface ProductTranslationsPatch {
+    [key: string]: ProductTranslationFieldsPatch | null;
+}
+
 export interface UpdateProductRequest {
-    translations?: ProductTranslationsWrite;
+    translations?: ProductTranslationsPatch;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
      * @minimum 0
      */
     price?: number;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
+    /** @nullable */
+    taxClass?: string | null;
+    /** @nullable */
+    rateType?: string | null;
+    /** @nullable */
+    sku?: string | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -2449,21 +2546,26 @@ export interface UpdateProductRequest {
      */
     weight?: number | null;
     imageUrl?: ImageRemoval | null;
+    /** @items.minLength 1 */
     categories?: string[];
+    /** @items.minLength 1 */
     tags?: string[];
 }
 
 export interface UpdateProductRequestMultipart {
-    /** JSON-encoded `ProductTranslationsWrite`. */
+    /** JSON-encoded `ProductTranslationsPatch`. */
     translations?: string;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
      * @minimum 0
      */
     price?: number;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
+    /** @nullable */
+    taxClass?: string | null;
+    /** @nullable */
+    rateType?: string | null;
+    /** @nullable */
+    sku?: string | null;
     active?: boolean;
     requiresShipping?: boolean;
     /**
@@ -2474,8 +2576,15 @@ export interface UpdateProductRequestMultipart {
     weight?: number | null;
     /** Optional product image */
     imageUpload?: Blob;
+    /** @items.minLength 1 */
     categories?: string[];
+    /** @items.minLength 1 */
     tags?: string[];
+}
+
+export interface ProductTranslationFields {
+    title: string;
+    description?: string;
 }
 
 export type ProductAdminTranslations = { [key: string]: ProductTranslationFields };
@@ -2629,7 +2738,7 @@ export interface CartResponseEnvelope {
  */
 export type CartQuantity = number;
 
-export interface UpsertCartItemRequest {
+export interface AddCartItemRequest {
     productId: Id;
     quantity: CartQuantity;
 }
@@ -2639,13 +2748,13 @@ export interface RemoveCartItemRequest {
 }
 
 export interface UpdateCartItemByIdRequest {
-    productId?: Id;
     quantity: CartQuantity;
 }
 
 export interface SetCartShippingMethodRequest {
     /**
      * Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
+     * @minLength 1
      * @nullable
      */
     shippingMethodId: string | null;
@@ -2659,7 +2768,10 @@ export interface CartSummaryResponseEnvelope {
 }
 
 export interface CheckoutRequest {
-    /** Optional order notes */
+    /**
+     * Optional order notes. Left out when there are none; an empty string is a 422.
+     * @minLength 1
+     */
     notes?: string;
     /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
     addressId?: Id;
@@ -2667,16 +2779,11 @@ export interface CheckoutRequest {
     paymentMethod?: PaymentMethodId;
 }
 
-export interface CheckoutResponse {
-    order: Order;
-    message?: string;
-}
-
 export interface CheckoutResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: CheckoutResponse;
+    data: Order;
 }
 
 export interface WishlistItem {
@@ -2692,10 +2799,6 @@ export interface WishlistResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WishlistResponse;
-}
-
-export interface AddWishlistItemRequest {
-    productId: Id;
 }
 
 export interface OrdersResponse {
@@ -2901,6 +3004,7 @@ export interface RecordOfflinePaymentRequest {
     method: RecordOfflinePaymentRequestMethod;
     /**
      * A bank transaction id, a receipt number — whatever ties this record to the money.
+     * @minLength 1
      * @maxLength 120
      */
     reference?: string;
@@ -3025,7 +3129,10 @@ export interface ShipmentEnvelope {
 }
 
 export interface ShipOrderRequest {
-    /** The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise. */
+    /**
+     * The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
+     * @minLength 1
+     */
     trackingCode?: string;
     /** Skip the normal `processing`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still creates the parcel record and sends the shipped email; still refuses a tracked method with no `trackingCode`. */
     forced?: boolean;
@@ -3124,7 +3231,10 @@ export interface ReceiptRequest {
      * @minimum 1
      */
     quantity: number;
-    /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
+    /**
+     * Optional — the supplier, the delivery note number, whatever the operator wants on the row.
+     * @minLength 1
+     */
     note?: string;
 }
 
@@ -3139,7 +3249,10 @@ export interface AdjustmentRequest {
     productId: Id;
     /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
     delta: number;
-    /** Why. An unexplained correction is the thing an audit is looking for. */
+    /**
+     * Why. An unexplained correction is the thing an audit is looking for.
+     * @minLength 1
+     */
     note?: string;
 }
 
@@ -3199,7 +3312,10 @@ export interface CreateWebhookSubscriptionRequest {
     url: string;
     /** @minLength 1 */
     description?: string;
-    /** @minItems 1 */
+    /**
+     * @minItems 1
+     * @items.minLength 1
+     */
     eventTypes: string[];
 }
 
@@ -3241,7 +3357,10 @@ export interface ReplaceWebhookSubscriptionRequest {
      * @nullable
      */
     description?: string | null;
-    /** @minItems 1 */
+    /**
+     * @minItems 1
+     * @items.minLength 1
+     */
     eventTypes: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
     enabled: boolean;
@@ -3265,7 +3384,10 @@ export interface UpdateWebhookSubscriptionRequest {
      * @nullable
      */
     description?: string | null;
-    /** @minItems 1 */
+    /**
+     * @minItems 1
+     * @items.minLength 1
+     */
     eventTypes?: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
     enabled?: boolean;
@@ -3520,6 +3642,27 @@ export type ListLocaleEntriesParams = {
      * @pattern ^[a-z0-9][a-z0-9-]*$
      */
     tenant?: EntryTenantQueryParamParameter;
+};
+
+export type ListTenantLocaleEntriesParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     * @maxLength 200
+     */
+    text?: TextParamParameter;
 };
 
 export type GetObservabilityAuditLogsParams = {
@@ -4073,6 +4216,29 @@ export const updateLocale = (
 };
 
 /**
+ * Merges a language's display names, writing direction or visibility (RFC 7396, an
+ * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * entry references, so changing it would be a rename of the whole dictionary rather
+ * than an edit of this record.
+ * @summary Edit a language
+ */
+export const updateLocaleWithMergePatchJson = (
+    locale: string,
+    updateLocaleRequest: UpdateLocaleRequest,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales/${locale}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateLocaleRequest
+        },
+        options
+    );
+};
+
+/**
  * Removes the language AND every entry translated into it.
  *
  * Refuses with 409 while the language is still active. That two-step is deliberate:
@@ -4127,7 +4293,9 @@ export const getLocaleMessages = (
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together.
+ * `text` searches keys and values together. Every tenant's rows are listed unless
+ * `tenant` narrows them; one tenant's slice is also a resource of its own,
+ * `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
  * @summary List translation entries
  */
 export const listLocaleEntries = (
@@ -4142,19 +4310,41 @@ export const listLocaleEntries = (
 };
 
 /**
- * 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * The rows behind one language's dictionary, paginated and searchable — what a
+ * translation screen lists. Flat, because a row is what gets edited; the nested tree
+ * is `GET /locales/{locale}/messages`.
+ *
+ * `text` searches keys and values together. The same rows `GET
+ * /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
+ * @summary List one tenant's translation entries
+ */
+export const listTenantLocaleEntries = (
+    locale: string,
+    tenant: string,
+    params?: ListTenantLocaleEntriesParams,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
+) => {
+    return orvalMutator<LocaleEntriesResponseEnvelope>(
+        { url: `/locales/${locale}/tenants/${tenant}/entries`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
  * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
 export const createLocaleEntry = (
     locale: string,
+    tenant: string,
     createLocaleEntryRequest: CreateLocaleEntryRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
 ) => {
     return orvalMutator<LocaleEntryEnvelope>(
         {
-            url: `/locales/${locale}/entries`,
+            url: `/locales/${locale}/tenants/${tenant}/entries`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: createLocaleEntryRequest
@@ -4165,7 +4355,9 @@ export const createLocaleEntry = (
 
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
- * entries for this language becomes exactly what the body carries.
+ * this tenant's entries for this language becomes exactly what the body carries;
+ * the other tenants are untouched. The URI names that slice, so the body is the
+ * same thing `GET` on it lists (RFC 9110 §9.3.4).
  *
  * Paired with `PATCH` on this same collection, which merges instead. "Does an import
  * delete missing keys" is the question every translation tool gets wrong, so the two
@@ -4178,12 +4370,13 @@ export const createLocaleEntry = (
  */
 export const replaceLocaleEntries = (
     locale: string,
+    tenant: string,
     replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
         {
-            url: `/locales/${locale}/entries`,
+            url: `/locales/${locale}/tenants/${tenant}/entries`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             data: replaceLocaleEntriesRequest
@@ -4202,14 +4395,40 @@ export const replaceLocaleEntries = (
  */
 export const mergeLocaleEntries = (
     locale: string,
+    tenant: string,
     mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
         {
-            url: `/locales/${locale}/entries`,
+            url: `/locales/${locale}/tenants/${tenant}/entries`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: mergeLocaleEntriesRequest
+        },
+        options
+    );
+};
+
+/**
+ * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
+ * alone. Nothing is ever deleted by this operation.
+ *
+ * See `PUT` on this collection for the replacing counterpart, and for why the choice
+ * lives in the method.
+ * @summary Merge entries
+ */
+export const mergeLocaleEntriesWithMergePatchJson = (
+    locale: string,
+    tenant: string,
+    mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+) => {
+    return orvalMutator<LocaleImportResultEnvelope>(
+        {
+            url: `/locales/${locale}/tenants/${tenant}/entries`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: mergeLocaleEntriesRequest
         },
         options
@@ -4276,15 +4495,17 @@ export const getEntityTranslations = (
  * — the whole set becomes exactly what the body carries. Paired with `PATCH` on this
  * same resource, which merges instead; "does saving delete the locales I didn't
  * touch" is the question every translation tool gets wrong, so the two behaviours
- * are spelled in the METHOD rather than a flag. Same three signals as `PATCH` for a
- * key that IS in the body — see its own description — plus the implicit fourth: a
- * key that is neither in the body nor already stored never existed either way.
+ * are spelled in the METHOD rather than a flag. A locale that IS in the body is
+ * replaced whole: a declared field its `fields` leaves out is cleared, and no value
+ * is `null`. A key that is neither in the body nor already stored never existed
+ * either way.
  *
  * The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
  * invariant `POST /products` already enforces on create: a caller cannot replace the
  * whole set and leave the entity with nothing to fall back to.
  *
- * 422 for the same reasons `PATCH` refuses — an unknown or inactive locale, an empty
+ * 422 for the same reasons `PATCH` refuses — an unknown locale, an inactive one being written (a `null` that deletes an inactive locale's row is
+ * allowed), an empty
  * `fields` object, a `fields` key the `translatables` registry does not declare, or a
  * missing/`null` fallback locale.
  * @summary Replace every translation an entity has
@@ -4310,16 +4531,22 @@ export const replaceEntityTranslations = (
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
  * signals inside the map, and no way to mistake one for another:
  *
- * | the body says      | the server does                                    |
- * | ------------------ | --------------------------------------------------- |
- * | key absent         | leaves that locale's row exactly as it is            |
- * | `"it": { … }`      | upserts that locale's row — created or fully replaced |
- * | `"it": null`       | deletes that locale's row                            |
+ * | the body says               | the server does                                  |
+ * | --------------------------- | ------------------------------------------------- |
+ * | key absent                  | leaves that locale's row exactly as it is          |
+ * | `"it": { "fields": { … } }` | merges field by field into the row, creating it    |
+ * | `"it": null`                | deletes that locale's row                          |
  *
- * An empty `fields` object is a 422, never a delete — deletion is `null`, spent
- * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
- * never delete translated work. `null` on the fallback locale is a 422: deleting it
- * would leave the entity with nothing to fall back to.
+ * Inside `fields` (RFC 7396, one level down): a string sets that field, `null`
+ * clears it, a field left out keeps what it has — so `{"it": {"fields": {"title":
+ * "x"}}}` changes only the Italian title. The values follow the entity's own rules:
+ * a product title still needs its minimum length and cannot be cleared, and `""` is
+ * never a value — clear with `null`.
+ *
+ * An empty `fields` object is a 422, never a delete — deletion is the locale's own
+ * `null`, spent deliberately so a mis-click can never delete translated work. `null`
+ * on the fallback locale is a 422: deleting it would leave the entity with nothing to
+ * fall back to.
  *
  * 422 equally when a named locale does not exist or is not `active` in the `locales`
  * collection, and when `fields` names a key the `translatables` registry does not
@@ -4331,7 +4558,7 @@ export const replaceEntityTranslations = (
 export const upsertEntityTranslations = (
     entityType: string,
     id: string,
-    upsertTranslationsRequest: UpsertTranslationsRequest,
+    mergeTranslationsRequest: MergeTranslationsRequest,
     options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
 ) => {
     return orvalMutator<EntityTranslationsEnvelope>(
@@ -4339,7 +4566,52 @@ export const upsertEntityTranslations = (
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: upsertTranslationsRequest
+            data: mergeTranslationsRequest
+        },
+        options
+    );
+};
+
+/**
+ * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
+ * signals inside the map, and no way to mistake one for another:
+ *
+ * | the body says               | the server does                                  |
+ * | --------------------------- | ------------------------------------------------- |
+ * | key absent                  | leaves that locale's row exactly as it is          |
+ * | `"it": { "fields": { … } }` | merges field by field into the row, creating it    |
+ * | `"it": null`                | deletes that locale's row                          |
+ *
+ * Inside `fields` (RFC 7396, one level down): a string sets that field, `null`
+ * clears it, a field left out keeps what it has — so `{"it": {"fields": {"title":
+ * "x"}}}` changes only the Italian title. The values follow the entity's own rules:
+ * a product title still needs its minimum length and cannot be cleared, and `""` is
+ * never a value — clear with `null`.
+ *
+ * An empty `fields` object is a 422, never a delete — deletion is the locale's own
+ * `null`, spent deliberately so a mis-click can never delete translated work. `null`
+ * on the fallback locale is a 422: deleting it would leave the entity with nothing to
+ * fall back to.
+ *
+ * 422 equally when a named locale does not exist or is not `active` in the `locales`
+ * collection, and when `fields` names a key the `translatables` registry does not
+ * declare for this `entityType` — the pointer names the locale, e.g.
+ * `translations.it.title`, so an editor with several tabs open can tell which one
+ * failed.
+ * @summary Merge one or more of an entity's translations
+ */
+export const upsertEntityTranslationsWithMergePatchJson = (
+    entityType: string,
+    id: string,
+    mergeTranslationsRequest: MergeTranslationsRequest,
+    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+) => {
+    return orvalMutator<EntityTranslationsEnvelope>(
+        {
+            url: `/locales/translations/${entityType}/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: mergeTranslationsRequest
         },
         options
     );
@@ -4470,7 +4742,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -4489,7 +4761,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
@@ -4520,12 +4792,7 @@ export const replaceAccountWithMultipart = (
     ) {
         formData.append(`website`, replaceAccountRequestMultipart.website);
     }
-    if (replaceAccountRequestMultipart.analyticsConsent !== undefined) {
-        formData.append(
-            `analyticsConsent`,
-            replaceAccountRequestMultipart.analyticsConsent.toString()
-        );
-    }
+    formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
 
     return orvalMutator<UserEnvelope>(
         {
@@ -4551,6 +4818,25 @@ export const updateAccount = (
             url: `/account`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateAccountRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * @summary Update own profile
+ */
+export const updateAccountWithMergePatchJson = (
+    updateAccountRequest: UpdateAccountRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateAccountRequest
         },
         options
@@ -4757,14 +5043,14 @@ export const getAddresses = (options?: SecondParameter<typeof orvalMutator<Addre
 };
 
 /**
- * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
+ * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
  * @summary Add an address
  */
 export const addAddress = (
     addressInput: AddressInput,
-    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
 ) => {
-    return orvalMutator<AddressesEnvelope>(
+    return orvalMutator<AddressEnvelope>(
         {
             url: `/account/addresses`,
             method: 'POST',
@@ -4776,15 +5062,15 @@ export const addAddress = (
 };
 
 /**
- * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
  * @summary Replace an address
  */
 export const replaceAddress = (
     addressId: Id,
     replaceAddressRequest: ReplaceAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
 ) => {
-    return orvalMutator<AddressesEnvelope>(
+    return orvalMutator<AddressEnvelope>(
         {
             url: `/account/addresses/${addressId}`,
             method: 'PUT',
@@ -4796,19 +5082,39 @@ export const replaceAddress = (
 };
 
 /**
- * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
  * @summary Update an address
  */
 export const updateAddress = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
 ) => {
-    return orvalMutator<AddressesEnvelope>(
+    return orvalMutator<AddressEnvelope>(
         {
             url: `/account/addresses/${addressId}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateAddressRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
+ * @summary Update an address
+ */
+export const updateAddressWithMergePatchJson = (
+    addressId: Id,
+    updateAddressRequest: UpdateAddressRequest,
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+) => {
+    return orvalMutator<AddressEnvelope>(
+        {
+            url: `/account/addresses/${addressId}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateAddressRequest
         },
         options
@@ -4825,6 +5131,20 @@ export const removeAddress = (
 ) => {
     return orvalMutator<AddressesEnvelope>(
         { url: `/account/addresses/${addressId}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
+ * @summary Make an address the default
+ */
+export const setDefaultAddress = (
+    addressId: Id,
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+) => {
+    return orvalMutator<AddressEnvelope>(
+        { url: `/account/addresses/${addressId}/default`, method: 'PUT' },
         options
     );
 };
@@ -5303,7 +5623,7 @@ export const getUserById = (
 };
 
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const replaceUserById = (
@@ -5323,7 +5643,7 @@ export const replaceUserById = (
 };
 
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const replaceUserByIdWithMultipart = (
@@ -5386,6 +5706,26 @@ export const updateUserById = (
             url: `/users/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateUserByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const updateUserByIdWithMergePatchJson = (
+    id: string,
+    updateUserByIdRequest: UpdateUserByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateUserByIdRequest
         },
         options
@@ -5617,6 +5957,26 @@ export const updateFeedbackRequestStatus = (
 };
 
 /**
+ * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * @summary Update feedback request status
+ */
+export const updateFeedbackRequestStatusWithMergePatchJson = (
+    id: string,
+    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateFeedbackRequestStatusRequest
+        },
+        options
+    );
+};
+
+/**
  * Permanently removes the feedback request identified by `{id}`.
  * @summary Delete feedback request
  */
@@ -5766,12 +6126,12 @@ export const getProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
- * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
- * semantics `PATCH` uses (see its own description): a translations table is keyed
- * sub-resources, not a single field a "whole-body replace" can meaningfully null out
- * — a caller cannot be expected to enumerate every locale that currently exists just
- * to keep it.
+ * `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
+ * cleared, not left alone. The image is outside the representation: it is set by an
+ * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
+ * it — a client cannot send the current path back. `translations` is the whole set as well: it must
+ * name the fallback locale, and every stored locale it leaves out is deleted. To
+ * change one locale without restating the others, use `PATCH`.
  * @summary Replace product
  */
 export const replaceProductById = (
@@ -5793,12 +6153,12 @@ export const replaceProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
- * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
- * semantics `PATCH` uses (see its own description): a translations table is keyed
- * sub-resources, not a single field a "whole-body replace" can meaningfully null out
- * — a caller cannot be expected to enumerate every locale that currently exists just
- * to keep it.
+ * `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
+ * cleared, not left alone. The image is outside the representation: it is set by an
+ * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
+ * it — a client cannot send the current path back. `translations` is the whole set as well: it must
+ * name the fallback locale, and every stored locale it leaves out is deleted. To
+ * change one locale without restating the others, use `PATCH`.
  * @summary Replace product
  */
 export const replaceProductByIdWithMultipart = (
@@ -5856,20 +6216,22 @@ export const replaceProductByIdWithMultipart = (
 
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
- * `translations` replaces the stored value when sent; `translations` merges one
- * locale at a time — three signals, and no way to mistake one for another:
+ * `translations` replaces the stored value when sent; `translations` merges (RFC
+ * 7396) — three signals for a locale, and one level down for its fields:
  *
- * | the body says      | the server does                        |
- * | ------------------- | --------------------------------------- |
- * | `"it"` absent       | leaves the Italian row exactly as it is |
- * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
- * | `"it": null`        | deletes the Italian row                 |
+ * | the body says                   | the server does                                |
+ * | ------------------------------- | ----------------------------------------------- |
+ * | `"it"` absent                   | leaves the Italian row exactly as it is          |
+ * | `"it": { "title": "x" }`        | changes the Italian title only; the rest is kept |
+ * | `"it": { "description": null }` | clears the Italian description only              |
+ * | `"it": null`                    | deletes the Italian row                          |
  *
  * An empty translation object is a 422, never a delete — deletion is `null`, spent
- * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
- * never delete translated work. `null` on the fallback locale is a 422: deleting it
- * would leave the product with nothing to fall back to. A validation failure names
- * the locale in its pointer, e.g. `translations.it.title`.
+ * deliberately, so a mis-click can never delete translated work. `""` is never a
+ * value: clear a description with `null`. A title cannot be cleared. `null` on the
+ * fallback locale is a 422: deleting it would leave the product with nothing to fall
+ * back to. A validation failure names the locale in its pointer, e.g.
+ * `translations.it.title`.
  * @summary Edit product
  */
 export const updateProductById = (
@@ -5890,20 +6252,58 @@ export const updateProductById = (
 
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
- * `translations` replaces the stored value when sent; `translations` merges one
- * locale at a time — three signals, and no way to mistake one for another:
+ * `translations` replaces the stored value when sent; `translations` merges (RFC
+ * 7396) — three signals for a locale, and one level down for its fields:
  *
- * | the body says      | the server does                        |
- * | ------------------- | --------------------------------------- |
- * | `"it"` absent       | leaves the Italian row exactly as it is |
- * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
- * | `"it": null`        | deletes the Italian row                 |
+ * | the body says                   | the server does                                |
+ * | ------------------------------- | ----------------------------------------------- |
+ * | `"it"` absent                   | leaves the Italian row exactly as it is          |
+ * | `"it": { "title": "x" }`        | changes the Italian title only; the rest is kept |
+ * | `"it": { "description": null }` | clears the Italian description only              |
+ * | `"it": null`                    | deletes the Italian row                          |
  *
  * An empty translation object is a 422, never a delete — deletion is `null`, spent
- * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
- * never delete translated work. `null` on the fallback locale is a 422: deleting it
- * would leave the product with nothing to fall back to. A validation failure names
- * the locale in its pointer, e.g. `translations.it.title`.
+ * deliberately, so a mis-click can never delete translated work. `""` is never a
+ * value: clear a description with `null`. A title cannot be cleared. `null` on the
+ * fallback locale is a 422: deleting it would leave the product with nothing to fall
+ * back to. A validation failure names the locale in its pointer, e.g.
+ * `translations.it.title`.
+ * @summary Edit product
+ */
+export const updateProductByIdWithMergePatchJson = (
+    id: string,
+    updateProductRequest: UpdateProductRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateProductRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the product identified by `{id}` in the path, merging. Every field but
+ * `translations` replaces the stored value when sent; `translations` merges (RFC
+ * 7396) — three signals for a locale, and one level down for its fields:
+ *
+ * | the body says                   | the server does                                |
+ * | ------------------------------- | ----------------------------------------------- |
+ * | `"it"` absent                   | leaves the Italian row exactly as it is          |
+ * | `"it": { "title": "x" }`        | changes the Italian title only; the rest is kept |
+ * | `"it": { "description": null }` | clears the Italian description only              |
+ * | `"it": null`                    | deletes the Italian row                          |
+ *
+ * An empty translation object is a 422, never a delete — deletion is `null`, spent
+ * deliberately, so a mis-click can never delete translated work. `""` is never a
+ * value: clear a description with `null`. A title cannot be cleared. `null` on the
+ * fallback locale is a 422: deleting it would leave the product with nothing to fall
+ * back to. A validation failure names the locale in its pointer, e.g.
+ * `translations.it.title`.
  * @summary Edit product
  */
 export const updateProductByIdWithMultipart = (
@@ -6066,11 +6466,11 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
 };
 
 /**
- * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
- * @summary Add/Edit cart item
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * @summary Add to cart
  */
-export const upsertCartItem = (
-    upsertCartItemRequest: UpsertCartItemRequest,
+export const addCartItem = (
+    addCartItemRequest: AddCartItemRequest,
     options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
     return orvalMutator<CartResponseEnvelope>(
@@ -6078,7 +6478,7 @@ export const upsertCartItem = (
             url: `/cart`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: upsertCartItemRequest
+            data: addCartItemRequest
         },
         options
     );
@@ -6112,7 +6512,7 @@ export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResp
 };
 
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const updateCartItemById = (
@@ -6178,7 +6578,7 @@ export const getCartSummary = (
 };
 
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkout = (
@@ -6221,20 +6621,15 @@ export const getWishlist = (
 };
 
 /**
- * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+ * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
  * @summary Save a product
  */
 export const addWishlistItem = (
-    addWishlistItemRequest: AddWishlistItemRequest,
+    productId: string,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        {
-            url: `/wishlist`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: addWishlistItemRequest
-        },
+        { url: `/wishlist/${productId}`, method: 'PUT' },
         options
     );
 };
@@ -6391,6 +6786,26 @@ export const updateOrderById = (
 };
 
 /**
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * @summary Edit order
+ */
+export const updateOrderByIdWithMergePatchJson = (
+    id: string,
+    updateOrderByIdRequest: UpdateOrderByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateOrderByIdRequest
+        },
+        options
+    );
+};
+
+/**
  * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
@@ -6435,7 +6850,7 @@ export const hardDeleteOrderById = (
 };
 
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderById = (
@@ -6516,7 +6931,7 @@ export const listPaymentMethods = (
 };
 
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const createPaymentIntent = (
@@ -6577,7 +6992,7 @@ export const refundPaymentByOrder = (
 };
 
 /**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Record a payment that arrived outside the provider
  */
 export const recordOfflinePayment = (
@@ -6771,7 +7186,7 @@ export const listStockMovements = (
 };
 
 /**
- * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
+ * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
  * @summary Receive stock
  */
 export const receiveStock = (
@@ -6790,7 +7205,7 @@ export const receiveStock = (
 };
 
 /**
- * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
+ * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
  * @summary Adjust stock
  */
 export const adjustStock = (
@@ -6825,7 +7240,7 @@ export const sweepReservations = (
 
 /**
  * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or the rotate action on `PATCH .../{id}`).
+ * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptions = (
@@ -6841,8 +7256,11 @@ export const listWebhookSubscriptions = (
 /**
  * Mints the ring's first secret and returns it in plaintext, once — the only
  * response that ever carries it. `url` must be `https://` and must not resolve to a
- * private, loopback or link-local address; that check runs again on every delivery,
- * since a subscription's DNS can change after it is created.
+ * private, loopback or link-local address. The host is resolved here, so a refusal is a
+ * 422 naming the field (`errors[].details` `{ field: url, reason }`) instead of a
+ * delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
+ * changes. It runs again on every delivery, since a subscription's DNS can change
+ * after it is created.
  * @summary Create a webhook subscription
  */
 export const createWebhookSubscription = (
@@ -6897,6 +7315,27 @@ export const updateWebhookSubscription = (
             url: `/webhooks/subscriptions/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateWebhookSubscriptionRequest
+        },
+        options
+    );
+};
+
+/**
+ * Partial update of url/description/eventTypes/enabled. Never touches the secret
+ * ring; rotate or drop a secret through its own action route below.
+ * @summary Update a webhook subscription
+ */
+export const updateWebhookSubscriptionWithMergePatchJson = (
+    id: string,
+    updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        {
+            url: `/webhooks/subscriptions/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateWebhookSubscriptionRequest
         },
         options
@@ -7062,14 +7501,23 @@ export type GetLocaleDictionaryResult = NonNullable<
 >;
 export type ReplaceLocaleResult = NonNullable<Awaited<ReturnType<typeof replaceLocale>>>;
 export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
+export type UpdateLocaleWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateLocaleWithMergePatchJson>>
+>;
 export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
 export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
 export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
+export type ListTenantLocaleEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof listTenantLocaleEntries>>
+>;
 export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>;
 export type ReplaceLocaleEntriesResult = NonNullable<
     Awaited<ReturnType<typeof replaceLocaleEntries>>
 >;
 export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>;
+export type MergeLocaleEntriesWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof mergeLocaleEntriesWithMergePatchJson>>
+>;
 export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetEntityTranslationsResult = NonNullable<
@@ -7080,6 +7528,9 @@ export type ReplaceEntityTranslationsResult = NonNullable<
 >;
 export type UpsertEntityTranslationsResult = NonNullable<
     Awaited<ReturnType<typeof upsertEntityTranslations>>
+>;
+export type UpsertEntityTranslationsWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof upsertEntityTranslationsWithMergePatchJson>>
 >;
 export type GetObservabilityEventsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityEvents>>
@@ -7107,6 +7558,9 @@ export type ReplaceAccountWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof replaceAccountWithMultipart>>
 >;
 export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
+export type UpdateAccountWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateAccountWithMergePatchJson>>
+>;
 export type UpdateAccountWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateAccountWithMultipart>>
 >;
@@ -7129,7 +7583,11 @@ export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddres
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
 export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
+export type UpdateAddressWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateAddressWithMergePatchJson>>
+>;
 export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>;
+export type SetDefaultAddressResult = NonNullable<Awaited<ReturnType<typeof setDefaultAddress>>>;
 export type RequestEmailVerificationResult = NonNullable<
     Awaited<ReturnType<typeof requestEmailVerification>>
 >;
@@ -7185,6 +7643,9 @@ export type ReplaceUserByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof replaceUserByIdWithMultipart>>
 >;
 export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
+export type UpdateUserByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserByIdWithMergePatchJson>>
+>;
 export type UpdateUserByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
 >;
@@ -7210,6 +7671,9 @@ export type ReplaceFeedbackRequestStatusResult = NonNullable<
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
 >;
+export type UpdateFeedbackRequestStatusWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateFeedbackRequestStatusWithMergePatchJson>>
+>;
 export type DeleteFeedbackRequestResult = NonNullable<
     Awaited<ReturnType<typeof deleteFeedbackRequest>>
 >;
@@ -7226,6 +7690,9 @@ export type ReplaceProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof replaceProductByIdWithMultipart>>
 >;
 export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
+export type UpdateProductByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateProductByIdWithMergePatchJson>>
+>;
 export type UpdateProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
 >;
@@ -7237,7 +7704,7 @@ export type HardDeleteProductByIdResult = NonNullable<
 >;
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
-export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;
+export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>;
 export type RemoveCartItemByBodyResult = NonNullable<
     Awaited<ReturnType<typeof removeCartItemByBody>>
 >;
@@ -7263,6 +7730,9 @@ export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrd
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
 export type ReplaceOrderByIdResult = NonNullable<Awaited<ReturnType<typeof replaceOrderById>>>;
 export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
+export type UpdateOrderByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateOrderByIdWithMergePatchJson>>
+>;
 export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
 export type RestoreOrderByIdResult = NonNullable<Awaited<ReturnType<typeof restoreOrderById>>>;
 export type HardDeleteOrderByIdResult = NonNullable<
@@ -7319,6 +7789,9 @@ export type ReplaceWebhookSubscriptionResult = NonNullable<
 >;
 export type UpdateWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof updateWebhookSubscription>>
+>;
+export type UpdateWebhookSubscriptionWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateWebhookSubscriptionWithMergePatchJson>>
 >;
 export type DeleteWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof deleteWebhookSubscription>>

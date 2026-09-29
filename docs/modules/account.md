@@ -82,7 +82,7 @@ Six stores, listed by what each one's setup function returns — an internal ref
 | `accountAuth`           | `stores/auth.ts`       | `login` · `reauth` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                            |
 | `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `updateOwnRole` · `changePassword` · `requestEmailVerification` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete`                                                                                     |
 | `accountSessions`       | `stores/sessions.ts`   | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
-| `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `removeAddress`                                                                                                                                                                                                              |
+| `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
 | `accountOAuthProviders` | `stores/oauth.ts`      | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
 | `accountTwoFactor`      | `stores/two-factor.ts` | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
 
@@ -121,6 +121,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /account/addresses`                    | `AddAddressResponse`               |
 | `DELETE /account/addresses/{id}`             | `RemoveAddressResponse`            |
 | `PATCH /account/addresses/{id}`              | `UpdateAddressResponse`            |
+| `PUT /account/addresses/{id}/default`        | `SetDefaultAddressResponse`        |
 | `DELETE /account/delete-confirm`             | `ConfirmAccountDeleteResponse`     |
 | `POST /account/export`                       | `ExportAccountDataResponse`        |
 | `POST /account/login`                        | `LoginResponse`                    |

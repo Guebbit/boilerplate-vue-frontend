@@ -204,8 +204,9 @@ const handleSearch = () => {
  */
 const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
     clearAddError();
+    const { tenant, ...entry } = fields;
     return localesStore
-        .addEntry(tag.value, fields)
+        .addEntry(tag.value, tenant, entry)
         .then(() => {
             entryFormOpen.value = false;
             addMessage(t('locale-entries-page.success-add'));

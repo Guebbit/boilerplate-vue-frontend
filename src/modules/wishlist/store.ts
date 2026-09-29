@@ -62,14 +62,15 @@ export const useWishlistStore = defineStore('wishlist', () => {
         );
 
     /**
-     * Saves a product. Idempotent server-side, so a double-clicked heart answers the same list.
+     * Saves a product: `PUT /wishlist/{productId}`, no body. Idempotent server-side, so a
+     * double-clicked heart answers the same list.
      *
      * @param productId - The product to save.
      * @returns A promise resolving with the updated lines.
      */
     const addToWishlist = (productId: string) =>
         fetchAny(() =>
-            addWishlistItem({ productId }).then((response) => {
+            addWishlistItem(productId).then((response) => {
                 items.value = response.data.items;
                 return items.value;
             })

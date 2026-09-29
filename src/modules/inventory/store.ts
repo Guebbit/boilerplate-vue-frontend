@@ -8,6 +8,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import {
     adjustStock,
     listInventoryLevels,
@@ -52,6 +53,18 @@ export const useInventoryStore = defineStore('inventory', () => {
         resourceKey: 'inventory',
         queryClient
     });
+
+    /**
+     * `Idempotency-Key` for a receipt: a retry after a network error or a 5xx resends the SAME key,
+     * so the API replays the first answer instead of counting the delivery twice.
+     */
+    const receiptIdempotencyKey = useIdempotencyKey();
+
+    /**
+     * `Idempotency-Key` for an adjustment, for the same reason: a delta applied twice is a wrong
+     * stock count.
+     */
+    const adjustmentIdempotencyKey = useIdempotencyKey();
 
     /**
      * The latest movements, as last fetched.
@@ -128,9 +141,15 @@ export const useInventoryStore = defineStore('inventory', () => {
      */
     const receive = (productId: string, quantity: number, note?: string) =>
         fetchAny(() =>
-            receiveStock({ productId, quantity, note }).then((response) =>
-                reloadAfterWrite(response.data)
-            )
+            receiveStock({ productId, quantity, note }, receiptIdempotencyKey.withKey())
+                .then((response) => {
+                    receiptIdempotencyKey.settle();
+                    return reloadAfterWrite(response.data);
+                })
+                .catch((error: unknown) => {
+                    receiptIdempotencyKey.settle(error);
+                    throw error;
+                })
         );
 
     /**
@@ -143,9 +162,15 @@ export const useInventoryStore = defineStore('inventory', () => {
      */
     const adjust = (productId: string, delta: number, note?: string) =>
         fetchAny(() =>
-            adjustStock({ productId, delta, note }).then((response) =>
-                reloadAfterWrite(response.data)
-            )
+            adjustStock({ productId, delta, note }, adjustmentIdempotencyKey.withKey())
+                .then((response) => {
+                    adjustmentIdempotencyKey.settle();
+                    return reloadAfterWrite(response.data);
+                })
+                .catch((error: unknown) => {
+                    adjustmentIdempotencyKey.settle(error);
+                    throw error;
+                })
         );
 
     /**

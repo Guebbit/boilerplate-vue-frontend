@@ -353,7 +353,9 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together.
+ * `text` searches keys and values together. Every tenant's rows are listed unless
+ * `tenant` narrows them; one tenant's slice is also a resource of its own,
+ * `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
  * @summary List translation entries
  */
 export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -436,23 +438,112 @@ export const ListLocaleEntriesResponse = zod.strictObject({
     })
 });
 /**
- * 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * The rows behind one language's dictionary, paginated and searchable — what a
+ * translation screen lists. Flat, because a row is what gets edited; the nested tree
+ * is `GET /locales/{locale}/messages`.
+ *
+ * `text` searches keys and values together. The same rows `GET
+ * /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
+ * @summary List one tenant's translation entries
+ */
+export const listTenantLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listTenantLocaleEntriesPathTenantMax = 64;
+export const listTenantLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const ListTenantLocaleEntriesParams = zod.strictObject({
+    locale: zod.string().regex(listTenantLocaleEntriesPathLocaleRegExp),
+    tenant: zod
+        .string()
+        .min(1)
+        .max(listTenantLocaleEntriesPathTenantMax)
+        .regex(listTenantLocaleEntriesPathTenantRegExp)
+});
+export const listTenantLocaleEntriesQueryPageDefault = 1;
+export const listTenantLocaleEntriesQueryPageMax = 10000;
+export const listTenantLocaleEntriesQueryPageSizeDefault = 10;
+export const listTenantLocaleEntriesQueryPageSizeMax = 100;
+export const listTenantLocaleEntriesQueryTextMax = 200;
+export const ListTenantLocaleEntriesQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .max(listTenantLocaleEntriesQueryPageMax)
+        .default(listTenantLocaleEntriesQueryPageDefault),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listTenantLocaleEntriesQueryPageSizeMax)
+        .default(listTenantLocaleEntriesQueryPageSizeDefault),
+    text: zod.string().min(1).max(listTenantLocaleEntriesQueryTextMax).optional()
+});
+export const listTenantLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const listTenantLocaleEntriesResponseDataItemsItemTenantMax = 64;
+export const listTenantLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
+    '^[a-z0-9][a-z0-9-]*$'
+);
+export const listTenantLocaleEntriesResponseDataMetaPageDefault = 1;
+export const listTenantLocaleEntriesResponseDataMetaPageMax = 10000;
+export const listTenantLocaleEntriesResponseDataMetaPageSizeDefault = 10;
+export const listTenantLocaleEntriesResponseDataMetaPageSizeMax = 100;
+export const listTenantLocaleEntriesResponseDataMetaTotalItemsMin = 0;
+export const listTenantLocaleEntriesResponseDataMetaTotalPagesMin = 0;
+export const ListTenantLocaleEntriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                locale: zod
+                    .string()
+                    .regex(listTenantLocaleEntriesResponseDataItemsItemLocaleRegExp),
+                tenant: zod
+                    .string()
+                    .min(1)
+                    .max(listTenantLocaleEntriesResponseDataItemsItemTenantMax)
+                    .regex(listTenantLocaleEntriesResponseDataItemsItemTenantRegExp),
+                key: zod.string(),
+                value: zod.string(),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listTenantLocaleEntriesResponseDataMetaPageMax)
+                .default(listTenantLocaleEntriesResponseDataMetaPageDefault),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listTenantLocaleEntriesResponseDataMetaPageSizeMax)
+                .default(listTenantLocaleEntriesResponseDataMetaPageSizeDefault),
+            totalItems: zod.number().min(listTenantLocaleEntriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listTenantLocaleEntriesResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+/**
+ * Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
  * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
 export const createLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleEntryPathTenantMax = 64;
+export const createLocaleEntryPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryParams = zod.strictObject({
-    locale: zod.string().regex(createLocaleEntryPathLocaleRegExp)
-});
-export const createLocaleEntryBodyTenantMax = 64;
-export const createLocaleEntryBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const CreateLocaleEntryBody = zod.strictObject({
+    locale: zod.string().regex(createLocaleEntryPathLocaleRegExp),
     tenant: zod
         .string()
         .min(1)
-        .max(createLocaleEntryBodyTenantMax)
-        .regex(createLocaleEntryBodyTenantRegExp),
+        .max(createLocaleEntryPathTenantMax)
+        .regex(createLocaleEntryPathTenantRegExp)
+});
+export const CreateLocaleEntryBody = zod.strictObject({
     key: zod.string().min(1),
     value: zod.string()
 });
@@ -479,7 +570,9 @@ export const CreateLocaleEntryResponse = zod.strictObject({
 });
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
- * entries for this language becomes exactly what the body carries.
+ * this tenant's entries for this language becomes exactly what the body carries;
+ * the other tenants are untouched. The URI names that slice, so the body is the
+ * same thing `GET` on it lists (RFC 9110 §9.3.4).
  *
  * Paired with `PATCH` on this same collection, which merges instead. "Does an import
  * delete missing keys" is the question every translation tool gets wrong, so the two
@@ -491,17 +584,17 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  * @summary Replace every entry
  */
 export const replaceLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntriesPathTenantMax = 64;
+export const replaceLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntriesParams = zod.strictObject({
-    locale: zod.string().regex(replaceLocaleEntriesPathLocaleRegExp)
-});
-export const replaceLocaleEntriesBodyTenantMax = 64;
-export const replaceLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const ReplaceLocaleEntriesBody = zod.strictObject({
+    locale: zod.string().regex(replaceLocaleEntriesPathLocaleRegExp),
     tenant: zod
         .string()
         .min(1)
-        .max(replaceLocaleEntriesBodyTenantMax)
-        .regex(replaceLocaleEntriesBodyTenantRegExp),
+        .max(replaceLocaleEntriesPathTenantMax)
+        .regex(replaceLocaleEntriesPathTenantRegExp)
+});
+export const ReplaceLocaleEntriesBody = zod.strictObject({
     entries: zod.array(
         zod.strictObject({
             key: zod.string().min(1),
@@ -533,17 +626,17 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  * @summary Merge entries
  */
 export const mergeLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const mergeLocaleEntriesPathTenantMax = 64;
+export const mergeLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const MergeLocaleEntriesParams = zod.strictObject({
-    locale: zod.string().regex(mergeLocaleEntriesPathLocaleRegExp)
-});
-export const mergeLocaleEntriesBodyTenantMax = 64;
-export const mergeLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const MergeLocaleEntriesBody = zod.strictObject({
+    locale: zod.string().regex(mergeLocaleEntriesPathLocaleRegExp),
     tenant: zod
         .string()
         .min(1)
-        .max(mergeLocaleEntriesBodyTenantMax)
-        .regex(mergeLocaleEntriesBodyTenantRegExp),
+        .max(mergeLocaleEntriesPathTenantMax)
+        .regex(mergeLocaleEntriesPathTenantRegExp)
+});
+export const MergeLocaleEntriesBody = zod.strictObject({
     entries: zod
         .array(
             zod.strictObject({
@@ -661,15 +754,17 @@ export const GetEntityTranslationsResponse = zod.strictObject({
  * — the whole set becomes exactly what the body carries. Paired with `PATCH` on this
  * same resource, which merges instead; "does saving delete the locales I didn't
  * touch" is the question every translation tool gets wrong, so the two behaviours
- * are spelled in the METHOD rather than a flag. Same three signals as `PATCH` for a
- * key that IS in the body — see its own description — plus the implicit fourth: a
- * key that is neither in the body nor already stored never existed either way.
+ * are spelled in the METHOD rather than a flag. A locale that IS in the body is
+ * replaced whole: a declared field its `fields` leaves out is cleared, and no value
+ * is `null`. A key that is neither in the body nor already stored never existed
+ * either way.
  *
  * The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
  * invariant `POST /products` already enforces on create: a caller cannot replace the
  * whole set and leave the entity with nothing to fall back to.
  *
- * 422 for the same reasons `PATCH` refuses — an unknown or inactive locale, an empty
+ * 422 for the same reasons `PATCH` refuses — an unknown locale, an inactive one being written (a `null` that deletes an inactive locale's row is
+ * allowed), an empty
  * `fields` object, a `fields` key the `translatables` registry does not declare, or a
  * missing/`null` fallback locale.
  * @summary Replace every translation an entity has
@@ -683,7 +778,7 @@ export const ReplaceEntityTranslationsBody = zod.record(
     zod.string(),
     zod
         .strictObject({
-            fields: zod.record(zod.string(), zod.string()),
+            fields: zod.record(zod.string(), zod.string().min(1)),
             origin: zod
                 .enum(['machine', 'human'])
                 .default(replaceEntityTranslationsBodyOneOriginDefault)
@@ -723,16 +818,22 @@ export const ReplaceEntityTranslationsResponse = zod.strictObject({
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
  * signals inside the map, and no way to mistake one for another:
  *
- * | the body says      | the server does                                    |
- * | ------------------ | --------------------------------------------------- |
- * | key absent         | leaves that locale's row exactly as it is            |
- * | `"it": { … }`      | upserts that locale's row — created or fully replaced |
- * | `"it": null`       | deletes that locale's row                            |
+ * | the body says               | the server does                                  |
+ * | --------------------------- | ------------------------------------------------- |
+ * | key absent                  | leaves that locale's row exactly as it is          |
+ * | `"it": { "fields": { … } }` | merges field by field into the row, creating it    |
+ * | `"it": null`                | deletes that locale's row                          |
  *
- * An empty `fields` object is a 422, never a delete — deletion is `null`, spent
- * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
- * never delete translated work. `null` on the fallback locale is a 422: deleting it
- * would leave the entity with nothing to fall back to.
+ * Inside `fields` (RFC 7396, one level down): a string sets that field, `null`
+ * clears it, a field left out keeps what it has — so `{"it": {"fields": {"title":
+ * "x"}}}` changes only the Italian title. The values follow the entity's own rules:
+ * a product title still needs its minimum length and cannot be cleared, and `""` is
+ * never a value — clear with `null`.
+ *
+ * An empty `fields` object is a 422, never a delete — deletion is the locale's own
+ * `null`, spent deliberately so a mis-click can never delete translated work. `null`
+ * on the fallback locale is a 422: deleting it would leave the entity with nothing to
+ * fall back to.
  *
  * 422 equally when a named locale does not exist or is not `active` in the `locales`
  * collection, and when `fields` names a key the `translatables` registry does not
@@ -750,7 +851,7 @@ export const UpsertEntityTranslationsBody = zod.record(
     zod.string(),
     zod
         .strictObject({
-            fields: zod.record(zod.string(), zod.string()),
+            fields: zod.record(zod.string(), zod.string().min(1).nullable()),
             origin: zod
                 .enum(['machine', 'human'])
                 .default(upsertEntityTranslationsBodyOneOriginDefault)
@@ -1222,7 +1323,7 @@ export const GetAccountResponse = zod.strictObject({
     })
 });
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
 export const replaceAccountBodyUsernameMin = 3;
@@ -1234,7 +1335,7 @@ export const ReplaceAccountBody = zod.strictObject({
     imageUrl: zod.literal(null).nullish(),
     phone: zod.string().min(1).nullish(),
     website: zod.string().min(1).nullish(),
-    analyticsConsent: zod.boolean().optional()
+    analyticsConsent: zod.boolean()
 });
 export const replaceAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const ReplaceAccountResponse = zod.strictObject({
@@ -1503,43 +1604,39 @@ export const GetAddressesResponse = zod.strictObject({
     })
 });
 /**
- * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
+ * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
  * @summary Add an address
  */
 export const addAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const AddAddressBody = zod.strictObject({
-    label: zod.string().optional(),
+    label: zod.string().min(1).optional(),
     fullName: zod.string().min(1),
     street: zod.string().min(1),
     city: zod.string().min(1),
     zip: zod.string().min(1),
     country: zod.string().regex(addAddressBodyCountryRegExp),
-    phone: zod.string().optional(),
+    phone: zod.string().min(1).optional(),
     default: zod.boolean().optional()
 });
-export const addAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const addAddressResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const AddAddressResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string(),
-                label: zod.string().optional(),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string().regex(addAddressResponseDataAddressesItemCountryRegExp),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
+        id: zod.string(),
+        label: zod.string().optional(),
+        fullName: zod.string(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod.string().regex(addAddressResponseDataCountryRegExp),
+        phone: zod.string().optional(),
+        default: zod.boolean()
     })
 });
 /**
- * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
  * @summary Replace an address
  */
 export const ReplaceAddressParams = zod.strictObject({
@@ -1553,32 +1650,27 @@ export const ReplaceAddressBody = zod.strictObject({
     city: zod.string().min(1),
     zip: zod.string().min(1),
     country: zod.string().regex(replaceAddressBodyCountryRegExp),
-    phone: zod.string().min(1).nullish(),
-    default: zod.boolean().optional()
+    phone: zod.string().min(1).nullish()
 });
-export const replaceAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceAddressResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const ReplaceAddressResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string(),
-                label: zod.string().optional(),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string().regex(replaceAddressResponseDataAddressesItemCountryRegExp),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
+        id: zod.string(),
+        label: zod.string().optional(),
+        fullName: zod.string(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod.string().regex(replaceAddressResponseDataCountryRegExp),
+        phone: zod.string().optional(),
+        default: zod.boolean()
     })
 });
 /**
- * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
  * @summary Update an address
  */
 export const UpdateAddressParams = zod.strictObject({
@@ -1592,28 +1684,23 @@ export const UpdateAddressBody = zod.strictObject({
     city: zod.string().min(1).optional(),
     zip: zod.string().min(1).optional(),
     country: zod.string().regex(updateAddressBodyCountryRegExp).optional(),
-    phone: zod.string().min(1).nullish(),
-    default: zod.boolean().optional()
+    phone: zod.string().min(1).nullish()
 });
-export const updateAddressResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateAddressResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const UpdateAddressResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        addresses: zod.array(
-            zod.strictObject({
-                id: zod.string(),
-                label: zod.string().optional(),
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod.string().regex(updateAddressResponseDataAddressesItemCountryRegExp),
-                phone: zod.string().optional(),
-                default: zod.boolean()
-            })
-        )
+        id: zod.string(),
+        label: zod.string().optional(),
+        fullName: zod.string(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod.string().regex(updateAddressResponseDataCountryRegExp),
+        phone: zod.string().optional(),
+        default: zod.boolean()
     })
 });
 /**
@@ -1645,6 +1732,30 @@ export const RemoveAddressResponse = zod.strictObject({
     })
 });
 /**
+ * Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
+ * @summary Make an address the default
+ */
+export const SetDefaultAddressParams = zod.strictObject({
+    addressId: zod.string()
+});
+export const setDefaultAddressResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const SetDefaultAddressResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        label: zod.string().optional(),
+        fullName: zod.string(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod.string().regex(setDefaultAddressResponseDataCountryRegExp),
+        phone: zod.string().optional(),
+        default: zod.boolean()
+    })
+});
+/**
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
@@ -1661,7 +1772,7 @@ export const RequestEmailVerificationResponse = zod.strictObject({
  * @summary Confirm email verification
  */
 export const ConfirmEmailVerificationBody = zod.strictObject({
-    token: zod.string()
+    token: zod.string().min(1)
 });
 export const ConfirmEmailVerificationResponse = zod.strictObject({
     success: zod.literal(true),
@@ -1673,7 +1784,7 @@ export const ConfirmEmailVerificationResponse = zod.strictObject({
  * @summary Confirm a pending email change
  */
 export const ConfirmEmailChangeBody = zod.strictObject({
-    token: zod.string()
+    token: zod.string().min(1)
 });
 export const ConfirmEmailChangeResponse = zod.strictObject({
     success: zod.literal(true),
@@ -1685,7 +1796,7 @@ export const ConfirmEmailChangeResponse = zod.strictObject({
  * @summary Confirm account deletion
  */
 export const ConfirmAccountDeleteBody = zod.strictObject({
-    token: zod.string()
+    token: zod.string().min(1)
 });
 export const ConfirmAccountDeleteResponse = zod.strictObject({
     success: zod.literal(true),
@@ -1811,7 +1922,7 @@ export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
 );
 export const confirmPasswordResetBodyPasswordConfirmMin = 8;
 export const ConfirmPasswordResetBody = zod.strictObject({
-    token: zod.string(),
+    token: zod.string().min(1),
     password: zod
         .string()
         .min(confirmPasswordResetBodyPasswordMin)
@@ -2234,7 +2345,7 @@ export const ExportAccountDataResponse = zod.strictObject({
  * @summary Complete a two-factor login
  */
 export const LoginTwoFactorBody = zod.strictObject({
-    challenge: zod.string().optional(),
+    challenge: zod.string().min(1).optional(),
     code: zod.string()
 });
 export const LoginTwoFactorResponse = zod.strictObject({
@@ -2252,7 +2363,7 @@ export const LoginTwoFactorResponse = zod.strictObject({
  * @summary Send a login code
  */
 export const SendTwoFactorCodeBody = zod.strictObject({
-    challenge: zod.string().optional(),
+    challenge: zod.string().min(1).optional(),
     method: zod.string()
 });
 export const SendTwoFactorCodeResponse = zod.strictObject({
@@ -2499,6 +2610,7 @@ export const ListUsersResponse = zod.strictObject({
  * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
  * @summary Create user
  */
+export const createUserBodyUsernameMin = 3;
 export const createUserBodyPasswordMin = 8;
 export const createUserBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
@@ -2508,14 +2620,14 @@ export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const CreateUserBody = zod.strictObject({
     email: zod.email(),
-    username: zod.string(),
+    username: zod.string().min(createUserBodyUsernameMin),
     password: zod
         .string()
         .min(createUserBodyPasswordMin)
         .regex(createUserBodyPasswordRegExp)
         .optional(),
     sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
-    role: zod.string().optional(),
+    role: zod.string().min(1).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
     imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(createUserBodyLocaleRegExp).optional()
@@ -2597,7 +2709,7 @@ export const GetUserByIdResponse = zod.strictObject({
     })
 });
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const ReplaceUserByIdParams = zod.strictObject({
@@ -2607,6 +2719,7 @@ export const replaceUserByIdBodyPasswordMin = 8;
 export const replaceUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
 );
+export const replaceUserByIdBodyUsernameMin = 3;
 export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const ReplaceUserByIdBody = zod.strictObject({
     email: zod.email(),
@@ -2615,8 +2728,8 @@ export const ReplaceUserByIdBody = zod.strictObject({
         .min(replaceUserByIdBodyPasswordMin)
         .regex(replaceUserByIdBodyPasswordRegExp)
         .optional(),
-    username: zod.string().min(1),
-    role: zod.string(),
+    username: zod.string().min(replaceUserByIdBodyUsernameMin),
+    role: zod.string().min(1),
     active: zod.boolean(),
     imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(replaceUserByIdBodyLocaleOneRegExp).nullish(),
@@ -2660,6 +2773,7 @@ export const updateUserByIdBodyPasswordMin = 8;
 export const updateUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
 );
+export const updateUserByIdBodyUsernameMin = 3;
 export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
@@ -2668,8 +2782,8 @@ export const UpdateUserByIdBody = zod.strictObject({
         .min(updateUserByIdBodyPasswordMin)
         .regex(updateUserByIdBodyPasswordRegExp)
         .optional(),
-    username: zod.string().min(1).optional(),
-    role: zod.string().optional(),
+    username: zod.string().min(updateUserByIdBodyUsernameMin).optional(),
+    role: zod.string().min(1).optional(),
     active: zod.boolean().optional(),
     imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(updateUserByIdBodyLocaleOneRegExp).nullish(),
@@ -2874,7 +2988,7 @@ export const createFeedbackRequestBodySubjectMax = 200;
 export const createFeedbackRequestBodyMessageMax = 5000;
 export const createFeedbackRequestBodyWebsiteMax = 200;
 export const CreateFeedbackRequestBody = zod.strictObject({
-    name: zod.string().max(createFeedbackRequestBodyNameMax).optional(),
+    name: zod.string().min(1).max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email(),
     subject: zod.string().max(createFeedbackRequestBodySubjectMax),
     message: zod.string().max(createFeedbackRequestBodyMessageMax),
@@ -3034,9 +3148,10 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
 export const ReplaceFeedbackRequestStatusParams = zod.strictObject({
     id: zod.string()
 });
+export const replaceFeedbackRequestStatusBodyAdminNotesMax = 5000;
 export const ReplaceFeedbackRequestStatusBody = zod.strictObject({
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    adminNotes: zod.string().min(1).nullish()
+    adminNotes: zod.string().min(1).max(replaceFeedbackRequestStatusBodyAdminNotesMax).nullish()
 });
 export const ReplaceFeedbackRequestStatusResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3062,9 +3177,10 @@ export const ReplaceFeedbackRequestStatusResponse = zod.strictObject({
 export const UpdateFeedbackRequestStatusParams = zod.strictObject({
     id: zod.string()
 });
+export const updateFeedbackRequestStatusBodyAdminNotesMax = 5000;
 export const UpdateFeedbackRequestStatusBody = zod.strictObject({
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    adminNotes: zod.string().min(1).nullish()
+    adminNotes: zod.string().min(1).max(updateFeedbackRequestStatusBodyAdminNotesMax).nullish()
 });
 export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3203,7 +3319,7 @@ export const CreateProductBody = zod.strictObject({
         zod
             .strictObject({
                 title: zod.string(),
-                description: zod.string().optional()
+                description: zod.string().min(1).optional()
             })
             .nullable()
     ),
@@ -3216,8 +3332,8 @@ export const CreateProductBody = zod.strictObject({
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
     imageUrl: zod.literal(null).nullish(),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
+    categories: zod.array(zod.string().min(1)).optional(),
+    tags: zod.array(zod.string().min(1)).optional()
 });
 export const createProductResponseDataPriceMin = 0;
 export const createProductResponseDataOnHandMin = 0;
@@ -3337,12 +3453,12 @@ export const GetProductByIdResponse = zod.strictObject({
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
- * cleared, not left alone. `translations` keeps the same per-locale upsert/delete
- * semantics `PATCH` uses (see its own description): a translations table is keyed
- * sub-resources, not a single field a "whole-body replace" can meaningfully null out
- * — a caller cannot be expected to enumerate every locale that currently exists just
- * to keep it.
+ * `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
+ * cleared, not left alone. The image is outside the representation: it is set by an
+ * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
+ * it — a client cannot send the current path back. `translations` is the whole set as well: it must
+ * name the fallback locale, and every stored locale it leaves out is deleted. To
+ * change one locale without restating the others, use `PATCH`.
  * @summary Replace product
  */
 export const ReplaceProductByIdParams = zod.strictObject({
@@ -3356,7 +3472,7 @@ export const ReplaceProductByIdBody = zod.strictObject({
         zod
             .strictObject({
                 title: zod.string(),
-                description: zod.string().optional()
+                description: zod.string().min(1).optional()
             })
             .nullable()
     ),
@@ -3368,8 +3484,8 @@ export const ReplaceProductByIdBody = zod.strictObject({
     requiresShipping: zod.boolean(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.literal(null).nullish(),
-    categories: zod.array(zod.string()),
-    tags: zod.array(zod.string())
+    categories: zod.array(zod.string().min(1)),
+    tags: zod.array(zod.string().min(1))
 });
 export const replaceProductByIdResponseDataPriceMin = 0;
 export const replaceProductByIdResponseDataOnHandMin = 0;
@@ -3409,20 +3525,22 @@ export const ReplaceProductByIdResponse = zod.strictObject({
 });
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
- * `translations` replaces the stored value when sent; `translations` merges one
- * locale at a time — three signals, and no way to mistake one for another:
+ * `translations` replaces the stored value when sent; `translations` merges (RFC
+ * 7396) — three signals for a locale, and one level down for its fields:
  *
- * | the body says      | the server does                        |
- * | ------------------- | --------------------------------------- |
- * | `"it"` absent       | leaves the Italian row exactly as it is |
- * | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
- * | `"it": null`        | deletes the Italian row                 |
+ * | the body says                   | the server does                                |
+ * | ------------------------------- | ----------------------------------------------- |
+ * | `"it"` absent                   | leaves the Italian row exactly as it is          |
+ * | `"it": { "title": "x" }`        | changes the Italian title only; the rest is kept |
+ * | `"it": { "description": null }` | clears the Italian description only              |
+ * | `"it": null`                    | deletes the Italian row                          |
  *
  * An empty translation object is a 422, never a delete — deletion is `null`, spent
- * deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
- * never delete translated work. `null` on the fallback locale is a 422: deleting it
- * would leave the product with nothing to fall back to. A validation failure names
- * the locale in its pointer, e.g. `translations.it.title`.
+ * deliberately, so a mis-click can never delete translated work. `""` is never a
+ * value: clear a description with `null`. A title cannot be cleared. `null` on the
+ * fallback locale is a 422: deleting it would leave the product with nothing to fall
+ * back to. A validation failure names the locale in its pointer, e.g.
+ * `translations.it.title`.
  * @summary Edit product
  */
 export const UpdateProductByIdParams = zod.strictObject({
@@ -3436,8 +3554,8 @@ export const UpdateProductByIdBody = zod.strictObject({
             zod.string(),
             zod
                 .strictObject({
-                    title: zod.string(),
-                    description: zod.string().optional()
+                    title: zod.string().optional(),
+                    description: zod.string().min(1).nullish()
                 })
                 .nullable()
         )
@@ -3450,8 +3568,8 @@ export const UpdateProductByIdBody = zod.strictObject({
     requiresShipping: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.literal(null).nullish(),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional()
+    categories: zod.array(zod.string().min(1)).optional(),
+    tags: zod.array(zod.string().min(1)).optional()
 });
 export const updateProductByIdResponseDataPriceMin = 0;
 export const updateProductByIdResponseDataOnHandMin = 0;
@@ -3750,21 +3868,21 @@ export const GetCartResponse = zod.strictObject({
     })
 });
 /**
- * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
- * @summary Add/Edit cart item
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * @summary Add to cart
  */
-export const upsertCartItemBodyQuantityMax = 999;
-export const UpsertCartItemBody = zod.strictObject({
+export const addCartItemBodyQuantityMax = 999;
+export const AddCartItemBody = zod.strictObject({
     productId: zod.string(),
-    quantity: zod.number().min(1).max(upsertCartItemBodyQuantityMax)
+    quantity: zod.number().min(1).max(addCartItemBodyQuantityMax)
 });
-export const upsertCartItemResponseDataSummaryItemsCountMin = 0;
-export const upsertCartItemResponseDataSummaryTotalQuantityMin = 0;
-export const upsertCartItemResponseDataSummaryItemsTotalMin = 0;
-export const upsertCartItemResponseDataSummaryShippingCostMin = 0;
-export const upsertCartItemResponseDataSummaryTotalPriceMin = 0;
-export const upsertCartItemResponseDataShippingOptionsItemPriceMin = 0;
-export const UpsertCartItemResponse = zod.strictObject({
+export const addCartItemResponseDataSummaryItemsCountMin = 0;
+export const addCartItemResponseDataSummaryTotalQuantityMin = 0;
+export const addCartItemResponseDataSummaryItemsTotalMin = 0;
+export const addCartItemResponseDataSummaryShippingCostMin = 0;
+export const addCartItemResponseDataSummaryTotalPriceMin = 0;
+export const addCartItemResponseDataShippingOptionsItemPriceMin = 0;
+export const AddCartItemResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -3776,11 +3894,11 @@ export const UpsertCartItemResponse = zod.strictObject({
             })
         ),
         summary: zod.strictObject({
-            itemsCount: zod.number().min(upsertCartItemResponseDataSummaryItemsCountMin),
-            totalQuantity: zod.number().min(upsertCartItemResponseDataSummaryTotalQuantityMin),
-            itemsTotal: zod.number().min(upsertCartItemResponseDataSummaryItemsTotalMin),
-            shippingCost: zod.number().min(upsertCartItemResponseDataSummaryShippingCostMin),
-            totalPrice: zod.number().min(upsertCartItemResponseDataSummaryTotalPriceMin),
+            itemsCount: zod.number().min(addCartItemResponseDataSummaryItemsCountMin),
+            totalQuantity: zod.number().min(addCartItemResponseDataSummaryTotalQuantityMin),
+            itemsTotal: zod.number().min(addCartItemResponseDataSummaryItemsTotalMin),
+            shippingCost: zod.number().min(addCartItemResponseDataSummaryShippingCostMin),
+            totalPrice: zod.number().min(addCartItemResponseDataSummaryTotalPriceMin),
             currency: zod.string()
         }),
         shipping: zod.strictObject({
@@ -3789,7 +3907,7 @@ export const UpsertCartItemResponse = zod.strictObject({
             options: zod.array(
                 zod.strictObject({
                     id: zod.string(),
-                    price: zod.number().min(upsertCartItemResponseDataShippingOptionsItemPriceMin),
+                    price: zod.number().min(addCartItemResponseDataShippingOptionsItemPriceMin),
                     requiresAddress: zod.boolean(),
                     tracked: zod.boolean()
                 })
@@ -3891,7 +4009,7 @@ export const ClearCartResponse = zod.strictObject({
     })
 });
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const UpdateCartItemByIdParams = zod.strictObject({
@@ -3899,7 +4017,6 @@ export const UpdateCartItemByIdParams = zod.strictObject({
 });
 export const updateCartItemByIdBodyQuantityMax = 999;
 export const UpdateCartItemByIdBody = zod.strictObject({
-    productId: zod.string().optional(),
     quantity: zod.number().min(1).max(updateCartItemByIdBodyQuantityMax)
 });
 export const updateCartItemByIdResponseDataSummaryItemsCountMin = 0;
@@ -3994,7 +4111,7 @@ export const RemoveCartItemResponse = zod.strictObject({
  * @summary Choose (or clear) the cart's shipping method
  */
 export const SetCartShippingMethodBody = zod.strictObject({
-    shippingMethodId: zod.string().nullable()
+    shippingMethodId: zod.string().min(1).nullable()
 });
 export const setCartShippingMethodResponseDataSummaryItemsCountMin = 0;
 export const setCartShippingMethodResponseDataSummaryTotalQuantityMin = 0;
@@ -4062,7 +4179,7 @@ export const GetCartSummaryResponse = zod.strictObject({
     })
 });
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkoutHeaderIdempotencyKeyMax = 200;
@@ -4077,175 +4194,139 @@ export const CheckoutHeader = zod.strictObject({
 });
 export const checkoutBodyPaymentMethodDefault = `card`;
 export const CheckoutBody = zod.strictObject({
-    notes: zod.string().optional(),
+    notes: zod.string().min(1).optional(),
     addressId: zod.string().optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).default(checkoutBodyPaymentMethodDefault)
 });
-export const checkoutResponseDataOrderItemsItemProductPriceMin = 0;
-export const checkoutResponseDataOrderItemsItemProductRequiresShippingDefault = true;
-export const checkoutResponseDataOrderItemsItemProductWeightMin = 0;
-export const checkoutResponseDataOrderItemsItemProductTaxRateMin = 0;
-export const checkoutResponseDataOrderItemsItemProductTaxRateMax = 1;
-export const checkoutResponseDataOrderItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
-);
-export const checkoutResponseDataOrderItemsItemTaxAmountMin = 0;
-export const checkoutResponseDataOrderItemsItemNetAmountMin = 0;
-export const checkoutResponseDataOrderTotalItemsMin = 0;
-export const checkoutResponseDataOrderTotalQuantityMin = 0;
-export const checkoutResponseDataOrderTotalPriceMin = 0;
-export const checkoutResponseDataOrderNetTotalMin = 0;
-export const checkoutResponseDataOrderTaxTotalMin = 0;
-export const checkoutResponseDataOrderShippingNetAmountMin = 0;
-export const checkoutResponseDataOrderShippingTaxAmountMin = 0;
-export const checkoutResponseDataOrderTaxSummaryItemRateMin = 0;
-export const checkoutResponseDataOrderTaxSummaryItemNetAmountMin = 0;
-export const checkoutResponseDataOrderTaxSummaryItemTaxAmountMin = 0;
-export const checkoutResponseDataOrderTaxSummaryItemGrossAmountMin = 0;
-export const checkoutResponseDataOrderShippingCostMin = 0;
-export const checkoutResponseDataOrderShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const checkoutResponseDataItemsItemProductPriceMin = 0;
+export const checkoutResponseDataItemsItemProductRequiresShippingDefault = true;
+export const checkoutResponseDataItemsItemProductWeightMin = 0;
+export const checkoutResponseDataItemsItemProductTaxRateMin = 0;
+export const checkoutResponseDataItemsItemProductTaxRateMax = 1;
+export const checkoutResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const checkoutResponseDataItemsItemTaxAmountMin = 0;
+export const checkoutResponseDataItemsItemNetAmountMin = 0;
+export const checkoutResponseDataTotalItemsMin = 0;
+export const checkoutResponseDataTotalQuantityMin = 0;
+export const checkoutResponseDataTotalPriceMin = 0;
+export const checkoutResponseDataNetTotalMin = 0;
+export const checkoutResponseDataTaxTotalMin = 0;
+export const checkoutResponseDataShippingNetAmountMin = 0;
+export const checkoutResponseDataShippingTaxAmountMin = 0;
+export const checkoutResponseDataTaxSummaryItemRateMin = 0;
+export const checkoutResponseDataTaxSummaryItemNetAmountMin = 0;
+export const checkoutResponseDataTaxSummaryItemTaxAmountMin = 0;
+export const checkoutResponseDataTaxSummaryItemGrossAmountMin = 0;
+export const checkoutResponseDataShippingCostMin = 0;
+export const checkoutResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const CheckoutResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        order: zod.strictObject({
-            id: zod.string(),
-            userId: zod.string().optional(),
-            email: zod.email(),
-            items: zod.array(
-                zod.strictObject({
-                    product: zod.strictObject({
-                        id: zod.string(),
-                        title: zod.string(),
-                        price: zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
-                        description: zod.string().optional(),
-                        active: zod.boolean().optional(),
-                        requiresShipping: zod
-                            .boolean()
-                            .default(
-                                checkoutResponseDataOrderItemsItemProductRequiresShippingDefault
-                            ),
-                        sku: zod.string().min(1).optional(),
-                        weight: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductWeightMin)
-                            .optional(),
-                        categories: zod.array(zod.string()).optional(),
-                        tags: zod.array(zod.string()).optional(),
-                        createdAt: zod.iso.datetime({ offset: true }).optional(),
-                        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                        deletedAt: zod.iso.datetime({ offset: true }).optional(),
-                        taxRate: zod
-                            .number()
-                            .min(checkoutResponseDataOrderItemsItemProductTaxRateMin)
-                            .max(checkoutResponseDataOrderItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
-                    }),
-                    quantity: zod.number().min(1),
-                    locale: zod.string().regex(checkoutResponseDataOrderItemsItemLocaleRegExp),
-                    current: zod
-                        .strictObject({
-                            imageUrl: zod.string().min(1),
-                            thumbnailUrl: zod.string().optional()
-                        })
-                        .nullable(),
-                    taxAmount: zod.number().min(checkoutResponseDataOrderItemsItemTaxAmountMin),
-                    netAmount: zod.number().min(checkoutResponseDataOrderItemsItemNetAmountMin)
-                })
-            ),
-            totalItems: zod.number().min(checkoutResponseDataOrderTotalItemsMin),
-            totalQuantity: zod.number().min(checkoutResponseDataOrderTotalQuantityMin),
-            totalPrice: zod.number().min(checkoutResponseDataOrderTotalPriceMin),
-            currency: zod.string().optional(),
-            netTotal: zod.number().min(checkoutResponseDataOrderNetTotalMin),
-            taxTotal: zod.number().min(checkoutResponseDataOrderTaxTotalMin),
-            shippingNetAmount: zod.number().min(checkoutResponseDataOrderShippingNetAmountMin),
-            shippingTaxAmount: zod.number().min(checkoutResponseDataOrderShippingTaxAmountMin),
-            taxSummary: zod.array(
-                zod.strictObject({
-                    rate: zod.number().min(checkoutResponseDataOrderTaxSummaryItemRateMin),
-                    netAmount: zod
+        id: zod.string(),
+        userId: zod.string().optional(),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string(),
+                    title: zod.string(),
+                    price: zod.number().min(checkoutResponseDataItemsItemProductPriceMin),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(checkoutResponseDataItemsItemProductRequiresShippingDefault),
+                    sku: zod.string().min(1).optional(),
+                    weight: zod
                         .number()
-                        .min(checkoutResponseDataOrderTaxSummaryItemNetAmountMin),
-                    taxAmount: zod
+                        .min(checkoutResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
                         .number()
-                        .min(checkoutResponseDataOrderTaxSummaryItemTaxAmountMin),
-                    grossAmount: zod
-                        .number()
-                        .min(checkoutResponseDataOrderTaxSummaryItemGrossAmountMin)
-                })
-            ),
-            notes: zod.string().optional(),
-            shippingMethod: zod.string().optional(),
-            shippingCost: zod.number().min(checkoutResponseDataOrderShippingCostMin).optional(),
-            shippingAddress: zod
-                .strictObject({
-                    fullName: zod.string(),
-                    street: zod.string(),
-                    city: zod.string(),
-                    zip: zod.string(),
-                    country: zod
-                        .string()
-                        .regex(checkoutResponseDataOrderShippingAddressCountryRegExp),
-                    phone: zod.string().optional()
-                })
-                .optional(),
-            paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-            payBy: zod.iso.datetime({ offset: true }).optional(),
-            orderNumber: zod.string().optional(),
-            transferInstructions: zod
-                .strictObject({
-                    beneficiary: zod.string(),
-                    iban: zod.string(),
-                    bic: zod.string().optional(),
-                    reference: zod.string()
-                })
-                .optional(),
-            status: zod.enum([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ]),
-            actions: zod
-                .strictObject({
-                    transitions: zod.array(
-                        zod.enum([
-                            'pending',
-                            'paid',
-                            'processing',
-                            'shipped',
-                            'delivered',
-                            'cancelled'
-                        ])
-                    ),
-                    cancel: zod.boolean(),
-                    pay: zod.boolean(),
-                    start: zod.boolean(),
-                    ship: zod.boolean(),
-                    deliver: zod.boolean(),
-                    fulfill: zod.boolean(),
-                    override: zod.array(
-                        zod.enum([
-                            'pending',
-                            'paid',
-                            'processing',
-                            'shipped',
-                            'delivered',
-                            'cancelled'
-                        ])
-                    ),
-                    invoice: zod.boolean()
-                })
-                .optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
-        }),
-        message: zod.string().optional()
+                        .min(checkoutResponseDataItemsItemProductTaxRateMin)
+                        .max(checkoutResponseDataItemsItemProductTaxRateMax),
+                    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                }),
+                quantity: zod.number().min(1),
+                locale: zod.string().regex(checkoutResponseDataItemsItemLocaleRegExp),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod.string().min(1),
+                        thumbnailUrl: zod.string().optional()
+                    })
+                    .nullable(),
+                taxAmount: zod.number().min(checkoutResponseDataItemsItemTaxAmountMin),
+                netAmount: zod.number().min(checkoutResponseDataItemsItemNetAmountMin)
+            })
+        ),
+        totalItems: zod.number().min(checkoutResponseDataTotalItemsMin),
+        totalQuantity: zod.number().min(checkoutResponseDataTotalQuantityMin),
+        totalPrice: zod.number().min(checkoutResponseDataTotalPriceMin),
+        currency: zod.string().optional(),
+        netTotal: zod.number().min(checkoutResponseDataNetTotalMin),
+        taxTotal: zod.number().min(checkoutResponseDataTaxTotalMin),
+        shippingNetAmount: zod.number().min(checkoutResponseDataShippingNetAmountMin),
+        shippingTaxAmount: zod.number().min(checkoutResponseDataShippingTaxAmountMin),
+        taxSummary: zod.array(
+            zod.strictObject({
+                rate: zod.number().min(checkoutResponseDataTaxSummaryItemRateMin),
+                netAmount: zod.number().min(checkoutResponseDataTaxSummaryItemNetAmountMin),
+                taxAmount: zod.number().min(checkoutResponseDataTaxSummaryItemTaxAmountMin),
+                grossAmount: zod.number().min(checkoutResponseDataTaxSummaryItemGrossAmountMin)
+            })
+        ),
+        notes: zod.string().optional(),
+        shippingMethod: zod.string().optional(),
+        shippingCost: zod.number().min(checkoutResponseDataShippingCostMin).optional(),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(checkoutResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        orderNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string()
+            })
+            .optional(),
+        status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ),
+                cancel: zod.boolean(),
+                pay: zod.boolean(),
+                start: zod.boolean(),
+                ship: zod.boolean(),
+                deliver: zod.boolean(),
+                fulfill: zod.boolean(),
+                override: zod.array(
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ),
+                invoice: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -4311,10 +4392,10 @@ export const GetWishlistResponse = zod.strictObject({
     })
 });
 /**
- * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+ * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
  * @summary Save a product
  */
-export const AddWishlistItemBody = zod.strictObject({
+export const AddWishlistItemParams = zod.strictObject({
     productId: zod.string()
 });
 export const AddWishlistItemResponse = zod.strictObject({
@@ -5627,7 +5708,7 @@ export const HardDeleteOrderByIdResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const CancelOrderByIdParams = zod.strictObject({
@@ -5970,7 +6051,7 @@ export const ListPaymentMethodsResponse = zod.strictObject({
     })
 });
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const createPaymentIntentHeaderIdempotencyKeyMax = 200;
@@ -6275,7 +6356,7 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Record a payment that arrived outside the provider
  */
 export const RecordOfflinePaymentParams = zod.strictObject({
@@ -6294,7 +6375,7 @@ export const RecordOfflinePaymentHeader = zod.strictObject({
 export const recordOfflinePaymentBodyReferenceMax = 120;
 export const RecordOfflinePaymentBody = zod.strictObject({
     method: zod.enum(['bank_transfer', 'cash', 'other']),
-    reference: zod.string().max(recordOfflinePaymentBodyReferenceMax).optional(),
+    reference: zod.string().min(1).max(recordOfflinePaymentBodyReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional()
 });
 export const recordOfflinePaymentResponseDataAmountMin = 0;
@@ -6681,7 +6762,7 @@ export const ShipOrderParams = zod.strictObject({
     orderId: zod.string()
 });
 export const ShipOrderBody = zod.strictObject({
-    trackingCode: zod.string().optional(),
+    trackingCode: zod.string().min(1).optional(),
     forced: zod.boolean().optional(),
     reason: zod.string().min(1).optional()
 });
@@ -6998,13 +7079,23 @@ export const ListStockMovementsResponse = zod.strictObject({
     })
 });
 /**
- * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
+ * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
  * @summary Receive stock
  */
+export const receiveStockHeaderIdempotencyKeyMax = 200;
+export const receiveStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const ReceiveStockHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(receiveStockHeaderIdempotencyKeyMax)
+        .regex(receiveStockHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const ReceiveStockBody = zod.strictObject({
     productId: zod.string(),
     quantity: zod.number().min(1),
-    note: zod.string().optional()
+    note: zod.string().min(1).optional()
 });
 export const receiveStockResponseDataOnHandMin = 0;
 export const receiveStockResponseDataReservedMin = 0;
@@ -7022,13 +7113,23 @@ export const ReceiveStockResponse = zod.strictObject({
     })
 });
 /**
- * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
+ * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
  * @summary Adjust stock
  */
+export const adjustStockHeaderIdempotencyKeyMax = 200;
+export const adjustStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const AdjustStockHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(adjustStockHeaderIdempotencyKeyMax)
+        .regex(adjustStockHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const AdjustStockBody = zod.strictObject({
     productId: zod.string(),
     delta: zod.number(),
-    note: zod.string().optional()
+    note: zod.string().min(1).optional()
 });
 export const adjustStockResponseDataOnHandMin = 0;
 export const adjustStockResponseDataReservedMin = 0;
@@ -7062,7 +7163,7 @@ export const SweepReservationsResponse = zod.strictObject({
 });
 /**
  * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or the rotate action on `PATCH .../{id}`).
+ * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptionsQueryPageDefault = 1;
@@ -7130,15 +7231,18 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
 /**
  * Mints the ring's first secret and returns it in plaintext, once — the only
  * response that ever carries it. `url` must be `https://` and must not resolve to a
- * private, loopback or link-local address; that check runs again on every delivery,
- * since a subscription's DNS can change after it is created.
+ * private, loopback or link-local address. The host is resolved here, so a refusal is a
+ * 422 naming the field (`errors[].details` `{ field: url, reason }`) instead of a
+ * delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
+ * changes. It runs again on every delivery, since a subscription's DNS can change
+ * after it is created.
  * @summary Create a webhook subscription
  */
 export const createWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const CreateWebhookSubscriptionBody = zod.strictObject({
     url: zod.url().regex(createWebhookSubscriptionBodyUrlRegExp),
     description: zod.string().min(1).optional(),
-    eventTypes: zod.array(zod.string()).min(1)
+    eventTypes: zod.array(zod.string().min(1)).min(1)
 });
 export const createWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
 export const createWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
@@ -7176,7 +7280,7 @@ export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)
 export const ReplaceWebhookSubscriptionBody = zod.strictObject({
     url: zod.url().regex(replaceWebhookSubscriptionBodyUrlRegExp),
     description: zod.string().min(1).nullish(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod.array(zod.string().min(1)).min(1),
     enabled: zod.boolean()
 });
 export const replaceWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
@@ -7212,7 +7316,7 @@ export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)'
 export const UpdateWebhookSubscriptionBody = zod.strictObject({
     url: zod.url().regex(updateWebhookSubscriptionBodyUrlRegExp).optional(),
     description: zod.string().min(1).nullish(),
-    eventTypes: zod.array(zod.string()).min(1).optional(),
+    eventTypes: zod.array(zod.string().min(1)).min(1).optional(),
     enabled: zod.boolean().optional()
 });
 export const updateWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');

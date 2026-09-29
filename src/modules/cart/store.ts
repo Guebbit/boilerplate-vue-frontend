@@ -11,7 +11,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     getCart,
     getCartSummary,
-    upsertCartItem,
+    addCartItem,
     updateCartItemById,
     removeCartItem,
     clearCart,
@@ -156,15 +156,17 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Adds a product to the cart, or updates its quantity when already present.
+     * "Add to cart": a product with no line gets one, a line already there GROWS by `quantity` —
+     * the server does the arithmetic, so the caller never reads the cart first to increment it.
+     * `updateCartItem` is the door that sets an exact quantity.
      *
-     * @param productId - Product to upsert.
-     * @param quantity - Quantity to set for that product.
+     * @param productId - Product to add.
+     * @param quantity - How many to add.
      * @returns A promise resolving with the updated cart response.
      */
-    const upsertCartItemAction = (productId: string, quantity: number) =>
+    const addCartItemAction = (productId: string, quantity: number) =>
         fetchAny(() =>
-            upsertCartItem({ productId, quantity }).then((response) => {
+            addCartItem({ productId, quantity }).then((response) => {
                 cart.value = response.data;
                 // The basket just changed — any checkout attempt still pending is now stale (B19).
                 mintCheckoutIdempotencyKey();
@@ -183,7 +185,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             updateCartItemById(productId, { quantity }).then((response) => {
                 cart.value = response.data;
-                // See upsertCartItemAction — a changed line means a new checkout attempt (B19).
+                // See addCartItemAction — a changed line means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
                 return response.data;
             })
@@ -219,7 +221,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
                 cart.value = response.data;
-                // See upsertCartItemAction — a changed basket means a new checkout attempt (B19).
+                // See addCartItemAction — a changed basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
                 return response.data;
             })
@@ -235,7 +237,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             clearCart().then((response) => {
                 cart.value = response.data;
-                // See upsertCartItemAction — an emptied basket means a new checkout attempt (B19).
+                // See addCartItemAction — an emptied basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
                 return response.data;
             })
@@ -274,7 +276,7 @@ export const useCartStore = defineStore('cart', () => {
      * for whatever the caller tries next.
      *
      * @param checkoutData - Optional checkout payload (address, payment method, order notes).
-     * @returns A promise resolving with the checkout response, the created order included.
+     * @returns A promise resolving with the created order.
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
@@ -315,7 +317,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             apiReorder(orderId).then((response) => {
                 cart.value = response.data;
-                // See upsertCartItemAction — a refilled basket means a new checkout attempt (B19).
+                // See addCartItemAction — a refilled basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
                 return response.data;
             })
@@ -422,7 +424,7 @@ export const useCartStore = defineStore('cart', () => {
         resetProductTitles,
         checkout,
         reorder,
-        upsertCartItem: upsertCartItemAction,
+        addCartItem: addCartItemAction,
         updateCartItem,
         removeCartItem: removeCartItemAction,
         clearCart: clearCartAction,

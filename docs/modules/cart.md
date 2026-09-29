@@ -84,11 +84,11 @@ first error and returns a verdict (`cart-changed`, `insufficient-stock`, `addres
 
 Store `cart`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                    | What it is                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `cart` · `productTitles`                                                                                                                                   | The refs the setup function returns — the only writable surface. |
-| **Getters** | `cartItems` · `cartSummary` · `badgeQuantity` · `badgeTotal` · `badgeCurrency` · `loading`                                                                 | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchSummary` · `fetchCart` · `titleOf` · `resolveTitles` · `checkout` · `reorder` · `upsertCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                 | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `cart` · `productTitles`                                                                                                                                | The refs the setup function returns — the only writable surface. |
+| **Getters** | `cartItems` · `cartSummary` · `badgeQuantity` · `badgeTotal` · `badgeCurrency` · `loading`                                                              | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchSummary` · `fetchCart` · `titleOf` · `resolveTitles` · `checkout` · `reorder` · `addCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -106,7 +106,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | ------------------------- | ------------------------------ |
 | `DELETE /cart`            | `RemoveCartItemByBodyResponse` |
 | `GET /cart`               | `GetCartResponse`              |
-| `POST /cart`              | `UpsertCartItemResponse`       |
+| `POST /cart`              | `AddCartItemResponse`          |
 | `DELETE /cart/all`        | `ClearCartResponse`            |
 | `POST /cart/checkout`     | `CheckoutResponse`             |
 | `POST /cart/reorder/{id}` | `ReorderResponse`              |

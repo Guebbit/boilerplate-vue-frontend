@@ -147,7 +147,7 @@ export function useDictionaryCellEditor(
         }
         const request = current
             ? localesStore.editEntry(language.tag, current.id, draft)
-            : localesStore.addEntry(language.tag, { tenant: tenant.value, key, value: draft });
+            : localesStore.addEntry(language.tag, tenant.value, { key, value: draft });
         return settleWrite(
             language,
             id,

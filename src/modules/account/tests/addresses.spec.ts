@@ -39,16 +39,33 @@ const lastRequest = () => {
 };
 
 /**
- * Makes the transport answer every address endpoint with this book.
+ * Makes the transport answer the book's own endpoints (read, delete) with this book, and a write
+ * to one entry with that entry alone — what the contract says each answers. Every answer is
+ * proven against the operation's schema by `parseOrvalFixture`.
+ *
+ * @param addresses - the book as the server holds it after the write
+ * @param written - the entry a create, PUT or PATCH answers with
  */
-const respondWithBook = (addresses: unknown[]) =>
-    vi
-        .mocked(orvalMutator)
-        .mockImplementation((config: { url?: string; method?: string }) =>
-            Promise.resolve(
-                parseOrvalFixture(config.method, config.url, orvalEnvelope({ addresses }))
+const respondWithBook = (addresses: unknown[], written?: unknown) =>
+    vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
+        const answersOneEntry = config.method !== 'GET' && config.method !== 'DELETE';
+        return Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                answersOneEntry ? orvalEnvelope(written) : orvalEnvelope({ addresses })
             )
         );
+    });
+
+/**
+ * The `METHOD url` of every request the transport has seen, in order.
+ */
+const requestLog = () =>
+    vi.mocked(orvalMutator).mock.calls.map((call) => {
+        const { method, url } = call[0] as { method: string; url: string };
+        return `${method} ${url}`;
+    });
 
 describe('useAddressesStore', () => {
     const HOME = {
@@ -92,28 +109,55 @@ describe('useAddressesStore', () => {
         });
     });
 
-    it('posts a new entry and replaces the book with the answer', () => {
-        respondWithBook([HOME, WORK]);
+    // A create answers the entry it made (201), which says nothing of a demoted default — so the
+    // store re-reads the book and renders THAT.
+    it('posts a new entry, then reloads the book rather than trusting the one row it got back', () => {
+        respondWithBook([HOME, WORK], WORK);
         const store = useAddressesStore();
 
         const { id: _id, default: _default, ...input } = WORK;
 
         return store.addAddress(input).then(() => {
-            expect(lastRequest()).toMatchObject({ url: '/account/addresses', method: 'POST' });
+            expect(requestLog()).toEqual(['POST /account/addresses', 'GET /account/addresses']);
             expect(store.addresses).toEqual([HOME, WORK]);
         });
     });
 
-    it('patches a change to one entry, addressed by id', () => {
-        respondWithBook([{ ...HOME, city: 'Ogdenville' }]);
+    it('patches a change to one entry, addressed by id, then reloads the book', () => {
+        const changed = { ...HOME, city: 'Ogdenville' };
+        respondWithBook([changed], changed);
         const store = useAddressesStore();
 
         return store.updateAddress('a1', { city: 'Ogdenville' }).then(() => {
-            expect(lastRequest()).toMatchObject({
-                url: '/account/addresses/a1',
-                method: 'PATCH'
-            });
-            expect(store.addresses).toEqual([{ ...HOME, city: 'Ogdenville' }]);
+            expect(requestLog()).toEqual(['PATCH /account/addresses/a1', 'GET /account/addresses']);
+            expect(store.addresses).toEqual([changed]);
+        });
+    });
+
+    // The default is the book's pointer: an action of its own, and the demoted holder is another
+    // row, which only the reload shows.
+    it('makes an entry the default through its own action, then reloads the book', () => {
+        respondWithBook(
+            [
+                { ...HOME, default: false },
+                { ...WORK, default: true }
+            ],
+            {
+                ...WORK,
+                default: true
+            }
+        );
+        const store = useAddressesStore();
+
+        return store.setDefaultAddress('a2').then(() => {
+            expect(requestLog()).toEqual([
+                'PUT /account/addresses/a2/default',
+                'GET /account/addresses'
+            ]);
+            expect(store.addresses).toEqual([
+                { ...HOME, default: false },
+                { ...WORK, default: true }
+            ]);
         });
     });
 

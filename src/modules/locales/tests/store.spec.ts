@@ -99,16 +99,22 @@ beforeEach(() => {
         }),
         // Bodyless per the real contract — no `data` at all — unlike the write endpoints above.
         'DELETE /locales/es': orvalEnvelope(),
-        'POST /locales/es/entries': orvalEnvelope(ENTRY),
+        'POST /locales/es/tenants/demo-fe/entries': orvalEnvelope(ENTRY),
+        'PATCH /locales/es/tenants/demo-be/entries': orvalEnvelope({
+            created: 0,
+            updated: 1,
+            removed: 0,
+            revision: 4
+        }),
         'PUT /locales/es/entries/locale-entry-1': orvalEnvelope({ ...ENTRY, value: 'Cercar' }),
         'DELETE /locales/es/entries/locale-entry-1': orvalEnvelope(),
-        'PATCH /locales/es/entries': orvalEnvelope({
+        'PATCH /locales/es/tenants/demo-fe/entries': orvalEnvelope({
             created: 2,
             updated: 1,
             removed: 0,
             revision: 4
         }),
-        'PUT /locales/es/entries': orvalEnvelope({
+        'PUT /locales/es/tenants/demo-fe/entries': orvalEnvelope({
             created: 2,
             updated: 1,
             removed: 5,
@@ -160,10 +166,10 @@ describe('entry writes', () => {
     it('adds an entry against the language named in the call', () => {
         const store = useLocalesStore();
         return store
-            .addEntry('es', { tenant: 'demo-fe', key: 'generic.search', value: 'Buscar' })
+            .addEntry('es', 'demo-fe', { key: 'generic.search', value: 'Buscar' })
             .then((entry) => {
                 expect(entry).toEqual(ENTRY);
-                expect(requestedUrls()).toEqual(['POST /locales/es/entries']);
+                expect(requestedUrls()).toEqual(['POST /locales/es/tenants/demo-fe/entries']);
             });
     });
 
@@ -181,7 +187,7 @@ describe('entry writes', () => {
         return store
             .importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
-                expect(requestedUrls()).toEqual(['PATCH /locales/es/entries']);
+                expect(requestedUrls()).toEqual(['PATCH /locales/es/tenants/demo-fe/entries']);
                 expect(result?.removed).toBe(0);
             });
     });
@@ -191,21 +197,22 @@ describe('entry writes', () => {
         return store
             .importEntries('es', 'replace', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
-                expect(requestedUrls()).toEqual(['PUT /locales/es/entries']);
+                expect(requestedUrls()).toEqual(['PUT /locales/es/tenants/demo-fe/entries']);
                 expect(result?.removed).toBe(5);
             });
     });
 
-    it('names the tenant once for the whole batch, exactly as the contract shapes it', () => {
+    it('names the tenant in the path, once for the whole batch — the body is only the rows', () => {
         const store = useLocalesStore();
         return store
             .importEntries('es', 'merge', 'demo-be', [{ key: 'a', value: 'b' }])
             .then(() => {
-                const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-                expect(call.data).toEqual({
-                    tenant: 'demo-be',
-                    entries: [{ key: 'a', value: 'b' }]
-                });
+                const call = vi.mocked(orvalMutator).mock.calls[0][0] as {
+                    url?: string;
+                    data?: unknown;
+                };
+                expect(call.url).toBe('/locales/es/tenants/demo-be/entries');
+                expect(call.data).toEqual({ entries: [{ key: 'a', value: 'b' }] });
             });
     });
 });

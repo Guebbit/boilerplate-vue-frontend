@@ -204,14 +204,14 @@ const runCheckout = () =>
         .then((result) => {
             // `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
             // actually takes that path (see `useCartStore.checkout`'s own docblock), but the
-            // guard is what lets `result.order.id` below type-check, and it is cheap insurance
+            // guard is what lets `result.id` below type-check, and it is cheap insurance
             // against a client-side navigation to `/orders/undefined` either way.
-            if (!result?.order.id) return;
+            if (!result?.id) return;
             addMessage(t('cart-page.success-checkout'));
             // `orders` is not one of cart's declared MODULE_EDGES reaches (FA86) — a build
             // shipping no orders module still completes the checkout, just with nowhere to SHOW
             // the order it just placed, so it lands Home instead of throwing.
-            const target = linkIfRouted(router, 'OrderTarget', { id: result.order.id }) ?? {
+            const target = linkIfRouted(router, 'OrderTarget', { id: result.id }) ?? {
                 name: 'Home'
             };
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
