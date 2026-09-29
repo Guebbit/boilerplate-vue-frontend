@@ -39,7 +39,9 @@ const handPaidSucceededPayment: Payment = {
     currency: 'EUR',
     status: 'succeeded',
     provider: 'manual',
-    method: 'bank_transfer'
+    method: 'bank_transfer',
+    amountRefunded: 0,
+    refunds: []
 };
 
 beforeEach(() => {
@@ -236,5 +238,35 @@ describe('PaymentPanel', () => {
                     expect(wrapper.find('[data-test=payment-status]').exists()).toBe(false);
                 });
         });
+    });
+});
+
+describe('a partially refunded payment', () => {
+    it('says how much of the payment went back', () => {
+        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+        store.payment = { ...handPaidSucceededPayment, amountRefunded: 25 };
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.get('[data-test=payment-partially-refunded]').text()).toMatch(/25.*100/);
+        });
+    });
+
+    it('says nothing when nothing went back, or when all of it did', () => {
+        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+        store.payment = { ...handPaidSucceededPayment };
+
+        return nextRenderTick(wrapper)
+            .then(() => {
+                expect(wrapper.find('[data-test=payment-partially-refunded]').exists()).toBe(false);
+                store.payment = {
+                    ...handPaidSucceededPayment,
+                    status: 'refunded',
+                    amountRefunded: 100
+                };
+                return nextRenderTick(wrapper);
+            })
+            .then(() => {
+                expect(wrapper.find('[data-test=payment-partially-refunded]').exists()).toBe(false);
+            });
     });
 });

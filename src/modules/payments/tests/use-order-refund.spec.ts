@@ -29,6 +29,8 @@ const payment = (refund: boolean) => ({
     status: refund ? 'succeeded' : 'refunded',
     provider: 'fake',
     method: 'card',
+    amountRefunded: refund ? 0 : 50,
+    refunds: [],
     actions: { pay: false, refund }
 });
 
