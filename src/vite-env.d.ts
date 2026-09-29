@@ -40,5 +40,6 @@ interface ImportMetaEnv {
     readonly VITE_MAX_UPLOAD_BYTES?: string;
     readonly VITE_UMAMI_SRC?: string;
     readonly VITE_UMAMI_WEBSITE_ID?: string;
+    readonly VITE_VALIDATE_REQUESTS?: string;
     readonly VITE_VALIDATE_RESPONSES?: string;
 }

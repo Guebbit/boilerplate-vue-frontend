@@ -9,7 +9,11 @@ import { z } from 'zod';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/i18n';
-import { isResponseSchemaTableLoading, resolveResponseSchema } from './response-schema-map.ts';
+import {
+    isResponseSchemaTableLoading,
+    resolveRequestSchema,
+    resolveResponseSchema
+} from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type { AxiosResponseErrorData } from './types.ts';
 
@@ -31,6 +35,21 @@ import type { AxiosResponseErrorData } from './types.ts';
  */
 export const shouldValidateResponses = (): boolean => {
     const flag = import.meta.env.VITE_VALIDATE_RESPONSES;
+    if (flag === 'true') return true;
+    if (flag === 'false') return false;
+    return import.meta.env.MODE !== 'test';
+};
+
+/**
+ * Whether `orvalMutator` should parse every outgoing JSON body through its contract schema before
+ * the request leaves. `VITE_VALIDATE_REQUESTS` ('true'/'false') decides; unset defaults to ON
+ * outside Vitest, exactly like {@link shouldValidateResponses} — the request twin of it.
+ *
+ * Validates only. It never rewrites a body: turning a form's `''` into the wire's `null` is
+ * `toRequestBody`'s job, one layer up. This is what makes a call site that forgot it loud.
+ */
+export const shouldValidateRequests = (): boolean => {
+    const flag = import.meta.env.VITE_VALIDATE_REQUESTS;
     if (flag === 'true') return true;
     if (flag === 'false') return false;
     return import.meta.env.MODE !== 'test';
@@ -111,4 +130,48 @@ export const validateResponseAgainstContract = (
         message,
         errors: [{ code: 'CONTRACT_MISMATCH', message }]
     } satisfies AxiosResponseErrorData;
+};
+
+/**
+ * Whether a request body is a plain JSON payload — the only shape the generated `*Body` schemas
+ * describe. A multipart call hands axios a `FormData`, which the JSON schema of the same
+ * operation must not be asked to parse.
+ *
+ * @param data - `config.data` as the mutator received it.
+ */
+const isJsonPayload = (data: unknown): boolean =>
+    typeof data === 'object' &&
+    data !== null &&
+    !(data instanceof FormData) &&
+    !(data instanceof Blob);
+
+/**
+ * Parses an outgoing JSON body through the request schema its route maps to.
+ *
+ * Fails open on an unmapped route or a bodyless call, like the response side. What a mismatch
+ * DOES depends on {@link isReportOnly}:
+ *
+ * | Profile | Behaviour |
+ * | --- | --- |
+ * | dev, unit, e2e | throws, naming the operation, the field and the rule — it is our bug |
+ * | production | reports to Faro and sends anyway — the backend answers 422 with a real message |
+ *
+ * @param config - The request config about to be sent.
+ * @throws {Error} When a mapped schema rejects the body outside report-only mode.
+ */
+export const validateRequestAgainstContract = (config: AxiosRequestConfig): void => {
+    if (!isJsonPayload(config.data)) return;
+    const schema = resolveRequestSchema(config.method, config.url);
+    if (!schema) return;
+
+    const result = schema.safeParse(config.data);
+    if (result.success) return;
+
+    const issues = result.error.issues
+        .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('\n');
+    const diagnostic = `[contract] request body for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
+    useObservabilityStore().captureException(new Error(diagnostic));
+
+    if (!isReportOnly()) throw new Error(diagnostic);
 };

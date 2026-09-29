@@ -11,13 +11,29 @@
 import { instance } from './client.ts';
 import { onRequest, onRequestReject } from './interceptors.ts';
 import { onResponseRejectWithStepUp } from './step-up.ts';
-import { shouldValidateResponses, validateResponseAgainstContract } from './validate.ts';
+import {
+    shouldValidateRequests,
+    shouldValidateResponses,
+    validateRequestAgainstContract,
+    validateResponseAgainstContract
+} from './validate.ts';
 import type { AxiosRequestConfig } from 'axios';
 
 instance.interceptors.request.use(onRequest, onRequestReject);
 // Step-up wraps refresh: a `REAUTH_REQUIRED` 401 has to be caught before the refresh branch would
 // "fix" it by renewing a cookie that was never the problem — see `step-up.ts`'s own module doc.
 instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
+
+/**
+ * Sends one already-merged request and unwraps the response, validating it when enabled.
+ *
+ * @param request - The merged request config.
+ */
+const send = <T>(request: AxiosRequestConfig): Promise<T> =>
+    instance.request<T>(request).then((response) => {
+        if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
+        return response.data;
+    });
 
 /**
  * Custom orval mutator: the *only* function allowed to call the shared axios instance directly.
@@ -48,10 +64,12 @@ export const orvalMutator = <T>(
         // eslint-disable-next-line @typescript-eslint/no-misused-spread -- AxiosHeaders' own enumerable entries are exactly what an object spread copies; axios documents this merge
         headers: { ...options?.headers, ...config.headers }
     };
-    return instance.request<T>(request).then((response) => {
-        if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
-        return response.data;
-    });
+    // Validated inside a promise, so a dev-mode throw reaches `.catch` instead of escaping it.
+    return shouldValidateRequests()
+        ? Promise.resolve(request)
+              .then(validateRequestAgainstContract)
+              .then(() => send<T>(request))
+        : send<T>(request);
 };
 
 export { onRequest, onRequestReject, onResponseReject } from './interceptors.ts';

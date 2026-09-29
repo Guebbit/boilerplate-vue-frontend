@@ -27,6 +27,7 @@ import { parse } from 'yaml';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     loadResponseSchemas,
+    resolveRequestSchema,
     resolveResponseSchema
 } from '@/infrastructure/http/response-schema-map';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
@@ -162,6 +163,26 @@ describe('routeSchemas table', () => {
         // Named, not counted: the failure message is the list of operations whose responses go
         // unvalidated, which is the thing someone has to act on.
         expect(unmapped).toEqual([]);
+    });
+
+    it('names a real request-body schema for every operation that declares a JSON body', () => {
+        const missing = GENERATED_ROUTES.flatMap((route) =>
+            route.bodySchemaName !== undefined &&
+            !(schemas as Record<string, unknown>)[route.bodySchemaName]
+                ? [`${route.method} ${route.pattern.source} -> ${route.bodySchemaName}`]
+                : []
+        );
+
+        expect(missing).toEqual([]);
+        // A canary: the check above is vacuous if the generator ever stops naming any.
+        expect(
+            GENERATED_ROUTES.filter((route) => route.bodySchemaName !== undefined).length
+        ).toBeGreaterThan(50);
+    });
+
+    it('resolves the request schema of a write from the same row as its response', () => {
+        expect(resolveRequestSchema('PATCH', '/account')).toBe(schemas.UpdateAccountBody);
+        expect(resolveRequestSchema('GET', '/account')).toBeUndefined();
     });
 
     it('has no two generated rows for the same method and pattern', () => {
