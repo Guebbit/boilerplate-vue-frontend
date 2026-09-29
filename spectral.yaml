@@ -6,6 +6,11 @@ rules:
     operation-operationId: error
     operation-tags: error
 
+    # Its `given` filter dereferences every visited node, and Spectral 6.16 visits the `null`
+    # member of `ImageRemoval`'s `enum: [null]` (the null-only write-side `imageUrl`) — a crash,
+    # not a finding. The enum has one member, so there is nothing for the rule to catch.
+    duplicated-entry-in-enum: off
+
     # --- Avoid nullable (optional) ---
     avoid-nullable:
         description: 'Prefer optional properties over nullable=true for codegen friendliness.'
