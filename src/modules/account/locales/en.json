@@ -15,7 +15,8 @@
         "text-terms": "I accept the {terms} and the {privacy}",
         "text-analytics-consent": "Share anonymous usage analytics to help us improve the product",
         "button-submit": "Register now",
-        "success-email-code-sent": "Welcome! We sent a link to confirm your email address — you can look around in the meantime."
+        "success-email-code-sent": "Welcome! We sent a link to confirm your email address — you can look around in the meantime.",
+        "avatar-upload-failed": "Your account is ready, but the profile picture could not be uploaded. You can add it from your profile."
     },
     "profile-page": {
         "page-title": "User Profile",

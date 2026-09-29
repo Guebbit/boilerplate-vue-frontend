@@ -15,7 +15,6 @@ import {
     login as apiLogin,
     LoginRequestRemember,
     signup as apiSignup,
-    signupWithMultipart,
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset,
     reauth as apiReauth
@@ -157,25 +156,21 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const signupIdempotencyKey = useIdempotencyKey();
 
     /**
-     * Registers a new user account, as multipart when a profile image is attached
-     * and as plain JSON otherwise.
+     * Registers a new user account — JSON only. The API takes no image at signup (a stranger
+     * writes nothing to the store before registering), so a picked avatar is a follow-up
+     * {@link setAvatarAfterSignup}.
      *
-     * The backend does not auto-login on signup: the user must confirm their
-     * email address and then log in separately, so no token/session is set here.
+     * Signup DOES sign the caller in: the response sets the session cookies, and the router's
+     * restore guard (or {@link setAvatarAfterSignup}) mints the access token from them.
      *
      * Takes its fields as one object rather than positionally, matching
-     * `createUser` / `createProduct`. Positionally this reached six arguments,
-     * two of them defaulted from earlier ones — an arity at which a caller can
-     * transpose `imageUpload` and `options`, or forget that `passwordConfirm`
-     * defaults from `password` while `username` defaults from `email`, with
-     * nothing but argument order to catch it.
+     * `createUser` / `createProduct`: `username` defaults from `email` and `passwordConfirm`
+     * from `password`, which nothing but argument order would otherwise keep straight.
      *
      * @param credentials - Account fields. `username` defaults to `email` and
-     *  `passwordConfirm` to `password`; an `imageUpload` switches the call to
-     *  `multipart/form-data`. `termsAccepted` must be `true` — the contract
+     *  `passwordConfirm` to `password`. `termsAccepted` must be `true` — the contract
      *  declares it `enum: [true]` — and `analyticsConsent` is opt-in, omittable.
-     * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
-     *  `Signup.vue` passes `onUploadProgress` through it.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
      * @returns A promise resolving once the account has been created.
      */
     const signup = (
@@ -185,8 +180,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
             username = email,
             passwordConfirm = password,
             termsAccepted,
-            analyticsConsent,
-            imageUpload
+            analyticsConsent
         }: {
             email: string;
             password: string;
@@ -194,35 +188,20 @@ export const useAuthStore = defineStore('accountAuth', () => {
             passwordConfirm?: string;
             termsAccepted: true;
             analyticsConsent?: boolean;
-            imageUpload?: File;
         },
         options?: AxiosRequestConfig
     ) =>
         fetchAny(() =>
-            (imageUpload
-                ? signupWithMultipart(
-                      {
-                          email,
-                          username,
-                          password,
-                          passwordConfirm,
-                          termsAccepted,
-                          analyticsConsent,
-                          imageUpload
-                      },
-                      signupIdempotencyKey.withKey(options)
-                  )
-                : apiSignup(
-                      {
-                          email,
-                          username,
-                          password,
-                          passwordConfirm,
-                          termsAccepted,
-                          analyticsConsent
-                      },
-                      signupIdempotencyKey.withKey(options)
-                  )
+            apiSignup(
+                {
+                    email,
+                    username,
+                    password,
+                    passwordConfirm,
+                    termsAccepted,
+                    analyticsConsent
+                },
+                signupIdempotencyKey.withKey(options)
             )
                 .then(() => {
                     signupIdempotencyKey.settle();
@@ -233,6 +212,26 @@ export const useAuthStore = defineStore('accountAuth', () => {
                     throw error;
                 })
         );
+
+    /**
+     * The second half of a signup that picked an avatar: `PATCH /account` with the file, as the
+     * session `signup` just opened.
+     *
+     * Mints the access token first — signup sets cookies only — then loads the profile so the
+     * store knows whose record it is patching. A failure here leaves a signed-in account with no
+     * avatar, which the profile page fixes in one click.
+     *
+     * @param imageUpload - The file picked on the signup form.
+     * @param options - Per-call axios overrides — `Signup.vue` passes `onUploadProgress`.
+     * @returns A promise resolving once the avatar is stored.
+     */
+    const setAvatarAfterSignup = (imageUpload: File, options?: AxiosRequestConfig) => {
+        const profile = useProfileStore();
+        return session
+            .refreshToken()
+            .then(() => profile.fetchProfile(true))
+            .then(() => profile.updateProfile({ imageUpload }, options));
+    };
 
     /**
      * Starts the password reset flow by sending a token to the provided email.
@@ -291,6 +290,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
         login,
         reauth,
         signup,
+        setAvatarAfterSignup,
         requestPasswordReset,
         confirmPasswordReset,
         logout,

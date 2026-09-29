@@ -15,7 +15,8 @@
         "text-terms": "Accetto i {terms} e la {privacy}",
         "text-analytics-consent": "Condividi dati di utilizzo anonimi per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
-        "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno."
+        "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno.",
+        "avatar-upload-failed": "Il tuo account è pronto, ma non è stato possibile caricare l'immagine del profilo. Puoi aggiungerla dal tuo profilo."
     },
     "profile-page": {
         "page-title": "Il tuo profilo",

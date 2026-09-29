@@ -20,7 +20,7 @@ vi.mock('@api', () => ({
     getAntibotChallenge: vi.fn()
 }));
 
-/** A stand-in for a real per-call option, e.g. the one `signupWithMultipart` attaches. */
+/** A stand-in for a real per-call option, e.g. the one `signup` attaches. */
 const onUploadProgress = () => {};
 
 describe('withAntibotToken', () => {

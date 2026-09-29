@@ -1,13 +1,12 @@
 /**
  * @module
- * Unit tests for the auth store's `signup`, pinning the JSON-vs-multipart branch and the request
- * each produces. Same shape as the products/users store specs: `@api` is NOT mocked, since the
+ * Unit tests for the auth store's `signup` and its avatar follow-up, pinning the request each
+ * produces. Same shape as the products/users store specs: `@api` is NOT mocked, since the
  * multipart encoding under test lives in the generated client — the transport (`orvalMutator`) is
  * mocked instead, so every assertion is about the request that actually goes out.
  *
- * `openapi.yaml` declares `SignupRequest.imageUpload` and the generator emits
- * `signupWithMultipart` for it, so the branch that picks between the two clients is the thing
- * worth pinning: a store that only ever called the JSON one would still pass a shape test.
+ * Signup is JSON-only (the API takes no image from a stranger); a picked avatar is the
+ * follow-up `PATCH /account` pinned at the bottom.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -44,10 +43,21 @@ const lastRequest = () => {
 };
 
 /**
- * As above, asserting the body was multipart-encoded.
+ * The most recent request with this method and url — the avatar PATCH is followed by refetches.
  */
-const lastFormData = () => {
-    const { data } = lastRequest();
+const lastRequestTo = (method: string, url: string) => {
+    const call = vi
+        .mocked(orvalMutator)
+        .mock.calls.findLast(([config]) => config.method === method && config.url === url);
+    if (!call) throw new Error(`no ${method} ${url} request was made`);
+    return call;
+};
+
+/**
+ * The avatar PATCH's body, asserting it was multipart-encoded.
+ */
+const avatarFormData = () => {
+    const { data } = lastRequestTo('PATCH', '/account')[0] as { data: unknown };
     if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
     return data;
 };
@@ -84,61 +94,51 @@ describe('useAuthStore.signup', () => {
                 expect(request.data).toMatchObject({ email: 'ada@example.com' });
             }));
 
-    it('posts multipart to the same endpoint when an image is attached', () =>
-        useAuthStore()
-            .signup({ ...CREDENTIALS, imageUpload: IMAGE() })
-            .then(() => {
-                expect(lastRequest()).toMatchObject({ url: '/account/signup', method: 'POST' });
-                expect(lastFormData().get('imageUpload')).toBeInstanceOf(File);
-            }));
-
-    it('carries every scalar field into the multipart body, not just the file', () =>
-        useAuthStore()
-            .signup({ ...CREDENTIALS, imageUpload: IMAGE() })
-            .then(() => {
-                const formData = lastFormData();
-                expect(formData.get('email')).toBe('ada@example.com');
-                expect(formData.get('username')).toBe('ada');
-                expect(formData.get('password')).toBe('hunter2hunter2');
-                expect(formData.get('passwordConfirm')).toBe('hunter2hunter2');
-            }));
-
     /**
-     * The username default is `email`, and it survives the switch to multipart — a JSON-only
-     * default that the other branch quietly dropped would be invisible until a signup with an
-     * avatar produced an account named `undefined`.
+     * The API takes no file at signup, so the request is JSON whatever the form held — a store
+     * that still built multipart would be refused by a route that no longer mounts multer.
      */
-    it('applies the same username default on both branches', () => {
-        const store = useAuthStore();
+    it('carries every scalar field in the JSON body', () =>
+        useAuthStore()
+            .signup(CREDENTIALS)
+            .then(() => {
+                expect(lastRequest().data).toMatchObject({
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: 'hunter2hunter2',
+                    passwordConfirm: 'hunter2hunter2'
+                });
+            }));
 
-        return store
+    it('defaults the username to the email address', () =>
+        useAuthStore()
             .signup({ email: 'ada@example.com', password: 'hunter2hunter2', termsAccepted: true })
             .then(() => {
                 expect(lastRequest().data).toMatchObject({ username: 'ada@example.com' });
-                return store.signup({
-                    email: 'ada@example.com',
-                    password: 'hunter2hunter2',
-                    termsAccepted: true,
-                    imageUpload: IMAGE()
-                });
-            })
+            }));
+
+    /**
+     * The avatar is its own request, as the account signup just opened: `PATCH /account`, multipart,
+     * after a token is minted and the profile loaded.
+     */
+    it('stores a picked avatar as a follow-up PATCH /account', () =>
+        useAuthStore()
+            .setAvatarAfterSignup(IMAGE())
             .then(() => {
-                expect(lastFormData().get('username')).toBe('ada@example.com');
-            });
-    });
+                expect(avatarFormData().get('imageUpload')).toBeInstanceOf(File);
+            }));
 
     /**
      * `orvalMutator`'s second argument is the whole reason it takes one — `Signup.vue` passes
-     * `onUploadProgress` through it to drive the progress bar.
+     * `onUploadProgress` through it to drive the progress bar of the avatar upload.
      */
-    it('forwards the upload progress callback to the transport', () => {
+    it('forwards the upload progress callback on the avatar request', () => {
         const onUploadProgress = vi.fn();
 
         return useAuthStore()
-            .signup({ ...CREDENTIALS, imageUpload: IMAGE() }, { onUploadProgress })
+            .setAvatarAfterSignup(IMAGE(), { onUploadProgress })
             .then(() => {
-                expect(orvalMutator).toHaveBeenCalledWith(
-                    expect.anything(),
+                expect(lastRequestTo('PATCH', '/account')[1]).toEqual(
                     expect.objectContaining({ onUploadProgress })
                 );
             });
