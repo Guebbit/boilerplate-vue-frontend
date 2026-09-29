@@ -150,7 +150,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     setupTwoFactorMethod: 'account',
     shipOrder: 'delivery',
     signup: 'account',
-    signupWithMultipart: 'account',
     startFulfilment: 'delivery',
     startOAuthLogin: 'account',
     sweepReservations: 'inventory',

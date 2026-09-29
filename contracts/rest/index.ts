@@ -79,6 +79,13 @@ export type CountryCode = string;
 export type ImageUrl = string;
 
 /**
+ * Write-side `imageUrl`: the ONLY accepted value is `null`, meaning "remove the current image". A new image is sent as multipart `imageUpload` bytes. A client never names a path in this server's store, because it cannot know which files are its own (a path would let one record delete another's file). Responses carry the real path under `ImageUrl`.
+ */
+export type ImageRemoval = (typeof ImageRemoval)[keyof typeof ImageRemoval] | null;
+
+export const ImageRemoval = {} as const;
+
+/**
  * Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs/tools/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.
  */
 export type ThumbnailUrl = string;
@@ -1578,7 +1585,7 @@ export interface ReplaceAccountRequest {
     /** @minLength 3 */
     username: string;
     locale?: Locale | null;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
      * @nullable
@@ -1617,7 +1624,7 @@ export interface UpdateAccountRequest {
     /** @minLength 3 */
     username?: string;
     locale?: Locale | null;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
      * @nullable
@@ -1890,21 +1897,8 @@ export interface SignupRequest {
     username: string;
     password: PasswordNew;
     passwordConfirm: Password;
-    imageUrl?: ImageUrl;
     termsAccepted: true;
     analyticsConsent?: boolean;
-}
-
-export interface SignupRequestMultipart {
-    email: Email;
-    /** @minLength 3 */
-    username: string;
-    password: PasswordNew;
-    passwordConfirm: Password;
-    termsAccepted: true;
-    analyticsConsent?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
 }
 
 export interface PasswordResetRequest {
@@ -2079,7 +2073,7 @@ export interface CreateUserRequest {
     sendSetupEmail?: boolean;
     role?: string;
     active?: boolean;
-    imageUrl?: ImageUrl;
+    imageUrl?: ImageRemoval | null;
     locale?: Locale;
 }
 
@@ -2107,7 +2101,7 @@ export interface ReplaceUserByIdRequest {
     username: string;
     role: string;
     active: boolean;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     locale?: Locale | null;
     /**
      * @minLength 1
@@ -2150,7 +2144,7 @@ export interface UpdateUserByIdRequest {
     username?: string;
     role?: string;
     active?: boolean;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     locale?: Locale | null;
     /**
      * @minLength 1
@@ -2327,7 +2321,7 @@ export interface CreateProductRequest {
      * @minimum 0
      */
     weight?: number;
-    imageUrl?: ImageUrl;
+    imageUrl?: ImageRemoval | null;
     categories?: string[];
     tags?: string[];
 }
@@ -2406,7 +2400,7 @@ export interface ReplaceProductRequest {
      * @nullable
      */
     weight?: number | null;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     categories: string[];
     tags: string[];
 }
@@ -2454,7 +2448,7 @@ export interface UpdateProductRequest {
      * @nullable
      */
     weight?: number | null;
-    imageUrl?: ImageUrl | null;
+    imageUrl?: ImageRemoval | null;
     categories?: string[];
     tags?: string[];
 }
@@ -4914,7 +4908,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
  * @summary Signup
  */
 export const signup = (
@@ -4927,38 +4921,6 @@ export const signup = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: signupRequest
-        },
-        options
-    );
-};
-
-/**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
- * @summary Signup
- */
-export const signupWithMultipart = (
-    signupRequestMultipart: SignupRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
-) => {
-    const formData = new FormData();
-    formData.append(`email`, signupRequestMultipart.email);
-    formData.append(`username`, signupRequestMultipart.username);
-    formData.append(`password`, signupRequestMultipart.password);
-    formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
-    formData.append(`termsAccepted`, signupRequestMultipart.termsAccepted.toString());
-    if (signupRequestMultipart.analyticsConsent !== undefined) {
-        formData.append(`analyticsConsent`, signupRequestMultipart.analyticsConsent.toString());
-    }
-    if (signupRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
-    }
-
-    return orvalMutator<UserEnvelope>(
-        {
-            url: `/account/signup`,
-            method: 'POST',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
         },
         options
     );
@@ -7168,9 +7130,6 @@ export type ConfirmAccountDeleteResult = NonNullable<
 >;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
-export type SignupWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof signupWithMultipart>>
->;
 export type RequestPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof requestPasswordReset>>
 >;

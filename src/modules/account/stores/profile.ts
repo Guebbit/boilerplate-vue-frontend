@@ -43,7 +43,7 @@ import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
  * @param imageUrl - The record's picture field, `null` when the call is a removal.
  * @returns The bucket key, or `undefined` for a plain save (matches the whole-resource `loading`).
  */
-const avatarLoadingKey = (imageUpload?: File, imageUrl?: string | null): string[] | undefined => {
+const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undefined => {
     if (imageUpload) return ['avatar-upload'];
     // `null` is the removal — the contract's `minLength: 1` refuses `''`.
     return imageUrl === null ? ['avatar-remove'] : undefined;
@@ -205,7 +205,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         {
             imageUpload,
             ...userData
-        }: Partial<Omit<User, 'imageUrl'>> & { imageUpload?: File; imageUrl?: string | null } = {},
+        }: Partial<Omit<User, 'imageUrl'>> & { imageUpload?: File; imageUrl?: null } = {},
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
@@ -237,10 +237,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     return payload ? publishViewer(payload).then(() => data) : data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
-            // `null` narrows to `undefined` for this OPTIMISTIC patch only — the toolkit's own
+            // The `null` removal marker is left out of this OPTIMISTIC patch — the toolkit's own
             // `Partial<User>` (the record's read shape) never carries a null image, and the
             // refetch right below corrects the visible state within one round trip regardless.
-            { ...userData, imageUrl: userData.imageUrl ?? undefined },
+            { ...userData, imageUrl: undefined },
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own bucket key so the picker
             // and the remove button spin one at a time. `imageUrl: null` is the removal.

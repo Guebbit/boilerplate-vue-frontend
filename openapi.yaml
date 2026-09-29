@@ -1898,7 +1898,7 @@ paths:
       tags:
         - Auth
       summary: Signup
-      description: Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+      description: Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
       operationId: signup
       security: []
       parameters:
@@ -1910,9 +1910,6 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/SignupRequest"
-          multipart/form-data:
-            schema:
-              $ref: "#/components/schemas/SignupRequestMultipart"
       responses:
         "201":
           description: Created
@@ -6368,6 +6365,11 @@ components:
       format: uri-reference
       minLength: 1
       description: "Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for \"no image\" — only `null` is, on a field that allows it."
+    ImageRemoval:
+      nullable: true
+      enum:
+        - null
+      description: "Write-side `imageUrl`: the ONLY accepted value is `null`, meaning \"remove the current image\". A new image is sent as multipart `imageUpload` bytes. A client never names a path in this server's store, because it cannot know which files are its own (a path would let one record delete another's file). Responses carry the real path under `ImageUrl`."
     ThumbnailUrl:
       type: string
       format: uri-reference
@@ -8574,9 +8576,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Locale"
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         phone:
           type: string
           minLength: 1
@@ -8631,9 +8631,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Locale"
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         phone:
           type: string
           minLength: 1
@@ -9139,43 +9137,12 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         passwordConfirm:
           $ref: "#/components/schemas/Password"
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
         termsAccepted:
           type: boolean
           enum:
             - true
         analyticsConsent:
           type: boolean
-    SignupRequestMultipart:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-        - username
-        - password
-        - passwordConfirm
-        - termsAccepted
-      properties:
-        email:
-          $ref: "#/components/schemas/Email"
-        username:
-          type: string
-          minLength: 3
-        password:
-          $ref: "#/components/schemas/PasswordNew"
-        passwordConfirm:
-          $ref: "#/components/schemas/Password"
-        termsAccepted:
-          type: boolean
-          enum:
-            - true
-        analyticsConsent:
-          type: boolean
-        imageUpload:
-          type: string
-          format: binary
-          description: Optional user profile image
     PasswordResetRequest:
       type: object
       additionalProperties: false
@@ -9785,7 +9752,7 @@ components:
           type: boolean
           default: true
         imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         locale:
           $ref: "#/components/schemas/Locale"
     CreateUserRequestMultipart:
@@ -9847,9 +9814,7 @@ components:
         active:
           type: boolean
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         locale:
           nullable: true
           allOf:
@@ -9914,9 +9879,7 @@ components:
         active:
           type: boolean
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         locale:
           nullable: true
           allOf:
@@ -10222,7 +10185,7 @@ components:
           minimum: 0
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         categories:
           type: array
           items:
@@ -10390,9 +10353,7 @@ components:
           nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         categories:
           type: array
           items:
@@ -10486,9 +10447,7 @@ components:
           nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUrl:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ImageUrl"
+          $ref: "#/components/schemas/ImageRemoval"
         categories:
           type: array
           items:

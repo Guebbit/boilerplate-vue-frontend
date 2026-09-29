@@ -1223,7 +1223,7 @@ export const ReplaceAccountBody = zod.strictObject({
     email: zod.email(),
     username: zod.string().min(replaceAccountBodyUsernameMin),
     locale: zod.string().regex(replaceAccountBodyLocaleOneRegExp).nullish(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     phone: zod.string().min(1).nullish(),
     website: zod.string().min(1).nullish(),
     analyticsConsent: zod.boolean().optional()
@@ -1264,7 +1264,7 @@ export const UpdateAccountBody = zod.strictObject({
     email: zod.email().optional(),
     username: zod.string().min(updateAccountBodyUsernameMin).optional(),
     locale: zod.string().regex(updateAccountBodyLocaleOneRegExp).nullish(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     phone: zod.string().min(1).nullish(),
     website: zod.string().min(1).nullish(),
     analyticsConsent: zod.boolean().optional()
@@ -1724,7 +1724,7 @@ export const LoginResponse = zod.strictObject({
     ])
 });
 /**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
  * @summary Signup
  */
 export const signupHeaderIdempotencyKeyMax = 200;
@@ -1749,7 +1749,6 @@ export const SignupBody = zod.strictObject({
     username: zod.string().min(signupBodyUsernameMin),
     password: zod.string().min(signupBodyPasswordMin).regex(signupBodyPasswordRegExp),
     passwordConfirm: zod.string().min(signupBodyPasswordConfirmMin),
-    imageUrl: zod.string().min(1).optional(),
     termsAccepted: zod.literal(true),
     analyticsConsent: zod.boolean().optional()
 });
@@ -2510,7 +2509,7 @@ export const CreateUserBody = zod.strictObject({
     sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
     role: zod.string().optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
-    imageUrl: zod.string().min(1).optional(),
+    imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(createUserBodyLocaleRegExp).optional()
 });
 export const createUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -2611,7 +2610,7 @@ export const ReplaceUserByIdBody = zod.strictObject({
     username: zod.string().min(1),
     role: zod.string(),
     active: zod.boolean(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(replaceUserByIdBodyLocaleOneRegExp).nullish(),
     phone: zod.string().min(1).nullish(),
     website: zod.string().min(1).nullish()
@@ -2664,7 +2663,7 @@ export const UpdateUserByIdBody = zod.strictObject({
     username: zod.string().min(1).optional(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     locale: zod.string().regex(updateUserByIdBodyLocaleOneRegExp).nullish(),
     phone: zod.string().min(1).nullish(),
     website: zod.string().min(1).nullish()
@@ -3208,7 +3207,7 @@ export const CreateProductBody = zod.strictObject({
     active: zod.boolean().default(createProductBodyActiveDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
-    imageUrl: zod.string().min(1).optional(),
+    imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
@@ -3360,7 +3359,7 @@ export const ReplaceProductByIdBody = zod.strictObject({
     active: zod.boolean(),
     requiresShipping: zod.boolean(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string()),
     tags: zod.array(zod.string())
 });
@@ -3442,7 +3441,7 @@ export const UpdateProductByIdBody = zod.strictObject({
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
-    imageUrl: zod.string().min(1).nullish(),
+    imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
