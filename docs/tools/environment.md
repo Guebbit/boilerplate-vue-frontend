@@ -86,3 +86,11 @@ nothing. See [Observability](./observability.md).
 | `VITE_FARO_ENVIRONMENT` | Faro environment tag (defaults to Vite `MODE`)             |
 | `VITE_UMAMI_WEBSITE_ID` | [Umami](./umami.md) website id (empty = off)               |
 | `VITE_UMAMI_SRC`        | Umami tracker script URL                                   |
+
+## `security.txt`
+
+The production container writes `/.well-known/security.txt` (RFC 9116) at start, from
+`VITE_SECURITY_CONTACT`, `VITE_SECURITY_EXPIRES` and the optional `VITE_SECURITY_POLICY_URL`.
+Both of the first two must be set; otherwise nothing is written and nginx answers 404. `Expires`
+is a renewal duty: set a date and renew it before it passes. The backend serves its own copy;
+see its "Reporting a vulnerability" section.
