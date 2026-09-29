@@ -135,7 +135,7 @@ const submitForm = () => {
             showFormErrors.value = true;
             return;
         }
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 

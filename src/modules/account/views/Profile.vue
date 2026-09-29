@@ -241,7 +241,7 @@ const submitForm = () => {
             return applyLanguagePreference(profile.value?.locale);
         })
         .catch((error: unknown) => {
-            if (!applyServerErrors(error)) reportSaveError(error);
+            applyServerErrors(error, { onUnmapped: () => reportSaveError(error) });
         })
         .finally(() => {
             savingProfile.value = false;

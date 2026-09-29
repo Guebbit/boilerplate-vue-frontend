@@ -128,7 +128,7 @@ const submitForm = () =>
             resetForm();
         });
     }).catch((error: unknown) => {
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 </script>
 

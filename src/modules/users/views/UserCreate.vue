@@ -178,7 +178,7 @@ const submitForm = () => {
                     locale: form.value.locale,
                     imageUpload: form.value.imageUpload
                 },
-                options
+                { requestOptions: options }
             )
         ).then((newUser) => {
             if (!newUser) return;
@@ -187,7 +187,7 @@ const submitForm = () => {
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
         })
     ).catch((error: unknown) => {
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 </script>

@@ -250,7 +250,7 @@ const submitForm = () => {
                     translations: form.value.translations,
                     imageUpload: form.value.imageUpload
                 },
-                options
+                { requestOptions: options }
             )
         ).then((newProduct) => {
             if (!newProduct) return;
@@ -264,7 +264,7 @@ const submitForm = () => {
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 </script>

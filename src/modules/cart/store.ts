@@ -6,7 +6,8 @@
  */
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     getCart,
     getCartSummary,
@@ -45,19 +46,12 @@ const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
  */
 export const useCartStore = defineStore('cart', () => {
     /**
-     * Shared per-key loading-flag bookkeeping from the core store, threaded into
-     * {@link useStructureRestApi} below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * Generic REST helper: wraps every mutating call in `fetchAny` so `loading` toggles
      * automatically around each request.
      */
     const { loading, fetchAny } = useStructureRestApi<CartItem, string>({
-        loadingKey: 'cart',
-        getLoading,
-        setLoading
+        resourceKey: 'cart',
+        queryClient
     });
 
     /**

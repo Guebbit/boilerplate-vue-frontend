@@ -12,26 +12,34 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import { useCoreStore } from '@guebbit/vue-toolkit';
 import Product from '@/modules/products/views/Product.vue';
 import { useProductsStore } from '@/modules/products/store';
 import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { upsertCartItem } from '@api';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
+import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Product as ProductType } from '@types';
 
-wireModulesIntoCore();
-
 /**
- * Satisfies `watchProduct`'s `WatchStopHandle` return type without setting up a real watcher.
+ * `upsertCartItem` alone is wrapped, real implementation and all (`vi.fn(actual.upsertCartItem)`
+ * calls through unless a test overrides it): every other case in this file spies on the STORE's
+ * own `upsertCartItem` action instead, which never reaches this. Only the in-flight-guard test
+ * below needs a controllable, genuinely pending API call — `cart.loading` is real, TanStack-tracked
+ * state now, so nothing short of an actual in-flight request can make it true.
  */
-const noopStopHandle = () => undefined;
+vi.mock('@api', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@api')>();
+    return { ...actual, upsertCartItem: vi.fn(actual.upsertCartItem) };
+});
+
+wireModulesIntoCore();
 
 /**
  * The real app router, scoped to the modules this test suite enables.
@@ -62,7 +70,7 @@ const signIn = () => {
  */
 const mountProduct = (product: ProductType) => {
     const products = useProductsStore();
-    vi.spyOn(products, 'watchProduct').mockImplementation(() => noopStopHandle);
+    vi.spyOn(products, 'watchProduct').mockImplementation(() => noopWatchHandle());
     products.addProduct(product);
     products.selectedProductId = product.id;
 
@@ -214,6 +222,22 @@ describe('the shelf', () => {
 
     it('disables add-to-cart while a cart write is already in flight (FA39)', async () => {
         signIn();
+        // `handleAddToCart` reads the cart fresh before its own write — stubbed to resolve at
+        // once, same as the "sends exactly the typed fields" case above, so the click reaches
+        // the gated `upsertCartItem` call below in the same tick instead of waiting on a second,
+        // unmocked request first.
+        vi.spyOn(useCartStore(), 'fetchCart').mockResolvedValue({
+            items: [],
+            summary: {
+                itemsCount: 0,
+                totalQuantity: 0,
+                itemsTotal: 0,
+                shippingCost: 0,
+                totalPrice: 0,
+                currency: 'EUR'
+            },
+            shipping: { required: false, selected: null, options: [] }
+        });
         const wrapper = mountProduct({
             id: 'p-in-stock',
             title: 'Available widget',
@@ -226,12 +250,23 @@ describe('the shelf', () => {
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
 
-        // The cart store's own `loading` — the flag `upsertCartItem` runs under — not a local
-        // one, so a double-click while the first request is still out cannot fire a second.
-        useCoreStore().setLoading('cart', true);
+        // A genuinely pending API call — the cart store's own `loading` is real, TanStack-tracked
+        // state now, so nothing short of an actual in-flight `upsertCartItem` request moves it. A
+        // double-click while the first is still out must not fire a second.
+        let release: ((error: Error) => void) | undefined;
+        const gate = new Promise<never>((_resolve, reject) => {
+            release = reject;
+        });
+        vi.mocked(upsertCartItem).mockReturnValueOnce(gate);
+
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+        await flushPromises();
         await nextRenderTick(wrapper);
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
+
+        release?.(new Error('network down'));
+        await flushPromises();
     });
 });
 

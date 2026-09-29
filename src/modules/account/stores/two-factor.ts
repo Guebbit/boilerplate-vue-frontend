@@ -8,7 +8,8 @@
  */
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     getTwoFactorStatus as apiGetTwoFactorStatus,
     setupTwoFactorMethod as apiSetupTwoFactorMethod,
@@ -66,19 +67,12 @@ interface LoginChallenge {
  */
 export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below; `isLoading` backs the
-     * computeds.
-     */
-    const { getLoading, setLoading, isLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
-     * every action below goes through.
+     * every action below goes through; `isLoading` backs the per-action computeds below.
      */
-    const { loadingKey, loading, fetchAny } = useStructureRestApi({
-        loadingKey: 'accountTwoFactor',
-        getLoading,
-        setLoading
+    const { loading, isLoading, fetchAny } = useStructureRestApi({
+        resourceKey: 'accountTwoFactor',
+        queryClient
     });
 
     /**
@@ -186,7 +180,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                             });
                         return payload;
                     }),
-                { loadingKey: ':setup' }
+                { key: ['setup'] }
             )
         );
 
@@ -208,7 +202,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     resendAvailableAt.value = undefined;
                     return fetchStatus().then(() => result);
                 }),
-            { loadingKey: ':confirm' }
+            { key: ['confirm'] }
         );
 
     /**
@@ -221,7 +215,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const removeMethod = (method: string, code: string) =>
         fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()), {
-            loadingKey: ':remove'
+            key: ['remove']
         });
 
     /**
@@ -232,7 +226,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const disableAll = (code: string) =>
         fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()), {
-            loadingKey: ':disable'
+            key: ['disable']
         });
 
     /**
@@ -252,7 +246,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     const result = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
                     return fetchStatus().then(() => result);
                 }),
-            { loadingKey: ':regenerate' }
+            { key: ['regenerate'] }
         );
 
     /**
@@ -260,19 +254,19 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * first send or its resend button. Per-action rather than the store-wide `loading`, which
      * every 2FA call shares: bound to a button, that made confirming look like resending.
      */
-    const sendingCode = computed(() => getLoading(`${loadingKey}:setup`));
+    const sendingCode = computed(() => isLoading(['setup']));
 
     /**
      * Whether {@link confirmMethod} is proving a code right now.
      */
-    const confirmingCode = computed(() => getLoading(`${loadingKey}:confirm`));
+    const confirmingCode = computed(() => isLoading(['confirm']));
 
     /**
      * Whether one of the three code-proved mutations is in flight. One flag for the three because
      * the panel prompts for the code with one button, whichever of them the answer dispatches to.
      */
-    const mutatingWithCode = computed(() =>
-        isLoading([`${loadingKey}:remove`, `${loadingKey}:disable`, `${loadingKey}:regenerate`])
+    const mutatingWithCode = computed(
+        () => isLoading(['remove']) || isLoading(['disable']) || isLoading(['regenerate'])
     );
 
     /**

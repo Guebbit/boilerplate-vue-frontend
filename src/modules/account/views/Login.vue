@@ -199,7 +199,7 @@ const submitForm = () => {
             return;
         }
         // A 401 names no field, so it blocks the form. A 422 that names `email` lands under it.
-        if (!applyServerErrors(error)) reportLoginError(error);
+        applyServerErrors(error, { onUnmapped: () => reportLoginError(error) });
     });
 };
 </script>

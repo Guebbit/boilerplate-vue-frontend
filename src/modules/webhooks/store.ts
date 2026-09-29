@@ -11,10 +11,10 @@
  * anything with `getRecord(id)`. `removeSecret` is hand-written too, for a different reason: it
  * calls its own action route, not `updateOne`'s target. See `docs/modules/webhooks.md`.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { useAsyncAction, useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
-import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
+import { useAsyncAction, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listWebhookSubscriptions,
     createWebhookSubscription,
@@ -63,11 +63,6 @@ const MAX_PAGE_SIZE = 100;
  */
 export const useWebhooksStore = defineStore('webhooks', () => {
     /**
-     * Shared per-key loading flags, keyed internally by this store's name.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * Subscriptions: full CRUD except `get` (no `GET .../subscriptions/{id}` exists — see
      * {@link watchSubscription}) and except `create` (see {@link createSubscription}).
      */
@@ -75,6 +70,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         itemDictionary: subscriptions,
         itemList: subscriptionsList,
         getRecord: getSubscription,
+        addRecord: addSubscriptionRecord,
         editRecord: editSubscriptionRecord,
         selectedIdentifier: selectedSubscriptionId,
         selectedRecord: currentSubscription,
@@ -83,6 +79,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         loading: loadingSubscriptions,
         pageCurrent: subscriptionPageCurrent,
         pageSize: subscriptionPageSize,
+        pageTotal: subscriptionsPageTotal,
         pageItemList: subscriptionPageItemList,
 
         fetchList: fetchAllSubscriptions,
@@ -105,25 +102,17 @@ export const useWebhooksStore = defineStore('webhooks', () => {
                 listWebhookSubscriptions({ pageSize: MAX_PAGE_SIZE }).then((r) => r.data.items),
 
             search: (filters, page, pageSize) =>
-                listWebhookSubscriptions({ page, pageSize, enabled: filters.enabled }).then((r) => {
-                    captureSubscriptionsTotal(r.data.meta.totalPages);
-                    return r.data.items;
-                }),
+                listWebhookSubscriptions({ page, pageSize, enabled: filters.enabled }).then(
+                    (r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems })
+                ),
 
             update: (id, data, options) =>
                 updateWebhookSubscription(id, data, options).then((r) => r.data),
 
             remove: (id) => deleteWebhookSubscription(id)
         },
-        { loadingKey: 'webhooks-subscriptions', getLoading, setLoading }
+        { resourceKey: 'webhooks-subscriptions', queryClient }
     );
-
-    /**
-     * `pageTotal` for `search`'s real, server-paginated results — `captureTotal` is called from
-     * `search:` above, once its response's `meta.totalPages` is in.
-     */
-    const { pageTotal: subscriptionsPageTotal, captureTotal: captureSubscriptionsTotal } =
-        useServerPageTotal();
 
     /**
      * Selects a subscription by id for the Target/Edit pages, hydrating from the cache rather
@@ -153,8 +142,8 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      *
      * The scrub-and-cache sits INSIDE the call handed to `fetchAny`, where the response is known
      * to exist, rather than in a `.then` on its result — `fetchAny` widens its return to
-     * `| undefined` for the cached path, and this call site passes no `lastUpdateKey`, so that
-     * half of the union is unreachable here.
+     * `| undefined` for the cached path, and this call site passes no `key`, so that half of the
+     * union is unreachable here.
      *
      * @param data - url, description and event types for the new subscription
      * @returns The full response, including the plaintext `secret` — the caller must not persist
@@ -219,7 +208,11 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         loading: loadingDeliveries,
         pageCurrent: deliveryPageCurrent,
         pageSize: deliveryPageSize,
+        pageTotal: deliveriesPageTotal,
         pageItemList: deliveryPageItemList,
+        // Total delivery rows matching the current filters, across every page — what the
+        // "showing X of Y" line counts with, as distinct from `deliveriesPageTotal`'s page count.
+        totalItems: deliveriesTotalItems,
 
         watchList: watchDeliveriesSearch,
         updateTarget: updateTargetDelivery
@@ -231,27 +224,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
                     pageSize,
                     subscriptionId: filters.subscriptionId,
                     status: filters.status
-                }).then((r) => {
-                    captureDeliveriesTotal(r.data.meta.totalPages);
-                    deliveriesTotalItems.value = r.data.meta.totalItems;
-                    return r.data.items;
-                })
+                }).then((r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems }))
         },
-        { loadingKey: 'webhooks-deliveries', getLoading, setLoading }
+        { resourceKey: 'webhooks-deliveries', queryClient }
     );
-
-    /**
-     * `pageTotal` for the delivery log's server-paginated results, same rationale as
-     * {@link subscriptionsPageTotal}.
-     */
-    const { pageTotal: deliveriesPageTotal, captureTotal: captureDeliveriesTotal } =
-        useServerPageTotal();
-
-    /**
-     * Total delivery rows matching the current filters, across every page — what the "showing X
-     * of Y" line counts with, as distinct from {@link deliveriesPageTotal}'s page count.
-     */
-    const deliveriesTotalItems = ref(0);
 
     /**
      * Re-sends one delivery synchronously and updates the same row in place with the outcome —
@@ -294,6 +270,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         subscriptions,
         subscriptionsList,
         getSubscription,
+        addSubscriptionRecord,
         selectedSubscriptionId,
         currentSubscription,
 

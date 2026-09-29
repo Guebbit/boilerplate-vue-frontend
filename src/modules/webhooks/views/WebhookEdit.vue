@@ -155,7 +155,7 @@ const submitForm = () => {
             addMessage(t('webhook-edit-page.success-update'));
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) reportFormError(error);
+        applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
 

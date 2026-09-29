@@ -25,6 +25,7 @@
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
+import { QueryClient } from '@tanstack/vue-query';
 import { useStructureSearchApi, useStructureCrudApi } from '@guebbit/vue-toolkit';
 
 /**
@@ -57,11 +58,20 @@ describe('the toolkit page window is dense', () => {
     it('drops a record the API answered with as `undefined`, rather than keeping a hole', () => {
         setActivePinia(createPinia());
         const filters = ref({ query: 'anything' });
-        const api = useStructureSearchApi<ProbeRow, string>(filters);
+        // A fresh client per test, not the app's shared one: these are synthetic probe resources,
+        // and `resourceKey` only has to be unique WITHIN a client.
+        const api = useStructureSearchApi<ProbeRow, string>(filters, {
+            resourceKey: 'probe',
+            queryClient: new QueryClient()
+        });
 
         return api
             .fetchSearch(
-                () => Promise.resolve([{ id: 'a', name: 'A' }, undefined, { id: 'c', name: 'C' }]),
+                () =>
+                    Promise.resolve({
+                        items: [{ id: 'a', name: 'A' }, undefined, { id: 'c', name: 'C' }],
+                        totalItems: 2
+                    }),
                 filters.value,
                 1,
                 10
@@ -75,16 +85,22 @@ describe('the toolkit page window is dense', () => {
     it('shortens the window when a cached record is deleted, rather than leaving a hole', () => {
         setActivePinia(createPinia());
         const filters = ref({ query: 'anything' });
-        const api = useStructureSearchApi<ProbeRow, string>(filters);
+        const api = useStructureSearchApi<ProbeRow, string>(filters, {
+            resourceKey: 'probe',
+            queryClient: new QueryClient()
+        });
 
         return api
             .fetchSearch(
                 () =>
-                    Promise.resolve([
-                        { id: 'a', name: 'A' },
-                        { id: 'b', name: 'B' },
-                        { id: 'c', name: 'C' }
-                    ]),
+                    Promise.resolve({
+                        items: [
+                            { id: 'a', name: 'A' },
+                            { id: 'b', name: 'B' },
+                            { id: 'c', name: 'C' }
+                        ],
+                        totalItems: 3
+                    }),
                 filters.value,
                 1,
                 10
@@ -100,11 +116,17 @@ describe('the toolkit page window is dense', () => {
 
     it('holds for `useStructureCrudApi`, which every list store here is built on', () => {
         setActivePinia(createPinia());
-        const api = useStructureCrudApi<ProbeRow, string>({
-            // Only `search` is exercised; `watchList` calls it and nothing else here does.
-            search: () =>
-                Promise.resolve([{ id: 'a', name: 'A' }, undefined, { id: 'c', name: 'C' }])
-        });
+        const api = useStructureCrudApi<ProbeRow, string>(
+            {
+                // Only `search` is exercised; `watchList` calls it and nothing else here does.
+                search: () =>
+                    Promise.resolve({
+                        items: [{ id: 'a', name: 'A' }, undefined, { id: 'c', name: 'C' }],
+                        totalItems: 2
+                    })
+            },
+            { resourceKey: 'probe', queryClient: new QueryClient() }
+        );
 
         // `immediate: false`: the watcher would fire on mount, and this test drives it by hand.
         const { search } = api.watchList({ immediate: false });

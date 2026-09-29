@@ -11,9 +11,9 @@
  * in this store's state forever, readable by anything with `getRecord(id)`. Same reasoning as
  * `webhooks/store.ts`'s `createSubscription`.
  */
-import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { defineStore } from 'pinia';
-import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { listApiKeys, mintApiKey, revokeApiKey } from '@api';
 import type { ApiKey, MintApiKeyRequest } from '@types';
 
@@ -22,23 +22,20 @@ import type { ApiKey, MintApiKeyRequest } from '@types';
  */
 export const useApiKeysStore = defineStore('api-keys', () => {
     /**
-     * Shared per-key loading flags, keyed internally by this store's name.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * Credentials: search only. No `list`/`get`/`update` — no matching endpoints — and no
      * `create`/`remove` either, since both need the hand-written scrubbing below.
      */
     const {
         itemDictionary: apiKeys,
         itemList: apiKeysList,
+        addRecord: addApiKeyRecord,
         editRecord: editApiKeyRecord,
 
         filters,
         loading,
         pageCurrent,
         pageSize,
+        pageTotal,
         pageItemList,
 
         watchList: watchApiKeysSearch,
@@ -46,19 +43,13 @@ export const useApiKeysStore = defineStore('api-keys', () => {
     } = useStructureCrudApi<ApiKey, string>(
         {
             search: (_filters, page, size) =>
-                listApiKeys({ page, pageSize: size }).then((response) => {
-                    captureTotal(response.data.meta.totalPages);
-                    return response.data.items;
-                })
+                listApiKeys({ page, pageSize: size }).then((response) => ({
+                    items: response.data.items,
+                    totalItems: response.data.meta.totalItems
+                }))
         },
-        { loadingKey: 'api-keys', getLoading, setLoading }
+        { resourceKey: 'api-keys', queryClient }
     );
-
-    /**
-     * `pageTotal` for `search`'s real, server-paginated results — `captureTotal` is called from
-     * `search:` above, once its response's `meta.totalPages` is in.
-     */
-    const { pageTotal, captureTotal } = useServerPageTotal();
 
     /**
      * Mints a credential.
@@ -69,8 +60,8 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      *
      * The scrub-and-cache sits INSIDE the call handed to `fetchAny`, where the response is known
      * to exist, rather than in a `.then` on its result — `fetchAny` widens its return to
-     * `| undefined` for the cached path, and this call site passes no `lastUpdateKey`, so that
-     * half of the union is unreachable here.
+     * `| undefined` for the cached path, and this call site passes no `key`, so that half of the
+     * union is unreachable here.
      *
      * @param data - name, permissions and an optional expiry for the new credential
      * @returns The full response, including the plaintext `secret` — the caller must not persist
@@ -105,6 +96,7 @@ export const useApiKeysStore = defineStore('api-keys', () => {
     return {
         apiKeys,
         apiKeysList,
+        addApiKeyRecord,
 
         filters,
         loading,

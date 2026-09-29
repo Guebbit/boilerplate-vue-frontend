@@ -25,8 +25,9 @@ import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanne
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import PageHeader from '@/ui/molecules/PageHeader.vue';
-import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 
 /**
  * The active route, read for `meta.title`/`meta.customHero`/`meta.centered` — the three things a
@@ -136,8 +137,8 @@ const SIDE_LOADING_KEYS = [
 ];
 
 /**
- * Reads the shared loading dictionary. A function rather than a ref, so it stays out of
- * `storeToRefs` and is called inside the computeds below.
+ * Reads `core`'s own manual flag — only `Playground.vue` still sets one by hand, so this stays
+ * on `useCoreStore` rather than the shared `QueryClient` below.
  */
 const { isLoading } = useCoreStore();
 
@@ -147,9 +148,12 @@ const { isLoading } = useCoreStore();
 const isMainLoading = computed(() => isLoading(MAIN_LOADING_KEYS));
 
 /**
- * Whether a domain store is working — the corner indicator's flag.
+ * Whether a domain store is working — the corner indicator's flag. Every domain store's
+ * `resourceKey` (`'cart'`, `'accountProfile'`, …) lives on the app's one shared `QueryClient`
+ * now, so this reads that instead of `useCoreStore`'s dictionary, which no toolkit composable
+ * writes to any more.
  */
-const isSideLoading = computed(() => isLoading(SIDE_LOADING_KEYS));
+const isSideLoading = useIsLoading(SIDE_LOADING_KEYS, queryClient);
 
 /**
  * Reactive toast queue, rendered below as one `v-alert` per visible message.

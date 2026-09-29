@@ -6,7 +6,7 @@
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { IToastType } from '@guebbit/vue-toolkit';
+import { EToastType } from '@guebbit/vue-toolkit';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import vuetify from '@/ui/vuetify';
 import { i18n, loadLocale } from '@/i18n';
@@ -20,7 +20,7 @@ const { addMessageMock, copyToClipboardMock } = vi.hoisted(() => ({
     copyToClipboardMock: vi.fn()
 }));
 
-// `IToastType` stays real (it is a plain enum the component branches on); only `addMessage` is a
+// `EToastType` stays real (it is a plain enum the component branches on); only `addMessage` is a
 // spy, so the assertions below can read what severity the toast actually carried.
 vi.mock('@guebbit/vue-toolkit', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@guebbit/vue-toolkit')>()),
@@ -69,7 +69,7 @@ describe('SecretRevealModal — copying the secret', () => {
             vi.waitFor(() => {
                 expect(addMessageMock).toHaveBeenCalledWith(
                     enMessages.generic['secret-reveal-copy-failed'],
-                    IToastType.DANGER
+                    EToastType.DANGER
                 );
             })
         );

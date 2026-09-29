@@ -5,12 +5,12 @@
  * them, then layers on a hard-delete action and a facets read that the toolkit has no shape for.
  */
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 
 import { ref } from 'vue';
-import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 import { omitNulls } from '@/infrastructure/utils/forms.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listProducts,
     searchProducts,
@@ -66,11 +66,6 @@ export type UpdateProductData = UpdateProductRequest & { imageUpload?: Blob };
  */
 export const useProductsStore = defineStore('products', () => {
     /**
-     * Core store's shared loading-flag helpers, used to key this store's own loading state.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The store's public surface, all derived from `useStructureCrudApi`: dictionary/list views,
      * selection, filters, pagination and the CRUD operations themselves.
      */
@@ -85,9 +80,7 @@ export const useProductsStore = defineStore('products', () => {
         loading,
         pageCurrent,
         pageSize,
-        // Local-only: counts whatever this store already holds, wrong for a server-paginated
-        // search. Shadowed below by useServerPageTotal's, built from the response's own count.
-        pageTotal: _localOnlyPageTotal,
+        pageTotal,
         pageItemList,
 
         fetchList: fetchProducts,
@@ -100,7 +93,7 @@ export const useProductsStore = defineStore('products', () => {
         deleteOne: deleteProduct,
         deleteTarget,
         fetchAny,
-        destroy
+        resetAll
     } = useStructureCrudApi<
         Product,
         string,
@@ -130,10 +123,10 @@ export const useProductsStore = defineStore('products', () => {
                     // `SearchProductsRequest.active`'s own doc in the contract.
                     active: filters.active,
                     deleted: filters.deleted
-                }).then((response) => {
-                    captureTotal(response.data.meta.totalPages);
-                    return response.data.items;
-                }),
+                }).then((response) => ({
+                    items: response.data.items,
+                    totalItems: response.data.meta.totalItems
+                })),
 
             get: (productId) => getProductById(productId).then((response) => response.data),
 
@@ -215,9 +208,8 @@ export const useProductsStore = defineStore('products', () => {
             })
         },
         {
-            loadingKey: 'products',
-            getLoading,
-            setLoading,
+            resourceKey: 'products',
+            queryClient,
             /**
              * Five minutes instead of the toolkit's one-hour default.
              *
@@ -227,15 +219,9 @@ export const useProductsStore = defineStore('products', () => {
              * — an expired entry keeps rendering while the refetch runs — so the cost of the
              * shorter window is a background request, not a spinner.
              */
-            TTL: 5 * 60 * 1000
+            staleTime: 5 * 60 * 1000
         }
     );
-
-    /**
-     * `pageTotal` for `search`'s real, server-paginated results — `captureTotal` is called from
-     * `search:` above, once its response's `meta.totalPages` is in.
-     */
-    const { pageTotal, captureTotal } = useServerPageTotal();
 
     /**
      * Permanently deletes a product, bypassing the soft delete.
@@ -274,7 +260,7 @@ export const useProductsStore = defineStore('products', () => {
      *
      * A plain ref rather than a `useStructureCrudApi` slice: `GET /products/{id}/admin` is
      * deliberately uncached — it's the screen someone is actively editing — so there is no
-     * dictionary or TTL for it to share with the public read.
+     * dictionary or `staleTime` for it to share with the public read.
      *
      * @param productId - Which product.
      * @returns A promise resolving with the admin record.
@@ -340,14 +326,14 @@ export const useProductsStore = defineStore('products', () => {
          * language, so after a switch both are wrong. Dropping the records alone is not enough —
          * the toolkit answers a repeat fetch from its own query cache while that entry is still
          * fresh, so the next read puts the old language straight back and no request is ever made.
-         * `destroy()` clears both halves; this store owns its query client, so nothing else loses
-         * a cache.
+         * `resetAll()` drops every entry of this resource under the current scope — records, lists
+         * and searches alike.
          *
          * The module manifest wires this into `resetOnLocaleChange`, which
          * `src/app/guards/locale-choice.ts` runs once a switch has actually happened.
          */
         resetForLocaleChange: () => {
-            destroy();
+            resetAll();
         }
     };
 });

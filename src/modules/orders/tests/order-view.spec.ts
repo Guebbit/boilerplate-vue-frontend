@@ -10,17 +10,30 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import { useCoreStore } from '@guebbit/vue-toolkit';
 import Order from '@/modules/orders/views/Order.vue';
 import { useOrdersStore } from '@/modules/orders/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { reorder as apiReorder } from '@api';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
+import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Order as OrderType } from '@types';
+
+/**
+ * `reorder` alone is wrapped, real implementation and all (`vi.fn(actual.reorder)` calls through
+ * unless a test overrides it): every other case in this file goes through the orders store's own
+ * mocked reads. Only the in-flight-guard test below needs a controllable, genuinely pending API
+ * call — the CART store's `loading` is real, TanStack-tracked state now, so nothing short of an
+ * actual in-flight request can make it true.
+ */
+vi.mock('@api', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@api')>();
+    return { ...actual, reorder: vi.fn(actual.reorder) };
+});
 
 wireModulesIntoCore();
 
@@ -35,12 +48,6 @@ const router = createRouter({
 });
 
 /**
- * Satisfies `watchOrder`'s `WatchStopHandle` return type without setting up a real watcher —
- * same as `product-view.spec.ts`'s `noopStopHandle`.
- */
-const noopStopHandle = () => undefined;
-
-/**
  * Mounts the detail page with `order` already the store's `currentOrder`, `actions` included so
  * `useOrderActionsRefetch` finds nothing missing and never forces a second, unmocked fetch.
  *
@@ -49,7 +56,7 @@ const noopStopHandle = () => undefined;
  */
 const mountOrder = (order: OrderType) => {
     const store = useOrdersStore();
-    vi.spyOn(store, 'watchOrder').mockImplementation(() => noopStopHandle);
+    vi.spyOn(store, 'watchOrder').mockImplementation(() => noopWatchHandle());
     store.addOrder(order);
     store.selectedOrderId = order.id;
 
@@ -283,9 +290,24 @@ describe('the reorder button (FA39)', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
         expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeUndefined();
 
-        useCoreStore().setLoading('cart', true);
-        return nextRenderTick(wrapper).then(() => {
-            expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeDefined();
+        // A genuinely pending API call — the cart store's `loading` is real, TanStack-tracked
+        // state now, so nothing short of an actual in-flight `reorder` request moves it.
+        let release: ((error: Error) => void) | undefined;
+        const gate = new Promise<never>((_resolve, reject) => {
+            release = reject;
         });
+        vi.mocked(apiReorder).mockReturnValueOnce(gate);
+
+        return wrapper
+            .get('[data-test=order-reorder]')
+            .trigger('click')
+            .then(() => nextRenderTick(wrapper))
+            .then(() => {
+                expect(
+                    wrapper.get('[data-test=order-reorder]').attributes('disabled')
+                ).toBeDefined();
+                release?.(new Error('network down'));
+                return nextRenderTick(wrapper);
+            });
     });
 });

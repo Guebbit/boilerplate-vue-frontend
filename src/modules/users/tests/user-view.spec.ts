@@ -18,6 +18,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { User as UserType } from '@types';
 
 wireModulesIntoCore();
@@ -32,9 +33,6 @@ const router = createRouter({
         { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
     ]
 });
-
-/** Satisfies `watchUser`'s `WatchStopHandle` return type without a real watcher. */
-const noopStopHandle = () => undefined;
 
 /** A user record, everything but `id` fixed. */
 const A_USER: UserType = {
@@ -70,7 +68,7 @@ const signIn = (canReadAuditLog: boolean) => {
  */
 const mountUser = (user: UserType) => {
     const store = useUsersStore();
-    vi.spyOn(store, 'watchUser').mockImplementation(() => noopStopHandle);
+    vi.spyOn(store, 'watchUser').mockImplementation(() => noopWatchHandle());
     store.addUser(user);
     store.selectedUserId = user.id;
 
@@ -123,7 +121,7 @@ describe('the "History" link', () => {
 
         signIn(true);
         const store = useUsersStore();
-        vi.spyOn(store, 'watchUser').mockImplementation(() => noopStopHandle);
+        vi.spyOn(store, 'watchUser').mockImplementation(() => noopWatchHandle());
         store.addUser(A_USER);
         store.selectedUserId = A_USER.id;
 

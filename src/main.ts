@@ -8,9 +8,11 @@
  */
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
+import { VueQueryPlugin } from '@tanstack/vue-query';
 import { i18n } from '@/i18n';
 import { mergeRemoteLocales } from '@/infrastructure/locale-overrides.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 
 import App from './App.vue';
 import router from '@/app/router';
@@ -90,7 +92,16 @@ const bootstrapApplication = () =>
         })
         .then((pinia) => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- createApp(App) is TypeScript-ESLint's own documented case: it cannot fully resolve a .vue SFC's component type
-            const app = createApp(App).use(pinia).use(router).use(i18n).use(vuetify);
+            const app = createApp(App)
+                .use(pinia)
+                .use(router)
+                .use(i18n)
+                .use(vuetify)
+                // Every store passes `queryClient` (src/infrastructure/query-client.ts)
+                // explicitly rather than relying on this injection — see that file's own
+                // docblock — so this is only for a future caller that reaches for
+                // `useQueryClient()` directly.
+                .use(VueQueryPlugin, { queryClient });
 
             // Anything a component's render/setup/watcher throws with nothing downstream to
             // catch it lands here instead of a blank page — see vue-error-handler.ts (FA74).

@@ -372,7 +372,7 @@ const submitForm = () => {
                     translations,
                     imageUpload
                 },
-                options
+                { requestOptions: options }
             )
         ).then(() => {
             // The API has answered with the stored `imageUrl` and the merged translations; the
@@ -389,7 +389,7 @@ const submitForm = () => {
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 </script>

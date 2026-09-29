@@ -6,8 +6,9 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     createPaymentIntent,
     confirmPayment,
@@ -33,18 +34,12 @@ import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
  */
 export const usePaymentsStore = defineStore('payments', () => {
     /**
-     * Shared per-key loading flags, threaded into `fetchAny` below.
-     */
-    const { getLoading, setLoading } = useCoreStore();
-
-    /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<Payment, string>({
-        loadingKey: 'payments',
-        getLoading,
-        setLoading
+        resourceKey: 'payments',
+        queryClient
     });
 
     /**

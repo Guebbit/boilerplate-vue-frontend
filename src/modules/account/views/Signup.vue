@@ -221,9 +221,13 @@ const submitForm = () => {
             )
         )
             .then(() => redirectAfterLogin())
-            .then(() => addMessage(t('signup-page.success-email-code-sent')))
+            // `handleSubmit`'s callback must resolve `void`; `addMessage` now returns the new
+            // message's id (vue-toolkit 5), which this call site has no use for.
+            .then(() => {
+                addMessage(t('signup-page.success-email-code-sent'));
+            })
     ).catch((error) => {
-        if (!applyServerErrors(error)) reportSignupError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSignupError(error) });
     });
 };
 </script>

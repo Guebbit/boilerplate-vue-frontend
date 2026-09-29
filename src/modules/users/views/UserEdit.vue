@@ -284,7 +284,7 @@ const submitForm = () => {
                         website: website || undefined,
                         imageUpload
                     },
-                    options
+                    { requestOptions: options }
                 )
             ).then(() => {
                 // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
@@ -295,7 +295,7 @@ const submitForm = () => {
             });
         });
     }).catch((error) => {
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 

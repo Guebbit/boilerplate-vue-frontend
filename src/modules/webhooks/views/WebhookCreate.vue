@@ -121,7 +121,7 @@ const submitForm = () => {
             revealedSecret.value = created.secret;
         })
     ).catch((error: unknown) => {
-        if (!applyServerErrors(error)) reportSubmitError(error);
+        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
 

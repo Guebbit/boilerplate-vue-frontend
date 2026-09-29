@@ -61,7 +61,7 @@ const SUBSCRIPTION: WebhookSubscription = {
  */
 const mountPage = () => {
     const store = useWebhooksStore();
-    store.subscriptions[SUBSCRIPTION.id] = { ...SUBSCRIPTION };
+    store.addSubscriptionRecord({ ...SUBSCRIPTION });
     vi.spyOn(store, 'fetchEventCatalogue').mockResolvedValue(undefined);
     const update = vi.spyOn(store, 'updateSubscription').mockResolvedValue(SUBSCRIPTION);
 

@@ -33,14 +33,58 @@ const TICKET = {
 };
 
 /**
- * Per-test response table, keyed by `METHOD /url`; reset in `beforeEach`.
+ * The ticket as the mocked API's own state currently holds it — updated by `PATCH /feedback/f1`
+ * and cleared by `DELETE /feedback/f1` below, and read back by `POST /feedback/search`. A real
+ * backend's list would reflect a write the moment it lands; a frozen `TICKET` snapshot would not,
+ * and vue-toolkit 5's active `watchSearchRequests` genuinely refetches the search after every
+ * write (it closes the "another store's list could go stale on screen indefinitely" bug), so a
+ * stale search fixture would silently overwrite the just-written (or just-deleted) row right back.
+ */
+let currentTicket: typeof TICKET | undefined;
+
+/**
+ * Per-test static response table, keyed by `METHOD /url`; reset in `beforeEach`. The three routes
+ * that read or change {@link currentTicket} (`search`, the `PATCH`, the `DELETE`) are handled
+ * ahead of this table instead of through it — see `orvalMutator`'s own mock below.
  */
 let responses: Record<string, unknown>;
 
+/**
+ * The envelope for the three routes that read or change {@link currentTicket} — computed fresh
+ * on every call, unlike the static {@link responses} table, since a search after a write or a
+ * delete must answer differently than the same route answered before it.
+ *
+ * @param method - the mocked request's HTTP method
+ * @param url - the mocked request's URL
+ * @returns the envelope to resolve with, or `undefined` for a route this does not own
+ */
+const ticketStateEnvelope = (method: string | undefined, url: string | undefined) => {
+    if (method === 'POST' && url === '/feedback/search')
+        return orvalEnvelope({
+            items: currentTicket ? [currentTicket] : [],
+            meta: currentTicket
+                ? { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
+                : { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }
+        });
+    if (method === 'PATCH' && url === '/feedback/f1' && currentTicket) {
+        currentTicket = { ...currentTicket, status: 'resolved' };
+        return orvalEnvelope(currentTicket);
+    }
+    if (method === 'DELETE' && url === '/feedback/f1') {
+        currentTicket = undefined;
+        return orvalEnvelope();
+    }
+    return undefined;
+};
+
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
-        const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
+        const method = config.method?.toUpperCase();
+        const stateEnvelope = ticketStateEnvelope(method, config.url);
+        const key = `${method} ${config.url}`;
+        return Promise.resolve(
+            parseOrvalFixture(config.method, config.url, stateEnvelope ?? responses[key])
+        );
     })
 }));
 
@@ -53,14 +97,9 @@ const requestedUrls = () =>
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    currentTicket = { ...TICKET };
     responses = {
-        'POST /feedback/contact': orvalEnvelope(TICKET),
-        'POST /feedback/search': orvalEnvelope({
-            items: [TICKET],
-            meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
-        }),
-        'PATCH /feedback/f1': orvalEnvelope({ ...TICKET, status: 'resolved' }),
-        'DELETE /feedback/f1': orvalEnvelope()
+        'POST /feedback/contact': orvalEnvelope(TICKET)
     };
 });
 
@@ -199,7 +238,16 @@ describe('deleteRequest', () => {
             .search()
             .then(() => store.deleteRequest('f1'))
             .then(() => {
-                expect(requestedUrls()).toEqual(['/feedback/search', '/feedback/f1']);
+                // A third request, not two: `deleteTarget` marks the resource's active lists
+                // stale on settling, and `watchSearchRequests()` is exactly that — an active
+                // watcher — so it refetches on its own (vue-toolkit 5's structural fix for a
+                // list going stale on screen indefinitely). The refetch is what proves the ticket
+                // is really gone server-side, not just removed from the local cache.
+                expect(requestedUrls()).toEqual([
+                    '/feedback/search',
+                    '/feedback/f1',
+                    '/feedback/search'
+                ]);
                 expect(store.pageItemList).toEqual([]);
             });
     });

@@ -27,6 +27,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
+import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
 import type { Order, OrderActions } from '@types';
 
@@ -48,11 +49,6 @@ vi.mock('@/modules/payments', () => ({
         template: '<div data-test="record-offline-payment-form" />'
     }
 }));
-
-/**
- * Satisfies `watchOrder`'s `WatchStopHandle` return type without setting up a real watcher.
- */
-const noopStopHandle = () => undefined;
 
 /**
  * The real app router, scoped to the modules this test suite enables.
@@ -128,7 +124,7 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
  */
 const mountFromListCache = (detailOrder: Order) => {
     const orders = useOrdersStore();
-    vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopStopHandle);
+    vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
     orders.addOrder({ ...detailOrder, actions: undefined });
     orders.selectedOrderId = detailOrder.id;
     const fetchOrder = vi.spyOn(orders, 'fetchOrder').mockImplementation(() => {
@@ -448,7 +444,7 @@ describe('recording a payment by hand', () => {
             actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
         });
         const orders = useOrdersStore();
-        vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopStopHandle);
+        vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
         orders.addOrder({ ...detail, actions: detail.actions });
         orders.selectedOrderId = detail.id;
         vi.spyOn(orders, 'fetchOrder').mockRejectedValue(new Error('network down'));

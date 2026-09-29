@@ -112,7 +112,7 @@ describe('UserCreate', () => {
                         locale: undefined,
                         imageUpload: undefined
                     },
-                    undefined
+                    { requestOptions: undefined }
                 );
                 return vi.waitFor(() => {
                     if (!router.currentRoute.value.fullPath.endsWith('/u-new'))
@@ -158,7 +158,7 @@ describe('UserCreate', () => {
                         password: undefined,
                         sendSetupEmail: true
                     }),
-                    undefined
+                    { requestOptions: undefined }
                 );
             });
     });

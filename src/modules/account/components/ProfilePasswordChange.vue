@@ -158,7 +158,7 @@ const submitPasswordChange = () =>
                     .catch(() => undefined);
             })
             .catch((error: unknown) => {
-                if (!applyServerErrors(error)) reportPasswordChangeError(error);
+                applyServerErrors(error, { onUnmapped: () => reportPasswordChangeError(error) });
             });
     });
 </script>
