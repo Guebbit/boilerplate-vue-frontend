@@ -144,8 +144,7 @@ describe('handleCellBlur', () => {
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
-            expect(addEntry).toHaveBeenCalledWith('en', {
-                tenant: OWN_TENANT,
+            expect(addEntry).toHaveBeenCalledWith('en', OWN_TENANT, {
                 key: 'greeting',
                 value: 'Ciao'
             });

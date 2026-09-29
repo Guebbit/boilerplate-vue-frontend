@@ -30,7 +30,9 @@ import type {
     ProductAdmin,
     CreateProductRequest,
     UpdateProductRequest,
-    SearchProductsRequest
+    SearchProductsRequest,
+    TaxClass,
+    RateType
 } from '@types';
 
 /**
@@ -55,8 +57,16 @@ export type CreateProductData = CreateProductRequest & { imageUpload?: Blob };
 /**
  * `updateProduct`'s payload — the merging `PATCH` body plus the optional replacement image. See
  * {@link CreateProductData} for why `translations` stays an object here too.
+ *
+ * `taxClass`/`rateType` are narrowed back to their enums: the contract's `nullable` wrapper around
+ * a `$ref` (`type: string` keeps `null` valid under OpenAPI 3.0.3) generates a bare
+ * `string | null`, which would let a caller send a value the API refuses.
  */
-export type UpdateProductData = UpdateProductRequest & { imageUpload?: Blob };
+export type UpdateProductData = Omit<UpdateProductRequest, 'taxClass' | 'rateType'> & {
+    taxClass?: TaxClass | null;
+    rateType?: RateType | null;
+    imageUpload?: Blob;
+};
 
 /**
  * Products CRUD, paginated search and image upload.

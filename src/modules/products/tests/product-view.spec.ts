@@ -17,7 +17,7 @@ import { useProductsStore } from '@/modules/products/store';
 import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { upsertCartItem } from '@api';
+import { addCartItem } from '@api';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -28,18 +28,34 @@ import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts'
 import type { Product as ProductType } from '@types';
 
 /**
- * `upsertCartItem` alone is wrapped, real implementation and all (`vi.fn(actual.upsertCartItem)`
+ * `addCartItem` alone is wrapped, real implementation and all (`vi.fn(actual.addCartItem)`
  * calls through unless a test overrides it): every other case in this file spies on the STORE's
- * own `upsertCartItem` action instead, which never reaches this. Only the in-flight-guard test
+ * own `addCartItem` action instead, which never reaches this. Only the in-flight-guard test
  * below needs a controllable, genuinely pending API call — `cart.loading` is real, TanStack-tracked
  * state now, so nothing short of an actual in-flight request can make it true.
  */
 vi.mock('@api', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@api')>();
-    return { ...actual, upsertCartItem: vi.fn(actual.upsertCartItem) };
+    return { ...actual, addCartItem: vi.fn(actual.addCartItem) };
 });
 
 wireModulesIntoCore();
+
+/**
+ * A cart with nothing in it — what a stubbed cart write resolves with.
+ */
+const EMPTY_CART = {
+    items: [],
+    summary: {
+        itemsCount: 0,
+        totalQuantity: 0,
+        itemsTotal: 0,
+        shippingCost: 0,
+        totalPrice: 0,
+        currency: 'EUR'
+    },
+    shipping: { required: false, selected: null, options: [] }
+};
 
 /**
  * The real app router, scoped to the modules this test suite enables.
@@ -127,7 +143,9 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=product-stock]').text()).not.toContain('Out of stock');
     });
 
-    it('adds to cart by incrementing a line already there, not resetting it to 1 (FA30)', async () => {
+    // `POST /cart` is "add": the server grows a line the shopper already has, so the click sends
+    // the ONE unit it means and never reads the cart to compute a total.
+    it('adds one unit and leaves the arithmetic to the server (FA30)', async () => {
         signIn();
         const product = {
             id: 'p-in-stock',
@@ -139,35 +157,18 @@ describe('the shelf', () => {
             available: 4
         };
         const cart = useCartStore();
-        const fetchedCart = {
-            items: [{ productId: product.id, quantity: 3 }],
-            summary: {
-                itemsCount: 1,
-                totalQuantity: 3,
-                itemsTotal: 29.97,
-                shippingCost: 0,
-                totalPrice: 29.97,
-                currency: 'EUR'
-            },
-            shipping: { required: false, selected: null, options: [] }
-        };
-        // `POST /cart` SETS a line's quantity — the fresh fetch answers 3 already on this line, so
-        // the click must send 4, never a bare 1.
-        const fetchCartSpy = vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
-            cart.cart = fetchedCart;
-            return Promise.resolve(fetchedCart);
-        });
-        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(fetchedCart);
+        const fetchCartSpy = vi.spyOn(cart, 'fetchCart');
+        const addSpy = vi.spyOn(cart, 'addCartItem').mockResolvedValue(EMPTY_CART);
 
         const wrapper = mountProduct(product);
         await wrapper.get('[data-test=add-to-cart]').trigger('click');
         await flushPromises();
 
-        expect(fetchCartSpy).toHaveBeenCalled();
-        expect(upsertSpy).toHaveBeenCalledWith(product.id, 4);
+        expect(addSpy).toHaveBeenCalledWith(product.id, 1);
+        expect(fetchCartSpy).not.toHaveBeenCalled();
     });
 
-    it("reads the cart fresh rather than trusting a previous account's in-memory copy", async () => {
+    it("never lets a previous account's in-memory cart shape the quantity it sends", async () => {
         signIn();
         const product = {
             id: 'p-in-stock',
@@ -181,63 +182,22 @@ describe('the shelf', () => {
         const cart = useCartStore();
         // A stale line left behind by whoever used this browser tab before — a different
         // account's cart, still sitting in the store's memory because logout resets only the
-        // profile store. If the click trusted this, it would send 6 (5 + 1) into the NEW
-        // account's cart instead of the fresh answer's 1 (0 + 1).
+        // profile store. A client that computed `existing + 1` from it would send 6.
         cart.cart = {
-            items: [{ productId: product.id, quantity: 5 }],
-            summary: {
-                itemsCount: 1,
-                totalQuantity: 5,
-                itemsTotal: 49.95,
-                shippingCost: 0,
-                totalPrice: 49.95,
-                currency: 'EUR'
-            },
-            shipping: { required: false, selected: null, options: [] }
+            ...EMPTY_CART,
+            items: [{ productId: product.id, quantity: 5 }]
         };
-        const freshCart = {
-            items: [],
-            summary: {
-                itemsCount: 0,
-                totalQuantity: 0,
-                itemsTotal: 0,
-                shippingCost: 0,
-                totalPrice: 0,
-                currency: 'EUR'
-            },
-            shipping: { required: false, selected: null, options: [] }
-        };
-        vi.spyOn(cart, 'fetchCart').mockImplementation(() => {
-            cart.cart = freshCart;
-            return Promise.resolve(freshCart);
-        });
-        const upsertSpy = vi.spyOn(cart, 'upsertCartItem').mockResolvedValue(freshCart);
+        const addSpy = vi.spyOn(cart, 'addCartItem').mockResolvedValue(EMPTY_CART);
 
         const wrapper = mountProduct(product);
         await wrapper.get('[data-test=add-to-cart]').trigger('click');
         await flushPromises();
 
-        expect(upsertSpy).toHaveBeenCalledWith(product.id, 1);
+        expect(addSpy).toHaveBeenCalledWith(product.id, 1);
     });
 
     it('disables add-to-cart while a cart write is already in flight (FA39)', async () => {
         signIn();
-        // `handleAddToCart` reads the cart fresh before its own write — stubbed to resolve at
-        // once, same as the "sends exactly the typed fields" case above, so the click reaches
-        // the gated `upsertCartItem` call below in the same tick instead of waiting on a second,
-        // unmocked request first.
-        vi.spyOn(useCartStore(), 'fetchCart').mockResolvedValue({
-            items: [],
-            summary: {
-                itemsCount: 0,
-                totalQuantity: 0,
-                itemsTotal: 0,
-                shippingCost: 0,
-                totalPrice: 0,
-                currency: 'EUR'
-            },
-            shipping: { required: false, selected: null, options: [] }
-        });
         const wrapper = mountProduct({
             id: 'p-in-stock',
             title: 'Available widget',
@@ -251,13 +211,13 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
 
         // A genuinely pending API call — the cart store's own `loading` is real, TanStack-tracked
-        // state now, so nothing short of an actual in-flight `upsertCartItem` request moves it. A
+        // state now, so nothing short of an actual in-flight `addCartItem` request moves it. A
         // double-click while the first is still out must not fire a second.
         let release: ((error: Error) => void) | undefined;
         const gate = new Promise<never>((_resolve, reject) => {
             release = reject;
         });
-        vi.mocked(upsertCartItem).mockReturnValueOnce(gate);
+        vi.mocked(addCartItem).mockReturnValueOnce(gate);
 
         await wrapper.get('[data-test=add-to-cart]').trigger('click');
         await flushPromises();

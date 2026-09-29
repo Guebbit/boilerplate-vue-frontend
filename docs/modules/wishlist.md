@@ -84,7 +84,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | Call                               | Response envelope                |
 | ---------------------------------- | -------------------------------- |
 | `GET /wishlist`                    | `GetWishlistResponse`            |
-| `POST /wishlist`                   | `AddWishlistItemResponse`        |
+| `PUT /wishlist/{id}`               | `AddWishlistItemResponse`        |
 | `DELETE /wishlist/{id}`            | `RemoveWishlistItemResponse`     |
 | `POST /wishlist/{id}/move-to-cart` | `MoveWishlistItemToCartResponse` |
 

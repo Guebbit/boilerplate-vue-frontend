@@ -49,6 +49,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
+import { toPatchTranslations } from '@/modules/products/composables/translations-body.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -382,7 +383,7 @@ const submitForm = () => {
                     taxClass,
                     categories,
                     tags,
-                    translations,
+                    translations: toPatchTranslations(translations),
                     imageUpload
                 },
                 { requestOptions: options }

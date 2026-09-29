@@ -1,8 +1,9 @@
 /**
  * @module
  * Pinia store (Composition API form) wrapping `useStructureRestApi` for the address book: every
- * write re-fetches the whole list from the response envelope rather than patching one entry,
- * because the invariant worth rendering — exactly one default — is a property of the list.
+ * write re-fetches the whole book rather than patching one entry, because the invariant worth
+ * rendering — exactly one default — is a property of the list, and a write that moves it changes a
+ * row other than the one the API answered with.
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
@@ -12,6 +13,7 @@ import {
     getAddresses as apiGetAddresses,
     addAddress as apiAddAddress,
     updateAddress as apiUpdateAddress,
+    setDefaultAddress as apiSetDefaultAddress,
     removeAddress as apiRemoveAddress
 } from '@api';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
@@ -45,11 +47,12 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
     const addresses = ref<Address[]>([]);
 
     /**
-     * Replace the local book with the payload every address endpoint answers with.
+     * Replace the local book with the payload the book's own endpoints answer with (the read and
+     * the delete).
      *
-     * Typed as the generated envelope rather than `unknown`, so the four call sites are checked
-     * against the contract instead of being waved through a cast: the day an endpoint stops
-     * answering with the address book, this stops compiling.
+     * Typed as the generated envelope rather than `unknown`, so the call sites are checked against
+     * the contract instead of being waved through a cast: the day an endpoint stops answering with
+     * the address book, this stops compiling.
      */
     const readAddressesResponse = (data: AddressesEnvelope) => {
         const payload = getPayloadFromResponse<AddressesResponse>(data);
@@ -66,28 +69,44 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAny(() => apiGetAddresses().then((data) => readAddressesResponse(data)));
 
     /**
-     * Adds an entry. The first one becomes the default server-side.
+     * Re-reads the book after a write that answered one entry. Called inside a write's own
+     * `fetchAny`, so `loading` stays up for the whole write-then-read and does not flicker.
+     *
+     * @returns A promise resolving with the addresses as the server now holds them.
+     */
+    const reloadBook = () => apiGetAddresses().then((data) => readAddressesResponse(data));
+
+    /**
+     * Adds an entry, then reloads the book. The first one becomes the default server-side, and
+     * `default: true` demotes the previous holder — a different row from the created one the API
+     * answers with.
      *
      * @param address - The entry's fields; `default: true` claims the default slot.
      * @returns A promise resolving with the updated book.
      */
     const addAddress = (address: AddressInput) =>
-        fetchAny(() => apiAddAddress(address).then((data) => readAddressesResponse(data)));
+        fetchAny(() => apiAddAddress(address).then(() => reloadBook()));
 
     /**
-     * Updates one entry through PATCH (AUDIT_0924 D17d) — `default: true` claims the slot; absent
-     * leaves it alone. Both call sites in `ProfileAddresses.vue` send a change-set rather than a
-     * guaranteed-full one (`handleMakeDefault` sends `{ default: true }` alone), so this is never
-     * routed through PUT, which would clear every field the caller left out (RFC 9110 §9.3.4).
+     * Updates one entry through PATCH (AUDIT_0924 D17d), then reloads the book. The default is
+     * not a field of one address: `setDefaultAddress` moves it.
      *
      * @param addressId - Which entry.
      * @param changes - The fields to change.
      * @returns A promise resolving with the updated book.
      */
     const updateAddress = (addressId: string, changes: UpdateAddressRequest) =>
-        fetchAny(() =>
-            apiUpdateAddress(addressId, changes).then((data) => readAddressesResponse(data))
-        );
+        fetchAny(() => apiUpdateAddress(addressId, changes).then(() => reloadBook()));
+
+    /**
+     * Makes one entry the book's default — `PUT /account/addresses/{addressId}/default`, an
+     * idempotent action — then reloads the book, since the demoted holder is another row.
+     *
+     * @param addressId - Which entry.
+     * @returns A promise resolving with the updated book.
+     */
+    const setDefaultAddress = (addressId: string) =>
+        fetchAny(() => apiSetDefaultAddress(addressId).then(() => reloadBook()));
 
     /**
      * Removes one entry; removing the default promotes the oldest survivor server-side.
@@ -104,6 +123,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAddresses,
         addAddress,
         updateAddress,
+        setDefaultAddress,
         removeAddress
     };
 });

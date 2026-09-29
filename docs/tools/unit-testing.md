@@ -59,7 +59,7 @@ Every domain store (`cart`, `orders`, `products`, `users`) is tested by mocking 
 ```ts
 vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve({ data: CART })),
-    upsertCartItem: vi.fn(() => Promise.resolve({ data: CART }))
+    addCartItem: vi.fn(() => Promise.resolve({ data: CART }))
 }));
 ```
 

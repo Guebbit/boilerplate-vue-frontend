@@ -22,7 +22,7 @@ import { useCartStore } from '@/modules/cart/store';
 import {
     getCart,
     getCartSummary,
-    upsertCartItem,
+    addCartItem,
     updateCartItemById,
     removeCartItem,
     clearCart,
@@ -97,11 +97,11 @@ const aProduct = (id: string, requiresShipping = true) => ({
 const RESPONSES = {
     cart: contractResponse(schemas.GetCartResponse, CART),
     summary: contractResponse(schemas.GetCartSummaryResponse, CART.summary),
-    upserted: contractResponse(schemas.UpsertCartItemResponse, CART),
+    added: contractResponse(schemas.AddCartItemResponse, CART),
     updated: contractResponse(schemas.UpdateCartItemByIdResponse, CART),
     removed: contractResponse(schemas.RemoveCartItemResponse, EMPTY_CART),
     cleared: contractResponse(schemas.ClearCartResponse, EMPTY_CART),
-    checkedOut: contractResponse(schemas.CheckoutResponse, { order: ORDER }),
+    checkedOut: contractResponse(schemas.CheckoutResponse, ORDER),
     reordered: contractResponse(schemas.ReorderResponse, CART),
     shippingSet: contractResponse(schemas.SetCartShippingMethodResponse, {
         ...CART,
@@ -137,7 +137,7 @@ const lastIdempotencyKey = (): unknown => {
 vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve(RESPONSES.cart)),
     getCartSummary: vi.fn(() => Promise.resolve(RESPONSES.summary)),
-    upsertCartItem: vi.fn(() => Promise.resolve(RESPONSES.upserted)),
+    addCartItem: vi.fn(() => Promise.resolve(RESPONSES.added)),
     updateCartItemById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
     removeCartItem: vi.fn(() => Promise.resolve(RESPONSES.removed)),
     clearCart: vi.fn(() => Promise.resolve(RESPONSES.cleared)),
@@ -210,12 +210,12 @@ describe('useCartStore', () => {
         });
     });
 
-    describe('upsertCartItem', () => {
-        it('sends the product and quantity and replaces the local cart', () => {
+    describe('addCartItem', () => {
+        it('sends the product and the quantity to ADD, and replaces the local cart', () => {
             const store = useCartStore();
 
-            return store.upsertCartItem('p1', 2).then(() => {
-                expect(upsertCartItem).toHaveBeenCalledWith({ productId: 'p1', quantity: 2 });
+            return store.addCartItem('p1', 2).then(() => {
+                expect(addCartItem).toHaveBeenCalledWith({ productId: 'p1', quantity: 2 });
                 expect(store.cartItems).toEqual(CART.items);
             });
         });
@@ -296,7 +296,7 @@ describe('useCartStore', () => {
                     expect(apiCheckout).toHaveBeenCalledWith(undefined, expect.anything());
                 }));
 
-        it('returns the checkout envelope, order included', () =>
+        it('resolves the created order itself, the same shape POST /orders answers', () =>
             useCartStore()
                 .checkout({ notes: 'leave at door' })
                 .then((result) => {
@@ -304,7 +304,7 @@ describe('useCartStore', () => {
                         { notes: 'leave at door' },
                         expect.anything()
                     );
-                    expect(result).toEqual({ order: ORDER });
+                    expect(result).toEqual(ORDER);
                 }));
 
         it('empties the local cart to a known-zero state, not to undefined (FA33)', () => {
@@ -456,7 +456,7 @@ describe('useCartStore', () => {
 
                 return store.checkout().then(() => {
                     const firstKey = lastIdempotencyKey();
-                    return store.upsertCartItem('p1', 3).then(() =>
+                    return store.addCartItem('p1', 3).then(() =>
                         store.checkout().then(() => {
                             expect(lastIdempotencyKey()).not.toBe(firstKey);
                         })

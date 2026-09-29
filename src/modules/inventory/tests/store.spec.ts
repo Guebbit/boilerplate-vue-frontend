@@ -155,6 +155,51 @@ describe('receive', () => {
     });
 });
 
+/**
+ * The `Idempotency-Key` header the first (write) call carried.
+ */
+const keyOfFirstCall = () =>
+    (vi.mocked(orvalMutator).mock.calls[0][1] as { headers?: Record<string, string> } | undefined)
+        ?.headers?.['Idempotency-Key'];
+
+describe('the Idempotency-Key on a stock write', () => {
+    it.each([
+        ['a receipt', (store: ReturnType<typeof useInventoryStore>) => store.receive('p1', 20)],
+        ['an adjustment', (store: ReturnType<typeof useInventoryStore>) => store.adjust('p1', -3)]
+    ])('is sent with %s, and a fresh one follows a success', (_label, write) => {
+        const store = useInventoryStore();
+        return write(store)
+            .then(() => {
+                const first = keyOfFirstCall();
+                expect(first).toEqual(expect.any(String));
+                vi.mocked(orvalMutator).mockClear();
+                return write(store).then(() => first);
+            })
+            .then((first) => {
+                expect(keyOfFirstCall()).toEqual(expect.any(String));
+                expect(keyOfFirstCall()).not.toBe(first);
+            });
+    });
+
+    it('is reused when the first attempt failed retryably, so the API replays instead of double-counting', () => {
+        responses['POST /inventory/receipts'] = undefined;
+        vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
+        const store = useInventoryStore();
+        return store
+            .receive('p1', 20)
+            .catch(() => undefined)
+            .then(() => {
+                const first = keyOfFirstCall();
+                vi.mocked(orvalMutator).mockClear();
+                responses['POST /inventory/receipts'] = orvalEnvelope(LEVEL);
+                return store.receive('p1', 20).then(() => first);
+            })
+            .then((first) => {
+                expect(keyOfFirstCall()).toBe(first);
+            });
+    });
+});
+
 describe('sweep', () => {
     it('answers how many holds were released and reloads both views', () => {
         responses['POST /inventory/reservations/sweep'] = orvalEnvelope({ expired: 3 });

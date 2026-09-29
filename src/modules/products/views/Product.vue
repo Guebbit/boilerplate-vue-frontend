@@ -137,18 +137,15 @@ const { addMessage } = useNotificationsStore();
 const { isAuth } = storeToRefs(useSessionStore());
 
 /**
- * Cart store instance, used by {@link handleAddToCart} both to write and to read whatever line
- * the shopper already has for this product — see {@link cartItems} below.
+ * Cart store instance, used by {@link handleAddToCart} to add to the shopper's cart.
  */
 const cartStore = useCartStore();
 
 /**
- * The loaded cart's lines, plus whether a cart write is already in flight. Read off
- * `storeToRefs`, not destructured off the store directly, so {@link handleAddToCart} sees
- * whatever the shopper's cart holds once its own forced fetch lands, not a stale snapshot taken
- * when this page mounted.
+ * Whether a cart write is already in flight — the add button's own double-click guard. Read off
+ * `storeToRefs`, not destructured off the store directly, so it stays reactive.
  */
-const { cartItems, loading: cartLoading } = storeToRefs(cartStore);
+const { loading: cartLoading } = storeToRefs(cartStore);
 
 /**
  * Wishlist store's actions and selector, used by {@link handleToggleWishlist}.
@@ -191,26 +188,18 @@ const {
 } = useBlockingError();
 
 /**
- * Adds one unit to the cart — an INCREMENT on whatever the line already holds, always reading the
- * cart fresh first. `POST /cart` SETS a line's quantity, so sending a bare `1` here
- * would reset a line the shopper already has back down to one — and trusting an in-memory `cart`
- * left over from a PREVIOUS account (logout resets only the profile store, not this one) would
- * write that account's quantity into this one's cart instead.
+ * Adds one unit to the cart. `POST /cart` is "add": the server grows a line the shopper already
+ * has, so no read-then-increment happens here — which also means a cart left in memory by a
+ * PREVIOUS account (logout resets only the profile store, not this one) can never leak its
+ * quantity into this one's.
  *
  * @returns Nothing; a failure blocks the button in place ({@link addToCartError}).
  */
 const handleAddToCart = () => {
     if (!currentProduct.value) return;
-    const productId = currentProduct.value.id;
     clearAddToCartError();
     cartStore
-        .fetchCart()
-        .then(() => {
-            const existingQuantity = cartItems.value.find(
-                (item) => item.productId === productId
-            )?.quantity;
-            return cartStore.upsertCartItem(productId, (existingQuantity ?? 0) + 1);
-        })
+        .addCartItem(currentProduct.value.id, 1)
         .then(() => addMessage(t('product-target-page.success-add-to-cart')))
         .catch((error: unknown) => reportAddToCartError(error));
 };

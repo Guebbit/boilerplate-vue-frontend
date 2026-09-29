@@ -174,6 +174,9 @@ paths:
       responses:
         "201":
           description: The created language
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -337,6 +340,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateLocaleRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/UpdateLocaleRequest"
       responses:
         "200":
           description: The updated language
@@ -455,7 +461,9 @@ paths:
         translation screen lists. Flat, because a row is what gets edited; the nested tree
         is `GET /locales/{locale}/messages`.
 
-        `text` searches keys and values together.
+        `text` searches keys and values together. Every tenant's rows are listed unless
+        `tenant` narrows them; one tenant's slice is also a resource of its own,
+        `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
       operationId: listLocaleEntries
       security:
         - bearerAuth: []
@@ -487,12 +495,55 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
+  /locales/{locale}/tenants/{tenant}/entries:
+    get:
+      tags:
+        - System
+      summary: List one tenant's translation entries
+      description: |
+        The rows behind one language's dictionary, paginated and searchable — what a
+        translation screen lists. Flat, because a row is what gets edited; the nested tree
+        is `GET /locales/{locale}/messages`.
+
+        `text` searches keys and values together. The same rows `GET
+        /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
+      operationId: listTenantLocaleEntries
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/TenantPathParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - $ref: "#/components/parameters/TextParam"
+      responses:
+        "200":
+          description: A page of entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocaleEntriesResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     post:
       tags:
         - System
       summary: Add one translation entry
       description: |
-        409 if the key already exists in this language, and equally if it COLLIDES with one
+        Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
         — see `LocaleEntryInput.key` for what a collision is and why it is refused here
         rather than discovered when the tree is built.
       operationId: createLocaleEntry
@@ -500,6 +551,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/TenantPathParam"
       requestBody:
         required: true
         content:
@@ -509,6 +561,9 @@ paths:
       responses:
         "201":
           description: The created entry
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -542,7 +597,9 @@ paths:
       summary: Replace every entry
       description: |
         Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
-        entries for this language becomes exactly what the body carries.
+        this tenant's entries for this language becomes exactly what the body carries;
+        the other tenants are untouched. The URI names that slice, so the body is the
+        same thing `GET` on it lists (RFC 9110 §9.3.4).
 
         Paired with `PATCH` on this same collection, which merges instead. "Does an import
         delete missing keys" is the question every translation tool gets wrong, so the two
@@ -556,6 +613,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/TenantPathParam"
       requestBody:
         required: true
         content:
@@ -607,10 +665,14 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/TenantPathParam"
       requestBody:
         required: true
         content:
           application/json:
+            schema:
+              $ref: "#/components/schemas/MergeLocaleEntriesRequest"
+          application/merge-patch+json:
             schema:
               $ref: "#/components/schemas/MergeLocaleEntriesRequest"
       responses:
@@ -767,15 +829,17 @@ paths:
         — the whole set becomes exactly what the body carries. Paired with `PATCH` on this
         same resource, which merges instead; "does saving delete the locales I didn't
         touch" is the question every translation tool gets wrong, so the two behaviours
-        are spelled in the METHOD rather than a flag. Same three signals as `PATCH` for a
-        key that IS in the body — see its own description — plus the implicit fourth: a
-        key that is neither in the body nor already stored never existed either way.
+        are spelled in the METHOD rather than a flag. A locale that IS in the body is
+        replaced whole: a declared field its `fields` leaves out is cleared, and no value
+        is `null`. A key that is neither in the body nor already stored never existed
+        either way.
 
         The fallback locale (`NODE_FALLBACK_LOCALE`) must be present and non-null, same
         invariant `POST /products` already enforces on create: a caller cannot replace the
         whole set and leave the entity with nothing to fall back to.
 
-        422 for the same reasons `PATCH` refuses — an unknown or inactive locale, an empty
+        422 for the same reasons `PATCH` refuses — an unknown locale, an inactive one being written (a `null` that deletes an inactive locale's row is
+        allowed), an empty
         `fields` object, a `fields` key the `translatables` registry does not declare, or a
         missing/`null` fallback locale.
       operationId: replaceEntityTranslations
@@ -826,16 +890,22 @@ paths:
         MERGING semantics: a locale key absent from the body is left exactly as it is. Three
         signals inside the map, and no way to mistake one for another:
 
-        | the body says      | the server does                                    |
-        | ------------------ | --------------------------------------------------- |
-        | key absent         | leaves that locale's row exactly as it is            |
-        | `"it": { … }`      | upserts that locale's row — created or fully replaced |
-        | `"it": null`       | deletes that locale's row                            |
+        | the body says               | the server does                                  |
+        | --------------------------- | ------------------------------------------------- |
+        | key absent                  | leaves that locale's row exactly as it is          |
+        | `"it": { "fields": { … } }` | merges field by field into the row, creating it    |
+        | `"it": null`                | deletes that locale's row                          |
 
-        An empty `fields` object is a 422, never a delete — deletion is `null`, spent
-        deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
-        never delete translated work. `null` on the fallback locale is a 422: deleting it
-        would leave the entity with nothing to fall back to.
+        Inside `fields` (RFC 7396, one level down): a string sets that field, `null`
+        clears it, a field left out keeps what it has — so `{"it": {"fields": {"title":
+        "x"}}}` changes only the Italian title. The values follow the entity's own rules:
+        a product title still needs its minimum length and cannot be cleared, and `""` is
+        never a value — clear with `null`.
+
+        An empty `fields` object is a 422, never a delete — deletion is the locale's own
+        `null`, spent deliberately so a mis-click can never delete translated work. `null`
+        on the fallback locale is a 422: deleting it would leave the entity with nothing to
+        fall back to.
 
         422 equally when a named locale does not exist or is not `active` in the `locales`
         collection, and when `fields` names a key the `translatables` registry does not
@@ -853,7 +923,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertTranslationsRequest"
+              $ref: "#/components/schemas/MergeTranslationsRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/MergeTranslationsRequest"
       responses:
         "200":
           description: Every locale this entity has a row for, after the write
@@ -1208,7 +1281,7 @@ paths:
       tags:
         - Account
       summary: Replace own profile
-      description: Replaces every writable field of the authenticated user's own profile — email, username, locale, image (RFC 9110 §9.3.4, an omitted optional field is cleared). `analyticsConsent` is the one exception — it cannot be cleared, so leaving it out keeps it unchanged. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address (or any other value that resolves to no change) is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+      description: Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
       operationId: replaceAccount
       security:
         - bearerAuth: []
@@ -1259,6 +1332,9 @@ paths:
         required: true
         content:
           application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest"
+          application/merge-patch+json:
             schema:
               $ref: "#/components/schemas/UpdateAccountRequest"
           multipart/form-data:
@@ -1590,7 +1666,7 @@ paths:
       tags:
         - Account
       summary: Add an address
-      description: Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
+      description: Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
       operationId: addAddress
       security:
         - bearerAuth: []
@@ -1601,12 +1677,15 @@ paths:
             schema:
               $ref: "#/components/schemas/AddressInput"
       responses:
-        "200":
-          description: The updated address book
+        "201":
+          description: The created address
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressesEnvelope"
+                $ref: "#/components/schemas/AddressEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1629,7 +1708,7 @@ paths:
       tags:
         - Account
       summary: Replace an address
-      description: Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+      description: Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
       operationId: replaceAddress
       security:
         - bearerAuth: []
@@ -1648,11 +1727,11 @@ paths:
               $ref: "#/components/schemas/ReplaceAddressRequest"
       responses:
         "200":
-          description: The updated address book
+          description: The address as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressesEnvelope"
+                $ref: "#/components/schemas/AddressEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1676,7 +1755,7 @@ paths:
       tags:
         - Account
       summary: Update an address
-      description: Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+      description: Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
       operationId: updateAddress
       security:
         - bearerAuth: []
@@ -1693,13 +1772,16 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateAddressRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/UpdateAddressRequest"
       responses:
         "200":
-          description: The updated address book
+          description: The address as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressesEnvelope"
+                $ref: "#/components/schemas/AddressEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1741,6 +1823,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AddressesEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
+  /account/addresses/{addressId}/default:
+    put:
+      tags:
+        - Account
+      summary: Make an address the default
+      description: Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
+      operationId: setDefaultAddress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Address identifier from `GET /account/addresses`
+      responses:
+        "200":
+          description: The address, now the default
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddressEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1937,6 +2055,9 @@ paths:
       responses:
         "201":
           description: Created
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -2586,6 +2707,9 @@ paths:
       responses:
         "201":
           description: Created user
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -2689,7 +2813,7 @@ paths:
       tags:
         - Users
       summary: Replace user
-      description: Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. Optional image can be uploaded.
+      description: Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
       operationId: replaceUserById
       security:
         - bearerAuth: []
@@ -2748,6 +2872,9 @@ paths:
         required: true
         content:
           application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserByIdRequest"
+          application/merge-patch+json:
             schema:
               $ref: "#/components/schemas/UpdateUserByIdRequest"
           multipart/form-data:
@@ -2980,6 +3107,9 @@ paths:
       responses:
         "201":
           description: Created feedback request
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -3149,6 +3279,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateFeedbackRequestStatusRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/UpdateFeedbackRequestStatusRequest"
       responses:
         "200":
           description: Updated feedback request
@@ -3290,6 +3423,9 @@ paths:
       responses:
         "201":
           description: Created product
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -3412,12 +3548,12 @@ paths:
       description: |
         Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
         writable scalar field is required, since none of them but `taxClass`/`rateType`/
-        `weight`/`imageUrl` has a legal "cleared" state, and an omitted one of those four is
-        cleared, not left alone. `translations` keeps the same per-locale upsert/delete
-        semantics `PATCH` uses (see its own description): a translations table is keyed
-        sub-resources, not a single field a "whole-body replace" can meaningfully null out
-        — a caller cannot be expected to enumerate every locale that currently exists just
-        to keep it.
+        `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
+        cleared, not left alone. The image is outside the representation: it is set by an
+        upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
+        it — a client cannot send the current path back. `translations` is the whole set as well: it must
+        name the fallback locale, and every stored locale it leaves out is deleted. To
+        change one locale without restating the others, use `PATCH`.
       operationId: replaceProductById
       security:
         - bearerAuth: []
@@ -3468,20 +3604,22 @@ paths:
       summary: Edit product
       description: |
         Updates the product identified by `{id}` in the path, merging. Every field but
-        `translations` replaces the stored value when sent; `translations` merges one
-        locale at a time — three signals, and no way to mistake one for another:
+        `translations` replaces the stored value when sent; `translations` merges (RFC
+        7396) — three signals for a locale, and one level down for its fields:
 
-        | the body says      | the server does                        |
-        | ------------------- | --------------------------------------- |
-        | `"it"` absent       | leaves the Italian row exactly as it is |
-        | `"it": { … }`       | upserts the Italian row, replacing its fields whole |
-        | `"it": null`        | deletes the Italian row                 |
+        | the body says                   | the server does                                |
+        | ------------------------------- | ----------------------------------------------- |
+        | `"it"` absent                   | leaves the Italian row exactly as it is          |
+        | `"it": { "title": "x" }`        | changes the Italian title only; the rest is kept |
+        | `"it": { "description": null }` | clears the Italian description only              |
+        | `"it": null`                    | deletes the Italian row                          |
 
         An empty translation object is a 422, never a delete — deletion is `null`, spent
-        deliberately: a cleared form field sends `""`, never `null`, so a mis-click can
-        never delete translated work. `null` on the fallback locale is a 422: deleting it
-        would leave the product with nothing to fall back to. A validation failure names
-        the locale in its pointer, e.g. `translations.it.title`.
+        deliberately, so a mis-click can never delete translated work. `""` is never a
+        value: clear a description with `null`. A title cannot be cleared. `null` on the
+        fallback locale is a 422: deleting it would leave the product with nothing to fall
+        back to. A validation failure names the locale in its pointer, e.g.
+        `translations.it.title`.
       operationId: updateProductById
       security:
         - bearerAuth: []
@@ -3491,6 +3629,9 @@ paths:
         required: true
         content:
           application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+          application/merge-patch+json:
             schema:
               $ref: "#/components/schemas/UpdateProductRequest"
           multipart/form-data:
@@ -3729,9 +3870,9 @@ paths:
     post:
       tags:
         - Cart
-      summary: Add/Edit cart item
-      description: Adds or edit a product to the authenticated user's cart. Returns the updated cart.
-      operationId: upsertCartItem
+      summary: Add to cart
+      description: "\"Add to cart\": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`."
+      operationId: addCartItem
       security:
         - bearerAuth: []
       requestBody:
@@ -3739,10 +3880,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertCartItemRequest"
+              $ref: "#/components/schemas/AddCartItemRequest"
       responses:
         "200":
-          description: Add/Edit to cart
+          description: The product already had a line, which grew
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponseEnvelope"
+        "201":
+          description: The product had no line; the cart now holds one
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -3837,9 +3987,8 @@ paths:
       tags:
         - Cart
       summary: Set cart item quantity
-      description: Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
+      description: Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
       operationId: updateCartItemById
-      x-alias-of: upsertCartItem
       security:
         - bearerAuth: []
       parameters:
@@ -3853,6 +4002,15 @@ paths:
       responses:
         "200":
           description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponseEnvelope"
+        "201":
+          description: The product had no line; the cart now holds one
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -3979,7 +4137,7 @@ paths:
       tags:
         - Orders
       summary: Checkout (place order from cart)
-      description: Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Returns the created order. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+      description: Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
       operationId: checkout
       security:
         - bearerAuth: []
@@ -3994,6 +4152,9 @@ paths:
       responses:
         "201":
           description: Order created
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -4002,12 +4163,12 @@ paths:
             PayOrder:
               operationId: createPaymentIntent
               parameters:
-                orderId: $response.body#/data/order/id
+                orderId: $response.body#/data/id
               description: The new order's id is the `orderId` to freeze into a payment intent.
             CancelOrder:
               operationId: cancelOrderById
               parameters:
-                id: $response.body#/data/order/id
+                id: $response.body#/data/id
               description: The new order's id can be cancelled directly.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -4093,20 +4254,17 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: wishlist
-    post:
+  /wishlist/{productId}:
+    put:
       tags:
         - Wishlist
       summary: Save a product
-      description: Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+      description: Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
       operationId: addWishlistItem
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AddWishlistItemRequest"
+      parameters:
+        - $ref: "#/components/parameters/ProductIdPathParam"
       responses:
         "200":
           description: The updated wishlist
@@ -4114,16 +4272,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WishlistResponseEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -4133,7 +4285,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: wishlist
-  /wishlist/{productId}:
     delete:
       tags:
         - Wishlist
@@ -4271,6 +4422,9 @@ paths:
       responses:
         "201":
           description: Created order
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -4489,6 +4643,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateOrderByIdRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderByIdRequest"
       responses:
         "200":
           description: Updated order
@@ -4632,7 +4789,7 @@ paths:
       tags:
         - Orders
       summary: Cancel order
-      description: "Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner."
+      description: "Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner."
       operationId: cancelOrderById
       security:
         - bearerAuth: []
@@ -4810,7 +4967,7 @@ paths:
       tags:
         - Payments
       summary: Create a payment intent
-      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
       operationId: createPaymentIntent
       security:
         - bearerAuth: []
@@ -4823,8 +4980,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CreatePaymentIntentRequest"
       responses:
-        "201":
-          description: The payment intent, ready to confirm
+        "200":
+          description: The order already had an intent; it was refreshed and is ready to confirm
           content:
             application/json:
               schema:
@@ -4835,6 +4992,20 @@ paths:
               parameters:
                 id: $response.body#/data/id
               description: The intent's id is confirmed here to complete the charge.
+        "201":
+          description: The payment intent, ready to confirm
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+          links:
+            ConfirmPayment:
+              operationId: confirmPayment
+              parameters:
+                id: $response.body#/data/id
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4984,7 +5155,7 @@ paths:
       tags:
         - Payments
       summary: Record a payment that arrived outside the provider
-      description: "An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
+      description: "An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
       operationId: recordOfflinePayment
       security:
         - bearerAuth: []
@@ -5003,8 +5174,17 @@ paths:
             schema:
               $ref: "#/components/schemas/RecordOfflinePaymentRequest"
       responses:
+        "200":
+          description: The payment, `succeeded` — it converted the row of an unpaid card intent — with the order now `paid`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
         "201":
           description: The payment, `succeeded`, with the order now `paid`
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -5500,10 +5680,12 @@ paths:
       tags:
         - Inventory
       summary: Receive stock
-      description: Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
+      description: Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
       operationId: receiveStock
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -5525,6 +5707,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -5543,10 +5727,12 @@ paths:
       tags:
         - Inventory
       summary: Adjust stock
-      description: A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
+      description: A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
       operationId: adjustStock
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -5624,7 +5810,7 @@ paths:
       summary: List this shop's webhook subscriptions
       description: |
         Never returns a secret — the ring's plaintext exists only in the response of the
-        call that minted it (`POST` here, or the rotate action on `PATCH .../{id}`).
+        call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
       operationId: listWebhookSubscriptions
       security:
         - bearerAuth: []
@@ -5664,8 +5850,11 @@ paths:
       description: |
         Mints the ring's first secret and returns it in plaintext, once — the only
         response that ever carries it. `url` must be `https://` and must not resolve to a
-        private, loopback or link-local address; that check runs again on every delivery,
-        since a subscription's DNS can change after it is created.
+        private, loopback or link-local address. The host is resolved here, so a refusal is a
+        422 naming the field (`errors[].details` `{ field: url, reason }`) instead of a
+        delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
+        changes. It runs again on every delivery, since a subscription's DNS can change
+        after it is created.
       operationId: createWebhookSubscription
       security:
         - bearerAuth: []
@@ -5678,6 +5867,9 @@ paths:
       responses:
         "201":
           description: Created subscription, with its one-time secret
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -5765,6 +5957,9 @@ paths:
         required: true
         content:
           application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWebhookSubscriptionRequest"
+          application/merge-patch+json:
             schema:
               $ref: "#/components/schemas/UpdateWebhookSubscriptionRequest"
       responses:
@@ -6071,6 +6266,9 @@ paths:
       responses:
         "201":
           description: The minted credential, with its one-time secret
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
@@ -6240,6 +6438,13 @@ components:
       schema:
         $ref: "#/components/schemas/LocaleTenant"
       description: Restrict the listing to one tenant's dictionary. Omitted lists every tenant, which is what an admin screen wants before the operator has picked one.
+    TenantPathParam:
+      name: tenant
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/LocaleTenant"
+      description: The tenant whose slice of the language's entries this is. An id the deployment does not configure is refused with a 422 — see `GET /locales/tenants`.
     EntryIdPathParam:
       name: entryId
       in: path
@@ -6268,6 +6473,12 @@ components:
       schema:
         type: string
       description: "Wire name of a second factor — a `method` from `GET /account/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel."
+  headers:
+    Location:
+      required: true
+      description: Where the created resource lives, as a path on this API (RFC 9110 §9.3.3). A create that answers 201 always sends it, so a client follows the link instead of composing one. Some created things have no `GET` of their own (a feedback ticket, a payment, an API key) — the link is still their address for `PUT`, `PATCH` and `DELETE`.
+      schema:
+        type: string
   responses:
     Success:
       description: Success
@@ -7715,14 +7926,11 @@ components:
       type: object
       additionalProperties: false
       required:
-        - tenant
         - entries
       description: |-
-        The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
-        The tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
+        The COMPLETE set of entries for this language IN THE TENANT the URI names. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
+        The tenant is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
       properties:
-        tenant:
-          $ref: "#/components/schemas/LocaleTenant"
         entries:
           type: array
           items:
@@ -7770,12 +7978,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - tenant
         - key
         - value
       properties:
-        tenant:
-          $ref: "#/components/schemas/LocaleTenant"
         key:
           type: string
           minLength: 1
@@ -7804,12 +8009,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - tenant
         - entries
-      description: Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.
+      description: Entries to upsert into the tenant the URI names. Anything already stored is left exactly as it was.
       properties:
-        tenant:
-          $ref: "#/components/schemas/LocaleTenant"
         entries:
           type: array
           minItems: 1
@@ -7932,7 +8134,8 @@ components:
           type: object
           additionalProperties:
             type: string
-          description: Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates.
+            minLength: 1
+          description: "The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale."
         origin:
           allOf:
             - $ref: "#/components/schemas/TranslationOrigin"
@@ -7945,12 +8148,43 @@ components:
         allOf:
           - $ref: "#/components/schemas/UpsertTranslationRequest"
         description: Upserts this locale's row when an object, deletes it when `null`. See the operation description for what a key this map does not name means for the verb in use.
-      description: One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean for the verb in use.
+      description: One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
       example:
         it:
           fields:
             title: Cuccia ortopedica in memory foam
             description: Un supporto extra per le articolazioni durante il riposo.
+    MergeTranslationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - fields
+      description: One locale's changes for one entity. `origin` defaults to `human`, as it does on `PUT`.
+      properties:
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+            nullable: true
+          description: Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time.
+        origin:
+          allOf:
+            - $ref: "#/components/schemas/TranslationOrigin"
+          default: human
+    MergeTranslationsRequest:
+      type: object
+      additionalProperties:
+        type: object
+        nullable: true
+        allOf:
+          - $ref: "#/components/schemas/MergeTranslationRequest"
+        description: Merges into this locale's row when an object, deletes the row when `null`. A locale key this map does not name is left alone.
+      description: One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
+      example:
+        it:
+          fields:
+            description: null
     DependencyStatus:
       type: string
       enum:
@@ -8589,6 +8823,7 @@ components:
       required:
         - email
         - username
+        - analyticsConsent
       properties:
         email:
           $ref: "#/components/schemas/Email"
@@ -8596,6 +8831,7 @@ components:
           type: string
           minLength: 3
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -8617,6 +8853,7 @@ components:
       required:
         - email
         - username
+        - analyticsConsent
       properties:
         email:
           $ref: "#/components/schemas/Email"
@@ -8624,6 +8861,7 @@ components:
           type: string
           minLength: 3
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -8651,6 +8889,7 @@ components:
           type: string
           minLength: 3
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -8676,6 +8915,7 @@ components:
           type: string
           minLength: 3
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -8920,6 +9160,7 @@ components:
       properties:
         label:
           type: string
+          minLength: 1
         fullName:
           type: string
           minLength: 1
@@ -8936,8 +9177,26 @@ components:
           $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
+          minLength: 1
         default:
           type: boolean
+    AddressEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Address"
     ReplaceAddressRequest:
       type: object
       additionalProperties: false
@@ -8970,8 +9229,6 @@ components:
           type: string
           minLength: 1
           nullable: true
-        default:
-          type: boolean
     UpdateAddressRequest:
       type: object
       additionalProperties: false
@@ -8998,8 +9255,6 @@ components:
           type: string
           minLength: 1
           nullable: true
-        default:
-          type: boolean
     EmailVerificationRequested:
       type: object
       additionalProperties: false
@@ -9034,6 +9289,7 @@ components:
       properties:
         token:
           type: string
+          minLength: 1
           description: One-time email verification token (NOT a JWT).
     AccountDeleteConfirmRequest:
       type: object
@@ -9043,6 +9299,7 @@ components:
       properties:
         token:
           type: string
+          minLength: 1
           description: One-time account deletion token (NOT a JWT).
     LoginRequest:
       type: object
@@ -9185,6 +9442,7 @@ components:
       properties:
         token:
           type: string
+          minLength: 1
           description: One-time password reset token (NOT a JWT).
         password:
           $ref: "#/components/schemas/PasswordNew"
@@ -9468,6 +9726,7 @@ components:
       properties:
         challenge:
           type: string
+          minLength: 1
           description: The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
         code:
           type: string
@@ -9480,6 +9739,7 @@ components:
       properties:
         challenge:
           type: string
+          minLength: 1
           description: The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
         method:
           type: string
@@ -9765,6 +10025,7 @@ components:
           $ref: "#/components/schemas/Email"
         username:
           type: string
+          minLength: 3
         password:
           $ref: "#/components/schemas/PasswordNew"
         sendSetupEmail:
@@ -9772,6 +10033,7 @@ components:
           default: false
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
           default: true
@@ -9790,6 +10052,7 @@ components:
           $ref: "#/components/schemas/Email"
         username:
           type: string
+          minLength: 3
         password:
           $ref: "#/components/schemas/PasswordNew"
         sendSetupEmail:
@@ -9797,6 +10060,7 @@ components:
           default: false
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
           default: true
@@ -9832,14 +10096,16 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
-          minLength: 1
+          minLength: 3
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -9866,9 +10132,10 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
-          minLength: 1
+          minLength: 3
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
         imageUpload:
@@ -9876,6 +10143,7 @@ components:
           format: binary
           description: Optional user profile image
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -9897,14 +10165,16 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
-          minLength: 1
+          minLength: 3
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -9926,9 +10196,10 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
-          minLength: 1
+          minLength: 3
         role:
           type: string
+          minLength: 1
         active:
           type: boolean
         imageUpload:
@@ -9936,6 +10207,7 @@ components:
           format: binary
           description: Optional user profile image
         locale:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
@@ -9981,6 +10253,7 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
           maxLength: 120
         email:
           $ref: "#/components/schemas/Email"
@@ -10108,6 +10381,7 @@ components:
         adminNotes:
           type: string
           minLength: 1
+          maxLength: 5000
           nullable: true
     UpdateFeedbackRequestStatusRequest:
       type: object
@@ -10118,6 +10392,7 @@ components:
         adminNotes:
           type: string
           minLength: 1
+          maxLength: 5000
           nullable: true
     ProductsResponse:
       type: object
@@ -10149,7 +10424,7 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ProductsResponse"
-    ProductTranslationFields:
+    ProductTranslationFieldsWrite:
       type: object
       additionalProperties: false
       required:
@@ -10159,14 +10434,15 @@ components:
           type: string
         description:
           type: string
+          minLength: 1
     ProductTranslationsWrite:
       type: object
       additionalProperties:
         type: object
         nullable: true
         allOf:
-          - $ref: "#/components/schemas/ProductTranslationFields"
-      description: One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object upserts it; a key mapped to null deletes it — never omission or an empty object, which are both errors. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create, and MUST NOT be null on update.
+          - $ref: "#/components/schemas/ProductTranslationFieldsWrite"
+      description: "One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`."
       example:
         en:
           title: Orthopedic Memory Foam Dog Bed
@@ -10214,10 +10490,12 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
     CreateProductRequestMultipart:
       type: object
       additionalProperties: false
@@ -10261,10 +10539,12 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
     ProductEnvelope:
       type: object
       additionalProperties: false
@@ -10356,14 +10636,17 @@ components:
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
@@ -10382,10 +10665,12 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
     ReplaceProductRequestMultipart:
       type: object
       additionalProperties: false
@@ -10406,14 +10691,17 @@ components:
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
@@ -10434,30 +10722,58 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
+    ProductTranslationFieldsPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          description: A title is never cleared — an empty locale is deleted with the locale's own `null`.
+        description:
+          type: string
+          minLength: 1
+          nullable: true
+          description: A string sets the description, `null` clears it, absent keeps it. `""` is a 422.
+    ProductTranslationsPatch:
+      type: object
+      additionalProperties:
+        type: object
+        nullable: true
+        allOf:
+          - $ref: "#/components/schemas/ProductTranslationFieldsPatch"
+      description: One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null.
+      example:
+        it:
+          description: null
     UpdateProductRequest:
       type: object
       additionalProperties: false
       properties:
         translations:
-          $ref: "#/components/schemas/ProductTranslationsWrite"
+          $ref: "#/components/schemas/ProductTranslationsPatch"
         price:
           type: number
           format: double
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
@@ -10476,31 +10792,36 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
     UpdateProductRequestMultipart:
       type: object
       additionalProperties: false
       properties:
         translations:
           type: string
-          description: JSON-encoded `ProductTranslationsWrite`.
+          description: JSON-encoded `ProductTranslationsPatch`.
         price:
           type: number
           format: double
           minimum: 0
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
+          type: string
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
@@ -10521,10 +10842,22 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         tags:
           type: array
           items:
             type: string
+            minLength: 1
+    ProductTranslationFields:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
     ProductAdmin:
       type: object
       additionalProperties: false
@@ -10774,7 +11107,7 @@ components:
       minimum: 1
       maximum: 999
       description: "Bounded at both ends, and this bound is on the STORED line, not only the request: `POST /cart` and `PUT /cart/{productId}` set a line to exactly this value, which already fits; a caller that instead adds to an existing line (the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over."
-    UpsertCartItemRequest:
+    AddCartItemRequest:
       type: object
       additionalProperties: false
       required:
@@ -10799,8 +11132,6 @@ components:
       required:
         - quantity
       properties:
-        productId:
-          $ref: "#/components/schemas/Id"
         quantity:
           $ref: "#/components/schemas/CartQuantity"
     SetCartShippingMethodRequest:
@@ -10811,6 +11142,7 @@ components:
       properties:
         shippingMethodId:
           type: string
+          minLength: 1
           nullable: true
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
     CartSummaryResponseEnvelope:
@@ -10836,7 +11168,8 @@ components:
       properties:
         notes:
           type: string
-          description: Optional order notes
+          minLength: 1
+          description: Optional order notes. Left out when there are none; an empty string is a 422.
         addressId:
           allOf:
             - $ref: "#/components/schemas/Id"
@@ -10846,16 +11179,6 @@ components:
             - $ref: "#/components/schemas/PaymentMethodId"
           default: card
           description: How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`.
-    CheckoutResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - order
-      properties:
-        order:
-          $ref: "#/components/schemas/Order"
-        message:
-          type: string
     CheckoutResponseEnvelope:
       type: object
       additionalProperties: false
@@ -10872,7 +11195,7 @@ components:
         message:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
-          $ref: "#/components/schemas/CheckoutResponse"
+          $ref: "#/components/schemas/Order"
     WishlistItem:
       type: object
       additionalProperties: false
@@ -10908,14 +11231,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/WishlistResponse"
-    AddWishlistItemRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
     OrdersResponse:
       type: object
       additionalProperties: false
@@ -11240,6 +11555,7 @@ components:
           description: How the money arrived. `card` is not offered here — that path is `POST /payments/intent`.
         reference:
           type: string
+          minLength: 1
           maxLength: 120
           description: A bank transaction id, a receipt number — whatever ties this record to the money.
         receivedAt:
@@ -11415,6 +11731,7 @@ components:
       properties:
         trackingCode:
           type: string
+          minLength: 1
           description: The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
         forced:
           type: boolean
@@ -11583,6 +11900,7 @@ components:
           description: How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
         note:
           type: string
+          minLength: 1
           description: Optional — the supplier, the delivery note number, whatever the operator wants on the row.
     InventoryLevelEnvelope:
       type: object
@@ -11615,6 +11933,7 @@ components:
           description: Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.
         note:
           type: string
+          minLength: 1
           description: Why. An unexplained correction is the thing an audit is looking for.
     ReservationSweepResponse:
       type: object
@@ -11739,6 +12058,7 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
           minItems: 1
     WebhookSubscriptionCreated:
       type: object
@@ -11828,6 +12148,7 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
           minItems: 1
         enabled:
           type: boolean
@@ -11866,6 +12187,7 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
           minItems: 1
         enabled:
           type: boolean

@@ -110,9 +110,9 @@ purpose — see the route table's own comment in `routes.ts`.
 | `PUT /locales/{id}`                             | `ReplaceLocaleResponse`             |
 | `DELETE /locales/{id}`                          | `DeleteLocaleResponse`              |
 | `PATCH /locales/{id}`                           | `UpdateLocaleResponse`              |
-| `PATCH /locales/{id}/entries`                   | `MergeLocaleEntriesResponse`        |
-| `POST /locales/{id}/entries`                    | `CreateLocaleEntryResponse`         |
-| `PUT /locales/{id}/entries`                     | `ReplaceLocaleEntriesResponse`      |
+| `PATCH /locales/{id}/tenants/{tenant}/entries`  | `MergeLocaleEntriesResponse`        |
+| `POST /locales/{id}/tenants/{tenant}/entries`   | `CreateLocaleEntryResponse`         |
+| `PUT /locales/{id}/tenants/{tenant}/entries`    | `ReplaceLocaleEntriesResponse`      |
 | `GET /locales/{id}/entries(\?.*)?`              | `ListLocaleEntriesResponse`         |
 | `DELETE /locales/{id}/entries/{id}`             | `DeleteLocaleEntryResponse`         |
 | `PUT /locales/{id}/entries/{id}`                | `UpdateLocaleEntryResponse`         |

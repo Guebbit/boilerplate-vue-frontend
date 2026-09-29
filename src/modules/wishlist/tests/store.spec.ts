@@ -36,7 +36,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /wishlist': orvalEnvelope({ items: [{ productId: 'p1' }, { productId: 'p2' }] }),
-        'POST /wishlist': orvalEnvelope({ items: [{ productId: 'p1' }, { productId: 'p2' }] }),
+        'PUT /wishlist/p1': orvalEnvelope({ items: [{ productId: 'p1' }, { productId: 'p2' }] }),
         'DELETE /wishlist/p1': orvalEnvelope({ items: [{ productId: 'p2' }] }),
         'POST /wishlist/p1/move-to-cart': orvalEnvelope({ items: [{ productId: 'p2' }] }),
         'GET /cart': orvalEnvelope({
@@ -75,7 +75,7 @@ describe('addToWishlist', () => {
             // a store appending locally would hold one line here and be wrong the moment two
             // tabs save different products.
             expect(store.isSaved('p2')).toBe(true);
-            expect(requestedUrls()).toEqual(['/wishlist']);
+            expect(requestedUrls()).toEqual(['/wishlist/p1']);
         });
     });
 });

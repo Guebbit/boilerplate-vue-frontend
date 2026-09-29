@@ -44,7 +44,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The address book's remaining two actions — add/edit now live in `AddressFormDialog.vue`.
  */
-const { fetchAddresses, updateAddress, removeAddress } = useAddressesStore();
+const { fetchAddresses, setDefaultAddress, removeAddress } = useAddressesStore();
 
 /**
  * The visitor's saved addresses.
@@ -91,14 +91,14 @@ const openEdit = (address: Address) => {
 };
 
 /**
- * Claims the default slot for one entry.
+ * Claims the default slot for one entry through the book's own action.
  *
  * @param address - The entry to promote.
  * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleMakeDefault = (address: Address) => {
     clearRowActionError();
-    updateAddress(address.id, { default: true }).catch((error) => reportRowActionError(error));
+    setDefaultAddress(address.id).catch((error) => reportRowActionError(error));
 };
 
 /**

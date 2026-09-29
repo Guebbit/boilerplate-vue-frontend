@@ -18,13 +18,14 @@ const unique = () => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
  * last silently wins. A fresh page load has no such background reload to race.
  *
  * @param username - the exact username to filter to
- * @param deleted - which deleted-filter option to select once the page loads
+ * @param deleted - which deleted-filter option to select before submitting the search
  */
 const searchUser = (username: string, deleted: 'All' | 'Not deleted') => {
     cy.visit('/en/users');
     cy.get('[data-test=filter-username] input').type(username);
-    cy.get('[data-test=search-submit]').click();
     cy.pickOption('[data-test=filter-deleted]', deleted);
+    // The selects only set the filter; the search runs on submit, so the click comes last.
+    cy.get('[data-test=search-submit]').click();
 };
 
 describe('Users', () => {
