@@ -19,6 +19,7 @@ export interface GeneratedRoute {
 
 /** Every operation this contract declares, response-schema row shape — see {@link GeneratedRoute}. */
 export const ROUTES: GeneratedRoute[] = [
+    { method: "GET", pattern: /^\/\.well-known\/security\.txt$/, schemaName: "GetSecurityTxtResponse", module: undefined },
     { method: "GET", pattern: /^\/$/, schemaName: "GetHealthResponse", module: undefined },
     { method: "POST", pattern: /^\/account\/2fa\/backup-codes$/, schemaName: "RegenerateBackupCodesResponse", module: "account" },
     { method: "DELETE", pattern: /^\/account\/2fa$/, schemaName: "DisableTwoFactorResponse", module: "account" },
