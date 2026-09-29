@@ -79,6 +79,7 @@ interface ProductCreateForm {
     price?: number;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     weight?: number;
     // Absent means the shop's standard rate; an edit sends `null` for the same meaning, but a
     // create simply omits the key rather than declaring a clear that has nothing to clear yet.
@@ -119,6 +120,7 @@ const {
         price: 0,
         active: true,
         requiresShipping: true,
+        noWithdrawal: false,
         onHand: productsOnHandDefault,
         translations: {}
     },
@@ -243,6 +245,7 @@ const submitForm = () => {
                     price: form.value.price!,
                     active: form.value.active,
                     requiresShipping: form.value.requiresShipping,
+                    noWithdrawal: form.value.noWithdrawal,
                     weight: form.value.weight,
                     taxClass: form.value.taxClass,
                     onHand: form.value.onHand,
@@ -418,6 +421,13 @@ const submitForm = () => {
                 v-model="form.requiresShipping"
                 :label="t('product-create-page.label-requires-shipping')"
                 data-test="product-requires-shipping-field"
+            />
+            <v-switch
+                v-model="form.noWithdrawal"
+                :label="t('product-create-page.label-no-withdrawal')"
+                :hint="t('product-create-page.hint-no-withdrawal')"
+                persistent-hint
+                data-test="product-no-withdrawal-field"
             />
 
             <InlineErrorAlert :message="submitError" data-test="product-create-submit-error" />

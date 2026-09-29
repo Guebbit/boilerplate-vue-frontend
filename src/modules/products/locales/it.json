@@ -77,6 +77,8 @@
         "label-categories": "Categorie",
         "label-tags": "Tag",
         "label-requires-shipping": "Richiede spedizione",
+        "label-no-withdrawal": "Nessun diritto di recesso",
+        "hint-no-withdrawal": "Beni personalizzati, sigillati per igiene o deperibili (UE art. 16): il cliente non può recedere.",
         "button-submit": "Crea prodotto",
         "button-go-to-list": "Torna alla lista prodotti",
         "success-create": "Prodotto creato con successo"
@@ -96,6 +98,8 @@
         "label-categories": "Categorie",
         "label-tags": "Tag",
         "label-requires-shipping": "Richiede spedizione",
+        "label-no-withdrawal": "Nessun diritto di recesso",
+        "hint-no-withdrawal": "Beni personalizzati, sigillati per igiene o deperibili (UE art. 16): il cliente non può recedere.",
         "button-submit": "Salva modifiche",
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli prodotto",
