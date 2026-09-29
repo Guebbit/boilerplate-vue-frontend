@@ -45,6 +45,7 @@ flowchart LR
         delivery["delivery"]
         inventory["inventory"]
         payments["payments"]
+        returns["returns"]
         webhooks["webhooks"]
         wishlist["wishlist"]
     end
@@ -64,6 +65,7 @@ flowchart LR
     orders ==> cart
     orders -.-> delivery
     orders -.-> payments
+    orders -.-> returns
     products ==> cart
     products ==> wishlist
     wishlist --> cart
@@ -72,7 +74,7 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,payments,webhooks,wishlist supporting;
+    class delivery,inventory,payments,returns,webhooks,wishlist supporting;
     class account,apiKeys,demo,feedback,locales,observability,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
@@ -131,7 +133,7 @@ backend's own per-module `group` field. `scripts/module-groups.ts` holds the sam
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 15      | 3    | 5          | 7       | 38      | 15     | 9             |
+| 16      | 3    | 6          | 7       | 40      | 16     | 10            |
 
 | Module                                | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | ------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -144,16 +146,17 @@ backend's own per-module `group` field. `scripts/module-groups.ts` holds the sam
 | [`inventory`](./inventory.md)         | `supporting` | `shop`       | 1       | `inventory`              | 5         | 1          | 0              |
 | [`locales`](./locales.md)             | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
 | [`observability`](./observability.md) | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
-| [`orders`](./orders.md)               | `core`       | `shop`       | 3       | `orders`                 | 11        | 3          | 0              |
+| [`orders`](./orders.md)               | `core`       | `shop`       | 3       | `orders`                 | 11        | 4          | 0              |
 | [`payments`](./payments.md)           | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
 | [`products`](./products.md)           | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
+| [`returns`](./returns.md)             | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
 | [`users`](./users.md)                 | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
 | [`webhooks`](./webhooks.md)           | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
 | [`wishlist`](./wishlist.md)           | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |
 
 ## The two repositories
 
-Twelve of fifteen domains exist on both sides under the same name. **The other three are the
+Thirteen of sixteen domains exist on both sides under the same name. **The other three are the
 interesting ones**, and until this table the asymmetry was written down nowhere in either repository:
 [`account`](./account.md) folds the address book and the account of record into one module,
 [`observability`](./observability.md) renders three backend domains over one console and playground,
@@ -178,6 +181,7 @@ job, not a checked one.
 | [`orders`](./orders.md)               | `orders`                                   | —                                                                                                                                                                                                                        |
 | [`payments`](./payments.md)           | `payments`                                 | —                                                                                                                                                                                                                        |
 | [`products`](./products.md)           | `products`                                 | —                                                                                                                                                                                                                        |
+| [`returns`](./returns.md)             | `returns`                                  | —                                                                                                                                                                                                                        |
 | [`users`](./users.md)                 | `users`                                    | —                                                                                                                                                                                                                        |
 | [`webhooks`](./webhooks.md)           | `webhooks`                                 | —                                                                                                                                                                                                                        |
 | [`wishlist`](./wishlist.md)           | `wishlist`                                 | —                                                                                                                                                                                                                        |

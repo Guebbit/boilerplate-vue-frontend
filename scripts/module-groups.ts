@@ -35,6 +35,7 @@ export const MODULE_GROUPS: Record<string, ModuleGroup> = {
     orders: 'shop',
     payments: 'shop',
     products: 'shop',
+    returns: 'shop',
     users: 'foundation',
     webhooks: 'foundation',
     wishlist: 'shop'

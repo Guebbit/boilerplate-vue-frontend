@@ -66,7 +66,7 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * The concrete actions a screen may ask about — CASL's own vocabulary, as
  * `shared/authorization-keys.yaml` declares it. Beyond CRUD: `checkout` (`cart.self.checkout`),
  * `override` (`orders.any.override`), `sweep` (`inventory.any.sweep`) and `start`
- * (`delivery.any.start`) — one action per non-CRUD write the contract actually exposes.
+ * (`delivery.any.start`) and `receive` (`returns.any.receive`) — one action per non-CRUD write the contract actually exposes.
  *
  * `manage` is deliberately absent from what a CLIENT may ask for: no key in the shared file
  * declares that action, and there is no wildcard of any kind to expand into one — every key
@@ -74,7 +74,15 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * the action it actually performs.
  */
 export type PermissionAction =
-    'read' | 'create' | 'update' | 'delete' | 'checkout' | 'override' | 'sweep' | 'start';
+    | 'read'
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'checkout'
+    | 'override'
+    | 'sweep'
+    | 'start'
+    | 'receive';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
