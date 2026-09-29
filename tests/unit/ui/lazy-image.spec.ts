@@ -70,8 +70,8 @@ describe('LazyImage — which picture is shown', () => {
     // it); the frontend draws its own stand-in for every spelling of "no image".
     it.each([undefined, null, ''])(
         'shows the placeholder when the record has no image (%j)',
-        (src) => {
-            const wrapper = mountImage({ src, width: 56, height: 56 });
+        (source) => {
+            const wrapper = mountImage({ src: source, width: 56, height: 56 });
 
             expect(mainImage(wrapper).attributes('src')).toBe('/images/no-image-placeholder.svg');
             expect(wrapper.attributes('data-placeholder')).toBe('true');
