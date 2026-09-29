@@ -55,6 +55,11 @@ export interface ResponseSchemaRoute {
      * The envelope this endpoint must answer in. Parsed, never merely asserted.
      */
     schema: zod.ZodType;
+    /**
+     * The JSON request body this endpoint accepts, when it takes one. Parsed by the request
+     * validator; `undefined` for a bodyless operation.
+     */
+    bodySchema?: zod.ZodType | undefined;
 }
 
 /**
@@ -101,7 +106,12 @@ const resolveGeneratedSchema = (
 ): ResponseSchemaRoute => ({
     method: route.method,
     pattern: route.pattern,
-    schema: (schemas as Record<string, unknown>)[route.schemaName] as zod.ZodType
+    schema: (schemas as Record<string, unknown>)[route.schemaName] as zod.ZodType,
+    // Same single narrowing as `schema` above, for the request half of the operation.
+    bodySchema:
+        route.bodySchemaName === undefined
+            ? undefined
+            : ((schemas as Record<string, unknown>)[route.bodySchemaName] as zod.ZodType)
 });
 
 /**
@@ -207,16 +217,36 @@ export const loadResponseSchemas = (
     });
 
 /**
+ * The row a request matches, by method and pathname.
+ *
+ * @param method - HTTP method; absent reads as GET, like axios.
+ * @param url - the request URL, absolute or relative.
+ */
+const findRoute = (
+    method: string | undefined,
+    url: string | undefined
+): ResponseSchemaRoute | undefined => {
+    const pathname = toPathname(url);
+    const upperMethod = (method ?? 'GET').toUpperCase();
+    return routeSchemas.find(
+        (route) => route.method === upperMethod && route.pattern.test(pathname)
+    );
+};
+
+/**
  * Looks up the response schema for a request, or `undefined` when the route isn't registered
  * (logged separately by the caller — see `orvalMutator`).
  */
 export const resolveResponseSchema = (
     method: string | undefined,
     url: string | undefined
-): zod.ZodType | undefined => {
-    const pathname = toPathname(url);
-    const upperMethod = (method ?? 'GET').toUpperCase();
-    return routeSchemas.find(
-        (route) => route.method === upperMethod && route.pattern.test(pathname)
-    )?.schema;
-};
+): zod.ZodType | undefined => findRoute(method, url)?.schema;
+
+/**
+ * Looks up the JSON request-body schema for a request, or `undefined` when the route is not
+ * registered or takes no JSON body. Same table, same match as {@link resolveResponseSchema}.
+ */
+export const resolveRequestSchema = (
+    method: string | undefined,
+    url: string | undefined
+): zod.ZodType | undefined => findRoute(method, url)?.bodySchema;

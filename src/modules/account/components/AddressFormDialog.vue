@@ -20,10 +20,10 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
 import { countryLabel } from '@/i18n/country-label.ts';
-import type { Address, AddressInput, UpdateAddressRequest } from '@types';
+import type { Address } from '@types';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -177,10 +177,9 @@ watch(open, (isOpen) => {
 /**
  * Saves the dialog: an update when `editing` names an entry, an add otherwise.
  *
- * An emptied label/phone means two different things depending on which one this is: on an add
- * there is no prior value, so it is just omitted; on an update (a PATCH merge) an omitted field
- * is read as "leave it alone" — clearing one that was set needs an explicit `null`
- * ({@link emptyToNull}), the AUDIT_0924 D17c contract's own way of saying so.
+ * {@link toRequestBody} decides what an emptied label/phone means. On an add there is no prior
+ * value, so it is omitted; on an update (a PATCH merge, diffed against `editing`) an omitted
+ * field is read as "leave it alone", so a cleared one goes as an explicit `null`.
  *
  * @returns Nothing; success is toasted and closes the dialog — both callers read the shared
  *  address store's own reactive list, so neither needs a `saved` event to react to it; a failure
@@ -188,21 +187,16 @@ watch(open, (isOpen) => {
  */
 const handleSave = () =>
     handleSubmit((fields) => {
-        const addPayload: AddressInput = {
-            ...fields,
-            label: fields.label || undefined,
-            phone: fields.phone || undefined,
-            // Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
-            // the only way to demote an entry is making a DIFFERENT one the default instead.
-            ...(offerSetAsDefault.value && setAsDefaultOnAdd.value ? { default: true } : {})
-        };
         const save = editing
-            ? updateAddress(editing.id, {
+            ? toRequestBody('UpdateAddressBody', fields, editing).then((body) =>
+                  updateAddress(editing.id, body)
+              )
+            : toRequestBody('AddAddressBody', {
                   ...fields,
-                  label: emptyToNull(fields.label),
-                  phone: emptyToNull(fields.phone)
-              } satisfies UpdateAddressRequest)
-            : addAddress(addPayload);
+                  // Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
+                  // the only way to demote an entry is making a DIFFERENT one the default instead.
+                  ...(offerSetAsDefault.value && setAsDefaultOnAdd.value ? { default: true } : {})
+              }).then((body) => addAddress(body));
         return save
             .then(() => {
                 addMessage(t('profile-page.addresses-saved'));

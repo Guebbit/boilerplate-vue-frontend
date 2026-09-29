@@ -13,9 +13,12 @@ import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -100,6 +103,23 @@ describe('an imageUpload switches the call to multipart', () => {
             });
     });
 
+    it('sends a clear that shares the save as a second JSON PATCH, since multipart has no null', () => {
+        const store = useProfileStore();
+        const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
+
+        return store
+            .fetchProfile(true)
+            .then(() => store.updateProfile({ imageUpload: file, phone: null }))
+            .then(() => {
+                const patches = calls().filter(({ method }) => method?.toUpperCase() === 'PATCH');
+                expect(patches).toHaveLength(2);
+                expect((patches[0].data as FormData).has('phone')).toBe(false);
+                expect(contractRequest(schemas.UpdateAccountBody, patches[1].data)).toEqual({
+                    phone: null
+                });
+            });
+    });
+
     it('forwards onUploadProgress through to the transport', () => {
         const store = useProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
@@ -146,7 +166,9 @@ describe('removing the picture', () => {
             .then(() => {
                 const patch = calls().find(({ method }) => method?.toUpperCase() === 'PATCH')!;
                 expect(patch.headers?.['Content-Type']).not.toBe('multipart/form-data');
-                expect(patch.data).toMatchObject({ imageUrl: null });
+                expect(contractRequest(schemas.UpdateAccountBody, patch.data)).toMatchObject({
+                    imageUrl: null
+                });
             });
     });
 });

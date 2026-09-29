@@ -20,9 +20,12 @@ import { useUsersStore } from '@/modules/users/store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -107,13 +110,13 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'password123'
+                    password: 'Password123!'
                 })
                 .then(() => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/users', method: 'POST' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({
+                    expect(contractRequest(schemas.CreateUserBody, request.data)).toMatchObject({
                         email: 'ada@example.com',
                         username: 'ada'
                     });
@@ -124,7 +127,7 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'password123',
+                    password: 'Password123!',
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -139,7 +142,7 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'password123',
+                    password: 'Password123!',
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -151,7 +154,7 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'password123',
+                    password: 'Password123!',
                     role: undefined,
                     imageUpload: new Blob(['x'])
                 })
@@ -172,7 +175,11 @@ describe('useUsersStore', () => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/users/u1', method: 'PATCH' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({ username: 'ada2' });
+                    expect(contractRequest(schemas.UpdateUserByIdBody, request.data)).toMatchObject(
+                        {
+                            username: 'ada2'
+                        }
+                    );
                 }));
 
         it('patches multipart when an avatar is attached', () =>
@@ -181,6 +188,37 @@ describe('useUsersStore', () => {
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'PATCH' });
                     expect(lastFormData().get('username')).toBe('ada2');
+                }));
+
+        /**
+         * A multipart part cannot carry `null`, so a clear that shares a save with an avatar
+         * travels as its own JSON PATCH, after the upload.
+         */
+        it('sends a clear that shares a save with an avatar as a second, JSON PATCH', () =>
+            useUsersStore()
+                .updateUser('u1', {
+                    username: 'ada2',
+                    phone: null,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const [upload, clear] = vi
+                        .mocked(orvalMutator)
+                        .mock.calls.slice(-2)
+                        .map(([config]) => config);
+                    expect(upload.data).toBeInstanceOf(FormData);
+                    expect((upload.data as FormData).has('phone')).toBe(false);
+                    expect(clear).toMatchObject({ url: '/users/u1', method: 'PATCH' });
+                    expect(contractRequest(schemas.UpdateUserByIdBody, clear.data)).toEqual({
+                        phone: null
+                    });
+                }));
+
+        it('sends only the upload when nothing is being cleared', () =>
+            useUsersStore()
+                .updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(vi.mocked(orvalMutator)).toHaveBeenCalledTimes(1);
                 }));
 
         it('never parks the submitted password in store state', () => {
@@ -393,6 +431,9 @@ describe('useUsersStore', () => {
                         method: 'POST',
                         data: { page: 1, pageSize: 10 }
                     });
+                    expect(
+                        contractRequest(schemas.SearchUsersBody, lastRequest().data)
+                    ).toBeDefined();
                 });
         });
 
@@ -403,6 +444,9 @@ describe('useUsersStore', () => {
                 .fetchPaginationUsers(2, 50)
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ data: { page: 2, pageSize: 50 } });
+                    expect(
+                        contractRequest(schemas.SearchUsersBody, lastRequest().data)
+                    ).toBeDefined();
                 });
         });
 

@@ -43,7 +43,7 @@ import {
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
-import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -269,31 +269,26 @@ const submitForm = () => {
 
         return accepted.then((wasAccepted) => {
             if (!wasAccepted) return;
-            return trackUpload(imageUpload, (options) =>
-                updateUser(
-                    id,
-                    {
-                        email,
-                        username,
-                        password: password || undefined,
-                        role: roleChanged ? role : undefined,
-                        active: activeChanged ? active : undefined,
-                        // The contract's own pattern/minLength refuse `''` with a live 422, so an
-                        // emptied field goes as `null` (clear); one never set stays `undefined`.
-                        locale: emptyToNull(locale),
-                        phone: emptyToNull(phone),
-                        website: emptyToNull(website),
-                        imageUpload
-                    },
-                    { requestOptions: options }
+            // The loaded record is the baseline: only what the admin changed is sent, and an
+            // emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
+            // `password` has no empty spelling (a create-only rule), so an untouched one is omitted.
+            return toRequestBody(
+                'UpdateUserByIdBody',
+                { email, username, password, role, active, locale, phone, website },
+                target
+            )
+                .then((body) =>
+                    trackUpload(imageUpload, (options) =>
+                        updateUser(id, { ...body, imageUpload }, { requestOptions: options })
+                    )
                 )
-            ).then(() => {
-                // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
-                // local File has done its job and holding it would only re-upload the same bytes on
-                // the next save.
-                form.value.imageUpload = undefined;
-                addMessage(t('user-edit-page.success-update'));
-            });
+                .then(() => {
+                    // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
+                    // local File has done its job and holding it would only re-upload the same bytes on
+                    // the next save.
+                    form.value.imageUpload = undefined;
+                    addMessage(t('user-edit-page.success-update'));
+                });
         });
     }).catch((error) => {
         applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });

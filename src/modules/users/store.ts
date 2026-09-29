@@ -8,7 +8,7 @@
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
-import { omitNulls } from '@/infrastructure/utils/forms.ts';
+import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listUsers,
@@ -124,9 +124,21 @@ export const useUsersStore = defineStore('users', () => {
             // PATCH, not PUT (AUDIT_0924 D17d): `UserEdit.vue` sends only the fields its form
             // actually holds (`email`, `password`, an upload) — a PUT's every omitted field would
             // be cleared instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
+            //
+            // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
+            // part cannot carry `null`, so the clears follow as a JSON PATCH.
             update: (userId, { imageUpload, ...userData } = {}, options) =>
                 (imageUpload
-                    ? updateUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
+                    ? uploadThenClear(
+                          userData,
+                          (rest) =>
+                              updateUserByIdWithMultipart(
+                                  userId,
+                                  { ...rest, imageUpload },
+                                  options
+                              ),
+                          (clears) => updateUserById(userId, clears, { signal: options?.signal })
+                      )
                     : updateUserById(userId, userData, options)
                 ).then((response) => response.data),
 

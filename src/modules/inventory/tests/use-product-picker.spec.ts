@@ -12,10 +12,12 @@ import {
 } from '@/modules/inventory/composables/use-product-picker.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { Product } from '@types';
+import * as schemas from '@api/schemas';
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
@@ -62,7 +64,10 @@ describe('useProductPicker', () => {
         await vi.runAllTimersAsync();
 
         expect(lastRequest()).toMatchObject({ url: '/products/search', method: 'POST' });
-        expect(lastRequest().data).toMatchObject({ text: undefined, pageSize: 20 });
+        expect(contractRequest(schemas.SearchProductsBody, lastRequest().data)).toMatchObject({
+            text: undefined,
+            pageSize: 20
+        });
         expect(options.value).toEqual([{ value: 'p1', title: 'Widget' }]);
     });
 
@@ -81,7 +86,9 @@ describe('useProductPicker', () => {
 
         await vi.advanceTimersByTimeAsync(1);
         expect(orvalMutator).toHaveBeenCalledTimes(1);
-        expect(lastRequest().data).toMatchObject({ text: 'gad' });
+        expect(contractRequest(schemas.SearchProductsBody, lastRequest().data)).toMatchObject({
+            text: 'gad'
+        });
         expect(options.value).toEqual([{ value: 'p2', title: 'Gadget' }]);
     });
 
@@ -108,7 +115,10 @@ describe('useProductPicker', () => {
         pin('p2');
         await vi.runAllTimersAsync();
 
-        expect(lastRequest().data).toMatchObject({ id: ['p2'], pageSize: 1 });
+        expect(contractRequest(schemas.SearchProductsBody, lastRequest().data)).toMatchObject({
+            id: ['p2'],
+            pageSize: 1
+        });
         expect(options.value).toEqual([
             { value: 'p2', title: 'Gadget' },
             { value: 'p1', title: 'Widget' }

@@ -132,7 +132,9 @@ describe('the GDPR analytics-consent switch', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                expect(patch?.data).toMatchObject({ analyticsConsent: true });
+                expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toMatchObject({
+                    analyticsConsent: true
+                });
             });
     });
 
@@ -196,7 +198,9 @@ describe('the email field, and a pending change', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                expect(patch?.data).toMatchObject({ email: 'new@example.com' });
+                expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toMatchObject({
+                    email: 'new@example.com'
+                });
             });
     });
 
@@ -221,7 +225,9 @@ describe('the email field, and a pending change', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                expect(patch?.data).toEqual({ email: 'new@example.com' });
+                expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toEqual({
+                    email: 'new@example.com'
+                });
             });
     });
 

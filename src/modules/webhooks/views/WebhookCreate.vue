@@ -25,6 +25,7 @@ import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 
 /**
  * Generics
@@ -111,16 +112,18 @@ const {
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() =>
-        createSubscription({
-            url: form.value.url!,
-            // Create has nothing to clear, so its schema is not nullable: empty means omitted.
-            description: form.value.description || undefined,
-            eventTypes: form.value.eventTypes!
-        }).then((created) => {
-            if (!created?.secret) return;
-            createdSubscriptionId.value = created.id;
-            revealedSecret.value = created.secret;
+        // Create has nothing to clear, so its schema is not nullable: an empty description is omitted.
+        toRequestBody('CreateWebhookSubscriptionBody', {
+            url: form.value.url,
+            description: form.value.description,
+            eventTypes: form.value.eventTypes
         })
+            .then((body) => createSubscription(body))
+            .then((created) => {
+                if (!created?.secret) return;
+                createdSubscriptionId.value = created.id;
+                revealedSecret.value = created.secret;
+            })
     ).catch((error: unknown) => {
         applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });

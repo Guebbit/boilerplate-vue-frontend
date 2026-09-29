@@ -21,10 +21,13 @@ import { useProductsStore } from '@/modules/products/store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { Product } from '@types';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -120,7 +123,7 @@ describe('useProductsStore', () => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/products', method: 'POST' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({
+                    expect(contractRequest(schemas.CreateProductBody, request.data)).toMatchObject({
                         price: 49.99,
                         translations: TRANSLATIONS
                     });
@@ -234,7 +237,12 @@ describe('useProductsStore', () => {
                     // PATCH, not PUT: the edit endpoint MERGES rather than replaces.
                     expect(request).toMatchObject({ url: '/products/p1', method: 'PATCH' });
                     expect(request.data).not.toBeInstanceOf(FormData);
-                    expect(request.data).toMatchObject({ price: 9.99, translations: TRANSLATIONS });
+                    expect(
+                        contractRequest(schemas.UpdateProductByIdBody, request.data)
+                    ).toMatchObject({
+                        price: 9.99,
+                        translations: TRANSLATIONS
+                    });
                 }));
 
         it('PATCHes multipart when an image is attached', () =>
@@ -247,6 +255,26 @@ describe('useProductsStore', () => {
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PATCH' });
                     expect(lastFormData().get('price')).toBe('9.99');
+                }));
+
+        /**
+         * The VAT case: standard is spelled `null`, and a multipart part cannot carry it — a save
+         * that also uploads an image must not lose it.
+         */
+        it('sends taxClass -> standard (null) alongside an upload as a second, JSON PATCH', () =>
+            useProductsStore()
+                .updateProduct('p1', { price: 9.99, taxClass: null, imageUpload: new Blob(['x']) })
+                .then(() => {
+                    const [upload, clear] = vi
+                        .mocked(orvalMutator)
+                        .mock.calls.slice(-2)
+                        .map(([config]) => config);
+                    expect(upload.data).toBeInstanceOf(FormData);
+                    expect((upload.data as FormData).has('taxClass')).toBe(false);
+                    expect(clear).toMatchObject({ url: '/products/p1', method: 'PATCH' });
+                    expect(contractRequest(schemas.UpdateProductByIdBody, clear.data)).toEqual({
+                        taxClass: null
+                    });
                 }));
 
         it('omits the translations field entirely when the call carries none, rather than an empty map', () =>

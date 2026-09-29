@@ -12,6 +12,7 @@
  * `docs/tools/unit-testing.md`.
  */
 import { asStub } from '../../../../tests/support/stub';
+import type { ZodType } from 'zod';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, ref } from 'vue';
@@ -21,9 +22,12 @@ import { useWebhooksStore } from '@/modules/webhooks/store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -66,7 +70,7 @@ const lastRequest = () => {
 /**
  * The JSON body of the most recent request.
  */
-const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
+const lastBody = (schema: ZodType) => contractRequest(schema, lastRequest().data);
 
 /**
  * The query parameters of the most recent request.
@@ -131,7 +135,7 @@ describe('useWebhooksStore', () => {
                         url: '/webhooks/subscriptions',
                         method: 'POST'
                     });
-                    expect(lastBody()).toMatchObject({
+                    expect(lastBody(schemas.CreateWebhookSubscriptionBody)).toMatchObject({
                         url: 'https://example.com/hook',
                         eventTypes: ['order.created']
                     });
@@ -230,7 +234,9 @@ describe('useWebhooksStore', () => {
                         url: '/webhooks/subscriptions/sub1',
                         method: 'PATCH'
                     });
-                    expect(lastBody()).toMatchObject({ enabled: false });
+                    expect(lastBody(schemas.UpdateWebhookSubscriptionBody)).toMatchObject({
+                        enabled: false
+                    });
                 }));
     });
 

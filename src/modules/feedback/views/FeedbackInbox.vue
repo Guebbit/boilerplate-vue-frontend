@@ -20,6 +20,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -165,8 +166,8 @@ const noteValueOf = (request: FeedbackRequest) =>
 
 /**
  * Saves one ticket's internal notes through the same PATCH the status move uses — an empty
- * textarea sends `null` (the D17c convention: `''` on this nullable, `minLength: 1` field is a
- * 422, not a synonym for "no change").
+ * textarea sends `null` ({@link toRequestBody} spells the clear: `''` on this nullable,
+ * `minLength: 1` field is a 422).
  *
  * @param request - Which ticket, and its last saved notes (the fallback {@link noteValueOf} reads
  *  if this save was never actually edited).
@@ -175,8 +176,11 @@ const noteValueOf = (request: FeedbackRequest) =>
  */
 const handleSaveNotes = (request: FeedbackRequest) => {
     clearRowActionError();
-    const value = noteValueOf(request).trim();
-    return updateRequest(request.id, { adminNotes: value === '' ? null : value })
+    // No baseline: the textarea is this save's whole intent, so an emptied one is always a clear.
+    return toRequestBody('UpdateFeedbackRequestStatusBody', {
+        adminNotes: noteValueOf(request).trim()
+    })
+        .then((body) => updateRequest(request.id, body))
         .then(() => addMessage(t('feedback-inbox-page.success-notes')))
         .then(() => search(true))
         .catch((error: unknown) => reportRowActionError(error));

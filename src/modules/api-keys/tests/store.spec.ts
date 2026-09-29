@@ -12,7 +12,7 @@
  * rejects, so the assertions inside a `.then` are as binding as awaited ones. See
  * `docs/tools/unit-testing.md`.
  */
-import { asStub } from '../../../../tests/support/stub';
+import type { ZodType } from 'zod';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
@@ -20,9 +20,12 @@ import { useApiKeysStore } from '@/modules/api-keys/store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -63,7 +66,7 @@ const lastRequest = () => {
 /**
  * The JSON body of the most recent request.
  */
-const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
+const lastBody = (schema: ZodType) => contractRequest(schema, lastRequest().data);
 
 /**
  * Makes the transport answer one call with `data`, verbatim — for the secret-carrying mint
@@ -89,7 +92,7 @@ describe('useApiKeysStore', () => {
                 .mintCredential({ name: 'CI integration', permissions: ['products.read'] })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/api-keys', method: 'POST' });
-                    expect(lastBody()).toMatchObject({
+                    expect(lastBody(schemas.MintApiKeyBody)).toMatchObject({
                         name: 'CI integration',
                         permissions: ['products.read']
                     });

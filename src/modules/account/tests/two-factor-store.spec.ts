@@ -13,9 +13,12 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -299,7 +302,10 @@ describe('the login-time challenge', () => {
                 data: Record<string, unknown>;
             };
             expect(last.url).toBe('/account/login/2fa/send');
-            expect(last.data).toEqual({ challenge: 'claim-check-token', method: 'email' });
+            expect(contractRequest(schemas.SendTwoFactorCodeBody, last.data)).toEqual({
+                challenge: 'claim-check-token',
+                method: 'email'
+            });
             expect(store.secondsUntilResend).toBeGreaterThan(0);
         });
     });
@@ -363,7 +369,10 @@ describe('the login-time challenge', () => {
                 .mock.calls.find(
                     (call) => (call[0] as { url: string }).url === '/account/login/2fa'
                 )![0] as { data: Record<string, unknown> };
-            expect(last.data).toEqual({ challenge: 'claim-check-token', code: 'backup-code-xyz' });
+            expect(contractRequest(schemas.LoginTwoFactorBody, last.data)).toEqual({
+                challenge: 'claim-check-token',
+                code: 'backup-code-xyz'
+            });
         });
     });
 
@@ -416,7 +425,9 @@ describe('the OAuth-originated login-time challenge (1b)', () => {
                 .mock.calls.find(
                     (call) => (call[0] as { url: string }).url === '/account/login/2fa'
                 )![0] as { data: Record<string, unknown> };
-            expect(last.data).toEqual({ code: '123456' });
+            expect(contractRequest(schemas.LoginTwoFactorBody, last.data)).toEqual({
+                code: '123456'
+            });
             expect(useSessionStore().accessToken).toBe('stepped-up-jwt');
         });
     });
@@ -435,7 +446,9 @@ describe('the OAuth-originated login-time challenge (1b)', () => {
             const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
                 data: Record<string, unknown>;
             };
-            expect(last.data).toEqual({ method: 'email' });
+            expect(contractRequest(schemas.SendTwoFactorCodeBody, last.data)).toEqual({
+                method: 'email'
+            });
         });
     });
 });

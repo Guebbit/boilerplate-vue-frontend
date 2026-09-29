@@ -15,9 +15,12 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -160,7 +163,9 @@ describe('a book that already holds an address', () => {
             .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                expect(lastAddCall()?.data).toMatchObject({ default: true });
+                expect(contractRequest(schemas.AddAddressBody, lastAddCall()?.data)).toMatchObject({
+                    default: true
+                });
             });
     });
 

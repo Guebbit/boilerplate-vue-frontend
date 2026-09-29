@@ -8862,7 +8862,6 @@ components:
           minLength: 3
         locale:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
         imageUpload:
@@ -8872,11 +8871,9 @@ components:
         phone:
           type: string
           minLength: 1
-          nullable: true
         website:
           type: string
           minLength: 1
-          nullable: true
         analyticsConsent:
           type: boolean
     UpdateAccountRequest:
@@ -8916,7 +8913,6 @@ components:
           minLength: 3
         locale:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
         imageUpload:
@@ -8926,11 +8922,9 @@ components:
         phone:
           type: string
           minLength: 1
-          nullable: true
         website:
           type: string
           minLength: 1
-          nullable: true
         analyticsConsent:
           type: boolean
     ChangePasswordRequest:
@@ -10144,17 +10138,14 @@ components:
           description: Optional user profile image
         locale:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
           minLength: 1
-          nullable: true
         website:
           type: string
           minLength: 1
-          nullable: true
     UpdateUserByIdRequest:
       type: object
       additionalProperties: false
@@ -10208,17 +10199,14 @@ components:
           description: Optional user profile image
         locale:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
           minLength: 1
-          nullable: true
         website:
           type: string
           minLength: 1
-          nullable: true
     SearchUsersRequest:
       type: object
       additionalProperties: false
@@ -10692,17 +10680,14 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
         active:
@@ -10712,7 +10697,6 @@ components:
         weight:
           type: integer
           minimum: 0
-          nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUpload:
           type: string
@@ -10812,17 +10796,14 @@ components:
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/TaxClass"
         rateType:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/RateType"
         sku:
           type: string
-          nullable: true
           allOf:
             - $ref: "#/components/schemas/Sku"
         active:
@@ -10832,7 +10813,6 @@ components:
         weight:
           type: integer
           minimum: 0
-          nullable: true
           description: Grams. Absent counts as 0 for shipping-method filtering.
         imageUpload:
           type: string

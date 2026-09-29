@@ -20,9 +20,12 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -147,7 +150,9 @@ describe('User (detail page)', () => {
                     .mocked(orvalMutator)
                     .mock.calls.find(([config]) => config.method === 'PATCH');
                 expect(patchCall?.[0]).toMatchObject({ url: '/users/u1', method: 'PATCH' });
-                expect(patchCall?.[0].data).toEqual({ active: false });
+                expect(contractRequest(schemas.UpdateUserByIdBody, patchCall?.[0].data)).toEqual({
+                    active: false
+                });
             });
     });
 

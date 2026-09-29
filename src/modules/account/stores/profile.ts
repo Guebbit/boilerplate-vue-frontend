@@ -9,7 +9,7 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { omitNulls } from '@/infrastructure/utils/forms.ts';
+import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { ERROR_CODES } from '@api/error-codes';
@@ -173,23 +173,36 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
+     * What a profile write may carry: the record's own fields, widened where the wire accepts
+     * `null` (a clear) but the local `User` never holds one.
+     */
+    type ProfileWrite = Partial<Omit<User, 'imageUrl' | 'locale' | 'phone' | 'website'>> & {
+        imageUrl?: null;
+        locale?: string | null;
+        phone?: string | null;
+        website?: string | null;
+    };
+
+    /**
      * The local cache patch for a profile write: the sent fields, minus any that carry `null`.
      *
      * @param userData - What the caller passed to {@link updateProfile}, `imageUpload` removed.
      * @returns A `Partial<User>` safe to merge into the cached record.
      */
     const optimisticPatch = ({
+        locale,
         phone,
         website,
         imageUrl,
         ...rest
-    }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
-        imageUrl?: null;
-        phone?: string | null;
-        website?: string | null;
-    }): Partial<User> => ({
+    }: ProfileWrite): Partial<User> => ({
         ...rest,
-        ...omitNulls({ phone, website, imageUrl }, ['phone', 'website', 'imageUrl'])
+        ...omitNulls({ locale, phone, website, imageUrl }, [
+            'locale',
+            'phone',
+            'website',
+            'imageUrl'
+        ])
     });
 
     /**
@@ -224,15 +237,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  `invalid user` error when no profile is selected.
      */
     const updateProfile = (
-        {
-            imageUpload,
-            ...userData
-        }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
-            imageUpload?: File;
-            imageUrl?: null;
-            phone?: string | null;
-            website?: string | null;
-        } = {},
+        { imageUpload, ...userData }: ProfileWrite & { imageUpload?: File } = {},
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
@@ -255,7 +260,13 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return updateTarget(
             () =>
                 (imageUpload
-                    ? apiUpdateAccountWithMultipart({ ...fields, imageUpload }, options)
+                    ? // A clear cannot ride a multipart part: it follows as a JSON PATCH.
+                      uploadThenClear(
+                          fields,
+                          (rest) =>
+                              apiUpdateAccountWithMultipart({ ...rest, imageUpload }, options),
+                          (clears) => apiUpdateAccount(clears, { signal: options?.signal })
+                      )
                     : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);

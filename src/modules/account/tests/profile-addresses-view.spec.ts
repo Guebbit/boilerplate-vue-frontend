@@ -14,6 +14,8 @@ import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -95,10 +97,13 @@ describe('ProfileAddresses save payload', () => {
             .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                expect(updateAddress).toHaveBeenCalledWith(
-                    'a1',
-                    expect.objectContaining({ label: null, phone: null })
-                );
+                expect(updateAddress).toHaveBeenCalledTimes(1);
+                const [id, body] = updateAddress.mock.calls[0];
+                expect(id).toBe('a1');
+                expect(contractRequest(schemas.UpdateAddressBody, body)).toEqual({
+                    label: null,
+                    phone: null
+                });
             });
     });
 
@@ -121,9 +126,10 @@ describe('ProfileAddresses save payload', () => {
             .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                expect(addAddress).toHaveBeenCalledWith(
-                    expect.objectContaining({ label: undefined, phone: undefined })
-                );
+                expect(addAddress).toHaveBeenCalledTimes(1);
+                const body = contractRequest(schemas.AddAddressBody, addAddress.mock.calls[0][0]);
+                expect(body).not.toHaveProperty('label');
+                expect(body).not.toHaveProperty('phone');
             });
     });
 });
