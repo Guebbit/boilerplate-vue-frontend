@@ -9,7 +9,7 @@ import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 
 import { ref } from 'vue';
-import { omitNulls } from '@/infrastructure/utils/forms.ts';
+import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listProducts,
@@ -157,22 +157,31 @@ export const useProductsStore = defineStore('products', () => {
                     : apiCreateProduct({ ...productData, translations }, options)
                 ).then((response) => response.data),
 
+            //
+            // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
+            // part cannot carry `null`, so the clears follow as a JSON PATCH.
             update: (productId, { imageUpload, translations, ...productData }, options) =>
                 (imageUpload
-                    ? updateProductByIdWithMultipart(
-                          productId,
-                          {
-                              ...productData,
-                              // `translations` is OPTIONAL on a PATCH: omitting the field entirely
-                              // means every locale is left alone, which is different from sending
-                              // an empty map. JSON-encoding `undefined` would produce the string
-                              // `"undefined"`, so the key itself is left off instead.
-                              ...(translations !== undefined && {
-                                  translations: JSON.stringify(translations)
-                              }),
-                              imageUpload
-                          },
-                          options
+                    ? uploadThenClear(
+                          productData,
+                          (rest) =>
+                              updateProductByIdWithMultipart(
+                                  productId,
+                                  {
+                                      ...rest,
+                                      // `translations` is OPTIONAL on a PATCH: omitting the field entirely
+                                      // means every locale is left alone, which is different from sending
+                                      // an empty map. JSON-encoding `undefined` would produce the string
+                                      // `"undefined"`, so the key itself is left off instead.
+                                      ...(translations !== undefined && {
+                                          translations: JSON.stringify(translations)
+                                      }),
+                                      imageUpload
+                                  },
+                                  options
+                              ),
+                          (clears) =>
+                              updateProductById(productId, clears, { signal: options?.signal })
                       )
                     : updateProductById(
                           productId,

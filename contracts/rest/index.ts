@@ -1622,20 +1622,13 @@ export interface ReplaceAccountRequestMultipart {
     email: Email;
     /** @minLength 3 */
     username: string;
-    /** @nullable */
-    locale?: string | null;
+    locale?: string;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    phone?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    website?: string | null;
+    /** @minLength 1 */
+    phone?: string;
+    /** @minLength 1 */
+    website?: string;
     analyticsConsent: boolean;
 }
 
@@ -1663,20 +1656,13 @@ export interface UpdateAccountRequestMultipart {
     email?: Email;
     /** @minLength 3 */
     username?: string;
-    /** @nullable */
-    locale?: string | null;
+    locale?: string;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    phone?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    website?: string | null;
+    /** @minLength 1 */
+    phone?: string;
+    /** @minLength 1 */
+    website?: string;
     analyticsConsent?: boolean;
 }
 
@@ -2175,18 +2161,11 @@ export interface ReplaceUserByIdRequestMultipart {
     active: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /** @nullable */
-    locale?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    phone?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    website?: string | null;
+    locale?: string;
+    /** @minLength 1 */
+    phone?: string;
+    /** @minLength 1 */
+    website?: string;
 }
 
 export interface UpdateUserByIdRequest {
@@ -2222,18 +2201,11 @@ export interface UpdateUserByIdRequestMultipart {
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /** @nullable */
-    locale?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    phone?: string | null;
-    /**
-     * @minLength 1
-     * @nullable
-     */
-    website?: string | null;
+    locale?: string;
+    /** @minLength 1 */
+    phone?: string;
+    /** @minLength 1 */
+    website?: string;
 }
 
 export interface SearchUsersRequest {
@@ -2484,20 +2456,16 @@ export interface ReplaceProductRequestMultipart {
      * @minimum 0
      */
     price: number;
-    /** @nullable */
-    taxClass?: string | null;
-    /** @nullable */
-    rateType?: string | null;
-    /** @nullable */
-    sku?: string | null;
+    taxClass?: string;
+    rateType?: string;
+    sku?: string;
     active: boolean;
     requiresShipping: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
-     * @nullable
      */
-    weight?: number | null;
+    weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
     /** @items.minLength 1 */
@@ -2560,20 +2528,16 @@ export interface UpdateProductRequestMultipart {
      * @minimum 0
      */
     price?: number;
-    /** @nullable */
-    taxClass?: string | null;
-    /** @nullable */
-    rateType?: string | null;
-    /** @nullable */
-    sku?: string | null;
+    taxClass?: string;
+    rateType?: string;
+    sku?: string;
     active?: boolean;
     requiresShipping?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
-     * @nullable
      */
-    weight?: number | null;
+    weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
     /** @items.minLength 1 */
@@ -4771,25 +4735,16 @@ export const replaceAccountWithMultipart = (
     const formData = new FormData();
     formData.append(`email`, replaceAccountRequestMultipart.email);
     formData.append(`username`, replaceAccountRequestMultipart.username);
-    if (
-        replaceAccountRequestMultipart.locale !== undefined &&
-        replaceAccountRequestMultipart.locale !== null
-    ) {
+    if (replaceAccountRequestMultipart.locale !== undefined) {
         formData.append(`locale`, replaceAccountRequestMultipart.locale);
     }
     if (replaceAccountRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, replaceAccountRequestMultipart.imageUpload);
     }
-    if (
-        replaceAccountRequestMultipart.phone !== undefined &&
-        replaceAccountRequestMultipart.phone !== null
-    ) {
+    if (replaceAccountRequestMultipart.phone !== undefined) {
         formData.append(`phone`, replaceAccountRequestMultipart.phone);
     }
-    if (
-        replaceAccountRequestMultipart.website !== undefined &&
-        replaceAccountRequestMultipart.website !== null
-    ) {
+    if (replaceAccountRequestMultipart.website !== undefined) {
         formData.append(`website`, replaceAccountRequestMultipart.website);
     }
     formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
@@ -4858,25 +4813,16 @@ export const updateAccountWithMultipart = (
     if (updateAccountRequestMultipart.username !== undefined) {
         formData.append(`username`, updateAccountRequestMultipart.username);
     }
-    if (
-        updateAccountRequestMultipart.locale !== undefined &&
-        updateAccountRequestMultipart.locale !== null
-    ) {
+    if (updateAccountRequestMultipart.locale !== undefined) {
         formData.append(`locale`, updateAccountRequestMultipart.locale);
     }
     if (updateAccountRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
     }
-    if (
-        updateAccountRequestMultipart.phone !== undefined &&
-        updateAccountRequestMultipart.phone !== null
-    ) {
+    if (updateAccountRequestMultipart.phone !== undefined) {
         formData.append(`phone`, updateAccountRequestMultipart.phone);
     }
-    if (
-        updateAccountRequestMultipart.website !== undefined &&
-        updateAccountRequestMultipart.website !== null
-    ) {
+    if (updateAccountRequestMultipart.website !== undefined) {
         formData.append(`website`, updateAccountRequestMultipart.website);
     }
     if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
@@ -5662,22 +5608,13 @@ export const replaceUserByIdWithMultipart = (
     if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
     }
-    if (
-        replaceUserByIdRequestMultipart.locale !== undefined &&
-        replaceUserByIdRequestMultipart.locale !== null
-    ) {
+    if (replaceUserByIdRequestMultipart.locale !== undefined) {
         formData.append(`locale`, replaceUserByIdRequestMultipart.locale);
     }
-    if (
-        replaceUserByIdRequestMultipart.phone !== undefined &&
-        replaceUserByIdRequestMultipart.phone !== null
-    ) {
+    if (replaceUserByIdRequestMultipart.phone !== undefined) {
         formData.append(`phone`, replaceUserByIdRequestMultipart.phone);
     }
-    if (
-        replaceUserByIdRequestMultipart.website !== undefined &&
-        replaceUserByIdRequestMultipart.website !== null
-    ) {
+    if (replaceUserByIdRequestMultipart.website !== undefined) {
         formData.append(`website`, replaceUserByIdRequestMultipart.website);
     }
 
@@ -5760,22 +5697,13 @@ export const updateUserByIdWithMultipart = (
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
-    if (
-        updateUserByIdRequestMultipart.locale !== undefined &&
-        updateUserByIdRequestMultipart.locale !== null
-    ) {
+    if (updateUserByIdRequestMultipart.locale !== undefined) {
         formData.append(`locale`, updateUserByIdRequestMultipart.locale);
     }
-    if (
-        updateUserByIdRequestMultipart.phone !== undefined &&
-        updateUserByIdRequestMultipart.phone !== null
-    ) {
+    if (updateUserByIdRequestMultipart.phone !== undefined) {
         formData.append(`phone`, updateUserByIdRequestMultipart.phone);
     }
-    if (
-        updateUserByIdRequestMultipart.website !== undefined &&
-        updateUserByIdRequestMultipart.website !== null
-    ) {
+    if (updateUserByIdRequestMultipart.website !== undefined) {
         formData.append(`website`, updateUserByIdRequestMultipart.website);
     }
 
@@ -6169,30 +6097,18 @@ export const replaceProductByIdWithMultipart = (
     const formData = new FormData();
     formData.append(`translations`, replaceProductRequestMultipart.translations);
     formData.append(`price`, replaceProductRequestMultipart.price.toString());
-    if (
-        replaceProductRequestMultipart.taxClass !== undefined &&
-        replaceProductRequestMultipart.taxClass !== null
-    ) {
+    if (replaceProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
     }
-    if (
-        replaceProductRequestMultipart.rateType !== undefined &&
-        replaceProductRequestMultipart.rateType !== null
-    ) {
+    if (replaceProductRequestMultipart.rateType !== undefined) {
         formData.append(`rateType`, replaceProductRequestMultipart.rateType);
     }
-    if (
-        replaceProductRequestMultipart.sku !== undefined &&
-        replaceProductRequestMultipart.sku !== null
-    ) {
+    if (replaceProductRequestMultipart.sku !== undefined) {
         formData.append(`sku`, replaceProductRequestMultipart.sku);
     }
     formData.append(`active`, replaceProductRequestMultipart.active.toString());
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
-    if (
-        replaceProductRequestMultipart.weight !== undefined &&
-        replaceProductRequestMultipart.weight !== null
-    ) {
+    if (replaceProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
     }
     if (replaceProductRequestMultipart.imageUpload !== undefined) {
@@ -6318,22 +6234,13 @@ export const updateProductByIdWithMultipart = (
     if (updateProductRequestMultipart.price !== undefined) {
         formData.append(`price`, updateProductRequestMultipart.price.toString());
     }
-    if (
-        updateProductRequestMultipart.taxClass !== undefined &&
-        updateProductRequestMultipart.taxClass !== null
-    ) {
+    if (updateProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
     }
-    if (
-        updateProductRequestMultipart.rateType !== undefined &&
-        updateProductRequestMultipart.rateType !== null
-    ) {
+    if (updateProductRequestMultipart.rateType !== undefined) {
         formData.append(`rateType`, updateProductRequestMultipart.rateType);
     }
-    if (
-        updateProductRequestMultipart.sku !== undefined &&
-        updateProductRequestMultipart.sku !== null
-    ) {
+    if (updateProductRequestMultipart.sku !== undefined) {
         formData.append(`sku`, updateProductRequestMultipart.sku);
     }
     if (updateProductRequestMultipart.active !== undefined) {
@@ -6345,10 +6252,7 @@ export const updateProductByIdWithMultipart = (
             updateProductRequestMultipart.requiresShipping.toString()
         );
     }
-    if (
-        updateProductRequestMultipart.weight !== undefined &&
-        updateProductRequestMultipart.weight !== null
-    ) {
+    if (updateProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, updateProductRequestMultipart.weight.toString());
     }
     if (updateProductRequestMultipart.imageUpload !== undefined) {
