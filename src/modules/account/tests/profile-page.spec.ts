@@ -16,7 +16,9 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import * as schemas from '@api/schemas';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -308,6 +310,49 @@ describe('the image field', () => {
                 // Not merely falsy: the KEY itself must be absent, the same "absent means
                 // untouched" proof the email and consent fields above pin.
                 expect(JSON.stringify(patch?.data)).not.toContain('imageUrl');
+            });
+    });
+});
+
+/**
+ * `''` is what a hand-cleared field holds, and `UpdateAccountBody` refuses it with a live 422:
+ * `null` is the contract's spelling of "clear". A field that was never set stays omitted.
+ */
+describe('clearing the phone and website', () => {
+    it('sends null for a phone and website the visitor cleared', () => {
+        responses['GET /account'] = orvalEnvelope({
+            ...USER,
+            phone: '+15550100',
+            website: 'https://ada.example.com'
+        });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('input[type=tel]').setValue(''))
+            .then(() => wrapper.get('input[type=url]').setValue(''))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(
+                    contractRequest(schemas.UpdateAccountBody, lastAccountPatch()?.data)
+                ).toMatchObject({
+                    phone: null,
+                    website: null
+                });
+            });
+    });
+
+    it('omits both when the profile never had them', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=profile-analytics-consent] input').setValue(true))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const sent = JSON.stringify(lastAccountPatch()?.data);
+                expect(sent).not.toContain('phone');
+                expect(sent).not.toContain('website');
             });
     });
 });

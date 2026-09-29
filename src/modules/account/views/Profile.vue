@@ -31,6 +31,7 @@ import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { emptyToNull } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -226,8 +227,9 @@ const submitForm = () => {
         ...(emailChanged ? { email: form.value.email } : {}),
         username: form.value.username,
         locale: form.value.locale,
-        phone: form.value.phone,
-        website: form.value.website,
+        // Cleared by hand is `''`, which the contract refuses; `null` is its spelling of "clear".
+        phone: emptyToNull(form.value.phone),
+        website: emptyToNull(form.value.website),
         ...(analyticsConsentChanged ? { analyticsConsent: form.value.analyticsConsent } : {})
     })
         .then(() => {

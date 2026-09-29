@@ -17,6 +17,8 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { WebhookSubscriptionCreated } from '@types';
+import * as schemas from '@api/schemas';
+import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -126,6 +128,27 @@ describe('WebhookCreate', () => {
                 document.body.querySelector('[data-test=secret-reveal-value]')?.textContent?.trim()
             ).toBe('whsec_shown_once');
         });
+    });
+
+    it('omits the description when it was typed and then cleared', () => {
+        const { wrapper, create } = mountPage();
+        create.mockResolvedValue(CREATED);
+
+        return wrapper
+            .get('[data-test=webhook-url] input')
+            .setValue('https://hooks.example.com/in')
+            .then(() => wrapper.get('[data-test=webhook-description] input').setValue('typo'))
+            .then(() => wrapper.get('[data-test=webhook-description] input').setValue(''))
+            .then(() => wrapper.get('select').trigger('change'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                // `CreateWebhookSubscriptionBody.description` is not nullable: `''` and `null`
+                // are both refused, so the key must be absent.
+                const body = create.mock.calls[0]?.[0];
+                expect(contractRequest(schemas.CreateWebhookSubscriptionBody, body)).toBeDefined();
+                expect(JSON.stringify(body)).not.toContain('description');
+            });
     });
 
     it('opens the new subscription once the secret is acknowledged', () => {

@@ -52,6 +52,17 @@ const LOADED_USER = aUser({
     active: true
 });
 
+/** The record the clearing cases load: all three optional fields set. */
+const USER_WITH_CONTACT = aUser({
+    ...LOADED_USER,
+    phone: '+15550100',
+    website: 'https://ada.example.com',
+    locale: 'en'
+});
+
+/** Which record `GET` answers with; reset per test. */
+let loadedUser = LOADED_USER;
+
 /**
  * Answers every GET with {@link LOADED_USER} and every PATCH with a bare success envelope.
  */
@@ -61,7 +72,7 @@ const mockTransport = () => {
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.method === 'GET' ? orvalEnvelope(LOADED_USER) : orvalEnvelope()
+                config.method === 'GET' ? orvalEnvelope(loadedUser) : orvalEnvelope()
             )
         )
     );
@@ -91,6 +102,7 @@ const mountPage = () =>
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    loadedUser = LOADED_USER;
     mockTransport();
     return loadLocale('en').then(() =>
         router.push('/en/users/u1/edit').then(() => router.isReady())
@@ -145,6 +157,45 @@ describe('UserEdit', () => {
                 expect(body?.locale).toBeUndefined();
                 expect(body?.phone).toBeUndefined();
                 expect(body?.website).toBeUndefined();
+            });
+    });
+
+    it('sends null for a phone and website the admin cleared, so the value really goes', () => {
+        loadedUser = USER_WITH_CONTACT;
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-phone] input').setValue(''))
+            .then(() => wrapper.get('[data-test=user-edit-website] input').setValue(''))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                const body = lastPatchBody();
+                expect(contractRequest(schemas.UpdateUserByIdBody, body)).toMatchObject({
+                    phone: null,
+                    website: null
+                });
+            });
+    });
+
+    it('sends null for a locale the admin cleared', () => {
+        loadedUser = USER_WITH_CONTACT;
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => {
+                const localeSelect = wrapper
+                    .findAllComponents(VSelect)
+                    .find((select) => select.attributes('data-test') === 'user-edit-locale');
+                if (localeSelect) emitOn(localeSelect, 'update:modelValue', '');
+                return nextRenderTick(wrapper);
+            })
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(contractRequest(schemas.UpdateUserByIdBody, lastPatchBody())).toMatchObject({
+                    locale: null
+                });
             });
     });
 

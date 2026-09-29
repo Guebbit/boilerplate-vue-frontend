@@ -43,6 +43,7 @@ import {
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { emptyToNull } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -155,9 +156,9 @@ activateAutoHydrate(
                   password: '',
                   role: currentUser.value.role ?? '',
                   active: currentUser.value.active ?? true,
-                  locale: currentUser.value.locale ?? '',
-                  phone: currentUser.value.phone ?? '',
-                  website: currentUser.value.website ?? ''
+                  locale: currentUser.value.locale ?? undefined,
+                  phone: currentUser.value.phone ?? undefined,
+                  website: currentUser.value.website ?? undefined
               }
             : undefined
     )
@@ -277,11 +278,11 @@ const submitForm = () => {
                         password: password || undefined,
                         role: roleChanged ? role : undefined,
                         active: activeChanged ? active : undefined,
-                        // The contract's own pattern/minLength refuse `''` with a live 422 — same
-                        // reason `password` above only ever sends a real value or omits the key.
-                        locale: locale || undefined,
-                        phone: phone || undefined,
-                        website: website || undefined,
+                        // The contract's own pattern/minLength refuse `''` with a live 422, so an
+                        // emptied field goes as `null` (clear); one never set stays `undefined`.
+                        locale: emptyToNull(locale),
+                        phone: emptyToNull(phone),
+                        website: emptyToNull(website),
                         imageUpload
                     },
                     { requestOptions: options }

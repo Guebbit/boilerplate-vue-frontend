@@ -9,6 +9,7 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { omitNulls } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { ERROR_CODES } from '@api/error-codes';
@@ -172,6 +173,26 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
+     * The local cache patch for a profile write: the sent fields, minus any that carry `null`.
+     *
+     * @param userData - What the caller passed to {@link updateProfile}, `imageUpload` removed.
+     * @returns A `Partial<User>` safe to merge into the cached record.
+     */
+    const optimisticPatch = ({
+        phone,
+        website,
+        imageUrl,
+        ...rest
+    }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
+        imageUrl?: string | null;
+        phone?: string | null;
+        website?: string | null;
+    }): Partial<User> => ({
+        ...rest,
+        ...omitNulls({ phone, website, imageUrl }, ['phone', 'website', 'imageUrl'])
+    });
+
+    /**
      * Updates the current user's own profile through `PATCH /account` — this call only ever sends
      * the fields the caller actually changed (AUDIT_0924 D17d: `PUT /account` would clear every
      * field left out instead, RFC 9110 §9.3.4).
@@ -195,7 +216,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  neither: re-sending the already-loaded `imageUrl` there would overwrite a concurrent avatar
      *  change and orphan the file it just uploaded. `imageUrl` widens past `Partial<User>`'s own
      *  (read-shape, non-null) type for exactly this: the write contract allows `null`, the record
-     *  itself never reads back as one.
+     *  itself never reads back as one. `phone` and `website` widen the same way: `null` clears
+     *  them, and `Profile.vue` sends it for a field the visitor emptied.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
      *  `ProfileAvatar.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving with the updated profile, rejected with an
@@ -205,7 +227,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
         {
             imageUpload,
             ...userData
-        }: Partial<Omit<User, 'imageUrl'>> & { imageUpload?: File; imageUrl?: string | null } = {},
+        }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
+            imageUpload?: File;
+            imageUrl?: string | null;
+            phone?: string | null;
+            website?: string | null;
+        } = {},
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
@@ -237,10 +264,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     return payload ? publishViewer(payload).then(() => data) : data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
-            // `null` narrows to `undefined` for this OPTIMISTIC patch only — the toolkit's own
-            // `Partial<User>` (the record's read shape) never carries a null image, and the
+            // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
+            // toolkit's `Partial<User>` (the record's read shape) never carries a null, and the
             // refetch right below corrects the visible state within one round trip regardless.
-            { ...userData, imageUrl: userData.imageUrl ?? undefined },
+            optimisticPatch(userData),
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own bucket key so the picker
             // and the remove button spin one at a time. `imageUrl: null` is the removal.

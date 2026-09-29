@@ -113,7 +113,8 @@ const submitForm = () => {
     return handleSubmit(() =>
         createSubscription({
             url: form.value.url!,
-            description: form.value.description,
+            // Create has nothing to clear, so its schema is not nullable: empty means omitted.
+            description: form.value.description || undefined,
             eventTypes: form.value.eventTypes!
         }).then((created) => {
             if (!created?.secret) return;
