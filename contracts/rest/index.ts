@@ -373,7 +373,7 @@ export interface OrderLineProduct {
 }
 
 export interface OrderLineCurrent {
-    imageUrl: ImageUrl;
+    imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
 }
 

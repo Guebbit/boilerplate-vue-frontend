@@ -7092,8 +7092,6 @@ components:
     OrderLineCurrent:
       type: object
       additionalProperties: false
-      required:
-        - imageUrl
       properties:
         imageUrl:
           $ref: "#/components/schemas/ImageUrl"
