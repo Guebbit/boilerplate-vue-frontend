@@ -31,7 +31,7 @@ import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
-import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -214,24 +214,20 @@ const submitForm = () => {
     if (!isDirty.value || savingProfile.value) return;
     clearSaveError();
     savingProfile.value = true;
-    // Absent means "leave alone" on this PATCH (RFC 7396) — sent only when it actually moved, so
-    // toggling it back to the baseline before saving reads as untouched, never as a fresh choice.
-    const analyticsConsentChanged = form.value.analyticsConsent !== profile.value?.analyticsConsent;
-    // Omitted rather than sent unchanged: PATCH treats an included `email` as a real request, even
-    // one that resolves to a no-op, and this save has nothing to say about the address at all.
-    const emailChanged = form.value.email !== profile.value?.email;
     // No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
     // own request. Sending the loaded value back on every details save would overwrite whatever
     // the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
-    return updateProfile({
-        ...(emailChanged ? { email: form.value.email } : {}),
-        username: form.value.username,
-        locale: form.value.locale,
-        // Cleared by hand is `''`, which the contract refuses; `null` is its spelling of "clear".
-        phone: emptyToNull(form.value.phone),
-        website: emptyToNull(form.value.website),
-        ...(analyticsConsentChanged ? { analyticsConsent: form.value.analyticsConsent } : {})
-    })
+    //
+    // The baseline is the loaded profile: an unchanged `email` is omitted (PATCH treats an included
+    // one as a real request, even a no-op), so is an untouched `analyticsConsent`, and an emptied
+    // phone or website becomes `null` (the clear) instead of a 422-bound `''`.
+    const { email, username, locale, phone, website, analyticsConsent } = form.value;
+    return toRequestBody(
+        'UpdateAccountBody',
+        { email, username, locale, phone, website, analyticsConsent },
+        profile.value
+    )
+        .then((body) => updateProfile(body))
         .then(() => {
             // Re-baseline on what the server now holds: the store refetched it, and a form
             // left dirty against a stale baseline would refuse the next hydration forever.

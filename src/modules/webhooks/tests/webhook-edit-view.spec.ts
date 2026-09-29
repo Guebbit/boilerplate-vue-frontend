@@ -19,6 +19,9 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { WebhookSubscription } from '@types';
 
+import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import * as schemas from '@api/schemas';
+
 wireModulesIntoCore();
 
 /**
@@ -96,14 +99,15 @@ describe('WebhookEdit', () => {
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                expect(update).toHaveBeenCalledWith(
-                    SUBSCRIPTION.id,
-                    expect.objectContaining({ description: null })
-                );
+                expect(update).toHaveBeenCalledTimes(1);
+                expect(update.mock.calls[0][0]).toBe(SUBSCRIPTION.id);
+                expect(
+                    contractRequest(schemas.UpdateWebhookSubscriptionBody, update.mock.calls[0][1])
+                ).toEqual({ description: null });
             });
     });
 
-    it('sends the description back unchanged when the field was left alone', () => {
+    it('leaves the description out when the field was left alone', () => {
         const { wrapper, update } = mountPage();
 
         return wrapper
@@ -111,10 +115,10 @@ describe('WebhookEdit', () => {
             .trigger('submit')
             .then(flushPromises)
             .then(() => {
-                expect(update).toHaveBeenCalledWith(
-                    SUBSCRIPTION.id,
-                    expect.objectContaining({ description: 'Orders feed' })
-                );
+                expect(update).toHaveBeenCalledTimes(1);
+                expect(
+                    contractRequest(schemas.UpdateWebhookSubscriptionBody, update.mock.calls[0][1])
+                ).toEqual({});
             });
     });
 });

@@ -46,6 +46,7 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
@@ -372,33 +373,34 @@ const submitForm = () => {
             imageUpload
         } = form.value;
         if (!id || price === undefined) return;
-        return trackUpload(imageUpload, (options) =>
-            updateProduct(
-                id,
-                {
-                    price,
-                    active,
-                    requiresShipping,
-                    weight,
-                    taxClass,
-                    categories,
-                    tags,
-                    translations: toPatchTranslations(translations),
-                    imageUpload
-                },
-                { requestOptions: options }
+        // No baseline: the whole form is this save's intent. What the helper adds is the spelling —
+        // a cleared weight or a blank translation description goes as the contract's `null`.
+        return toRequestBody('UpdateProductByIdBody', {
+            price,
+            active,
+            requiresShipping,
+            weight,
+            taxClass,
+            categories,
+            tags,
+            translations: toPatchTranslations(translations)
+        })
+            .then((body) =>
+                trackUpload(imageUpload, (options) =>
+                    updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
+                )
             )
-        ).then(() => {
-            // The API has answered with the stored `imageUrl` and the merged translations; the
-            // admin record is the only place both live, so it is reloaded rather than patched by
-            // hand — the store's own optimistic patch already skips `translations` for the same
-            // reason (see `products/store.ts`).
-            form.value.imageUpload = undefined;
-            addMessage(t('product-edit-page.success-update'));
-            // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
-            // and the reload itself (not what it returns) is the point.
-            return loadAdminProduct(id).then(() => undefined);
-        });
+            .then(() => {
+                // The API has answered with the stored `imageUrl` and the merged translations; the
+                // admin record is the only place both live, so it is reloaded rather than patched by
+                // hand — the store's own optimistic patch already skips `translations` for the same
+                // reason (see `products/store.ts`).
+                form.value.imageUpload = undefined;
+                addMessage(t('product-edit-page.success-update'));
+                // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
+                // and the reload itself (not what it returns) is the point.
+                return loadAdminProduct(id).then(() => undefined);
+            });
     }).catch((error) => {
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)

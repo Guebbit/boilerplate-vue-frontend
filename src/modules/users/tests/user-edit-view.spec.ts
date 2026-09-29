@@ -123,11 +123,9 @@ describe('UserEdit', () => {
                 // FA123: proves the PATCH is a shape the real endpoint accepts, not just the
                 // shape this test expected — `UpdateUserByIdBody` is a `strictObject`, so a stray
                 // key this assertion never thought to name would fail it too.
-                expect(contractRequest(schemas.UpdateUserByIdBody, body)).toMatchObject({
-                    username: 'ada2',
-                    role: undefined,
-                    active: undefined
-                });
+                const sent = contractRequest(schemas.UpdateUserByIdBody, body);
+                // Only what changed is sent: the loaded record is the baseline.
+                expect(sent).toEqual({ username: 'ada2' });
             });
     });
 
@@ -230,7 +228,9 @@ describe('UserEdit', () => {
             .then(() => {
                 // The critical trap: `role` rides along ONLY because it actually changed, not as
                 // part of a blanket "send everything" body.
-                expect(lastPatchBody()).toMatchObject({ role: 'manager', active: undefined });
+                expect(contractRequest(schemas.UpdateUserByIdBody, lastPatchBody())).toEqual({
+                    role: 'manager'
+                });
             });
     });
 

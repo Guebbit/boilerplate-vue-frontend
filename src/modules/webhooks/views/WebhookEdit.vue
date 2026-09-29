@@ -27,7 +27,7 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import { emptyToNull } from '@/infrastructure/utils/forms.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
@@ -133,9 +133,8 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
 /**
  * Validates the form and persists the subscription changes.
  *
- * `description` is emptied through {@link emptyToNull} — Vuetify gives `''` for a hand-cleared
- * field, and the contract's own rule ("null clears, `''` is invalid") means sending the raw empty
- * string back would be a 422, not a clear.
+ * {@link toRequestBody} turns a hand-cleared `description` (Vuetify gives `''`) into the `null`
+ * the contract spells "clear" — the raw empty string would be a 422.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the revealed
  *  validation errors when the input is invalid. An API failure blocks the form in place
@@ -146,14 +145,15 @@ const submitForm = () => {
     return handleSubmit(() => {
         if (!id) return;
         const { url, description, eventTypes, enabled } = form.value;
-        return updateSubscription(id, {
-            url,
-            description: emptyToNull(description),
-            eventTypes,
-            enabled
-        }).then(() => {
-            addMessage(t('webhook-edit-page.success-update'));
-        });
+        return toRequestBody(
+            'UpdateWebhookSubscriptionBody',
+            { url, description, eventTypes, enabled },
+            currentSubscription.value
+        )
+            .then((body) => updateSubscription(id, body))
+            .then(() => {
+                addMessage(t('webhook-edit-page.success-update'));
+            });
     }).catch((error) => {
         applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
