@@ -41,7 +41,8 @@ import {
     formatText,
     formatDateTime,
     formatCurrency,
-    formatFlag
+    formatFlag,
+    currencyDigits
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -122,6 +123,18 @@ const loadAdminProduct = (productId: string) => {
             loadingAdmin.value = false;
         });
 };
+
+/**
+ * Decimal places this product's own price field should accept — a KWD product can't round-trip
+ * its third decimal through a 2-decimal input, and a JPY product would accept cents `toMinorUnits`
+ * then silently rounds away server-side.
+ */
+const pricePrecision = computed(() => currencyDigits(adminProduct.value?.currency ?? 'EUR'));
+
+/**
+ * Smallest increment the price input's stepper buttons move by, matching {@link pricePrecision}.
+ */
+const priceStep = computed(() => 10 ** -pricePrecision.value);
 
 /**
  * Form definition. `translations` mirrors the write body's own shape
@@ -503,8 +516,8 @@ const submitForm = () => {
                         v-model="form.price"
                         :label="t('product-edit-page.label-price')"
                         :min="0"
-                        :step="0.01"
-                        :precision="2"
+                        :step="priceStep"
+                        :precision="pricePrecision"
                         control-variant="stacked"
                         :error-messages="showFormErrors ? formErrors.price : []"
                         data-test="product-price-field"

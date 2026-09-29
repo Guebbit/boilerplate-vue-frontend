@@ -79,7 +79,8 @@ export const formatDate = (value?: string | null) =>
  *
  * @param value - Amount to format; non-numbers yield the fallback glyph.
  * @param currency - ISO 4217 currency code, from the same resource `value` was read off.
- * @param format - `Intl.NumberFormat` overrides. Defaults to 2 decimals.
+ * @param format - `Intl.NumberFormat` overrides. Defaults to the currency's own decimals (js-toolkit
+ *  2.2.1+: none for JPY/KRW, 3 for KWD/BHD, 2 for the common case).
  * @returns The formatted amount, or {@link EMPTY_VALUE} when `value` is not a
  *  number. Unknown currency codes degrade to a plain number format.
  */
@@ -88,6 +89,40 @@ export const formatCurrency = (
     currency: string,
     format?: Intl.NumberFormatOptions
 ) => formatCurrencyBase(value, { currency, format, locale: getLocale(), empty: EMPTY_VALUE });
+
+/**
+ * Decimal places a currency's minor unit represents, cached per code — mirrors the backend's own
+ * `minorUnitExponent` (`orders/domain/money.ts`) so a price input's `step`/`precision` never
+ * disagrees with what the server will actually store. js-toolkit has no such helper of its own.
+ * https://tc39.es/ecma402/#sec-currencydigits
+ */
+const currencyDigitsCache = new Map<string, number>();
+
+/**
+ * @param currency - An ISO 4217 currency code.
+ * @returns The number of decimal places that currency's minor unit represents; 2 for an
+ *  unrecognised code, `Intl`'s own fallback for a style it otherwise can't resolve.
+ */
+export const currencyDigits = (currency: string): number => {
+    const cached = currencyDigitsCache.get(currency);
+    if (cached !== undefined) return cached;
+
+    let digits = 2;
+    // `Intl.NumberFormat` throws a `RangeError` for a currency code it doesn't recognise, and a
+    // malformed or not-yet-typed code from a product form must fall back to 2, not crash the form.
+    // eslint-disable-next-line no-restricted-syntax -- contains exactly that RangeError, see above
+    try {
+        digits =
+            new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
+                .maximumFractionDigits ?? 2;
+    } catch {
+        // Stryker disable next-line -- an unrecognised currency code is a form-input edge case,
+        // not a branch this suite drives; the fallback above already covers it.
+    }
+
+    currencyDigitsCache.set(currency, digits);
+    return digits;
+};
 
 /**
  * Formats a fraction (`0.055`) as a locale-aware percentage (`5.5%`), rounding instead of

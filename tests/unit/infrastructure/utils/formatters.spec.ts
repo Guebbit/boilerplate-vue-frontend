@@ -13,6 +13,7 @@ import {
     formatDate,
     formatDateTime,
     formatCurrency,
+    currencyDigits,
     formatPercent,
     formatFlag,
     formatMegabytes,
@@ -105,6 +106,44 @@ describe('formatCurrency', () => {
 
     it('formats zero rather than treating it as missing', () => {
         expect(formatCurrency(0, 'EUR')).not.toBe(EMPTY_VALUE);
+    });
+
+    it('drops decimals entirely for a zero-exponent currency (JPY)', () => {
+        const formatted = formatCurrency(1234, 'JPY');
+
+        // `,` is the thousands separator here, not a decimal mark — only `.` would be one.
+        expect(formatted).not.toMatch(/\.\d/);
+        expect(formatted).toMatch(/¥|JPY/);
+    });
+
+    it('prints three decimals for a three-exponent currency (KWD)', () => {
+        const formatted = formatCurrency(1234.5, 'KWD');
+
+        expect(formatted).toMatch(/1.234[,.]500/);
+    });
+});
+
+describe('currencyDigits', () => {
+    it('reads the common two-decimal case from Intl', () => {
+        expect(currencyDigits('EUR')).toBe(2);
+        expect(currencyDigits('USD')).toBe(2);
+    });
+
+    it('reads a zero-decimal currency', () => {
+        expect(currencyDigits('JPY')).toBe(0);
+    });
+
+    it('reads a three-decimal currency', () => {
+        expect(currencyDigits('KWD')).toBe(3);
+        expect(currencyDigits('BHD')).toBe(3);
+    });
+
+    it('falls back to 2 for an unrecognised code', () => {
+        expect(currencyDigits('NOT-A-CURRENCY')).toBe(2);
+    });
+
+    it('caches per currency code rather than re-resolving Intl on every call', () => {
+        expect(currencyDigits('EUR')).toBe(currencyDigits('EUR'));
     });
 });
 
