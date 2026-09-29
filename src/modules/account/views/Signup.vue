@@ -8,8 +8,9 @@ export default {
 /**
  * @module
  * Signup form: the zod schema chains a password-confirm `.refine` onto the shared
- * `usersSchema`/`usersPasswordSchema` rules, and `trackUpload` wraps the store call so
- * `FormImageUpload` can show real upload progress when an avatar is attached. The breach check
+ * `usersSchema`/`usersPasswordSchema` rules, and a picked avatar is sent as a
+ * follow-up `PATCH /account` once signup has opened the session (`POST /account/signup` takes no
+ * file), wrapped in `trackUpload` so `FormImageUpload` can show real upload progress. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
 import { computed, ref, watch } from 'vue';
@@ -159,15 +160,15 @@ watch(
 );
 
 /**
- * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
- * flight.
+ * Profile image upload progress, shown by `FormImageUpload` while the avatar upload that follows
+ * signup is in flight.
  */
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
- * Creates the account.
+ * Creates the account, then stores its avatar as the follow-up call.
  */
-const { signup } = useAuthStore();
+const { signup, setAvatarAfterSignup } = useAuthStore();
 
 /**
  * The human-challenge widget — rendered only once a provider is active, and read here for its
@@ -188,6 +189,22 @@ const {
 } = useBlockingError();
 
 /**
+ * Stores the avatar picked on the form, if any. The account already exists by now, so a failed
+ * upload must not fail the signup: it is reported, and the profile page is where to retry.
+ *
+ * @returns A promise that always resolves.
+ */
+const uploadPickedAvatar = () => {
+    const { imageUpload } = form.value;
+    if (!imageUpload) return Promise.resolve();
+    return trackUpload(imageUpload, (options) => setAvatarAfterSignup(imageUpload, options)).catch(
+        () => {
+            addMessage(t('signup-page.avatar-upload-failed'));
+        }
+    );
+};
+
+/**
  * Validates the form and registers the account.
  *
  * Signup DOES log the user in — `POST /account/signup` sets the session cookies, so the router's
@@ -204,22 +221,20 @@ const submitForm = () => {
     clearSignupError();
     return handleSubmit(() =>
         // No username field on this form: the store defaults it to the email address.
-        trackUpload(form.value.imageUpload, (options) =>
-            signup(
-                {
-                    email: form.value.email!,
-                    password: form.value.password!,
-                    passwordConfirm: form.value.passwordConfirm!,
-                    // Validated by `signupSchema` above — `true` by the time submission is
-                    // allowed to reach here at all.
-                    termsAccepted: form.value.termsAccepted as true,
-                    analyticsConsent: form.value.analyticsConsent,
-                    imageUpload: form.value.imageUpload
-                },
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
-                withAntibotToken(humanCheck.value?.token, options)
-            )
+        signup(
+            {
+                email: form.value.email!,
+                password: form.value.password!,
+                passwordConfirm: form.value.passwordConfirm!,
+                // Validated by `signupSchema` above — `true` by the time submission is
+                // allowed to reach here at all.
+                termsAccepted: form.value.termsAccepted as true,
+                analyticsConsent: form.value.analyticsConsent
+            },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
+            withAntibotToken(humanCheck.value?.token)
         )
+            .then(() => uploadPickedAvatar())
             .then(() => redirectAfterLogin())
             // `handleSubmit`'s callback must resolve `void`; `addMessage` now returns the new
             // message's id (vue-toolkit 5), which this call site has no use for.

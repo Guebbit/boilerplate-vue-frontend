@@ -44,7 +44,7 @@ import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
  * @param imageUrl - The record's picture field, `null` when the call is a removal.
  * @returns The bucket key, or `undefined` for a plain save (matches the whole-resource `loading`).
  */
-const avatarLoadingKey = (imageUpload?: File, imageUrl?: string | null): string[] | undefined => {
+const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undefined => {
     if (imageUpload) return ['avatar-upload'];
     // `null` is the removal — the contract's `minLength: 1` refuses `''`.
     return imageUrl === null ? ['avatar-remove'] : undefined;
@@ -184,7 +184,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         imageUrl,
         ...rest
     }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
-        imageUrl?: string | null;
+        imageUrl?: null;
         phone?: string | null;
         website?: string | null;
     }): Partial<User> => ({
@@ -229,7 +229,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
             ...userData
         }: Partial<Omit<User, 'imageUrl' | 'phone' | 'website'>> & {
             imageUpload?: File;
-            imageUrl?: string | null;
+            imageUrl?: null;
             phone?: string | null;
             website?: string | null;
         } = {},

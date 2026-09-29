@@ -49,10 +49,10 @@ describe('Image upload', () => {
 
     describe('Signup', () => {
         /**
-         * `signup` was the one store method with no multipart branch, so this is the case that
-         * would have silently sent JSON and dropped the file on the floor.
+         * `POST /account/signup` takes no file, so the avatar is a second request. This is the case that
+         * would silently drop the file if the follow-up were ever skipped.
          */
-        it('registers an account with a profile image', () => {
+        it('registers an account with a profile image, sent as a follow-up PATCH /account', () => {
             cy.visit('/en/signup');
 
             cy.get('input[type=email]').should('not.be.disabled').type('newcomer@example.com');

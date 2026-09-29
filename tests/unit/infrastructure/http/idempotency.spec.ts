@@ -25,7 +25,7 @@ const SERVER_FAILURE = { status: 503 };
 /** A definitive 4xx refusal — "email taken", a decline, a validation error. */
 const CLIENT_FAILURE = { status: 422 };
 
-/** A stand-in for a real per-call option, e.g. the one `signupWithMultipart` attaches. */
+/** A stand-in for a real per-call option, e.g. the one `signup` attaches. */
 const onUploadProgress = () => {};
 
 describe('useIdempotencyKey', () => {
