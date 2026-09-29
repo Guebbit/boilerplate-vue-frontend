@@ -81,7 +81,41 @@ export type PaymentRefundedEventType = "payment.refunded";
 export interface PaymentRefundedPayload {
   'paymentId': string;
   'orderId': string;
+  'refundId': string;
   'amount': number;
+  'currency': string;
+}
+export interface ReturnRequestedEnvelope {
+  'type': ReturnRequestedEventType;
+  'timestamp': string;
+  'data': ReturnRequestedPayload;
+}
+export type ReturnRequestedEventType = "return.requested";
+export interface ReturnRequestedPayload {
+  'returnId': string;
+  'orderId': string;
+  'reason': string;
+}
+export interface ReturnReceivedEnvelope {
+  'type': ReturnReceivedEventType;
+  'timestamp': string;
+  'data': ReturnReceivedPayload;
+}
+export type ReturnReceivedEventType = "return.received";
+export interface ReturnReceivedPayload {
+  'returnId': string;
+  'orderId': string;
+}
+export interface ReturnClosedEnvelope {
+  'type': ReturnClosedEventType;
+  'timestamp': string;
+  'data': ReturnClosedPayload;
+}
+export type ReturnClosedEventType = "return.closed";
+export interface ReturnClosedPayload {
+  'returnId': string;
+  'orderId': string;
+  'refundAmount': number;
   'currency': string;
 }
 
@@ -95,6 +129,9 @@ export type OrderCancelledEvent = OrderCancelledEnvelope;
 export type PaymentSucceededEvent = PaymentSucceededEnvelope;
 export type PaymentFailedEvent = PaymentFailedEnvelope;
 export type PaymentRefundedEvent = PaymentRefundedEnvelope;
+export type ReturnReceivedEvent = ReturnReceivedEnvelope;
+export type ReturnClosedEvent = ReturnClosedEnvelope;
+export type ReturnRequestedEvent = ReturnRequestedEnvelope;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -128,6 +165,16 @@ export const PAYMENT_CHANNELS = {
 
 /* Union of every "payment." channel name */
 export type PaymentChannel = (typeof PAYMENT_CHANNELS)[keyof typeof PAYMENT_CHANNELS];
+
+/* Channel names in the "return." namespace */
+export const RETURN_CHANNELS = {
+    REQUESTED: 'return.requested',
+    RECEIVED: 'return.received',
+    CLOSED: 'return.closed',
+} as const;
+
+/* Union of every "return." channel name */
+export type ReturnChannel = (typeof RETURN_CHANNELS)[keyof typeof RETURN_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",

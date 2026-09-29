@@ -2000,6 +2000,8 @@ export const exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp
     '^[A-Z]{2}$'
 );
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
+export const exportAccountDataResponseDataPaymentsItemAmountRefundedMin = 0;
+export const exportAccountDataResponseDataPaymentsItemRefundsItemAmountMin = 0;
 export const exportAccountDataResponseDataInvoicingInvoicesItemGrandTotalMin = 0;
 export const exportAccountDataResponseDataInvoicingCreditNotesItemGrandTotalMin = 0;
 export const ExportAccountDataResponse = zod.strictObject({
@@ -2071,6 +2073,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 .default(
                                     exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault
                                 ),
+                            noWithdrawal: zod.boolean().optional(),
                             sku: zod.string().min(1).optional(),
                             weight: zod
                                 .number()
@@ -2182,6 +2185,15 @@ export const ExportAccountDataResponse = zod.strictObject({
                     'delivered',
                     'cancelled'
                 ]),
+                paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+                fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+                returnStatus: zod.enum([
+                    'none',
+                    'requested',
+                    'in_progress',
+                    'partially_returned',
+                    'returned'
+                ]),
                 actions: zod
                     .strictObject({
                         transitions: zod.array(
@@ -2210,6 +2222,8 @@ export const ExportAccountDataResponse = zod.strictObject({
                                 'cancelled'
                             ])
                         ),
+                        withdraw: zod.boolean(),
+                        withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -2237,6 +2251,23 @@ export const ExportAccountDataResponse = zod.strictObject({
                 orderId: zod.string(),
                 amount: zod.number().min(exportAccountDataResponseDataPaymentsItemAmountMin),
                 currency: zod.string(),
+                amountRefunded: zod
+                    .number()
+                    .min(exportAccountDataResponseDataPaymentsItemAmountRefundedMin),
+                refunds: zod.array(
+                    zod.strictObject({
+                        id: zod.string(),
+                        amount: zod
+                            .number()
+                            .min(exportAccountDataResponseDataPaymentsItemRefundsItemAmountMin),
+                        currency: zod.string(),
+                        status: zod.enum(['pending', 'succeeded', 'failed']),
+                        reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                        returnId: zod.string().optional(),
+                        settledAt: zod.iso.datetime({ offset: true }).optional(),
+                        createdAt: zod.iso.datetime({ offset: true })
+                    })
+                ),
                 status: zod.enum([
                     'requires_confirmation',
                     'requires_action',
@@ -2337,7 +2368,24 @@ export const ExportAccountDataResponse = zod.strictObject({
                         .min(exportAccountDataResponseDataInvoicingCreditNotesItemGrandTotalMin)
                 })
             )
-        })
+        }),
+        returns: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                orderId: zod.string(),
+                status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+                reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+                note: zod.string().optional(),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod.string(),
+                        quantity: zod.number().min(1),
+                        title: zod.string()
+                    })
+                ),
+                createdAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        )
     })
 });
 /**
@@ -3245,6 +3293,7 @@ export const listProductsResponseDataItemsItemOnHandMin = 0;
 export const listProductsResponseDataItemsItemReservedMin = 0;
 export const listProductsResponseDataItemsItemAvailableMin = 0;
 export const listProductsResponseDataItemsItemRequiresShippingDefault = true;
+export const listProductsResponseDataItemsItemNoWithdrawalDefault = false;
 export const listProductsResponseDataItemsItemWeightMin = 0;
 export const listProductsResponseDataMetaPageDefault = 1;
 export const listProductsResponseDataMetaPageMax = 10000;
@@ -3277,6 +3326,9 @@ export const ListProductsResponse = zod.strictObject({
                 requiresShipping: zod
                     .boolean()
                     .default(listProductsResponseDataItemsItemRequiresShippingDefault),
+                noWithdrawal: zod
+                    .boolean()
+                    .default(listProductsResponseDataItemsItemNoWithdrawalDefault),
                 weight: zod.number().min(listProductsResponseDataItemsItemWeightMin).optional(),
                 imageUrl: zod.string().min(1).optional(),
                 thumbnailUrl: zod.string().optional(),
@@ -3312,6 +3364,7 @@ export const createProductBodyOnHandDefault = 0;
 export const createProductBodyOnHandMin = 0;
 export const createProductBodyActiveDefault = true;
 export const createProductBodyRequiresShippingDefault = true;
+export const createProductBodyNoWithdrawalDefault = false;
 export const createProductBodyWeightMin = 0;
 export const CreateProductBody = zod.strictObject({
     translations: zod.record(
@@ -3330,6 +3383,7 @@ export const CreateProductBody = zod.strictObject({
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     active: zod.boolean().default(createProductBodyActiveDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
+    noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
     imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string().min(1)).optional(),
@@ -3340,6 +3394,7 @@ export const createProductResponseDataOnHandMin = 0;
 export const createProductResponseDataReservedMin = 0;
 export const createProductResponseDataAvailableMin = 0;
 export const createProductResponseDataRequiresShippingDefault = true;
+export const createProductResponseDataNoWithdrawalDefault = false;
 export const createProductResponseDataWeightMin = 0;
 export const CreateProductResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3359,6 +3414,7 @@ export const CreateProductResponse = zod.strictObject({
         description: zod.string().optional(),
         active: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(createProductResponseDataNoWithdrawalDefault),
         weight: zod.number().min(createProductResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3421,6 +3477,7 @@ export const getProductByIdResponseDataOnHandMin = 0;
 export const getProductByIdResponseDataReservedMin = 0;
 export const getProductByIdResponseDataAvailableMin = 0;
 export const getProductByIdResponseDataRequiresShippingDefault = true;
+export const getProductByIdResponseDataNoWithdrawalDefault = false;
 export const getProductByIdResponseDataWeightMin = 0;
 export const GetProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3440,6 +3497,7 @@ export const GetProductByIdResponse = zod.strictObject({
         description: zod.string().optional(),
         active: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(getProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3482,6 +3540,7 @@ export const ReplaceProductByIdBody = zod.strictObject({
     sku: zod.string().min(1).nullish(),
     active: zod.boolean(),
     requiresShipping: zod.boolean(),
+    noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string().min(1)),
@@ -3492,6 +3551,7 @@ export const replaceProductByIdResponseDataOnHandMin = 0;
 export const replaceProductByIdResponseDataReservedMin = 0;
 export const replaceProductByIdResponseDataAvailableMin = 0;
 export const replaceProductByIdResponseDataRequiresShippingDefault = true;
+export const replaceProductByIdResponseDataNoWithdrawalDefault = false;
 export const replaceProductByIdResponseDataWeightMin = 0;
 export const ReplaceProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3513,6 +3573,7 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         requiresShipping: zod
             .boolean()
             .default(replaceProductByIdResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(replaceProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(replaceProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3566,6 +3627,7 @@ export const UpdateProductByIdBody = zod.strictObject({
     sku: zod.string().min(1).nullish(),
     active: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
+    noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.literal(null).nullish(),
     categories: zod.array(zod.string().min(1)).optional(),
@@ -3576,6 +3638,7 @@ export const updateProductByIdResponseDataOnHandMin = 0;
 export const updateProductByIdResponseDataReservedMin = 0;
 export const updateProductByIdResponseDataAvailableMin = 0;
 export const updateProductByIdResponseDataRequiresShippingDefault = true;
+export const updateProductByIdResponseDataNoWithdrawalDefault = false;
 export const updateProductByIdResponseDataWeightMin = 0;
 export const UpdateProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3597,6 +3660,7 @@ export const UpdateProductByIdResponse = zod.strictObject({
         requiresShipping: zod
             .boolean()
             .default(updateProductByIdResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(updateProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(updateProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3638,6 +3702,7 @@ export const getProductAdminResponseDataOnHandMin = 0;
 export const getProductAdminResponseDataReservedMin = 0;
 export const getProductAdminResponseDataAvailableMin = 0;
 export const getProductAdminResponseDataRequiresShippingDefault = true;
+export const getProductAdminResponseDataNoWithdrawalDefault = false;
 export const getProductAdminResponseDataWeightMin = 0;
 export const GetProductAdminResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3657,6 +3722,7 @@ export const GetProductAdminResponse = zod.strictObject({
         description: zod.string().optional(),
         active: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductAdminResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(getProductAdminResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductAdminResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3686,6 +3752,7 @@ export const restoreProductByIdResponseDataOnHandMin = 0;
 export const restoreProductByIdResponseDataReservedMin = 0;
 export const restoreProductByIdResponseDataAvailableMin = 0;
 export const restoreProductByIdResponseDataRequiresShippingDefault = true;
+export const restoreProductByIdResponseDataNoWithdrawalDefault = false;
 export const restoreProductByIdResponseDataWeightMin = 0;
 export const RestoreProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3707,6 +3774,7 @@ export const RestoreProductByIdResponse = zod.strictObject({
         requiresShipping: zod
             .boolean()
             .default(restoreProductByIdResponseDataRequiresShippingDefault),
+        noWithdrawal: zod.boolean().default(restoreProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(restoreProductByIdResponseDataWeightMin).optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3763,6 +3831,7 @@ export const searchProductsResponseDataItemsItemOnHandMin = 0;
 export const searchProductsResponseDataItemsItemReservedMin = 0;
 export const searchProductsResponseDataItemsItemAvailableMin = 0;
 export const searchProductsResponseDataItemsItemRequiresShippingDefault = true;
+export const searchProductsResponseDataItemsItemNoWithdrawalDefault = false;
 export const searchProductsResponseDataItemsItemWeightMin = 0;
 export const searchProductsResponseDataMetaPageDefault = 1;
 export const searchProductsResponseDataMetaPageMax = 10000;
@@ -3798,6 +3867,9 @@ export const SearchProductsResponse = zod.strictObject({
                 requiresShipping: zod
                     .boolean()
                     .default(searchProductsResponseDataItemsItemRequiresShippingDefault),
+                noWithdrawal: zod
+                    .boolean()
+                    .default(searchProductsResponseDataItemsItemNoWithdrawalDefault),
                 weight: zod.number().min(searchProductsResponseDataItemsItemWeightMin).optional(),
                 imageUrl: zod.string().min(1).optional(),
                 thumbnailUrl: zod.string().optional(),
@@ -4238,6 +4310,7 @@ export const CheckoutResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(checkoutResponseDataItemsItemProductRequiresShippingDefault),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -4307,6 +4380,15 @@ export const CheckoutResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -4321,6 +4403,8 @@ export const CheckoutResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -4530,6 +4614,7 @@ export const ListOrdersResponse = zod.strictObject({
                                 .default(
                                     listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
+                            noWithdrawal: zod.boolean().optional(),
                             sku: zod.string().min(1).optional(),
                             weight: zod
                                 .number()
@@ -4629,6 +4714,15 @@ export const ListOrdersResponse = zod.strictObject({
                     'delivered',
                     'cancelled'
                 ]),
+                paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+                fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+                returnStatus: zod.enum([
+                    'none',
+                    'requested',
+                    'in_progress',
+                    'partially_returned',
+                    'returned'
+                ]),
                 actions: zod
                     .strictObject({
                         transitions: zod.array(
@@ -4657,6 +4751,8 @@ export const ListOrdersResponse = zod.strictObject({
                                 'cancelled'
                             ])
                         ),
+                        withdraw: zod.boolean(),
+                        withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -4749,6 +4845,7 @@ export const CreateOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -4818,6 +4915,15 @@ export const CreateOrderResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -4832,6 +4938,8 @@ export const CreateOrderResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -4941,6 +5049,7 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .default(
                                     searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
                                 ),
+                            noWithdrawal: zod.boolean().optional(),
                             sku: zod.string().min(1).optional(),
                             weight: zod
                                 .number()
@@ -5040,6 +5149,15 @@ export const SearchOrdersResponse = zod.strictObject({
                     'delivered',
                     'cancelled'
                 ]),
+                paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+                fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+                returnStatus: zod.enum([
+                    'none',
+                    'requested',
+                    'in_progress',
+                    'partially_returned',
+                    'returned'
+                ]),
                 actions: zod
                     .strictObject({
                         transitions: zod.array(
@@ -5068,6 +5186,8 @@ export const SearchOrdersResponse = zod.strictObject({
                                 'cancelled'
                             ])
                         ),
+                        withdraw: zod.boolean(),
+                        withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -5141,6 +5261,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5210,6 +5331,15 @@ export const GetOrderByIdResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -5224,6 +5354,8 @@ export const GetOrderByIdResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -5286,6 +5418,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                         .default(
                             replaceOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5359,6 +5492,15 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -5373,6 +5515,8 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -5435,6 +5579,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         .default(
                             updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5508,6 +5653,15 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -5522,6 +5676,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -5600,6 +5756,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                         .default(
                             restoreOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5673,6 +5830,15 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -5687,6 +5853,8 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -5762,6 +5930,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         .default(
                             cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5835,6 +6004,15 @@ export const CancelOrderByIdResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -5849,6 +6027,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -5914,6 +6094,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .default(
                             overrideOrderStatusResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -5991,6 +6172,15 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -6005,6 +6195,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6022,11 +6214,35 @@ export const GetOrderInvoiceParams = zod.strictObject({
 });
 export const GetOrderInvoiceResponse = zod.unknown();
 /**
- * The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
- * @summary Download the order's credit note (PDF)
+ * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, or with no invoice to reverse. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+ * @summary List the order's credit notes
+ */
+export const ListOrderCreditNotesParams = zod.strictObject({
+    id: zod.string()
+});
+export const listOrderCreditNotesResponseDataItemGrandTotalMin = 0;
+export const ListOrderCreditNotesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.array(
+        zod.strictObject({
+            id: zod.string(),
+            number: zod.string(),
+            issuedAt: zod.iso.datetime({ offset: true }),
+            currency: zod.string(),
+            grandTotal: zod.number().min(listOrderCreditNotesResponseDataItemGrandTotalMin),
+            refundId: zod.string()
+        })
+    )
+});
+/**
+ * The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist or belongs to another order — the two are indistinguishable on purpose.
+ * @summary Download one credit note (PDF)
  */
 export const GetOrderCreditNoteParams = zod.strictObject({
-    id: zod.string()
+    id: zod.string(),
+    creditNoteId: zod.string()
 });
 export const GetOrderCreditNoteResponse = zod.unknown();
 /**
@@ -6068,6 +6284,8 @@ export const CreatePaymentIntentBody = zod.strictObject({
     orderId: zod.string()
 });
 export const createPaymentIntentResponseDataAmountMin = 0;
+export const createPaymentIntentResponseDataAmountRefundedMin = 0;
+export const createPaymentIntentResponseDataRefundsItemAmountMin = 0;
 export const createPaymentIntentResponseDataReferenceMax = 120;
 export const CreatePaymentIntentResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6079,6 +6297,19 @@ export const CreatePaymentIntentResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(createPaymentIntentResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(createPaymentIntentResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(createPaymentIntentResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6112,6 +6343,8 @@ export const GetPaymentByOrderParams = zod.strictObject({
     orderId: zod.string()
 });
 export const getPaymentByOrderResponseDataAmountMin = 0;
+export const getPaymentByOrderResponseDataAmountRefundedMin = 0;
+export const getPaymentByOrderResponseDataRefundsItemAmountMin = 0;
 export const getPaymentByOrderResponseDataReferenceMax = 120;
 export const GetPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6123,6 +6356,19 @@ export const GetPaymentByOrderResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(getPaymentByOrderResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(getPaymentByOrderResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(getPaymentByOrderResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6202,6 +6448,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .default(
                             getOrderByReferenceResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -6279,6 +6526,15 @@ export const GetOrderByReferenceResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -6293,6 +6549,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6302,7 +6560,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
     })
 });
 /**
- * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const RefundPaymentByOrderParams = zod.strictObject({
@@ -6318,7 +6576,14 @@ export const RefundPaymentByOrderHeader = zod.strictObject({
         .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
         .optional()
 });
+export const refundPaymentByOrderBodyAmountExclusiveMin = 0;
+export const RefundPaymentByOrderBody = zod.strictObject({
+    amount: zod.number().gt(refundPaymentByOrderBodyAmountExclusiveMin).optional(),
+    currency: zod.string().optional()
+});
 export const refundPaymentByOrderResponseDataAmountMin = 0;
+export const refundPaymentByOrderResponseDataAmountRefundedMin = 0;
+export const refundPaymentByOrderResponseDataRefundsItemAmountMin = 0;
 export const refundPaymentByOrderResponseDataReferenceMax = 120;
 export const RefundPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6330,6 +6595,19 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(refundPaymentByOrderResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(refundPaymentByOrderResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(refundPaymentByOrderResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6379,6 +6657,8 @@ export const RecordOfflinePaymentBody = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional()
 });
 export const recordOfflinePaymentResponseDataAmountMin = 0;
+export const recordOfflinePaymentResponseDataAmountRefundedMin = 0;
+export const recordOfflinePaymentResponseDataRefundsItemAmountMin = 0;
 export const recordOfflinePaymentResponseDataReferenceMax = 120;
 export const RecordOfflinePaymentResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6390,6 +6670,19 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(recordOfflinePaymentResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(recordOfflinePaymentResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(recordOfflinePaymentResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6443,6 +6736,8 @@ export const ConfirmPaymentBody = zod.strictObject({
         .regex(confirmPaymentBodyPaymentMethodRefRegExp)
 });
 export const confirmPaymentResponseDataAmountMin = 0;
+export const confirmPaymentResponseDataAmountRefundedMin = 0;
+export const confirmPaymentResponseDataRefundsItemAmountMin = 0;
 export const confirmPaymentResponseDataReferenceMax = 120;
 export const ConfirmPaymentResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6454,6 +6749,19 @@ export const ConfirmPaymentResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(confirmPaymentResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(confirmPaymentResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(confirmPaymentResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6487,6 +6795,8 @@ export const SyncPaymentParams = zod.strictObject({
     id: zod.string()
 });
 export const syncPaymentResponseDataAmountMin = 0;
+export const syncPaymentResponseDataAmountRefundedMin = 0;
+export const syncPaymentResponseDataRefundsItemAmountMin = 0;
 export const syncPaymentResponseDataReferenceMax = 120;
 export const SyncPaymentResponse = zod.strictObject({
     success: zod.literal(true),
@@ -6498,6 +6808,19 @@ export const SyncPaymentResponse = zod.strictObject({
         userId: zod.string().optional(),
         amount: zod.number().min(syncPaymentResponseDataAmountMin),
         currency: zod.string(),
+        amountRefunded: zod.number().min(syncPaymentResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                amount: zod.number().min(syncPaymentResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                returnId: zod.string().optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
         status: zod.enum([
             'requires_confirmation',
             'requires_action',
@@ -6552,6 +6875,7 @@ export const listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMinWeightMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMaxWeightMin = 0;
 export const listShippingMethodsResponseDataShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$');
+export const listShippingMethodsResponseDataReturnAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const ListShippingMethodsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6584,7 +6908,18 @@ export const ListShippingMethodsResponse = zod.strictObject({
         ),
         shipToCountries: zod.array(
             zod.string().regex(listShippingMethodsResponseDataShipToCountriesItemRegExp)
-        )
+        ),
+        returnAddress: zod
+            .strictObject({
+                name: zod.string().optional(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod
+                    .string()
+                    .regex(listShippingMethodsResponseDataReturnAddressCountryRegExp)
+            })
+            .optional()
     })
 });
 /**
@@ -6659,6 +6994,7 @@ export const StartFulfilmentResponse = zod.strictObject({
                         .default(
                             startFulfilmentResponseDataItemsItemProductRequiresShippingDefault
                         ),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -6732,6 +7068,15 @@ export const StartFulfilmentResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -6746,6 +7091,8 @@ export const StartFulfilmentResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6854,6 +7201,7 @@ export const FulfillOrderResponse = zod.strictObject({
                     requiresShipping: zod
                         .boolean()
                         .default(fulfillOrderResponseDataItemsItemProductRequiresShippingDefault),
+                    noWithdrawal: zod.boolean().optional(),
                     sku: zod.string().min(1).optional(),
                     weight: zod
                         .number()
@@ -6923,6 +7271,15 @@ export const FulfillOrderResponse = zod.strictObject({
             })
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
         actions: zod
             .strictObject({
                 transitions: zod.array(
@@ -6937,12 +7294,510 @@ export const FulfillOrderResponse = zod.strictObject({
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
             .optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Staff (`returns.any.read`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
+ * @summary List returns (paginated)
+ */
+export const listReturnsQueryPageDefault = 1;
+export const listReturnsQueryPageMax = 10000;
+export const listReturnsQueryPageSizeDefault = 10;
+export const listReturnsQueryPageSizeMax = 100;
+export const ListReturnsQueryParams = zod.strictObject({
+    page: zod.number().min(1).max(listReturnsQueryPageMax).default(listReturnsQueryPageDefault),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listReturnsQueryPageSizeMax)
+        .default(listReturnsQueryPageSizeDefault),
+    orderId: zod.string().optional(),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']).optional(),
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']).optional()
+});
+export const listReturnsResponseDataItemsItemNoteMax = 1000;
+export const listReturnsResponseDataItemsItemLinesItemUnitPriceMin = 0;
+export const listReturnsResponseDataItemsItemHandlingDeductionMin = 0;
+export const listReturnsResponseDataItemsItemRefundAmountMin = 0;
+export const listReturnsResponseDataMetaPageDefault = 1;
+export const listReturnsResponseDataMetaPageMax = 10000;
+export const listReturnsResponseDataMetaPageSizeDefault = 10;
+export const listReturnsResponseDataMetaPageSizeMax = 100;
+export const listReturnsResponseDataMetaTotalItemsMin = 0;
+export const listReturnsResponseDataMetaTotalPagesMin = 0;
+export const ListReturnsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                orderId: zod.string(),
+                orderNumber: zod.string().optional(),
+                currency: zod.string(),
+                status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+                reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+                note: zod.string().max(listReturnsResponseDataItemsItemNoteMax).optional(),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod.string(),
+                        quantity: zod.number().min(1),
+                        title: zod.string(),
+                        unitPrice: zod
+                            .number()
+                            .min(listReturnsResponseDataItemsItemLinesItemUnitPriceMin)
+                    })
+                ),
+                returnPostage: zod.enum(['consumer', 'shop']),
+                declineReason: zod.string().optional(),
+                decidedAt: zod.iso.datetime({ offset: true }).optional(),
+                receivedAt: zod.iso.datetime({ offset: true }).optional(),
+                handlingDeduction: zod
+                    .number()
+                    .min(listReturnsResponseDataItemsItemHandlingDeductionMin)
+                    .optional(),
+                refundAmount: zod
+                    .number()
+                    .min(listReturnsResponseDataItemsItemRefundAmountMin)
+                    .optional(),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod
+                    .strictObject({
+                        approve: zod.boolean(),
+                        decline: zod.boolean(),
+                        receive: zod.boolean()
+                    })
+                    .optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listReturnsResponseDataMetaPageMax)
+                .default(listReturnsResponseDataMetaPageDefault),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listReturnsResponseDataMetaPageSizeMax)
+                .default(listReturnsResponseDataMetaPageSizeDefault),
+            totalItems: zod.number().min(listReturnsResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listReturnsResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+/**
+ * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
+ * What follows depends on where the goods are. Once they have shipped, a return is written (201, with `Location`) — a withdrawal is born `approved`, any other reason waits for staff — and the customer gets an acknowledgement email carrying the exact date and time. Before dispatch there is nothing to send back, so a withdrawal cancels the order instead: refunded in full, stock released, acknowledgement mailed, and the answer is the cancelled `Order` (200), not a `Return`. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
+ * Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * @summary Open a return, or withdraw from the contract
+ */
+export const createReturnHeaderIdempotencyKeyMax = 200;
+export const createReturnHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const CreateReturnHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createReturnHeaderIdempotencyKeyMax)
+        .regex(createReturnHeaderIdempotencyKeyRegExp)
+        .optional()
+});
+export const createReturnBodyNoteMax = 1000;
+export const CreateReturnBody = zod.strictObject({
+    orderId: zod.string(),
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+    note: zod.string().min(1).max(createReturnBodyNoteMax).optional(),
+    lines: zod
+        .array(
+            zod.strictObject({
+                productId: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        )
+        .min(1)
+        .optional()
+});
+export const createReturnResponseDataItemsItemProductPriceMin = 0;
+export const createReturnResponseDataItemsItemProductRequiresShippingDefault = true;
+export const createReturnResponseDataItemsItemProductWeightMin = 0;
+export const createReturnResponseDataItemsItemProductTaxRateMin = 0;
+export const createReturnResponseDataItemsItemProductTaxRateMax = 1;
+export const createReturnResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const createReturnResponseDataItemsItemTaxAmountMin = 0;
+export const createReturnResponseDataItemsItemNetAmountMin = 0;
+export const createReturnResponseDataTotalItemsMin = 0;
+export const createReturnResponseDataTotalQuantityMin = 0;
+export const createReturnResponseDataTotalPriceMin = 0;
+export const createReturnResponseDataNetTotalMin = 0;
+export const createReturnResponseDataTaxTotalMin = 0;
+export const createReturnResponseDataShippingNetAmountMin = 0;
+export const createReturnResponseDataShippingTaxAmountMin = 0;
+export const createReturnResponseDataTaxSummaryItemRateMin = 0;
+export const createReturnResponseDataTaxSummaryItemNetAmountMin = 0;
+export const createReturnResponseDataTaxSummaryItemTaxAmountMin = 0;
+export const createReturnResponseDataTaxSummaryItemGrossAmountMin = 0;
+export const createReturnResponseDataShippingCostMin = 0;
+export const createReturnResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const CreateReturnResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        userId: zod.string().optional(),
+        email: zod.email(),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod.string(),
+                    title: zod.string(),
+                    price: zod.number().min(createReturnResponseDataItemsItemProductPriceMin),
+                    description: zod.string().optional(),
+                    active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(createReturnResponseDataItemsItemProductRequiresShippingDefault),
+                    noWithdrawal: zod.boolean().optional(),
+                    sku: zod.string().min(1).optional(),
+                    weight: zod
+                        .number()
+                        .min(createReturnResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(createReturnResponseDataItemsItemProductTaxRateMin)
+                        .max(createReturnResponseDataItemsItemProductTaxRateMax),
+                    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                }),
+                quantity: zod.number().min(1),
+                locale: zod.string().regex(createReturnResponseDataItemsItemLocaleRegExp),
+                current: zod
+                    .strictObject({
+                        imageUrl: zod.string().min(1).optional(),
+                        thumbnailUrl: zod.string().optional()
+                    })
+                    .nullable(),
+                taxAmount: zod.number().min(createReturnResponseDataItemsItemTaxAmountMin),
+                netAmount: zod.number().min(createReturnResponseDataItemsItemNetAmountMin)
+            })
+        ),
+        totalItems: zod.number().min(createReturnResponseDataTotalItemsMin),
+        totalQuantity: zod.number().min(createReturnResponseDataTotalQuantityMin),
+        totalPrice: zod.number().min(createReturnResponseDataTotalPriceMin),
+        currency: zod.string().optional(),
+        netTotal: zod.number().min(createReturnResponseDataNetTotalMin),
+        taxTotal: zod.number().min(createReturnResponseDataTaxTotalMin),
+        shippingNetAmount: zod.number().min(createReturnResponseDataShippingNetAmountMin),
+        shippingTaxAmount: zod.number().min(createReturnResponseDataShippingTaxAmountMin),
+        taxSummary: zod.array(
+            zod.strictObject({
+                rate: zod.number().min(createReturnResponseDataTaxSummaryItemRateMin),
+                netAmount: zod.number().min(createReturnResponseDataTaxSummaryItemNetAmountMin),
+                taxAmount: zod.number().min(createReturnResponseDataTaxSummaryItemTaxAmountMin),
+                grossAmount: zod.number().min(createReturnResponseDataTaxSummaryItemGrossAmountMin)
+            })
+        ),
+        notes: zod.string().optional(),
+        shippingMethod: zod.string().optional(),
+        shippingCost: zod.number().min(createReturnResponseDataShippingCostMin).optional(),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(createReturnResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        orderNumber: zod.string().optional(),
+        transferInstructions: zod
+            .strictObject({
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string()
+            })
+            .optional(),
+        status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ),
+                cancel: zod.boolean(),
+                pay: zod.boolean(),
+                start: zod.boolean(),
+                ship: zod.boolean(),
+                deliver: zod.boolean(),
+                fulfill: zod.boolean(),
+                override: zod.array(
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ),
+                withdraw: zod.boolean(),
+                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                invoice: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * One return with the caller's `actions`. A return on someone else's order answers 404, the same as one that does not exist.
+ * @summary Get a return
+ */
+export const GetReturnByIdParams = zod.strictObject({
+    id: zod.string()
+});
+export const getReturnByIdResponseDataNoteMax = 1000;
+export const getReturnByIdResponseDataLinesItemUnitPriceMin = 0;
+export const getReturnByIdResponseDataHandlingDeductionMin = 0;
+export const getReturnByIdResponseDataRefundAmountMin = 0;
+export const GetReturnByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string().optional(),
+        currency: zod.string(),
+        status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        note: zod.string().max(getReturnByIdResponseDataNoteMax).optional(),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod.string(),
+                quantity: zod.number().min(1),
+                title: zod.string(),
+                unitPrice: zod.number().min(getReturnByIdResponseDataLinesItemUnitPriceMin)
+            })
+        ),
+        returnPostage: zod.enum(['consumer', 'shop']),
+        declineReason: zod.string().optional(),
+        decidedAt: zod.iso.datetime({ offset: true }).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        handlingDeduction: zod
+            .number()
+            .min(getReturnByIdResponseDataHandlingDeductionMin)
+            .optional(),
+        refundAmount: zod.number().min(getReturnByIdResponseDataRefundAmountMin).optional(),
+        closedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                approve: zod.boolean(),
+                decline: zod.boolean(),
+                receive: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
+ * @summary Approve a return request
+ */
+export const ApproveReturnParams = zod.strictObject({
+    id: zod.string()
+});
+export const approveReturnResponseDataNoteMax = 1000;
+export const approveReturnResponseDataLinesItemUnitPriceMin = 0;
+export const approveReturnResponseDataHandlingDeductionMin = 0;
+export const approveReturnResponseDataRefundAmountMin = 0;
+export const ApproveReturnResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string().optional(),
+        currency: zod.string(),
+        status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        note: zod.string().max(approveReturnResponseDataNoteMax).optional(),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod.string(),
+                quantity: zod.number().min(1),
+                title: zod.string(),
+                unitPrice: zod.number().min(approveReturnResponseDataLinesItemUnitPriceMin)
+            })
+        ),
+        returnPostage: zod.enum(['consumer', 'shop']),
+        declineReason: zod.string().optional(),
+        decidedAt: zod.iso.datetime({ offset: true }).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        handlingDeduction: zod
+            .number()
+            .min(approveReturnResponseDataHandlingDeductionMin)
+            .optional(),
+        refundAmount: zod.number().min(approveReturnResponseDataRefundAmountMin).optional(),
+        closedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                approve: zod.boolean(),
+                decline: zod.boolean(),
+                receive: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Staff refuse a `requested` return, saying why — the customer is mailed the reason. Same conditional write as `approve`.
+ * @summary Decline a return request
+ */
+export const DeclineReturnParams = zod.strictObject({
+    id: zod.string()
+});
+export const declineReturnBodyReasonMax = 500;
+export const DeclineReturnBody = zod.strictObject({
+    reason: zod.string().min(1).max(declineReturnBodyReasonMax)
+});
+export const declineReturnResponseDataNoteMax = 1000;
+export const declineReturnResponseDataLinesItemUnitPriceMin = 0;
+export const declineReturnResponseDataHandlingDeductionMin = 0;
+export const declineReturnResponseDataRefundAmountMin = 0;
+export const DeclineReturnResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string().optional(),
+        currency: zod.string(),
+        status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        note: zod.string().max(declineReturnResponseDataNoteMax).optional(),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod.string(),
+                quantity: zod.number().min(1),
+                title: zod.string(),
+                unitPrice: zod.number().min(declineReturnResponseDataLinesItemUnitPriceMin)
+            })
+        ),
+        returnPostage: zod.enum(['consumer', 'shop']),
+        declineReason: zod.string().optional(),
+        decidedAt: zod.iso.datetime({ offset: true }).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        handlingDeduction: zod
+            .number()
+            .min(declineReturnResponseDataHandlingDeductionMin)
+            .optional(),
+        refundAmount: zod.number().min(declineReturnResponseDataRefundAmountMin).optional(),
+        closedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                approve: zod.boolean(),
+                decline: zod.boolean(),
+                receive: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * @summary Record that the returned goods arrived
+ */
+export const ReceiveReturnParams = zod.strictObject({
+    id: zod.string()
+});
+export const receiveReturnHeaderIdempotencyKeyMax = 200;
+export const receiveReturnHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const ReceiveReturnHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(receiveReturnHeaderIdempotencyKeyMax)
+        .regex(receiveReturnHeaderIdempotencyKeyRegExp)
+        .optional()
+});
+export const receiveReturnBodyHandlingDeductionMin = 0;
+export const ReceiveReturnBody = zod.strictObject({
+    handlingDeduction: zod.number().min(receiveReturnBodyHandlingDeductionMin).optional()
+});
+export const receiveReturnResponseDataNoteMax = 1000;
+export const receiveReturnResponseDataLinesItemUnitPriceMin = 0;
+export const receiveReturnResponseDataHandlingDeductionMin = 0;
+export const receiveReturnResponseDataRefundAmountMin = 0;
+export const ReceiveReturnResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        orderId: zod.string(),
+        orderNumber: zod.string().optional(),
+        currency: zod.string(),
+        status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        note: zod.string().max(receiveReturnResponseDataNoteMax).optional(),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod.string(),
+                quantity: zod.number().min(1),
+                title: zod.string(),
+                unitPrice: zod.number().min(receiveReturnResponseDataLinesItemUnitPriceMin)
+            })
+        ),
+        returnPostage: zod.enum(['consumer', 'shop']),
+        declineReason: zod.string().optional(),
+        decidedAt: zod.iso.datetime({ offset: true }).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        handlingDeduction: zod
+            .number()
+            .min(receiveReturnResponseDataHandlingDeductionMin)
+            .optional(),
+        refundAmount: zod.number().min(receiveReturnResponseDataRefundAmountMin).optional(),
+        closedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                approve: zod.boolean(),
+                decline: zod.boolean(),
+                receive: zod.boolean()
+            })
+            .optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**

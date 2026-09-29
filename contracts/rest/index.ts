@@ -309,6 +309,7 @@ export interface Product {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /** @minimum 0 */
     weight?: number;
     imageUrl?: ImageUrl;
@@ -355,6 +356,7 @@ export interface OrderLineProduct {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     sku?: Sku;
     /** @minimum 0 */
     weight?: number;
@@ -421,6 +423,44 @@ export const OrderStatus = {
 } as const;
 
 /**
+ * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
+ */
+export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
+
+export const OrderPaymentStatus = {
+    unpaid: 'unpaid',
+    paid: 'paid',
+    partially_refunded: 'partially_refunded',
+    refunded: 'refunded'
+} as const;
+
+/**
+ * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only.
+ */
+export type OrderFulfillmentStatus =
+    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
+
+export const OrderFulfillmentStatus = {
+    unfulfilled: 'unfulfilled',
+    in_progress: 'in_progress',
+    shipped: 'shipped',
+    fulfilled: 'fulfilled'
+} as const;
+
+/**
+ * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
+ */
+export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
+
+export const OrderReturnStatus = {
+    none: 'none',
+    requested: 'requested',
+    in_progress: 'in_progress',
+    partially_returned: 'partially_returned',
+    returned: 'returned'
+} as const;
+
+/**
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree.
  */
 export interface OrderActions {
@@ -440,6 +480,10 @@ export interface OrderActions {
     fulfill: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
     override: OrderStatus[];
+    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
+    withdraw: boolean;
+    /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
+    withdrawUntil?: string;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
 }
@@ -520,6 +564,9 @@ export interface Order {
     readonly orderNumber?: string;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
     actions?: OrderActions;
     createdAt?: string;
     updatedAt?: string;
@@ -587,6 +634,49 @@ export interface ApiKey {
     updatedAt: string;
 }
 
+/**
+ * `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator).
+ */
+export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+
+export const RefundStatus = {
+    pending: 'pending',
+    succeeded: 'succeeded',
+    failed: 'failed'
+} as const;
+
+/**
+ * Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+ */
+export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
+
+export const RefundReason = {
+    cancellation: 'cancellation',
+    goodwill: 'goodwill',
+    return: 'return'
+} as const;
+
+/**
+ * One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+ */
+export interface Refund {
+    id: Id;
+    /**
+     * The amount returned, in the payment's own `currency`.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code, copied from the payment. */
+    currency: string;
+    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
+    status: RefundStatus;
+    reason: RefundReason;
+    returnId?: Id;
+    /** When the refund succeeded. Absent while it has not. */
+    settledAt?: string;
+    createdAt: string;
+}
+
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
 export const ExportPaymentStatus = {
@@ -604,6 +694,9 @@ export interface ExportPayment {
     /** @minimum 0 */
     amount: number;
     currency: string;
+    /** @minimum 0 */
+    amountRefunded: number;
+    refunds: Refund[];
     status: ExportPaymentStatus;
     provider: string;
     cardLast4?: string;
@@ -712,6 +805,48 @@ export interface ExportFeedbackTicket {
     createdAt?: string;
 }
 
+/**
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved`. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ */
+export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
+
+export const ReturnStatus = {
+    requested: 'requested',
+    approved: 'approved',
+    declined: 'declined',
+    received: 'received',
+    closed: 'closed'
+} as const;
+
+/**
+ * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+ */
+export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
+
+export const ReturnReason = {
+    withdrawal: 'withdrawal',
+    defective: 'defective',
+    wrong_item: 'wrong_item',
+    other: 'other'
+} as const;
+
+export type ExportReturnLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+    title: string;
+};
+
+export interface ExportReturn {
+    id: Id;
+    orderId: Id;
+    status: ReturnStatus;
+    reason: ReturnReason;
+    note?: string;
+    lines: ExportReturnLinesItem[];
+    createdAt?: string;
+}
+
 export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
@@ -728,6 +863,7 @@ export interface AccountExportResponse {
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
     invoicing: AccountExportResponseInvoicing;
+    returns: ExportReturn[];
 }
 
 export interface AccountExportEnvelope {
@@ -2350,6 +2486,7 @@ export interface CreateProductRequest {
     onHand?: number;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2377,6 +2514,7 @@ export interface CreateProductRequestMultipart {
     onHand?: number;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2435,6 +2573,7 @@ export interface ReplaceProductRequest {
     sku?: string | null;
     active: boolean;
     requiresShipping: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2461,6 +2600,7 @@ export interface ReplaceProductRequestMultipart {
     sku?: string;
     active: boolean;
     requiresShipping: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2507,6 +2647,7 @@ export interface UpdateProductRequest {
     sku?: string | null;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2533,6 +2674,7 @@ export interface UpdateProductRequestMultipart {
     sku?: string;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -2578,6 +2720,7 @@ export interface ProductAdmin {
     description?: string;
     active?: boolean;
     requiresShipping?: boolean;
+    noWithdrawal?: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering — the editor warns when it's missing.
      * @minimum 0
@@ -2842,6 +2985,28 @@ export interface StatusOverrideRequest {
     reason: string;
 }
 
+export interface CreditNoteSummary {
+    id: Id;
+    /** The credit note's own number, in its own yearly series. */
+    number: string;
+    issuedAt: string;
+    /** ISO-4217 currency code (e.g. EUR) */
+    currency: string;
+    /**
+     * The gross amount this credit note reverses.
+     * @minimum 0
+     */
+    grandTotal: number;
+    refundId: Id;
+}
+
+export interface CreditNoteListEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CreditNoteSummary[];
+}
+
 export interface PaymentMethodOption {
     id: PaymentMethodId;
     /**
@@ -2872,12 +3037,12 @@ export interface CreatePaymentIntentRequest {
 export interface PaymentActions {
     /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
     refund: boolean;
 }
 
 /**
- * The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions
+ * The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions
  */
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
@@ -2913,7 +3078,14 @@ export interface Payment {
     amount: number;
     /** ISO-4217 currency code (e.g. EUR) */
     currency: string;
-    /** The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions */
+    /**
+     * How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid.
+     * @minimum 0
+     */
+    amountRefunded: number;
+    /** One record per refund attempt, oldest first. */
+    refunds: Refund[];
+    /** The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
     /** Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`), or a real PSP's name. */
     provider: string;
@@ -2949,6 +3121,16 @@ export interface OrderByReferenceResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+export interface RefundPaymentRequest {
+    /**
+     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+     * @exclusiveMinimum 0
+     */
+    amount?: number;
+    /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
+    currency?: string;
 }
 
 /**
@@ -3050,10 +3232,23 @@ export interface ShippingMethod {
     maxWeight?: number;
 }
 
+/**
+ * Where returned goods are sent. Absent from `ShippingMethodsResponse` until a deployment configures one (`NODE_RETURN_ADDRESS_*`) — a customer is told where to post goods back only once there is somewhere to post them.
+ */
+export interface ReturnAddress {
+    /** Who the parcel is addressed to. */
+    name?: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: CountryCode;
+}
+
 export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
     /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
     shipToCountries: CountryCode[];
+    returnAddress?: ReturnAddress;
 }
 
 export interface ShippingMethodsResponseEnvelope {
@@ -3115,6 +3310,141 @@ export interface DeliverOrderRequest {
      * @minLength 1
      */
     reason?: string;
+}
+
+/**
+ * One line of a return — a snapshot of what is coming back, so it reads the same later.
+ */
+export interface ReturnLine {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+    /** The product's title as the order froze it. */
+    title: string;
+    /**
+     * The gross unit price the order froze.
+     * @minimum 0
+     */
+    unitPrice: number;
+}
+
+/**
+ * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle.
+ */
+export interface ReturnActions {
+    /** Whether `POST /returns/{id}/approve` would be accepted. */
+    approve: boolean;
+    /** Whether `POST /returns/{id}/decline` would be accepted. */
+    decline: boolean;
+    /** Whether `POST /returns/{id}/receive` would be accepted. */
+    receive: boolean;
+}
+
+/**
+ * Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)).
+ */
+export type ReturnReturnPostage = (typeof ReturnReturnPostage)[keyof typeof ReturnReturnPostage];
+
+export const ReturnReturnPostage = {
+    consumer: 'consumer',
+    shop: 'shop'
+} as const;
+
+export interface Return {
+    id: Id;
+    orderId: Id;
+    /** The order's human number, when it has one. */
+    orderNumber?: string;
+    /** ISO-4217 code of the order's own currency. */
+    currency: string;
+    status: ReturnStatus;
+    reason: ReturnReason;
+    /**
+     * What the customer wrote. Free text.
+     * @maxLength 1000
+     */
+    note?: string;
+    lines: ReturnLine[];
+    /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
+    returnPostage: ReturnReturnPostage;
+    /** Why staff declined. Present only on a `declined` return. */
+    declineReason?: string;
+    /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
+    decidedAt?: string;
+    /** When the goods arrived and went back on sale. */
+    receivedAt?: string;
+    /**
+     * An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept.
+     * @minimum 0
+     */
+    handlingDeduction?: number;
+    /**
+     * What the customer is owed for this return, fixed when the goods were received.
+     * @minimum 0
+     */
+    refundAmount?: number;
+    /** When the money went back and the return finished. */
+    closedAt?: string;
+    actions?: ReturnActions;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface ReturnsResponse {
+    items: Return[];
+    meta: PaginationMeta;
+}
+
+export interface ReturnsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReturnsResponse;
+}
+
+export type CreateReturnRequestLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+};
+
+export interface CreateReturnRequest {
+    orderId: Id;
+    reason: ReturnReason;
+    /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note?: string;
+    /**
+     * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal.
+     * @minItems 1
+     */
+    lines?: CreateReturnRequestLinesItem[];
+}
+
+export interface ReturnEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Return;
+}
+
+export interface DeclineReturnRequest {
+    /**
+     * What the customer is told. Required — a refusal nobody explains is not one.
+     * @minLength 1
+     * @maxLength 500
+     */
+    reason: string;
+}
+
+export interface ReceiveReturnRequest {
+    /**
+     * Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused.
+     * @minimum 0
+     */
+    handlingDeduction?: number;
 }
 
 export interface InventoryLevel {
@@ -3913,6 +4243,24 @@ export type GetOrderByReferenceParams = {
      * @maxLength 64
      */
     ref: string;
+};
+
+export type ListReturnsParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    orderId?: Id;
+    status?: ReturnStatus;
+    reason?: ReturnReason;
 };
 
 export type ListInventoryLevelsParams = {
@@ -5980,6 +6328,9 @@ export const createProductWithMultipart = (
             createProductRequestMultipart.requiresShipping.toString()
         );
     }
+    if (createProductRequestMultipart.noWithdrawal !== undefined) {
+        formData.append(`noWithdrawal`, createProductRequestMultipart.noWithdrawal.toString());
+    }
     if (createProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, createProductRequestMultipart.weight.toString());
     }
@@ -6108,6 +6459,9 @@ export const replaceProductByIdWithMultipart = (
     }
     formData.append(`active`, replaceProductRequestMultipart.active.toString());
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
+    if (replaceProductRequestMultipart.noWithdrawal !== undefined) {
+        formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
+    }
     if (replaceProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
     }
@@ -6251,6 +6605,9 @@ export const updateProductByIdWithMultipart = (
             `requiresShipping`,
             updateProductRequestMultipart.requiresShipping.toString()
         );
+    }
+    if (updateProductRequestMultipart.noWithdrawal !== undefined) {
+        formData.append(`noWithdrawal`, updateProductRequestMultipart.noWithdrawal.toString());
     }
     if (updateProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, updateProductRequestMultipart.weight.toString());
@@ -6808,15 +7165,30 @@ export const getOrderInvoice = (
 };
 
 /**
- * The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
- * @summary Download the order's credit note (PDF)
+ * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, or with no invoice to reverse. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+ * @summary List the order's credit notes
+ */
+export const listOrderCreditNotes = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<CreditNoteListEnvelope>>
+) => {
+    return orvalMutator<CreditNoteListEnvelope>(
+        { url: `/orders/${id}/credit-notes`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist or belongs to another order — the two are indistinguishable on purpose.
+ * @summary Download one credit note (PDF)
  */
 export const getOrderCreditNote = (
     id: string,
+    creditNoteId: Id,
     options?: SecondParameter<typeof orvalMutator<Blob>>
 ) => {
     return orvalMutator<Blob>(
-        { url: `/orders/${id}/credit-note`, method: 'GET', responseType: 'blob' },
+        { url: `/orders/${id}/credit-notes/${creditNoteId}`, method: 'GET', responseType: 'blob' },
         options
     );
 };
@@ -6882,15 +7254,21 @@ export const getOrderByReference = (
 };
 
 /**
- * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
     orderId: Id,
+    refundPaymentRequest?: RefundPaymentRequest,
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
     return orvalMutator<PaymentEnvelope>(
-        { url: `/payments/order/${orderId}/refund`, method: 'POST' },
+        {
+            url: `/payments/order/${orderId}/refund`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: refundPaymentRequest
+        },
         options
     );
 };
@@ -7057,6 +7435,104 @@ export const fulfillOrder = (
 ) => {
     return orvalMutator<OrderEnvelope>(
         { url: `/delivery/order/${orderId}/fulfill`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Staff (`returns.any.read`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
+ * @summary List returns (paginated)
+ */
+export const listReturns = (
+    params?: ListReturnsParams,
+    options?: SecondParameter<typeof orvalMutator<ReturnsResponseEnvelope>>
+) => {
+    return orvalMutator<ReturnsResponseEnvelope>(
+        { url: `/returns`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
+ * What follows depends on where the goods are. Once they have shipped, a return is written (201, with `Location`) — a withdrawal is born `approved`, any other reason waits for staff — and the customer gets an acknowledgement email carrying the exact date and time. Before dispatch there is nothing to send back, so a withdrawal cancels the order instead: refunded in full, stock released, acknowledgement mailed, and the answer is the cancelled `Order` (200), not a `Return`. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
+ * Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * @summary Open a return, or withdraw from the contract
+ */
+export const createReturn = (
+    createReturnRequest: CreateReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope | ReturnEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope | ReturnEnvelope>(
+        {
+            url: `/returns`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createReturnRequest
+        },
+        options
+    );
+};
+
+/**
+ * One return with the caller's `actions`. A return on someone else's order answers 404, the same as one that does not exist.
+ * @summary Get a return
+ */
+export const getReturnById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+) => {
+    return orvalMutator<ReturnEnvelope>({ url: `/returns/${id}`, method: 'GET' }, options);
+};
+
+/**
+ * Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
+ * @summary Approve a return request
+ */
+export const approveReturn = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+) => {
+    return orvalMutator<ReturnEnvelope>({ url: `/returns/${id}/approve`, method: 'POST' }, options);
+};
+
+/**
+ * Staff refuse a `requested` return, saying why — the customer is mailed the reason. Same conditional write as `approve`.
+ * @summary Decline a return request
+ */
+export const declineReturn = (
+    id: string,
+    declineReturnRequest: DeclineReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+) => {
+    return orvalMutator<ReturnEnvelope>(
+        {
+            url: `/returns/${id}/decline`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: declineReturnRequest
+        },
+        options
+    );
+};
+
+/**
+ * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * @summary Record that the returned goods arrived
+ */
+export const receiveReturn = (
+    id: string,
+    receiveReturnRequest?: ReceiveReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+) => {
+    return orvalMutator<ReturnEnvelope>(
+        {
+            url: `/returns/${id}/receive`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: receiveReturnRequest
+        },
         options
     );
 };
@@ -7647,6 +8123,9 @@ export type OverrideOrderStatusResult = NonNullable<
     Awaited<ReturnType<typeof overrideOrderStatus>>
 >;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type ListOrderCreditNotesResult = NonNullable<
+    Awaited<ReturnType<typeof listOrderCreditNotes>>
+>;
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type CreatePaymentIntentResult = NonNullable<
@@ -7675,6 +8154,12 @@ export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startF
 export type ShipOrderResult = NonNullable<Awaited<ReturnType<typeof shipOrder>>>;
 export type DeliverOrderResult = NonNullable<Awaited<ReturnType<typeof deliverOrder>>>;
 export type FulfillOrderResult = NonNullable<Awaited<ReturnType<typeof fulfillOrder>>>;
+export type ListReturnsResult = NonNullable<Awaited<ReturnType<typeof listReturns>>>;
+export type CreateReturnResult = NonNullable<Awaited<ReturnType<typeof createReturn>>>;
+export type GetReturnByIdResult = NonNullable<Awaited<ReturnType<typeof getReturnById>>>;
+export type ApproveReturnResult = NonNullable<Awaited<ReturnType<typeof approveReturn>>>;
+export type DeclineReturnResult = NonNullable<Awaited<ReturnType<typeof declineReturn>>>;
+export type ReceiveReturnResult = NonNullable<Awaited<ReturnType<typeof receiveReturn>>>;
 export type ListInventoryLevelsResult = NonNullable<
     Awaited<ReturnType<typeof listInventoryLevels>>
 >;

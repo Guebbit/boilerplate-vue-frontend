@@ -38,6 +38,8 @@ tags:
   - name: Invoicing
     description: The frozen invoice and credit-note PDFs — issued at payment and at refund, never before.
   - name: Delivery
+  - name: Returns
+    description: Sending goods back — including the EU withdrawal button, which is a return with `reason` `withdrawal`.
   - name: Inventory
   - name: Feedback
   - name: System
@@ -4908,17 +4910,54 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: invoicing
-  /orders/{id}/credit-note:
+  /orders/{id}/credit-notes:
     get:
       tags:
         - Invoicing
-      summary: Download the order's credit note (PDF)
-      description: The frozen credit note for the order identified by `{id}`, as a binary PDF — issued once a refund on this order's payment actually lands. Refuses with `404` for an order with no credit note (never refunded, or nothing to reverse in the first place).
+      summary: List the order's credit notes
+      description: One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, or with no invoice to reverse. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+      operationId: listOrderCreditNotes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The credit notes issued for the order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNoteListEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: invoicing
+  /orders/{id}/credit-notes/{creditNoteId}:
+    get:
+      tags:
+        - Invoicing
+      summary: Download one credit note (PDF)
+      description: The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist or belongs to another order — the two are indistinguishable on purpose.
       operationId: getOrderCreditNote
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - name: creditNoteId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The credit note, from `GET /orders/{id}/credit-notes`
       responses:
         "200":
           description: Credit note PDF
@@ -5114,7 +5153,7 @@ paths:
       tags:
         - Payments
       summary: Refund an order's payment
-      description: Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+      description: "Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of \"cancel and refund\" when a client sends both. Admin only. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
       operationId: refundPaymentByOrder
       security:
         - bearerAuth: []
@@ -5126,13 +5165,21 @@ paths:
             $ref: "#/components/schemas/Id"
           description: The order whose payment is being returned
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundPaymentRequest"
       responses:
         "200":
-          description: The payment, `refunded`
+          description: The payment — `refunded` once fully returned, still `succeeded` after a partial refund
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5141,6 +5188,10 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -5592,6 +5643,267 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+  /returns:
+    get:
+      tags:
+        - Returns
+      summary: List returns (paginated)
+      description: Staff (`returns.any.read`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
+      operationId: listReturns
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: orderId
+          in: query
+          schema:
+            $ref: "#/components/schemas/Id"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReturnStatus"
+        - name: reason
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReturnReason"
+      responses:
+        "200":
+          description: A page of returns
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+    post:
+      tags:
+        - Returns
+      summary: Open a return, or withdraw from the contract
+      description: |-
+        The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
+        What follows depends on where the goods are. Once they have shipped, a return is written (201, with `Location`) — a withdrawal is born `approved`, any other reason waits for staff — and the customer gets an acknowledgement email carrying the exact date and time. Before dispatch there is nothing to send back, so a withdrawal cancels the order instead: refunded in full, stock released, acknowledgement mailed, and the answer is the cancelled `Order` (200), not a `Return`. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
+        Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
+      operationId: createReturn
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReturnRequest"
+      responses:
+        "200":
+          description: A withdrawal before dispatch — the order is cancelled and refunded in full; no return exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderEnvelope"
+        "201":
+          description: The return, opened
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+  /returns/{id}:
+    get:
+      tags:
+        - Returns
+      summary: Get a return
+      description: One return with the caller's `actions`. A return on someone else's order answers 404, the same as one that does not exist.
+      operationId: getReturnById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The return
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+  /returns/{id}/approve:
+    post:
+      tags:
+        - Returns
+      summary: Approve a return request
+      description: Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
+      operationId: approveReturn
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The return, `approved`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+  /returns/{id}/decline:
+    post:
+      tags:
+        - Returns
+      summary: Decline a return request
+      description: Staff refuse a `requested` return, saying why — the customer is mailed the reason. Same conditional write as `approve`.
+      operationId: declineReturn
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineReturnRequest"
+      responses:
+        "200":
+          description: The return, `declined`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+  /returns/{id}/receive:
+    post:
+      tags:
+        - Returns
+      summary: Record that the returned goods arrived
+      description: |-
+        The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
+        What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+      operationId: receiveReturn
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiveReturnRequest"
+      responses:
+        "200":
+          description: The return — `closed` once the money went back, `received` while a refused refund waits for the sweep
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
   /inventory/levels:
     get:
       tags:
@@ -6958,6 +7270,9 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        noWithdrawal:
+          type: boolean
+          default: false
         weight:
           type: integer
           minimum: 0
@@ -7059,6 +7374,8 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        noWithdrawal:
+          type: boolean
         sku:
           $ref: "#/components/schemas/Sku"
         weight:
@@ -7148,6 +7465,31 @@ components:
         - delivered
         - cancelled
       description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+    OrderPaymentStatus:
+      type: string
+      enum:
+        - unpaid
+        - paid
+        - partially_refunded
+        - refunded
+      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
+    OrderFulfillmentStatus:
+      type: string
+      enum:
+        - unfulfilled
+        - in_progress
+        - shipped
+        - fulfilled
+      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only."
+    OrderReturnStatus:
+      type: string
+      enum:
+        - none
+        - requested
+        - in_progress
+        - partially_returned
+        - returned
+      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
     OrderActions:
       type: object
       additionalProperties: false
@@ -7161,6 +7503,7 @@ components:
         - fulfill
         - override
         - invoice
+        - withdraw
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
       properties:
         transitions:
@@ -7198,6 +7541,13 @@ components:
             - processing
             - shipped
             - delivered
+        withdraw:
+          type: boolean
+          description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`."
+        withdrawUntil:
+          type: string
+          format: date-time
+          description: "The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet."
         invoice:
           type: boolean
           description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
@@ -7239,6 +7589,9 @@ components:
         - totalQuantity
         - totalPrice
         - status
+        - paymentStatus
+        - fulfillmentStatus
+        - returnStatus
         - netTotal
         - taxTotal
         - shippingNetAmount
@@ -7331,6 +7684,12 @@ components:
           $ref: "#/components/schemas/OrderTransferInstructions"
         status:
           $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/OrderPaymentStatus"
+        fulfillmentStatus:
+          $ref: "#/components/schemas/OrderFulfillmentStatus"
+        returnStatus:
+          $ref: "#/components/schemas/OrderReturnStatus"
         actions:
           $ref: "#/components/schemas/OrderActions"
         createdAt:
@@ -7359,6 +7718,7 @@ components:
         - auditLog
         - apiKeys
         - invoicing
+        - returns
       properties:
         exportedAt:
           type: string
@@ -7443,6 +7803,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/ExportInvoiceDocument"
+        returns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportReturn"
     AccountExportEnvelope:
       type: object
       additionalProperties: false
@@ -9511,6 +9875,53 @@ components:
         updatedAt:
           type: string
           format: date-time
+    RefundReason:
+      type: string
+      enum:
+        - cancellation
+        - goodwill
+        - return
+      description: Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+    Refund:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - amount
+        - currency
+        - status
+        - reason
+        - createdAt
+      description: One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: The amount returned, in the payment's own `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code, copied from the payment.
+        status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
+        reason:
+          $ref: "#/components/schemas/RefundReason"
+        returnId:
+          $ref: "#/components/schemas/Id"
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund succeeded. Absent while it has not.
+        createdAt:
+          type: string
+          format: date-time
     ExportPayment:
       type: object
       additionalProperties: false
@@ -9521,6 +9932,8 @@ components:
         - currency
         - status
         - provider
+        - amountRefunded
+        - refunds
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -9532,6 +9945,14 @@ components:
           minimum: 0
         currency:
           type: string
+        amountRefunded:
+          type: number
+          format: double
+          minimum: 0
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refund"
         status:
           type: string
           enum:
@@ -9710,6 +10131,63 @@ components:
           type: number
           format: double
           minimum: 0
+    ReturnStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - declined
+        - received
+        - closed
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved`. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+    ReturnReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+    ExportReturn:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - status
+        - reason
+        - lines
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+              - title
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false
@@ -10466,6 +10944,9 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        noWithdrawal:
+          type: boolean
+          default: false
         weight:
           type: integer
           minimum: 0
@@ -10513,6 +10994,9 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        noWithdrawal:
+          type: boolean
+          default: false
         weight:
           type: integer
           minimum: 0
@@ -10640,6 +11124,8 @@ components:
           type: boolean
         requiresShipping:
           type: boolean
+        noWithdrawal:
+          type: boolean
         weight:
           type: integer
           minimum: 0
@@ -10691,6 +11177,8 @@ components:
         active:
           type: boolean
         requiresShipping:
+          type: boolean
+        noWithdrawal:
           type: boolean
         weight:
           type: integer
@@ -10763,6 +11251,8 @@ components:
           type: boolean
         requiresShipping:
           type: boolean
+        noWithdrawal:
+          type: boolean
         weight:
           type: integer
           minimum: 0
@@ -10807,6 +11297,8 @@ components:
         active:
           type: boolean
         requiresShipping:
+          type: boolean
+        noWithdrawal:
           type: boolean
         weight:
           type: integer
@@ -10885,6 +11377,9 @@ components:
         requiresShipping:
           type: boolean
           default: true
+        noWithdrawal:
+          type: boolean
+          default: false
         weight:
           type: integer
           minimum: 0
@@ -11351,6 +11846,54 @@ components:
           type: string
           minLength: 1
           description: Why the normal door didn't apply. Recorded on the order's override history, never optional.
+    CreditNoteSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - number
+        - issuedAt
+        - currency
+        - grandTotal
+        - refundId
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+          description: The credit note's own number, in its own yearly series.
+        issuedAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+          description: ISO-4217 currency code (e.g. EUR)
+        grandTotal:
+          type: number
+          format: double
+          minimum: 0
+          description: The gross amount this credit note reverses.
+        refundId:
+          $ref: "#/components/schemas/Id"
+    CreditNoteListEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditNoteSummary"
     PaymentMethodOption:
       type: object
       additionalProperties: false
@@ -11411,7 +11954,7 @@ components:
           description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.
         refund:
           type: boolean
-          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking.
+          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking.
     Payment:
       type: object
       additionalProperties: false
@@ -11423,6 +11966,8 @@ components:
         - status
         - provider
         - method
+        - amountRefunded
+        - refunds
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -11438,6 +11983,16 @@ components:
         currency:
           type: string
           description: ISO-4217 currency code (e.g. EUR)
+        amountRefunded:
+          type: number
+          format: double
+          minimum: 0
+          description: How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid.
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refund"
+          description: One record per refund attempt, oldest first.
         status:
           type: string
           enum:
@@ -11447,7 +12002,7 @@ components:
             - succeeded
             - declined
             - refunded
-          description: "The provider-facing lifecycle. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. `refunded` is terminal. Full transition table: docs/modules/payments.md#status-transitions"
+          description: "The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
         provider:
           type: string
           description: Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`), or a real PSP's name.
@@ -11518,6 +12073,19 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/Order"
+    RefundPaymentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+        currency:
+          type: string
+          description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     RecordOfflinePaymentRequest:
       type: object
       additionalProperties: false
@@ -11623,6 +12191,27 @@ components:
           type: integer
           minimum: 0
           description: Grams. Absent means no ceiling. Enforced the same way as minWeight.
+    ReturnAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - street
+        - city
+        - zip
+        - country
+      description: Where returned goods are sent. Absent from `ShippingMethodsResponse` until a deployment configures one (`NODE_RETURN_ADDRESS_*`) — a customer is told where to post goods back only once there is somewhere to post them.
+      properties:
+        name:
+          type: string
+          description: Who the parcel is addressed to.
+        street:
+          type: string
+        city:
+          type: string
+        zip:
+          type: string
+        country:
+          $ref: "#/components/schemas/CountryCode"
     ShippingMethodsResponse:
       type: object
       additionalProperties: false
@@ -11639,6 +12228,8 @@ components:
           items:
             $ref: "#/components/schemas/CountryCode"
           description: Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it.
+        returnAddress:
+          $ref: "#/components/schemas/ReturnAddress"
     ShippingMethodsResponseEnvelope:
       type: object
       additionalProperties: false
@@ -11729,6 +12320,219 @@ components:
           type: string
           minLength: 1
           description: Required exactly when `forced` is `true`.
+    ReturnLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+        - title
+        - unitPrice
+      description: One line of a return — a snapshot of what is coming back, so it reads the same later.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+          description: The product's title as the order froze it.
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: The gross unit price the order froze.
+    ReturnActions:
+      type: object
+      additionalProperties: false
+      required:
+        - approve
+        - decline
+        - receive
+      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle.
+      properties:
+        approve:
+          type: boolean
+          description: Whether `POST /returns/{id}/approve` would be accepted.
+        decline:
+          type: boolean
+          description: Whether `POST /returns/{id}/decline` would be accepted.
+        receive:
+          type: boolean
+          description: Whether `POST /returns/{id}/receive` would be accepted.
+    Return:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - currency
+        - status
+        - reason
+        - lines
+        - returnPostage
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's human number, when it has one.
+        currency:
+          type: string
+          description: ISO-4217 code of the order's own currency.
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+          maxLength: 1000
+          description: What the customer wrote. Free text.
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnLine"
+        returnPostage:
+          type: string
+          enum:
+            - consumer
+            - shop
+          description: Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)).
+        declineReason:
+          type: string
+          description: Why staff declined. Present only on a `declined` return.
+        decidedAt:
+          type: string
+          format: date-time
+          description: When staff decided it — or, for a withdrawal, when it was opened already approved.
+        receivedAt:
+          type: string
+          format: date-time
+          description: When the goods arrived and went back on sale.
+        handlingDeduction:
+          type: number
+          format: double
+          minimum: 0
+          description: An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept.
+        refundAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: What the customer is owed for this return, fixed when the goods were received.
+        closedAt:
+          type: string
+          format: date-time
+          description: When the money went back and the return finished.
+        actions:
+          $ref: "#/components/schemas/ReturnActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ReturnsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Return"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    ReturnsResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/ReturnsResponse"
+    CreateReturnRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - reason
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        lines:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+          description: What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal.
+    ReturnEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Return"
+    DeclineReturnRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: What the customer is told. Required — a refusal nobody explains is not one.
+    ReceiveReturnRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        handlingDeduction:
+          type: number
+          format: double
+          minimum: 0
+          description: Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused.
     InventoryLevel:
       type: object
       additionalProperties: false
@@ -12521,7 +13325,7 @@ x-error-codes:
     description: The addressed resource does not exist, or the caller may not be told that it does.
   ORDER_CREDIT_NOTE_NOT_ISSUED:
     status: 404
-    description: The order exists but no credit note has been issued for it yet.
+    description: The order exists but has no such credit note.
   ORDER_INSUFFICIENT_STOCK:
     status: 409
     description: An admin-created order references a quantity beyond the product's available stock.
@@ -12569,10 +13373,13 @@ x-error-codes:
     description: The payment is not in a state this confirmation can apply to.
   PAYMENT_NOT_REFUNDABLE:
     status: 409
-    description: The payment is not in a state that can still be refunded.
+    description: The payment is not in a state that can still be refunded, or nothing of it is left to refund.
   PAYMENT_ORDER_NOT_PAYABLE:
     status: 409
     description: The order is not in a state that can still accept a payment.
+  PAYMENT_REFUND_EXCEEDS_REMAINING:
+    status: 422
+    description: The refund asks for more than the payment still has left to give back.
   RATE_LIMITED:
     status: 429
     description: The caller exceeded a rate-limit budget. Carries a `Retry-After` hint.
@@ -12585,6 +13392,24 @@ x-error-codes:
   REQUEST_ERROR:
     status: 400
     description: A 4xx with no more specific code of its own.
+  RETURN_DEDUCTION_INVALID:
+    status: 422
+    description: The handling deduction is more than the refund is worth.
+  RETURN_LINES_INVALID:
+    status: 422
+    description: A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return.
+  RETURN_NOT_DECIDABLE:
+    status: 409
+    description: The return has already been decided.
+  RETURN_NOT_RECEIVABLE:
+    status: 409
+    description: The return is not an approved one awaiting its goods.
+  RETURN_ORDER_NOT_RETURNABLE:
+    status: 409
+    description: The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands.
+  RETURN_WINDOW_CLOSED:
+    status: 409
+    description: The withdrawal period for this order has ended.
   SERVICE_UNAVAILABLE:
     status: 503
     description: A dependency (database, broker) is unreachable. Carries a `Retry-After` hint.
