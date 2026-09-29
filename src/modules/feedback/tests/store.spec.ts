@@ -12,9 +12,12 @@ import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -154,6 +157,9 @@ describe('the inbox search', () => {
                     method: 'POST',
                     data: { page: 1, pageSize: 10 }
                 });
+                expect(
+                    contractRequest(schemas.SearchFeedbackRequestsBody, request.data)
+                ).toBeDefined();
                 expect(request.params).toBeUndefined();
             }));
 
@@ -225,6 +231,9 @@ describe('updateRequest', () => {
                     method: 'PATCH',
                     data: { status: 'resolved' }
                 });
+                expect(
+                    contractRequest(schemas.UpdateFeedbackRequestStatusBody, request.data)
+                ).toEqual({ status: 'resolved' });
                 expect(store.requests.f1?.status).toBe('resolved');
             });
     });

@@ -18,9 +18,12 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -267,7 +270,7 @@ describe('the password reset flow', () => {
 
     it('confirms with the token and the new password', () =>
         useAuthStore()
-            .confirmPasswordReset('reset-token', 'hunter3hunter3', 'hunter3hunter3')
+            .confirmPasswordReset('reset-token', 'Hunter3!hunter3', 'Hunter3!hunter3')
             .then(() => {
                 const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
                     url: string;
@@ -275,7 +278,9 @@ describe('the password reset flow', () => {
                 };
 
                 expect(last.url).toBe('/account/reset-confirm');
-                expect(last.data).toMatchObject({ token: 'reset-token' });
+                expect(contractRequest(schemas.ConfirmPasswordResetBody, last.data)).toMatchObject({
+                    token: 'reset-token'
+                });
             }));
 });
 

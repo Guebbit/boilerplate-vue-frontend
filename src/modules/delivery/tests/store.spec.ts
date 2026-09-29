@@ -12,9 +12,12 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -214,7 +217,9 @@ describe('ship', () => {
             const call = vi
                 .mocked(orvalMutator)
                 .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
-            expect(call?.[0].data).toEqual({ trackingCode: 'TRK-2' });
+            expect(contractRequest(schemas.ShipOrderBody, call?.[0].data)).toEqual({
+                trackingCode: 'TRK-2'
+            });
         });
     });
 
@@ -225,7 +230,7 @@ describe('ship', () => {
             const call = vi
                 .mocked(orvalMutator)
                 .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
-            expect(call?.[0].data).toEqual({
+            expect(contractRequest(schemas.ShipOrderBody, call?.[0].data)).toEqual({
                 trackingCode: 'TRK-2',
                 forced: true,
                 reason: 'warehouse system was down'
@@ -250,7 +255,10 @@ describe('deliver', () => {
             const call = vi
                 .mocked(orvalMutator)
                 .mock.calls.find(([config]) => config.url === '/delivery/order/order-1/deliver');
-            expect(call?.[0].data).toEqual({ forced: true, reason: 'customer disputed delivery' });
+            expect(contractRequest(schemas.DeliverOrderBody, call?.[0].data)).toEqual({
+                forced: true,
+                reason: 'customer disputed delivery'
+            });
         });
     });
 });

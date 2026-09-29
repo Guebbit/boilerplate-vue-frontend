@@ -13,9 +13,12 @@ import { useLocalesStore } from '@/modules/locales/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -149,7 +152,9 @@ describe('language writes', () => {
         const store = useLocalesStore();
         return store.editLanguage('es', { name: 'Castilian' }).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ name: 'Castilian' });
+            expect(contractRequest(schemas.UpdateLocaleBody, call.data)).toEqual({
+                name: 'Castilian'
+            });
             expect(requestedUrls()).toEqual(['PATCH /locales/es', 'GET /locales']);
         });
     });
@@ -177,7 +182,9 @@ describe('entry writes', () => {
         const store = useLocalesStore();
         return store.editEntry('es', 'locale-entry-1', 'Cercar').then((entry) => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ value: 'Cercar' });
+            expect(contractRequest(schemas.UpdateLocaleEntryBody, call.data)).toEqual({
+                value: 'Cercar'
+            });
             expect(entry?.value).toBe('Cercar');
         });
     });
@@ -212,7 +219,9 @@ describe('entry writes', () => {
                     data?: unknown;
                 };
                 expect(call.url).toBe('/locales/es/tenants/demo-be/entries');
-                expect(call.data).toEqual({ entries: [{ key: 'a', value: 'b' }] });
+                expect(contractRequest(schemas.MergeLocaleEntriesBody, call.data)).toEqual({
+                    entries: [{ key: 'a', value: 'b' }]
+                });
             });
     });
 });

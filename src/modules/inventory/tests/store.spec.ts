@@ -13,9 +13,12 @@ import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -142,7 +145,10 @@ describe('receive', () => {
         const store = useInventoryStore();
         return store.receive('p1', 20).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ productId: 'p1', quantity: 20 });
+            expect(contractRequest(schemas.ReceiveStockBody, call.data)).toEqual({
+                productId: 'p1',
+                quantity: 20
+            });
         });
     });
 
@@ -150,7 +156,11 @@ describe('receive', () => {
         const store = useInventoryStore();
         return store.receive('p1', 20, 'pallet 7, DHL').then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ productId: 'p1', quantity: 20, note: 'pallet 7, DHL' });
+            expect(contractRequest(schemas.ReceiveStockBody, call.data)).toEqual({
+                productId: 'p1',
+                quantity: 20,
+                note: 'pallet 7, DHL'
+            });
         });
     });
 });
@@ -220,7 +230,10 @@ describe('adjust', () => {
         const store = useInventoryStore();
         return store.adjust('p1', -3).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ productId: 'p1', delta: -3 });
+            expect(contractRequest(schemas.AdjustStockBody, call.data)).toEqual({
+                productId: 'p1',
+                delta: -3
+            });
         });
     });
 

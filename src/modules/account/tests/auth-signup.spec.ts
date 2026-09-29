@@ -15,9 +15,12 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -72,9 +75,9 @@ const IMAGE = () => new File(['x'], 'avatar.png', { type: 'image/png' });
  */
 const CREDENTIALS = {
     email: 'ada@example.com',
-    password: 'hunter2hunter2',
+    password: 'Hunter2!hunter2',
     username: 'ada',
-    passwordConfirm: 'hunter2hunter2',
+    passwordConfirm: 'Hunter2!hunter2',
     termsAccepted: true as const
 };
 
@@ -86,12 +89,14 @@ describe('useAuthStore.signup', () => {
 
     it('posts JSON when no image is attached', () =>
         useAuthStore()
-            .signup({ email: 'ada@example.com', password: 'hunter2hunter2', termsAccepted: true })
+            .signup({ email: 'ada@example.com', password: 'Hunter2!hunter2', termsAccepted: true })
             .then(() => {
                 const request = lastRequest();
                 expect(request).toMatchObject({ url: '/account/signup', method: 'POST' });
                 expect(request.data).not.toBeInstanceOf(FormData);
-                expect(request.data).toMatchObject({ email: 'ada@example.com' });
+                expect(contractRequest(schemas.SignupBody, request.data)).toMatchObject({
+                    email: 'ada@example.com'
+                });
             }));
 
     /**
@@ -102,19 +107,21 @@ describe('useAuthStore.signup', () => {
         useAuthStore()
             .signup(CREDENTIALS)
             .then(() => {
-                expect(lastRequest().data).toMatchObject({
+                expect(contractRequest(schemas.SignupBody, lastRequest().data)).toMatchObject({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'hunter2hunter2',
-                    passwordConfirm: 'hunter2hunter2'
+                    password: 'Hunter2!hunter2',
+                    passwordConfirm: 'Hunter2!hunter2'
                 });
             }));
 
     it('defaults the username to the email address', () =>
         useAuthStore()
-            .signup({ email: 'ada@example.com', password: 'hunter2hunter2', termsAccepted: true })
+            .signup({ email: 'ada@example.com', password: 'Hunter2!hunter2', termsAccepted: true })
             .then(() => {
-                expect(lastRequest().data).toMatchObject({ username: 'ada@example.com' });
+                expect(contractRequest(schemas.SignupBody, lastRequest().data)).toMatchObject({
+                    username: 'ada@example.com'
+                });
             }));
 
     /**

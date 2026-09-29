@@ -18,9 +18,12 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
@@ -178,7 +181,11 @@ describe('updateProfile', () => {
                 // record cannot promote themselves, and the store is the only thing enforcing it.
                 // No `imageUrl` either: this call carries none, the same shape as a details-only
                 // save from `Profile.vue` — only `ProfileAvatar.vue` ever includes that key.
-                expect(Object.keys(last.data).toSorted()).toEqual(
+                expect(
+                    Object.keys(
+                        contractRequest(schemas.UpdateAccountBody, last.data) as object
+                    ).toSorted()
+                ).toEqual(
                     [
                         'email',
                         'username',
@@ -247,7 +254,9 @@ describe('own role', () => {
                 // `PATCH /account` is deliberately roleless; `/users/{id}` is behind the admin
                 // guard, so the API decides whether this visitor may promote anyone.
                 expect(patch?.url).toBe('/users/u1');
-                expect(patch?.data).toEqual({ role: 'admin' });
+                expect(contractRequest(schemas.UpdateUserByIdBody, patch?.data)).toEqual({
+                    role: 'admin'
+                });
             });
     });
 
@@ -350,16 +359,18 @@ describe('exportAccountData', () => {
 describe('the self-service actions', () => {
     it('changePassword sends all three fields and adopts the rotated access token', () =>
         useProfileStore()
-            .changePassword('old-secret', 'new-secret', 'new-secret')
+            .changePassword('old-secret', 'New-secret-1!', 'New-secret-1!')
             .then(() => {
                 const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
                     url: string;
                     data: Record<string, unknown>;
                 };
                 expect(last.url).toBe('/account/password');
-                expect(Object.keys(last.data).toSorted()).toEqual(
-                    ['currentPassword', 'password', 'passwordConfirm'].toSorted()
-                );
+                expect(
+                    Object.keys(
+                        contractRequest(schemas.ChangePasswordBody, last.data) as object
+                    ).toSorted()
+                ).toEqual(['currentPassword', 'password', 'passwordConfirm'].toSorted());
                 // The API revoked every other session and re-keyed this one; running on with the
                 // old token is the regression this pins against.
                 expect(useSessionStore().accessToken).toBe('rotated-jwt');
