@@ -12,31 +12,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import * as schemas from '@api/schemas';
 import {
+    contractRequest,
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
 /**
  * Fixture order returned by the mocked cancel endpoint.
  */
-const ORDER = {
-    id: 'o1',
-    userId: 'u1',
-    email: 'ada@example.com',
-    items: [],
-    totalItems: 0,
-    totalQuantity: 0,
-    totalPrice: 0,
-    netTotal: 0,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
-    taxSummary: [],
-    status: 'cancelled'
-};
+const ORDER = anOrder({ status: 'cancelled' });
 
 /**
  * Canned response bodies keyed by `METHOD url`, read by the `orvalMutator` mock.
@@ -89,7 +78,9 @@ describe('cancelOrder — the operator choosing what happens to the money', () =
         const store = useOrdersStore();
 
         return store.cancelOrder('o1', false).then(() => {
-            expect(sent[0]?.data).toEqual({ refund: false });
+            expect(contractRequest(schemas.CancelOrderByIdBody, sent[0]?.data)).toEqual({
+                refund: false
+            });
         });
     });
 
@@ -97,7 +88,9 @@ describe('cancelOrder — the operator choosing what happens to the money', () =
         const store = useOrdersStore();
 
         return store.cancelOrder('o1', true).then(() => {
-            expect(sent[0]?.data).toEqual({ refund: true });
+            expect(contractRequest(schemas.CancelOrderByIdBody, sent[0]?.data)).toEqual({
+                refund: true
+            });
         });
     });
 });

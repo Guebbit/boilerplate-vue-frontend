@@ -25,7 +25,10 @@ import {
     getOrderInvoice
 } from '@api';
 import * as schemas from '@api/schemas';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import {
+    contractRequest,
+    contractResponse
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 /**
@@ -124,6 +127,7 @@ describe('useOrdersStore', () => {
                 .createOrder(payload)
                 .then(() => {
                     expect(apiCreateOrder).toHaveBeenCalledWith(payload);
+                    contractRequest(schemas.CreateOrderBody, payload);
                 });
         });
     });
@@ -138,6 +142,7 @@ describe('useOrdersStore', () => {
                     expect(updateOrderById).toHaveBeenCalledWith('o1', {
                         email: 'new@example.com'
                     });
+                    contractRequest(schemas.UpdateOrderByIdBody, { email: 'new@example.com' });
                 }));
     });
 
