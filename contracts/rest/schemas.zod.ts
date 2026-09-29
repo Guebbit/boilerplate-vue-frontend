@@ -43,6 +43,14 @@ export const GetHealthResponse = zod.strictObject({
  */
 export const GetReadyzResponse = zod.unknown();
 /**
+ * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
+ * Published only when the deployment sets `NODE_SECURITY_CONTACT` and
+ * `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
+ * nothing. Plain text, not the JSON envelope, because the format is fixed by the RFC.
+ * @summary Vulnerability disclosure contact
+ */
+export const GetSecurityTxtResponse = zod.string();
+/**
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *

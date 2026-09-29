@@ -3932,6 +3932,17 @@ export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) 
 };
 
 /**
+ * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
+ * Published only when the deployment sets `NODE_SECURITY_CONTACT` and
+ * `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
+ * nothing. Plain text, not the JSON envelope, because the format is fixed by the RFC.
+ * @summary Vulnerability disclosure contact
+ */
+export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/.well-known/security.txt`, method: 'GET' }, options);
+};
+
+/**
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
@@ -7080,6 +7091,7 @@ export const revokeApiKey = (
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
+export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>;

@@ -9,6 +9,11 @@ gives us a private channel to discuss and fix the problem before it is disclosed
 Include what you'd include in any bug report: the affected version or commit, the steps to
 reproduce, and the impact you'd expect. A proof of concept helps but isn't required.
 
+A running deployment of this frontend may also publish `/.well-known/security.txt`
+([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)). The production container writes it only when
+the operator sets `VITE_SECURITY_CONTACT` and `VITE_SECURITY_EXPIRES`, so a fork never advertises
+someone else's address.
+
 ## Supported versions
 
 This is an alpha-stage boilerplate with no version policy yet: the latest commit on `main` is the
