@@ -3,7 +3,7 @@
  * Mounts the real order detail page against a real, memory-history router — same template as
  * `products/tests/product-view.spec.ts`. Scoped to one thing: each line's picture comes from
  * `item.current`, resolved live against the catalogue, never a frozen `item.product.imageUrl` —
- * see SECURITY_HOLES_7_STORAGE_QUOTA (decision 2). `watchOrder` is stubbed so the store's own
+ * and a product with no picture carries none. `watchOrder` is stubbed so the store's own
  * fetch never runs; the order is seeded directly into the dictionary instead.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -273,6 +273,12 @@ describe('an order line’s picture', () => {
         const image = wrapper.get('[data-test=lazy-image]');
         expect(image.attributes('data-placeholder')).toBeUndefined();
         expect(image.find('img').attributes('src')).toContain('/images/live.jpg');
+    });
+
+    it('falls back to the placeholder for a product that never had a picture (`current: {}`)', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith({})] });
+
+        expect(wrapper.get('[data-test=lazy-image]').attributes('data-placeholder')).toBe('true');
     });
 
     it('falls back to the placeholder once the product is gone (`current: null`)', () => {
