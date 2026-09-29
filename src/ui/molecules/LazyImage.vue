@@ -20,7 +20,7 @@
  * `thumbnailSrc` and `src` are two independent fields on the record (`thumbnailUrl`/`imageUrl`),
  * not one derived from the other — the backend promotes them to distinct paths, a small WebP
  * derivative and the digested original, so there is no `width` parameter to ask for here. A
- * record with no thumbnail (a remote/default image, or a digest job still pending) simply omits
+ * record with no thumbnail (a remote image, or a digest job still pending) simply omits
  * `thumbnailSrc`, and this behaves as a plain lazy image — the degradation every caller already
  * had to handle before thumbnails existed at all.
  */

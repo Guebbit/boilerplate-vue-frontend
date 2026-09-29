@@ -2099,7 +2099,7 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .regex(exportAccountDataResponseDataOrdersItemItemsItemLocaleRegExp),
                         current: zod
                             .strictObject({
-                                imageUrl: zod.string().min(1),
+                                imageUrl: zod.string().min(1).optional(),
                                 thumbnailUrl: zod.string().optional()
                             })
                             .nullable(),
@@ -4258,7 +4258,7 @@ export const CheckoutResponse = zod.strictObject({
                 locale: zod.string().regex(checkoutResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -4552,7 +4552,7 @@ export const ListOrdersResponse = zod.strictObject({
                             .regex(listOrdersResponseDataItemsItemItemsItemLocaleRegExp),
                         current: zod
                             .strictObject({
-                                imageUrl: zod.string().min(1),
+                                imageUrl: zod.string().min(1).optional(),
                                 thumbnailUrl: zod.string().optional()
                             })
                             .nullable(),
@@ -4769,7 +4769,7 @@ export const CreateOrderResponse = zod.strictObject({
                 locale: zod.string().regex(createOrderResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -4963,7 +4963,7 @@ export const SearchOrdersResponse = zod.strictObject({
                             .regex(searchOrdersResponseDataItemsItemItemsItemLocaleRegExp),
                         current: zod
                             .strictObject({
-                                imageUrl: zod.string().min(1),
+                                imageUrl: zod.string().min(1).optional(),
                                 thumbnailUrl: zod.string().optional()
                             })
                             .nullable(),
@@ -5161,7 +5161,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 locale: zod.string().regex(getOrderByIdResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -5306,7 +5306,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 locale: zod.string().regex(replaceOrderByIdResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -5455,7 +5455,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 locale: zod.string().regex(updateOrderByIdResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -5620,7 +5620,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 locale: zod.string().regex(restoreOrderByIdResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -5782,7 +5782,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 locale: zod.string().regex(cancelOrderByIdResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -5934,7 +5934,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 locale: zod.string().regex(overrideOrderStatusResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -6222,7 +6222,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 locale: zod.string().regex(getOrderByReferenceResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -6679,7 +6679,7 @@ export const StartFulfilmentResponse = zod.strictObject({
                 locale: zod.string().regex(startFulfilmentResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),
@@ -6874,7 +6874,7 @@ export const FulfillOrderResponse = zod.strictObject({
                 locale: zod.string().regex(fulfillOrderResponseDataItemsItemLocaleRegExp),
                 current: zod
                     .strictObject({
-                        imageUrl: zod.string().min(1),
+                        imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
                     })
                     .nullable(),

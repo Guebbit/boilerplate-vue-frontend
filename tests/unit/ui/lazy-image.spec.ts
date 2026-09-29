@@ -66,12 +66,17 @@ describe('LazyImage — which picture is shown', () => {
         expect(wrapper.attributes('data-placeholder')).toBeUndefined();
     });
 
-    it('shows the placeholder when the record has no image', () => {
-        const wrapper = mountImage({ src: undefined, width: 56, height: 56 });
+    // The backend sends no `imageUrl` for a record without one (or `null` where a client clears
+    // it); the frontend draws its own stand-in for every spelling of "no image".
+    it.each([undefined, null, ''])(
+        'shows the placeholder when the record has no image (%j)',
+        (source) => {
+            const wrapper = mountImage({ src: source, width: 56, height: 56 });
 
-        expect(mainImage(wrapper).attributes('src')).toBe('/images/no-image-placeholder.svg');
-        expect(wrapper.attributes('data-placeholder')).toBe('true');
-    });
+            expect(mainImage(wrapper).attributes('src')).toBe('/images/no-image-placeholder.svg');
+            expect(wrapper.attributes('data-placeholder')).toBe('true');
+        }
+    );
 
     it('falls back to the placeholder only once the browser has given up', async () => {
         const wrapper = mountImage({ src: '/images/gone.png', width: 56, height: 56 });

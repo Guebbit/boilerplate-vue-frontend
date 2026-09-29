@@ -109,7 +109,7 @@ export interface SessionViewer {
     imageUrl?: string;
     /**
      * The small variant of {@link imageUrl}, shown as the avatar's first-paint tier. Absent for a
-     * remote/default image or while a digest job is still pending.
+     * remote image or while a digest job is still pending.
      */
     thumbnailUrl?: string;
     /**
