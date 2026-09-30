@@ -25,6 +25,7 @@ import 'cypress-real-events';
 import './scenario';
 import './commands';
 import './fixtures';
+import './journey';
 
 beforeEach(() => {
     cy.clearCookies();
