@@ -27,6 +27,7 @@ import AppNavMenu from '@/app/components/AppNavMenu.vue';
 import type { AppNavItem } from '@/app/components/app-nav-item.ts';
 import AppNavBarLink from '@/app/components/AppNavBarLink.vue';
 import AppNavPinnedButton from '@/app/components/AppNavPinnedButton.vue';
+import { brandLogoSource } from '@/app/utils/branding.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import {
     loginContinueTo,
@@ -67,6 +68,11 @@ const { isAuth, viewer } = storeToRefs(session);
  * served from `public/` no matter where the app is mounted.
  */
 const baseUrl = import.meta.env.BASE_URL;
+
+/**
+ * The app bar's logo — configurable, see `brandLogoSource`.
+ */
+const logoSource = brandLogoSource(baseUrl);
 
 /**
  * Mobile drawer open state
@@ -257,11 +263,7 @@ const toggleTheme = () => {
     <v-app-bar flat border="b" density="comfortable">
         <template #prepend>
             <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="flex items-center">
-                <img
-                    :alt="t('navigation.label-logo')"
-                    class="mx-2 block h-9"
-                    :src="`${baseUrl}images/guebbit-logo-colored.png`"
-                />
+                <img :alt="t('navigation.label-logo')" class="mx-2 block h-9" :src="logoSource" />
             </RouterLink>
         </template>
 

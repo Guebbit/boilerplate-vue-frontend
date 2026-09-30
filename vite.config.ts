@@ -49,6 +49,21 @@ export default defineConfig(({ mode }) => ({
         }
     },
     plugins: [
+        // `%APP_NAME%` in `index.html` becomes `VITE_APP_NAME` (default `Guebbit`) — the pre-boot
+        // title and description, until the router writes the real one on the first navigation.
+        // Vite's own `%VITE_X%` substitution leaves an unset variable as literal text; this one has
+        // a default. https://vite.dev/guide/api-plugin#transformindexhtml
+        {
+            name: 'brand-index-html',
+            transformIndexHtml: (html: string) =>
+                html.replaceAll(
+                    '%APP_NAME%',
+                    (loadEnv(mode, process.cwd(), 'VITE_').VITE_APP_NAME || 'Guebbit')
+                        .replaceAll('&', '&amp;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('"', '&quot;')
+                )
+        },
         vue({
             template: {
                 compilerOptions: {

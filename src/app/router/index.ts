@@ -21,7 +21,7 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 import { assertUniqueRoutes, collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { staticPageRouteName } from '@/app/utils/static-pages.ts';
-import { runtimeValue } from '@/infrastructure/runtime-config';
+import { brandName } from '@/app/utils/branding.ts';
 
 /*
  * Every domain route in the app arrives through this one call, and this file names no domain at
@@ -96,7 +96,7 @@ assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes]);
  * The name that follows every page title in the browser tab, and stands alone on a route that
  * declares none. An env value so a derived project renames the tab without touching the router.
  */
-const appName = runtimeValue('APP_NAME') || import.meta.env.VITE_APP_NAME || 'Guebbit';
+const appName = brandName();
 
 /**
  * Whether the visitor asked the OS for less motion; read per call, since the setting can change.
