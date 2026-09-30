@@ -184,15 +184,28 @@ what the button would do, the rule is in the wrong repository.**
 
 **A module publishes exactly what a sibling imports. No sibling, no barrel.**
 
-Applying that removed three whole barrels — `admin`, `orders`, `realtime` — and four stores nobody
-had ever imported.
+Applying that removed whole barrels (`admin`, `orders`, `realtime`, and later `wishlist`, once the
+product page's heart became a contribution to a slot instead of an import) and the stores nobody had
+ever imported.
 
 What survived says something specific about a client. The modules that publish a **store** are the
-ones siblings ask to change state: `cart` and `wishlist`. The ones that publish a **component** or a
-**schema** are answering a narrower question, and are the better shape — `PaymentPanel` renders a
-payment without its caller learning what a provider is. `delivery` publishes two components and
-deliberately not its store, because offering both would mean offering a wider way to do the same
-thing, and the wider one always wins.
+ones siblings read or ask to change state: `cart` (asked to refetch by `wishlist`, to refill by
+`orders`) and `products` (read by `cart`, `wishlist` and `inventory`, through `useProductLines` and
+its store). The ones that publish a **component** or a **schema** are answering a narrower question,
+and are the better shape — `PaymentPanel` renders a payment without its caller learning what a
+provider is. `delivery` publishes two components and deliberately not its store, because offering
+both would mean offering a wider way to do the same thing, and the wider one always wins.
+
+### Why the backend's rule is the opposite
+
+The paired backend requires a convenience barrel from **every** module, and this repo forbids the
+ones nobody imports. Both are right for their own tier. A backend module's barrel is a stable,
+documented surface for an AI or a newcomer to extend without copying logic; deleting a module there
+is an infrastructure decision. Here, deleting a module is `rm -rf` plus one line, so a barrel with no
+importer is dead weight that also promises a sibling something it cannot keep — and
+`tests/cross-cutting/published-language.spec.ts` fails on it. The client's other way to let one
+module serve another without a barrel is the slot (`src/kernel/slots.ts`): the contributor's manifest
+puts a component where the owner asked for one, and the owner imports nothing.
 
 ---
 

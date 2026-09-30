@@ -32,6 +32,11 @@ Small, single-purpose, and composed into the organisms below.
 from any per-locale record — the one piece of logic `TranslationTabs.vue` below does not own,
 since it differs per caller's own state shape.
 
+Three more composables carry logic several screens shared, so it is written once:
+`use-list-url-state.ts` and `use-list-search.ts` are a filtered list page's whole search wiring —
+filters and page kept in the URL, and the apply and reset handlers — and `use-fullscreen-dialog.ts`
+is the one flag every dialog binds so it fills the screen on a phone.
+
 ## Organisms
 
 | File                                    | What it is                                                                                                                                                                        | Read next                                                  |
