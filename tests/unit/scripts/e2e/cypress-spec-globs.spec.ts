@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 
 import {
     ALL_SPEC_GLOBS,
+    ANTIBOT_SPEC_GLOBS,
     FUNCTIONAL_SPEC_GLOBS,
     VISUAL_SPEC_GLOBS
 } from '../../../../scripts/e2e/cypress-spec-globs';
@@ -69,16 +70,33 @@ describe('every spelling of the spec set resolves to the same files', () => {
         }
     );
 
-    /**
-     * The two halves partition the whole. A spec in neither is a spec nothing runs, and a spec in
-     * both would be photographed by the gate that exists not to photograph anything.
-     */
-    it('splits every spec into exactly one of the two suites', () => {
-        const functional = resolve(FUNCTIONAL_SPEC_GLOBS);
-        const visual = resolve(VISUAL_SPEC_GLOBS);
+    it('test:e2e:antibot runs exactly the antibot suite', () => {
+        expect(resolve(specArgumentOf('test:e2e:antibot'))).toEqual(resolve(ANTIBOT_SPEC_GLOBS));
+    });
 
-        expect(functional.filter((file) => visual.includes(file))).toEqual([]);
-        expect([...functional, ...visual].toSorted()).toEqual(resolve(ALL_SPEC_GLOBS));
+    /**
+     * The three suites partition the whole. A spec in none is a spec nothing runs; a spec in two
+     * would be photographed by the gate that exists not to photograph anything, or run against a
+     * backend without the provider it needs.
+     */
+    it('splits every spec into exactly one of the three suites', () => {
+        const suites = [FUNCTIONAL_SPEC_GLOBS, VISUAL_SPEC_GLOBS, ANTIBOT_SPEC_GLOBS].map((globs) =>
+            resolve(globs)
+        );
+        const everything = suites.flat();
+
+        expect(new Set(everything).size).toBe(everything.length);
+        expect(everything.toSorted()).toEqual(resolve(ALL_SPEC_GLOBS));
+    });
+
+    it('keeps an antibot spec out of the functional suite, and only it', () => {
+        const antibot = resolve(ANTIBOT_SPEC_GLOBS);
+
+        expect(antibot.length).toBeGreaterThan(0);
+        expect(antibot.every((file) => file.endsWith('.antibot.cy.ts'))).toBe(true);
+        expect(resolve(FUNCTIONAL_SPEC_GLOBS).some((file) => file.includes('.antibot.'))).toBe(
+            false
+        );
     });
 
     /** The guard on the guard: an empty set would satisfy every assertion above. */

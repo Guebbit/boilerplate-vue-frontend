@@ -3,7 +3,7 @@
  *
  * The set is spelled in five places that cannot import from each other's world: this repo's
  * `cypress.config.ts` (`specPattern`), `eslint.config.ts` (which parser claims a file),
- * `scripts/e2e/run-shards.ts` (what the default gate schedules), and six `--spec` arguments in
+ * `scripts/e2e/run-shards.ts` (what the default gate schedules), and the `--spec` arguments in
  * `package.json`. Three of them read the constants below; `package.json` cannot import anything, so
  * `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts` asserts its strings resolve to the same files instead.
  *
@@ -25,8 +25,8 @@
  * update would read as an application regression.
  */
 export const FUNCTIONAL_SPEC_GLOBS = [
-    'tests/e2e/specs/**/*.cy.ts',
-    'src/modules/*/tests/e2e/**/!(*.visual).cy.ts'
+    'tests/e2e/specs/**/!(*.antibot).cy.ts',
+    'src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts'
 ];
 
 /**
@@ -39,10 +39,27 @@ export const VISUAL_SPEC_GLOBS = [
 ];
 
 /**
+ * The specs that need a backend booted with a human-challenge provider (`<name>.antibot.cy.ts`).
+ *
+ * Kept out of the functional run because the provider changes what every signup and login asks
+ * for: with it on, the plain specs would have to solve a challenge to get in at all. So these run
+ * in their own shard against their own backend (`antibot-backend.ts`) — one more shard in the
+ * demo run, one more entry in the nightly live matrix.
+ */
+export const ANTIBOT_SPEC_GLOBS = [
+    'tests/e2e/specs/**/*.antibot.cy.ts',
+    'src/modules/*/tests/e2e/**/*.antibot.cy.ts'
+];
+
+/**
  * Every spec Cypress may run. `specPattern` is this, not the functional half: a pattern narrower
  * than the union would make `test:e2e:visual`'s own `--spec` match nothing.
  *
  * `.cy.ts` only, because this repo is TypeScript-only and `lint` enforces it — a `.cy.js` would be
  * an anomaly worth failing on rather than a case worth supporting.
  */
-export const ALL_SPEC_GLOBS = [...FUNCTIONAL_SPEC_GLOBS, ...VISUAL_SPEC_GLOBS];
+export const ALL_SPEC_GLOBS = [
+    ...FUNCTIONAL_SPEC_GLOBS,
+    ...VISUAL_SPEC_GLOBS,
+    ...ANTIBOT_SPEC_GLOBS
+];

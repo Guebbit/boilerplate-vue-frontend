@@ -13,7 +13,9 @@ name: E2E (live backend)
 #              a 15-minute budget. The push-time question is "does the real infrastructure work",
 #              and the smoke set answers it. This is the tier that gates.
 #   nightly    the `schedule` below, or a manual run with no `grep` — every test, split into
-#              `LIVE_SHARDS` matrix jobs that each get their own services and a sequential slice.
+#              `LIVE_SHARDS` matrix jobs that each get their own services and a sequential slice,
+#              plus one `antibot` entry: the same stack with the human-challenge provider on,
+#              running only the `*.antibot.cy.ts` specs (scripts/e2e/antibot-backend.ts).
 #              It reports; it does not block a push.
 #
 # `test:e2e` (in ci.yml) runs EVERY journey against the demo profile on every push — in-memory
@@ -132,6 +134,10 @@ env:
     NODE_SIGNUP_RATE_LIMIT_MAX: '1000'
     NODE_RESET_RATE_LIMIT_MAX: '1000'
     NODE_METRICS_TOKEN: ci-metrics-token
+    # The provider's webhook signing secret. Known, so a spec can sign a delivery itself
+    # (`postPaymentWebhook`, scripts/e2e/payment-webhook.ts reads the second name).
+    NODE_PAYMENT_WEBHOOK_SECRET: ci-not-a-secret-payment-webhook
+    E2E_PAYMENT_WEBHOOK_SECRET: ci-not-a-secret-payment-webhook
 
 jobs:
     # Decides the tier: a tag expression means the per-push smoke run (one job, short budget);
@@ -160,7 +166,9 @@ jobs:
                       echo 'timeout=15' >> "$GITHUB_OUTPUT"
                   else
                       shards=$(seq -s, 1 "$LIVE_SHARDS")
-                      echo "matrix={\"shard\":[$shards],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT"
+                      # The last entry is not a slice: `print-live-shard.ts` reads `antibot` as "the
+                      # antibot specs", and the backend step below boots with the provider on for it.
+                      echo "matrix={\"shard\":[$shards,\"antibot\"],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT"
                       echo 'timeout=45' >> "$GITHUB_OUTPUT"
                   fi
 
@@ -368,6 +376,11 @@ jobs:
                   # job-wide would also reach `vite build`. It is also what the webhook sink requires:
                   # the sink exemption is refused in production.
                   NODE_ENV: development
+                  # The antibot entry's provider — the values of scripts/e2e/antibot-backend.ts,
+                  # which a unit test keeps equal. Empty for every other entry, which reads as unset.
+                  NODE_ANTIBOT_PROVIDER: ${{ matrix.shard == 'antibot' && 'altcha' || '' }}
+                  NODE_ANTIBOT_ALTCHA_SECRET: ${{ matrix.shard == 'antibot' && 'e2e-not-a-secret-altcha-key' || '' }}
+                  NODE_ANTIBOT_ALTCHA_COST: ${{ matrix.shard == 'antibot' && '1000' || '' }}
               # `e2e:serve` is `start` plus the mark that makes boot refuse a real SMTP host, so a
               # live run cannot send mail. `host` is a prefix runner (see the seed step).
               run: |

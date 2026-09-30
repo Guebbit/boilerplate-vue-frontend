@@ -30,11 +30,12 @@
         "test:mutation:check": "tsx scripts/mutation/check-baseline.ts",
         "test:mutation:baseline": "tsx scripts/mutation/check-baseline.ts --update",
         "test:e2e": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'tsx scripts/e2e/run-shards.ts'",
-        "test:e2e:serial": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts'\"",
+        "test:e2e:serial": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/specs/**/!(*.antibot).cy.ts,src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts'\"",
+        "test:e2e:antibot": "npm run build:e2e && start-server-and-test 'npm run backend:demo -- --antibot' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/specs/**/*.antibot.cy.ts,src/modules/*/tests/e2e/**/*.antibot.cy.ts'\"",
         "test:e2e:visual": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort --host 127.0.0.1' http://localhost:8085 \"cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/**/*.visual.cy.ts'\"",
         "test:e2e:visual:update": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort --host 127.0.0.1' http://localhost:8085 \"cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/**/*.visual.cy.ts' --env updateSnapshots=true\"",
-        "test:e2e:live": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_liveProfile=true cypress run --browser chromium --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts'\"",
-        "test:e2e:live:spec": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cross-env CYPRESS_liveProfile=true cypress run --browser chromium --e2e --spec \"${E2E_SPEC:-tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts}\"'",
+        "test:e2e:live": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_liveProfile=true cypress run --browser chromium --e2e --spec 'tests/e2e/specs/**/!(*.antibot).cy.ts,src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts'\"",
+        "test:e2e:live:spec": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cross-env CYPRESS_liveProfile=true cypress run --browser chromium --e2e --spec \"${E2E_SPEC:-tests/e2e/specs/**/!(*.antibot).cy.ts,src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts}\"'",
         "test:e2e:dev": "start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite dev --port 8085' http://localhost:8085 'cross-env CYPRESS_apiUrl=http://localhost:3100 cypress open --e2e'",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",
@@ -60,7 +61,7 @@
         "prepare": "husky",
         "test:unit:report": "vitest run --reporter=json --outputFile=reports/test-report.json",
         "test:report": "tsx scripts/testing/report-results.ts",
-        "test:e2e:spec": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec \"${E2E_SPEC:-tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts}\"'"
+        "test:e2e:spec": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec \"${E2E_SPEC:-tests/e2e/specs/**/!(*.antibot).cy.ts,src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts}\"'"
     },
     "dependencies": {
         "@casl/ability": "^7.0.1",
