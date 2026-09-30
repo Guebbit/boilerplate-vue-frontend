@@ -15,6 +15,8 @@ import { useOrdersStore } from '@/modules/orders/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { reorder as apiReorder, listOrderCreditNotes, getOrderCreditNote } from '@api';
 import { downloadBlob } from '@guebbit/js-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { asStub } from '../../../../tests/support/stub.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -415,6 +417,37 @@ describe('the reorder button (FA39)', () => {
                 release?.(new Error('network down'));
                 return nextRenderTick(wrapper);
             });
+    });
+});
+
+/** The cart the API answers, holding exactly these products. */
+const cartWith = (...productIds: string[]) =>
+    asStub<Awaited<ReturnType<typeof apiReorder>>>({
+        data: { items: productIds.map((productId) => ({ productId, quantity: 1 })) }
+    });
+
+/** The toasts the page has raised, newest last. */
+const toasts = () => useNotificationsStore().messages.map(({ message }) => message);
+
+describe('the reorder outcome', () => {
+    it('says it plainly when every line came back', async () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        vi.mocked(apiReorder).mockResolvedValueOnce(cartWith('p1'));
+
+        await wrapper.get('[data-test=order-reorder]').trigger('click');
+        await flushPromises();
+
+        expect(toasts()).toEqual(['Order added to cart.']);
+    });
+
+    it('names what the cart did not get when a product has left the catalogue', async () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        vi.mocked(apiReorder).mockResolvedValueOnce(cartWith());
+
+        await wrapper.get('[data-test=order-reorder]').trigger('click');
+        await flushPromises();
+
+        expect(toasts()).toEqual(['Order added to cart, without what is no longer sold: Gadget.']);
     });
 });
 

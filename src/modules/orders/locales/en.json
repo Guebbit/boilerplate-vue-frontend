@@ -69,6 +69,7 @@
         "success-cancel": "Order cancelled.",
         "button-reorder": "Buy again",
         "success-reorder": "Order added to cart.",
+        "warning-reorder-left-out": "Order added to cart, without what is no longer sold: {titles}.",
         "label-shipping": "Shipping",
         "label-shipping-address": "Shipping address",
         "label-payment-method": "Payment method",

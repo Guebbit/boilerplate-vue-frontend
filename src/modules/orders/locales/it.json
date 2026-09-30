@@ -69,6 +69,7 @@
         "success-cancel": "Ordine annullato.",
         "button-reorder": "Acquista di nuovo",
         "success-reorder": "Ordine aggiunto al carrello.",
+        "warning-reorder-left-out": "Ordine aggiunto al carrello, tranne ciò che non è più in vendita: {titles}.",
         "label-shipping": "Spedizione",
         "label-shipping-address": "Indirizzo di spedizione",
         "label-payment-method": "Metodo di pagamento",
