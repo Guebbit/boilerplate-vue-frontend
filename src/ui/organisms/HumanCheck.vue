@@ -18,6 +18,7 @@ export default {
  */
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { fetchAntibotConfig, fetchAntibotChallenge } from '@/infrastructure/http/antibot.ts';
+import { logger } from '@/infrastructure/utils/logger.ts';
 import 'altcha';
 import type { AltchaWidgetElement } from 'altcha';
 
@@ -167,20 +168,28 @@ const renderTurnstile = (siteKey: string): void => {
  * `turnstileElement` are still `undefined` in the microtask right after the assignment.
  */
 onMounted(() => {
-    void fetchAntibotConfig().then((envelope) => {
-        provider.value = envelope.data.provider;
-        const activeProvider = provider.value;
-        if (activeProvider !== 'turnstile' && activeProvider !== 'altcha') return;
+    void fetchAntibotConfig()
+        .then((envelope) => {
+            provider.value = envelope.data.provider;
+            const activeProvider = provider.value;
+            if (activeProvider !== 'turnstile' && activeProvider !== 'altcha') return;
 
-        return nextTick().then(() => {
-            if (activeProvider === 'turnstile') {
-                const { siteKey, scriptUrl } = envelope.data.parameters;
-                if (!siteKey || !scriptUrl) return;
-                return loadVendorScript(scriptUrl).then(() => renderTurnstile(siteKey));
-            }
-            return configureAltcha();
+            return nextTick().then(() => {
+                if (activeProvider === 'turnstile') {
+                    const { siteKey, scriptUrl } = envelope.data.parameters;
+                    if (!siteKey || !scriptUrl) return;
+                    return loadVendorScript(scriptUrl).then(() => renderTurnstile(siteKey));
+                }
+                return configureAltcha();
+            });
+        })
+        // An unreachable API or a vendor script that would not load leaves the widget absent, and
+        // nothing else: the health banner already says the API is down, and the form's own submit
+        // reports its refusal. Left uncaught, it is an unhandled rejection on every page that
+        // hosts a check.
+        .catch((error: unknown) => {
+            logger.warn('HumanCheck: the human check could not be prepared', error);
         });
-    });
 });
 
 onBeforeUnmount(() => {
