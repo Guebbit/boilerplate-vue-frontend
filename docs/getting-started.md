@@ -124,9 +124,9 @@ is fatal instead, because there it means the workflow is misconfigured.
 Deliberately outside that gate:
 
 ```bash
-npm run complete:manual       # the two below, in one go
-npm run test:e2e:visual       # pixel diffing — answers to the machine that took the snapshots
+npm run complete:manual       # the live suite below
 npm run test:e2e:live         # the suite against a real backend
+npm run test:e2e:visual       # pixel diffing — meant for the pinned CI image; see visual-regression.md
 
 npm run test:unit             # fast — the jsdom suite alone
 npm run test:mutation         # Stryker; nightly in CI, by hand when you want it

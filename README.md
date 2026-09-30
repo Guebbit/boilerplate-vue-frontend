@@ -109,8 +109,9 @@ build, coverage or Cypress), so run this yourself before merging. It takes **aro
 mostly Cypress — start it and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
 rather than reported.
 
-Two suites sit outside it, in `npm run complete:manual`: pixel diffing, which answers to the
-machine that took the snapshots, and the live-backend e2e run, which needs the paired API up.
+Two suites sit outside it: the live-backend e2e run (`npm run complete:manual`), which needs the
+paired API up, and pixel diffing, which answers to the machine that took the snapshots and so runs
+only in its pinned CI image (`visual.yml`).
 See [Test timings](./docs/tools/testing-and-docs.md#test-timings) for what each layer costs.
 
 ---

@@ -155,7 +155,7 @@ promise.
 | `npm run test:e2e`        | **~3m30s** | 17 specs, 136 tests, sharded across `E2E_SHARDS` Cypress processes                       |
 | `npm run complete`        | **~5m**    | the gate: lint + both spec lints + format + contract identity + build + all of the above |
 | `npm run test:mutation`   | ~9m        | 2182 mutants, incremental; nightly in CI                                                 |
-| `npm run test:e2e:visual` | ~1m        | pixel diffs — `complete:manual`, not the gate                                            |
+| `npm run test:e2e:visual` | ~1m        | pixel diffs — pinned CI image, not the gate                                              |
 | `npm run test:e2e:live`   | ~13m       | the full suite against a real backend — `complete:manual`, sequential                    |
 
 **Cypress is the gate**, and the reason `test:e2e` is sharded. Sequentially those 17 specs take
