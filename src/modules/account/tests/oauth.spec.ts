@@ -80,14 +80,23 @@ describe('oauthStartUrl', () => {
     });
 
     it('carries a continueTo path as ?continue= on the start URL', () => {
-        expect(oauthStartUrl('google', '/cart')).toBe(
+        expect(oauthStartUrl('google', { continueTo: '/cart' })).toBe(
             'https://api.example.test/account/oauth/google?continue=%2Fcart'
         );
     });
 
     it('omits ?continue= entirely when there is nowhere to return to', () => {
-        expect(oauthStartUrl('google', undefined)).toBe(
+        expect(oauthStartUrl('google', { continueTo: undefined })).toBe(
             'https://api.example.test/account/oauth/google'
+        );
+    });
+
+    it('carries the page locale as ?locale=, after ?continue= when both are present', () => {
+        expect(oauthStartUrl('google', { locale: 'it' })).toBe(
+            'https://api.example.test/account/oauth/google?locale=it'
+        );
+        expect(oauthStartUrl('google', { continueTo: '/cart', locale: 'it' })).toBe(
+            'https://api.example.test/account/oauth/google?continue=%2Fcart&locale=it'
         );
     });
 });

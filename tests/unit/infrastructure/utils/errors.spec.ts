@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import {
     rethrowUnlessAbsent,
     absentIs,
+    isPreconditionFailed,
     isTransportFailure,
     notifyErrorMessages
 } from '@/infrastructure/utils/errors.ts';
@@ -207,4 +208,28 @@ describe('rethrowUnlessAbsent', () => {
         const error = { message: 'Network Error' };
         expect(() => rethrowUnlessAbsent(error, 404)).toThrow(error);
     });
+});
+
+/**
+ * `isPreconditionFailed` — the 412 an edit form answers with "reload", never with a resend. It must
+ * not be fooled by a dropped connection (nothing was decided) or by another 4xx.
+ */
+describe('isPreconditionFailed', () => {
+    it('is true for the API answering 412', () => {
+        expect(isPreconditionFailed({ status: 412 })).toBe(true);
+    });
+
+    it.each([{ status: 409 }, { status: 422 }, { status: 500 }, { status: 0 }])(
+        'is false for %o',
+        (error) => {
+            expect(isPreconditionFailed(error)).toBe(false);
+        }
+    );
+
+    it.each([undefined, null, 'Network Error', { message: 'boom' }])(
+        'is false for the transport failure %o',
+        (error) => {
+            expect(isPreconditionFailed(error)).toBe(false);
+        }
+    );
 });

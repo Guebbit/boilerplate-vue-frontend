@@ -37,25 +37,36 @@ export const providerLabel = (provider: string): string =>
  * The URL a login button points at — a real navigation target, not an API call: the redirect
  * dance needs an actual top-level browser navigation to reach the provider's consent screen and
  * come back with cookies set, which neither a `RouterLink` nor an axios call can do. This is why
- * `continueTo` is appended by hand rather than through `startOAuthLogin` itself — the generated
- * function's own docblock says it is "not called programmatically" — typed against its
- * `StartOAuthLoginParams` regardless, so a future rename of the `continue` param breaks this build
- * instead of silently building the wrong URL.
+ * the query is built by hand rather than through `startOAuthLogin` itself — the generated
+ * function's own docblock says it is "not called programmatically" — keyed by its
+ * `StartOAuthLoginParams` regardless, so a rename of a param breaks this build instead of
+ * silently building the wrong URL.
  *
  * The prefix is read off the axios instance rather than `import.meta.env`, same reasoning as
  * `resolveImageUrl` — it follows the e2e shard runner's `__APP_CONFIG` override, a runtime value
  * a build-time env read can't see.
  *
  * @param provider - Registry key, e.g. `'google'`.
- * @param continueTo - A same-origin path to send the browser back to once login completes — the
- *  OAuth equivalent of the password-login flow's own `?continue=` (`isSameOriginPath`). Omitted
- *  when there is nowhere in particular to return to.
+ * @param options - Both optional, both saved by the backend for the round trip:
+ *  `continueTo` is a same-origin path to send the browser back to once login completes (the OAuth
+ *  equivalent of the password-login flow's own `?continue=`, `isSameOriginPath`); `locale` is the
+ *  language the visitor is reading, so a login with nowhere to return to still comes back in it.
  * @returns The backend's start-login URL for that provider.
  */
-export const oauthStartUrl = (provider: string, continueTo?: string): string => {
-    const query = continueTo
-        ? `?${new URLSearchParams({ continue: continueTo } satisfies StartOAuthLoginParams).toString()}`
-        : '';
+export const oauthStartUrl = (
+    provider: string,
+    options: { continueTo?: string; locale?: string } = {}
+): string => {
+    const startParameters = {
+        continue: options.continueTo,
+        locale: options.locale
+    } satisfies StartOAuthLoginParams;
+    const parameters = new URLSearchParams(
+        Object.entries(startParameters).filter((entry): entry is [string, string] =>
+            Boolean(entry[1])
+        )
+    );
+    const query = parameters.size > 0 ? `?${parameters.toString()}` : '';
     return `${instance.defaults.baseURL ?? ''}/account/oauth/${provider}${query}`;
 };
 

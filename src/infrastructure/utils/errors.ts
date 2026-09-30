@@ -109,3 +109,14 @@ export const notifyErrorMessages = (
     addMessage(getErrorMessage(error));
     useObservabilityStore().captureException(error);
 };
+
+/**
+ * Whether a rejected write was refused because the record changed since the caller loaded it
+ * (HTTP 412, the API's `PRECONDITION_FAILED`): the `If-Match` the client sent no longer matches.
+ * The answer is to reload the record and reapply the edit — never to resend as is.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when the API answered 412.
+ */
+export const isPreconditionFailed = (error: unknown): boolean =>
+    !isTransportFailure(error) && (error as { status: number }).status === 412;
