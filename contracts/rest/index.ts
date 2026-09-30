@@ -1403,7 +1403,7 @@ export interface ObservabilityHealthQueue {
 
 /**
  * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
- * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
+ * This is not liveness. `GET /livez` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
 export type ObservabilityHealthStatus =
     (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
@@ -1416,7 +1416,7 @@ export const ObservabilityHealthStatus = {
 export interface ObservabilityHealth {
     /**
      * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
-     * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
+     * This is not liveness. `GET /livez` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
      */
     status: ObservabilityHealthStatus;
     environment: string;
@@ -4463,7 +4463,8 @@ export type ListApiKeysParams = {
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
+ * Public ping for clients (the frontend's API-down banner), rate-limited like any
+ * browser call. Not an orchestrator probe: `/livez` is liveness, `/readyz` readiness.
  * @summary API health check
  */
 export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPingEnvelope>>) => {
@@ -4471,13 +4472,25 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
- * Public readiness probe for an orchestrator (Kubernetes' own `/livez` + `/readyz`
- * convention). Empty body either way: 200 once this instance has finished booting,
- * has not started draining for shutdown, and can reach the database; 503 otherwise.
+ * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
+ * convention) and for every container HEALTHCHECK. Empty body, no I/O: it checks
+ * nothing else, on purpose. A failing dependency must never fail liveness, because
+ * a restart does not bring a downed database back.
+ * @summary Liveness check
+ */
+export const getLivez = (options?: SecondParameter<typeof orvalMutator<void>>) => {
+    return orvalMutator<void>({ url: `/livez`, method: 'GET' }, options);
+};
+
+/**
+ * Public readiness probe, for a load balancer's own probe (a Kubernetes
+ * readinessProbe, an AWS ALB target group, Traefik's service health check). Empty
+ * body either way: 200 once this instance has finished booting, has not started
+ * draining for shutdown, and can reach the database; 503 otherwise.
  *
- * NOT the liveness probe — `GET /` is that, and answers regardless of readiness.
- * Point a load balancer or a container HEALTHCHECK here instead of at `/`, so a
- * draining instance stops receiving new traffic before its connections are cut.
+ * NOT for a container HEALTHCHECK: the tools that read Docker's health status treat
+ * it as liveness, so a database blip would restart or replace healthy containers.
+ * `GET /livez` is that probe.
  * @summary Readiness check
  */
 export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) => {
@@ -5056,9 +5069,9 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  * backing service is missing when it cannot. Also carries uptime, memory, system and
  * telemetry-wiring detail for the dashboard card.
  *
- * This is NOT the liveness probe (`GET /`) or the readiness probe the container
- * HEALTHCHECK calls (`GET /readyz`) — this is the detailed, authenticated view for a
- * dashboard. Nothing here performs I/O; every dependency is read from the connection
+ * This is NOT the liveness probe the container HEALTHCHECK calls (`GET /livez`) or
+ * the readiness probe a load balancer calls (`GET /readyz`) — this is the detailed,
+ * authenticated view for a dashboard. Nothing here performs I/O; every dependency is read from the connection
  * state its adapter already maintains.
  *
  * Requires admin role.
@@ -7997,6 +8010,7 @@ export const revokeApiKey = (
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;

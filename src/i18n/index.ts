@@ -148,10 +148,10 @@ export const i18n = createI18n({
     // MUST be false to use the composition API.
     legacy: false,
     locale:
-        runtimeLocaleValue('APP_DEFAULT_LOCALE') ?? import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
+        runtimeLocaleValue('APP_DEFAULT_LOCALE') || import.meta.env.VITE_APP_DEFAULT_LOCALE || 'en',
     fallbackLocale:
-        runtimeLocaleValue('APP_FALLBACK_LOCALE') ??
-        import.meta.env.VITE_APP_FALLBACK_LOCALE ??
+        runtimeLocaleValue('APP_FALLBACK_LOCALE') ||
+        import.meta.env.VITE_APP_FALLBACK_LOCALE ||
         'en',
     modifiers: {
         customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
@@ -409,8 +409,8 @@ export function getDefaultLocale() {
     // default unreachable — `VITE_APP_DEFAULT_LOCALE` had no effect on a visitor with an
     // unsupported browser language, regardless of what a deployment set it to.
     return (
-        runtimeLocaleValue('APP_DEFAULT_LOCALE') ??
-        import.meta.env.VITE_APP_DEFAULT_LOCALE ??
+        runtimeLocaleValue('APP_DEFAULT_LOCALE') ||
+        import.meta.env.VITE_APP_DEFAULT_LOCALE ||
         (i18n.global.fallbackLocale as WritableComputedRef<string>).value
     );
 }

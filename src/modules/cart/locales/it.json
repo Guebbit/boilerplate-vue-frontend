@@ -18,7 +18,7 @@
         "label-notes": "Note sull'ordine (facoltative)",
         "button-remove": "Rimuovi",
         "button-clear": "Svuota carrello",
-        "button-checkout": "Acquista",
+        "button-checkout": "Ordina con obbligo di pagamento",
         "success-checkout": "Ordine effettuato con successo!",
         "error-cart-changed": "Il tuo carrello è cambiato sul server da quando hai caricato questa pagina — è stato aggiornato, controllalo e riprova.",
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",

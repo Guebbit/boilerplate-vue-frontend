@@ -6,13 +6,16 @@
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
  * so a module's own folder is the only place its name is written down.
  *
+ * The cross-module specs under `tests/e2e/` go too: each names the modules it walks on a
+ * `// requires-module:` line (`./demo-remove-tests`), the way the backend's specs do.
+ *
  * RUNS AGAINST THIS CHECKOUT, not a scratch copy — see the backend's `scripts/ops/demo-remove.ts`
  * for the report-only MEASURE script this pairs with (`npm run measure:demo-strip`, this repo's
  * own copy). A module-owned spec under `src/modules/<name>/tests/` goes with its folder
- * automatically; `commerce.cy.ts`, `journey.cy.ts` and `storefront.cy.ts` under
- * `tests/e2e/specs/` are SYSTEM-level specs that walk the shop on purpose
- * (`docs/theory/module-lifecycle.md`, backend repo) and this script's own report lists them as
- * exactly the residue a human has to judge, the same as the backend's.
+ * automatically; the SYSTEM-level specs that walk the shop on purpose
+ * (`docs/theory/module-lifecycle.md`, backend repo) are deleted by their `requires-module` header.
+ * What the report still lists is a grep for an import this script did not recognise — the residue
+ * a human has to judge.
  *
  * See: docs/getting-started-new-project.md
  */
@@ -22,6 +25,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readDemoModuleNames } from './demo-module-names';
+import { removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -101,12 +105,16 @@ console.info('\n[demo-remove] the module registry:');
 stripModuleRegistry(demoModuleNames);
 removeManifest();
 
+console.info('\n[demo-remove] cross-module specs:');
+for (const note of removeResidueSpecs(REPO_ROOT, demoModuleNames))
+    console.info(`  ${note.file} — ${note.detail}`);
+
 console.info('\n[demo-remove] done. Next:');
 console.info('  1. npm run type-check-only   — the module-owned specs are already gone');
 console.info('  2. npm run lint              — catches an import eslint-plugin-boundaries refused');
 
 const residue = findResidueTests(demoModuleNames);
 if (residue.length > 0) {
-    console.info('\n[demo-remove] candidates, from a grep for the deleted modules:');
+    console.info('\n[demo-remove] still importing a deleted module, from a grep:');
     for (const file of residue) console.info(`  ${file}`);
 }

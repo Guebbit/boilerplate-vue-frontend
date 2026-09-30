@@ -242,17 +242,20 @@ const handleDelete = (requestId: string, subject: string) => {
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     <v-text-field
                         v-model="filters.text"
+                        data-test="filter-text"
                         :label="t('feedback-inbox-page.filter-text')"
                         maxlength="200"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.email"
+                        data-test="filter-email"
                         :label="t('feedback-inbox-page.filter-email')"
                         hide-details
                     />
                     <v-select
                         v-model="statusChoice"
+                        data-test="filter-status"
                         :label="t('feedback-inbox-page.filter-status')"
                         :items="filterStatusOptions"
                         item-title="title"
@@ -268,11 +271,21 @@ const handleDelete = (requestId: string, subject: string) => {
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary" :loading="loading">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        :loading="loading"
+                        data-test="search-submit"
+                    >
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" :disabled="loading" @click="handleReset">
+                    <v-btn
+                        variant="tonal"
+                        :disabled="loading"
+                        data-test="search-reset"
+                        @click="handleReset"
+                    >
                         {{ t('generic.reset') }}
                     </v-btn>
                 </div>

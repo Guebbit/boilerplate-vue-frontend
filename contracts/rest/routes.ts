@@ -74,6 +74,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/inventory\/movements$/, schemaName: "ListStockMovementsResponse", bodySchemaName: undefined, module: "inventory" },
     { method: "POST", pattern: /^\/inventory\/receipts$/, schemaName: "ReceiveStockResponse", bodySchemaName: "ReceiveStockBody", module: "inventory" },
     { method: "POST", pattern: /^\/inventory\/reservations\/sweep$/, schemaName: "SweepReservationsResponse", bodySchemaName: undefined, module: "inventory" },
+    { method: "GET", pattern: /^\/livez$/, schemaName: "GetLivezResponse", bodySchemaName: undefined, module: undefined },
     { method: "GET", pattern: /^\/locales\/tenants$/, schemaName: "GetLocaleTenantsResponse", bodySchemaName: undefined, module: "locales" },
     { method: "GET", pattern: /^\/locales$/, schemaName: "GetLocalesResponse", bodySchemaName: undefined, module: "locales" },
     { method: "POST", pattern: /^\/locales$/, schemaName: "CreateLocaleResponse", bodySchemaName: "CreateLocaleBody", module: "locales" },

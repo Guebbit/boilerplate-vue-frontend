@@ -258,7 +258,11 @@ const submitForm = () => {
                     :label="t('user-create-page.label-locale')"
                     data-test="user-locale"
                 />
-                <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
+                <v-switch
+                    v-model="form.active"
+                    :label="t('user-create-page.label-active')"
+                    data-test="user-active"
+                />
             </div>
 
             <InlineErrorAlert :message="submitError" data-test="user-create-submit-error" />

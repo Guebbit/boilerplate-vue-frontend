@@ -92,6 +92,7 @@ const confirmClearExpiredTokens = () =>
                 variant="tonal"
                 color="error"
                 :loading="clearingExpiredTokens"
+                data-test="admin-clear-expired-tokens"
                 @click="confirmClearExpiredTokens"
             >
                 <Trash2 :size="16" class="mr-1" aria-hidden="true" />

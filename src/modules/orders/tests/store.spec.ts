@@ -22,7 +22,9 @@ import {
     deleteOrderById,
     hardDeleteOrderById,
     restoreOrderById,
-    getOrderInvoice
+    getOrderInvoice,
+    listOrderCreditNotes,
+    getOrderCreditNote
 } from '@api';
 import * as schemas from '@api/schemas';
 import {
@@ -40,6 +42,20 @@ const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netT
  * Fixture PDF blob returned by the mocked invoice endpoint.
  */
 const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+
+/**
+ * Fixture credit-note list, as the list endpoint's envelope carries it.
+ */
+const CREDIT_NOTES = [
+    {
+        id: 'cn1',
+        number: 'CN-2026-0001',
+        issuedAt: '2026-09-30T10:00:00.000Z',
+        currency: 'EUR',
+        grandTotal: 9.99,
+        refundId: 'r1'
+    }
+];
 
 // `meta` matches the real `PaginationMeta` shape — `search:` (`store.ts`) reads
 // `meta.totalPages` for `pageTotal`, so an envelope without one no longer represents a real
@@ -71,6 +87,8 @@ vi.mock('@api', () => ({
     hardDeleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.hardDeleted)),
     restoreOrderById: vi.fn(() => Promise.resolve(RESPONSES.restored)),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE)),
+    listOrderCreditNotes: vi.fn(() => Promise.resolve({ data: CREDIT_NOTES })),
+    getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
     // The contract's sort enum: the store reads it to drop a sort the API would refuse.
     OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }
 }));
@@ -199,6 +217,26 @@ describe('useOrdersStore', () => {
                 .fetchInvoice('o1')
                 .then((result) => {
                     expect(getOrderInvoice).toHaveBeenCalledWith('o1');
+                    expect(result).toBe(INVOICE);
+                }));
+    });
+
+    describe('fetchCreditNotes', () => {
+        it('unwraps the envelope to the list of note summaries', () =>
+            useOrdersStore()
+                .fetchCreditNotes('o1')
+                .then((result) => {
+                    expect(listOrderCreditNotes).toHaveBeenCalledWith('o1');
+                    expect(result).toEqual(CREDIT_NOTES);
+                }));
+    });
+
+    describe('fetchCreditNote', () => {
+        it('downloads the one note asked for, as a Blob', () =>
+            useOrdersStore()
+                .fetchCreditNote('o1', 'cn1')
+                .then((result) => {
+                    expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn1');
                     expect(result).toBe(INVOICE);
                 }));
     });

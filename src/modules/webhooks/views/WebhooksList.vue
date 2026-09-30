@@ -176,6 +176,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                     <v-select
                         v-model="enabledChoice"
+                        data-test="filter-enabled"
                         :label="t('webhooks-list-page.filter-enabled')"
                         :items="enabledOptions"
                         item-title="label"

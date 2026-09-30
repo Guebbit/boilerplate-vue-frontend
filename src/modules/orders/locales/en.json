@@ -60,6 +60,8 @@
         "button-go-to-edit": "Edit order",
         "button-download-invoice": "Download invoice",
         "button-view-invoice": "View invoice",
+        "button-download-credit-note": "Download credit note",
+        "label-credit-note": "Credit note {number} · {date} · {amount}",
         "label-order-number": "Order no. {number}",
         "label-updated-at": "Updated at",
         "button-cancel": "Cancel order",

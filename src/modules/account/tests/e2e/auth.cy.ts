@@ -212,14 +212,12 @@ describe('Authentication', () => {
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 
             let forced401 = false;
-            // Pinned to the API origin, and deliberately not `**/orders*`: that glob also matches
-            // this app's own route at `http://localhost:8085/en/orders`, so the request that got
-            // the forced 401 was `cy.reload()`'s *document* navigation. The browser then rendered
-            // the error JSON as the entire page and the SPA never booted — the row assertion below
-            // failed for want of an application, which looks identical to a failed token refresh
-            // and is what made this failure so hard to read.
+            // Pinned to the API origin: a bare glob would also match the app's own `/en/orders`
+            // document route. The list reads `POST /orders/search`, never `GET /orders`, so that
+            // is the request to fail once.
             cy.env(['apiUrl']).then(({ apiUrl }) => {
-                cy.intercept('GET', `${apiUrl}/orders*`, (request) => {
+                cy.intercept('GET', `${apiUrl}/account/refresh`).as('refresh');
+                cy.intercept('POST', `${apiUrl}/orders/search`, (request) => {
                     if (forced401) {
                         request.continue();
                         return;
@@ -234,10 +232,17 @@ describe('Authentication', () => {
                             errors: [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }]
                         }
                     });
-                }).as('ordersForcedOnce');
+                }).as('ordersSearch');
             });
 
             cy.reload();
+
+            // The forced 401 must fire, then the retry must reach the API and succeed. Without
+            // these waits the test would pass on the ordinary boot refresh alone.
+            cy.wait('@ordersSearch').its('response.statusCode').should('eq', 401);
+            cy.wait('@ordersSearch').its('response.statusCode').should('eq', 200);
+            // Boot refresh + the refresh the 401 triggered.
+            cy.get('@refresh.all').should('have.length.at.least', 2);
 
             // If the refresh cookie hadn't crossed the origin boundary, the retried request would
             // 401 again and the app would bounce to /login instead of re-rendering the list.

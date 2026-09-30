@@ -120,6 +120,21 @@ declare global {
             subjectOrder(name: string): Chainable<OrderLike>;
 
             /**
+             * Clicks the storefront's category chip that narrows the list to a `product.*`
+             * guarantee — the category of that product holding the fewest visible products.
+             *
+             * The chip reads `<category> (<count>)`, and both halves are the backend's data: a
+             * spec typing `food (1)` has copied a seed choice into itself, and breaks when the
+             * seed grows. Derived here from the same public list the chip counts, so the click
+             * keeps landing on the narrowest shelf that still holds the subject.
+             *
+             * Run on `/en/products`, after the list has loaded. Yields the product cards once the list has narrowed.
+             *
+             * @param name - a `product.*` guarantee name whose categories the chip is drawn from
+             */
+            filterByNarrowestCategoryOf(name: string): Chainable<JQuery>;
+
+            /**
              * The seeded account `cy.loginAs(role)` signs in as, as the API serialises it.
              *
              * A page addressed by a user's id — `/en/users/{id}` and its edit form — needs one,
@@ -156,17 +171,24 @@ declare global {
             deactivateProduct(product: ProductLike): Chainable<null>;
 
             /**
-             * Creates an order owned by the named role's seeded account, server-side as admin,
-             * carrying one line of a freshly created product.
+             * One authenticated API call as a seeded account, made from Node, yielding the
+             * envelope's `data` (null for a body-less answer).
              *
-             * Provisions rather than reads: the backend's `order.*` guarantees name the admin's
-             * orders, and the one it puts on the `user` account is soft-deleted on purpose — so a
-             * spec needing that account's own, VISIBLE order has nothing to ask for and must make
-             * one.
+             * For arranging STATE before the page is opened: emptying a cart, unsaving a wishlist
+             * line. Going through the API keeps the browser's own session and refresh cookie
+             * untouched, and makes the starting state exact rather than assumed.
              *
-             * @param role - whose account the order is created under
+             * @param role - whose credentials the call is made with
+             * @param method - the HTTP verb
+             * @param path - the API path, without the origin
+             * @param body - JSON body, when the endpoint takes one
              */
-            createOrder(role: E2ERole): Chainable<{ id: string; userId: string; status: string }>;
+            apiAs<T = unknown>(
+                role: E2ERole,
+                method: string,
+                path: string,
+                body?: Record<string, unknown>
+            ): Chainable<T | null>;
 
             /**
              * Creates a webhook subscription as admin, server-side, and yields it as the API
@@ -242,7 +264,7 @@ Cypress.Commands.add('subjectProduct', (name: string) =>
 );
 
 /*
- * Writes go through a Node-side task rather than `cy.request`, for the reason the `createSession`
+ * Writes go through a Node-side task rather than `cy.request`, for the reason the `deviceLogin`
  * task already exists: the app holds its access token in a Pinia store, so a browser-side admin
  * call would have to log in again and leave a refresh cookie behind — which the sessions specs
  * count and the analytics spec attributes.
@@ -305,6 +327,31 @@ Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
 
 Cypress.Commands.add('subjectOrder', (name: string) =>
     cy.subjectId(name).then((id) => adminApi<OrderLike>(`/orders/${id}`, 'GET'))
+);
+
+Cypress.Commands.add(
+    'apiAs',
+    <T>(role: E2ERole, method: string, path: string, body?: Record<string, unknown>) =>
+        apiAs<T>(role, path, method, body)
+);
+
+Cypress.Commands.add('filterByNarrowestCategoryOf', (name: string) =>
+    cy.subjectProduct(name).then((product) =>
+        cy.publicProducts().then((products) => {
+            const shelves = (product.categories ?? []).map((category) => ({
+                category,
+                count: products.filter((other) => other.categories?.includes(category)).length
+            }));
+            const [narrowest] = shelves.toSorted((first, second) => first.count - second.count);
+            if (!narrowest) throw new Error(`${name} has no category to filter by`);
+            cy.get('[data-test=category-chip]')
+                .contains(`${narrowest.category} (${String(narrowest.count)})`)
+                .click();
+            // The filter is a request: until the list shrinks to the chip's own count, the
+            // unfiltered one is still on screen and a click would land on the wrong card.
+            return cy.get('[data-test=product-card]').should('have.length', narrowest.count);
+        })
+    )
 );
 
 Cypress.Commands.add('accountInRole', (role: E2ERole) =>

@@ -13,4 +13,20 @@
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
-sweepVisual('admin', [['admin-dashboard', '/en/admin', '#admin-page']], 'admin');
+sweepVisual(
+    'admin',
+    [
+        {
+            name: 'admin-dashboard',
+            route: '/en/admin',
+            readySelector: '#admin-page',
+            // Live figures of the backend process: the clock, uptime, the request/error counters
+            // and latency (KPI cards 5-10) all differ per run. Status cards 1-4 stay photographed.
+            redact: [
+                '#admin-page span.text-sm.opacity-70',
+                '#admin-page .v-card:nth-child(n+5) p.text-2xl'
+            ]
+        }
+    ],
+    'admin'
+);

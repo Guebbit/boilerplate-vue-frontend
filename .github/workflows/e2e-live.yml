@@ -1,17 +1,28 @@
 name: E2E (live backend)
 
 # Runs this app's Cypress specs against the FULLY COMPOSED backend — a checked-out sibling repo, a
-# real Mongo and Redis, a really seeded database that persists between requests.
+# Mongo replica set, Redis, RabbitMQ, a mail sink and a webhook sink, and a really seeded database
+# that persists between requests.
 #
-# THIS IS THE MERGE GATE. `ci.yml` calls it via `workflow_call`, so behaviour is proven against a
-# complete stack on every PR.
+# The recipe here is the one in docs/tools/live-e2e.md, service for service and variable for
+# variable. Change one, change the other.
 #
-# `test:e2e` (in ci.yml) runs the same specs against the same real API in its DEMO profile —
-# in-memory Mongo, cache and queue disabled — and runs first, because it is seconds where this is
-# minutes and it catches ordinary app regressions long before this finishes. What the demo profile
-# cannot answer is anything that depends on the infrastructure it switches off: a cached read
-# served stale, a queued job, a cookie over a real network. That is what this workflow adds, and
-# when the two disagree, this one is right.
+# TWO TIERS, one workflow (E2E-D8; docs/tools/live-e2e.md#tiers):
+#
+#   per push   `ci.yml` calls it with `grep: '@smoke'` — one job, only the tests tagged `@smoke`,
+#              a 15-minute budget. The push-time question is "does the real infrastructure work",
+#              and the smoke set answers it. This is the tier that gates.
+#   nightly    the `schedule` below, or a manual run with no `grep` — every test, split into
+#              `LIVE_SHARDS` matrix jobs that each get their own services and a sequential slice,
+#              plus one `antibot` entry: the same stack with the human-challenge provider on,
+#              running only the `*.antibot.cy.ts` specs (scripts/e2e/antibot-backend.ts).
+#              It reports; it does not block a push.
+#
+# `test:e2e` (in ci.yml) runs EVERY journey against the demo profile on every push — in-memory
+# Mongo, cache and queue disabled — and runs first, because it is seconds where this is minutes.
+# What the demo profile cannot answer is anything that depends on the infrastructure it switches
+# off: a cached read served stale, a queued job, a cookie over a real network. That is what this
+# workflow adds, and when the two disagree, this one is right.
 #
 # On failure, read it in this order:
 #   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
@@ -24,18 +35,29 @@ name: E2E (live backend)
 on:
     # Called by ci.yml as a required job — see that file's `test-e2e-live`.
     workflow_call:
+        inputs:
+            grep:
+                description: '@cypress/grep tag expression (space = OR, + = AND, - = NOT). Empty runs every test, as the nightly tier.'
+                type: string
+                default: ''
     schedule:
         # 03:15 UTC — before mutation.yml (03:30), so the two nightlies do not compete for
         # runners. Kept alongside the PR gate: this answers "does main still agree with the
         # backend's default branch", which no PR run can, because the backend moves on its own.
         - cron: '15 3 * * *'
     workflow_dispatch:
+        inputs:
+            grep:
+                description: '@cypress/grep tag expression, e.g. @smoke. Empty runs every test, split like the nightly.'
+                type: string
+                default: ''
 
 permissions:
     contents: read
 
 concurrency:
-    group: e2e-live-${{ github.workflow }}-${{ github.ref }}
+    # `inputs.grep` in the key: a smoke run must not cancel the nightly's shards on the same ref.
+    group: e2e-live-${{ github.workflow }}-${{ github.ref }}-${{ inputs.grep }}
     cancel-in-progress: true
 
 env:
@@ -46,37 +68,130 @@ env:
     # this is the Node twin's, the PHP one goes through composer. `{describeTo}` is where the
     # backend writes the accounts and subject ids: a live deployment mounts no `/__test/scenario`,
     # so this file is the only way the specs learn them.
-    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- scenario:apply:reset -- --describe-to={describeTo}
+    #
+    # `{scenario}` is where `cy.restore('name')` puts the scenario name (empty for a plain
+    # `cy.restore()`, which reseeds the backend's default). `NODE_ENV=development` is set on the
+    # command, not job-wide, because a job-wide value would also reach `vite build`; the seeder
+    # needs it, since it refuses public fallback passwords outside development/test.
+    LIVE_RESET_COMMAND: NODE_ENV=development npm --prefix {backend} run host -- scenario:apply:reset -- {scenario} --describe-to={describeTo}
     # The at-rest encryption keys, job-wide rather than per step: the seed step, the running
     # backend AND every `cy.restore()` (which re-seeds through LIVE_RESET_COMMAND from the Cypress
-    # step) must encrypt and decrypt with the same keys. Throwaway values — see "Start the backend".
+    # step) must encrypt and decrypt with the same keys. Throwaway values.
     NODE_PII_ENCRYPTION_KEY: ci-not-a-secret-pii-key
     NODE_TOTP_ENCRYPTION_KEY: ci-not-a-secret-totp-key
     NODE_WEBHOOK_SECRET_ENCRYPTION_KEY: ci-not-a-secret-webhook-key
+    #
+    # The backend's boot config, job-wide because the seed, the running backend AND every
+    # `cy.restore()` reseed (from the Cypress step) all boot the app and refuse without it.
+    # `host` (below) points the database and Redis at 127.0.0.1; the broker is not
+    # among what it sets, so it is named here.
+    NODE_RABBITMQ_HOST: 127.0.0.1
+    # One process. The default is one worker per core, all fighting over port 3000.
+    NODE_CLUSTER_WORKERS: '1'
+    # A required key for the personal-data pseudonyms; throwaway, like the ones above.
+    NODE_PSEUDONYM_KEY: ci-not-a-secret-pseudonym-key
+    # Webhook deliveries go to the tester service; the literal IP is deliberate, as the
+    # SSRF guard's DNS lookup skips /etc/hosts.
+    NODE_WEBHOOK_DEMO_SINK_URL: http://127.0.0.1:3070
+    # src/kernel/required-config.ts refuses to boot without these — throwaway
+    # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
+    # a real deployment's secrets have no place in a CI runner that dies with the job.
+    NODE_URL: http://localhost:3000/
+    NODE_TOKEN_ACCESS: ci-not-a-secret-access-token
+    NODE_TOKEN_REFRESH: ci-not-a-secret-refresh-token
+    # The e2e preview serves the app on 8085; the backend's CORS default names only
+    # the dev server, and a refused preflight fails every spec before any assertion.
+    NODE_CORS_ORIGIN: http://localhost:8085
+    # Where mailed links point — the preview, so a spec can open the link it read.
+    NODE_FRONTEND_URL: http://localhost:8085
+    # Mail goes to the Mailpit service above: plain SMTP on 1025 (the backend only
+    # negotiates TLS on 465/587), throwaway credentials Mailpit accepts.
+    NODE_MAIL_TRANSPORT: smtp
+    # `e2e:serve` refuses any host but localhost, 127.0.0.1, ::1 or mailpit.
+    NODE_SMTP_HOST: 127.0.0.1
+    NODE_SMTP_PORT: '1025'
+    NODE_SMTP_USER: ci
+    NODE_SMTP_PASS: ci-not-a-secret
+    NODE_SMTP_SENDER: 'CI <noreply@example.com>'
+    # The server-side half of the analytics pair. Unset, the backend logs "events
+    # are being discarded" and carries on — Umami would be up, the browser tracker
+    # would still write, and `analytics.cy.ts` would read one row where it expects
+    # one, passing for the wrong reason. `INGEST_HOST` is localhost here, not the
+    # compose stack's `http://umami:3000`, because this process runs on the runner
+    # rather than inside the job network.
+    NODE_ANALYTICS_PROVIDER: umami
+    NODE_UMAMI_INGEST_HOST: http://localhost:3080
+    NODE_UMAMI_HOST: http://localhost:3080
+    NODE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
+    # The live suite drives browsing, login, signup and reset far harder than a person
+    # does, from one address. Only these volume budgets are raised, so a limiter cannot
+    # silently truncate a spec; payments, invoicing and returns keep their defaults.
+    # Raised, not disabled, so a runaway loop still terminates. The global budget is
+    # per minute: 1000 still gave 429s on login.
+    NODE_RATE_LIMIT_MAX: '100000'
+    NODE_AUTH_RATE_LIMIT_MAX: '1000'
+    NODE_AUTH_RATE_LIMIT_ADDRESS_MAX: '1000'
+    NODE_SIGNUP_RATE_LIMIT_MAX: '1000'
+    NODE_RESET_RATE_LIMIT_MAX: '1000'
+    NODE_METRICS_TOKEN: ci-metrics-token
+    # The provider's webhook signing secret. Known, so a spec can sign a delivery itself
+    # (`postPaymentWebhook`, scripts/e2e/payment-webhook.ts reads the second name).
+    NODE_PAYMENT_WEBHOOK_SECRET: ci-not-a-secret-payment-webhook
+    E2E_PAYMENT_WEBHOOK_SECRET: ci-not-a-secret-payment-webhook
 
 jobs:
-    test-e2e-live:
+    # Decides the tier: a tag expression means the per-push smoke run (one job, short budget);
+    # none means the nightly (a matrix, longer budget per job). Kept in one place so the matrix
+    # and the timeout cannot disagree about which tier this is.
+    plan:
         runs-on: ubuntu-latest
-        timeout-minutes: 30
+        timeout-minutes: 2
+        permissions:
+            contents: read
+        outputs:
+            matrix: ${{ steps.tier.outputs.matrix }}
+            timeout: ${{ steps.tier.outputs.timeout }}
+        steps:
+            - name: Pick the tier
+              id: tier
+              env:
+                  # Through env, never interpolated into the script: it is caller-supplied text.
+                  GREP: ${{ inputs.grep }}
+                  # The nightly's slice count. The full live run is ~85-115 min sequential, so 4
+                  # slices land at ~30 min each; raise it as journeys are added.
+                  LIVE_SHARDS: '4'
+              run: |
+                  if [ -n "$GREP" ]; then
+                      echo 'matrix={"shard":[1],"total":[1]}' >> "$GITHUB_OUTPUT"
+                      echo 'timeout=15' >> "$GITHUB_OUTPUT"
+                  else
+                      shards=$(seq -s, 1 "$LIVE_SHARDS")
+                      # The last entry is not a slice: `print-live-shard.ts` reads `antibot` as "the
+                      # antibot specs", and the backend step below boots with the provider on for it.
+                      echo "matrix={\"shard\":[$shards,\"antibot\"],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT"
+                      echo 'timeout=45' >> "$GITHUB_OUTPUT"
+                  fi
+
+    test-e2e-live:
+        needs: plan
+        runs-on: ubuntu-latest
+        # Per tier — see `plan`. Not a literal: 15 is the smoke budget, 45 one nightly slice.
+        timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout) }}
+        # Every matrix job has its OWN services below and its own database, which is what lets the
+        # slices run in parallel: live specs share one seeded Mongo and cannot share it across jobs.
+        strategy:
+            fail-fast: false
+            matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
         permissions:
             contents: read
 
-        # The real datastores. This is the only workflow that needs them: every other suite runs
+        # The real infrastructure. This is the only workflow that needs it: every other suite runs
         # on mongodb-memory-server with no cache and no broker, so nothing else here talks to a
         # database that persists between requests. Health checks gate the steps below — a container
         # that is up but not yet accepting connections would fail the seed step in a way that reads
-        # as a bad seed.
+        # as a bad seed. Mongo is not here: it must be a replica set, which needs a command run
+        # after it starts, so the "Start Mongo" step below owns it.
         services:
-            mongodb:
-                # mongo:8
-                image: mongo@sha256:5d7043a4ffe02b9ed1b6e0bab057546981af5ca0a79107e9c461e49bc44c0a7b
-                ports:
-                    - 27017:27017
-                options: >-
-                    --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 10
             redis:
                 # redis:8
                 image: redis@sha256:718f745deb7dfefeac6eed7041fc7ec9476b50e61b247932682457c41adafa0e
@@ -87,6 +202,36 @@ jobs:
                     --health-interval 10s
                     --health-timeout 5s
                     --health-retries 10
+
+            # The broker. Workers run inside the API process, so nothing else is started; without it
+            # the queue-backed paths (webhook delivery, mail jobs) never leave `pending` and a spec
+            # that waits on them fails as a timeout rather than as a missing service.
+            rabbitmq:
+                # rabbitmq:4-management
+                image: rabbitmq@sha256:6ec83ef56205ce7cc6f8a762f28fdeeab50f52e8f79becbac5a3a4c7293a379a
+                ports:
+                    - 5672:5672
+                options: >-
+                    --health-cmd "rabbitmq-diagnostics -q ping"
+                    --health-interval 10s
+                    --health-timeout 10s
+                    --health-retries 10
+            # Where outbound webhooks land, so a delivery is real and its signature is checkable
+            # from the tester's API. The backend's SSRF guard exempts exactly this URL
+            # (`NODE_WEBHOOK_DEMO_SINK_URL`, development only). Host port 3070 matches the backend's
+            # own compose service. No health check: the image is minimal, so "Wait for the
+            # backend" waits on the port instead.
+            # https://github.com/tarampampam/webhook-tester
+            webhook-tester:
+                # ghcr.io/tarampampam/webhook-tester:2.3.0
+                image: ghcr.io/tarampampam/webhook-tester@sha256:85818267b450d3d386cad6510c561e09b974183ed2832c373bc83b125fc1b221
+                ports:
+                    - 3070:8080
+                env:
+                    # A POST to any uuid creates that session, which a seeded subscription cannot
+                    # do by clicking "new URL" first.
+                    AUTO_CREATE_SESSIONS: 'true'
+                    STORAGE_DRIVER: memory
 
             # Umami, and the Postgres behind it. Here because `analytics.cy.ts` is the one spec
             # neither repo's own suite can replace: this frontend's browser tracker and the
@@ -170,6 +315,23 @@ jobs:
                   token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: ${{ env.BACKEND_PATH }}
 
+            # A single-node replica set, because the backend runs multi-document transactions and a
+            # standalone `mongod` refuses them (BE `runtime/database.ts`, `withTransaction`). A
+            # service container cannot run `rs.initiate` after it starts, so this is a step.
+            # The member host must be 127.0.0.1: it is what the driver is told to reconnect to.
+            # https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/
+            - name: Start Mongo as a single-node replica set
+              run: |
+                  # mongo:8
+                  docker run -d --name mongo -p 27017:27017 \
+                      mongo@sha256:5d7043a4ffe02b9ed1b6e0bab057546981af5ca0a79107e9c461e49bc44c0a7b \
+                      --replSet rs0 --bind_ip_all
+                  until docker exec mongo mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' >/dev/null 2>&1; do sleep 2; done
+                  docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
+                  # Wait for the election: a seed that starts before there is a primary fails on its
+                  # first write.
+                  until docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; do sleep 2; done
+
             # The specs are written against the seed dataset, so the database has to hold it
             # before anything starts — and `cy.restore()` re-runs the seed between specs, which
             # is what `LIVE_RESET_COMMAND` above runs.
@@ -180,10 +342,9 @@ jobs:
             - name: Migrate and seed
               working-directory: ${{ env.BACKEND_PATH }}
               env:
-                  NODE_DB_URI: ''
-                  NODE_MONGODB_HOST: localhost
-                  NODE_REDIS_URL: ''
-                  NODE_REDIS_HOST: localhost
+                  # `host` already points the database and cache at 127.0.0.1. `development` is what
+                  # lets the seeder use its public demo passwords.
+                  NODE_ENV: development
               run: npm run host -- db:bootstrap
 
             # Umami seeds a fixed admin account on first boot but offers no env var for its
@@ -211,54 +372,25 @@ jobs:
             - name: Start the backend
               working-directory: ${{ env.BACKEND_PATH }}
               env:
-                  NODE_DB_URI: ''
-                  NODE_MONGODB_HOST: localhost
-                  NODE_REDIS_URL: ''
-                  NODE_REDIS_HOST: localhost
-                  # src/kernel/required-config.ts refuses to boot without these — throwaway
-                  # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
-                  # a real deployment's secrets have no place in a CI runner that dies with the job.
-                  NODE_URL: http://localhost:3000/
-                  NODE_TOKEN_ACCESS: ci-not-a-secret-access-token
-                  NODE_TOKEN_REFRESH: ci-not-a-secret-refresh-token
-                  # The e2e preview serves the app on 8085; the backend's CORS default names only
-                  # the dev server, and a refused preflight fails every spec before any assertion.
-                  NODE_CORS_ORIGIN: http://localhost:8085
-                  # Where mailed links point — the preview, so a spec can open the link it read.
-                  NODE_FRONTEND_URL: http://localhost:8085
-                  # Mail goes to the Mailpit service above: plain SMTP on 1025 (the backend only
-                  # negotiates TLS on 465/587), throwaway credentials Mailpit accepts.
-                  NODE_MAIL_TRANSPORT: smtp
-                  NODE_SMTP_HOST: localhost
-                  NODE_SMTP_PORT: '1025'
-                  NODE_SMTP_USER: ci
-                  NODE_SMTP_PASS: ci-not-a-secret
-                  NODE_SMTP_SENDER: 'CI <noreply@example.com>'
-                  # The server-side half of the analytics pair. Unset, the backend logs "events
-                  # are being discarded" and carries on — Umami would be up, the browser tracker
-                  # would still write, and `analytics.cy.ts` would read one row where it expects
-                  # one, passing for the wrong reason. `INGEST_HOST` is localhost here, not the
-                  # compose stack's `http://umami:3000`, because this process runs on the runner
-                  # rather than inside the job network.
-                  NODE_ANALYTICS_PROVIDER: umami
-                  NODE_UMAMI_INGEST_HOST: http://localhost:3080
-                  NODE_UMAMI_HOST: http://localhost:3080
-                  NODE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
-                  # The live suite drives login, signup and reset far harder than a person does,
-                  # from one address. Same reasoning as tests/helpers/setup.ts in the backend:
-                  # raised so the limiter cannot silently truncate a spec, not disabled, so a
-                  # runaway loop still terminates.
-                  NODE_RATE_LIMIT_MAX: '1000'
-                  NODE_AUTH_RATE_LIMIT_MAX: '1000'
-                  NODE_METRICS_TOKEN: ci-metrics-token
+                  # see the job-wide env for the rest; only NODE_ENV differs by step, because `development`
+                  # job-wide would also reach `vite build`. It is also what the webhook sink requires:
+                  # the sink exemption is refused in production.
+                  NODE_ENV: development
+                  # The antibot entry's provider — the values of scripts/e2e/antibot-backend.ts,
+                  # which a unit test keeps equal. Empty for every other entry, which reads as unset.
+                  NODE_ANTIBOT_PROVIDER: ${{ matrix.shard == 'antibot' && 'altcha' || '' }}
+                  NODE_ANTIBOT_ALTCHA_SECRET: ${{ matrix.shard == 'antibot' && 'e2e-not-a-secret-altcha-key' || '' }}
+                  NODE_ANTIBOT_ALTCHA_COST: ${{ matrix.shard == 'antibot' && '1000' || '' }}
+              # `e2e:serve` is `start` plus the mark that makes boot refuse a real SMTP host, so a
+              # live run cannot send mail. `host` is a prefix runner (see the seed step).
               run: |
-                  npm start > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+                  npm run host -- e2e:serve > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
                   echo $! > "$GITHUB_WORKSPACE/backend.pid"
 
             # Nothing downstream retries a connection, so without this the first spec would race
             # the server's startup and fail on a network error rather than on an assertion.
             - name: Wait for the backend
-              run: npx wait-on http://localhost:3000 --timeout 120000
+              run: npx wait-on http://localhost:3000 tcp:127.0.0.1:3070 --timeout 120000
 
             # Before spending minutes on Cypress: are the two checkouts still the same pair? A
             # forked `openapi.yaml` makes the run fail on shapes rather than on behaviour, which
@@ -282,7 +414,22 @@ jobs:
                   MAILPIT_URL: http://localhost:8025
                   VITE_UMAMI_SRC: http://localhost:3080/script.js
                   VITE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
-              run: npm run test:e2e:live
+                  # The tier's tag filter (empty = every test), read by cypress.config.ts.
+                  E2E_GREP_TAGS: ${{ inputs.grep }}
+                  # This job's slice of the suite, so the matrix jobs cover it exactly once between
+                  # them (a smoke run is the one slice of one).
+                  SHARD: ${{ matrix.shard }}
+                  TOTAL: ${{ matrix.total }}
+              run: |
+                  # A tag no spec carries makes Cypress fail with "no spec files were found", which
+                  # reads as a broken run. Say so as a warning and stop instead: the tier is simply
+                  # empty. Only positive tags are checked; an expression of exclusions runs as is.
+                  tags="$(echo "$E2E_GREP_TAGS" | grep -oE '(^|[ +])@[A-Za-z0-9_-]+' | tr -d ' +' | paste -sd'|' || true)"
+                  if [ -n "$tags" ] && ! grep -rqE --include='*.cy.ts' -- "$tags" tests/e2e src/modules; then
+                      echo "::warning::No spec carries $E2E_GREP_TAGS, so this tier ran nothing."
+                      exit 0
+                  fi
+                  E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts "$SHARD" "$TOTAL")" npm run test:e2e:live:spec
 
             # Tests that passed only on Cypress' one retry, as warning annotations — flaky rather
             # than green, and never failing the job. The sharded demo run prints its own.
@@ -301,7 +448,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: backend-log
+                  name: backend-log-${{ matrix.shard }}
                   path: backend.log
                   retention-days: 14
                   if-no-files-found: warn
@@ -312,7 +459,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-screenshots-live
+                  name: cypress-screenshots-live-${{ matrix.shard }}
                   path: tests/e2e/screenshots
                   retention-days: 14
                   if-no-files-found: ignore
@@ -322,7 +469,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-videos-live
+                  name: cypress-videos-live-${{ matrix.shard }}
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore
@@ -333,7 +480,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: a11y-reports-live
+                  name: a11y-reports-live-${{ matrix.shard }}
                   path: reports/a11y/
                   retention-days: 14
                   if-no-files-found: ignore

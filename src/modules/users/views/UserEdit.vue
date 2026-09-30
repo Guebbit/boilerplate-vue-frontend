@@ -360,6 +360,7 @@ watchUser(() => id);
                     <v-text-field
                         v-model="form.email"
                         type="email"
+                        data-test="user-edit-email"
                         :label="t('user-edit-page.label-email')"
                         :error-messages="showFormErrors ? formErrors.email : []"
                     />
@@ -374,6 +375,7 @@ watchUser(() => id);
                         v-model="form.password"
                         type="password"
                         autocomplete="new-password"
+                        data-test="user-edit-password"
                         :label="t('user-edit-page.label-password')"
                         :error-messages="showFormErrors ? formErrors.password : []"
                     />
@@ -416,6 +418,7 @@ watchUser(() => id);
                     </div>
                     <FormImageUpload
                         v-model="form.imageUpload"
+                        data-test="user-edit-avatar"
                         :current-image-url="currentUser?.imageUrl"
                         :error-messages="showFormErrors ? formErrors.imageUpload : []"
                         :progress="uploadProgress"

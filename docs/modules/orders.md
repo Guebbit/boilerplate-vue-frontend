@@ -80,11 +80,11 @@ optional amount for a partial refund — empty still means everything still refu
 
 Store `orders`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                       | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `orders` · `selectedOrderId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                         | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                      | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `createOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                                | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **State**   | `orders` · `selectedOrderId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                                                  | The refs the setup function returns — the only writable surface. |
+| **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `createOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` · `fetchCreditNotes` · `fetchCreditNote` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -100,21 +100,22 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                | Response envelope             |
-| ----------------------------------- | ----------------------------- |
-| `DELETE /orders`                    | `DeleteOrderResponse`         |
-| `GET /orders`                       | `ListOrdersResponse`          |
-| `POST /orders`                      | `CreateOrderResponse`         |
-| `DELETE /orders/{id}`               | `DeleteOrderByIdResponse`     |
-| `GET /orders/{id}`                  | `GetOrderByIdResponse`        |
-| `PUT /orders/{id}`                  | `ReplaceOrderByIdResponse`    |
-| `PATCH /orders/{id}`                | `UpdateOrderByIdResponse`     |
-| `POST /orders/{id}/cancel`          | `CancelOrderByIdResponse`     |
-| `POST /orders/{id}/restore`         | `RestoreOrderByIdResponse`    |
-| `POST /orders/{id}/status-override` | `OverrideOrderStatusResponse` |
-| `DELETE /orders/{id}/hard`          | `HardDeleteOrderByIdResponse` |
-| `GET /orders/{id}/invoice`          | `GetOrderInvoiceResponse`     |
-| `POST /orders/search`               | `SearchOrdersResponse`        |
+| Call                                | Response envelope              |
+| ----------------------------------- | ------------------------------ |
+| `DELETE /orders`                    | `DeleteOrderResponse`          |
+| `GET /orders`                       | `ListOrdersResponse`           |
+| `POST /orders`                      | `CreateOrderResponse`          |
+| `DELETE /orders/{id}`               | `DeleteOrderByIdResponse`      |
+| `GET /orders/{id}`                  | `GetOrderByIdResponse`         |
+| `PUT /orders/{id}`                  | `ReplaceOrderByIdResponse`     |
+| `PATCH /orders/{id}`                | `UpdateOrderByIdResponse`      |
+| `POST /orders/{id}/cancel`          | `CancelOrderByIdResponse`      |
+| `POST /orders/{id}/restore`         | `RestoreOrderByIdResponse`     |
+| `POST /orders/{id}/status-override` | `OverrideOrderStatusResponse`  |
+| `DELETE /orders/{id}/hard`          | `HardDeleteOrderByIdResponse`  |
+| `GET /orders/{id}/invoice`          | `GetOrderInvoiceResponse`      |
+| `GET /orders/{id}/credit-notes`     | `ListOrderCreditNotesResponse` |
+| `POST /orders/search`               | `SearchOrdersResponse`         |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

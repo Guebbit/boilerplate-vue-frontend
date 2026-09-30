@@ -2,7 +2,7 @@
  * The five places that must agree about which Cypress specs exist.
  *
  * Three of them import `scripts/e2e/cypress-spec-globs.ts` and are true by construction. `package.json`
- * cannot import anything, so its five `--spec` arguments are checked here instead — by resolving
+ * cannot import anything, so its six `--spec` arguments are checked here instead — by resolving
  * them against the real filesystem and comparing the file sets, not by comparing the strings.
  * Comparing strings would pass on two spellings that mean different things, which is the whole
  * failure being guarded: a one-level `tests/e2e` glob and its recursive form look alike and
@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 
 import {
     ALL_SPEC_GLOBS,
+    ANTIBOT_SPEC_GLOBS,
     FUNCTIONAL_SPEC_GLOBS,
     VISUAL_SPEC_GLOBS
 } from '../../../../scripts/e2e/cypress-spec-globs';
@@ -55,7 +56,7 @@ const specArgumentOf = (scriptName: string): string[] => {
 };
 
 describe('every spelling of the spec set resolves to the same files', () => {
-    it.each(['test:e2e:serial', 'test:e2e:live', 'test:e2e:spec'])(
+    it.each(['test:e2e:serial', 'test:e2e:live', 'test:e2e:live:spec', 'test:e2e:spec'])(
         '%s runs exactly the functional suite',
         (scriptName) => {
             expect(resolve(specArgumentOf(scriptName))).toEqual(resolve(FUNCTIONAL_SPEC_GLOBS));
@@ -69,16 +70,33 @@ describe('every spelling of the spec set resolves to the same files', () => {
         }
     );
 
-    /**
-     * The two halves partition the whole. A spec in neither is a spec nothing runs, and a spec in
-     * both would be photographed by the gate that exists not to photograph anything.
-     */
-    it('splits every spec into exactly one of the two suites', () => {
-        const functional = resolve(FUNCTIONAL_SPEC_GLOBS);
-        const visual = resolve(VISUAL_SPEC_GLOBS);
+    it('test:e2e:antibot runs exactly the antibot suite', () => {
+        expect(resolve(specArgumentOf('test:e2e:antibot'))).toEqual(resolve(ANTIBOT_SPEC_GLOBS));
+    });
 
-        expect(functional.filter((file) => visual.includes(file))).toEqual([]);
-        expect([...functional, ...visual].toSorted()).toEqual(resolve(ALL_SPEC_GLOBS));
+    /**
+     * The three suites partition the whole. A spec in none is a spec nothing runs; a spec in two
+     * would be photographed by the gate that exists not to photograph anything, or run against a
+     * backend without the provider it needs.
+     */
+    it('splits every spec into exactly one of the three suites', () => {
+        const suites = [FUNCTIONAL_SPEC_GLOBS, VISUAL_SPEC_GLOBS, ANTIBOT_SPEC_GLOBS].map((globs) =>
+            resolve(globs)
+        );
+        const everything = suites.flat();
+
+        expect(new Set(everything).size).toBe(everything.length);
+        expect(everything.toSorted()).toEqual(resolve(ALL_SPEC_GLOBS));
+    });
+
+    it('keeps an antibot spec out of the functional suite, and only it', () => {
+        const antibot = resolve(ANTIBOT_SPEC_GLOBS);
+
+        expect(antibot.length).toBeGreaterThan(0);
+        expect(antibot.every((file) => file.endsWith('.antibot.cy.ts'))).toBe(true);
+        expect(resolve(FUNCTIONAL_SPEC_GLOBS).some((file) => file.includes('.antibot.'))).toBe(
+            false
+        );
     });
 
     /** The guard on the guard: an empty set would satisfy every assertion above. */

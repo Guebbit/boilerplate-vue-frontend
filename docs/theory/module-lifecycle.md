@@ -87,6 +87,8 @@ domain's screens is that domain's; left under `tests/e2e/specs/` it survives the
 orphan addressing routes that no longer exist, and nothing in the build can see that it has. Specs
 that belong to no single domain — the shell, the locale layer, the a11y sweep, the arcs that cross
 four modules — stay central, where a failure after a deletion is correct signal rather than debris.
+A central spec that needs a module says so on a `// requires-module:` line, and `demo:remove`
+deletes it with that module — see [Journeys](../reference/tests.md#journeys--stories-that-cross-modules).
 
 Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outside
 `tsconfig.app.json`, the Vitest `include`, the coverage `include` and the Stryker `mutate` list.

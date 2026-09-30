@@ -6,6 +6,8 @@
  * exercised in the one language where "translated" and "untranslated" look identical. A broken
  * `loadLocale` would have kept every one of those specs green.
  */
+import { seedAccount } from '../../support/e2e/scenario';
+
 describe('Italian locale', () => {
     beforeEach(() => {
         cy.visit('/it');
@@ -112,9 +114,7 @@ describe('the saved preference', () => {
         cy.visit('/en');
     });
 
-    it("a guest's switch writes nothing to any account", function () {
-        cy.skipUnlessDemo();
-
+    it("a guest's switch writes nothing to any account", () => {
         cy.get('[data-test=language-switcher]').first().click();
         cy.get('[data-test=language-option-it]').click();
         cy.get('html').should('have.attr', 'lang', 'it');
@@ -125,9 +125,7 @@ describe('the saved preference', () => {
         cy.get('html').should('have.attr', 'lang', 'en');
     });
 
-    it("a registered visitor's choice follows them to the next login", function () {
-        cy.skipUnlessDemo();
-
+    it("a registered visitor's choice follows them to the next login", () => {
         cy.loginAs('user');
         cy.get('[data-test=language-switcher]').first().click();
         cy.get('[data-test=language-option-it]').click();
@@ -138,7 +136,7 @@ describe('the saved preference', () => {
         cy.logout();
         // The session is ended only once the viewer chip is gone — a locale-independent fact,
         // unlike any nav label after the switch above.
-        cy.contains('customer@example.com').should('not.exist');
+        cy.contains(seedAccount('user').email).should('not.exist');
         cy.loginAs('user');
 
         cy.get('html').should('have.attr', 'lang', 'it');

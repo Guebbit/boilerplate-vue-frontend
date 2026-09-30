@@ -1,7 +1,8 @@
 /**
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
- * search, plus two hand-written actions (`cancelOrder`, `fetchInvoice`)
+ * search, plus hand-written actions (`cancelOrder`, `fetchInvoice`, `fetchCreditNotes`,
+ * `fetchCreditNote`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { defineStore } from 'pinia';
@@ -20,6 +21,8 @@ import {
     restoreOrderById,
     cancelOrderById,
     getOrderInvoice,
+    listOrderCreditNotes,
+    getOrderCreditNote,
     overrideOrderStatus,
     OrderSortItem
 } from '@api';
@@ -28,7 +31,8 @@ import type {
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     SearchOrdersRequest,
-    OrderStatus
+    OrderStatus,
+    CreditNoteSummary
 } from '@types';
 
 /**
@@ -44,6 +48,18 @@ type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize' | 'id' | 'sor
     /** The API's `sort` as one CSV (`-createdAt`): the form a URL holds. */
     sort?: string;
 };
+
+/**
+ * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
+ * never refunded. The list is how the UI learns which notes exist; there is no flag for it.
+ * Deliberately outside `fetchAny`: this is a background read, and flipping the store's shared
+ * `loading` would disable the page's other buttons every time it runs.
+ *
+ * @param orderId - Identifier of the order.
+ * @returns A promise resolving with the note summaries.
+ */
+const listCreditNotes = (orderId: string): Promise<CreditNoteSummary[]> =>
+    listOrderCreditNotes(orderId).then((response) => response.data);
 
 /**
  * Orders CRUD, paginated search and invoices.
@@ -234,6 +250,17 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const fetchInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
 
+    /**
+     * Fetches one credit note's frozen PDF. Each download counts against the invoicing rate limit,
+     * so callers fetch the one note the visitor asked for, never all of them.
+     *
+     * @param orderId - Identifier of the order.
+     * @param creditNoteId - Which note, from `fetchCreditNotes`.
+     * @returns A promise resolving with the PDF bytes.
+     */
+    const fetchCreditNote = (orderId: string, creditNoteId: string) =>
+        fetchAny(() => getOrderCreditNote(orderId, creditNoteId));
+
     return {
         orders,
         ordersList,
@@ -260,6 +287,8 @@ export const useOrdersStore = defineStore('orders', () => {
         overrideStatus,
         hardDeleteOrder,
         restoreOrder,
-        fetchInvoice
+        fetchInvoice,
+        fetchCreditNotes: listCreditNotes,
+        fetchCreditNote
     };
 });

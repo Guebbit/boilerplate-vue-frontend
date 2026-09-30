@@ -29,8 +29,6 @@ concurrency:
     group: mutation-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
-env:
-
 jobs:
     mutation:
         runs-on: ubuntu-latest

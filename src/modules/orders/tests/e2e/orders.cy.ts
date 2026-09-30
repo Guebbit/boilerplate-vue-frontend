@@ -55,8 +55,8 @@ describe('Orders', () => {
      * The staff row actions are gated on `orders.update`/`orders.delete` — a customer reaching
      * their own orders list must see View and nothing else, same model as
      * `src/modules/products/tests/e2e/products.cy.ts`'s per-role visibility. The seeded `user`
-     * account has three visible orders of its own (its fourth, oldest one is soft-deleted) — no
-     * provisioning needed, same as the admin block above.
+     * account has visible orders of its own (its oldest one is soft-deleted) — no provisioning
+     * needed, same as the admin block above.
      */
     describe('Orders list — a non-admin customer', () => {
         beforeEach(() => {

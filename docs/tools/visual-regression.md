@@ -50,22 +50,25 @@ Visual testing is the classic flake generator, and its failure mode is **social*
 3. that becomes the habit
 4. the suite now produces the paperwork of review without the review
 
-Twelve screens that are genuinely looked at beat forty that are rubber-stamped. The rule is **one per module — its main screen — plus the two the shell owns**, which keeps the count tied to the architecture rather than to somebody's enthusiasm. A module gaining a second baseline should be a decision, not a habit.
+Screens that are genuinely looked at beat a crowd that is rubber-stamped. The rule is **one main screen per module, plus the shell's own** — a module gains a second baseline (a state that is a layout of its own: a modal, a challenge step) by a decision, not a habit, which keeps the count tied to the architecture rather than to somebody's enthusiasm.
 
-| Screen                | Owner       | Layout family it stands for         |
-| --------------------- | ----------- | ----------------------------------- |
-| `home`                | shell       | marketing content, cards, hero      |
-| `not-found`           | shell       | error state, empty state            |
-| `products-list`       | `products`  | data table, filter form, pagination |
-| `login`               | `account`   | centred narrow form                 |
-| `cart`                | `cart`      | line items, totals panel            |
-| `orders-list`         | `orders`    | data table, authenticated           |
-| `wishlist`            | `wishlist`  | card grid, authenticated            |
-| `users-list`          | `users`     | admin data table                    |
-| `admin-dashboard`     | `admin`     | KPI tiles, dense numbers            |
-| `inventory-ledger`    | `inventory` | admin table, board + ledger         |
-| `contact`             | `feedback`  | public form                         |
-| `realtime-playground` | `realtime`  | live-updating panels                |
+| Screen                                                                        | Owner           | Layout family it stands for            |
+| ----------------------------------------------------------------------------- | --------------- | -------------------------------------- |
+| `home`, `home-signed-in`                                                      | shell           | marketing content, cards, hero         |
+| `about`, `faq`                                                                | shell           | long-form prose, accordions            |
+| `not-found`                                                                   | shell           | error state, empty state               |
+| `login`, `login, 2FA challenge`                                               | `account`       | centred narrow form, second step       |
+| `profile, 2FA panel off`, `profile, 2FA backup codes`                         | `account`       | settings card, modal over a page       |
+| `products-list`                                                               | `products`      | filter form, product grid              |
+| `cart`                                                                        | `cart`          | empty state, line items, totals        |
+| `orders-list`                                                                 | `orders`        | data table, authenticated              |
+| `wishlist`                                                                    | `wishlist`      | card list, authenticated               |
+| `users-list`                                                                  | `users`         | admin data table                       |
+| `inventory-ledger`                                                            | `inventory`     | admin forms + table                    |
+| `contact`                                                                     | `feedback`      | public form                            |
+| `locales-list`, `locales-dictionary`, `locale-entries`, `entity-translations` | `locales`       | admin tables, wide matrix, tabbed form |
+| `admin-dashboard`                                                             | `observability` | KPI tiles, dense numbers               |
+| `realtime-playground`                                                         | `observability` | live-updating panels                   |
 
 ## Where the baselines live
 
@@ -83,7 +86,7 @@ Diffs go the other way, to `reports/visual-diff/` — one gitignored folder, bec
 
 ## Not in the gate — deliberately
 
-The visual specs sit inside `src/modules/*/tests/e2e/`, which is also the functional e2e glob, so `scripts/e2e/run-shards.ts` excludes them **by the `.visual.cy.ts` suffix**. Without that the merge gate would have silently acquired twelve pixel comparisons, and the first font update would have looked like an application regression.
+The visual specs sit inside `src/modules/*/tests/e2e/`, which is also the functional e2e glob, so `scripts/e2e/run-shards.ts` excludes them **by the `.visual.cy.ts` suffix**. Without that the merge gate would have silently acquired a dozen pixel-comparing specs, and the first font update would have looked like an application regression.
 
 `npm run test:e2e:visual` is where they run.
 
@@ -186,7 +189,7 @@ A visual suite that is silently photographing blank pages passes forever and cat
 #   LayoutDefault.vue's own <v-main style="padding-top:120px" …>
 npm run test:e2e:visual
 #   home: 45043 of 921600 pixels differ (4.887%, budget 0.200%)  ← 1 failing
-#   the other three screens still pass    ← proves run-to-run stability at the same time
+#   the other screens still pass    ← proves run-to-run stability at the same time
 ```
 
 That is the check to repeat after touching anything in `freezeForVisual`, the viewport, or the visit override. It caught the blank-baseline problem: an early version recorded images with 19 distinct colours, and `home.png` was byte-identical to `not-found.png`.
@@ -209,26 +212,46 @@ all differ between a developer's machine and a CI runner, by more than the 0.2% 
 text-heavy pages. So the suite runs in **one pinned image**, and the baselines are recorded there
 too — never on a host:
 
-| What                   | Where                                                                 |
-| ---------------------- | --------------------------------------------------------------------- |
-| The image              | `cypress/included:<version>@sha256:<digest>` — pinned in `visual.yml` |
-| The nightly comparison | `.github/workflows/visual.yml`, 02:30 UTC and on demand               |
-| The diff images        | uploaded as the `visual-diff` artefact on every run                   |
-| The baselines          | recorded in that same image, committed beside each spec               |
+| What                   | Where                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| The image              | `cypress/included:<version>@sha256:<digest>` — pinned in `visual.yml`                |
+| The nightly comparison | `.github/workflows/visual.yml`, 02:30 UTC and on demand                              |
+| The re-record          | the `update-visual-baselines` job of the same workflow, run by hand, never on `main` |
+| The diff images        | uploaded as the `visual-diff` artefact on every run                                  |
+| The baselines          | recorded in that same image, committed beside each spec                              |
 
 It stays a nightly rather than a merge gate: a red run means "go and look at the picture", and the
 artefact is that picture.
 
 ### Re-recording the baselines
 
-Only after looking at the diff, and only inside the pinned image. Copy both checkouts into a
-container (never mount them read-write: the image's Node would rebuild the host's
-`node_modules`), install, and run the update — `--network host` so the preview (8085) and the demo
-backend (3000) reach each other:
+Only after looking at the diff, and only inside the pinned image. The way to do it is the manual
+`update-visual-baselines` job of `visual.yml`:
+
+```mermaid
+flowchart LR
+    Push["push the branch\nwith the intended UI change"] --> Run["Actions -> Visual regression\nRun workflow, mode: update-baselines"]
+    Run --> Rec["pinned image:\ntest:e2e:visual:update"]
+    Rec --> Commit["commit **/__snapshots__/*.png\nto the SAME branch"]
+    Commit --> Review["review every PNG\nin the branch diff"]
+    Review --> Merge["merge"]
+```
+
+- It runs in the same image and digest as the nightly, so both sides of a comparison match.
+- It commits to the branch it was started from and refuses to run on `main`: the new PNGs reach
+  `main` only through a reviewed merge.
+- `contents: write` is granted to that one job; the comparison job keeps `contents: read`.
+- Nothing changed means nothing committed.
+
+To record locally instead (say, to look before pushing), copy both checkouts into a container of
+the same image; never mount them read-write, because the image's Node would rebuild the host's
+`node_modules`. Leave the container on its own network (no `--network host`): the preview (8085)
+and the demo backend (3100) both live inside it, and a host-network container would collide with
+any other Cypress run using those ports.
 
 ```bash
 IMAGE=cypress/included:15.18.1   # the tag pinned in visual.yml
-docker run -d --name visual --network host \
+docker run -d --name visual \
   -v "$PWD:/src/frontend:ro" -v "$PWD/../boilerplate-node-backend:/src/backend:ro" \
   --entrypoint sleep "$IMAGE" infinity
 docker exec visual bash -c '
@@ -245,12 +268,22 @@ docker rm -f visual
 ```
 
 `.env` is left behind on purpose: CI has none, and a host `.env` can name paths that do not exist
-inside the image. Then review the changed PNGs in the diff, as always.
+inside the image. Then review the changed PNGs in the diff, as always. Run the comparison once
+more afterwards: a second run on the fresh baselines must be green, or something on a screen
+varies per run (see below).
+
+### The preview binds `127.0.0.1`
+
+`test:e2e:visual` starts `vite preview --host 127.0.0.1`. Without it the preview binds
+`localhost`, which inside the container resolves to `::1` only, so a client that asks for
+`127.0.0.1` never gets an answer. Bound to `127.0.0.1`, `localhost` still works from Node and
+Chrome, which try both address families; the app's own origin (`http://localhost:8085`) stays
+what the backend's CORS list expects.
 
 ### What varies between two runs of an unchanged app
 
 A screen that shows a value minted per run — an id created at boot, a date relative to today, a
-freshly random backup code — cannot be compared as it stands. `sweepVisual`'s `redact` option
+freshly random backup code, a live counter or a clock — cannot be compared as it stands. `sweepVisual`'s `redact` option
 replaces those elements' text with one fixed placeholder before the photograph. Replaced, not
 hidden: a hidden table cell still sizes its column by the text inside it.
 
@@ -262,7 +295,7 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 
 | Path                                               | Contents                                                                                                                                       |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/visual/visual.cy.ts`                    | The four screens, the readiness selectors, the determinism `beforeEach`                                                                        |
+| `tests/e2e/visual/visual.cy.ts`                    | The shell's five screens, the readiness selectors, the determinism `beforeEach`                                                                |
 | `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
 | `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                              |
 | `cypress.config.ts`                                | Registers the `compareSnapshot` task and pins the 1280×800 viewport                                                                            |

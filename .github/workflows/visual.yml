@@ -6,7 +6,7 @@ name: Visual regression (nightly)
 # Inside ONE pinned image, because screenshots are machine-sensitive: font rasterisation and the
 # browser build differ between hosts by more than the 0.2% budget. The committed baselines were
 # recorded in this same image, so both sides of every comparison share a font stack and a Chrome.
-# Re-record them there too, never on a host — the page above says how.
+# Re-record them there too, never on a host: run this workflow by hand with mode update-baselines.
 #
 # Nightly and advisory rather than a merge gate: a red run means "go and look at the picture",
 # which is why the diff images are uploaded whatever the outcome.
@@ -16,16 +16,29 @@ on:
         # 02:30 UTC — before the other nightlies (03:00 onwards), so they do not compete.
         - cron: '30 2 * * *'
     workflow_dispatch:
+        inputs:
+            mode:
+                description: >-
+                    compare: the nightly run, by hand. update-baselines: re-record every baseline
+                    in the pinned image and commit the PNGs to the selected branch (never main).
+                type: choice
+                options:
+                    - compare
+                    - update-baselines
+                default: compare
 
 permissions:
     contents: read
 
 concurrency:
     group: visual-${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+    # A cancelled re-record would leave the branch half-committed; only comparisons are disposable.
+    cancel-in-progress: ${{ inputs.mode != 'update-baselines' }}
 
 jobs:
     visual:
+        # The nightly (no inputs) and a manual `compare`; a manual `update-baselines` skips it.
+        if: inputs.mode != 'update-baselines'
         runs-on: ubuntu-latest
         timeout-minutes: 40
         permissions:
@@ -70,3 +83,53 @@ jobs:
                   path: reports/visual-diff/
                   retention-days: 14
                   if-no-files-found: ignore
+
+    update-visual-baselines:
+        # Manual only, and never on main: the re-recorded PNGs land as a commit on the branch the
+        # run was started from, so a person reviews them in that branch's diff before merging.
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'update-baselines' && github.ref != 'refs/heads/main'
+        runs-on: ubuntu-latest
+        timeout-minutes: 40
+        permissions:
+            # The only job in this repo's workflows that pushes; the grant stops at this job.
+            contents: write
+        container:
+            # Same image and digest as the `visual` job: baselines recorded anywhere else would
+            # not match the comparison. Bump both together.
+            image: cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047
+        env:
+            CYPRESS_CACHE_FOLDER: /root/.cache/Cypress
+            BACKEND_PATH: ${{ github.workspace }}/.backend
+            BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
+              with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+                  path: .backend
+
+            - name: Install dependencies
+              run: CYPRESS_INSTALL_BINARY=0 npm ci
+
+            - name: Re-record every baseline
+              run: npm run test:e2e:visual:update
+
+            - name: Commit the changed baselines to this branch
+              # A container job runs as root in a workspace owned by another uid, which git refuses
+              # without `safe.directory`. New PNGs are untracked, so `git add` must see them; the
+              # pathspec is quoted so git, not the shell, expands the glob.
+              run: |
+                  git config --global --add safe.directory "$GITHUB_WORKSPACE"
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add -- ':(glob)**/__snapshots__/*.png'
+                  if git diff --cached --quiet; then
+                      echo "Baselines unchanged, nothing to commit."
+                      exit 0
+                  fi
+                  git commit -m "test(visual): re-record baselines in the pinned image"
+                  git push origin "HEAD:${GITHUB_REF_NAME}"

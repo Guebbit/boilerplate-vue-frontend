@@ -45,6 +45,7 @@
         "label-reference": "Riferimento",
         "button-copy-iban": "Copia IBAN",
         "button-copy-reference": "Copia riferimento",
+        "copy-failed": "Copia non riuscita — seleziona il testo e copialo a mano.",
         "hint-reference": "Scrivi questo riferimento nella causale del bonifico esattamente come mostrato, così potremo abbinare il tuo pagamento a questo ordine."
     },
     "order-reference-search": {

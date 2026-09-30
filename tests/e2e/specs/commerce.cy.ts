@@ -1,3 +1,4 @@
+// requires-module: cart, delivery, inventory, orders, payments, products
 /**
  * The money and the logistics, walked honestly: the customer chooses shipping and watches its
  * cost freeze onto the order, pays with the declined card first (the API's demo provider refuses
@@ -9,10 +10,13 @@
  * Two sessions on purpose: each `it` builds its own state and never reloads mid-arc, so nothing
  * it wrote depends on a store surviving a page load — the same discipline as journey.cy.ts.
  */
+import { seedAccount } from '../../support/e2e/scenario';
+
 /**
- * Corrects the order on the edit page to `label` via the `orders.any.override` door — the only
- * way onto `processing`: `PUT /orders/:id` carries no `status` field, and shipping itself only
- * ever moves `processing → shipped`, never `paid → processing`.
+ * Corrects the order on the edit page to `label` via the `orders.any.override` door. It is one
+ * way onto `processing` — the ordinary one is `POST /delivery/order/{id}/start` — and the one
+ * this walk takes, since it is about shipping and the ledger, not the start. `PUT /orders/:id`
+ * carries no `status` field, and shipping itself only ever moves `processing → shipped`.
  *
  * Reachable here because `loginAs` just re-authenticated for real, well inside the override
  * permission's `stepUp: critical` window — no `ReauthDialog` to answer.
@@ -40,7 +44,7 @@ describe('Commerce', () => {
 
         // ── Buy something ───────────────────────────────────────────────────────────
         cy.navigateTo('/en/products');
-        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        cy.filterByNarrowestCategoryOf('product.rich');
         cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
@@ -92,7 +96,7 @@ describe('Commerce', () => {
          */
         cy.loginAs('user');
         cy.navigateTo('/en/products');
-        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        cy.filterByNarrowestCategoryOf('product.rich');
         cy.get('[data-test=product-card-link]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=add-to-cart]').click();
@@ -111,15 +115,17 @@ describe('Commerce', () => {
             const orderId = pathname.split('/').at(-1);
 
             cy.logout();
-            cy.contains('customer@example.com').should('not.exist');
+            cy.contains(seedAccount('user').email).should('not.exist');
             cy.loginAs('admin');
             cy.visit(`/en/orders/${orderId}/edit`);
         });
         cy.get('#order-edit-page').should('exist');
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
-        // `paid → processing` has no ordinary door at all (SH1) — only the override correction
-        // reaches it; `processing → shipped` is the shipment panel's own move, below.
+        // This walk takes the override correction to `processing`, because it is about shipping
+        // and the ledger. The ordinary door — `POST /delivery/order/{id}/start`, the
+        // `mark-started` button — is a different arc; `processing → shipped` is the shipment
+        // panel's own move, below.
         correctStatusTo(/processing/i);
 
         // ── Ship it: the shipment panel is the one door for the move ────────────────

@@ -3,7 +3,7 @@
  *
  * Registered as the `adminApi` task in `cypress.config.ts` and used by `fixtures.ts` to provision
  * the subjects a visibility spec needs. It runs OUTSIDE the browser for the reason the
- * `createSession` task beside it does: a plain fetch carries no browser cookie jar, so the page's
+ * `deviceLogin` task beside it does: a plain fetch carries no browser cookie jar, so the page's
  * own refresh cookie — and with it which session counts as "current" — is left untouched.
  *
  * The token is fetched per call rather than cached. `cy.restore()` drops and reseeds the

@@ -20,8 +20,8 @@
 #
 # Deliberately not here, and run by hand for the occasions that want them: `test:mutation`
 # (re-executes the unit suite once per mutant — nightly in CI), and `complete:manual`, which is
-# `test:e2e:visual` (pixel diffs that answer to the machine that took them) plus `test:e2e:live`
-# (needs the paired backend up).
+# `test:e2e:live` (needs the paired backend up). Pixel diffs answer to the machine that took them,
+# so they run only in the pinned image of `visual.yml`.
 #
 # FA124 — lint and format check the STAGED SNAPSHOT, not the working tree. `lint-staged`
 # (`.lintstagedrc.json`) runs `eslint` and `prettier --check` on staged files only. Before this,

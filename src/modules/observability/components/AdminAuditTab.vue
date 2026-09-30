@@ -173,17 +173,20 @@ void fetchPage({ ...filters });
                     <v-text-field
                         v-model="filters.actor"
                         type="text"
+                        data-test="filter-actor"
                         :label="t('admin-page.audit-filter-actor')"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.action"
                         type="text"
+                        data-test="filter-action"
                         :label="t('admin-page.audit-filter-action')"
                         hide-details
                     />
                     <v-select
                         v-model="outcomeChoice"
+                        data-test="filter-outcome"
                         :items="outcomeOptions"
                         item-title="label"
                         item-value="value"
@@ -193,6 +196,7 @@ void fetchPage({ ...filters });
                     <v-text-field
                         v-model="filters.since"
                         type="datetime-local"
+                        data-test="filter-since"
                         :label="t('admin-page.audit-filter-since')"
                         hide-details
                     />
@@ -204,11 +208,18 @@ void fetchPage({ ...filters });
                     />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" :disabled="loading">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        :disabled="loading"
+                        data-test="search-submit"
+                    >
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
+                        {{ t('generic.reset') }}
+                    </v-btn>
                 </div>
             </form>
         </v-card>

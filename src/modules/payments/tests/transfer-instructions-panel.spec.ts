@@ -5,7 +5,8 @@
  * GROUP the same characters the copy button puts on the clipboard, never a different string.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { createPinia, setActivePinia } from 'pinia';
 import TransferInstructionsPanel from '@/modules/payments/components/TransferInstructionsPanel.vue';
 import { i18n, loadLocale } from '@/i18n';
@@ -52,6 +53,22 @@ describe('TransferInstructionsPanel', () => {
             .trigger('click')
             .then(() => {
                 expect(writeText).toHaveBeenCalledWith('RF132EY8H44VJAVZKX80JRL');
+            });
+    });
+
+    it('tells the customer when the copy did not work, instead of failing silently', () => {
+        writeText.mockRejectedValueOnce(new Error('denied'));
+        const wrapper = mountPanel();
+
+        return wrapper
+            .get('[data-test=transfer-copy-iban]')
+            .trigger('click')
+            .then(() => flushPromises())
+            .then(() => {
+                // The module dictionary is installed at app boot, not in this spec: the key is the text.
+                expect(useNotificationsStore().messages.at(-1)?.message).toBe(
+                    'transfer-instructions-panel.copy-failed'
+                );
             });
     });
 

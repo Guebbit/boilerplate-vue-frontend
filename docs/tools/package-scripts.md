@@ -4,15 +4,15 @@ This page groups the `package.json` scripts by job instead of raw list order.
 
 ## Development scripts
 
-| Script               | Job                                                                                                                               | Read more                         |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `dev`                | Start Vite dev server on `:8080` with HMR — the port comes from `VITE_APP_PORT` in `.env`, not from the script                    | [Runtime](./runtime.md)           |
-| `preview`            | Preview the production build locally                                                                                              | [Runtime](./runtime.md)           |
-| `backend:demo`       | Boot the paired backend's in-memory demo (`BACKEND_DEMO_COMMAND` in `.env`), the one the e2e shards start                         | [Demo profile](./demo-profile.md) |
-| `demo:remove`        | Delete every module `src/demo-modules.ts` names, and its line in `src/modules.ts` — the shop demo, gone                           | [Demo profile](./demo-profile.md) |
-| `measure:demo-strip` | Report-only: copy the checkout to a scratch directory, strip the demo modules, and run type-check, lint and build on what is left | [Demo profile](./demo-profile.md) |
-| `prepare`            | Runs on `npm install`: installs the husky git hooks                                                                               | [Testing](./testing-and-docs.md)  |
-| `update:all`         | `npm-check-updates -u`: bump every dependency range in `package.json` (then review and install)                                   | [Runtime](./runtime.md)           |
+| Script               | Job                                                                                                                                                                             | Read more                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `dev`                | Start Vite dev server on `:8080` with HMR — the port comes from `VITE_APP_PORT` in `.env`, not from the script                                                                  | [Runtime](./runtime.md)           |
+| `preview`            | Preview the production build locally                                                                                                                                            | [Runtime](./runtime.md)           |
+| `backend:demo`       | Boot the paired backend's in-memory demo (`BACKEND_DEMO_COMMAND` in `.env`), the one the e2e shards start                                                                       | [Demo profile](./demo-profile.md) |
+| `demo:remove`        | Delete every module `src/demo-modules.ts` names, and its line in `src/modules.ts` — the shop demo, gone (and the cross-module specs that name it in a `requires-module` header) | [Demo profile](./demo-profile.md) |
+| `measure:demo-strip` | Report-only: copy the checkout to a scratch directory, strip the demo modules, and run type-check, lint and build on what is left                                               | [Demo profile](./demo-profile.md) |
+| `prepare`            | Runs on `npm install`: installs the husky git hooks                                                                                                                             | [Testing](./testing-and-docs.md)  |
+| `update:all`         | `npm-check-updates -u`: bump every dependency range in `package.json` (then review and install)                                                                                 | [Runtime](./runtime.md)           |
 
 ## Container scripts
 
@@ -50,28 +50,30 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `complete:light:gates`            | the static checks + `type-check-only` + unit tests that `complete:light` runs after lint and prettier                                                                       | [Testing](./testing-and-docs.md)                 |
 | `complete:fix`                    | the same gate, with lint and formatting fixed rather than reported                                                                                                          | [Testing](./testing-and-docs.md)                 |
 | `complete:light`                  | the fast subset pre-commit runs for now: every static check + `vue-tsc` + unit tests; no build, coverage or e2e                                                             | [Testing](./testing-and-docs.md)                 |
-| `complete:manual`                 | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live`                                                                                                       | [Testing](./testing-and-docs.md)                 |
+| `complete:manual`                 | what the gate cannot run for you: `test:e2e:live`                                                                                                                           | [Testing](./testing-and-docs.md)                 |
 
 ## Test scripts
 
-| Script                   | Job                                                                                                                                 | Read more                                     |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `test:unit:report`       | The unit run again, writing `reports/test-report.json` for the reader below                                                         | [Quick Start](./testing-quickstart.md)        |
-| `test:report`            | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists               | [Quick Start](./testing-quickstart.md)        |
-| `test:e2e:spec`          | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec`                                                                          | [Quick Start](./testing-quickstart.md)        |
-| `test:unit`              | Vitest unit suite (CI mode); pass a path after `--` to run one module — `npm run test:unit -- src/modules/<name>`                   | [Testing](./testing-and-docs.md)              |
-| `test:unit:coverage`     | The unit run with coverage; what the gate's `test` script runs                                                                      | [Testing](./testing-and-docs.md)              |
-| `test:unit:ci`           | Coverage plus a JSON report at `reports/test-report.json`, for CI's summary                                                         | [Testing](./testing-and-docs.md)              |
-| `test:e2e`               | Build, serve with `vite preview`, boot one demo backend per shard + run Cypress headlessly, sharded across `E2E_SHARDS` processes   | [Testing](./testing-and-docs.md#test-timings) |
-| `test:e2e:serial`        | The same run in one Cypress process — for when interleaved output is hard to read                                                   | [Testing](./testing-and-docs.md#test-timings) |
-| `test:e2e:dev`           | Open Cypress UI for interactive e2e development                                                                                     | [Testing](./testing-and-docs.md)              |
-| `test:e2e:live`          | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand                                       | [Live E2E](./live-e2e.md)                     |
-| `test:e2e:visual`        | The visual-regression specs against committed baselines; not in the gate                                                            | [Visual regression](./visual-regression.md)   |
-| `test:e2e:visual:update` | The same run, rewriting the baselines                                                                                               | [Visual regression](./visual-regression.md)   |
-| `test:mutation:check`    | Compare the last mutation run with the committed baseline                                                                           | [Testing](./testing-and-docs.md)              |
-| `test:mutation:baseline` | The same, rewriting the baseline                                                                                                    | [Testing](./testing-and-docs.md)              |
-| `test:mutation`          | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR | [Testing](./testing-and-docs.md)              |
-| `test`                   | `test:unit` then `test:e2e`                                                                                                         | [Testing](./testing-and-docs.md)              |
+| Script                   | Job                                                                                                                                                    | Read more                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `test:unit:report`       | The unit run again, writing `reports/test-report.json` for the reader below                                                                            | [Quick Start](./testing-quickstart.md)        |
+| `test:report`            | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists                                  | [Quick Start](./testing-quickstart.md)        |
+| `test:e2e:spec`          | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec`                                                                                             | [Quick Start](./testing-quickstart.md)        |
+| `test:unit`              | Vitest unit suite (CI mode); pass a path after `--` to run one module — `npm run test:unit -- src/modules/<name>`                                      | [Testing](./testing-and-docs.md)              |
+| `test:unit:coverage`     | The unit run with coverage; what the gate's `test` script runs                                                                                         | [Testing](./testing-and-docs.md)              |
+| `test:unit:ci`           | Coverage plus a JSON report at `reports/test-report.json`, for CI's summary                                                                            | [Testing](./testing-and-docs.md)              |
+| `test:e2e`               | Build, serve with `vite preview`, boot one demo backend per shard + run Cypress headlessly, sharded across `E2E_SHARDS` processes                      | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e:serial`        | The same run in one Cypress process — for when interleaved output is hard to read                                                                      | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e:antibot`       | The antibot specs (`*.antibot.cy.ts`) in one process, against a demo backend booted with the human-challenge provider on (`backend:demo -- --antibot`) | [Live E2E](./live-e2e.md#the-antibot-run)     |
+| `test:e2e:dev`           | Open Cypress UI for interactive e2e development                                                                                                        | [Testing](./testing-and-docs.md)              |
+| `test:e2e:live:spec`     | The live run of one slice: `E2E_SPEC=<specs> npm run test:e2e:live:spec` (the nightly matrix's per-job command); `E2E_GREP_TAGS=@smoke` filters by tag | [Live E2E](./live-e2e.md#tiers)               |
+| `test:e2e:live`          | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand                                                          | [Live E2E](./live-e2e.md)                     |
+| `test:e2e:visual`        | The visual-regression specs against committed baselines; not in the gate                                                                               | [Visual regression](./visual-regression.md)   |
+| `test:e2e:visual:update` | The same run, rewriting the baselines                                                                                                                  | [Visual regression](./visual-regression.md)   |
+| `test:mutation:check`    | Compare the last mutation run with the committed baseline                                                                                              | [Testing](./testing-and-docs.md)              |
+| `test:mutation:baseline` | The same, rewriting the baseline                                                                                                                       | [Testing](./testing-and-docs.md)              |
+| `test:mutation`          | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR                    | [Testing](./testing-and-docs.md)              |
+| `test`                   | `test:unit` then `test:e2e`                                                                                                                            | [Testing](./testing-and-docs.md)              |
 
 ## Contract and codegen scripts
 

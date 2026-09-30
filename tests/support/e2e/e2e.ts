@@ -22,9 +22,14 @@ import 'cypress-axe';
  * — which is why `keyboard.cy.ts` could not be written without this.
  */
 import 'cypress-real-events';
+// Tag filtering: `it('…', { tags: '@smoke' }, …)` — see cypress.config.ts `expose`.
+import { register as registerCypressGrep } from '@cypress/grep';
 import './scenario';
 import './commands';
 import './fixtures';
+import './journey';
+
+registerCypressGrep();
 
 beforeEach(() => {
     cy.clearCookies();

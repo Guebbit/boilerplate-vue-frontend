@@ -20,6 +20,8 @@
 import { spawn } from 'node:child_process';
 import { resolveBackendDemoCommand } from '../pairing/paired-backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from './scratch-directory';
+import { ANTIBOT_BACKEND_ENV, wantsAntibotBackend } from '../e2e/antibot-backend';
+import { SINGLE_PROCESS_SINK_PORT, sinkUrlForPort } from '../e2e/webhook-sink';
 
 /**
  * The port every single-process e2e npm script (serial, visual, dev, spec — everything that is
@@ -69,7 +71,12 @@ const boot = (argv: readonly string[]) => {
             SERVER_PORT: String(SINGLE_PROCESS_DEMO_PORT),
             // Marks this as a throwaway demo instance, same as `run-shards.ts`'s per-shard
             // backends set it — kept symmetric with that file rather than read by anything here.
-            NODE_DEMO: 'true'
+            NODE_DEMO: 'true',
+            // The webhook receiver Cypress hosts beside this backend (`webhook-sink.ts`): the
+            // seeded subscription points at it, and the SSRF guard exempts exactly its host.
+            NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SINGLE_PROCESS_SINK_PORT),
+            // `npm run backend:demo -- --antibot`: the human-challenge provider on (`antibot-backend.ts`).
+            ...(wantsAntibotBackend(process.argv.slice(2)) ? ANTIBOT_BACKEND_ENV : {})
         }
     });
 

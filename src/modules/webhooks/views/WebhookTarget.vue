@@ -332,6 +332,7 @@ const handleDelete = () => {
                                                 id: secretId
                                             })
                                         "
+                                        data-test="webhook-secret-remove"
                                         @click="handleRemoveSecret(secretId)"
                                     >
                                         {{ t('webhook-target-page.button-remove-secret') }}

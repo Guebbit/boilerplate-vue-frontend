@@ -45,7 +45,9 @@ import {
     resolveBackendDemoShardLimit
 } from '../pairing/paired-backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/scratch-directory';
-import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
+import { ANTIBOT_SPEC_GLOBS, FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
+import { ANTIBOT_BACKEND_ENV } from './antibot-backend';
+import { SHARD_SINK_PORT_BASE, sinkUrlForPort } from './webhook-sink';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
 import { readSpecDurations } from './spec-durations';
@@ -131,11 +133,28 @@ if (specs.length === 0) {
 const weighted = weighSpecs(specs, durations);
 const shards = balanceShards(weighted, shardCount);
 
-const active = shards.filter((shard) => shard.files.length > 0);
+const functionalShards = shards.filter((shard) => shard.files.length > 0);
+
+/*
+ * The antibot run: its specs need a backend with the human-challenge provider on, so they form one
+ * shard of their own, booted beside the others (see `ANTIBOT_SPEC_GLOBS`). Absent when no spec
+ * carries the suffix, so a checkout without one pays nothing.
+ */
+const antibotSpecs = globSync(ANTIBOT_SPEC_GLOBS, { cwd: REPO_ROOT })
+    .map((entry) => entry.split(path.sep).join('/'))
+    .toSorted();
+
+const active = [
+    ...functionalShards.map((shard) => ({ ...shard, antibot: false })),
+    ...(antibotSpecs.length > 0 ? [{ files: antibotSpecs, load: 0, antibot: true }] : [])
+];
 
 console.log(
-    `[e2e-shard] ${specs.length} specs across ${active.length} shard(s); ` +
-        `predicted wall-clock ~${Math.round(Math.max(...active.map((shard) => shard.load)))}s ` +
+    `[e2e-shard] ${specs.length + antibotSpecs.length} specs across ${active.length} shard(s)` +
+        (antibotSpecs.length > 0
+            ? ` (the last is the antibot run, ${antibotSpecs.length} spec(s))`
+            : '') +
+        `; predicted wall-clock ~${Math.round(Math.max(...functionalShards.map((shard) => shard.load)))}s ` +
         `(sequential is ~${Math.round(weighted.reduce((sum, spec) => sum + spec.weight, 0))}s)`
 );
 
@@ -163,6 +182,21 @@ const LOG_DIR = path.join(REPO_ROOT, 'reports', 'e2e');
 const DEMO_PORT_BASE = 3101;
 
 /**
+ * What one shard's backend needs beyond the shared environment.
+ *
+ * The webhook sink URL is per shard because each Cypress process hosts its own listener
+ * (`webhook-sink.ts`), on the port the backend is told about. The antibot shard adds the provider's
+ * environment.
+ *
+ * @param index - the shard's index
+ * @param antibot - whether this is the antibot shard
+ */
+const backendEnvironmentFor = (index: number, antibot: boolean): Record<string, string> => ({
+    NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SHARD_SINK_PORT_BASE + index),
+    ...(antibot ? ANTIBOT_BACKEND_ENV : {})
+});
+
+/**
  * One demo backend per shard, booted through `resolveBackendDemoCommand()` — `npm run demo`
  * against an in-memory Mongo for the Node twin, `composer demo` against MySQL for the PHP one.
  * Booted in parallel, readiness is a 200 from `GET /`, and every child is killed however the run
@@ -175,7 +209,7 @@ const DEMO_PORT_BASE = 3101;
  * as `BACKEND_DEMO_SHARD_LIMIT` and is enforced by the guard below; see
  * `resolveBackendDemoShardLimit`.
  */
-const bootDemoBackends = async (count: number): Promise<() => void> => {
+const bootDemoBackends = async (count: number, antibotIndex: number): Promise<() => void> => {
     // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
     // The readiness wait below still runs, so a shard never starts against a port with nothing on
     // it — it fails there, saying why, instead of inside Cypress.
@@ -230,6 +264,7 @@ const bootDemoBackends = async (count: number): Promise<() => void> => {
                 SERVER_PORT: String(port),
                 DB_DATABASE: `e2e_demo_shard_${index + 1}`,
                 NODE_DEMO: 'true',
+                ...backendEnvironmentFor(index, index === antibotIndex),
                 TMPDIR: scratchDirectory,
                 // All shards serve the SAME built bundle on :8085 (the preview server this file's
                 // own module doc names) — every shard's OAuth callback and emailed link must
@@ -316,7 +351,9 @@ const runShard = (files: string[], index: number) =>
                     CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`,
                     // Tells `cypress.config.ts` not to reset the shared flaky report: `main`
                     // already did, once, and a shard resetting it would erase the others'.
-                    E2E_SHARDED: 'true'
+                    E2E_SHARDED: 'true',
+                    // Where this process hosts the webhook sink its backend was told about.
+                    E2E_WEBHOOK_SINK_PORT: String(SHARD_SINK_PORT_BASE + index)
                 }
             });
 
@@ -336,7 +373,8 @@ const runShard = (files: string[], index: number) =>
 const main = async () => {
     const startedAt = Date.now();
     resetFlakyReport();
-    const killBackends = await bootDemoBackends(active.length);
+    const antibotIndex = active.findIndex((shard) => shard.antibot);
+    const killBackends = await bootDemoBackends(active.length, antibotIndex);
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
     killBackends();
 

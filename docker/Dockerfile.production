@@ -33,7 +33,9 @@ FROM docker.io/library/node:24-alpine AS build
 WORKDIR /app
 
 # Manifests first so the install layer survives every change that is not a dependency change.
-COPY package.json package-lock.json ./
+# `.npmrc` rides along: its `legacy-peer-deps` is part of how the lockfile was resolved, and
+# without it `npm ci` reports optional peers (search-insights) as missing from the lock.
+COPY package.json package-lock.json .npmrc ./
 
 RUN npm ci
 

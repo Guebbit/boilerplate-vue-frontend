@@ -501,7 +501,11 @@ const submitForm = () => {
                         :label="t('product-edit-page.label-tags')"
                         data-test="product-tags-field"
                     />
-                    <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
+                    <v-switch
+                        v-model="form.active"
+                        :label="t('product-edit-page.label-active')"
+                        data-test="product-active-field"
+                    />
                     <v-switch
                         v-model="form.requiresShipping"
                         :label="t('product-edit-page.label-requires-shipping')"

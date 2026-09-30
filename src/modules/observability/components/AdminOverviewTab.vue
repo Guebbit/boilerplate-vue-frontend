@@ -219,6 +219,7 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
                 color="primary"
                 variant="tonal"
                 :disabled="props.loading"
+                data-test="admin-overview-refresh"
                 @click="emit('refresh')"
             >
                 <RefreshCw :size="16" class="mr-1" aria-hidden="true" />
