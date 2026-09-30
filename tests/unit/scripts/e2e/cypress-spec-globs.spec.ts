@@ -2,7 +2,7 @@
  * The five places that must agree about which Cypress specs exist.
  *
  * Three of them import `scripts/e2e/cypress-spec-globs.ts` and are true by construction. `package.json`
- * cannot import anything, so its five `--spec` arguments are checked here instead — by resolving
+ * cannot import anything, so its six `--spec` arguments are checked here instead — by resolving
  * them against the real filesystem and comparing the file sets, not by comparing the strings.
  * Comparing strings would pass on two spellings that mean different things, which is the whole
  * failure being guarded: a one-level `tests/e2e` glob and its recursive form look alike and
@@ -55,7 +55,7 @@ const specArgumentOf = (scriptName: string): string[] => {
 };
 
 describe('every spelling of the spec set resolves to the same files', () => {
-    it.each(['test:e2e:serial', 'test:e2e:live', 'test:e2e:spec'])(
+    it.each(['test:e2e:serial', 'test:e2e:live', 'test:e2e:live:spec', 'test:e2e:spec'])(
         '%s runs exactly the functional suite',
         (scriptName) => {
             expect(resolve(specArgumentOf(scriptName))).toEqual(resolve(FUNCTIONAL_SPEC_GLOBS));

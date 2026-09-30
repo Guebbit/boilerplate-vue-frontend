@@ -6,24 +6,50 @@ The demo profile ([The demo profile](./demo-profile.md)) runs the same API this 
 
 ## Where it runs, and where it does not
 
-Three places:
+Two tiers and a hand run, all through the same `e2e-live.yml`:
 
-- **On every PR**, as the required `test-e2e-live` job in `.github/workflows/ci.yml`. That job delegates to `e2e-live.yml` through `workflow_call` rather than duplicating its setup — one definition of the services, the sibling checkout and the seeding, so the gate and the nightly cannot drift apart.
-- **Nightly**, via `e2e-live.yml`'s own `cron` (03:15 UTC, plus `workflow_dispatch`). This answers a question no PR run can: does `main` still agree with the _backend's_ default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
+- **Every push: a `@smoke` subset.** The `test-e2e-live` job in `.github/workflows/ci.yml` calls `e2e-live.yml` through `workflow_call` with `grep: '@smoke'`: one job, only the tests tagged `@smoke`, a 15-minute budget. It is a required job of the `ci` aggregate, so it gates. Every journey also runs on every push in the demo profile (`test:e2e`), so breadth costs nightly minutes, not push time.
+- **Nightly: everything.** `e2e-live.yml`'s own `cron` (03:15 UTC), or a manual run with an empty `grep`, runs every test, split into a matrix of jobs (see [Tiers](#tiers)). It reports; it does not block a push. It also answers a question no push can: does `main` still agree with the _backend's_ default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
 - **By hand**, with [the recipe](#the-recipe) below. It is the same recipe: `e2e-live.yml` is this page, service for service and variable for variable, so change one and change the other.
 
-**Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else — but that no longer leaves a branch uncovered, because the PR gate runs the same job against the branch.
+Both tiers share one definition of the services, the sibling checkout and the seeding, so they cannot drift apart. **Scheduled workflows only ever run on the default branch**: a `cron` fires against `main` and nothing else.
 
-## Why it gates rather than merely reports
+## Tiers
 
-Because cache- and queue-enabled behaviour is real behaviour: an invalidation bug or a queue-path regression is invisible to a profile that runs both `disabled`. The demo suite fails fast on ordinary regressions; this one is where the full stack answers.
+```mermaid
+flowchart LR
+    Push["push / PR"] --> Demo["test:e2e\nevery journey, demo profile, 4 shards"]
+    Push --> Smoke["test-e2e-live\ngrep: @smoke\n1 job, 15 min"]
+    Cron["03:15 UTC nightly"] --> Full["e2e-live.yml, grep empty\nevery test, 4 matrix jobs\n45 min each"]
+```
 
-It costs what it costs: this profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the demo profile is seconds-per-boot. The demo suite still runs first and still fails fast on ordinary regressions; this is the one that also exercises the infrastructure.
+A test joins the smoke tier by carrying the tag; a test with no tag runs nightly:
 
-What carries the weight in between:
+```ts
+it('a customer buys a product', { tags: '@smoke' }, () => { … });
+describe('Checkout', { tags: '@smoke' }, () => { … }); // every test inside
+```
+
+Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/develop/npm/grep), registered in `tests/support/e2e/e2e.ts` and `cypress.config.ts`. Tags, not file names: `@smoke` works in any file layout and keeps each spec's recorded run time. The catalogue in [Tests](../reference/tests.md#the-journey-catalogue) says which tier each journey is in.
+
+| Tier     | Runs               | Grep     | Jobs                                | Budget per job |
+| -------- | ------------------ | -------- | ----------------------------------- | -------------- |
+| Per push | the `@smoke` tests | `@smoke` | 1                                   | 15 min         |
+| Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job) | 45 min         |
+
+- **The `grep` input** (`workflow_call` and `workflow_dispatch`) takes any `@cypress/grep` expression: space is OR, `+` is AND, `-` is NOT. Run `grep: '@smoke'` by hand from the Actions tab to reproduce the push tier. It reaches Cypress as `E2E_GREP_TAGS`, which `cypress.config.ts` puts in `expose.grepTags`. (v7 reads `expose`, not `env`: a `CYPRESS_grepTags` variable is silently ignored.)
+- **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live:spec` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
+- **An empty tier warns, it does not fail.** If no spec carries the tag, the run ends with a warning annotation ("No spec carries @smoke") rather than Cypress's "no spec files were found". Until the first `@smoke` journey lands, the push tier therefore runs nothing: it is green and says so.
+- **By hand**, `E2E_GREP_TAGS=@smoke npm run test:e2e:live` runs the smoke tier locally.
+
+## Why the push tier is only a subset
+
+A full live run is minutes to hours, not seconds, and live CI must stay a signal people read. So the push tier is the smallest set that answers "does the real infrastructure work" — a real Mongo replica set, Redis, a real broker, a cookie over a real network — and the nightly is the full sweep. The price: a live-only break outside `@smoke` shows up the next morning, not on the push. Everything else is covered on the push by the demo run, which already runs every journey.
+
+What carries the weight for the infrastructure the demo profile lacks:
 
 - **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
-- the **specs themselves**, which run unchanged against the real API: a handler that has drifted from the service it mirrors fails here, on the PR that introduced it
+- the **specs themselves**, which run unchanged against the real API: a handler that has drifted from the service it mirrors fails here, on the push that introduced it (when the test is `@smoke`) or the next morning
 
 ## Architecture
 

@@ -18,6 +18,8 @@
  * registered below.
  */
 import { defineConfig } from 'cypress';
+// @cypress/grep: keeps or skips tests by tag (`{ tags: '@smoke' }`) — see docs/tools/live-e2e.md#tiers.
+import { plugin as cypressGrepPlugin } from '@cypress/grep/plugin';
 import { loadEnv } from 'vite';
 import path from 'node:path';
 // The live profile's description file, read by the `readScenarioFile` task below.
@@ -83,13 +85,23 @@ export default defineConfig({
     // tests. https://docs.cypress.io/app/references/troubleshooting#Cypress-crashes
     experimentalMemoryManagement: true,
     numTestsKeptInMemory: 5,
+    /*
+     * The tier filter. `E2E_GREP_TAGS=@smoke` runs only tests tagged `@smoke`; empty runs them all.
+     * Read through `expose` because @cypress/grep v7 does, not `env` — a `CYPRESS_grepTags` variable
+     * would be silently ignored. `E2E_GREP_TAGS` is set from `e2e-live.yml`'s `grep` input.
+     * Syntax (space = OR, `+` = AND, `-` = NOT): https://github.com/cypress-io/cypress/tree/develop/npm/grep
+     */
+    expose: {
+        grepTags: process.env.E2E_GREP_TAGS ?? '',
+        grepFilterSpecs: true
+    },
     e2e: {
         /**
          * Node-side hooks. `compareVisualSnapshot` is the image diff behind
          * `cy.compareSnapshot()` — it has to run here because the browser cannot read the
          * committed baseline files. See `tests/support/e2e/visual-task.ts`.
          */
-        setupNodeEvents(on) {
+        setupNodeEvents(on, config) {
             /*
              * Retry-passes, recorded rather than lost to `retries` — see
              * `scripts/e2e/flaky-report.ts`. A sharded run resets the report once, before its
@@ -180,6 +192,14 @@ export default defineConfig({
                         ? (JSON.parse(readFileSync(LIVE_SCENARIO_FILE, 'utf8')) as unknown)
                         : null
             });
+
+            /*
+             * Reads `expose.grep*` (below) and, with `grepFilterSpecs`, drops specs that hold no
+             * matching test, so a `@smoke` run does not open forty files to skip every test in them.
+             * https://github.com/cypress-io/cypress/tree/develop/npm/grep
+             */
+            cypressGrepPlugin(config);
+            return config;
         },
         /*
          * Two homes for the e2e specs, the same split the unit suite already makes (see

@@ -54,24 +54,25 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 ## Test scripts
 
-| Script                   | Job                                                                                                                                 | Read more                                     |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `test:unit:report`       | The unit run again, writing `reports/test-report.json` for the reader below                                                         | [Quick Start](./testing-quickstart.md)        |
-| `test:report`            | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists               | [Quick Start](./testing-quickstart.md)        |
-| `test:e2e:spec`          | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec`                                                                          | [Quick Start](./testing-quickstart.md)        |
-| `test:unit`              | Vitest unit suite (CI mode); pass a path after `--` to run one module — `npm run test:unit -- src/modules/<name>`                   | [Testing](./testing-and-docs.md)              |
-| `test:unit:coverage`     | The unit run with coverage; what the gate's `test` script runs                                                                      | [Testing](./testing-and-docs.md)              |
-| `test:unit:ci`           | Coverage plus a JSON report at `reports/test-report.json`, for CI's summary                                                         | [Testing](./testing-and-docs.md)              |
-| `test:e2e`               | Build, serve with `vite preview`, boot one demo backend per shard + run Cypress headlessly, sharded across `E2E_SHARDS` processes   | [Testing](./testing-and-docs.md#test-timings) |
-| `test:e2e:serial`        | The same run in one Cypress process — for when interleaved output is hard to read                                                   | [Testing](./testing-and-docs.md#test-timings) |
-| `test:e2e:dev`           | Open Cypress UI for interactive e2e development                                                                                     | [Testing](./testing-and-docs.md)              |
-| `test:e2e:live`          | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand                                       | [Live E2E](./live-e2e.md)                     |
-| `test:e2e:visual`        | The visual-regression specs against committed baselines; not in the gate                                                            | [Visual regression](./visual-regression.md)   |
-| `test:e2e:visual:update` | The same run, rewriting the baselines                                                                                               | [Visual regression](./visual-regression.md)   |
-| `test:mutation:check`    | Compare the last mutation run with the committed baseline                                                                           | [Testing](./testing-and-docs.md)              |
-| `test:mutation:baseline` | The same, rewriting the baseline                                                                                                    | [Testing](./testing-and-docs.md)              |
-| `test:mutation`          | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR | [Testing](./testing-and-docs.md)              |
-| `test`                   | `test:unit` then `test:e2e`                                                                                                         | [Testing](./testing-and-docs.md)              |
+| Script                   | Job                                                                                                                                                    | Read more                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `test:unit:report`       | The unit run again, writing `reports/test-report.json` for the reader below                                                                            | [Quick Start](./testing-quickstart.md)        |
+| `test:report`            | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists                                  | [Quick Start](./testing-quickstart.md)        |
+| `test:e2e:spec`          | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec`                                                                                             | [Quick Start](./testing-quickstart.md)        |
+| `test:unit`              | Vitest unit suite (CI mode); pass a path after `--` to run one module — `npm run test:unit -- src/modules/<name>`                                      | [Testing](./testing-and-docs.md)              |
+| `test:unit:coverage`     | The unit run with coverage; what the gate's `test` script runs                                                                                         | [Testing](./testing-and-docs.md)              |
+| `test:unit:ci`           | Coverage plus a JSON report at `reports/test-report.json`, for CI's summary                                                                            | [Testing](./testing-and-docs.md)              |
+| `test:e2e`               | Build, serve with `vite preview`, boot one demo backend per shard + run Cypress headlessly, sharded across `E2E_SHARDS` processes                      | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e:serial`        | The same run in one Cypress process — for when interleaved output is hard to read                                                                      | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e:dev`           | Open Cypress UI for interactive e2e development                                                                                                        | [Testing](./testing-and-docs.md)              |
+| `test:e2e:live:spec`     | The live run of one slice: `E2E_SPEC=<specs> npm run test:e2e:live:spec` (the nightly matrix's per-job command); `E2E_GREP_TAGS=@smoke` filters by tag | [Live E2E](./live-e2e.md#tiers)               |
+| `test:e2e:live`          | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand                                                          | [Live E2E](./live-e2e.md)                     |
+| `test:e2e:visual`        | The visual-regression specs against committed baselines; not in the gate                                                                               | [Visual regression](./visual-regression.md)   |
+| `test:e2e:visual:update` | The same run, rewriting the baselines                                                                                                                  | [Visual regression](./visual-regression.md)   |
+| `test:mutation:check`    | Compare the last mutation run with the committed baseline                                                                                              | [Testing](./testing-and-docs.md)              |
+| `test:mutation:baseline` | The same, rewriting the baseline                                                                                                                       | [Testing](./testing-and-docs.md)              |
+| `test:mutation`          | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR                    | [Testing](./testing-and-docs.md)              |
+| `test`                   | `test:unit` then `test:e2e`                                                                                                                            | [Testing](./testing-and-docs.md)              |
 
 ## Contract and codegen scripts
 

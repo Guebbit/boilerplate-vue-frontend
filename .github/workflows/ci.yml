@@ -562,13 +562,14 @@ jobs:
                   if-no-files-found: ignore
 
     test-e2e-live:
-        # The behaviour gate: the same specs as `test-e2e` above, against the fully composed stack
-        # — a real backend checkout, a real Mongo and a real Redis — rather than against the demo
-        # profile's in-memory database with the cache and queue disabled.
+        # The live smoke gate: the tests tagged `@smoke` against the fully composed stack — a real
+        # backend checkout, Mongo replica set, Redis, RabbitMQ — within a 15-minute budget. Every
+        # journey still runs on every push in `test-e2e` above; what this adds is "the real
+        # infrastructure works". The full live run is `e2e-live.yml`'s nightly.
         #
-        # Delegated rather than duplicated — `e2e-live.yml` owns the datastore services, the
-        # sibling checkout and the seeding, and is also scheduled nightly on its own. Two copies of
-        # that setup would drift, which is the exact failure mode this whole job exists to close.
+        # Delegated rather than duplicated — `e2e-live.yml` owns the services, the sibling checkout
+        # and the seeding, and is also scheduled nightly on its own. Two copies of that setup would
+        # drift, which is the exact failure mode this whole job exists to close.
         #
         # Gated on the cheap checks: a live run composes a real backend, Mongo and Redis, and
         # nothing spares that cost for a build that a plain `npm run build` already knows is broken.
@@ -576,6 +577,9 @@ jobs:
             - build
             - test-unit
         uses: ./.github/workflows/e2e-live.yml
+        with:
+            # Only the `@smoke` tests gate a push (E2E-D8); the full live run is the nightly's.
+            grep: '@smoke'
         # SPEC_SIBLING_TOKEN, for checking out the paired backend.
         secrets: inherit
 

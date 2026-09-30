@@ -139,7 +139,7 @@ Worth being explicit, because the boundary has bitten this project before.
 | Wrong response **shape** from the API                                                                           | response validation — `orvalMutator` parses every response against the generated Zod schema in every profile but Vitest — see [Live E2E](./live-e2e.md) |
 | Generated client out of step with `openapi.yaml`                                                                | the `api-freshness` CI job                                                                                                                              |
 | App breaks on unusual but valid data (a record with every optional field at its default, an unusual role split) | add the record to the backend's demo dataset — [The demo profile](./demo-profile.md)                                                                    |
-| The demo dataset disagreeing with what the real backend answers, or a live contract violation                   | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, plus response validation                                                                       |
+| The demo dataset disagreeing with what the real backend answers, or a live contract violation                   | [Live E2E](./live-e2e.md) — the `test-e2e-live` smoke gate and the nightly full run, plus response validation                                           |
 
 Both e2e profiles run the real backend, so "does this frontend agree with that backend" is answered by construction rather than by a reviewer checking a handler against a service. What the two profiles split between them is infrastructure: the demo profile answers fast with the cache and queue disabled, the live profile answers on every PR with everything attached. See [The demo profile](./demo-profile.md) and [Live E2E](./live-e2e.md).
 
@@ -217,7 +217,7 @@ flowchart LR
     class Review finish;
 ```
 
-`npm run test` runs `test:unit` then `test:e2e` — the two layers fast and deterministic enough to gate a PR. The live profile and mutation testing are run separately, by hand or on a schedule; see each one's own page for why.
+`npm run test` runs `test:unit` then `test:e2e` — the two layers fast and deterministic enough to gate a PR. The live profile runs separately (a `@smoke` subset per push in CI, the full run nightly, or by hand) and so does mutation testing; see each one's own page for why.
 
 ## Test conventions
 
@@ -246,13 +246,13 @@ flowchart LR
 
 Worth naming explicitly, because it decides where a suite runs and how a failure is read.
 
-A **gate** answers a yes/no question definitively enough to block a merge. Unit, component, property, the mock e2e profile, the a11y pass and the **live e2e profile** are gates: a failure means "do not merge this".
+A **gate** answers a yes/no question definitively enough to block a merge. Unit, component, property, the demo e2e profile, the a11y pass and the **live `@smoke` subset** are gates: a failure means "do not merge this".
 
 A **hunter** goes looking for problems nobody asked about. Mutation testing is the hunter: slower, nightly, and a failure is usually a **finding to read** rather than a merge to stop. A hunter wired as a gate gets switched off the first week it is inconvenient — which is why it lives in its own workflow file, where it cannot become a PR gate by accident.
 
-Note that "gate" is about the strength of the answer, not its speed. The live profile is minutes rather than seconds and gates anyway, because it is the only layer that can answer "does this frontend agree with that backend" — and a question that important, answered only nightly, is answered too late. It still runs _after_ the fast gates, so an ordinary regression is caught in seconds and never reaches it.
+Note that "gate" is about the strength of the answer, not its speed, and the live profile is split by it. The demo profile already runs every journey on every push, so live only has to answer what demo cannot — "does the real infrastructure work" — and a small `@smoke` subset (about 15 minutes) answers that on every push. It still runs _after_ the fast gates, so an ordinary regression is caught in seconds and never reaches it.
 
-The live profile keeps a nightly schedule as well, and that run is a hunter: it asks whether `main` still agrees with the backend's default branch, which no PR run can, because the backend moves on its own.
+The **full** live run is the nightly, and it is a hunter: every test against the real stack, split across CI jobs, asking also whether `main` still agrees with the backend's default branch, which no push can, because the backend moves on its own. A live-only break outside `@smoke` therefore shows up the next morning, not on the push. See [Live E2E — Tiers](./live-e2e.md#tiers).
 
 The corollary: a green pull request is a claim that this frontend and that backend agreed at that moment. It is not a claim that the mutation run is happy.
 

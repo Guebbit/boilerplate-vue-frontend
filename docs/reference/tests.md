@@ -172,13 +172,13 @@ flowchart LR
 One row per journey. **A journey's lane adds its row in the same commit as its spec** — the row is
 how a reader finds the story without opening the file.
 
-| Column  | Means                                                                                       |
-| ------- | ------------------------------------------------------------------------------------------- |
-| ID      | The plan's id (`CU1`, `OP4`, `AC3`, …), which is also the spec's file prefix                |
-| Story   | One line: who does what, ending in what is proven                                           |
-| Persona | Who signs in — an `E2ERole` (`user`, `admin`, `twoFactor`, …)                               |
-| Tier    | `@smoke` (runs on every push) or `nightly` (the full matrix); `—` until the tiers are wired |
-| Spec    | The file name inside the journeys folder                                                    |
+| Column  | Means                                                                                                                                                                                                                                    |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID      | The plan's id (`CU1`, `OP4`, `AC3`, …), which is also the spec's file prefix                                                                                                                                                             |
+| Story   | One line: who does what, ending in what is proven                                                                                                                                                                                        |
+| Persona | Who signs in — an `E2ERole` (`user`, `admin`, `twoFactor`, …)                                                                                                                                                                            |
+| Tier    | `@smoke`: the spec carries the tag, so its live run happens on every push. `nightly`: untagged, live only in the nightly matrix. Every journey runs on demo on every push either way. See [Live E2E — Tiers](../tools/live-e2e.md#tiers) |
+| Spec    | The file name inside the journeys folder                                                                                                                                                                                                 |
 
 | ID  | Story | Persona | Tier | Spec |
 | --- | ----- | ------- | ---- | ---- |

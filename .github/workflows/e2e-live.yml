@@ -7,15 +7,20 @@ name: E2E (live backend)
 # The recipe here is the one in docs/tools/live-e2e.md, service for service and variable for
 # variable. Change one, change the other.
 #
-# THIS IS THE MERGE GATE. `ci.yml` calls it via `workflow_call`, so behaviour is proven against a
-# complete stack on every PR.
+# TWO TIERS, one workflow (E2E-D8; docs/tools/live-e2e.md#tiers):
 #
-# `test:e2e` (in ci.yml) runs the same specs against the same real API in its DEMO profile —
-# in-memory Mongo, cache and queue disabled — and runs first, because it is seconds where this is
-# minutes and it catches ordinary app regressions long before this finishes. What the demo profile
-# cannot answer is anything that depends on the infrastructure it switches off: a cached read
-# served stale, a queued job, a cookie over a real network. That is what this workflow adds, and
-# when the two disagree, this one is right.
+#   per push   `ci.yml` calls it with `grep: '@smoke'` — one job, only the tests tagged `@smoke`,
+#              a 15-minute budget. The push-time question is "does the real infrastructure work",
+#              and the smoke set answers it. This is the tier that gates.
+#   nightly    the `schedule` below, or a manual run with no `grep` — every test, split into
+#              `LIVE_SHARDS` matrix jobs that each get their own services and a sequential slice.
+#              It reports; it does not block a push.
+#
+# `test:e2e` (in ci.yml) runs EVERY journey against the demo profile on every push — in-memory
+# Mongo, cache and queue disabled — and runs first, because it is seconds where this is minutes.
+# What the demo profile cannot answer is anything that depends on the infrastructure it switches
+# off: a cached read served stale, a queued job, a cookie over a real network. That is what this
+# workflow adds, and when the two disagree, this one is right.
 #
 # On failure, read it in this order:
 #   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
@@ -28,18 +33,29 @@ name: E2E (live backend)
 on:
     # Called by ci.yml as a required job — see that file's `test-e2e-live`.
     workflow_call:
+        inputs:
+            grep:
+                description: '@cypress/grep tag expression (space = OR, + = AND, - = NOT). Empty runs every test, as the nightly tier.'
+                type: string
+                default: ''
     schedule:
         # 03:15 UTC — before mutation.yml (03:30), so the two nightlies do not compete for
         # runners. Kept alongside the PR gate: this answers "does main still agree with the
         # backend's default branch", which no PR run can, because the backend moves on its own.
         - cron: '15 3 * * *'
     workflow_dispatch:
+        inputs:
+            grep:
+                description: '@cypress/grep tag expression, e.g. @smoke. Empty runs every test, split like the nightly.'
+                type: string
+                default: ''
 
 permissions:
     contents: read
 
 concurrency:
-    group: e2e-live-${{ github.workflow }}-${{ github.ref }}
+    # `inputs.grep` in the key: a smoke run must not cancel the nightly's shards on the same ref.
+    group: e2e-live-${{ github.workflow }}-${{ github.ref }}-${{ inputs.grep }}
     cancel-in-progress: true
 
 env:
@@ -118,9 +134,46 @@ env:
     NODE_METRICS_TOKEN: ci-metrics-token
 
 jobs:
-    test-e2e-live:
+    # Decides the tier: a tag expression means the per-push smoke run (one job, short budget);
+    # none means the nightly (a matrix, longer budget per job). Kept in one place so the matrix
+    # and the timeout cannot disagree about which tier this is.
+    plan:
         runs-on: ubuntu-latest
-        timeout-minutes: 30
+        timeout-minutes: 2
+        permissions:
+            contents: read
+        outputs:
+            matrix: ${{ steps.tier.outputs.matrix }}
+            timeout: ${{ steps.tier.outputs.timeout }}
+        steps:
+            - name: Pick the tier
+              id: tier
+              env:
+                  # Through env, never interpolated into the script: it is caller-supplied text.
+                  GREP: ${{ inputs.grep }}
+                  # The nightly's slice count. The full live run is ~85-115 min sequential, so 4
+                  # slices land at ~30 min each; raise it as journeys are added.
+                  LIVE_SHARDS: '4'
+              run: |
+                  if [ -n "$GREP" ]; then
+                      echo 'matrix={"shard":[1],"total":[1]}' >> "$GITHUB_OUTPUT"
+                      echo 'timeout=15' >> "$GITHUB_OUTPUT"
+                  else
+                      shards=$(seq -s, 1 "$LIVE_SHARDS")
+                      echo "matrix={\"shard\":[$shards],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT"
+                      echo 'timeout=45' >> "$GITHUB_OUTPUT"
+                  fi
+
+    test-e2e-live:
+        needs: plan
+        runs-on: ubuntu-latest
+        # Per tier — see `plan`. Not a literal: 15 is the smoke budget, 45 one nightly slice.
+        timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout) }}
+        # Every matrix job has its OWN services below and its own database, which is what lets the
+        # slices run in parallel: live specs share one seeded Mongo and cannot share it across jobs.
+        strategy:
+            fail-fast: false
+            matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
         permissions:
             contents: read
 
@@ -348,7 +401,22 @@ jobs:
                   MAILPIT_URL: http://localhost:8025
                   VITE_UMAMI_SRC: http://localhost:3080/script.js
                   VITE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
-              run: npm run test:e2e:live
+                  # The tier's tag filter (empty = every test), read by cypress.config.ts.
+                  E2E_GREP_TAGS: ${{ inputs.grep }}
+                  # This job's slice of the suite, so the matrix jobs cover it exactly once between
+                  # them (a smoke run is the one slice of one).
+                  SHARD: ${{ matrix.shard }}
+                  TOTAL: ${{ matrix.total }}
+              run: |
+                  # A tag no spec carries makes Cypress fail with "no spec files were found", which
+                  # reads as a broken run. Say so as a warning and stop instead: the tier is simply
+                  # empty. Only positive tags are checked; an expression of exclusions runs as is.
+                  tags="$(echo "$E2E_GREP_TAGS" | grep -oE '(^|[ +])@[A-Za-z0-9_-]+' | tr -d ' +' | paste -sd'|' || true)"
+                  if [ -n "$tags" ] && ! grep -rqE --include='*.cy.ts' -- "$tags" tests/e2e src/modules; then
+                      echo "::warning::No spec carries $E2E_GREP_TAGS, so this tier ran nothing."
+                      exit 0
+                  fi
+                  E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts "$SHARD" "$TOTAL")" npm run test:e2e:live:spec
 
             # Tests that passed only on Cypress' one retry, as warning annotations — flaky rather
             # than green, and never failing the job. The sharded demo run prints its own.
@@ -367,7 +435,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: backend-log
+                  name: backend-log-${{ matrix.shard }}
                   path: backend.log
                   retention-days: 14
                   if-no-files-found: warn
@@ -378,7 +446,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-screenshots-live
+                  name: cypress-screenshots-live-${{ matrix.shard }}
                   path: tests/e2e/screenshots
                   retention-days: 14
                   if-no-files-found: ignore
@@ -388,7 +456,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-videos-live
+                  name: cypress-videos-live-${{ matrix.shard }}
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore
@@ -399,7 +467,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: a11y-reports-live
+                  name: a11y-reports-live-${{ matrix.shard }}
                   path: reports/a11y/
                   retention-days: 14
                   if-no-files-found: ignore
