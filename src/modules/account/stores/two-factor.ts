@@ -18,7 +18,8 @@ import {
     disableTwoFactor as apiDisableTwoFactor,
     regenerateBackupCodes as apiRegenerateBackupCodes,
     sendTwoFactorCode as apiSendTwoFactorCode,
-    loginTwoFactor as apiLoginTwoFactor
+    loginTwoFactor as apiLoginTwoFactor,
+    RememberTier
 } from '@api';
 import {
     getPayloadFromResponse,
@@ -43,7 +44,7 @@ import type { LoginOutcome } from './auth.ts';
  * The login-time challenge, as handed off by `useAuthStore().login()`'s `mfa` branch, plus the
  * "remember me" choice the visitor made on the form it came from — an `MfaChallenge` response
  * carries no `remember` field, so the form's own choice has to survive the hop across the two
- * steps for {@link submitLoginCode} to apply it.
+ * steps for {@link submitLoginCode} to send it on `LoginTwoFactorRequest`.
  *
  * `challenge` and `remember` are both absent for an OAuth-originated one — see
  * {@link beginOAuthChallenge}: the token itself never reaches this client at all, it travels in
@@ -359,7 +360,13 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         if (!challenge.value) return Promise.reject(new Error('NO_ACTIVE_CHALLENGE'));
         const { challenge: challengeToken, remember } = challenge.value;
         return fetchAny(() =>
-            apiLoginTwoFactor({ challenge: challengeToken, code }).then((data) => {
+            apiLoginTwoFactor({
+                challenge: challengeToken,
+                code,
+                // The password step set no cookie, so the box's value is sent again here: the
+                // backend sizes the session cookie from THIS request. Absent for OAuth logins.
+                remember: remember ? RememberTier.medium : undefined
+            }).then((data) => {
                 useSessionStore().setAccessToken(getTokenFromResponse(data), remember);
                 return useProfileStore()
                     .fetchProfile(true)

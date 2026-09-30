@@ -1989,11 +1989,11 @@ export interface AccountDeleteConfirmRequest {
 }
 
 /**
- * How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
+ * The "remember me" choice, sized by the deployment (`short`, `medium`, `long`). Ticked: the refresh cookie persists for that tier. Omitted: a browser-session cookie (gone when the browser closes) whose token still lives for the `short` tier server-side. Refresh rotation, reauth and a password change keep the choice.
  */
-export type LoginRequestRemember = (typeof LoginRequestRemember)[keyof typeof LoginRequestRemember];
+export type RememberTier = (typeof RememberTier)[keyof typeof RememberTier];
 
-export const LoginRequestRemember = {
+export const RememberTier = {
     short: 'short',
     medium: 'medium',
     long: 'long'
@@ -2002,8 +2002,7 @@ export const LoginRequestRemember = {
 export interface LoginRequest {
     email: Email;
     password: Password;
-    /** How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token. */
-    remember?: LoginRequestRemember;
+    remember?: RememberTier;
 }
 
 export interface TwoFactorMethodSummary {
@@ -2096,6 +2095,7 @@ export interface LoginTwoFactorRequest {
     challenge?: string;
     /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
     code: string;
+    remember?: RememberTier;
 }
 
 export interface TwoFactorSendRequest {

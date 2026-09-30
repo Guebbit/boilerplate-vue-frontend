@@ -9657,6 +9657,13 @@ components:
           type: string
           minLength: 1
           description: One-time account deletion token (NOT a JWT).
+    RememberTier:
+      type: string
+      enum:
+        - short
+        - medium
+        - long
+      description: 'The "remember me" choice, sized by the deployment (`short`, `medium`, `long`). Ticked: the refresh cookie persists for that tier. Omitted: a browser-session cookie (gone when the browser closes) whose token still lives for the `short` tier server-side. Refresh rotation, reauth and a password change keep the choice.'
     LoginRequest:
       type: object
       additionalProperties: false
@@ -9669,12 +9676,7 @@ components:
         password:
           $ref: "#/components/schemas/Password"
         remember:
-          type: string
-          enum:
-            - short
-            - medium
-            - long
-          description: How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
+          $ref: "#/components/schemas/RememberTier"
     TwoFactorMethodSummary:
       type: object
       additionalProperties: false
@@ -10201,6 +10203,8 @@ components:
         code:
           type: string
           description: A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's.
+        remember:
+          $ref: "#/components/schemas/RememberTier"
     TwoFactorSendRequest:
       type: object
       additionalProperties: false

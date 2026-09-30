@@ -2394,7 +2394,8 @@ export const ExportAccountDataResponse = zod.strictObject({
  */
 export const LoginTwoFactorBody = zod.strictObject({
     challenge: zod.string().min(1).optional(),
-    code: zod.string()
+    code: zod.string(),
+    remember: zod.enum(['short', 'medium', 'long']).optional()
 });
 export const LoginTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
