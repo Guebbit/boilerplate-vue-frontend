@@ -37,6 +37,12 @@ describe('The customer journey', () => {
         // paired backend produces it by driving a seeded order history rather than writing a
         // number down. What this spec is actually about is that the count comes BACK — so it is
         // captured here and compared with itself after the cancel.
+        // `#product-target` exists before the product has loaded, and the stat then shows a
+        // placeholder — capturing that would make the later comparisons fail on a fast first run
+        // and pass on the retry. A digit in the text is the proof the real count has arrived.
+        cy.get('[data-test=product-stock]').should(($stock) => {
+            expect($stock.text()).to.match(/\d/);
+        });
         cy.get('[data-test=product-stock]')
             .invoke('text')
             .then((text) => {
@@ -101,8 +107,11 @@ describe('The customer journey', () => {
         // ── The shelf recovered — same product, same count as the journey began with ─
         // The walk's toasts stack over the table's action column until dismissed — close them
         // the way a person does before clicking through the list again.
-        cy.get('.v-alert').each((alert) => {
-            cy.wrap(alert).find('.v-alert__close button').click();
+        // One multi-click command rather than `.each` over a snapshot: a toast that times out
+        // between the snapshot and its click leaves `.each` holding a detached element.
+        cy.get('body').then(($body) => {
+            if ($body.find('.v-alert__close button').length > 0)
+                cy.get('.v-alert__close button').click({ multiple: true });
         });
         cy.get('.v-alert').should('not.exist');
         cy.navigateTo('/en/products');
