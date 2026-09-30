@@ -22,6 +22,19 @@ export const centsOf = (selector: string): Cypress.Chainable<number> =>
     cy.get(selector).invoke('text').then(cents);
 
 /**
+ * Waits until an element's money, read in cents, satisfies `check` — retried, unlike
+ * {@link centsOf}, which reads once. For a total that moves after a click the page debounces.
+ *
+ * @param selector - a `data-test` selector for one money element
+ * @param check - an assertion over the cents; it throws (an `expect`) while the page is not there yet
+ */
+export const shouldShowCents = (selector: string, check: (amount: number) => void): void => {
+    cy.get(selector).should(($element) => {
+        check(cents($element.text()));
+    });
+};
+
+/**
  * From the storefront's list, opens the card of a seeded product — by the link's own address, so
  * no title is copied into the spec. The list must already show it (filter first).
  *
