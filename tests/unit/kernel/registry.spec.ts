@@ -1,8 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import {
     assertUniqueRoutes,
-    collectLocaleSensitiveResets,
     collectModuleLoadingKeys,
     collectModuleNavigation,
     collectModuleRoutes,
@@ -147,25 +146,6 @@ describe('sortNavigation', () => {
         sortNavigation(entries);
 
         expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
-    });
-});
-
-describe('collectLocaleSensitiveResets', () => {
-    it('collects the reset callback of every module that declares one', () => {
-        const productsReset = vi.fn();
-        const cartReset = vi.fn();
-
-        const resets = collectLocaleSensitiveResets([
-            { ...makeModule('products'), resetOnLocaleChange: productsReset },
-            { ...makeModule('cart'), resetOnLocaleChange: cartReset },
-            makeModule('wishlist')
-        ]);
-
-        expect(resets).toEqual([productsReset, cartReset]);
-    });
-
-    it('returns nothing for a build with no locale-sensitive module at all', () => {
-        expect(collectLocaleSensitiveResets([makeModule('orders')])).toEqual([]);
     });
 });
 

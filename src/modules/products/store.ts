@@ -11,6 +11,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { ref } from 'vue';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { getCurrentLocale } from '@/i18n';
 import {
     listProducts,
     searchProducts,
@@ -119,8 +120,7 @@ export const useProductsStore = defineStore('products', () => {
         deleteOne: deleteProduct,
         deleteTarget,
         fetchAny,
-        fetchMultiple,
-        resetAll
+        fetchMultiple
     } = useStructureCrudApi<
         Product,
         string,
@@ -246,6 +246,16 @@ export const useProductsStore = defineStore('products', () => {
         {
             resourceKey: 'products',
             queryClient,
+            /**
+             * Cache scope: the language the request carried.
+             *
+             * Every cached record's server text (`title`, `description`) was resolved in the
+             * caller's language, so it is only valid under it. Keyed on the locale, a switch reads
+             * a different scope — nothing stale can be served — and the toolkit cancels and drops
+             * the old one once no watcher shows it.
+             * https://github.com/Guebbit/vue-toolkit (`dependsOn` in `useStructureRestApi`)
+             */
+            dependsOn: () => [getCurrentLocale()],
             /**
              * Five minutes instead of the toolkit's one-hour default.
              *
@@ -381,23 +391,6 @@ export const useProductsStore = defineStore('products', () => {
         updateProduct,
         deleteProduct,
         hardDeleteProduct,
-        restoreProduct,
-        /**
-         * Forget everything a language switch invalidated: the cached records AND the cached
-         * RESPONSES behind them.
-         *
-         * Every record's `title` and `description` were resolved server-side against the caller's
-         * language, so after a switch both are wrong. Dropping the records alone is not enough —
-         * the toolkit answers a repeat fetch from its own query cache while that entry is still
-         * fresh, so the next read puts the old language straight back and no request is ever made.
-         * `resetAll()` drops every entry of this resource under the current scope — records, lists
-         * and searches alike.
-         *
-         * The module manifest wires this into `resetOnLocaleChange`, which
-         * `src/app/guards/locale-choice.ts` runs once a switch has actually happened.
-         */
-        resetForLocaleChange: () => {
-            resetAll();
-        }
+        restoreProduct
     };
 });

@@ -185,24 +185,6 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-
-    /**
-     * Wipes this domain's locale-sensitive cache(s) — a product title in a Pinia dictionary keyed
-     * by id alone, with nothing about the key that says which language filled it in. Called by
-     * the locale guard once a language switch has actually happened — never on an ordinary
-     * navigation that keeps the same one. A module with no server-text cache (or one already
-     * keyed/refetched per locale) simply omits it: having the callback IS the flag, so there is
-     * no separate declaration to forget.
-     *
-     * A callback rather than a store reference: the kernel must not know Pinia exists, so a
-     * module wires its own store's reset action (or several, or a partial one that spares
-     * unrelated state) in here rather than exposing the store itself.
-     *
-     * May return a promise — a module reaching its store through a lazy `import()` (FA81) has no
-     * synchronous alternative — and the locale guard awaits it before resolving the navigation, so
-     * a page rendered right after a switch never reads a not-yet-wiped cache.
-     */
-    resetOnLocaleChange?: () => void | Promise<void>;
 }
 
 /**
@@ -382,19 +364,6 @@ export const collectModuleSlots = (appModules: AppModule[]): Slots => {
  */
 export const collectModuleLoadingKeys = (appModules: AppModule[]): string[] =>
     appModules.flatMap((appModule) => appModule.loadingKeys ?? []);
-
-/**
- * Collect every enabled module's locale-reset callback, for the locale guard to run after an
- * actual language switch.
- *
- * @param appModules - the enabled module list
- */
-export const collectLocaleSensitiveResets = (
-    appModules: AppModule[]
-): (() => void | Promise<void>)[] =>
-    appModules.flatMap((appModule) =>
-        appModule.resetOnLocaleChange ? [appModule.resetOnLocaleChange] : []
-    );
 
 /**
  * Group every enabled module's dictionary loaders by locale code, for

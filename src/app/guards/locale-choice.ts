@@ -2,9 +2,9 @@
  * @module
  * Router guard that keeps the active i18n locale in sync with the `:locale` route param —
  * loading the bundled dictionary plus any remote overrides on first use of a locale, and
- * redirecting to the default locale when the param is missing or unsupported. Also wipes every
- * locale-sensitive module's cache once a language switch actually happens, so a product title
- * (or anything else server text) cannot survive under the wrong language.
+ * redirecting to the default locale when the param is missing or unsupported. A cache that holds
+ * server text is keyed on the active locale (`dependsOn` in the store), so a switch here needs no
+ * cleanup step of its own.
  */
 import {
     getDefaultLocale,
@@ -16,8 +16,6 @@ import {
     type TranslationDictionaries
 } from '@/i18n';
 import { withLocaleOverrides } from '@/infrastructure/locale-overrides.ts';
-import { collectLocaleSensitiveResets } from '@/kernel/registry';
-import { enabledModules } from '@/modules';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
 
 /**
@@ -59,24 +57,6 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
 };
 
 /**
- * Wipes every enabled, locale-sensitive module's cache — `useProductsStore`'s dictionary, the
- * cart's product-title join, and the rest `collectLocaleSensitiveResets` finds.
- *
- * Read `enabledModules` at call time rather than importing it into a module-level constant: the
- * list never actually changes at runtime, but reading it lazily keeps this file's only
- * `@/modules` touch inside the one function that needs it.
- *
- * Awaited by the caller: a module reaching its store through a lazy `import()` (FA81) resolves
- * its reset a tick later than a synchronous one, and the navigation this guard gates must not
- * settle before every reset actually lands — otherwise the page it lets through can render off a
- * cache that has not been wiped yet.
- */
-const resetLocaleSensitiveStores = (): Promise<void> =>
-    Promise.all(
-        collectLocaleSensitiveResets(enabledModules).map((reset) => Promise.resolve(reset()))
-    ).then(() => undefined);
-
-/**
  * The most recently REQUESTED locale, across every call to this guard.
  *
  * Two navigations close together (e.g. a user double-clicking two language options) each start
@@ -113,27 +93,15 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // Locale segment coming from the URL (may be undefined on locale-less routes)
     const locale = to.params.locale as string;
 
-    // Snapshot before anything below can change it, so the reset it gates fires only for an
-    // ACTUAL switch — never for two pages visited back to back in the same language.
-    const previousLocale = getCurrentLocale();
-
     // Recorded before any async work starts, so a slower CONCURRENT chain for an earlier
     // navigation can tell it has been superseded — see `activateIfLatest`.
     latestRequestedLocale = locale;
-
-    /**
-     * Resolves the guard's `true` verdict, wiping locale-sensitive caches first if — and only
-     * if — the language genuinely changed underneath this navigation. Awaited: the navigation
-     * must not resolve before every reset has actually landed.
-     */
-    const settle = (): true | Promise<true> =>
-        locale === previousLocale ? true : resetLocaleSensitiveStores().then(() => true as const);
 
     // Already loaded: just make sure it is the active language and proceed.
     // (covers back/forward navigation and direct URLs between loaded locales)
     if (loadedLanguages.includes(locale))
         return (getCurrentLocale() === locale ? Promise.resolve() : activateIfLatest(locale)).then(
-            settle
+            () => true as const
         );
 
     // Supported but not yet loaded: fetch it, register the messages, activate it — every
@@ -144,7 +112,7 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
         return fetchLanguageApi(locale)
             .then(([lang, vocabulary]) => updateLocale(lang, vocabulary).then(() => lang))
             .then((lang) => activateIfLatest(lang))
-            .then(settle);
+            .then(() => true as const);
 
     // Missing, unsupported or empty locale: redirect to the same route with the
     // browser/default locale injected into the params.

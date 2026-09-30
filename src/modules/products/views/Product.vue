@@ -10,8 +10,7 @@ export default {
  * Public product detail page: renders the fetched record, and hosts the `product-actions` slot
  * where other modules put the storefront's visitor writes (add to cart, toggle wishlist).
  */
-import { computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -45,14 +44,9 @@ const { id } = defineProps<{
 }>();
 
 /**
- * The current route, read for the locale param the refetch below keys on.
+ * Product store's watch action.
  */
-const route = useRoute();
-
-/**
- * Product store's fetch action.
- */
-const { watchProduct, fetchProduct } = useProductsStore();
+const { watchProduct } = useProductsStore();
 
 /**
  * Product store's reactive current-record reference.
@@ -87,29 +81,12 @@ const productStatus = computed(() =>
 );
 
 /**
- * Selects and (re)fetches the product whenever the route id changes.
+ * Selects and (re)fetches the product whenever the route id changes — and whenever the language
+ * does: the products store scopes its cache by locale (`dependsOn`), and the toolkit re-runs an
+ * active watcher under the new scope, since the API resolves `title` and `description` against
+ * the caller's language.
  */
 watchProduct(() => id);
-
-/**
- * Fetches it again when the language does.
- *
- * The LOCALE is part of what identifies this record, not just the id: the API resolves `title`
- * and `description` against the caller's language, and `resetOnLocaleChange` drops the cached
- * copy the moment a switch invalidates it. Nothing else would ask for the replacement — the route
- * id did not change, so the watcher above never fires — and the page sits on an empty record.
- *
- * Keyed on the ROUTE's own locale param rather than i18n's `locale`: the param is what
- * `localeChoice` decides a switch from, so watching it cannot disagree with the guard about
- * whether one happened.
- */
-watch(
-    () => route.params.locale,
-    () => {
-        const productId = typeof route.params.id === 'string' ? route.params.id : id;
-        if (productId) void fetchProduct(productId);
-    }
-);
 
 /**
  * Whether a visitor is signed in — a guest is told to sign in instead of being offered the

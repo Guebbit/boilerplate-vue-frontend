@@ -37,14 +37,5 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
-    },
-    // The dictionary is keyed by product id alone, and every cached record's title/description
-    // is resolved server-side in whatever language the request carried, so a language switch has
-    // to wipe it. A dynamic `import('./store')` rather than a top-level one: this manifest is
-    // evaluated eagerly for every enabled module, and a static import would pull the whole
-    // store into that same eager chunk for a callback that only fires after a real switch.
-    // Returned, not `void`-ed: the locale guard awaits this so a page it lets through never
-    // renders off a cache the reset hasn't reached yet.
-    resetOnLocaleChange: () =>
-        import('./store').then(({ useProductsStore }) => useProductsStore().resetForLocaleChange())
+    }
 } satisfies AppModule;
