@@ -212,6 +212,9 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
  * state). The tag itself is immutable — it is what every entry references, so
  * changing it would be a rename of the whole dictionary rather than an edit of this
  * record.
+ *
+ * Refuses with 409 when it would deactivate the deployment's fallback language: every
+ * translatable row's source lives there.
  * @summary Replace a language
  */
 export const replaceLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -249,6 +252,9 @@ export const ReplaceLocaleResponse = zod.strictObject({
  * omitted field is left unchanged). The tag itself is immutable — it is what every
  * entry references, so changing it would be a rename of the whole dictionary rather
  * than an edit of this record.
+ *
+ * Refuses with 409 when it would deactivate the deployment's fallback language: every
+ * translatable row's source lives there.
  * @summary Edit a language
  */
 export const updateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
