@@ -41,7 +41,14 @@
         "intro": "This action needs a recent password check. Enter your password to continue.",
         "label-password": "Password",
         "button-submit": "Confirm",
-        "error-wrong-password": "That password is not right. Try again."
+        "error-wrong-password": "That password is not right. Try again.",
+        "intro-email": "This action needs a recent confirmation. Your account has no password, so we email you a code instead.",
+        "label-code": "Code from the email",
+        "button-send": "Send code",
+        "button-send-wait": "Send again in {seconds}s",
+        "sent": "Code sent. Check your inbox.",
+        "error-wrong-code": "That code is not right. Check it and try again.",
+        "no-method": "This account has no password and no way to email a code. Reset the password from the sign-in page to set one."
     },
     "verification-banner": {
         "message": "Your email address is not verified yet. Check your inbox, or resend the link.",

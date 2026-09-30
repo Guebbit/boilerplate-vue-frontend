@@ -1547,13 +1547,32 @@ export const CheckPasswordBreachedResponse = zod.strictObject({
     })
 });
 /**
- * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
+ * The ways THIS account can answer a `401 REAUTH_REQUIRED` challenge, in the order a client should offer them. An account with a password gets `password`; an account with none (it signed up through an OAuth provider) gets `email`, a code mailed to its verified address. Empty when the account has no password and this deployment cannot deliver mail, so a client shows a dead end instead of a form nobody can pass. The list is a server fact, not a client guess: the kernel that raises the challenge cannot see account data.
+ * @summary How this account can re-authenticate
+ */
+export const GetReauthMethodsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        methods: zod.array(zod.enum(['password', 'email']))
+    })
+});
+/**
+ * Re-proves who the caller is to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). The body is tagged by `method`, one of those `GET /account/reauth` lists. Re-mints the session and returns a fresh access token, same as `POST /account/password`. The session keeps the factors it already proved (`amr`) and gains this one.
  * @summary Re-authenticate (step-up)
  */
-export const reauthBodyPasswordMin = 8;
-export const ReauthBody = zod.strictObject({
-    password: zod.string().min(reauthBodyPasswordMin)
-});
+export const reauthBodyOnePasswordMin = 8;
+export const ReauthBody = zod.union([
+    zod.strictObject({
+        method: zod.enum(['password']),
+        password: zod.string().min(reauthBodyOnePasswordMin)
+    }),
+    zod.strictObject({
+        method: zod.enum(['email']),
+        code: zod.string().min(1)
+    })
+]);
 export const ReauthResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8644,4 +8663,22 @@ export const RevokeApiKeyResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+/**
+ * Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.
+ * @summary Send a code to re-authenticate
+ */
+export const SendReauthCodeParams = zod.strictObject({
+    method: zod.enum(['email'])
+});
+export const SendReauthCodeResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string(),
+        sentTo: zod.string(),
+        resendAfter: zod.number(),
+        expiresAt: zod.iso.datetime({ offset: true })
+    })
 });

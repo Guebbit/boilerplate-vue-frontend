@@ -41,7 +41,14 @@
         "intro": "Questa azione richiede una verifica recente della password. Inserisci la tua password per continuare.",
         "label-password": "Password",
         "button-submit": "Conferma",
-        "error-wrong-password": "Password non corretta. Riprova."
+        "error-wrong-password": "Password non corretta. Riprova.",
+        "intro-email": "Questa azione richiede una conferma recente. Il tuo account non ha una password, quindi ti inviamo un codice via email.",
+        "label-code": "Codice dall'email",
+        "button-send": "Invia codice",
+        "button-send-wait": "Invia di nuovo tra {seconds}s",
+        "sent": "Codice inviato. Controlla la posta.",
+        "error-wrong-code": "Quel codice non è corretto. Controllalo e riprova.",
+        "no-method": "Questo account non ha una password e non può ricevere un codice via email. Reimposta la password dalla pagina di accesso per crearne una."
     },
     "verification-banner": {
         "message": "Il tuo indirizzo email non è ancora verificato. Controlla la posta o invia di nuovo il link.",

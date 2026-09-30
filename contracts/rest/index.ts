@@ -1849,9 +1849,57 @@ export interface PasswordCheckEnvelope {
     data: PasswordCheck;
 }
 
-export interface ReauthRequest {
+/**
+ * One way to re-authenticate. `password` proves the account password; `email` proves control of the account's verified address with a mailed code.
+ */
+export type ReauthMethod = (typeof ReauthMethod)[keyof typeof ReauthMethod];
+
+export const ReauthMethod = {
+    password: 'password',
+    email: 'email'
+} as const;
+
+export interface ReauthMethods {
+    /** The methods this account can use now, in the order to offer them. Empty means none can. */
+    methods: ReauthMethod[];
+}
+
+export interface ReauthMethodsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReauthMethods;
+}
+
+export type ReauthPasswordRequestMethod =
+    (typeof ReauthPasswordRequestMethod)[keyof typeof ReauthPasswordRequestMethod];
+
+export const ReauthPasswordRequestMethod = {
+    password: 'password'
+} as const;
+
+export interface ReauthPasswordRequest {
+    method: ReauthPasswordRequestMethod;
     password: Password;
 }
+
+export type ReauthEmailRequestMethod =
+    (typeof ReauthEmailRequestMethod)[keyof typeof ReauthEmailRequestMethod];
+
+export const ReauthEmailRequestMethod = {
+    email: 'email'
+} as const;
+
+export interface ReauthEmailRequest {
+    method: ReauthEmailRequestMethod;
+    /**
+     * The code from `POST /account/reauth/methods/email/send`.
+     * @minLength 1
+     */
+    code: string;
+}
+
+export type ReauthRequest = ReauthPasswordRequest | ReauthEmailRequest;
 
 export interface AuthTokensEnvelope {
     success: EnvelopeSuccess;
@@ -5411,7 +5459,17 @@ export const checkPasswordBreached = (
 };
 
 /**
- * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
+ * The ways THIS account can answer a `401 REAUTH_REQUIRED` challenge, in the order a client should offer them. An account with a password gets `password`; an account with none (it signed up through an OAuth provider) gets `email`, a code mailed to its verified address. Empty when the account has no password and this deployment cannot deliver mail, so a client shows a dead end instead of a form nobody can pass. The list is a server fact, not a client guess: the kernel that raises the challenge cannot see account data.
+ * @summary How this account can re-authenticate
+ */
+export const getReauthMethods = (
+    options?: SecondParameter<typeof orvalMutator<ReauthMethodsEnvelope>>
+) => {
+    return orvalMutator<ReauthMethodsEnvelope>({ url: `/account/reauth`, method: 'GET' }, options);
+};
+
+/**
+ * Re-proves who the caller is to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). The body is tagged by `method`, one of those `GET /account/reauth` lists. Re-mints the session and returns a fresh access token, same as `POST /account/password`. The session keeps the factors it already proved (`amr`) and gains this one.
  * @summary Re-authenticate (step-up)
  */
 export const reauth = (
@@ -8034,6 +8092,20 @@ export const revokeApiKey = (
     return orvalMutator<SuccessResponse>({ url: `/api-keys/${id}`, method: 'DELETE' }, options);
 };
 
+/**
+ * Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.
+ * @summary Send a code to re-authenticate
+ */
+export const sendReauthCode = (
+    method: 'email',
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+) => {
+    return orvalMutator<TwoFactorDeliveryEnvelope>(
+        { url: `/account/reauth/methods/${method}/send`, method: 'POST' },
+        options
+    );
+};
+
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
@@ -8120,6 +8192,7 @@ export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changeP
 export type CheckPasswordBreachedResult = NonNullable<
     Awaited<ReturnType<typeof checkPasswordBreached>>
 >;
+export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getReauthMethods>>>;
 export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;
@@ -8370,3 +8443,4 @@ export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof list
 export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
+export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;

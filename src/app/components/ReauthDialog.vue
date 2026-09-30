@@ -2,18 +2,21 @@
 /**
  * @module
  * Step-up re-authentication prompt: mounted once by `LayoutDefault.vue`, beside `<DialogHost />`.
- * One password field. On submit it calls `useSessionStore().reauth()` itself — the interceptor that
- * opened it only needed to know when a fresh session exists, not how one gets there — and a wrong
- * password stays open for another try rather than closing.
+ * Asks the server which method this account can use, then shows that one: a password field, or —
+ * for an account with no password — a "send code" button and a field for the mailed code. On
+ * submit it calls `useSessionStore().reauth()` itself — the interceptor that opened it only needed
+ * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
+ * another try rather than closing. See docs/modules/account.md.
  */
-import { computed, nextTick, ref, useId, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import { reauthSendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
+import type { ReauthMethod, ReauthRequest } from '@types';
 
 /**
  * Translation function.
@@ -62,14 +65,98 @@ const errorMessage = ref<string>();
  */
 const passwordField = ref<VTextField>();
 
+/**
+ * The mailed-code input, focused once a code has been requested.
+ */
+const codeField = ref<VTextField>();
+
+/**
+ * The code typed from the mail. Cleared with the prompt, like {@link password}.
+ */
+const code = ref('');
+
+/**
+ * What this account can answer with, in the server's order; `undefined` while it is being asked.
+ */
+const methods = ref<ReauthMethod[]>();
+
+/**
+ * The method on show: the first the server listed. The list is ordered for the visitor, so the
+ * first is the one to offer.
+ */
+const method = computed(() => methods.value?.[0]);
+
+/**
+ * Whether the server has answered and offered nothing — an account with no password on a
+ * deployment that cannot mail. A dead end told as one, not a form nobody can pass.
+ */
+const noMethod = computed(() => methods.value?.length === 0);
+
+/**
+ * Whether a code has been requested in this prompt, which swaps the hint under the button.
+ */
+const sent = ref(false);
+
+/**
+ * Seconds left on the server's resend cooldown; zero means "send code" may be pressed.
+ */
+const cooldown = ref(0);
+
+/**
+ * The interval driving {@link cooldown}, kept to be cleared at zero, on reopening and on unmount.
+ */
+let ticker: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * Starts the countdown the server just handed back.
+ *
+ * @param seconds - The cooldown from `resendAfter` or a 429's `retryAfter`; zero or less is none.
+ */
+const startCooldown = (seconds: number) => {
+    clearInterval(ticker);
+    cooldown.value = Math.max(0, seconds);
+    if (seconds <= 0) return;
+    ticker = setInterval(() => {
+        cooldown.value -= 1;
+        if (cooldown.value <= 0) clearInterval(ticker);
+    }, 1000);
+};
+
+onUnmounted(() => {
+    clearInterval(ticker);
+});
+
+/**
+ * Asks the server which method applies and focuses the field it brings.
+ *
+ * @returns A promise settling once the list is known; a failure shows in the dialog.
+ */
+const loadMethods = () =>
+    useSessionStore()
+        .reauthMethods()
+        .then((list) => {
+            methods.value = list;
+            if (list[0] === 'password') void nextTick(() => passwordField.value?.focus());
+        })
+        .catch((error: unknown) => {
+            methods.value = undefined;
+            errorMessage.value = getErrorMessage(error);
+        });
+
 watch(
     () => reauthDialog.isOpen,
     (open) => {
         if (!open) return;
         password.value = '';
+        code.value = '';
+        sent.value = false;
+        methods.value = undefined;
         errorMessage.value = undefined;
-        void nextTick(() => passwordField.value?.focus());
-    }
+        startCooldown(0);
+        void loadMethods();
+    },
+    // Also on mount: the dialog may be created while a prompt is already open.
+    { immediate: true }
 );
 
 /**
@@ -85,25 +172,59 @@ const isOpen = computed({
 });
 
 /**
- * Proves the password and, on success, tells the interceptor a fresh session exists.
+ * The tagged body for whichever method is on show; `undefined` while its field is empty.
+ */
+const proof = computed<ReauthRequest | undefined>(() => {
+    if (method.value === 'password' && password.value)
+        return { method: 'password', password: password.value };
+    if (method.value === 'email' && code.value) return { method: 'email', code: code.value };
+    return undefined;
+});
+
+/**
+ * Proves the answer and, on success, tells the interceptor a fresh session exists.
  *
  * @returns A promise resolving once the attempt settles. The prompt stays open either way, since
- *  the parked requests are still worth retrying once the visitor can — but a wrong password (422)
- *  and any other failure (network, 5xx) are told apart: retyping the same password again is never
- *  the right next step for a failure the password had nothing to do with.
+ *  the parked requests are still worth retrying once the visitor can — but a wrong answer (422)
+ *  and any other failure (network, 5xx) are told apart: retyping the same thing again is never
+ *  the right next step for a failure the answer had nothing to do with.
  */
 const submit = () => {
-    if (!password.value) return;
+    if (!proof.value) return;
+    const wrongKey =
+        proof.value.method === 'password'
+            ? 'reauth-dialog.error-wrong-password'
+            : 'reauth-dialog.error-wrong-code';
     return useSessionStore()
-        .reauth(password.value)
+        .reauth(proof.value)
         .then(() => {
             reauthDialog.resolveStepUp();
         })
         .catch((error: unknown) => {
-            errorMessage.value = absentIs(error, 422)
-                ? t('reauth-dialog.error-wrong-password')
-                : getErrorMessage(error);
+            errorMessage.value = absentIs(error, 422) ? t(wrongKey) : getErrorMessage(error);
             password.value = '';
+            code.value = '';
+        });
+};
+
+/**
+ * Asks for the mailed code and starts the server's own resend countdown.
+ *
+ * @returns A promise settling once the send is answered. A 429 inside the cooldown starts the
+ *  countdown from ITS number, so the button cannot be hammered while the server is refusing it.
+ */
+const sendCode = () => {
+    errorMessage.value = undefined;
+    return useSessionStore()
+        .sendReauthCode()
+        .then((resendAfter) => {
+            startCooldown(resendAfter);
+            sent.value = true;
+            void nextTick(() => codeField.value?.focus());
+        })
+        .catch((error: unknown) => {
+            startCooldown(reauthSendRetryAfter(error) ?? 0);
+            errorMessage.value = getErrorMessage(error);
         });
 };
 </script>
@@ -122,8 +243,25 @@ const submit = () => {
         <v-card v-if="reauthDialog.isOpen">
             <v-card-title :id="titleId">{{ t('reauth-dialog.title') }}</v-card-title>
             <v-card-text :id="messageId">
-                <p class="mb-4">{{ t('reauth-dialog.intro') }}</p>
-                <form novalidate @submit.prevent="submit">
+                <p v-if="method === 'email'" class="mb-4">
+                    {{ t('reauth-dialog.intro-email') }}
+                </p>
+                <p v-else-if="!noMethod" class="mb-4">{{ t('reauth-dialog.intro') }}</p>
+                <v-progress-linear
+                    v-if="!methods && !errorMessage"
+                    indeterminate
+                    data-test="reauth-dialog-loading"
+                />
+                <v-alert
+                    v-else-if="noMethod"
+                    type="warning"
+                    variant="tonal"
+                    density="compact"
+                    data-test="reauth-dialog-no-method"
+                >
+                    {{ t('reauth-dialog.no-method') }}
+                </v-alert>
+                <form v-else-if="method === 'password'" novalidate @submit.prevent="submit">
                     <v-text-field
                         ref="passwordField"
                         v-model="password"
@@ -134,6 +272,40 @@ const submit = () => {
                         data-test="reauth-dialog-password"
                     />
                 </form>
+                <form v-else-if="method === 'email'" novalidate @submit.prevent="submit">
+                    <v-btn
+                        variant="tonal"
+                        class="mb-4"
+                        :disabled="cooldown > 0"
+                        data-test="reauth-dialog-send"
+                        @click="sendCode"
+                    >
+                        {{
+                            cooldown > 0
+                                ? t('reauth-dialog.button-send-wait', { seconds: cooldown })
+                                : t('reauth-dialog.button-send')
+                        }}
+                    </v-btn>
+                    <p v-if="sent" class="mb-4" role="status" data-test="reauth-dialog-sent">
+                        {{ t('reauth-dialog.sent') }}
+                    </p>
+                    <v-text-field
+                        ref="codeField"
+                        v-model="code"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        :label="t('reauth-dialog.label-code')"
+                        :error-messages="errorMessage ? [errorMessage] : []"
+                        data-test="reauth-dialog-code"
+                    />
+                </form>
+                <p
+                    v-if="errorMessage && !method"
+                    class="text-error"
+                    data-test="reauth-dialog-error"
+                >
+                    {{ errorMessage }}
+                </p>
             </v-card-text>
             <v-card-actions>
                 <v-spacer />
@@ -143,7 +315,7 @@ const submit = () => {
                 <v-btn
                     color="primary"
                     variant="flat"
-                    :disabled="!password"
+                    :disabled="!proof"
                     :loading="reauthing"
                     data-test="reauth-dialog-submit"
                     @click="submit"

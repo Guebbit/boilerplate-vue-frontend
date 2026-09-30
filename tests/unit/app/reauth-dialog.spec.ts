@@ -24,10 +24,13 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
 const reauth = vi.fn();
+const reauthMethods = vi.fn();
+const sendReauthCode = vi.fn();
 const reauthing = ref(false);
 
 vi.mock('@/infrastructure/session.ts', () => ({
-    useSessionStore: () => ({ reauth, reauthing })
+    reauthSendRetryAfter: (error: { retryAfter?: number }) => error.retryAfter,
+    useSessionStore: () => ({ reauth, reauthMethods, sendReauthCode, reauthing })
 }));
 
 const mountDialog = () =>
@@ -38,9 +41,18 @@ const mountDialog = () =>
         }
     });
 
+/**
+ * Two render ticks: one for the prompt to open, one for the server's method list to arrive and the
+ * form it selects to render.
+ */
+const settled = (wrapper: ReturnType<typeof mountDialog>) =>
+    nextRenderTick(wrapper).then(() => nextRenderTick(wrapper));
+
 beforeEach(() => {
     setActivePinia(createPinia());
     reauth.mockReset();
+    reauthMethods.mockReset().mockResolvedValue(['password']);
+    sendReauthCode.mockReset();
     reauthing.value = false;
     return loadLocale('en');
 });
@@ -55,7 +67,7 @@ describe('ReauthDialog', () => {
         // Never awaited in this case — settling it is what the OTHER cases below assert on.
         void useReauthPromptStore().requestStepUp();
 
-        return nextRenderTick(wrapper).then(() => {
+        return settled(wrapper).then(() => {
             expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(true);
             expect(
                 wrapper.find('[data-test="reauth-dialog-submit"]').attributes('disabled')
@@ -68,13 +80,16 @@ describe('ReauthDialog', () => {
         const wrapper = mountDialog();
         const stepUp = useReauthPromptStore().requestStepUp();
 
-        return nextRenderTick(wrapper).then(() =>
+        return settled(wrapper).then(() =>
             wrapper
                 .get('[data-test="reauth-dialog-password"] input')
                 .setValue('correct horse')
                 .then(() => wrapper.get('[data-test="reauth-dialog-submit"]').trigger('click'))
                 .then(() => {
-                    expect(reauth).toHaveBeenCalledWith('correct horse');
+                    expect(reauth).toHaveBeenCalledWith({
+                        method: 'password',
+                        password: 'correct horse'
+                    });
                     return expect(stepUp).resolves.toBeUndefined();
                 })
         );
@@ -90,7 +105,7 @@ describe('ReauthDialog', () => {
         // than rejecting the caller's promise.
         void useReauthPromptStore().requestStepUp();
 
-        return nextRenderTick(wrapper).then(() =>
+        return settled(wrapper).then(() =>
             wrapper
                 .get('[data-test="reauth-dialog-password"] input')
                 .setValue('wrong guess')
@@ -112,5 +127,102 @@ describe('ReauthDialog', () => {
         return nextRenderTick(wrapper)
             .then(() => wrapper.get('[data-test="reauth-dialog-cancel"]').trigger('click'))
             .then(() => expect(stepUp).rejects.toThrow('REAUTH_CANCELLED'));
+    });
+});
+
+/** Opens the prompt for an account the server says can only use the mailed code. */
+const openForEmail = () => {
+    reauthMethods.mockResolvedValue(['email']);
+    const wrapper = mountDialog();
+    const stepUp = useReauthPromptStore().requestStepUp();
+    return nextRenderTick(wrapper)
+        .then(() => nextRenderTick(wrapper))
+        .then(() => ({ wrapper, stepUp }));
+};
+
+describe('ReauthDialog — an account with no password', () => {
+    it('offers the code flow, not a password field', () =>
+        openForEmail().then(({ wrapper }) => {
+            expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(false);
+            expect(wrapper.find('[data-test="reauth-dialog-send"]').exists()).toBe(true);
+            expect(wrapper.find('[data-test="reauth-dialog-code"]').exists()).toBe(true);
+        }));
+
+    it('sends the code, then counts the server’s cooldown down on the button', () => {
+        sendReauthCode.mockResolvedValue(30);
+
+        return openForEmail().then(({ wrapper }) =>
+            wrapper
+                .get('[data-test="reauth-dialog-send"]')
+                .trigger('click')
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(sendReauthCode).toHaveBeenCalledOnce();
+                    expect(wrapper.find('[data-test="reauth-dialog-sent"]').exists()).toBe(true);
+                    expect(
+                        wrapper.get('[data-test="reauth-dialog-send"]').attributes('disabled')
+                    ).toBeDefined();
+                    expect(wrapper.get('[data-test="reauth-dialog-send"]').text()).toContain('30');
+                })
+        );
+    });
+
+    it('starts the countdown from a 429’s own number when the send is refused', () => {
+        sendReauthCode.mockRejectedValue({ status: 429, retryAfter: 12, message: 'Too soon' });
+
+        return openForEmail().then(({ wrapper }) =>
+            wrapper
+                .get('[data-test="reauth-dialog-send"]')
+                .trigger('click')
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(wrapper.get('[data-test="reauth-dialog-send"]').text()).toContain('12');
+                    expect(wrapper.text()).toContain('Too soon');
+                })
+        );
+    });
+
+    it('resolves the step-up with the tagged email body once the code is typed', () => {
+        reauth.mockResolvedValue(undefined);
+
+        return openForEmail().then(({ wrapper, stepUp }) =>
+            wrapper
+                .get('[data-test="reauth-dialog-code"] input')
+                .setValue('123456')
+                .then(() => wrapper.get('[data-test="reauth-dialog-submit"]').trigger('click'))
+                .then(() => {
+                    expect(reauth).toHaveBeenCalledWith({ method: 'email', code: '123456' });
+                    return expect(stepUp).resolves.toBeUndefined();
+                })
+        );
+    });
+
+    it('says the code is wrong, not the password, on a 422', () => {
+        reauth.mockRejectedValue({ status: 422 });
+
+        return openForEmail().then(({ wrapper }) =>
+            wrapper
+                .get('[data-test="reauth-dialog-code"] input')
+                .setValue('000000')
+                .then(() => wrapper.get('[data-test="reauth-dialog-submit"]').trigger('click'))
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(wrapper.text()).toContain('That code is not right');
+                    expect(wrapper.text()).not.toContain('password is not right');
+                })
+        );
+    });
+
+    it('shows a dead end when the server offers no method', () => {
+        reauthMethods.mockResolvedValue([]);
+        const wrapper = mountDialog();
+        void useReauthPromptStore().requestStepUp();
+
+        return nextRenderTick(wrapper)
+            .then(() => nextRenderTick(wrapper))
+            .then(() => {
+                expect(wrapper.find('[data-test="reauth-dialog-no-method"]').exists()).toBe(true);
+                expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(false);
+            });
     });
 });
