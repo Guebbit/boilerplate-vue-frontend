@@ -223,6 +223,7 @@ how a reader finds the story without opening the file.
 | CU1 | A visitor with no account signs up, verifies by mail, puts two products in the cart, adds an address in the checkout dialog and pays by card; cart, order lines and VAT rows agree in cents, the invoice downloads as a PDF and the order mail links to the order | new account          | `@smoke` | `cu1-first-purchase.cy.ts`          |
 | CU3 | The customer checks out by bank transfer and copies the IBAN and reference; the admin finds the order by that reference and records the money; the customer reloads and it is paid                                                                                | `user`, then `admin` | `@smoke` | `cu3-bank-transfer.cy.ts`           |
 | N1  | The customer withdraws from a paid, undispatched order: two steps, then the order is cancelled, refunded whole (delivery included), the stock is back and the acknowledgement is mailed                                                                           | `user`               | `@smoke` | `n1-withdraw-before-dispatch.cy.ts` |
+| OP1 | The admin takes a paid express order through start, ship (code required) and deliver, each button only in its own state; the customer sees the parcel and is mailed the code                                                                                      | `admin`, then `user` | `@smoke` | `op1-fulfil-paid-order.cy.ts`       |
 
 ## `tests/support/` — the harness
 
