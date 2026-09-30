@@ -38,13 +38,17 @@ const anAddress = (overrides: Partial<Address> = {}): Address => ({
  * @param addresses - The book to seed before mount.
  * @param modelValue - The chosen entry id, if any.
  */
-const mountPicker = (addresses: Address[], modelValue?: string) => {
+const mountPicker = (
+    addresses: Address[],
+    modelValue?: string,
+    extraProps: { purpose?: 'shipping' | 'billing'; sameAsShipping?: boolean } = {}
+) => {
     const store = useAddressesStore();
     store.addresses = addresses;
     vi.spyOn(store, 'fetchAddresses').mockResolvedValue([]);
 
     const wrapper = mount(AddressPicker, {
-        props: { modelValue },
+        props: { modelValue, ...extraProps },
         global: { plugins: [vuetify, i18n] }
     });
     return { store, wrapper };
@@ -126,6 +130,8 @@ describe('AddressPicker — adding a place at checkout', () => {
 
     it('chooses the entry the visitor just added, not the default', () => {
         const { store, wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], 'a1');
+        // The add came through THIS picker's own dialog.
+        void wrapper.get('[data-test=address-picker-add]').trigger('click');
 
         store.addresses = [anAddress({ id: 'a1', default: true }), anAddress({ id: 'a2' })];
 
@@ -142,5 +148,72 @@ describe('AddressPicker — adding a place at checkout', () => {
         return nextRenderTick(wrapper).then(() => {
             expect(lastChosen(wrapper)).toBe('a2');
         });
+    });
+});
+
+describe('AddressPicker — two pickers on one book', () => {
+    it('ignores an entry added through the other picker', () => {
+        const { store, wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], 'a1');
+
+        // No click on THIS picker's add button: the new entry came from the other one.
+        store.addresses = [anAddress({ id: 'a1', default: true }), anAddress({ id: 'a2' })];
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(lastChosen(wrapper)).toBeUndefined();
+        });
+    });
+});
+
+describe('AddressPicker — the billing purpose', () => {
+    it('wears its own test id and offers "same as the shipping address" first', () => {
+        const { wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], undefined, {
+            purpose: 'billing',
+            sameAsShipping: true
+        });
+
+        expect(wrapper.find('[data-test=billing-address-picker]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=address-picker]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=billing-address-picker-same]').exists()).toBe(true);
+    });
+
+    it('leaves "same as shipping" as the standing choice rather than pre-selecting an entry', () => {
+        const { wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], undefined, {
+            purpose: 'billing',
+            sameAsShipping: true
+        });
+
+        expect(lastChosen(wrapper)).toBeUndefined();
+    });
+
+    it('pre-selects the default entry when nothing ships to an address', () => {
+        const { wrapper } = mountPicker(
+            [anAddress({ id: 'a1' }), anAddress({ id: 'a2', default: true })],
+            undefined,
+            { purpose: 'billing' }
+        );
+
+        expect(wrapper.find('[data-test=billing-address-picker-same]').exists()).toBe(false);
+        expect(lastChosen(wrapper)).toBe('a2');
+    });
+
+    it('falls back to the default once "same as shipping" is no longer on offer', () => {
+        const { wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], undefined, {
+            purpose: 'billing',
+            sameAsShipping: true
+        });
+
+        return wrapper
+            .setProps({ sameAsShipping: false })
+            .then(() => nextRenderTick(wrapper))
+            .then(() => {
+                expect(lastChosen(wrapper)).toBe('a1');
+            });
+    });
+
+    it('explains an empty book in billing terms and still offers the add button', () => {
+        const { wrapper } = mountPicker([], undefined, { purpose: 'billing' });
+
+        expect(wrapper.find('[data-test=billing-address-picker-empty]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=billing-address-picker-add]').exists()).toBe(true);
     });
 });

@@ -9,7 +9,7 @@
  * read the product page's count along the way: it follows the hold and the release, because every
  * stock write clears the server cache and the browser revalidates the page.
  */
-import { addToCartFromStorefront, idFromLocation } from '../../../support/e2e/steps';
+import { addToCartFromStorefront, giveAnAddress, idFromLocation } from '../../../support/e2e/steps';
 
 /** The slice of a product this story reads: the units a shopper could still buy. */
 interface ProductLike {
@@ -44,10 +44,13 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 addToCartFromStorefront('product.lowStock');
                 // Adding never looks at stock, so the editor's cart can hold it too.
                 cy.apiAs('editor', 'POST', '/cart', { productId, quantity: 1 });
+                // Pickup ships to no address, but the invoice needs one: the editor keeps no book.
+                giveAnAddress('editor');
 
                 cy.step('the customer checks out the last unit: it is held');
                 cy.goToCart();
-                // `pickup` needs no address, so choosing it alone enables the button.
+                // `pickup` needs no shipping address, and the customer's default bills, so choosing
+                // it alone enables the button.
                 cy.get('[data-test=shipping-method-pickup]').click();
                 cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
                 cy.get('#order-target').should('exist');

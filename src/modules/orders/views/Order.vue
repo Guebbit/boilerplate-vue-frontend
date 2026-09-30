@@ -34,6 +34,7 @@ import {
     Euro,
     Eye,
     FileText,
+    ReceiptText,
     Hash,
     Mail,
     MapPin,
@@ -258,17 +259,31 @@ const orderStatus = computed(() => {
 });
 
 /**
+ * One frozen address as one readable line.
+ *
+ * @param address - The order's `shippingAddress` or `billingAddress`, when it carries one.
+ * @returns The address as one line, or `undefined` when the order has none.
+ */
+const addressLine = (
+    address:
+        { fullName: string; street: string; zip: string; city: string; country: string } | undefined
+) =>
+    address
+        ? `${address.fullName}, ${address.street}, ${address.zip} ${address.city}, ${address.country}`
+        : undefined;
+
+/**
  * The frozen shipping address, one line — whoever fulfils the order needs to see it without
  * opening the address book, which may since have changed or lost the entry this order was placed
- * against.
- *
- * @returns The address as one readable line, or `undefined` when the order carries none.
+ * against. Absent on an order with nothing to ship to an address (digital-only, or a pickup).
  */
-const shippingAddressText = computed(() => {
-    const address = currentOrder.value?.shippingAddress;
-    if (!address) return undefined;
-    return `${address.fullName}, ${address.street}, ${address.zip} ${address.city}, ${address.country}`;
-});
+const shippingAddressText = computed(() => addressLine(currentOrder.value?.shippingAddress));
+
+/**
+ * The frozen billing address, one line — the address the invoice is made out to. Every order a
+ * checkout placed carries one, whether or not anything ships.
+ */
+const billingAddressText = computed(() => addressLine(currentOrder.value?.billingAddress));
 
 /**
  * Whether an invoice request — either action below — is in flight. Its own flag, not the store's
@@ -589,6 +604,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :icon="MapPin"
                         full-width
                         data-test="order-shipping-address"
+                    />
+                    <ItemDetailField
+                        v-if="billingAddressText"
+                        :label="t('order-target-page.label-billing-address')"
+                        :value="billingAddressText"
+                        :icon="ReceiptText"
+                        full-width
+                        data-test="order-billing-address"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"

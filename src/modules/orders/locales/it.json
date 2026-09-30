@@ -72,6 +72,7 @@
         "warning-reorder-left-out": "Ordine aggiunto al carrello, tranne ciò che non è più in vendita: {titles}.",
         "label-shipping": "Spedizione",
         "label-shipping-address": "Indirizzo di spedizione",
+        "label-billing-address": "Indirizzo di fatturazione",
         "label-payment-method": "Metodo di pagamento",
         "label-vat-summary": "Riepilogo IVA",
         "label-vat-rate": "Aliquota",

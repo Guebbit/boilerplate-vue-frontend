@@ -211,5 +211,11 @@
         "title": "Indirizzo di spedizione",
         "empty": "Non hai ancora indirizzi salvati.",
         "add": "Aggiungi un indirizzo"
+    },
+    "billing-address-picker": {
+        "title": "Indirizzo di fatturazione",
+        "same": "Uguale all'indirizzo di spedizione",
+        "empty": "Non hai ancora indirizzi salvati — aggiungi l'indirizzo a cui intestare la fattura.",
+        "add": "Aggiungi un indirizzo"
     }
 }

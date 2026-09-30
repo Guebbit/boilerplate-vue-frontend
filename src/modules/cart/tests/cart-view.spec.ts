@@ -48,6 +48,35 @@ const router = createRouter({
 });
 
 /**
+ * Stands in for both address pickers, choosing the way a shopper leaving them alone would: the
+ * shipping picker takes `addr-1`; the billing picker is "same as shipping" (no choice) while that
+ * is on offer, and takes the book's `billing-1` otherwise. Its `data-test` matches the real one's.
+ */
+const AddressPickerStub = defineComponent({
+    props: {
+        modelValue: { type: String, default: undefined },
+        purpose: { type: String, default: 'shipping' },
+        sameAsShipping: { type: Boolean, default: false }
+    },
+    emits: ['update:modelValue'],
+    template:
+        "<div :data-test=\"purpose === 'billing' ? 'billing-address-picker' : 'address-picker'\" />",
+    watch: {
+        sameAsShipping: {
+            immediate: true,
+            handler(
+                this: { purpose: string; $emit: (event: 'update:modelValue', id?: string) => void },
+                same: boolean
+            ) {
+                if (this.purpose === 'billing')
+                    this.$emit('update:modelValue', same ? undefined : 'billing-1');
+                else this.$emit('update:modelValue', 'addr-1');
+            }
+        }
+    }
+});
+
+/**
  * One line, one summary — the shared non-empty cart every case starts from.
  */
 const A_CART: CartResponse = {
@@ -127,6 +156,7 @@ const mountCart = () => {
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
                 ShippingSelector: ShippingSelectorStub,
+                AddressPicker: AddressPickerStub,
                 PaymentMethodSelector: { template: '<div />' }
             }
         }
@@ -249,6 +279,23 @@ describe('the checkout refusals', () => {
                 });
         }));
 
+    it('answers CART_BILLING_ADDRESS_REQUIRED with its own message, not the generic fallback', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(422, 'CART_BILLING_ADDRESS_REQUIRED')
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // A message, not a banner: the fix is choosing or adding an address.
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                    expect(wrapper.find('[data-test=checkout-error]').exists()).toBe(false);
+                });
+        }));
+
     /**
      * E12: the resolved address's country fell outside the deployment's ship-to list. Same shape
      * as `CART_ADDRESS_NOT_FOUND` above — a message, no banner — since the fix is picking a
@@ -301,6 +348,7 @@ describe('the checkout refusals', () => {
                         template:
                             '<div data-test="shipping-selector-stub" :data-selected="modelValue" />'
                     },
+                    AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }
                 }
             }
@@ -357,15 +405,6 @@ describe('the checkout payload', () => {
             }
         });
 
-        const AddressPickerStub = defineComponent({
-            props: ['modelValue'],
-            emits: ['update:modelValue'],
-            template: '<div />',
-            mounted() {
-                this.$emit('update:modelValue', 'addr-1');
-            }
-        });
-
         const wrapper = mount(Cart, {
             global: {
                 plugins: [router, vuetify, i18n],
@@ -396,6 +435,93 @@ describe('the checkout payload', () => {
                 expect(checkoutSpy).toHaveBeenCalledOnce();
                 expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('addressId');
             });
+    });
+});
+
+describe('the checkout payload — billing', () => {
+    /**
+     * Courier chosen: the shipping picker is asked and billing defaults to "same as shipping",
+     * which the API reads from an OMITTED `billingAddressId` — sending one would pin a choice the
+     * shopper never made.
+     */
+    it('leaves billingAddressId out while billing is "same as shipping"', () => {
+        const cart = useCartStore();
+        cart.cart = A_CART;
+        vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
+        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
+        const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
+        const CourierStub = defineComponent({
+            props: ['modelValue', 'requiresAddress'],
+            emits: ['update:modelValue', 'update:requiresAddress'],
+            template: '<div />',
+            mounted() {
+                this.$emit('update:modelValue', 'standard');
+                this.$emit('update:requiresAddress', true);
+            }
+        });
+        const wrapper = mount(Cart, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    LayoutDefault: { template: '<div><slot /></div>' },
+                    ShippingSelector: CourierStub,
+                    AddressPicker: AddressPickerStub,
+                    PaymentMethodSelector: { template: '<div />' }
+                }
+            }
+        });
+
+        return flushPromises()
+            .then(() => {
+                expect(wrapper.find('[data-test=address-picker]').exists()).toBe(true);
+                expect(wrapper.find('[data-test=billing-address-picker]').exists()).toBe(true);
+                return wrapper.get('[data-test=cart-checkout]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(checkoutSpy.mock.calls[0]?.[0]).toMatchObject({ addressId: 'addr-1' });
+                expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('billingAddressId');
+            });
+    });
+
+    it('sends the billing entry the shopper named when it is not the shipping one', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) =>
+            // `mountCart` picks `pickup`: nothing ships to an address, so billing stands alone
+            // and carries the picked entry.
+            wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(checkoutSpy.mock.calls[0]?.[0]).toMatchObject({
+                        billingAddressId: 'billing-1'
+                    });
+                    expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('addressId');
+                })
+        ));
+
+    it('holds checkout back while billing stands alone and no entry is chosen', () => {
+        const cart = useCartStore();
+        cart.cart = { ...A_CART, shipping: { required: false, selected: null, options: [] } };
+        vi.spyOn(cart, 'fetchCart').mockResolvedValue(cart.cart);
+        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
+        const wrapper = mount(Cart, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    LayoutDefault: { template: '<div><slot /></div>' },
+                    // An empty book: the picker has nothing to pre-choose.
+                    AddressPicker: { template: '<div data-test="billing-address-picker" />' },
+                    PaymentMethodSelector: { template: '<div />' }
+                }
+            }
+        });
+
+        return flushPromises().then(() => {
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeDefined();
+        });
     });
 });
 
@@ -459,31 +585,46 @@ describe('a cart with nothing to ship', () => {
         cart.cart = DIGITAL_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(DIGITAL_CART);
         vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        // Before mounting: `Cart.vue` captures `checkout` from the store at setup time.
+        const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
         const wrapper = mount(Cart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
                     LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: { template: '<div data-test="shipping-selector" />' },
+                    AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }
                 }
             }
         });
-        return flushPromises().then(() => wrapper);
+        return flushPromises().then(() => ({ wrapper, checkoutSpy }));
     };
 
     it('says so in one line instead of showing an empty shipping heading', () =>
-        mountDigital().then((wrapper) => {
+        mountDigital().then(({ wrapper }) => {
             expect(wrapper.find('[data-test=shipping-selector]').exists()).toBe(false);
             expect(wrapper.get('[data-test=cart-no-shipping]').text()).toBe(
                 i18n.global.t('cart-page.no-shipping-needed')
             );
         }));
 
-    it('can be checked out at once, with no method or address chosen', () =>
-        mountDigital().then((wrapper) => {
+    it('asks for a billing address only, pre-chosen from the book, and checks out with it', () =>
+        mountDigital().then(({ wrapper, checkoutSpy }) => {
             expect(wrapper.find('[data-test=address-picker]').exists()).toBe(false);
-            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.find('[data-test=billing-address-picker]').exists()).toBe(true);
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(checkoutSpy).toHaveBeenCalledOnce();
+                    expect(checkoutSpy.mock.calls[0]?.[0]).toMatchObject({
+                        billingAddressId: 'billing-1'
+                    });
+                    expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('addressId');
+                });
         }));
 
     it('still shows the selector for a cart that ships', () =>

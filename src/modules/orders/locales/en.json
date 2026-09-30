@@ -72,6 +72,7 @@
         "warning-reorder-left-out": "Order added to cart, without what is no longer sold: {titles}.",
         "label-shipping": "Shipping",
         "label-shipping-address": "Shipping address",
+        "label-billing-address": "Billing address",
         "label-payment-method": "Payment method",
         "label-vat-summary": "VAT summary",
         "label-vat-rate": "Rate",

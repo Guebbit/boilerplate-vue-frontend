@@ -66,6 +66,7 @@ const mountCart = () => {
             stubs: {
                 LayoutDefault: { template: '<div><slot /></div>' },
                 ShippingSelector: { template: '<div />' },
+                AddressPicker: { template: '<div />' },
                 PaymentMethodSelector: { template: '<div />' }
             }
         }
@@ -101,6 +102,7 @@ describe('a cart line price (FA32b)', () => {
                 stubs: {
                     LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: { template: '<div />' },
+                    AddressPicker: { template: '<div />' },
                     PaymentMethodSelector: { template: '<div />' }
                 }
             }

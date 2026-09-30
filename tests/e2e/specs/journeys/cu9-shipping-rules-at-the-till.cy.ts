@@ -82,20 +82,29 @@ describe('CU9 · Shipping rules at the till', () => {
         cy.location('pathname').should('match', /\/cart$/);
         cy.get('[data-test=cart-item]').should('have.length', 2);
 
-        cy.step('pickup asks for no address, and the order that follows carries none');
+        cy.step(
+            'pickup asks for no shipping address, only the one to invoice, and the order carries just that'
+        );
         cy.get('[data-test=shipping-method-pickup]').click();
         cy.get('[data-test=address-picker]').should('not.exist');
+        cy.get('[data-test=billing-address-picker-same]').should('not.exist');
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
         cy.get('#order-target').should('exist');
         cy.get('[data-test=order-shipping-address]').should('not.exist');
+        cy.get('[data-test=order-billing-address]').should('exist');
         idFromLocation().then((orderId) => {
-            cy.apiAs<{ shippingAddress?: unknown }>('user', 'GET', `/orders/${orderId}`).should(
-                (order) => {
-                    expect(order?.shippingAddress, 'a pickup order froze no address').to.equal(
-                        undefined
-                    );
-                }
-            );
+            cy.apiAs<{ shippingAddress?: unknown; billingAddress?: unknown }>(
+                'user',
+                'GET',
+                `/orders/${orderId}`
+            ).should((order) => {
+                expect(order?.shippingAddress, 'a pickup order froze no shipping address').to.equal(
+                    undefined
+                );
+                expect(order?.billingAddress, 'but it is still invoiced to someone').to.not.equal(
+                    undefined
+                );
+            });
         });
     });
 });

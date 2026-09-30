@@ -25,6 +25,7 @@
         "error-insufficient-stock": "Some items in your cart are no longer available in the quantity you asked for.",
         "shortfall-line": "{title}: requested {requested}, only {available} left",
         "error-address-not-found": "We couldn't find the shipping address for this order — check your saved addresses and try again.",
+        "error-billing-address-required": "Every order needs a billing address for its invoice — choose or add one to continue.",
         "error-shipping-method-weight": "Your basket is too heavy for the chosen shipping method — pick another one.",
         "error-shipping-method-generic": "That shipping method could not be set — pick another one.",
         "error-ship-to-country-not-supported": "We don't ship to that address's country — choose or add an address in a country we deliver to.",
