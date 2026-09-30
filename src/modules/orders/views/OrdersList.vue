@@ -115,7 +115,8 @@ const rowActionSize = useTouchFriendlySize();
  * @returns The localized headers, re-translated on locale change.
  */
 const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
-    { title: t('orders-list-page.column-id'), key: 'id' },
+    // Sorts by the id (creation order, which the number follows); the cell shows the number.
+    { title: t('orders-list-page.column-order'), key: 'id' },
     { title: t('orders-list-page.column-status'), key: 'status' },
     { title: t('orders-list-page.column-total'), key: 'totalPrice' },
     { title: t('orders-list-page.column-date'), key: 'createdAt' },
@@ -412,6 +413,12 @@ const handleHardDelete = (orderId: string) =>
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
+            <!-- The number is what mails and invoices cite; the id stays the fallback, and the link's
+                 own address, for an order that has none. -->
+            <template v-slot:[`item.id`]="{ item }">
+                <span data-test="row-order-number">{{ item.orderNumber ?? item.id }}</span>
+            </template>
+
             <template v-slot:[`item.status`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
                     {{ t(`orders-form.status-${item.status}`) }}

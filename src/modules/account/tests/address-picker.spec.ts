@@ -108,3 +108,39 @@ describe('AddressPicker — the pre-select watcher', () => {
         });
     });
 });
+
+describe('AddressPicker — adding a place at checkout', () => {
+    it('offers the add button when the book already has an entry', () => {
+        const { wrapper } = mountPicker([anAddress({ id: 'a1', default: true })]);
+
+        expect(wrapper.find('[data-test=address-picker-add]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=address-picker-empty]').exists()).toBe(false);
+    });
+
+    it('still explains an empty book', () => {
+        const { wrapper } = mountPicker([]);
+
+        expect(wrapper.find('[data-test=address-picker-empty]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=address-picker-add]').exists()).toBe(true);
+    });
+
+    it('chooses the entry the visitor just added, not the default', () => {
+        const { store, wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], 'a1');
+
+        store.addresses = [anAddress({ id: 'a1', default: true }), anAddress({ id: 'a2' })];
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(lastChosen(wrapper)).toBe('a2');
+        });
+    });
+
+    it('does not mistake the first load of a book for an add', () => {
+        const { store, wrapper } = mountPicker([]);
+
+        store.addresses = [anAddress({ id: 'a1' }), anAddress({ id: 'a2', default: true })];
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(lastChosen(wrapper)).toBe('a2');
+        });
+    });
+});
