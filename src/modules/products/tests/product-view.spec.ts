@@ -15,6 +15,7 @@ import { defineComponent, h } from 'vue';
 import type { Component } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { SLOTS_KEY } from '@/kernel/slots';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import Product from '@/modules/products/views/Product.vue';
 import { useProductsStore } from '@/modules/products/store';
 import { i18n, loadLocale } from '@/i18n';
@@ -159,5 +160,33 @@ describe('a barebones product', () => {
         });
 
         expect(wrapper.text()).toContain('Everything a widget could want');
+    });
+});
+
+/** Signs the viewer in holding exactly these abilities. */
+const signInWith = (tenant: [string, string][]) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'someone@example.com', role: 'customer' };
+    session.setAbilities({ tenant, platform: [] });
+};
+
+describe('the edit button', () => {
+    const widget: ProductType = { id: 'p-edit', title: 'Widget', price: 1, currency: 'EUR' };
+
+    it('is hidden from a shopper, who would only meet a guard refusal', () => {
+        signInWith([['read', 'Product']]);
+
+        expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
+    });
+
+    it('is hidden from a guest', () => {
+        expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
+    });
+
+    it('is shown to staff who may update products', () => {
+        signInWith([['update', 'Product']]);
+
+        expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(true);
     });
 });

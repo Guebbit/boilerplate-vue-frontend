@@ -2607,6 +2607,7 @@ export const listUsersQueryPageDefault = 1;
 export const listUsersQueryPageMax = 10000;
 export const listUsersQueryPageSizeDefault = 10;
 export const listUsersQueryPageSizeMax = 100;
+export const listUsersQuerySortMax = 3;
 export const listUsersQueryTextMax = 200;
 export const listUsersQueryIdMax = 100;
 export const ListUsersQueryParams = zod.strictObject({
@@ -2616,6 +2617,11 @@ export const ListUsersQueryParams = zod.strictObject({
         .min(1)
         .max(listUsersQueryPageSizeMax)
         .default(listUsersQueryPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'email', '-email', 'username', '-username']))
+        .min(1)
+        .max(listUsersQuerySortMax)
+        .optional(),
     text: zod.string().min(1).max(listUsersQueryTextMax).optional(),
     id: zod.array(zod.string()).min(1).max(listUsersQueryIdMax).optional(),
     email: zod.email().optional(),
@@ -2983,6 +2989,7 @@ export const searchUsersBodyPageDefault = 1;
 export const searchUsersBodyPageMax = 10000;
 export const searchUsersBodyPageSizeDefault = 10;
 export const searchUsersBodyPageSizeMax = 100;
+export const searchUsersBodySortMax = 3;
 export const searchUsersBodyTextMax = 200;
 export const searchUsersBodyIdMax = 100;
 export const SearchUsersBody = zod.strictObject({
@@ -2992,6 +2999,11 @@ export const SearchUsersBody = zod.strictObject({
         .min(1)
         .max(searchUsersBodyPageSizeMax)
         .default(searchUsersBodyPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'email', '-email', 'username', '-username']))
+        .min(1)
+        .max(searchUsersBodySortMax)
+        .optional(),
     text: zod.string().min(1).max(searchUsersBodyTextMax).optional(),
     id: zod.array(zod.string()).min(1).max(searchUsersBodyIdMax).optional(),
     email: zod.email().optional(),
@@ -3102,6 +3114,7 @@ export const listFeedbackRequestsQueryPageDefault = 1;
 export const listFeedbackRequestsQueryPageMax = 10000;
 export const listFeedbackRequestsQueryPageSizeDefault = 10;
 export const listFeedbackRequestsQueryPageSizeMax = 100;
+export const listFeedbackRequestsQuerySortMax = 3;
 export const listFeedbackRequestsQueryTextMax = 200;
 export const ListFeedbackRequestsQueryParams = zod.strictObject({
     page: zod
@@ -3114,6 +3127,11 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
         .min(1)
         .max(listFeedbackRequestsQueryPageSizeMax)
         .default(listFeedbackRequestsQueryPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .min(1)
+        .max(listFeedbackRequestsQuerySortMax)
+        .optional(),
     text: zod.string().min(1).max(listFeedbackRequestsQueryTextMax).optional(),
     email: zod.email().optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional()
@@ -3167,6 +3185,7 @@ export const searchFeedbackRequestsBodyPageDefault = 1;
 export const searchFeedbackRequestsBodyPageMax = 10000;
 export const searchFeedbackRequestsBodyPageSizeDefault = 10;
 export const searchFeedbackRequestsBodyPageSizeMax = 100;
+export const searchFeedbackRequestsBodySortMax = 3;
 export const searchFeedbackRequestsBodyTextMax = 200;
 export const SearchFeedbackRequestsBody = zod.strictObject({
     page: zod
@@ -3179,6 +3198,11 @@ export const SearchFeedbackRequestsBody = zod.strictObject({
         .min(1)
         .max(searchFeedbackRequestsBodyPageSizeMax)
         .default(searchFeedbackRequestsBodyPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .min(1)
+        .max(searchFeedbackRequestsBodySortMax)
+        .optional(),
     text: zod.string().min(1).max(searchFeedbackRequestsBodyTextMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     email: zod.email().optional()
@@ -3302,6 +3326,7 @@ export const listProductsQueryPageDefault = 1;
 export const listProductsQueryPageMax = 10000;
 export const listProductsQueryPageSizeDefault = 10;
 export const listProductsQueryPageSizeMax = 100;
+export const listProductsQuerySortMax = 3;
 export const listProductsQueryTextMax = 200;
 export const listProductsQueryIdMax = 100;
 export const listProductsQueryMinPriceMin = 0;
@@ -3313,6 +3338,11 @@ export const ListProductsQueryParams = zod.strictObject({
         .min(1)
         .max(listProductsQueryPageSizeMax)
         .default(listProductsQueryPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'price', '-price', 'title', '-title']))
+        .min(1)
+        .max(listProductsQuerySortMax)
+        .optional(),
     text: zod.string().min(1).max(listProductsQueryTextMax).optional(),
     id: zod.array(zod.string()).min(1).max(listProductsQueryIdMax).optional(),
     category: zod.string().optional(),
@@ -3868,6 +3898,7 @@ export const searchProductsBodyPageDefault = 1;
 export const searchProductsBodyPageMax = 10000;
 export const searchProductsBodyPageSizeDefault = 10;
 export const searchProductsBodyPageSizeMax = 100;
+export const searchProductsBodySortMax = 3;
 export const searchProductsBodyTextMax = 200;
 export const searchProductsBodyIdMax = 100;
 export const searchProductsBodyMinPriceMin = 0;
@@ -3879,6 +3910,11 @@ export const SearchProductsBody = zod.strictObject({
         .min(1)
         .max(searchProductsBodyPageSizeMax)
         .default(searchProductsBodyPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'price', '-price', 'title', '-title']))
+        .min(1)
+        .max(searchProductsBodySortMax)
+        .optional(),
     text: zod.string().min(1).max(searchProductsBodyTextMax).optional(),
     id: zod.array(zod.string()).min(1).max(searchProductsBodyIdMax).optional(),
     minPrice: zod.number().min(searchProductsBodyMinPriceMin).optional(),
@@ -4604,6 +4640,7 @@ export const listOrdersQueryPageDefault = 1;
 export const listOrdersQueryPageMax = 10000;
 export const listOrdersQueryPageSizeDefault = 10;
 export const listOrdersQueryPageSizeMax = 100;
+export const listOrdersQuerySortMax = 3;
 export const listOrdersQueryIdMax = 100;
 export const ListOrdersQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listOrdersQueryPageMax).default(listOrdersQueryPageDefault),
@@ -4612,6 +4649,11 @@ export const ListOrdersQueryParams = zod.strictObject({
         .min(1)
         .max(listOrdersQueryPageSizeMax)
         .default(listOrdersQueryPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .min(1)
+        .max(listOrdersQuerySortMax)
+        .optional(),
     id: zod.array(zod.string()).min(1).max(listOrdersQueryIdMax).optional(),
     userId: zod.string().optional(),
     productId: zod.string().optional(),
@@ -5037,6 +5079,7 @@ export const searchOrdersBodyPageDefault = 1;
 export const searchOrdersBodyPageMax = 10000;
 export const searchOrdersBodyPageSizeDefault = 10;
 export const searchOrdersBodyPageSizeMax = 100;
+export const searchOrdersBodySortMax = 3;
 export const searchOrdersBodyIdMax = 100;
 export const SearchOrdersBody = zod.strictObject({
     page: zod.number().min(1).max(searchOrdersBodyPageMax).default(searchOrdersBodyPageDefault),
@@ -5045,6 +5088,11 @@ export const SearchOrdersBody = zod.strictObject({
         .min(1)
         .max(searchOrdersBodyPageSizeMax)
         .default(searchOrdersBodyPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .min(1)
+        .max(searchOrdersBodySortMax)
+        .optional(),
     id: zod.array(zod.string()).min(1).max(searchOrdersBodyIdMax).optional(),
     userId: zod.string().optional(),
     productId: zod.string().optional(),

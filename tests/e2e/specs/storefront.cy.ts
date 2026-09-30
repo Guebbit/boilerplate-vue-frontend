@@ -33,7 +33,7 @@ describe('Storefront', () => {
                     .contains(`${category} (${String(count)})`)
                     .should('exist')
                     .click();
-                cy.get('#products-list-page tbody tr').should('have.length', count);
+                cy.get('[data-test=product-card]').should('have.length', count);
             });
         });
     });

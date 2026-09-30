@@ -102,6 +102,54 @@ describe('DataTable — the headers', () => {
     });
 });
 
+describe('DataTable — server sort', () => {
+    const rows: Row[] = [
+        { id: 'b', name: 'Beta' },
+        { id: 'a', name: 'Alpha' }
+    ];
+    const twoFields: CoreDataTableHeader<Row>[] = [
+        { title: 'Name', key: 'name' },
+        { title: 'Id', key: 'id' }
+    ];
+
+    it('makes only the columns the API can sort by sortable', () => {
+        const heads = mountTable(
+            { headers: twoFields, sortBy: [], serverSortKeys: ['name'] },
+            sortBound
+        ).findAll('th');
+
+        expect(heads[0].classes()).toContain('v-data-table__th--sortable');
+        expect(heads[1].classes()).not.toContain('v-data-table__th--sortable');
+    });
+
+    it('does not reorder the rows it holds: the server did that', () => {
+        const wrapper = mountTable(
+            {
+                headers: twoFields,
+                items: rows,
+                sortBy: [{ key: 'name', order: 'asc' }],
+                serverSortKeys: ['name']
+            },
+            sortBound
+        );
+
+        expect(wrapper.findAll('[data-test=list-row]').map((row) => row.find('td').text())).toEqual(
+            ['Beta', 'Alpha']
+        );
+    });
+
+    it('sorts client-side, as before, when no server keys are given', () => {
+        const wrapper = mountTable(
+            { headers: twoFields, items: rows, sortBy: [{ key: 'name', order: 'asc' }] },
+            sortBound
+        );
+
+        expect(wrapper.findAll('[data-test=list-row]').map((row) => row.find('td').text())).toEqual(
+            ['Alpha', 'Beta']
+        );
+    });
+});
+
 describe('DataTable — keyboard selection', () => {
     it('leaves a table without a v-model out of the tab order', () => {
         const row = mountTable().find('[data-test=list-row]');

@@ -8,6 +8,7 @@ import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
+import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listOrders,
     searchOrders,
@@ -19,7 +20,8 @@ import {
     restoreOrderById,
     cancelOrderById,
     getOrderInvoice,
-    overrideOrderStatus
+    overrideOrderStatus,
+    OrderSortItem
 } from '@api';
 import type {
     Order,
@@ -37,7 +39,11 @@ import type {
  * one-element array `SearchOrdersRequest.id` now requires, in `search:` below. `userId`/
  * `productId` are untouched — they stay scalar in the contract.
  */
-type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
+type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize' | 'id' | 'sort'> & {
+    id?: string;
+    /** The API's `sort` as one CSV (`-createdAt`): the form a URL holds. */
+    sort?: string;
+};
 
 /**
  * Orders CRUD, paginated search and invoices.
@@ -96,6 +102,7 @@ export const useOrdersStore = defineStore('orders', () => {
                     pageSize,
                     // The API reads a batch of ids; the filter box searches for one.
                     id: filters.id ? [filters.id] : undefined,
+                    sort: sortTokensOf(filters.sort, OrderSortItem),
                     userId: filters.userId,
                     productId: filters.productId,
                     email: filters.email,

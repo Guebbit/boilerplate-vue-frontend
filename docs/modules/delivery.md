@@ -1,7 +1,7 @@
 # delivery
 
 ::: tip At a glance
-**Owns** — `ShippingSelector` and `ShipmentPanel`: shipping as components, not pages.
+**Owns** — `ShippingSelector`, `ShipmentPanel` and `ShippingMethodName`: shipping as components, not pages.
 **Depends on** — nothing. Two modules mount it; it mounts nothing.
 **Breaks if you change** — either component's props. [`cart`](./cart.md) and [`orders`](./orders.md) mount them.
 :::
@@ -16,7 +16,7 @@
 | **Depends on**          | _nothing_                                                                      |
 | **Depended on by**      | [`cart`](./cart.md) · [`orders`](./orders.md)                                  |
 | **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | `ShipmentPanel` · `ShippingSelector`                                           |
+| **Publishes**           | `ShipmentPanel` · `ShippingMethodName` · `ShippingSelector`                    |
 | **Backend counterpart** | `delivery` in `boilerplate-node-backend`                                       |
 
 ## The map

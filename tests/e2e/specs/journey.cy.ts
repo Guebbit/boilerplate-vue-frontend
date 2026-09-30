@@ -30,7 +30,7 @@ describe('The customer journey', () => {
         cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         cy.get('#products-list-page tbody tr').should('have.length', 1);
-        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=product-card-link]').first().click();
 
         cy.get('#product-target').should('exist');
         // Read, never asserted as a literal: the shelf's count is the backend's own, and the
@@ -61,8 +61,8 @@ describe('The customer journey', () => {
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         // The filter is a request; against a fast API the unfiltered list is still on screen for
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
-        cy.get('[data-test=row-view]').should('have.length', 1);
-        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=product-card-link]').should('have.length', 1);
+        cy.get('[data-test=product-card-link]').first().click();
         // A callback, not a bare `stockBeforeBuying` argument: `.should('have.text', value)` reads
         // `value` when this LINE runs — Cypress queues the whole test body synchronously before any
         // command actually executes — which is before the `.then()` above has assigned it. A
@@ -118,8 +118,8 @@ describe('The customer journey', () => {
         // The store kept the walk's own filter, so the list comes back already narrowed —
         // clicking the chip again would TOGGLE the filter off, and the row click would then land
         // on whatever the unfiltered list re-rendered underneath it.
-        cy.get('[data-test=row-view]').should('have.length', 1);
-        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=product-card-link]').should('have.length', 1);
+        cy.get('[data-test=product-card-link]').first().click();
         // Same closure trap as above — deferred, not a bare argument captured at queue time.
         cy.get('[data-test=product-stock]').should(($stock) => {
             expect($stock.text()).to.equal(stockBeforeBuying);

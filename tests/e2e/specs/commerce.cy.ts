@@ -41,7 +41,7 @@ describe('Commerce', () => {
         // ── Buy something ───────────────────────────────────────────────────────────
         cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
-        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
@@ -93,8 +93,8 @@ describe('Commerce', () => {
         cy.loginAs('user');
         cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
-        cy.get('[data-test=row-view]').should('have.length', 1);
-        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=product-card-link]').should('have.length', 1);
+        cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
         cy.goToCart();

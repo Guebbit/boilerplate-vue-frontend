@@ -495,6 +495,24 @@ describe('useUsersStore', () => {
                 });
         });
 
+        it('watchSearchUsers sends a sort the contract names, and drops one it does not', () => {
+            respondWithItems([]);
+            const store = useUsersStore();
+            store.filters = { sort: '-email' };
+
+            return store
+                .watchSearchUsers()
+                .search()
+                .then(() => {
+                    expect(lastBody().sort).toEqual(['-email']);
+                    store.filters = { sort: 'password' };
+                    return store.watchSearchUsers().search(true);
+                })
+                .then(() => {
+                    expect(lastBody().sort).toBeUndefined();
+                });
+        });
+
         it('watchSearchUsers keeps active:false distinct from "no filter"', () => {
             // A truthiness check on `active` would drop `false` and silently return active AND
             // inactive users when an admin asked for inactive ones only.

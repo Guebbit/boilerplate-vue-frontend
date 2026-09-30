@@ -407,3 +407,61 @@ describe('goods with no right of withdrawal', () => {
         wrapper.unmount();
     });
 });
+
+/** Signs the viewer in holding exactly these abilities. */
+const signInWith = (tenant: [string, string][]) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'someone@example.com', role: 'customer' };
+    session.setAbilities({ tenant, platform: [] });
+};
+
+describe('the edit button', () => {
+    it('is hidden from a customer, who would only meet a guard refusal', () => {
+        signInWith([['read', 'Order']]);
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=go-to-edit]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('is shown to staff who may update orders', () => {
+        signInWith([['update', 'Order']]);
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=go-to-edit]').exists()).toBe(true);
+
+        wrapper.unmount();
+    });
+});
+
+describe('the shipping method', () => {
+    it('reads as its name, not the id the order froze', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [lineWith(null)],
+            shippingMethod: 'express',
+            shippingCost: 5
+        });
+
+        const shipping = wrapper.get('[data-test=order-shipping]').text();
+        expect(shipping).toContain('Express');
+        expect(shipping).not.toContain('express');
+
+        wrapper.unmount();
+    });
+
+    it('falls back to the id for a method this deployment has no wording for', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [lineWith(null)],
+            shippingMethod: 'drone',
+            shippingCost: 5
+        });
+
+        expect(wrapper.get('[data-test=order-shipping]').text()).toContain('drone');
+
+        wrapper.unmount();
+    });
+});

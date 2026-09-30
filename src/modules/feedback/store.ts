@@ -9,11 +9,13 @@ import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     createFeedbackRequest,
     deleteFeedbackRequest,
     searchFeedbackRequests,
-    updateFeedbackRequestStatus
+    updateFeedbackRequestStatus,
+    FeedbackRequestSortItem
 } from '@api';
 import type {
     CreateFeedbackRequest,
@@ -26,7 +28,10 @@ import type {
  * Search criteria for the inbox, i.e. everything but pagination (which is owned by the toolkit's
  * search state).
  */
-type FeedbackFilters = Omit<SearchFeedbackRequestsRequest, 'page' | 'pageSize'>;
+type FeedbackFilters = Omit<SearchFeedbackRequestsRequest, 'page' | 'pageSize' | 'sort'> & {
+    /** The API's `sort` as one CSV (`-createdAt`): the form a URL holds. */
+    sort?: string;
+};
 
 /**
  * The contact form's two audiences: anyone may submit, admins read the inbox and move tickets
@@ -73,6 +78,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
                     page,
                     pageSize,
                     text: filters.text,
+                    sort: sortTokensOf(filters.sort, FeedbackRequestSortItem),
                     status: filters.status,
                     email: filters.email
                 }).then((response) => ({

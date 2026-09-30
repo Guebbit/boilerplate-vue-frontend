@@ -7,8 +7,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Public products list: search/filter form, facet chips, and the paginated table with
- * admin-only row actions (edit, soft delete or restore, hard delete).
+ * Products list: search/filter form, facet chips, and the paginated result. Shoppers get the
+ * storefront grid (cards: picture, price, availability, add to cart); staff get the table with its
+ * row actions (edit, soft delete or restore, hard delete). Both sort on the server (`filters.sort`).
+ * The catalogue is public, so the split is on what the viewer may DO, not on being signed in.
  */
 import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -26,6 +28,12 @@ import type { Product } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
+import { useServerSort } from '@/ui/composables/use-server-sort.ts';
+import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
+import { ProductSortItem } from '@/types/enums.ts';
+import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
+import SortSelect from '@/ui/molecules/SortSelect.vue';
+import ProductCard from '@/modules/products/components/ProductCard.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -70,6 +78,18 @@ const {
  * Whether the signed-in visitor may see the admin-only actions (create, edit, delete).
  */
 const session = useSessionStore();
+
+/**
+ * Whether the viewer manages the catalogue — decides table (staff) or grid (everyone else), and
+ * whether the staff-only filters show. Any one write permission is enough: a role that can edit
+ * but not delete is still staff.
+ */
+const isStaff = computed(
+    () =>
+        session.can('create', 'Product') ||
+        session.can('update', 'Product') ||
+        session.can('delete', 'Product')
+);
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -153,7 +173,8 @@ const { sync: syncUrl } = useListUrlState({
         category: 'string',
         tag: 'string',
         active: 'boolean',
-        deleted: 'boolean'
+        deleted: 'boolean',
+        sort: 'string'
     }
 });
 
@@ -173,6 +194,31 @@ const { handleSearch, handleReset } = useListSearch({
     search,
     onApplied: syncUrl
 });
+
+/**
+ * The columns the API can order by (the contract's `ProductSort` enum) — the staff table's other
+ * headers stay inert rather than reorder one page.
+ */
+const sortableKeys = sortFieldsOf(ProductSortItem);
+
+/**
+ * The sort state, kept in `filters.sort` so it travels in the URL and the request: the staff
+ * table edits it through {@link sortBy}, the shopper's select through {@link sortChoice}.
+ */
+const { sortBy, choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
+
+/**
+ * The orders the shopper's select offers on top of the default newest-first — a subset of the
+ * contract's `ProductSort` enum.
+ *
+ * @returns The options, re-translated on locale change.
+ */
+const sortOptions = computed(() => [
+    { value: 'price', title: t('products-list-page.sort-price-asc') },
+    { value: '-price', title: t('products-list-page.sort-price-desc') },
+    { value: 'title', title: t('products-list-page.sort-title-asc') },
+    { value: '-title', title: t('products-list-page.sort-title-desc') }
+]);
 
 /**
  * Toggles one category chip: selecting it filters the list, selecting it again clears it.
@@ -331,6 +377,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         hide-details
                     />
                     <v-text-field
+                        v-if="isStaff"
                         v-model="filters.id"
                         :label="t('products-list-page.filter-id')"
                         hide-details
@@ -369,6 +416,13 @@ const handleHardDelete = (productId: string, title: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
+                    <SortSelect
+                        v-if="!isStaff"
+                        v-model="sortChoice"
+                        :label="t('products-list-page.sort-label')"
+                        :default-label="t('products-list-page.sort-newest')"
+                        :options="sortOptions"
+                    />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
@@ -397,8 +451,33 @@ const handleHardDelete = (productId: string, title: string) =>
             data-test="products-list-row-action-error"
         />
 
+        <template v-if="!isStaff">
+            <v-empty-state
+                v-if="!loading && pageItemList.length === 0"
+                :title="t('products-list-page.empty-products')"
+                data-test="products-empty"
+            />
+            <section
+                v-else
+                :aria-label="t('products-list-page.grid-caption')"
+                :aria-busy="loading ? 'true' : undefined"
+                class="relative"
+                data-test="products-grid"
+            >
+                <TableLoadingBar v-if="loading" />
+                <ul class="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <li v-for="product in pageItemList" :key="product.id">
+                        <ProductCard :product="product" />
+                    </li>
+                </ul>
+            </section>
+        </template>
+
         <DataTable
+            v-else
             v-model="selectedProductId"
+            v-model:sort-by="sortBy"
+            :server-sort-keys="sortableKeys"
             :headers="tableHeaders"
             :items="pageItemList"
             :caption="t('products-list-page.table-caption')"

@@ -70,7 +70,9 @@ vi.mock('@api', () => ({
     deleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.deleted)),
     hardDeleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.hardDeleted)),
     restoreOrderById: vi.fn(() => Promise.resolve(RESPONSES.restored)),
-    getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE))
+    getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE)),
+    // The contract's sort enum: the store reads it to drop a sort the API would refuse.
+    OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }
 }));
 
 describe('useOrdersStore', () => {
@@ -288,6 +290,25 @@ describe('useOrdersStore', () => {
                             pageSize: expect.any(Number)
                         })
                     );
+                });
+        });
+
+        it('sends a sort the contract names as its token list, and drops one it does not', () => {
+            const store = useOrdersStore();
+            store.filters = { sort: '-createdAt' };
+
+            return store
+                .watchSearchOrders()
+                .search()
+                .then(() => {
+                    expect(searchOrders).toHaveBeenLastCalledWith(
+                        expect.objectContaining({ sort: ['-createdAt'] })
+                    );
+                    store.filters = { sort: 'totalPrice' };
+                    return store.watchSearchOrders().search(true);
+                })
+                .then(() => {
+                    expect(vi.mocked(searchOrders).mock.lastCall?.[0]?.sort).toBeUndefined();
                 });
         });
 
