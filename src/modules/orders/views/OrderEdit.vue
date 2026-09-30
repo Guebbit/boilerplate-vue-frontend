@@ -12,6 +12,7 @@ export default {
  * on the `actions` the server attaches to the loaded record. `status` is not a form field: it
  * moves only through the cancel and override actions below.
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -361,11 +362,16 @@ const submitForm = () => {
 };
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and (re)fetches the order whenever the route id changes. `useOrderRefund` reads the
  * payment on the same id, because the refund controls are a fact about money the order record does
  * not carry.
  */
-watchOrder(() => id);
+watchOrder(() => id, { onError: onMissingRecord });
 
 /**
  * Forces the one re-fetch a list-cache arrival needs to gain `actions` — without it, an order

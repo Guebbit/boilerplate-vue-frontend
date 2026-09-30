@@ -11,6 +11,7 @@ export default {
  * still open. Cache-first by route id, forced once when the cached row lacks `actions` (the list
  * seeds the cache with rows that carry none), so the detail read is always made once on arrival.
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -64,17 +65,23 @@ const orderTo = computed(() =>
 );
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and fetches the return whenever the route id changes.
  */
-watchReturn(() => id);
+watchReturn(() => id, { onError: onMissingRecord });
 
 /**
  * Re-reads the return, forced past the cache — after a move, and once for a list-seeded row that
  * carries no `actions`.
  *
- * @returns A promise settling once the record is fresh.
+ * @returns A promise settling once the record is fresh; a missing record leaves for the Error page.
  */
-const refresh = () => (id ? fetchReturn(id, { forced: true }) : Promise.resolve());
+const refresh = () =>
+    id ? fetchReturn(id, { forced: true }).catch(onMissingRecord) : Promise.resolve();
 
 onMounted(refresh);
 </script>

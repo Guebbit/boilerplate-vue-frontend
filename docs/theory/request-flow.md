@@ -219,7 +219,13 @@ to see it":
   of these stopped something the visitor just asked for in this view; the view keeps working
   either way, so `notifyErrorMessages`'s toast is where the failure belongs.
 
-The status code decides nothing here: a 404 lookup miss and a 500 on the same save both block the
+- **The record itself is not there** — a detail page (`Product.vue`, `Order.vue`, `Return.vue`,
+  `User.vue`) whose id the API answers 404 or 403. There is no view left to keep working, so
+  `useMissingRecord()` (`src/infrastructure/utils/use-missing-record.ts`) replaces the route with
+  the shell's Error page, carrying the status; any other failure still toasts. The API answers 404
+  for an order another customer owns, so the visitor learns no more than "not found".
+
+The status code decides nothing about the pairing above: a 404 lookup miss and a 500 on the same save both block the
 same workflow, so both are inline (just `warn` vs `report`); a 500 on a background poll still only
 toasts.
 

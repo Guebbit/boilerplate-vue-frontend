@@ -15,6 +15,7 @@ export default {
  * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
  * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -314,9 +315,14 @@ const submitForm = () => {
 };
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and (re)fetches the user whenever the route id changes.
  */
-watchUser(() => id);
+watchUser(() => id, { onError: onMissingRecord });
 </script>
 
 <template>

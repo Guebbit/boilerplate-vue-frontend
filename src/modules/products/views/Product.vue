@@ -10,6 +10,7 @@ export default {
  * Public product detail page: renders the fetched record, and hosts the `product-actions` slot
  * where other modules put the storefront's visitor writes (add to cart, toggle wishlist).
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -81,12 +82,17 @@ const productStatus = computed(() =>
 );
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and (re)fetches the product whenever the route id changes — and whenever the language
  * does: the products store scopes its cache by locale (`dependsOn`), and the toolkit re-runs an
  * active watcher under the new scope, since the API resolves `title` and `description` against
  * the caller's language.
  */
-watchProduct(() => id);
+watchProduct(() => id, { onError: onMissingRecord });
 
 /**
  * Whether a visitor is signed in — a guest is told to sign in instead of being offered the
