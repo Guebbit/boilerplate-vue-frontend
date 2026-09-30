@@ -161,19 +161,32 @@ describe('Feedback', () => {
     });
 
     it('rejects an empty form with field errors, not a request', () => {
+        cy.env(['apiUrl']).then(({ apiUrl }) => {
+            cy.intercept('POST', `${String(apiUrl)}/feedback`).as('feedbackSubmit');
+        });
         cy.visit('/en/contact');
         cy.get('[data-test=contact-submit]').click();
         cy.get('.v-messages__message').should('exist');
+        // Read after the errors show: a request the click had fired would be counted by now.
+        cy.get('@feedbackSubmit.all').should('have.length', 0);
     });
 
     it('the inbox is admin-only: a plain user is sent home with the forbidden notice', () => {
         cy.loginAs('user');
+        cy.env(['apiUrl']).then(({ apiUrl }) => {
+            cy.intercept('POST', `${String(apiUrl)}/feedback/search`).as('inboxSearch');
+        });
         cy.visit('/en/feedback');
 
         // Not merely "the inbox is absent" — where they LANDED is the assertion, because a
         // blank error page would also have no inbox and prove nothing.
         cy.get('#home-page').should('exist');
         cy.get('#feedback-inbox-page').should('not.exist');
+        // The notice is asserted as shown, not by its wording: the copy belongs to the guard's
+        // own unit spec.
+        cy.get('.v-alert[role=status]').should('be.visible');
+        // The guard stops the visitor before the page loads: the inbox is never asked for.
+        cy.get('@inboxSearch.all').should('have.length', 0);
     });
 
     it('the inbox asks a guest to log in, keeping the target', () => {

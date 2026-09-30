@@ -9,6 +9,7 @@
  * from there to the end the page never reloads.
  */
 import { expectMailTemplate } from '../../support/e2e/commands';
+import { seedAccount } from '../../support/e2e/scenario';
 describe('The customer journey', () => {
     /**
      * The shelf's count as the guest first saw it — the value the cancel has to restore.
@@ -28,7 +29,7 @@ describe('The customer journey', () => {
     it('guest browses but cannot buy; the customer buys, cancels, and the shelf recovers', () => {
         // ── Guest: browse via the nav, meet the wall ────────────────────────────────
         cy.navigateTo('/en/products');
-        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        cy.filterByNarrowestCategoryOf('product.rich');
         cy.get('[data-test=product-card]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
 
@@ -58,7 +59,7 @@ describe('The customer journey', () => {
 
         // ── Customer: filter → product → cart → checkout ────────────────────────────
         cy.navigateTo('/en/products');
-        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        cy.filterByNarrowestCategoryOf('product.rich');
         // The filter is a request; against a fast API the unfiltered list is still on screen for
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
         cy.get('[data-test=product-card-link]').should('have.length', 1);
@@ -75,7 +76,7 @@ describe('The customer journey', () => {
         cy.contains('Product added to cart').should('exist');
 
         cy.goToCart();
-        // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
+        // The demo customer's cart starts empty (the seeded carts belong to other accounts), so
         // the line just added is the whole cart.
         cy.get('[data-test=cart-item]').should('have.length', 1);
         cy.checkoutWith('standard');
@@ -88,7 +89,7 @@ describe('The customer journey', () => {
         // (Only the demo profile has a readable outbox; live, the email leaves for real.)
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             if (liveProfile === true) return;
-            cy.emailTo('customer@example.com').then((email) => {
+            cy.emailTo(seedAccount('user').email).then((email) => {
                 // The outbox records template variables; the line items are structured data the
                 // order page below asserts far more precisely than a variable dump could.
                 expectMailTemplate(email, 'orders.order-confirm');

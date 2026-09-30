@@ -23,13 +23,13 @@ describe('Password reset', () => {
         cy.visit('/en/password-reset');
         cy.get('#password-reset-request-page [type=email]')
             .should('not.be.disabled')
-            .type('customer@example.com');
+            .type(seedAccount('user').email);
         cy.get('#password-reset-request-page button[type=submit]').click();
         // The enumeration-safe acknowledgement, same words whether the account exists or not.
         cy.contains('If the account exists').should('exist');
 
         // ── Open the email, follow the link ─────────────────────────────────────────
-        cy.emailTo('customer@example.com').then((email) => {
+        cy.emailTo(seedAccount('user').email).then((email) => {
             expectMailTemplate(email, 'account.reset-request');
             cy.visit(mailedLinkUrl(email));
         });
@@ -46,7 +46,7 @@ describe('Password reset', () => {
 
         // ── The proof, both directions ──────────────────────────────────────────────
         cy.get('[type=email]').should('not.be.disabled').clear();
-        cy.get('[type=email]').should('not.be.disabled').type('customer@example.com');
+        cy.get('[type=email]').should('not.be.disabled').type(seedAccount('user').email);
         cy.get('[type=password]').should('not.be.disabled').clear();
         // The pre-reset password — proven dead now that the reset above replaced it.
         cy.get('[type=password]').should('not.be.disabled').type(seedAccount('user').password);

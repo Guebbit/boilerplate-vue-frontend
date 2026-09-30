@@ -226,7 +226,7 @@ describe('Profile self-service', () => {
 
         it('an email change leaves the account verified, and shows no banner', () => {
             // Wait for hydration the way a person does: type only once the record shows.
-            cy.get('#profile-page [type=email]').should('have.value', 'customer@example.com');
+            cy.get('#profile-page [type=email]').should('have.value', seedAccount('user').email);
             cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
             cy.get('#profile-page [type=email]')
                 .should('not.be.disabled')
@@ -236,8 +236,14 @@ describe('Profile self-service', () => {
             /*
              * The API parks the new address in `pendingEmail` and leaves `email`/`verifiedAt` alone
              * until a token proves it, so asking for a change never unverifies the account. No
-             * banner, because nothing about the CURRENT address changed.
+             * banner, because nothing about the CURRENT address changed. The notice naming the
+             * new address is the proof the PATCH went through: without it this case would pass on
+             * a rejected change too.
              */
+            cy.get('[data-test=pending-email-notice]').should(
+                'contain.text',
+                'fresh-address@example.com'
+            );
             cy.get('[data-test=verify-banner]').should('not.exist');
         });
 
@@ -249,7 +255,8 @@ describe('Profile self-service', () => {
          */
 
         it('confirming the mailed link swaps the pending address into the live one', () => {
-            cy.get('#profile-page [type=email]').should('have.value', 'customer@example.com');
+            cy.skipUnlessMailbox();
+            cy.get('#profile-page [type=email]').should('have.value', seedAccount('user').email);
             cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
             cy.get('#profile-page [type=email]')
                 .should('not.be.disabled')
@@ -281,6 +288,7 @@ describe('Profile self-service', () => {
 
     describe('account deletion', () => {
         it('the emailed link permanently deletes the account', () => {
+            cy.skipUnlessMailbox();
             cy.get('[data-test=profile-delete-account] button').click();
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.contains('We sent a confirmation email').should('exist');

@@ -213,7 +213,7 @@ describe('keyboard', () => {
 
         cy.realPress('Escape');
         cy.get('[data-test=app-dialog-message]').should('not.exist');
-        // Declined, not confirmed: the subscription is still on the list.
+        // Declined, not confirmed: the user is still on the list.
         cy.get('[data-test=row-delete]').should('exist');
     });
 });

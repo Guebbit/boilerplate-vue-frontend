@@ -55,9 +55,9 @@ describe('Storefront', () => {
             cy.loginAs('admin');
             // Any order the cancel gate is still open on — the page hides the button for every
             // other status, so the guarantee IS the precondition this case needs. The owner's
-            // seeded cart already carries lines of its own, so "at least one cart item" would pass
-            // whether or not reorder did anything — `productTitle` is what makes this assert the
-            // REORDERED line specifically, not just a non-empty cart.
+            // seeded cart already carries lines of its own, so it is emptied through the API
+            // first: the reordered line can then only be there because reorder put it there.
+            cy.apiAs('admin', 'DELETE', '/cart/all');
             let productTitle = '';
             cy.subjectOrder('order.ownerPending').then((order) => {
                 productTitle = order.items[0].product.title;

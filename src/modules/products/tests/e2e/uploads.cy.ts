@@ -12,23 +12,7 @@
  * path is proof that the body was multipart and that the file survived the trip. An assertion on
  * the outcome keeps working whatever the transport does.
  */
-
-/**
- * The path the API hands back for an uploaded file: `<owner>-<24-hex-content-hash>.<ext>` — see
- * the backend's `image.worker.ts#contentStem`. The owner segment's LENGTH differs by profile
- * rather than its presence: the demo profile digests inline, before a document exists to own the
- * file, so it salts with the 32-hex quarantine key; the live profile's queued worker runs after
- * the document is persisted, so it salts with the document's own 24-hex id. Both are still one
- * shape here — hex, variable length, a dash, then the hash — which is what a field arriving as a
- * string being a 422 in every run of this suite actually buys: it proves the write was multipart
- * on both profiles, not that the two profiles' owner segments are the same length.
- *
- * The origin is optional because the API's answer is a path relative to the API — `/images/…` —
- * and `resolveImageUrl` prefixes it with the API host before it reaches `src`, since a bare path
- * would otherwise be resolved against THIS app's origin and 404. Optional rather than required so
- * the pattern still holds for a single-origin deployment, where there is no prefix to add.
- */
-const UPLOAD_PATH = /^(?:https?:\/\/[^/]+)?\/images\/[\da-f]+-[\da-f]{24}\.(png|jpg|jpeg|webp)$/;
+import { pollForImageSource, UPLOAD_PATH } from '../../../../../tests/support/e2e/images';
 
 /** The thumbnail sibling of {@link UPLOAD_PATH} — same optional API-host prefix, own segment. */
 const THUMBNAIL_PATH = /^(?:https?:\/\/[^/]+)?\/images\/thumbs\/v1\/[\w.-]+\.webp$/;
@@ -39,39 +23,6 @@ const THUMBNAIL_PATH = /^(?:https?:\/\/[^/]+)?\/images\/thumbs\/v1\/[\w.-]+\.web
  */
 const toFetchableUrl = (path: string, apiUrl: string) =>
     /^https?:\/\//.test(path) ? path : `${apiUrl}${path}`;
-
-/** How long a broker (RabbitMQ) may take to run the digest before this suite gives up on it. */
-const DIGEST_TIMEOUT_MS = 15_000;
-const DIGEST_POLL_INTERVAL_MS = 500;
-
-/**
- * Reloads and re-reads `selector`'s `src` until it matches `pattern` or `deadline` passes.
- *
- * A broker runs the image digest OFF the request (see `docs/tools/image-processing.md`), so the
- * page's first paint can still show the pre-digest value; without a broker the first read already
- * matches and this returns immediately. Neither app pushes the update, so re-reading the DOM
- * without a reload would wait forever on a page that already has its final HTML — the poll has to
- * `cy.reload()` between reads.
- *
- * @param selector - the image element to read `src` off
- * @param pattern - what a post-digest `src` looks like
- * @param deadline - epoch milliseconds after which to stop polling
- * @returns the last `src` read, matching or not
- */
-const pollForImageSource = (
-    selector: string,
-    pattern: RegExp,
-    deadline: number = Date.now() + DIGEST_TIMEOUT_MS
-): Cypress.Chainable<string> =>
-    cy.get(selector).then(($image) => {
-        const source = $image.attr('src') ?? '';
-        if (pattern.test(source) || Date.now() >= deadline) return cy.wrap(source);
-        // eslint-disable-next-line cypress/no-unnecessary-waiting -- polling a queue worker neither app drives directly; bounded by `deadline`, not trusted to be long enough
-        return cy
-            .wait(DIGEST_POLL_INTERVAL_MS, { log: false })
-            .then(() => cy.reload())
-            .then(() => pollForImageSource(selector, pattern, deadline));
-    });
 
 /**
  * Asserts no locally-picked file is still sitting in the preview.
@@ -180,8 +131,13 @@ describe('Image upload', () => {
             // writeback matches (`settleWriteback` in `infrastructure/adapters/image.worker.ts`),
             // so a re-fetch after the async digest lands sees the promoted url on both profiles —
             // the demo profile has no broker and digests inline; the live profile's queued digest
-            // just takes longer to appear, which `.should()`'s built-in retry covers.
-            cy.get('img[alt="Image preview"]').should('have.attr', 'src').and('match', UPLOAD_PATH);
+            // just takes longer to appear. With a broker the first answer is the pending
+            // placeholder and nothing re-fetches on its own, so the poll reloads between reads
+            // (`.should()` retries would re-read a page that never changes).
+            pollForImageSource('img[alt="Image preview"]', UPLOAD_PATH).should(
+                'match',
+                UPLOAD_PATH
+            );
         });
 
         /**
@@ -205,6 +161,13 @@ describe('Image upload', () => {
          * attribute the same way a drag-and-drop would, which is exactly the case worth covering.
          */
         it('rejects a file of the wrong type without contacting the API', () => {
+            // Any write to the catalogue counts: the hydrating GET is the only call allowed.
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.intercept({
+                    method: /^(PATCH|PUT|POST)$/,
+                    url: `${String(apiUrl)}/products/**`
+                }).as('productWrite');
+            });
             cy.get('input[type=file]').selectFile('tests/e2e/fixtures/not-an-image.txt', {
                 force: true
             });
@@ -212,6 +175,8 @@ describe('Image upload', () => {
 
             cy.contains('The image must be a PNG, JPEG or WebP file').should('exist');
             cy.contains('Product updated successfully').should('not.exist');
+            // Read only after the error shows, so a request still in flight would be counted.
+            cy.get('@productWrite.all').should('have.length', 0);
         });
 
         it('saves ordinary field edits without an image, as before', () => {
@@ -353,6 +318,12 @@ describe('Image upload', () => {
             cy.loginAs('admin');
             openHydratedProductEditForm();
 
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.intercept({
+                    method: /^(PATCH|PUT)$/,
+                    url: `${String(apiUrl)}/products/**`
+                }).as('productWrite');
+            });
             cy.get('input[type=file]').selectFile(
                 {
                     contents: Cypress.Buffer.from('this is not a PNG, whatever the header says'),
@@ -363,6 +334,10 @@ describe('Image upload', () => {
             );
             cy.get('form').submit();
 
+            // The API's own refusal, not just the absence of the success toast: that would also
+            // hold if the request never left.
+            cy.wait('@productWrite').its('response.statusCode').should('eq', 422);
+            cy.get('[data-test=product-edit-submit-error]').should('not.be.empty');
             cy.contains('Product updated successfully').should('not.exist');
         });
     });

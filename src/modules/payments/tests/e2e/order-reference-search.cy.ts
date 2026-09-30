@@ -5,6 +5,8 @@
  * exact reference into the orders list search and lands on the order's edit page — where
  * `RecordOfflinePaymentForm` already lives for recording the money once it arrives.
  */
+import { seedAccount } from '../../../../../tests/support/e2e/scenario';
+
 describe('Order reference search', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -17,9 +19,9 @@ describe('Order reference search', () => {
         // ── Buy something, paying by bank transfer — the one method that mints an RF ──
         // A digital-only product needs no shipping method and refuses one outright (E16), so
         // `.first()` alone is no longer guaranteed to land on something this flow can actually
-        // ship — the seed's one named water-bottle product always can.
+        // ship — the rich subject is a physical, shippable product.
         cy.navigateTo('/en/products');
-        cy.get('[data-test=filter-text]').type('Water Bottle{enter}');
+        cy.filterByNarrowestCategoryOf('product.rich');
         cy.get('[data-test=product-card-link]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
@@ -43,7 +45,7 @@ describe('Order reference search', () => {
 
                 // ── The admin pastes it and jumps straight to this same order's edit page ──
                 cy.logout();
-                cy.contains('customer@example.com').should('not.exist');
+                cy.contains(seedAccount('user').email).should('not.exist');
                 cy.loginAs('admin');
                 cy.visit('/en/orders');
                 cy.get('[data-test=order-reference-search-input] input').type(rf);

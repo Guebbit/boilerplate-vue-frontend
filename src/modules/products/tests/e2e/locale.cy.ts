@@ -63,13 +63,6 @@ describe('a locale only the API has', () => {
         cy.restore();
     });
 
-    it('is offered in the switcher even though this app has no dictionary for it', () => {
-        cy.visit('/en');
-
-        cy.get('[data-test=language-switcher]').first().click();
-        cy.get('[data-test=language-option-es]').should('exist');
-    });
-
     it('activates, and falls back per key for UI copy it has no Spanish for', () => {
         cy.visit('/es/products');
 

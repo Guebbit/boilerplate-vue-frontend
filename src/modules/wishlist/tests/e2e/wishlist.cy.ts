@@ -16,7 +16,7 @@ describe('Wishlist', () => {
         cy.restore();
     });
 
-    it('the heart saves and unsaves from the product page', () => {
+    it('the heart unsaves a product that is already saved', () => {
         cy.loginAs('user');
         /*
          * The subject is a product the demo user has ALREADY saved, so the heart starts
@@ -46,6 +46,38 @@ describe('Wishlist', () => {
 
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
         cy.get('[data-test=wishlist-toggle]').click();
+        cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
+    });
+
+    it('the heart saves an unsaved product, then unsaves it', () => {
+        cy.loginAs('user');
+        // The starting state is read from the API, so the product chosen is one the heart has
+        // never been pressed on: saving it is what `PUT /wishlist/{productId}` has to do.
+        cy.apiAs<{ items: { productId: string }[] }>('user', 'GET', '/wishlist').then(
+            (wishlist) => {
+                const saved = new Set((wishlist?.items ?? []).map((item) => item.productId));
+                cy.publicProducts().then((products) => {
+                    const unsaved = products.find((product) => !saved.has(product.id));
+                    expect(
+                        unsaved?.id,
+                        'the catalogue has a product the user has not saved'
+                    ).to.be.a('string');
+                    cy.env(['apiUrl']).then(({ apiUrl }) => {
+                        cy.intercept('PUT', `${String(apiUrl)}/wishlist/*`).as('save');
+                        cy.intercept('DELETE', `${String(apiUrl)}/wishlist/*`).as('unsave');
+                    });
+                    cy.visit(`/en/products/${unsaved?.id ?? ''}`);
+                });
+            }
+        );
+
+        cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
+        cy.get('[data-test=wishlist-toggle]').click();
+        cy.wait('@save').its('response.statusCode').should('eq', 200);
+        cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
+
+        cy.get('[data-test=wishlist-toggle]').click();
+        cy.wait('@unsave').its('response.statusCode').should('eq', 200);
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
     });
 

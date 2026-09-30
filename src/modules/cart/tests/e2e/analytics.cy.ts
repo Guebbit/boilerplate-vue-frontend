@@ -5,7 +5,7 @@
  * ── WHY THIS CANNOT BE A UNIT TEST ───────────────────────────────────────────────────────────
  * Both repos write into one Umami website, and the bug this guards against was invisible from
  * inside either one: the frontend fired `cart_item_added` from its cart store, the backend fired
- * it from `POST /cart/items`, both suites asserted their own emission and both passed. The two
+ * it from `POST /cart`, both suites asserted their own emission and both passed. The two
  * rows were indistinguishable — same name, same properties, same website id, and the same visitor
  * hash, because the backend forwards the caller's `User-Agent` and address for attribution. Every
  * count built on those names read twice reality, and nothing anywhere errored.
