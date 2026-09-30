@@ -15,7 +15,8 @@ export default {
 
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { copyToClipboard } from '@guebbit/js-toolkit';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { OrderTransferInstructions } from '@types';
 
@@ -41,15 +42,21 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Copies one field to the clipboard and confirms it with a toast.
+ * Copies one field to the clipboard and toasts either way: a customer who thinks they copied the
+ * IBAN and did not would send a transfer to nowhere.
  *
- * https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText — requires a secure
- * context, which every deployment of this app already is (the app itself is https-only).
+ * `@guebbit/js-toolkit`'s `copyToClipboard` tries the async Clipboard API first and falls back to
+ * a hidden textarea + `execCommand('copy')`; it never rejects, only resolves `false` on failure.
+ * https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
  *
  * @param value - The text to copy.
  */
 const copy = (value: string) =>
-    navigator.clipboard.writeText(value).then(() => addMessage(t('generic.secret-reveal-copied')));
+    copyToClipboard(value).then((succeeded) =>
+        succeeded
+            ? addMessage(t('generic.secret-reveal-copied'))
+            : addMessage(t('transfer-instructions-panel.copy-failed'), EToastType.DANGER)
+    );
 
 /**
  * How many characters make up one visual group of the grouped reference below.

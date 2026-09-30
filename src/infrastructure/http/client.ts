@@ -23,7 +23,7 @@ export const instance = axiosClient.create({
     },
     withCredentials: true,
     timeout: Number.parseInt(
-        runtimeValue('AXIOS_TIMEOUT') ?? import.meta.env.VITE_AXIOS_TIMEOUT ?? '10000'
+        runtimeValue('AXIOS_TIMEOUT') || import.meta.env.VITE_AXIOS_TIMEOUT || '10000'
     )
 });
 
@@ -33,4 +33,4 @@ export const instance = axiosClient.create({
  * `visit` overwrite) — each shard owns its own demo backend, and one built bundle cannot bake four
  * URLs. Outside e2e, a running container's own `config.js` wins the same way.
  */
-instance.defaults.baseURL = runtimeValue('API_URL') ?? import.meta.env.VITE_API_URL ?? '';
+instance.defaults.baseURL = runtimeValue('API_URL') || import.meta.env.VITE_API_URL || '';

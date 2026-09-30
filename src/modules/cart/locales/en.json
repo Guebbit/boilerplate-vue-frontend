@@ -18,7 +18,7 @@
         "label-notes": "Order notes (optional)",
         "button-remove": "Remove",
         "button-clear": "Clear cart",
-        "button-checkout": "Checkout",
+        "button-checkout": "Order with obligation to pay",
         "success-checkout": "Order placed successfully!",
         "error-cart-changed": "Your cart changed on the server since this page loaded — it has been refreshed, please review it and try again.",
         "error-insufficient-stock": "Some items in your cart are no longer available in the quantity you asked for.",
