@@ -167,6 +167,24 @@ flowchart LR
 - **Personas** are `E2ERole`s beside the four staff roles: `unverified`, `twoFactor` (with
   `backupCodes`), `pendingEmail`, `banned`. Their state is seeded, so a journey starts in it.
 
+#### The journey catalogue
+
+One row per journey. **A journey's lane adds its row in the same commit as its spec** — the row is
+how a reader finds the story without opening the file.
+
+| Column  | Means                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------- |
+| ID      | The plan's id (`CU1`, `OP4`, `AC3`, …), which is also the spec's file prefix                |
+| Story   | One line: who does what, ending in what is proven                                           |
+| Persona | Who signs in — an `E2ERole` (`user`, `admin`, `twoFactor`, …)                               |
+| Tier    | `@smoke` (runs on every push) or `nightly` (the full matrix); `—` until the tiers are wired |
+| Spec    | The file name inside the journeys folder                                                    |
+
+| ID  | Story | Persona | Tier | Spec |
+| --- | ----- | ------- | ---- | ---- |
+
+No journey is built yet.
+
 ## `tests/support/` — the harness
 
 No assertions live here.
