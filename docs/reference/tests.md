@@ -241,6 +241,7 @@ how a reader finds the story without opening the file.
 | OP8  | The warehouse records a delivery and writes off damaged units, narrows the board to low stock, and reads each movement back in the ledger with its reason and note; the count follows each step as staff see it (guests see a cached one, OP21)                   | `warehouse`                          | nightly  | `op8-day-in-the-stock-room.cy.ts`            |
 | OP9  | A customer checks out by card and never pays; the demo clock passes the hold and the admin presses the sweep: the order is cancelled, its units are back, the ledger says expire, the customer is mailed and the pay form is gone (demo only)                     | `user`, then `admin`                 | nightly  | `op9-expired-holds-are-swept.cy.ts`          |
 | OP10 | An editor creates a product in two languages with price, weight, tax class, category, tag and image, then deactivates, soft-deletes, restores and erases it; a guest sees each state, in both languages and in the facets                                         | `editor`, guest                      | nightly  | `op10-editors-product-cradle-to-grave.cy.ts` |
+| OP14 | An admin edits and cancels an order and forces a parcel through ship and deliver with a reason each time; "history" opens the audit page narrowed to that order (and to a user), and the reasons are on record                                                    | `admin`                              | nightly  | `op14-audit-trail-follows-the-action.cy.ts`  |
 
 ## `tests/support/` — the harness
 
