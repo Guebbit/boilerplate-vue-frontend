@@ -264,7 +264,7 @@ Cypress.Commands.add('subjectProduct', (name: string) =>
 );
 
 /*
- * Writes go through a Node-side task rather than `cy.request`, for the reason the `createSession`
+ * Writes go through a Node-side task rather than `cy.request`, for the reason the `deviceLogin`
  * task already exists: the app holds its access token in a Pinia store, so a browser-side admin
  * call would have to log in again and leave a refresh cookie behind — which the sessions specs
  * count and the analytics spec attributes.

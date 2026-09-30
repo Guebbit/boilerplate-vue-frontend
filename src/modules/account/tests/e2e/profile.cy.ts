@@ -9,6 +9,7 @@
  * are the backend's to test.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
+import { loginDevice } from '../../../../../tests/support/e2e/harness';
 import { expectMailTemplate, mailedLinkUrl } from '../../../../../tests/support/e2e/commands';
 
 /**
@@ -65,19 +66,12 @@ describe('Profile access', () => {
 
 /**
  * "Another device" is a second real login, made server-side so the page's own refresh cookie —
- * and which session counts as current — stays untouched (see cypress.config.ts).
+ * and which session counts as current — stays untouched (see `loginDevice`).
  */
 const loginFromAnotherDevice = () =>
-    cy
-        .env(['apiUrl'])
-        .then(({ apiUrl }) =>
-            cy.task('createSession', {
-                apiUrl: String(apiUrl),
-                email: seedAccount('user').email,
-                password: seedAccount('user').password
-            })
-        )
-        .then((created) => expect(created, 'the second session').to.equal(true));
+    loginDevice('user').then((device) =>
+        expect(device.token, 'the second session').to.be.a('string')
+    );
 
 describe('Profile self-service', () => {
     beforeEach(() => {

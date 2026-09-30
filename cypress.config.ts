@@ -36,6 +36,13 @@ import { adminApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
+import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
+import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
+import {
+    SINGLE_PROCESS_SINK_PORT,
+    startWebhookSink,
+    type WebhookSink
+} from './scripts/e2e/webhook-sink';
 
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
@@ -51,6 +58,23 @@ try {
 }
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
+
+/**
+ * The webhook sink this process hosts (demo profile only), kept across `setupNodeEvents` calls:
+ * `cypress open` re-runs it on a config change, and a second listener on the same port would fail.
+ */
+let webhookSink: Promise<WebhookSink> | undefined;
+
+/**
+ * The sink, started on first ask. The port is the one this process's backend was told about
+ * (`E2E_WEBHOOK_SINK_PORT`, set per shard by `scripts/e2e/run-shards.ts`).
+ */
+const hostedWebhookSink = (): Promise<WebhookSink> => {
+    webhookSink ??= startWebhookSink(
+        Number(process.env.E2E_WEBHOOK_SINK_PORT ?? SINGLE_PROCESS_SINK_PORT)
+    );
+    return webhookSink;
+};
 
 /** Name shared with `cy.checkPageA11y()` in `tests/support/e2e/commands.ts`. */
 const A11Y_REPORT_TASK = 'recordA11yViolations';
@@ -130,24 +154,41 @@ export default defineConfig({
 
             on('task', {
                 /**
-                 * Opens a second session for the demo user, server-side: a plain Node fetch
-                 * carries no browser cookie jar, so the page's own refresh cookie — and with it
-                 * which session counts as "current" — is left untouched. The sessions specs use
-                 * it to make "another device" exist without pretending.
-                 */
-                /**
                  * One authenticated admin call, made from Node — see
                  * `tests/support/e2e/admin-api-task.ts`. The e2e fixtures provision their own
                  * subjects through this rather than through `cy.request`, so the page's own
                  * session and refresh cookie are left exactly as the spec found them.
                  */
                 adminApi: (request: Parameters<typeof adminApi>[0]) => adminApi(request),
-                createSession: ({ apiUrl, email, password }: Record<string, string>) =>
-                    fetch(`${apiUrl}/account/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    }).then((response) => response.ok),
+                /*
+                 * A second device, server-side: a plain Node fetch carries no browser cookie jar,
+                 * so the page's own refresh cookie — and which session counts as "current" — is
+                 * left untouched. The spec keeps the returned device and hands it back to
+                 * `deviceRefresh` / `deviceRequest` — see `scripts/e2e/device-session.ts`.
+                 */
+                deviceLogin: (credentials: Parameters<typeof deviceLogin>[0]) =>
+                    deviceLogin(credentials),
+                deviceRefresh: (device: Parameters<typeof deviceRefresh>[0]) =>
+                    deviceRefresh(device),
+                deviceRequest: (request: Parameters<typeof deviceRequest>[0]) =>
+                    deviceRequest(request),
+                /*
+                 * Signs a payment-provider event and posts it to `/payments/webhook`; answers the
+                 * status. See `scripts/e2e/payment-webhook.ts`.
+                 */
+                postPaymentWebhook: (request: Parameters<typeof postPaymentWebhook>[0]) =>
+                    postPaymentWebhook(request),
+                /*
+                 * The webhook sink this process hosts (demo profile): what arrived, and forget it.
+                 * See `scripts/e2e/webhook-sink.ts`. Both ask for the sink, which starts it if the
+                 * spec is the first to want one.
+                 */
+                webhookSinkRequests: () => hostedWebhookSink().then((sink) => sink.requests()),
+                webhookSinkClear: () =>
+                    hostedWebhookSink().then((sink) => {
+                        sink.clear();
+                        return null;
+                    }),
                 compareVisualSnapshot: (options: Parameters<typeof compareSnapshot>[0]) =>
                     compareSnapshot(options),
                 /*

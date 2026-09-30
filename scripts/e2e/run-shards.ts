@@ -46,6 +46,7 @@ import {
 } from '../pairing/paired-backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/scratch-directory';
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
+import { SHARD_SINK_PORT_BASE, sinkUrlForPort } from './webhook-sink';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
 import { readSpecDurations } from './spec-durations';
@@ -163,6 +164,16 @@ const LOG_DIR = path.join(REPO_ROOT, 'reports', 'e2e');
 const DEMO_PORT_BASE = 3101;
 
 /**
+ * What one shard's backend needs beyond the shared environment: the URL of the webhook sink its
+ * Cypress process hosts (`webhook-sink.ts`), on a port per shard so the listeners cannot collide.
+ *
+ * @param index - the shard's index
+ */
+const backendEnvironmentFor = (index: number): Record<string, string> => ({
+    NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SHARD_SINK_PORT_BASE + index)
+});
+
+/**
  * One demo backend per shard, booted through `resolveBackendDemoCommand()` — `npm run demo`
  * against an in-memory Mongo for the Node twin, `composer demo` against MySQL for the PHP one.
  * Booted in parallel, readiness is a 200 from `GET /`, and every child is killed however the run
@@ -230,6 +241,7 @@ const bootDemoBackends = async (count: number): Promise<() => void> => {
                 SERVER_PORT: String(port),
                 DB_DATABASE: `e2e_demo_shard_${index + 1}`,
                 NODE_DEMO: 'true',
+                ...backendEnvironmentFor(index),
                 TMPDIR: scratchDirectory,
                 // All shards serve the SAME built bundle on :8085 (the preview server this file's
                 // own module doc names) — every shard's OAuth callback and emailed link must
@@ -316,7 +328,9 @@ const runShard = (files: string[], index: number) =>
                     CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`,
                     // Tells `cypress.config.ts` not to reset the shared flaky report: `main`
                     // already did, once, and a shard resetting it would erase the others'.
-                    E2E_SHARDED: 'true'
+                    E2E_SHARDED: 'true',
+                    // Where this process hosts the webhook sink its backend was told about.
+                    E2E_WEBHOOK_SINK_PORT: String(SHARD_SINK_PORT_BASE + index)
                 }
             });
 
