@@ -51,20 +51,16 @@ describe('Authentication', () => {
 
         /*
          * The refresh cookie's expiry is the one observable effect of "remember me": unchecked,
-         * the session lasts an access-token window (minutes); checked, days. `jwt` rather than
-         * the readable `isAuth` twin, which `session.ts` rewrites as a session cookie — Cypress
-         * reads httpOnly cookies, a page script could not.
+         * it is a browser-session cookie (no `expiry` at all); checked, it lasts days. `jwt` rather
+         * than the readable `isAuth` twin — Cypress reads httpOnly cookies, a page script could not.
          */
-        it('keeps the session only minutes unless asked to remember', () => {
+        it('keeps the session only until the browser closes unless asked to remember', () => {
             cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
             cy.get('[type=password]').should('not.be.disabled').type(seedAccount('admin').password);
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
-            cy.getCookie('jwt')
-                .should('exist')
-                .its('expiry')
-                .should('be.lessThan', Date.now() / 1000 + 60 * 60);
+            cy.getCookie('jwt').should('exist').and('not.have.property', 'expiry');
         });
 
         it('remember me keeps the session for days', () => {
