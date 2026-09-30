@@ -234,6 +234,7 @@ how a reader finds the story without opening the file.
 | CU9  | The customer meets the delivery rules: free standard shipping at the threshold, express refused for a too-heavy basket and not offered after a reload, a non-ship-to address refused at checkout, pickup with no address                                          | `user`                               | nightly  | cu9-shipping-rules-at-the-till.cy.ts    |
 | CU12 | The customer opens an order whose products were left, re-pictured and deleted: each picture follows the live catalogue or the app's stand-in, and buy-again brings back only what is still sold and names what it dropped                                         | `user`                               | nightly  | cu12-buy-again-catalogue-changed.cy.ts  |
 | CU13 | The customer opens their orders from the menu: only their own, each by order number, the status filter keeps exactly its rows, and a delivered order reads out whole with its parcel and an invoice that opens in a new tab                                       | `user`                               | nightly  | cu13-my-order-history.cy.ts             |
+| CU15 | With one address saved, the customer adds a second at checkout and it becomes the choice; the order freezes that address and the note, the profile shares the book, and the admin reads the note on the same order                                                | `user`, `admin`                      | nightly  | cu15-another-address-and-a-note.cy.ts   |
 
 ## `tests/support/` — the harness
 
