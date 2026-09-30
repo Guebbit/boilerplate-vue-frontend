@@ -234,6 +234,7 @@ const handlePageChange = (page: number) => {
             :loading="props.loading"
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
+            row-test="webhook-delivery-row"
         >
             <template v-slot:[`item.createdAt`]="{ item }">
                 <span class="whitespace-nowrap">{{ formatDateTime(item.createdAt) }}</span>
