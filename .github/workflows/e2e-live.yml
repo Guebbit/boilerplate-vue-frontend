@@ -166,6 +166,8 @@ jobs:
             - name: Checkout and install paired backend
               uses: ./.github/actions/paired-backend
               with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: ${{ env.BACKEND_PATH }}
 
             # The specs are written against the seed dataset, so the database has to hold it

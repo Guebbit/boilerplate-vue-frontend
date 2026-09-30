@@ -7,6 +7,17 @@ description: >-
     package.json (a PHP pair commits its own bundled contract and has nothing to install).
 
 inputs:
+    repository:
+        description: >-
+            The backend repository to check out, as owner/name. Passed in by each caller because a
+            composite action cannot read the `vars` context.
+        required: false
+        default: Guebbit/boilerplate-node-backend
+    token:
+        description: >-
+            Token for the checkout. Passed in by each caller because a composite action cannot read
+            the `secrets` context; the caller falls back to its own github.token.
+        required: true
     path:
         description: Where the checkout lands, relative to the workspace.
         required: false
@@ -43,18 +54,16 @@ runs:
           continue-on-error: ${{ inputs.report-failure == 'true' }}
           uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
           with:
-              # Override with a repository variable when the pair lives elsewhere.
-              repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+              repository: ${{ inputs.repository }}
               path: ${{ inputs.path }}
-              # Only needed when the sibling is private; falls back to this repo's token.
-              token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+              token: ${{ inputs.token }}
 
         - name: Report an unreachable sibling
           if: inputs.report-failure == 'true' && steps.sibling.outcome == 'failure'
           shell: bash
           run: |
               echo "::error::Could not check out the paired backend "\
-              "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
+              "(${{ inputs.repository }}). "\
               "${{ inputs.no-backend-mode }}${{ inputs.no-backend-mode != '' && ': ' || '' }}"\
               "set the SPEC_SIBLING_REPO variable, or add a SPEC_SIBLING_TOKEN secret if it is "\
               "private."

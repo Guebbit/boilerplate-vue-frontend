@@ -446,6 +446,8 @@ jobs:
             - name: Checkout and install paired backend
               uses: ./.github/actions/paired-backend
               with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: .spec-sibling
                   report-failure: 'true'
                   no-backend-mode: 'This job only compares contracts, so delete it if this copy has no paired backend'
@@ -508,6 +510,8 @@ jobs:
             - name: Checkout and install paired backend
               uses: ./.github/actions/paired-backend
               with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: ${{ env.BACKEND_PATH }}
                   report-failure: 'true'
                   no-backend-mode: 'The e2e suite boots its demo profile, so there is no backend-less mode'

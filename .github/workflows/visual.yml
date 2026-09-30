@@ -49,6 +49,8 @@ jobs:
             - name: Checkout and install paired backend
               uses: ./.github/actions/paired-backend
               with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: .backend
 
             # The image already holds the matching Cypress binary, so none is downloaded.
