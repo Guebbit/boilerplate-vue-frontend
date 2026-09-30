@@ -88,7 +88,7 @@ const isOpen = computed({
  * Proves the password and, on success, tells the interceptor a fresh session exists.
  *
  * @returns A promise resolving once the attempt settles. The prompt stays open either way, since
- *  the parked requests are still worth retrying once the visitor can — but a wrong password (401)
+ *  the parked requests are still worth retrying once the visitor can — but a wrong password (422)
  *  and any other failure (network, 5xx) are told apart: retyping the same password again is never
  *  the right next step for a failure the password had nothing to do with.
  */
@@ -100,7 +100,7 @@ const submit = () => {
             reauthDialog.resolveStepUp();
         })
         .catch((error: unknown) => {
-            errorMessage.value = absentIs(error, 401)
+            errorMessage.value = absentIs(error, 422)
                 ? t('reauth-dialog.error-wrong-password')
                 : getErrorMessage(error);
             password.value = '';

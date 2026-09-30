@@ -558,7 +558,7 @@ export const useSessionStore = defineStore('session', () => {
      *
      * @param password - The visitor's current password.
      * @returns A promise resolving once the fresh token is stored; rejects with the API's error
-     *  (a 401 means a wrong password).
+     *  (a 422 means a wrong password — the API keeps 401 for "your session is gone").
      */
     const reauth = (password: string): Promise<void> => {
         reauthing.value = true;

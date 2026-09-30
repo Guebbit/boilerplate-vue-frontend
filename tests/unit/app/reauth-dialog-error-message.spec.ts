@@ -2,7 +2,7 @@
  * `ReauthDialog.vue` — the one branch worth pinning: a failed re-authentication used to show
  * "wrong password" no matter what actually failed. A network drop or a 5xx got the same wording
  * as a genuinely wrong password, which sends the visitor to retype a password that was never the
- * problem. Only a 401 is a wrong password; everything else shows the failure's own message.
+ * problem. Only a 422 is a wrong password (the API keeps 401 for a dead session); everything else shows the failure's own message.
  *
  * Kept apart from `reauth-dialog.spec.ts`'s general open/submit/resolve/cancel coverage: this file
  * needs a real (unstubbed) `VDialog`, since Vuetify teleports its content to `document.body`, and
@@ -82,9 +82,9 @@ afterEach(() => {
 });
 
 describe('ReauthDialog — a failed attempt', () => {
-    it('shows the wrong-password message for a 401', () => {
+    it('shows the wrong-password message for a 422', () => {
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 401 }));
+        reauthMock.mockReturnValue(Promise.reject({ status: 422 }));
         openDialog();
 
         return submitPassword('nope').then(() =>
@@ -94,7 +94,7 @@ describe('ReauthDialog — a failed attempt', () => {
         );
     });
 
-    it('shows the failure’s own message for anything other than a 401', () => {
+    it('shows the failure’s own message for anything other than a 422', () => {
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
         reauthMock.mockReturnValue(Promise.reject({ status: 500, message: 'Server exploded' }));
         openDialog();
@@ -109,9 +109,24 @@ describe('ReauthDialog — a failed attempt', () => {
         );
     });
 
+    it('does not call a 401 a wrong password — that status means the session is gone', () => {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
+        reauthMock.mockReturnValue(Promise.reject({ status: 401, message: 'Unauthorized' }));
+        openDialog();
+
+        return submitPassword('whatever').then(() =>
+            vi.waitFor(() => {
+                expect(document.body.textContent).toContain('Unauthorized');
+                expect(document.body.textContent).not.toContain(
+                    'reauth-dialog.error-wrong-password'
+                );
+            })
+        );
+    });
+
     it('clears the password field either way, so a retry starts from empty', () => {
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 401 }));
+        reauthMock.mockReturnValue(Promise.reject({ status: 422 }));
         openDialog();
 
         return submitPassword('nope')

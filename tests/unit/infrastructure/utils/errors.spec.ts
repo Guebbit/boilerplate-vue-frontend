@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import {
+    getErrorMessage,
     rethrowUnlessAbsent,
     absentIs,
     isPreconditionFailed,
@@ -232,4 +233,40 @@ describe('isPreconditionFailed', () => {
             expect(isPreconditionFailed(error)).toBe(false);
         }
     );
+});
+
+describe('getErrorMessage', () => {
+    it("prefers the API's own sentence over the envelope's HTTP phrase", () => {
+        expect(
+            getErrorMessage({
+                status: 422,
+                message: 'Unprocessable Entity',
+                errors: [{ code: 'VALIDATION', message: 'The password is incorrect.' }]
+            })
+        ).toBe('The password is incorrect.');
+    });
+
+    it('reads the first item when several are sent', () => {
+        expect(
+            getErrorMessage({
+                message: 'Bad Request',
+                errors: [{ message: 'one' }, { message: 'two' }]
+            })
+        ).toBe('one');
+    });
+
+    it.each([
+        ['no errors', { message: 'Forbidden' }],
+        ['an empty errors list', { message: 'Forbidden', errors: [] }],
+        ['an item with no message', { message: 'Forbidden', errors: [{ code: 'X' }] }],
+        ['an item with an empty message', { message: 'Forbidden', errors: [{ message: '' }] }],
+        ['an item that is not an object', { message: 'Forbidden', errors: ['text'] }],
+        ['errors that is not a list', { message: 'Forbidden', errors: 'oops' }]
+    ])('falls back to the envelope message when it carries %s', (_name, error) => {
+        expect(getErrorMessage(error)).toBe('Forbidden');
+    });
+
+    it('falls back to the generic wording when nothing is readable', () => {
+        expect(getErrorMessage({ errors: [] })).toBe(enMessages['api-errors'].unknown);
+    });
 });

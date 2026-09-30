@@ -14,11 +14,32 @@ import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/i18n';
 
 /**
+ * The API's own explanation for a refusal: `errors[0].message` of the reject envelope.
+ *
+ * The envelope's top-level `message` is only the HTTP phrase ("Unprocessable Entity"); the item in
+ * `errors` is the sentence the backend chose, already translated. Reading the phrase instead is
+ * what made every unmapped refusal look the same.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns The first error item's non-empty message, or `undefined` when the value carries none.
+ */
+const firstApiMessage = (error: unknown): string | undefined => {
+    if (!error || typeof error !== 'object') return undefined;
+    const { errors } = error as { errors?: unknown };
+    if (!Array.isArray(errors)) return undefined;
+    const first: unknown = errors[0];
+    if (!first || typeof first !== 'object') return undefined;
+    const { message } = first as { message?: unknown };
+    return typeof message === 'string' && message ? message : undefined;
+};
+
+/**
  * The app's fallback wording, bound onto the toolkit's `extractErrorMessage`.
  *
- * The toolkit deliberately returns an empty string when a rejection carries nothing readable —
- * what to say in that case is a decision about tone and language, so it belongs here rather than
- * in a package that does not know which languages this app speaks.
+ * The API's own sentence ({@link firstApiMessage}) wins; the toolkit then reads whatever else the
+ * value carries. The toolkit deliberately returns an empty string when a rejection carries nothing
+ * readable — what to say in that case is a decision about tone and language, so it belongs here
+ * rather than in a package that does not know which languages this app speaks.
  *
  * Exported for `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`) — the one other place a caught error
  * becomes this same wording, just kept local instead of toasted.
@@ -27,7 +48,7 @@ import { translate } from '@/i18n';
  * @returns The best message found, otherwise the generic translated "something went wrong".
  */
 export const getErrorMessage = (error: unknown): string =>
-    extractErrorMessage(error, translate('api-errors.unknown'));
+    firstApiMessage(error) ?? extractErrorMessage(error, translate('api-errors.unknown'));
 
 /**
  * Whether a rejected API call never got an answer at all.
