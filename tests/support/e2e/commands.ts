@@ -661,14 +661,16 @@ const mailpitAll = (mailpitUrl: string): Cypress.Chainable<MailpitListed[]> =>
 const mailpitEmailAbout = (mailpitUrl: string, subject: string): Cypress.Chainable<MailedEmail> =>
     pollUntilFound<MailedEmail>(
         () =>
-            mailpitAll(mailpitUrl).then((messages) => {
+            mailpitAll(mailpitUrl).then((messages): Cypress.Chainable<MailedEmail | undefined> => {
                 const found = messages.find((message) => message.Subject.includes(subject));
                 if (!found) return cy.wrap<MailedEmail | undefined>(undefined);
                 return cy.request(`${mailpitUrl}/api/v1/message/${found.ID}`).then((response) => {
                     const body = response.body as Parameters<typeof parseMailpitMessage>[1] & {
                         To: { Address: string }[];
                     };
-                    return parseMailpitMessage(body.To[0]?.Address ?? '', body);
+                    return cy.wrap<MailedEmail | undefined>(
+                        parseMailpitMessage(body.To[0]?.Address ?? '', body)
+                    );
                 });
             }),
         MAILPIT_ATTEMPTS,
