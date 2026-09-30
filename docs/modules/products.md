@@ -1,7 +1,7 @@
 # products
 
 ::: tip At a glance
-**Owns** — the catalogue screens: public list and detail, admin create and edit.
+**Owns** — the catalogue screens: the list (storefront grid for shoppers, table for staff) and detail, admin create and edit.
 **Depends on** — nothing but its own locales. [`cart`](./cart.md) and [`wishlist`](./wishlist.md) depend on it, and put their buttons on the product page through the `product-actions` slot.
 **Breaks if you change** — `useProductsStore`'s shape. [`inventory`](./inventory.md) reads it as-is.
 :::
@@ -59,6 +59,30 @@ select and its ledger titles. That is `conformist`: no translation, no say in th
 the same one-way arrow the backend's `inventory → products` edge has, which is a small piece of
 evidence that both context maps are describing the same system.
 :::
+
+## The list is two presentations
+
+The catalogue is public, but what a viewer may do decides how it is shown: staff (anyone holding
+`create`, `update` or `delete` on `Product`) get the `DataTable` with its row actions and the
+by-id filter; everyone else, guests included, gets a **storefront grid** of `ProductCard`s. A card
+is an `<article>`: picture, the title as its one link, price, availability, and whatever the
+`product-actions` slot carries — the same slot the product page hosts, so the grid learns nothing
+about the cart. The product page's Edit button is gated the same way, on `update Product`.
+
+```mermaid
+flowchart TD
+    V["/products"] --> S{"holds create, update or delete on Product?"}
+    S -->|yes| T["DataTable + row actions<br/>header sort"]
+    S -->|no| G["ProductCard grid<br/>Sort by select"]
+    T --> F["filters.sort"]
+    G --> F
+    F -->|"?sort=-price"| A["POST /products/search { sort: ['-price'] }"]
+```
+
+Both write the same `filters.sort` (the API's CSV, so it lives in the URL) through
+`useServerSort`, and both re-search from page 1: the server sorts the whole catalogue, never the
+page the browser holds. See [`sorting`](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/sorting.md)
+in the backend for the grammar and the per-resource whitelist.
 
 `products/create` is declared before `products/:id` in `routes.ts`. vue-router ranks a static
 segment above a dynamic one regardless of order, so `create` could never be swallowed as an id —

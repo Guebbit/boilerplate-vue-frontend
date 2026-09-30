@@ -24,6 +24,7 @@ const productDetail = () => cy.subjectId('product.rich').then((id) => `/en/produ
 const productEdit = () => cy.subjectId('product.rich').then((id) => `/en/products/${id}/edit`);
 
 sweepA11y('products — public', [
+    // Shoppers' view: the storefront grid. Its cards are `<article>`s with one link each.
     ['products list', '/en/products'],
     ['product detail', productDetail],
     // The storefront's most-used page in its other theme: the product cards and the facet
@@ -36,6 +37,8 @@ sweepA11y('products — public', [
 sweepA11y(
     'products — admin',
     [
+        // The staff view of the same route: the table, its row actions and the server-sorted headers.
+        ['products list, staff table', '/en/products'],
         ['product create', '/en/products/create'],
         ['product edit', productEdit],
         {

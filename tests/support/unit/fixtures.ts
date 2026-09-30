@@ -5,7 +5,7 @@
  * compile error in every spec at once — rather than a hand-typed `{ id, totalPrice }` that only
  * fails when something finally parses it.
  */
-import type { Order, Return, User } from '@types';
+import type { Order, Product, Return, User } from '@types';
 
 /**
  * A valid, empty order — every required field the contract declares, all totals zero.
@@ -63,5 +63,20 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
     returnPostage: 'consumer',
     createdAt: '2026-09-01T10:00:00.000Z',
     actions: { approve: false, decline: false, receive: false },
+    ...overrides
+});
+
+/**
+ * A valid catalogue product — the required fields only, plus whatever a case sets.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `Product` that parses against the generated schema
+ */
+export const aProduct = (overrides: Partial<Product> = {}): Product => ({
+    id: 'p1',
+    title: 'Walnut desk',
+    price: 120,
+    currency: 'EUR',
+    active: true,
     ...overrides
 });

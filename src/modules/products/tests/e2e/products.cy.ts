@@ -16,10 +16,10 @@ describe('Products', () => {
     describe('Products list', () => {
         beforeEach(() => {
             cy.visit('/en/products');
-            cy.get('[data-test=list-row]').should('have.length.at.least', 1);
+            cy.get('[data-test=product-card]').should('have.length.at.least', 1);
         });
 
-        it('shows the page title and a product table', () => {
+        it('shows the page title and the storefront grid', () => {
             cy.get('#products-list-page').should('exist');
             cy.get('h1').should('contain.text', 'Products list');
         });
@@ -36,22 +36,22 @@ describe('Products', () => {
         it('hides soft-deleted products from anonymous visitors', () => {
             cy.createProduct().then((product) => {
                 cy.reload();
-                cy.contains('[data-test=list-row]', product.title).should('exist');
+                cy.contains('[data-test=product-card]', product.title).should('exist');
 
                 cy.softDeleteProduct(product.id);
                 cy.reload();
-                cy.contains('[data-test=list-row]', product.title).should('not.exist');
+                cy.contains('[data-test=product-card]', product.title).should('not.exist');
             });
         });
 
         it('hides inactive products from anonymous visitors', () => {
             cy.createProduct().then((product) => {
                 cy.reload();
-                cy.contains('[data-test=list-row]', product.title).should('exist');
+                cy.contains('[data-test=product-card]', product.title).should('exist');
 
                 cy.deactivateProduct(product);
                 cy.reload();
-                cy.contains('[data-test=list-row]', product.title).should('not.exist');
+                cy.contains('[data-test=product-card]', product.title).should('not.exist');
             });
         });
 
@@ -61,7 +61,7 @@ describe('Products', () => {
         // page, regardless of how correctly pagination itself behaves.
         it('renders exactly the publicly visible products for anonymous visitors', () => {
             cy.publicProducts().then((products) => {
-                cy.get('[data-test=list-row]').should(
+                cy.get('[data-test=product-card]').should(
                     'have.length',
                     Math.min(products.length, PAGE_ONE_SIZE)
                 );
@@ -76,7 +76,7 @@ describe('Products', () => {
         it('displays product title and price in each row', () => {
             cy.publicProducts().then((products) => {
                 for (const product of products.slice(0, PAGE_ONE_SIZE))
-                    cy.contains('[data-test=list-row]', product.title).within(() => {
+                    cy.contains('[data-test=product-card]', product.title).within(() => {
                         cy.contains(String(product.price)).should('exist');
                     });
             });
@@ -94,15 +94,34 @@ describe('Products', () => {
             cy.url().should('include', '/products/create');
         });
 
-        it('shows only the View action for non-admin users', () => {
-            cy.get('[data-test=list-row]')
+        // Shoppers get the storefront grid, not the back office: a link to the product, and
+        // none of the staff actions the table carries.
+        it('shows a grid with only the product link for non-admin users', () => {
+            cy.get('table').should('not.exist');
+            cy.get('[data-test=product-card]')
                 .eq(0)
                 .within(() => {
-                    cy.get('[data-test=row-view]').should('exist');
+                    cy.get('[data-test=product-card-link]').should('exist');
                     cy.get('[data-test=row-edit]').should('not.exist');
                     cy.get('[data-test=row-delete]').should('not.exist');
                     cy.get('[data-test=row-hard-delete]').should('not.exist');
                 });
+        });
+
+        // The sort is the server's, so it orders the whole catalogue: the first page after
+        // "low to high" starts at the cheapest product, whatever page it used to sit on.
+        it('sorts the whole catalogue by price from the select', () => {
+            cy.get('[data-test=sort-select]').click();
+            cy.contains('.v-list-item', 'Price: low to high').click();
+            cy.url().should('include', 'sort=price');
+            cy.get('[data-test=product-card-price]').then(($prices) => {
+                const amounts = [...$prices].map((element) =>
+                    Number.parseFloat(
+                        element.textContent.replaceAll(/[^\d,.]/g, '').replace(',', '.')
+                    )
+                );
+                expect(amounts).to.deep.equal(amounts.toSorted((a, b) => a - b));
+            });
         });
 
         it('shows View, Edit, Delete and Hard delete actions per row for admin users', () => {
@@ -153,23 +172,19 @@ describe('Products', () => {
                 cy.get('[data-test=filter-text]').type(italianOnlyWord);
                 cy.get('form').first().submit();
 
-                cy.contains('[data-test=list-row]', italianOnlyWord).should('exist');
+                cy.contains('[data-test=product-card]', italianOnlyWord).should('exist');
             });
         });
 
-        // The expected id is read off the row that gets clicked, not hard-coded. The API sorts by
-        // `createdAt DESC, _id DESC` and the seeded rows can share a millisecond, so which product
-        // occupies row 0 is a property of fixture insertion timing rather than of the navigation
-        // this spec is about. The id is read synchronously off the jQuery element inside a single
-        // `.then()`: re-entering the chain with `.eq(0).find('td').first().invoke('text')` before
-        // clicking fails with `cy.eq() failed because it requires a DOM element`.
-        it('navigates to product detail when clicking View', () => {
-            cy.get('[data-test=list-row]')
+        // The destination is read off the link that gets clicked, not hard-coded: which product
+        // sits first is a property of fixture insertion timing, not of the navigation under test.
+        it('navigates to product detail when clicking a product', () => {
+            cy.get('[data-test=product-card-link]')
                 .first()
-                .then(($row) => {
-                    const productId = $row.find('td').first().text().trim();
-                    cy.wrap($row).find('[data-test=row-view]').click();
-                    cy.url().should('include', `/products/${productId}`);
+                .then(($link) => {
+                    const target = $link.attr('href');
+                    cy.wrap($link).click();
+                    cy.location('pathname').should('eq', target);
                 });
             cy.get('#product-target').should('exist');
         });

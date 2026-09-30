@@ -2,7 +2,20 @@
     "product-lines": {
         "unavailable": "No longer available"
     },
+    "product-card": {
+        "in-stock": "In stock",
+        "out-of-stock": "Out of stock",
+        "login-to-buy": "Sign in to buy or save this product."
+    },
     "products-list-page": {
+        "sort-label": "Sort by",
+        "sort-newest": "Newest first",
+        "sort-price-asc": "Price: low to high",
+        "sort-price-desc": "Price: high to low",
+        "sort-title-asc": "Name: A to Z",
+        "sort-title-desc": "Name: Z to A",
+        "grid-caption": "Products",
+        "empty-products": "No products match this search",
         "page-title": "Products list",
         "button-view": "View",
         "button-edit": "Edit",

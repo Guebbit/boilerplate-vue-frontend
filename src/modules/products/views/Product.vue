@@ -92,7 +92,8 @@ watchProduct(() => id);
  * Whether a visitor is signed in — a guest is told to sign in instead of being offered the
  * storefront actions.
  */
-const { isAuth } = storeToRefs(useSessionStore());
+const session = useSessionStore();
+const { isAuth } = storeToRefs(session);
 
 /**
  * The storefront buttons other modules contribute (add to cart, save to wishlist). This page
@@ -229,8 +230,9 @@ const outOfStock = computed(() => currentProduct.value?.available === 0);
 
             <template #actions>
                 <v-btn
-                    v-if="currentProduct"
+                    v-if="currentProduct && session.can('update', 'Product')"
                     color="secondary"
+                    data-test="go-to-edit"
                     :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
                 >
                     {{ t('product-target-page.button-go-to-edit') }}

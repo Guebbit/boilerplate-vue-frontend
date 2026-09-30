@@ -2,7 +2,20 @@
     "product-lines": {
         "unavailable": "Non più disponibile"
     },
+    "product-card": {
+        "in-stock": "Disponibile",
+        "out-of-stock": "Esaurito",
+        "login-to-buy": "Accedi per acquistare o salvare questo prodotto."
+    },
     "products-list-page": {
+        "sort-label": "Ordina per",
+        "sort-newest": "Prima i più recenti",
+        "sort-price-asc": "Prezzo: dal più basso",
+        "sort-price-desc": "Prezzo: dal più alto",
+        "sort-title-asc": "Nome: da A a Z",
+        "sort-title-desc": "Nome: da Z ad A",
+        "grid-caption": "Prodotti",
+        "empty-products": "Nessun prodotto corrisponde alla ricerca",
         "page-title": "Lista prodotti",
         "button-view": "Visualizza",
         "button-edit": "Modifica",
