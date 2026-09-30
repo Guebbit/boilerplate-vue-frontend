@@ -19,7 +19,6 @@ import {
     searchAndOpenProduct
 } from '../../../support/e2e/steps';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
-import { seedAccount } from '../../../support/e2e/scenario';
 
 /** The slice of a payment this story reads: what was paid and what came back. */
 interface PaymentLike {
@@ -101,10 +100,12 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             cy.step('the acknowledgement mail names the order');
             cy.visit(`/en/orders/${orderId}`);
             orderNumberShown().then((number) => {
-                cy.emailTo(
-                    seedAccount('user').email,
-                    (mail) => mailMentions(mail, number) && mailMentions(mail, 'withdraw')
-                );
+                cy.accountOf('user').then(({ email }) => {
+                    cy.emailTo(
+                        email,
+                        (mail) => mailMentions(mail, number) && mailMentions(mail, 'withdraw')
+                    );
+                });
             });
         });
     });

@@ -11,7 +11,6 @@
  * and `NODE_REAUTH_TIME_SENSITIVE` (900 s, export and session management).
  */
 import { addToCartFromStorefront } from '../../../support/e2e/steps';
-import { seedAccount } from '../../../support/e2e/scenario';
 
 /** Past the critical window (300 s), inside the access token's own life (600 s). */
 const PAST_CRITICAL_MS = 400_000;
@@ -27,6 +26,13 @@ const PAST_SENSITIVE_MS = 1_000_000;
 const answerDialog = (password: string): void => {
     cy.get('[data-test=reauth-dialog-password] input').type(password);
     cy.get('[data-test=reauth-dialog-submit]').click();
+};
+
+/** Answers the open dialog with the customer's real password, read when the step runs. */
+const answerWithCustomerPassword = (): void => {
+    cy.accountOf('user').then(({ password }) => {
+        answerDialog(password);
+    });
 };
 
 describe('AC3 · Prove it’s still you', { tags: '@smoke' }, () => {
@@ -71,7 +77,7 @@ describe('AC3 · Prove it’s still you', { tags: '@smoke' }, () => {
         cy.get('[data-test=cart-checkout]').click();
         cy.wait('@checkout').its('response.statusCode').should('equal', 401);
         cy.get('[data-test=reauth-dialog]').should('be.visible');
-        answerDialog(seedAccount('user').password);
+        answerWithCustomerPassword();
         cy.wait('@checkout').its('response.statusCode').should('equal', 201);
         cy.get('#order-target').should('exist');
 
@@ -93,7 +99,7 @@ describe('AC3 · Prove it’s still you', { tags: '@smoke' }, () => {
         cy.step('the right password lets the same export through');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 401);
-        answerDialog(seedAccount('user').password);
+        answerWithCustomerPassword();
         cy.wait('@export').its('response.statusCode').should('equal', 200);
         cy.get('[data-test=reauth-dialog]').should('not.exist');
     });

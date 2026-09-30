@@ -10,7 +10,6 @@
  * are untouched: nothing here confirms a card.
  */
 import { addToCartFromStorefront, idFromLocation } from '../../../support/e2e/steps';
-import { seedAccount } from '../../../support/e2e/scenario';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /** A bank reference the admin types when recording the transfer. */
@@ -69,7 +68,9 @@ describe('CU3 · Bank transfer, both sides', { tags: '@smoke' }, () => {
                 });
 
             cy.step('the instructions mail carries the same reference');
-            cy.emailTo(seedAccount('user').email, (mail) => mailMentions(mail, reference));
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(email, (mail) => mailMentions(mail, reference));
+            });
 
             cy.step('the admin finds the order by the reference and records the money');
             idFromLocation().then((orderId) => {

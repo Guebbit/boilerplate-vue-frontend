@@ -10,7 +10,6 @@
  * the panel keeps "ship" disabled until a code is typed.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
-import { seedAccount } from '../../../support/e2e/scenario';
 
 /** The tracking code the admin types. Chosen here, so the mail can be searched for it. */
 const TRACKING_CODE = 'TRK-E2E-OP1';
@@ -68,7 +67,9 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             customerSees(orderId, 'shipped');
 
             cy.step('the customer is mailed the tracking code');
-            cy.emailTo(seedAccount('user').email, (mail) => mailMentions(mail, TRACKING_CODE));
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(email, (mail) => mailMentions(mail, TRACKING_CODE));
+            });
 
             cy.step('marks it delivered: nothing is left to press');
             cy.get('[data-test=mark-delivered]').click();

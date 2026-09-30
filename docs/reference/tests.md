@@ -173,6 +173,10 @@ flowchart LR
   A jump beyond 7 days ends the session — log in again.
 - **Personas** are `E2ERole`s beside the four seeded roles: `unverified`, `twoFactor` (with
   `backupCodes`), `pendingEmail`, `banned`. Their state is seeded, so a journey starts in it.
+- **`cy.accountOf(role)`** yields a seeded login, read when it runs. A journey asks for it and
+  imports nothing from `scenario.ts`: a spec file that imports that module gets its own copy of
+  the backend's description, which `cy.restore()` never refreshes, so `order.*` ids — new after
+  every live reset — go stale and `cy.subjectId` answers with the previous test's rows.
 - **Staff** are `manager`, `warehouse`, `support` (one shop role each) and `operator` (a platform
   role only, with no shop membership). Their passwords are the backend's `NODE_SEED_<NAME>_PASSWORD`.
 

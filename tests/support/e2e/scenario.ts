@@ -148,6 +148,21 @@ declare global {
              * @param name - a guarantee name, e.g. `order.ownerPending` or `product.rich`
              */
             subjectId(name: string): Chainable<string>;
+
+            /**
+             * One seeded account's login, read when the command RUNS — after this test's reset.
+             *
+             * The command form of {@link seedAccount}, for a spec file: a spec that imports this
+             * module gets its OWN copy of the description, loaded once before the spec and never
+             * refreshed by `cy.restore()` (the support file holds the other copy). Account logins
+             * never change, so that is harmless for them; it is not for `order.*` subjects, whose
+             * ids are new after every live reset, and importing this file also re-registers
+             * `subjectId` against the stale copy. A spec therefore asks for an account here and
+             * imports nothing from this file.
+             *
+             * @param role - which seeded account
+             */
+            accountOf(role: E2ERole): Chainable<ScenarioAccount>;
         }
     }
 }
@@ -161,6 +176,10 @@ Cypress.Commands.add('subjectId', (name: string) => {
         );
     return cy.wrap(id, { log: false });
 });
+
+Cypress.Commands.add('accountOf', (role: E2ERole) =>
+    cy.wrap(null, { log: false }).then(() => seedAccount(role))
+);
 
 // Once per spec file, before anything reads it. `cy.restore()` re-reads it whenever a spec puts a
 // different scenario in place.

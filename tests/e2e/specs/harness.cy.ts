@@ -65,6 +65,13 @@ describe('The journey harness', () => {
             expect(seedAccount('twoFactor').backupCodes, 'backup codes').to.have.length(5);
         });
 
+        it('are also asked for as a command, which reads the login when it runs', () => {
+            cy.accountOf('twoFactor').should((account) => {
+                expect(account.email).to.equal(seedAccount('twoFactor').email);
+                expect(account.backupCodes).to.have.length(5);
+            });
+        });
+
         it('can sign in as the unverified and the pending-email accounts', () => {
             cy.loginAs('unverified');
             cy.get('[data-test=user-menu]').should('exist');
