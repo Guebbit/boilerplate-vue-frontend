@@ -240,6 +240,7 @@ how a reader finds the story without opening the file.
 | CU18 | The customer saves from a grid card and sees it saved on the detail page and in the list, removes everything and follows the empty state, then saves two and moves one into a cart that already holds it                                                          | `user`                               | nightly  | cu18-the-wishlist-from-both-doors.cy.ts |
 | AC11 | The customer edits their address and adds a new default from the dialog; checkout pre-selects the default and shows the edit. Emptying the book shows the empty state in both places, and an address added at checkout is the choice                              | `user`                               | nightly  | ac11-i-moved-house.cy.ts                |
 | N3   | The editor's open edit form goes stale when the admin changes the price: the save is refused with 412 and the way forward, reload-latest shows the admin's price, and the next save lands on top of it                                                            | `editor`, `admin`                    | nightly  | n3-two-staff-edit-one-product.cy.ts     |
+| FR5  | At 390 x 844 a guest signs in through the drawer, buys by card adding an address in the dialog, and logs out through it; no page scrolls sideways and the dialog fits the screen                                                                                  | `user`                               | nightly  | fr5-shopping-on-a-phone.cy.ts           |
 
 ## `tests/support/` — the harness
 
