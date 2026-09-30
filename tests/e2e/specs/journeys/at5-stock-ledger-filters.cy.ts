@@ -17,6 +17,19 @@
 const movement = (productId: string, path: string, body: Record<string, unknown>) =>
     cy.apiAs('admin', 'POST', path, { productId, ...body });
 
+/**
+ * Waits until every movement on show carries `reason`: the list is refetched on each pick, so a
+ * read taken at once can still be the previous page.
+ *
+ * @param reason - the chip text every row must show
+ */
+const onlyReasons = (reason: string): void => {
+    cy.get('[data-test=movement-reason]').should(($chips) => {
+        expect($chips.length).to.be.greaterThan(0);
+        for (const chip of $chips.toArray()) expect(chip.textContent).to.contain(reason);
+    });
+};
+
 describe('AT5 · Stock ledger filters', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -36,16 +49,11 @@ describe('AT5 · Stock ledger filters', () => {
 
                 cy.step('reason: only receipts');
                 cy.pickOption('[data-test=movements-filter-reason]', 'Received');
-                cy.get('[data-test=movement-reason]').should('have.length.greaterThan', 0);
-                cy.get('[data-test=movement-reason]').each(($reason) => {
-                    expect($reason.text()).to.contain('Received');
-                });
+                onlyReasons('Received');
 
                 cy.step('reason: only adjustments');
                 cy.pickOption('[data-test=movements-filter-reason]', 'Adjusted');
-                cy.get('[data-test=movement-reason]').each(($reason) => {
-                    expect($reason.text()).to.contain('Adjusted');
-                });
+                onlyReasons('Adjusted');
 
                 cy.step('all reasons: the ledger is back');
                 cy.pickOption('[data-test=movements-filter-reason]', 'All reasons');
@@ -54,10 +62,21 @@ describe('AT5 · Stock ledger filters', () => {
 
             cy.step("product: only that product's movements");
             cy.subjectProduct('product.inStock').then(({ title }) => {
+                // Cleared first: the filter holds "All products" as its text until something else is chosen.
+                cy.get('[data-test=movements-filter-product] input').clear();
                 cy.get('[data-test=movements-filter-product] input').type(title);
-                cy.get('[role=listbox] [role=option]').first().click();
-                cy.get('[data-test=movements-total]').should('not.contain.text', ' 0 ');
-                cy.get('[data-test=movement-reason]').should('have.length.greaterThan', 0);
+                cy.get('[role=listbox] [role=option]').contains(title).click();
+                cy.subjectId('product.inStock').then((productId) => {
+                    // The column names a product by title, or by id when the catalogue page the
+                    // ledger loaded does not hold it — either way it is this product.
+                    cy.get('[data-test=movement-row]').should(($rows) => {
+                        expect($rows.length).to.be.greaterThan(0);
+                        for (const row of $rows.toArray())
+                            expect(
+                                [title, productId].some((name) => row.textContent?.includes(name))
+                            ).to.equal(true);
+                    });
+                });
             });
 
             cy.step('low stock only: the board shrinks to the products that are low');
