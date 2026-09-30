@@ -33,7 +33,7 @@ interface CypressWithRunnableState {
 
 /**
  * The `Product` fields anything here reads: an id to visit, a title and a price to assert on, and
- * the categories the storefront's facet chips count.
+ * the categories and tags the storefront's facet chips count.
  *
  * Structural rather than imported from `@api`: `tsconfig.cypress.json` is a composite project
  * that does not claim `contracts/`.
@@ -43,6 +43,7 @@ interface ProductLike {
     title: string;
     price: number;
     categories?: string[];
+    tags?: string[];
 }
 
 /**
