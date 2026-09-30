@@ -26,6 +26,9 @@ import type { User } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
+import { useServerSort } from '@/ui/composables/use-server-sort.ts';
+import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
+import { UserSortItem } from '@/types/enums.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -151,7 +154,8 @@ const { sync: syncUrl } = useListUrlState({
         email: 'string',
         username: 'string',
         active: 'boolean',
-        deleted: 'boolean'
+        deleted: 'boolean',
+        sort: 'string'
     }
 });
 
@@ -170,6 +174,17 @@ const { handleSearch, handleReset } = useListSearch({
     search,
     onApplied: syncUrl
 });
+
+/**
+ * The columns the API can order by (the contract's `UserSort` enum) — the table's other headers
+ * stay inert rather than reorder one page.
+ */
+const sortableKeys = sortFieldsOf(UserSortItem);
+
+/**
+ * The header's sort state, kept in `filters.sort` so it travels in the URL and the request.
+ */
+const { sortBy } = useServerSort({ filters, apply: handleSearch });
 
 /**
  * The row actions' own blocked state — delete and hard-delete share one instance, since both
@@ -346,6 +361,8 @@ const handleHardDelete = (userId: string, username: string) =>
 
         <DataTable
             v-model="selectedUserId"
+            v-model:sort-by="sortBy"
+            :server-sort-keys="sortableKeys"
             :headers="tableHeaders"
             :items="pageItemList"
             :caption="t('users-list-page.table-caption')"

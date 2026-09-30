@@ -5,9 +5,10 @@
  * Vuetify's headers, forwards `header.*`/`item.*` slots the caller actually provided, swaps in
  * the accessible `TableLoadingBar`, and adds two OPT-IN behaviours through a `v-model`, each
  * detected from whether its own `update:*` listener is actually bound rather than from the
- * model's value: single-row selection (`v-model`) and client-side sorting (`v-model:sort-by`,
- * FA75) — pagination here is server-side for every real caller today, so a header is sortable
- * only for the one caller that opts in, and the footer stays hidden either way.
+ * model's value: single-row selection (`v-model`) and sorting (`v-model:sort-by`, FA75). Sorting
+ * is client-side by default; `serverSortKeys` makes it a server sort (only those columns, no local
+ * reorder). Pagination is server-side for every real caller, so a header is sortable only for the
+ * caller that opts in, and the footer stays hidden either way.
  */
 import { computed, getCurrentInstance, useSlots } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
@@ -24,7 +25,8 @@ const {
     loading,
     loadingText,
     noDataText,
-    rowTest = 'list-row'
+    rowTest = 'list-row',
+    serverSortKeys
 } = defineProps<{
     headers: CoreDataTableHeader<T>[];
     items: T[];
@@ -56,6 +58,13 @@ const {
      * means.
      */
     rowTest?: string;
+    /**
+     * Turns the sort into a SERVER sort: the fields the API's `sort` enum accepts for this list.
+     * Only those headers are sortable, and Vuetify's own reorder of the rows it holds is switched
+     * off, so a click only reports the new `v-model:sort-by` and the caller re-fetches. Left unset,
+     * the table sorts client-side, for a caller that holds the whole list.
+     */
+    serverSortKeys?: readonly string[];
 }>();
 
 /**
@@ -64,9 +73,9 @@ const {
 const modelValue = defineModel<unknown>();
 
 /**
- * Vuetify's own sort state (`{ key, order }[]`), bound only by a caller that wants CLIENT-side
- * sorting on this table — a short, unpaginated list, not the paginated fetches every other view
- * makes. `v-data-table`'s own shape, passed straight through via `v-model:sort-by` below.
+ * Vuetify's own sort state (`{ key, order }[]`), bound only by a caller that wants sorting on this
+ * table: client-side for a short, unpaginated list, or server-side (`serverSortKeys`) for a
+ * paginated one. `v-data-table`'s own shape, passed straight through via `v-model:sort-by` below.
  */
 const sortBy = defineModel<{ key: string; order?: boolean | 'asc' | 'desc' }[]>('sortBy');
 
@@ -128,7 +137,14 @@ const vuetifyHeaders = computed(() =>
         title: header.title,
         key: header.key,
         width: header.width,
-        sortable: isSortable.value && !('synthetic' in header)
+        sortable:
+            isSortable.value &&
+            !('synthetic' in header) &&
+            (serverSortKeys === undefined || serverSortKeys.includes(header.key)),
+        // Vuetify's per-column comparator: `() => 0` keeps the server's order, so the header
+        // shows its arrow and reports the click without reshuffling the page it holds.
+        // https://vuetifyjs.com/en/api/v-data-table/#props-headers
+        ...(serverSortKeys && { sort: () => 0 })
     }))
 );
 

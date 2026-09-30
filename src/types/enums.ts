@@ -28,3 +28,6 @@ export { FeedbackRequestStatus } from '@api';
 
 // Return lifecycle and reasons: the returns list's filter selects.
 export { ReturnStatus, ReturnReason } from '@api';
+
+// Server-side sort tokens: which columns a list's table may sort by, read off the contract's enum.
+export { ProductSortItem, UserSortItem, OrderSortItem } from '@api';

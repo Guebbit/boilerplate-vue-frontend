@@ -170,6 +170,23 @@ describe('the inbox search', () => {
                 expect(lastBody()).toMatchObject({ page: 3, pageSize: 25 });
             }));
 
+    it('sends a sort the contract names, and drops one it does not', () => {
+        const store = useFeedbackStore();
+        store.filters = { sort: 'status,-createdAt' };
+
+        return store
+            .watchSearchRequests()
+            .search()
+            .then(() => {
+                expect(lastBody()?.sort).toEqual(['status', '-createdAt']);
+                store.filters = { sort: 'message' };
+                return store.watchSearchRequests().search(true);
+            })
+            .then(() => {
+                expect(lastBody()?.sort).toBeUndefined();
+            });
+    });
+
     it('posts every supported filter', () => {
         const store = useFeedbackStore();
         store.filters = { text: 'cats', status: 'new', email: 'curious@example.com' };

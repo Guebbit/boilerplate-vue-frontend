@@ -2220,6 +2220,23 @@ export interface OAuthProvidersEnvelope {
     data: OAuthProviders;
 }
 
+export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
+
+export const UserSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    email: 'email',
+    '-email': '-email',
+    username: 'username',
+    '-username': '-username'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type UserSort = UserSortItem[];
+
 export interface UsersResponse {
     items: User[];
     meta: PaginationMeta;
@@ -2347,6 +2364,7 @@ export interface UpdateUserByIdRequestMultipart {
 export interface SearchUsersRequest {
     page?: Page;
     pageSize?: PageSize;
+    sort?: UserSort;
     text?: Text;
     /**
      * @minItems 1
@@ -2407,6 +2425,24 @@ export interface FeedbackRequestEnvelope {
     data: FeedbackRequest;
 }
 
+export type FeedbackRequestSortItem =
+    (typeof FeedbackRequestSortItem)[keyof typeof FeedbackRequestSortItem];
+
+export const FeedbackRequestSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    status: 'status',
+    '-status': '-status',
+    email: 'email',
+    '-email': '-email'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type FeedbackRequestSort = FeedbackRequestSortItem[];
+
 export interface FeedbackRequestsResponse {
     items: FeedbackRequest[];
     meta: PaginationMeta;
@@ -2422,6 +2458,7 @@ export interface FeedbackRequestsResponseEnvelope {
 export interface SearchFeedbackRequestsRequest {
     page?: Page;
     pageSize?: PageSize;
+    sort?: FeedbackRequestSort;
     text?: Text;
     status?: FeedbackRequestStatus;
     email?: Email;
@@ -2446,6 +2483,23 @@ export interface UpdateFeedbackRequestStatusRequest {
      */
     adminNotes?: string | null;
 }
+
+export type ProductSortItem = (typeof ProductSortItem)[keyof typeof ProductSortItem];
+
+export const ProductSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    price: 'price',
+    '-price': '-price',
+    title: 'title',
+    '-title': '-title'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type ProductSort = ProductSortItem[];
 
 export interface ProductsResponse {
     items: Product[];
@@ -2746,6 +2800,7 @@ export interface ProductAdminEnvelope {
 export interface SearchProductsRequest {
     page?: Page;
     pageSize?: PageSize;
+    sort?: ProductSort;
     text?: Text;
     /**
      * @minItems 1
@@ -2908,6 +2963,23 @@ export interface WishlistResponseEnvelope {
     data: WishlistResponse;
 }
 
+export type OrderSortItem = (typeof OrderSortItem)[keyof typeof OrderSortItem];
+
+export const OrderSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    status: 'status',
+    '-status': '-status',
+    email: 'email',
+    '-email': '-email'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type OrderSort = OrderSortItem[];
+
 export interface OrdersResponse {
     items: Order[];
     meta: PaginationMeta;
@@ -2945,6 +3017,7 @@ export interface DeleteOrderRequest {
 export interface SearchOrdersRequest {
     page?: Page;
     pageSize?: PageSize;
+    sort?: OrderSort;
     /**
      * @minItems 1
      * @maxItems 100
@@ -4080,6 +4153,7 @@ export type ListUsersParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: UserSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -4127,6 +4201,7 @@ export type ListFeedbackRequestsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: FeedbackRequestSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -4150,6 +4225,7 @@ export type ListProductsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: ProductSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -4206,6 +4282,7 @@ export type ListOrdersParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: OrderSort;
     /**
      * @minItems 1
      * @maxItems 100

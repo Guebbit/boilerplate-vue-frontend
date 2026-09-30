@@ -606,6 +606,26 @@ describe('useProductsStore', () => {
                     });
             });
 
+            it('sends the CSV sort as the contract’s token list, and drops one it does not name', () => {
+                respondWithItems([]);
+                const store = useProductsStore();
+                store.filters = { sort: '-price,title' };
+
+                return store
+                    .watchSearchProducts()
+                    .search()
+                    .then(() => {
+                        expect(lastBody().sort).toEqual(['-price', 'title']);
+
+                        // A hand-edited URL must not reach the API just to be refused with a 422.
+                        store.filters = { sort: '-price,password' };
+                        return store.watchSearchProducts().search(true);
+                    })
+                    .then(() => {
+                        expect(lastBody().sort).toBeUndefined();
+                    });
+            });
+
             it('reports a failed search to the supplied error handler', () => {
                 const failure = new Error('network down');
                 vi.mocked(orvalMutator).mockRejectedValue(failure);

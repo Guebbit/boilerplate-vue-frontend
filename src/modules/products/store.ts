@@ -12,6 +12,7 @@ import { ref } from 'vue';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
+import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listProducts,
     searchProducts,
@@ -24,7 +25,8 @@ import {
     updateProductByIdWithMultipart,
     deleteProductById,
     hardDeleteProductById,
-    restoreProductById
+    restoreProductById,
+    ProductSortItem
 } from '@api';
 import type {
     Product,
@@ -41,9 +43,14 @@ import type {
  * is owned by the toolkit's search state).
  *
  * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
- * one-element array `SearchProductsRequest.id` now requires, in `search:` below.
+ * one-element array `SearchProductsRequest.id` now requires, in `search:` below. `sort` likewise
+ * stays the CSV and becomes the contract's token list there.
  */
-type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
+type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize' | 'id' | 'sort'> & {
+    id?: string;
+    /** The API's `sort` as one CSV (`-price,title`): the form a URL and a select hold. */
+    sort?: string;
+};
 
 /**
  * `createProduct`'s payload: the JSON write body plus the optional file the form attaches.
@@ -141,6 +148,7 @@ export const useProductsStore = defineStore('products', () => {
                     // POST /products/search body, and that is what the API reads. The API now
                     // reads a batch of ids; the filter box searches for one, so it's wrapped here.
                     id: filters.id ? [filters.id] : undefined,
+                    sort: sortTokensOf(filters.sort, ProductSortItem),
                     minPrice: filters.minPrice,
                     maxPrice: filters.maxPrice,
                     category: filters.category,

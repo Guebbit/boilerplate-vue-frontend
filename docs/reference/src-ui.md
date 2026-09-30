@@ -26,22 +26,24 @@ Small, single-purpose, and composed into the organisms below.
 | `src/ui/molecules/FormImageUpload.vue`  | The image field: file picker, preview, and the client-side limits before a request is made.        | [Infrastructure](./src-infrastructure.md)          |
 | `src/ui/molecules/ItemDetailField.vue`  | One read-only label/value pair, the atom every detail page is built from.                          | [UI Kit](./src-ui.md)                              |
 | `src/ui/molecules/ListPagination.vue`   | The paginator: page count in, page changes out, no knowledge of what is being paged.               | [State & Routing](../tools/state-and-routing.md)   |
+| `src/ui/molecules/SortSelect.vue`       | The "Sort by" picker for a card list: server sort tokens, with a default order first.              | [UI Kit](./src-ui.md)                              |
 | `src/ui/molecules/TableLoadingBar.vue`  | The loading bar a `v-data-table` renders through its `#loader` slot.                               | [UI Kit](./src-ui.md)                              |
 
 `src/ui/composables/use-translation-tab-order.ts` derives "which tabs are open, fallback first"
 from any per-locale record — the one piece of logic `TranslationTabs.vue` below does not own,
 since it differs per caller's own state shape.
 
-Three more composables carry logic several screens shared, so it is written once:
+Four more composables carry logic several screens shared, so it is written once:
 `use-list-url-state.ts` and `use-list-search.ts` are a filtered list page's whole search wiring —
-filters and page kept in the URL, and the apply and reset handlers — and `use-fullscreen-dialog.ts`
+filters and page kept in the URL, and the apply and reset handlers — `use-server-sort.ts` binds
+`filters.sort` to a table's header or a select and re-searches from page 1, and `use-fullscreen-dialog.ts`
 is the one flag every dialog binds so it fills the screen on a phone.
 
 ## Organisms
 
 | File                                    | What it is                                                                                                                                                                        | Read next                                                  |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with sorting, loading and pagination wired in.                                                                | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with server sorting (`serverSortKeys`), loading and pagination wired in.                                      | [Admin Dashboard](../tools/admin-dashboard.md)             |
 | `src/ui/organisms/ItemDetailLayout.vue` | The shared skeleton for entity detail and edit pages — product, order, user. What keeps twelve detail screens looking like one app.                                               | [Admin Dashboard](../tools/admin-dashboard.md)             |
 | `src/ui/organisms/ItemDetailHero.vue`   | The header band of that skeleton: title, subtitle, actions.                                                                                                                       | [UI Kit](./src-ui.md)                                      |
 | `src/ui/organisms/CardDetail.vue`       | A card presenting one entity's fields.                                                                                                                                            | [UI Kit](./src-ui.md)                                      |

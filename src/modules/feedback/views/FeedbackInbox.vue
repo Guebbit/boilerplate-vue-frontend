@@ -25,6 +25,8 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
+import { useServerSort } from '@/ui/composables/use-server-sort.ts';
+import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { FeedbackRequestStatus } from '@/types/enums.ts';
@@ -89,7 +91,9 @@ const statusChoice = useAnyFilterChoice(
 /**
  * Whether any filter is narrowing the inbox — picks the empty state's wording.
  */
-const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
+const isFiltered = computed(() =>
+    Object.entries(filters.value).some(([name, value]) => name !== 'sort' && Boolean(value))
+);
 
 /**
  * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
@@ -98,7 +102,12 @@ const { sync: syncUrl } = useListUrlState({
     filters,
     page: pageCurrent,
     pageSize: pageSize,
-    params: { text: 'string', email: 'string', status: Object.values(FeedbackRequestStatus) }
+    params: {
+        text: 'string',
+        email: 'string',
+        status: Object.values(FeedbackRequestStatus),
+        sort: 'string'
+    }
 });
 
 /**
@@ -118,6 +127,23 @@ const { handleSearch, handleReset } = useListSearch({
     search,
     onApplied: syncUrl
 });
+
+/**
+ * The sort select's model, kept in `filters.sort`; picking an order re-searches from page 1.
+ */
+const { choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
+
+/**
+ * The orders the inbox offers on top of the default newest-first — a subset of the contract's
+ * `FeedbackRequestSort` enum, the ones a triager reaches for.
+ *
+ * @returns The select's options, re-translated on locale change.
+ */
+const sortOptions = computed(() => [
+    { value: 'createdAt', title: t('feedback-inbox-page.sort-oldest') },
+    { value: 'status', title: t('feedback-inbox-page.sort-status') },
+    { value: 'email', title: t('feedback-inbox-page.sort-email') }
+]);
 
 /**
  * The row actions' own blocked state — a status move and a delete share one instance, since
@@ -232,6 +258,12 @@ const handleDelete = (requestId: string, subject: string) => {
                         item-title="title"
                         item-value="value"
                         hide-details
+                    />
+                    <SortSelect
+                        v-model="sortChoice"
+                        :label="t('feedback-inbox-page.sort-label')"
+                        :default-label="t('feedback-inbox-page.sort-newest')"
+                        :options="sortOptions"
                     />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>

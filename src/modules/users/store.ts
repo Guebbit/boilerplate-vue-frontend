@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listUsers,
     searchUsers,
@@ -21,7 +22,8 @@ import {
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
-    adminDisableUserTwoFactor as apiAdminDisableUserTwoFactor
+    adminDisableUserTwoFactor as apiAdminDisableUserTwoFactor,
+    UserSortItem
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
 import type {
@@ -38,7 +40,11 @@ import type {
  * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
  * one-element array `SearchUsersRequest.id` now requires, in `search:` below.
  */
-type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize' | 'id'> & { id?: string };
+type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize' | 'id' | 'sort'> & {
+    id?: string;
+    /** The API's `sort` as one CSV (`email`): the form a URL holds. */
+    sort?: string;
+};
 
 /**
  * `updateUser`'s payload — the merging `PATCH` body plus the optional replacement image. The
@@ -104,6 +110,7 @@ export const useUsersStore = defineStore('users', () => {
                     text: filters.text,
                     // The API reads a batch of ids; the filter box searches for one.
                     id: filters.id ? [filters.id] : undefined,
+                    sort: sortTokensOf(filters.sort, UserSortItem),
                     email: filters.email,
                     username: filters.username,
                     active: filters.active,
