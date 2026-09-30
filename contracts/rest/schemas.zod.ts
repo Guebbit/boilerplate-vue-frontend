@@ -2515,11 +2515,14 @@ export const RemoveTwoFactorMethodResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
  * @summary Start enrolling one second factor
  */
 export const SetupTwoFactorMethodParams = zod.strictObject({
     method: zod.string()
+});
+export const SetupTwoFactorMethodBody = zod.strictObject({
+    code: zod.string().optional()
 });
 export const SetupTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2533,6 +2536,24 @@ export const SetupTwoFactorMethodResponse = zod.strictObject({
         sentTo: zod.string().optional(),
         resendAfter: zod.number().optional(),
         expiresAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Delivers a fresh code for one ARMED delivered method to a signed-in caller, so an account whose only factor is delivered (email) can satisfy the code that removing, replacing or disabling a factor asks for without spending a backup code. Answers 422 for a method that is not armed or does not deliver, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent. Needs fresh critical auth, like the calls it serves.
+ * @summary Send a code to prove an armed factor
+ */
+export const SendTwoFactorMethodCodeParams = zod.strictObject({
+    method: zod.string()
+});
+export const SendTwoFactorMethodCodeResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        method: zod.string(),
+        sentTo: zod.string(),
+        resendAfter: zod.number(),
+        expiresAt: zod.iso.datetime({ offset: true })
     })
 });
 /**

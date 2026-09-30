@@ -157,6 +157,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     searchProducts: 'products',
     searchUsers: 'users',
     sendTwoFactorCode: 'account',
+    sendTwoFactorMethodCode: 'account',
     setCartShippingMethod: 'cart',
     setDefaultAddress: 'addresses',
     setupTwoFactorMethod: 'account',

@@ -2149,6 +2149,11 @@ export interface TwoFactorCodeRequest {
     code: string;
 }
 
+export interface TwoFactorSetupRequest {
+    /** A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor. */
+    code?: string;
+}
+
 export interface TwoFactorSetup {
     /** The method being enrolled, echoed back. */
     method: string;
@@ -5844,15 +5849,35 @@ export const removeTwoFactorMethod = (
 };
 
 /**
- * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed — the "lost my phone, still have my session" recovery path, which is why it is gated on fresh critical auth.
+ * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
  * @summary Start enrolling one second factor
  */
 export const setupTwoFactorMethod = (
     method: string,
+    twoFactorSetupRequest?: TwoFactorSetupRequest,
     options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
 ) => {
     return orvalMutator<TwoFactorSetupEnvelope>(
-        { url: `/account/2fa/methods/${method}/setup`, method: 'POST' },
+        {
+            url: `/account/2fa/methods/${method}/setup`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorSetupRequest
+        },
+        options
+    );
+};
+
+/**
+ * Delivers a fresh code for one ARMED delivered method to a signed-in caller, so an account whose only factor is delivered (email) can satisfy the code that removing, replacing or disabling a factor asks for without spending a backup code. Answers 422 for a method that is not armed or does not deliver, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent. Needs fresh critical auth, like the calls it serves.
+ * @summary Send a code to prove an armed factor
+ */
+export const sendTwoFactorMethodCode = (
+    method: string,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+) => {
+    return orvalMutator<TwoFactorDeliveryEnvelope>(
+        { url: `/account/2fa/methods/${method}/send`, method: 'POST' },
         options
     );
 };
@@ -8141,6 +8166,9 @@ export type RemoveTwoFactorMethodResult = NonNullable<
 >;
 export type SetupTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof setupTwoFactorMethod>>
+>;
+export type SendTwoFactorMethodCodeResult = NonNullable<
+    Awaited<ReturnType<typeof sendTwoFactorMethodCode>>
 >;
 export type ConfirmTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof confirmTwoFactorMethod>>

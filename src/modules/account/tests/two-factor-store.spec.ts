@@ -308,6 +308,42 @@ describe('every write reaches the API each time', () => {
     });
 });
 
+describe('proving a factor before changing one', () => {
+    it('setupMethod sends the code in the body, and nothing for the first factor', () => {
+        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+            method: 'totp',
+            delivers: false,
+            secret: 'JBSWY3DPEHPK3PXP',
+            otpauthUri: 'otpauth://totp/x'
+        });
+        const store = useTwoFactorStore();
+        return store
+            .setupMethod('totp')
+            .then(() => store.setupMethod('totp', '123456'))
+            .then(() => {
+                const bodies = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map((call) => (call[0] as { data?: unknown }).data);
+                expect(bodies).toEqual([undefined, { code: '123456' }]);
+            });
+    });
+
+    it('sendMethodCode mails the account and starts the resend cooldown', () => {
+        responses['POST /account/2fa/methods/email/send'] = orvalEnvelope({
+            method: 'email',
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
+        const store = useTwoFactorStore();
+        return store.sendMethodCode('email').then((payload) => {
+            expect(payload).toMatchObject({ sentTo: 'a***a@example.com' });
+            expect(requestedUrls()).toEqual(['/account/2fa/methods/email/send']);
+            expect(store.secondsUntilResend).toBeGreaterThan(0);
+        });
+    });
+});
+
 describe('the resend countdown', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());

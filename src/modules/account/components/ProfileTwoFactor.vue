@@ -28,6 +28,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import TwoFactorEnroll from '@/modules/account/components/TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from '@/modules/account/components/TwoFactorBackupCodes.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import type { TwoFactorSetup } from '@api';
 
 /**
  * Translation function.
@@ -52,7 +53,7 @@ const twoFactor = useTwoFactorStore();
 /**
  * Two-factor state: what is armed, and whether a code-guarded mutation is in flight.
  */
-const { status, mutatingWithCode } = storeToRefs(twoFactor);
+const { status, mutatingWithCode, sendingCode, secondsUntilResend } = storeToRefs(twoFactor);
 
 onMounted(twoFactor.fetchStatus);
 
@@ -88,18 +89,32 @@ const handleBackupCodesDone = () => {
 };
 
 /**
- * Opens enrollment for one method, confirming first when it REPLACES an already-armed one — the
- * "lost my phone, still have my session" recovery path, and the one `setupMethod` call this panel
- * makes without a code, so it has to say plainly that it disarms the current one. Whether it
+ * The setup answer the code prompt obtained, handed to `TwoFactorEnroll.vue` so the dialog opens
+ * on it instead of starting a second setup. `undefined` for the account's first factor, which the
+ * dialog starts itself.
+ */
+const pendingSetup = ref<TwoFactorSetup>();
+
+/**
+ * Opens enrollment for one method. The account's FIRST factor needs only the fresh password the
+ * route already demands, so its dialog just opens. Once anything is armed a replace, or a second
+ * method, must prove a factor first (a code or a backup code): that goes through the shared code
+ * prompt, and a REPLACE is confirmed before it, because it disarms the current one. Whether it
  * replaces is read off `status` rather than passed in: the two lists below already agree with it,
  * and a flag at the call site is one more thing that can disagree.
  *
  * @param method - Wire name of the method to enroll or re-enroll.
  */
 const openEnroll = (method: string) => {
+    const anyArmed = (status.value?.methods.length ?? 0) > 0;
+    if (!anyArmed) {
+        pendingSetup.value = undefined;
+        enrolling.value = method;
+        return;
+    }
     const alreadyArmed = status.value?.methods.some((row) => row.method === method) ?? false;
     if (!alreadyArmed) {
-        enrolling.value = method;
+        startCodePrompt({ kind: 'enroll', method });
         return;
     }
     void useDialogStore()
@@ -108,17 +123,21 @@ const openEnroll = (method: string) => {
             color: 'error'
         })
         .then((accepted) => {
-            if (accepted) enrolling.value = method;
+            if (accepted) startCodePrompt({ kind: 'enroll', method });
         });
 };
 
 /**
  * One shared code prompt for every mutation that needs to prove an existing factor: removing one
- * method, dropping every method at once, or minting a fresh set of backup codes. `kind` says which
+ * method, dropping every method at once, minting a fresh set of backup codes, or starting an
+ * enrollment while another factor is armed. `kind` says which
  * action {@link submitCode} performs.
  */
 type CodePromptRequest =
-    { kind: 'remove'; method: string } | { kind: 'disable' } | { kind: 'regenerate' };
+    | { kind: 'remove'; method: string }
+    | { kind: 'disable' }
+    | { kind: 'regenerate' }
+    | { kind: 'enroll'; method: string };
 
 /**
  * The pending code prompt, if one is open — a method removal and a re-enrolment both ask
@@ -142,6 +161,17 @@ const {
 } = useBlockingError();
 
 /**
+ * Opens the code prompt for a request, clearing whatever the last one left in it.
+ *
+ * @param request - What {@link codePrompt} becomes.
+ */
+const startCodePrompt = (request: CodePromptRequest) => {
+    clearCodePromptError();
+    codePrompt.value = request;
+    codeInput.value = '';
+};
+
+/**
  * Confirms the destructive intent, then opens the code prompt for it.
  *
  * @param request - What is being confirmed and, on accept, what {@link codePrompt} becomes.
@@ -150,10 +180,7 @@ const openCodePrompt = (request: { message: string; next: CodePromptRequest }) =
     useDialogStore()
         .confirm({ message: request.message, color: 'error' })
         .then((accepted) => {
-            if (!accepted) return;
-            clearCodePromptError();
-            codePrompt.value = request.next;
-            codeInput.value = '';
+            if (accepted) startCodePrompt(request.next);
         });
 
 /**
@@ -188,7 +215,7 @@ const handleRegenerate = () =>
 
 /**
  * Runs the mutation a code-prompt request names, and says what to toast on success —
- * `undefined` for a regenerate, since the backup-codes screen it opens IS the success feedback.
+ * `undefined` for a regenerate or an enrollment, since the screen each opens IS the feedback.
  *
  * @param request - The pending {@link codePrompt} value.
  * @param code - The code just typed into the prompt.
@@ -204,6 +231,13 @@ const runCodePromptMutation = (
             .then(() => t('two-factor.success-removed', { method: methodLabel(request.method) }));
     if (request.kind === 'disable')
         return twoFactor.disableAll(code).then(() => t('two-factor.success-disabled'));
+    if (request.kind === 'enroll')
+        // Started HERE, not in the dialog: a wrong code must stay in this prompt for another try.
+        return twoFactor.setupMethod(request.method, code).then((payload) => {
+            pendingSetup.value = payload;
+            enrolling.value = request.method;
+            return undefined;
+        });
     return twoFactor.regenerateBackupCodes(code).then((result) => {
         revealedBackupCodes.value = result?.backupCodes;
         return undefined;
@@ -227,6 +261,28 @@ const submitCode = () => {
             codePrompt.value = undefined;
         })
         .catch((error) => reportCodePromptError(error));
+};
+
+/**
+ * The armed method that can mail a code to a signed-in caller, if any — what an account whose only
+ * factor is delivered needs, since it has no device to read one off. The server's own `delivers`
+ * flag decides, never a check on the method name.
+ */
+const deliveredMethod = computed(() => status.value?.methods.find((row) => row.delivers)?.method);
+
+/**
+ * Mails a code for the prompt that is open, so the caller can prove themselves without spending a
+ * backup code. A refusal stays in the prompt, where the visitor is looking.
+ *
+ * @returns Nothing; the answer starts the resend countdown this button reads.
+ */
+const sendProofCode = () => {
+    if (!deliveredMethod.value) return;
+    clearCodePromptError();
+    return twoFactor
+        .sendMethodCode(deliveredMethod.value)
+        .then(() => addMessage(t('two-factor.code-sent')))
+        .catch((error: unknown) => reportCodePromptError(error));
 };
 
 /**
@@ -366,7 +422,12 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
 
         <!-- Enrollment dialog -->
         <v-dialog :model-value="!!enrolling" max-width="480" persistent>
-            <TwoFactorEnroll v-if="enrolling" :method="enrolling" @close="handleEnrollClose" />
+            <TwoFactorEnroll
+                v-if="enrolling"
+                :method="enrolling"
+                :initial-setup="pendingSetup"
+                @close="handleEnrollClose"
+            />
         </v-dialog>
 
         <!-- Backup codes — blocking, shown once, right after the first factor is confirmed -->
@@ -384,6 +445,22 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                 <v-card-title>{{ t('two-factor.label-code') }}</v-card-title>
                 <v-card-text>
                     <p class="mb-2 text-sm opacity-70">{{ t('two-factor.label-code-hint') }}</p>
+                    <v-btn
+                        v-if="deliveredMethod"
+                        variant="tonal"
+                        size="small"
+                        class="mb-2"
+                        :disabled="secondsUntilResend > 0"
+                        :loading="sendingCode"
+                        data-test="two-factor-code-prompt-send"
+                        @click="sendProofCode"
+                    >
+                        {{
+                            secondsUntilResend > 0
+                                ? t('two-factor.button-resend-in', { seconds: secondsUntilResend })
+                                : t('two-factor.button-email-code')
+                        }}
+                    </v-btn>
                     <form novalidate @submit.prevent="submitCode">
                         <v-text-field
                             v-model="codeInput"

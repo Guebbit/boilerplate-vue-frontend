@@ -36,11 +36,18 @@ import type { TwoFactorSetup } from '@api';
 /**
  * Which second factor is being armed.
  */
-const { method } = defineProps<{
+const { method, initialSetup } = defineProps<{
     /**
      * Wire name of the method being enrolled.
      */
     method: string;
+
+    /**
+     * The setup answer the parent already holds, when it had to start the setup itself — the
+     * code-proved case (a replace, or a second method), where a wrong code must stay in the prompt
+     * that asked for it rather than close this dialog. Absent, this card starts the setup on mount.
+     */
+    initialSetup?: TwoFactorSetup;
 }>();
 
 /**
@@ -92,6 +99,10 @@ const closeAndClear = () => {
 };
 
 onMounted(() => {
+    if (initialSetup) {
+        setup.value = initialSetup;
+        return;
+    }
     // Stays a toast: a failure here closes the dialog immediately (nothing to render without a
     // setup answer), so an inline alert would have nowhere to stay visible.
     void twoFactor
@@ -194,7 +205,11 @@ const handleConfirm = () => {
                     :alt="t('two-factor.setup-totp-qr-alt')"
                     class="mx-auto mb-4 h-40 w-40"
                 />
-                <p v-if="setup.secret" class="mb-4 break-all text-sm opacity-80">
+                <p
+                    v-if="setup.secret"
+                    class="mb-4 break-all text-sm opacity-80"
+                    data-test="two-factor-enroll-secret"
+                >
                     {{ t('two-factor.setup-totp-manual-entry', { secret: setup.secret }) }}
                 </p>
             </template>
