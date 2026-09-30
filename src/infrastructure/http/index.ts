@@ -10,6 +10,7 @@
  */
 import { instance } from './client.ts';
 import { onRequest, onRequestReject } from './interceptors.ts';
+import { onEtagRequest, onEtagResponse } from './etag.ts';
 import { onResponseRejectWithStepUp } from './step-up.ts';
 import {
     shouldValidateRequests,
@@ -20,6 +21,12 @@ import {
 import type { AxiosRequestConfig } from 'axios';
 
 instance.interceptors.request.use(onRequest, onRequestReject);
+// After `onRequest`: only reads and adds a header, so the order with auth is not load-bearing —
+// kept beside it so both request-side wirings are found together.
+instance.interceptors.request.use(onEtagRequest);
+// Observes every success without unwrapping it (see the note in `interceptors.ts`); failures pass
+// on untouched to the step-up wrapper below.
+instance.interceptors.response.use(onEtagResponse);
 // Step-up wraps refresh: a `REAUTH_REQUIRED` 401 has to be caught before the refresh branch would
 // "fix" it by renewing a cookie that was never the problem — see `step-up.ts`'s own module doc.
 instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);

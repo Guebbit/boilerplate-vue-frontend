@@ -46,6 +46,7 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -348,8 +349,23 @@ const heroDescription = computed(() => formatText(adminProduct.value?.descriptio
 const {
     message: submitError,
     report: reportSubmitError,
+    warn: warnSubmit,
     clear: clearSubmitError
 } = useBlockingError();
+
+/**
+ * The save came back 412: someone else edited this product since it was loaded. The warning shows
+ * through {@link submitError}; "reload latest" re-reads the admin record, which re-hydrates the
+ * form and refreshes the `ETag` the next save sends (`infrastructure/http/etag.ts`).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
+    id ? loadAdminProduct(id) : Promise.resolve()
+);
 
 /**
  * Validates the form and persists the product changes.
@@ -362,6 +378,7 @@ const {
  */
 const submitForm = () => {
     clearSubmitError();
+    clearStale();
     return handleSubmit(() => {
         const {
             price,
@@ -406,6 +423,7 @@ const submitForm = () => {
                 return loadAdminProduct(id).then(() => undefined);
             });
     }).catch((error) => {
+        if (handleStaleSave(error)) return;
         const serverTabErrors = translationTabErrorCountsFromServerError(error);
         if (Object.keys(serverTabErrors).length > 0)
             tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
@@ -596,8 +614,20 @@ const submitForm = () => {
 
                     <InlineErrorAlert
                         :message="submitError"
+                        :type="isStale ? 'warning' : 'error'"
                         data-test="product-edit-submit-error"
                     />
+
+                    <v-btn
+                        v-if="isStale"
+                        variant="tonal"
+                        color="warning"
+                        data-test="product-edit-reload-latest"
+                        :loading="loadingAdmin"
+                        @click="reloadLatest"
+                    >
+                        {{ t('generic.action-reload-latest') }}
+                    </v-btn>
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn

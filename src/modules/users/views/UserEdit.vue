@@ -45,6 +45,7 @@ import {
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 
@@ -68,7 +69,7 @@ const { id } = defineProps<{
 /**
  * User store APIs and references.
  */
-const { watchUser, updateUser } = useUsersStore();
+const { watchUser, updateUser, fetchUser } = useUsersStore();
 
 /**
  * The user being edited, and whether a call is in flight.
@@ -231,8 +232,23 @@ const userStatus = computed(() =>
 const {
     message: submitError,
     report: reportSubmitError,
+    warn: warnSubmit,
     clear: clearSubmitError
 } = useBlockingError();
+
+/**
+ * The save came back 412: someone else edited this user since it was loaded. "Reload latest"
+ * re-reads the record past the store's cache, which re-hydrates the form and refreshes the `ETag`
+ * the next save sends (`infrastructure/http/etag.ts`).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
+    id ? fetchUser(id, { forced: true }) : Promise.resolve()
+);
 
 /**
  * Validates the form and persists the user changes.
@@ -250,6 +266,7 @@ const {
  */
 const submitForm = () => {
     clearSubmitError();
+    clearStale();
     return handleSubmit(() => {
         const target = currentUser.value;
         if (!id || !target) return;
@@ -291,6 +308,7 @@ const submitForm = () => {
                 });
         });
     }).catch((error) => {
+        if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
 };
@@ -404,7 +422,21 @@ watchUser(() => id);
                         :disabled="isSubmitting"
                     />
 
-                    <InlineErrorAlert :message="submitError" data-test="user-edit-submit-error" />
+                    <InlineErrorAlert
+                        :message="submitError"
+                        :type="isStale ? 'warning' : 'error'"
+                        data-test="user-edit-submit-error"
+                    />
+                    <v-btn
+                        v-if="isStale"
+                        variant="tonal"
+                        color="warning"
+                        data-test="user-edit-reload-latest"
+                        :loading="loading"
+                        @click="reloadLatest"
+                    >
+                        {{ t('generic.action-reload-latest') }}
+                    </v-btn>
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">

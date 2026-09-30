@@ -33,6 +33,7 @@ import ProfileExportData from '@/modules/account/components/ProfileExportData.vu
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -188,8 +189,26 @@ const {
     message: saveError,
     type: saveErrorType,
     report: reportSaveError,
+    warn: warnSave,
     clear: clearSaveError
 } = useBlockingError();
+
+/**
+ * The save came back 412: the profile changed (another device, another tab) since this page
+ * loaded it. "Reload latest" re-reads it past the store's cache and re-baselines the form on it;
+ * the read also refreshes the `ETag` the next save sends (`infrastructure/http/etag.ts`).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnSave, clear: clearSaveError }, () =>
+    fetchProfile(true).then(() => {
+        setInitialData(profile.value ?? {});
+        resetForm();
+    })
+);
 
 /**
  * Whether a save is in flight — the submit button spins and refuses a second one (FA52): this
@@ -213,6 +232,7 @@ const submitForm = () => {
     // both states, so only a keyboard submit reaches here.
     if (!isDirty.value || savingProfile.value) return;
     clearSaveError();
+    clearStale();
     savingProfile.value = true;
     // No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
     // own request. Sending the loaded value back on every details save would overwrite whatever
@@ -239,6 +259,7 @@ const submitForm = () => {
             return applyLanguagePreference(profile.value?.locale);
         })
         .catch((error: unknown) => {
+            if (handleStaleSave(error)) return;
             applyServerErrors(error, { onUnmapped: () => reportSaveError(error) });
         })
         .finally(() => {
@@ -412,6 +433,17 @@ const cancelPendingEmail = () => {
                     class="mt-4"
                     data-test="profile-form-error"
                 />
+                <v-btn
+                    v-if="isStale"
+                    class="mt-2"
+                    variant="tonal"
+                    color="warning"
+                    data-test="profile-reload-latest"
+                    :loading="savingProfile"
+                    @click="reloadLatest"
+                >
+                    {{ t('generic.action-reload-latest') }}
+                </v-btn>
             </form>
 
             <ProfilePasswordChange />

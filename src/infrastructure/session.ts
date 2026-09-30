@@ -25,6 +25,7 @@ import {
     getPayloadFromResponse,
     getRetryAfter
 } from '@/infrastructure/http/envelope.ts';
+import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
@@ -512,6 +513,8 @@ export const useSessionStore = defineStore('session', () => {
         // Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
         // they do the least-privileged answer is the right one.
         setAbilities();
+        // The record versions the last person read are theirs; the next one must not send them.
+        clearEtags();
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
