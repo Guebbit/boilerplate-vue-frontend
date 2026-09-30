@@ -233,6 +233,7 @@ how a reader finds the story without opening the file.
 | N2   | The customer withdraws from a delivered order inside the window: a return opens already approved; the warehouse receives it keeping a handling deduction; the refund is paid minus the deduction, the ledger shows the restock and a credit note is issued        | `user`, then `warehouse`             | nightly  | `n2-withdraw-after-delivery.cy.ts`      |
 | CU11 | The customer cancels a paid order after a second confirmation: the card is refunded whole, the units return to the shelf and a credit note is listed on the order (no cancel mail exists)                                                                         | `user`                               | nightly  | `cu11-cancel-paid-order.cy.ts`          |
 | OP4  | A moderator refunds a delivered order (refund only): the cancel buttons stay shut, the order stays delivered, the payment reads refunded, and the customer sees the refund and its credit note                                                                    | `moderator`, then `user`             | nightly  | `op4-refund-delivered-order.cy.ts`      |
+| OP5  | An admin cancels one paid order only (the money stays captured, refund only works later) and cancels-and-refunds another in one press; credit notes are issued and the stock is back                                                                              | `admin`                              | nightly  | `op5-cancel-only-or-refund.cy.ts`       |
 
 ## `tests/support/` — the harness
 
