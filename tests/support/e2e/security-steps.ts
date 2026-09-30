@@ -87,9 +87,13 @@ export const loginDeviceWith = (email: string, password: string): Cypress.Chaina
  *
  * @param ms - how long, in milliseconds
  */
-export const letTimePass = (ms: number): Cypress.Chainable<unknown> =>
+export const letTimePass = (ms: number): void => {
     cy.env(['liveProfile']).then(({ liveProfile }) => {
-        if (liveProfile !== true) return cy.travel(ms);
+        if (liveProfile !== true) {
+            cy.travel(ms);
+            return;
+        }
         // A live backend's clock cannot be moved, so the window is waited out in real time.
-        return cy.wait(ms);
+        cy.wait(ms);
     });
+};

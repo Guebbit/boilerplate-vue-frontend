@@ -54,16 +54,17 @@ const armEmailFromPanel = (mintsBackupCodes: boolean): void => {
 };
 
 /**
- * Types one guess into the login challenge and submits it, answering with the status the API gave.
+ * Types one guess into the login challenge, submits it, and expects the API's answer.
  *
  * @param code - what to type
+ * @param expectedStatus - the HTTP status the API should answer with
  */
-const guess = (code: string): Cypress.Chainable<number | undefined> => {
+const guess = (code: string, expectedStatus: number): void => {
     cy.intercept('POST', '**/account/login/2fa').as('guess');
     cy.get('[data-test=two-factor-challenge-code] input').clear();
     cy.get('[data-test=two-factor-challenge-code] input').type(code);
     cy.get('[data-test=two-factor-challenge-submit]').click();
-    return cy.wait('@guess').then((interception) => interception.response?.statusCode);
+    cy.wait('@guess').its('response.statusCode').should('equal', expectedStatus);
 };
 
 describe('AC16 · Two-factor, the awkward edges', () => {
@@ -119,9 +120,8 @@ describe('AC16 · Two-factor, the awkward edges', () => {
             .and('contain.text', 's');
 
         cy.step('five wrong guesses are answered as wrong, the sixth is refused outright');
-        for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1)
-            guess('000000').should('equal', 422);
-        guess('000000').should('equal', 429);
+        for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1) guess('000000', 422);
+        guess('000000', 429);
         cy.get('[data-test=two-factor-challenge-submit-error]').should('not.be.empty');
 
         cy.step('a new login, and a challenge that has expired cannot be submitted');
