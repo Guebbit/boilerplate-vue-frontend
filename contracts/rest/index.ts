@@ -3318,7 +3318,7 @@ export interface ShippingMethod {
 }
 
 /**
- * Where returned goods are sent. Absent from `ShippingMethodsResponse` until a deployment configures one (`NODE_RETURN_ADDRESS_*`) — a customer is told where to post goods back only once there is somewhere to post them.
+ * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
  */
 export interface ReturnAddress {
     /** Who the parcel is addressed to. */
@@ -3333,7 +3333,7 @@ export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
     /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
     shipToCountries: CountryCode[];
-    returnAddress?: ReturnAddress;
+    returnAddress: ReturnAddress;
 }
 
 export interface ShippingMethodsResponseEnvelope {

@@ -7046,17 +7046,13 @@ export const ListShippingMethodsResponse = zod.strictObject({
         shipToCountries: zod.array(
             zod.string().regex(listShippingMethodsResponseDataShipToCountriesItemRegExp)
         ),
-        returnAddress: zod
-            .strictObject({
-                name: zod.string().optional(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod
-                    .string()
-                    .regex(listShippingMethodsResponseDataReturnAddressCountryRegExp)
-            })
-            .optional()
+        returnAddress: zod.strictObject({
+            name: zod.string().optional(),
+            street: zod.string(),
+            city: zod.string(),
+            zip: zod.string(),
+            country: zod.string().regex(listShippingMethodsResponseDataReturnAddressCountryRegExp)
+        })
     })
 });
 /**
