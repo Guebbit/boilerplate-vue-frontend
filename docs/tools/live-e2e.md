@@ -32,15 +32,24 @@ describe('Checkout', { tags: '@smoke' }, () => { … }); // every test inside
 
 Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/develop/npm/grep), registered in `tests/support/e2e/e2e.ts` and `cypress.config.ts`. Tags, not file names: `@smoke` works in any file layout and keeps each spec's recorded run time. The catalogue in [Tests](../reference/tests.md#the-journey-catalogue) says which tier each journey is in.
 
-| Tier     | Runs               | Grep     | Jobs                                | Budget per job |
-| -------- | ------------------ | -------- | ----------------------------------- | -------------- |
-| Per push | the `@smoke` tests | `@smoke` | 1                                   | 15 min         |
-| Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job) | 45 min         |
+| Tier     | Runs               | Grep     | Jobs                                                        | Budget per job |
+| -------- | ------------------ | -------- | ----------------------------------------------------------- | -------------- |
+| Per push | the `@smoke` tests | `@smoke` | 1                                                           | 15 min         |
+| Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job), plus the antibot entry | 45 min         |
 
 - **The `grep` input** (`workflow_call` and `workflow_dispatch`) takes any `@cypress/grep` expression: space is OR, `+` is AND, `-` is NOT. Run `grep: '@smoke'` by hand from the Actions tab to reproduce the push tier. It reaches Cypress as `E2E_GREP_TAGS`, which `cypress.config.ts` puts in `expose.grepTags`. (v7 reads `expose`, not `env`: a `CYPRESS_grepTags` variable is silently ignored.)
 - **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live:spec` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
 - **An empty tier warns, it does not fail.** If no spec carries the tag, the run ends with a warning annotation ("No spec carries @smoke") rather than Cypress's "no spec files were found". Until the first `@smoke` journey lands, the push tier therefore runs nothing: it is green and says so.
 - **By hand**, `E2E_GREP_TAGS=@smoke npm run test:e2e:live` runs the smoke tier locally.
+
+### The antibot run
+
+A backend with a human-challenge provider asks every signup and login to solve it, so the plain specs could not get in. The specs that need the provider are named `<name>.antibot.cy.ts`, are kept out of the functional run (`ANTIBOT_SPEC_GLOBS`), and run against their own backend:
+
+- **Demo:** `npm run test:e2e` adds one more shard, booted with `NODE_ANTIBOT_PROVIDER=altcha`, a fixed secret and a low cost (`scripts/e2e/antibot-backend.ts`). `npm run test:e2e:antibot` runs the same specs by hand.
+- **Live, nightly:** the matrix gets an `antibot` entry. Its backend boots with the same three variables, and `print-live-shard.ts antibot` prints its specs. A unit test holds the workflow's values equal to the constant.
+
+`tests/e2e/specs/harness.antibot.cy.ts` proves the provider really is on, so a mis-wired run cannot pass by testing the provider-off branch.
 
 ## Why the push tier is only a subset
 
@@ -118,6 +127,7 @@ export NODE_PSEUDONYM_KEY=any-throwaway-value
 export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
 export NODE_FRONTEND_URL=http://localhost:8085
 export NODE_WEBHOOK_DEMO_SINK_URL=http://127.0.0.1:3070   # the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
+export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
 
 # Mail into Mailpit. `e2e:serve` refuses any SMTP host but localhost, 127.0.0.1, ::1 or mailpit,
 # so a live run cannot send real mail. NODE_MAIL_TRANSPORT=log sends nothing at all, but then

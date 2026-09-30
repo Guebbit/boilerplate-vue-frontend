@@ -115,6 +115,10 @@ reconciled against a manifest field here. See
 | `tests/unit/ui/list-pagination.spec.ts`                  | Page maths and the events a parent listens for.                                                                                                             | [UI Kit](./src-ui.md)                             |
 | `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`      | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md)    |
 | `tests/unit/scripts/demo/demo-remove-tests.spec.ts`      | `demo:remove` deletes a spec by its `requires-module` header or an import of a removed module, keeps the rest, and the header check can fail.               | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/device-session.spec.ts`          | A second device keeps its own refresh cookie, rotates its token on a refresh, and answers a refused call as data.                                           | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/payment-webhook.spec.ts`         | A payment event is signed as `t=…,v1=<HMAC of "<t>.<body>">` over the exact bytes sent, with the demo secret unless the environment names one.              | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/webhook-sink.spec.ts`            | The sink records what arrives, checks the Standard Webhooks signature, and refuses a port that is taken.                                                    | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/antibot-backend.spec.ts`         | The antibot backend's environment is altcha with a secret and a low cost, and the live workflow boots its matrix entry with the same values.                | [Live E2E](../tools/live-e2e.md#the-antibot-run)  |
 | `tests/unit/scripts/e2e/step-prefix.spec.ts`             | A failure message gets the `[step: …]` line once, and not before a step starts.                                                                             | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/pairing/spec-identity.spec.ts`       | The cross-repo shared-file list, and that this checkout matches the sibling.                                                                                | [Contracts](./contracts.md)                       |
 | `tests/unit/scripts/pairing/paired-backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong.                                                                        | [Scripts & Hooks](./scripts.md)                   |
@@ -122,17 +126,18 @@ reconciled against a manifest field here. See
 
 ## `tests/e2e/` — a real browser against a real backend
 
-| File                               | What it guarantees                                                                                                    | Read next                                                  |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `tests/e2e/specs/storefront.cy.ts` | Browsing the catalogue: listing, search, detail.                                                                      | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/commerce.cy.ts`   | Cart and checkout against real API responses.                                                                         | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/journey.cy.ts`    | The full visitor journey end to end, the one spec that crosses every domain.                                          | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/locale.cy.ts`     | Switching language re-enters the route and the copy follows.                                                          | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/uploads.cy.ts`    | The multipart image path, including a file the API must refuse.                                                       | [Security](../tools/security.md)                           |
-| `tests/e2e/specs/resilience.cy.ts` | What the app does when the API is slow, unreachable, or answers an error.                                             | [Observability](../tools/observability.md)                 |
-| `tests/e2e/specs/a11y.cy.ts`       | The accessibility sweep over every reachable route.                                                                   | [Accessibility Testing](../tools/accessibility-testing.md) |
-| `tests/e2e/specs/harness.cy.ts`    | The journey harness: `cy.travel` moves the demo clock, and the four persona accounts sign in as their state promises. | [Journeys](#journeys--stories-that-cross-modules)          |
-| `tests/e2e/visual/visual.cy.ts`    | The visual-regression run: each baseline screenshot compared pixel-wise.                                              | [Visual Regression](../tools/visual-regression.md)         |
+| File                                    | What it guarantees                                                                                                                                                                                                | Read next                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `tests/e2e/specs/storefront.cy.ts`      | Browsing the catalogue: listing, search, detail.                                                                                                                                                                  | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/commerce.cy.ts`        | Cart and checkout against real API responses.                                                                                                                                                                     | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/journey.cy.ts`         | The full visitor journey end to end, the one spec that crosses every domain.                                                                                                                                      | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/locale.cy.ts`          | Switching language re-enters the route and the copy follows.                                                                                                                                                      | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/uploads.cy.ts`         | The multipart image path, including a file the API must refuse.                                                                                                                                                   | [Security](../tools/security.md)                           |
+| `tests/e2e/specs/resilience.cy.ts`      | What the app does when the API is slow, unreachable, or answers an error.                                                                                                                                         | [Observability](../tools/observability.md)                 |
+| `tests/e2e/specs/a11y.cy.ts`            | The accessibility sweep over every reachable route.                                                                                                                                                               | [Accessibility Testing](../tools/accessibility-testing.md) |
+| `tests/e2e/specs/harness.cy.ts`         | The journey harness: the demo clock, the persona and staff accounts, a second device, a signed payment webhook, the webhook sink, the job lever and the browser helpers each do what a journey leans on them for. | [Journeys](#journeys--stories-that-cross-modules)          |
+| `tests/e2e/specs/harness.antibot.cy.ts` | The antibot run's backend really has the altcha provider on and serves its challenge.                                                                                                                             | [Live E2E](../tools/live-e2e.md#the-antibot-run)           |
+| `tests/e2e/visual/visual.cy.ts`         | The visual-regression run: each baseline screenshot compared pixel-wise.                                                                                                                                          | [Visual Regression](../tools/visual-regression.md)         |
 
 | Pattern                                | What it is                                                                                                                                                                                   | Read next                                          |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -164,8 +169,35 @@ flowchart LR
   clock does not move. It runs no job: trigger the reaction through its own door (the reservation
   sweep is `POST /inventory/reservations/sweep`). Open a time journey with `cy.skipUnlessDemo()`.
   A jump beyond 7 days ends the session — log in again.
-- **Personas** are `E2ERole`s beside the four staff roles: `unverified`, `twoFactor` (with
+- **Personas** are `E2ERole`s beside the four seeded roles: `unverified`, `twoFactor` (with
   `backupCodes`), `pendingEmail`, `banned`. Their state is seeded, so a journey starts in it.
+- **Staff** are `manager`, `warehouse`, `support` (one shop role each) and `operator` (a platform
+  role only, with no shop membership). Their passwords are the backend's `NODE_SEED_<NAME>_PASSWORD`.
+
+```mermaid
+flowchart LR
+    S["journey spec"] -->|"loginDevice(role)"| D["second device<br/>own token + refresh cookie"]
+    S -->|"postPaymentWebhook(event)"| P["signed POST /payments/webhook"]
+    S -->|"webhookSink.requests()"| W["listener Cypress hosts<br/>(demo profile)"]
+    S -->|"POST /__test/jobs/reap-orders"| J["job lever"]
+    S -->|"cy.grantClipboard() · cy.stubWindowOpen()"| B["browser helpers"]
+```
+
+- **`loginDevice(role)`** signs in as a second device, server-side, so the page's own session is
+  untouched. Keep the returned device and hand it to `refreshDevice(device)` and
+  `requestAsDevice(device, method, path)`. A refused refresh (401) is an answer, not a failure: it is
+  what a journey asserts after a logout-everywhere or a password reset.
+- **`postPaymentWebhook(event, timestamp?)`** signs a provider event with the backend's
+  `NODE_PAYMENT_WEBHOOK_SECRET` (`E2E_PAYMENT_WEBHOOK_SECRET` on live) and posts it. An old
+  `timestamp` proves a stale delivery is refused.
+- **`webhookSink`** (demo only): `clear()` starts the listener and forgets, `requests()` reads what
+  arrived, each with `signatureValid` against the seeded subscription's known secret. Clear first,
+  then trigger the replay. On live the `webhook-tester` service plays this part.
+- **`cy.grantClipboard()`** lets the page read the clipboard (over the DevTools protocol, so a
+  Chromium-family browser); **`cy.stubWindowOpen()`** stubs `window.open` as `@windowOpen`. Call
+  either after `cy.visit()`.
+- **The antibot run.** A spec named `<name>.antibot.cy.ts` runs against a backend with the
+  human-challenge provider on, in its own shard — see [Live E2E](../tools/live-e2e.md#the-antibot-run).
 
 #### The journey catalogue
 
@@ -197,7 +229,8 @@ No assertions live here.
 | `tests/support/stub.ts`                             | The one sanctioned cast for a hand-built stub, and the reason double casts can be banned everywhere else.                                                                                                                                                                                                                      | [Repository Root](./root.md)                               |
 | `tests/support/e2e/e2e.ts`                          | Cypress's support entry point — what loads before every browser spec.                                                                                                                                                                                                                                                          | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/commands.ts`                     | The custom commands the specs are written in, including `cy.loginAs()`, `cy.restore()` — the latter branching on which backend profile is running — and the chrome navigation trio `cy.navigateTo(path)`, `cy.navigateViaMenu(menu, path)`, `cy.logout()`, which address the bar and its menus by `href` rather than by label. | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/support/e2e/journey.ts`                      | `cy.step()` and `cy.travel()` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                                                                                                                         | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/support/e2e/journey.ts`                      | `cy.step()`, `cy.travel()`, `cy.grantClipboard()` and `cy.stubWindowOpen()` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                                                                           | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/support/e2e/harness.ts`                      | Typed doors onto the Node-side tasks: `loginDevice`, `refreshDevice`, `requestAsDevice`, `postPaymentWebhook` and `webhookSink` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                       | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/a11y-sweep.ts`                   | The reusable accessibility pass a spec applies to a page.                                                                                                                                                                                                                                                                      | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/support/e2e/visual-sweep.ts`                 | The reusable screenshot-and-compare pass.                                                                                                                                                                                                                                                                                      | [Visual Regression](../tools/visual-regression.md)         |
 | `tests/support/e2e/visual-task.ts`                  | The Node-side task behind it — image comparison cannot run in the browser.                                                                                                                                                                                                                                                     | [Visual Regression](../tools/visual-regression.md)         |

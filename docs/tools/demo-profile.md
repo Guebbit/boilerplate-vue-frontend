@@ -34,6 +34,17 @@ What each concern maps to now:
 
 `cy.restore()` POSTs the shard's own `/__test/restore` before every spec — a replay of a copy the backend process built at boot, so it costs milliseconds — and then re-reads `GET /__test/scenario`, which is where `cy.subjectId('order.paid')` and `seedAccount('admin')` get their answers. `cy.emailTo(address)` reads the outbox — or, against the live profile, Mailpit (see [Live E2E](./live-e2e.md)). Specs that need the full stack open with `cy.skipUnlessLive()`; specs that read mail open with `cy.skipUnlessMailbox()`, which skips only a live run with no Mailpit to read; `cy.skipUnlessDemo()` is left for what only the demo has, like the fake OAuth provider.
 
+### What a journey can do beyond restoring
+
+Four more doors, for the journeys (see [Tests — Journeys](../reference/tests.md#journeys--stories-that-cross-modules)):
+
+| Need                    | How                                                                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run a background job    | `POST /__test/jobs/reap-orders` (the backend's job lever), after `cy.travel(ms)` moved the clock                                                   |
+| See a webhook arrive    | The Cypress process hosts a receiver; each demo backend boots with `NODE_WEBHOOK_DEMO_SINK_URL` pointing at it, so a replayed delivery lands there |
+| Sign a provider webhook | The backend's demo secret is known, so a `cy.task` signs `POST /payments/webhook` itself                                                           |
+| Test the challenge      | A shard booted with the altcha provider on — see [Live E2E — the antibot run](./live-e2e.md#the-antibot-run)                                       |
+
 ## Working without any backend
 
 There is no offline mock of the app any more, deliberately: a stateless imitation renders pages whose every flow is dead, which demonstrates less than it appears to. The demo profile _is_ the no-infrastructure path — it needs Node and the sibling checkout, nothing else.
