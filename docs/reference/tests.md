@@ -239,6 +239,7 @@ how a reader finds the story without opening the file.
 | CU19 | The customer checks out by bank transfer, then pays the same order by card: the transfer panel goes, the order says card (JB8), and the admin searching the RF reference finds a paid order with no offline form                                                  | `user`, then `admin`                 | nightly  | `cu19-transfer-order-paid-by-card.cy.ts` |
 | CU4  | A slow-settling card leaves the order honestly waiting (no invoice, no card form, one Finish button) until Finish reads the provider; and money that lands after the customer cancelled is refunded, never kept                                                   | `user`                               | nightly  | `cu4-card-slow-to-settle.cy.ts`          |
 | OP8  | The warehouse records a delivery and writes off damaged units, narrows the board to low stock, and reads each movement back in the ledger with its reason and note; the count follows each step as staff see it (guests see a cached one, OP21)                   | `warehouse`                          | nightly  | `op8-day-in-the-stock-room.cy.ts`        |
+| OP9  | A customer checks out by card and never pays; the demo clock passes the hold and the admin presses the sweep: the order is cancelled, its units are back, the ledger says expire, the customer is mailed and the pay form is gone (demo only)                     | `user`, then `admin`                 | nightly  | `op9-expired-holds-are-swept.cy.ts`      |
 
 ## `tests/support/` — the harness
 
