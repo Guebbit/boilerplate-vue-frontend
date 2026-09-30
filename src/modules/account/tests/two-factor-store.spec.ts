@@ -352,6 +352,52 @@ describe('the login-time challenge', () => {
         });
     });
 
+    it('submitLoginCode carries a ticked remember-me box to the API as the medium tier', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(MFA_OUTCOME, true);
+        responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
+        responses['GET /account'] = orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        });
+
+        return store.submitLoginCode('123456').then(() => {
+            const last = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(
+                    (call) => (call[0] as { url: string }).url === '/account/login/2fa'
+                )![0] as { data: Record<string, unknown> };
+            expect(contractRequest(schemas.LoginTwoFactorBody, last.data)).toEqual({
+                challenge: 'claim-check-token',
+                code: '123456',
+                remember: 'medium'
+            });
+        });
+    });
+
+    it('submitLoginCode sends no tier when the box was unticked', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(MFA_OUTCOME, false);
+        responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
+        responses['GET /account'] = orvalEnvelope({
+            id: 'u1',
+            username: 'ada',
+            email: 'ada@example.com',
+            role: 'customer'
+        });
+
+        return store.submitLoginCode('123456').then(() => {
+            const last = vi
+                .mocked(orvalMutator)
+                .mock.calls.find(
+                    (call) => (call[0] as { url: string }).url === '/account/login/2fa'
+                )![0] as { data: Record<string, unknown> };
+            expect(last.data.remember).toBeUndefined();
+        });
+    });
+
     it('a backup code takes the same path — the server tells the two apart, not this store', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);

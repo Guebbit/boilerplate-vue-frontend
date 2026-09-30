@@ -12,7 +12,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
-    LoginRequestRemember,
+    RememberTier,
     signup as apiSignup,
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset
@@ -74,9 +74,9 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @param email - Account email.
      * @param password - Plain-text password, sent over the wire only.
      * @param remember - The "remember me" checkbox. One checkbox, one tier: thirty days is what
-     *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the refresh cookie
-     *  the API sets lives only as long as an access token. Dropped by the backend on the 2FA path
-     *  regardless of this value — see `TwoFactorChallenge.vue`.
+     *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the API sets a
+     *  browser-session cookie (gone when the browser closes). On the 2FA path the choice rides
+     *  along to the second step — see `useTwoFactorStore().submitLoginCode`.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` — `Login.vue` attaches
      *  a solved `HumanCheck` token through it on the retry after an `ANTIBOT_VERIFICATION_FAILED`
      *  refusal (rung 3 only engages once the per-identity failure budget is mostly spent).
@@ -96,7 +96,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                 {
                     email,
                     password,
-                    remember: remember ? LoginRequestRemember.medium : undefined
+                    remember: remember ? RememberTier.medium : undefined
                 },
                 options
             ).then((data) => {

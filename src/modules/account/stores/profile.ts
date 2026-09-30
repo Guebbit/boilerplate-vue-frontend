@@ -357,8 +357,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *
      * The API revokes every OTHER session on success and answers with a fresh access token for
      * THIS one (plus fresh session cookies), so the token is adopted here the way login adopts
-     * its own — without it, this session would be living on borrowed time. `remember` is omitted:
-     * a password change is not the place to rewrite the visitor's remember-me choice.
+     * its own — without it, this session would be living on borrowed time. No `remember` is sent:
+     * the API keeps the session's persistence itself, and a password change is not the place to
+     * rewrite the visitor's remember-me choice.
      *
      * @param currentPassword - The credential being replaced.
      * @param password - The new password.
