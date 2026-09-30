@@ -3825,6 +3825,11 @@ export type NotFoundResponse = ErrorResponse;
 export type ConflictResponse = ErrorResponse;
 
 /**
+ * The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`.
+ */
+export type PreconditionFailedResponse = ErrorResponse;
+
+/**
  * The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
  */
 export type PayloadTooLargeResponse = ErrorResponse;
@@ -3864,6 +3869,11 @@ export type AntibotChallengeTokenHeaderParameter = string;
  * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
  */
 export type IdempotencyKeyHeaderParameter = string;
+
+/**
+ * The `ETag` this client last read for the resource (RFC 9110 §13.1.1), quoted as received. The write runs only if the stored resource is still at that version; otherwise it answers 412 `PRECONDITION_FAILED` and changes nothing. `*` means "any version, as long as it exists". Omitting the header keeps the old behaviour: the write is unconditional, last writer wins.
+ */
+export type IfMatchHeaderParameter = string;
 
 export type IdParamParameter = Id[];
 

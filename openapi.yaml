@@ -1267,6 +1267,10 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: antibot
   /account:
+    x-versioned:
+      - get
+      - put
+      - patch
     get:
       tags:
         - Account
@@ -1282,6 +1286,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1313,12 +1320,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1331,6 +1343,8 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
       x-module: account
     patch:
       tags:
@@ -1359,12 +1373,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1377,6 +1396,8 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
       x-module: account
     delete:
       tags:
@@ -2789,6 +2810,11 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
+      - delete
     get:
       tags:
         - Users
@@ -2806,6 +2832,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2831,6 +2860,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -2847,6 +2877,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2857,6 +2890,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2880,6 +2915,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -2899,6 +2935,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2909,6 +2948,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2933,6 +2974,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: false
         content:
@@ -2950,6 +2992,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2999,6 +3043,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/hard:
+    x-versioned:
+      - delete
     delete:
       tags:
         - Users
@@ -3010,6 +3056,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -3019,6 +3066,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -3527,6 +3576,11 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
   /products/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
+      - delete
     get:
       tags:
         - Products
@@ -3542,6 +3596,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -3571,6 +3628,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -3587,6 +3645,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3597,6 +3658,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -3637,6 +3700,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -3656,6 +3720,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3666,6 +3733,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -3690,6 +3759,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: false
         content:
@@ -3707,6 +3777,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -3721,6 +3793,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
   /products/{id}/admin:
+    x-versioned:
+      - get
     get:
       tags:
         - Products
@@ -3738,6 +3812,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductAdminEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3789,6 +3866,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
   /products/{id}/hard:
+    x-versioned:
+      - delete
     delete:
       tags:
         - Products
@@ -3800,6 +3879,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -3809,6 +3889,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -4563,6 +4645,11 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
+      - delete
     get:
       tags:
         - Orders
@@ -4580,6 +4667,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrderEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4605,6 +4695,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -4618,6 +4709,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrderEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4626,6 +4720,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4649,6 +4745,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -4665,6 +4762,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrderEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4673,6 +4773,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4697,6 +4799,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: false
         content:
@@ -4716,6 +4819,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4765,6 +4870,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/hard:
+    x-versioned:
+      - delete
     delete:
       tags:
         - Orders
@@ -4776,6 +4883,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -4787,6 +4895,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -6695,6 +6805,15 @@ components:
         pattern: ^[A-Za-z0-9_-]+$
       description: |
         An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+    IfMatchHeader:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 200
+      description: |
+        The `ETag` this client last read for the resource (RFC 9110 §13.1.1), quoted as received. The write runs only if the stored resource is still at that version; otherwise it answers 412 `PRECONDITION_FAILED` and changes nothing. `*` means "any version, as long as it exists". Omitting the header keeps the old behaviour: the write is unconditional, last writer wins.
     IdParam:
       name: id
       in: query
@@ -6801,6 +6920,11 @@ components:
       description: Where the created resource lives, as a path on this API (RFC 9110 §9.3.3). A create that answers 201 always sends it, so a client follows the link instead of composing one. Some created things have no `GET` of their own (a feedback ticket, a payment, an API key) — the link is still their address for `PUT`, `PATCH` and `DELETE`.
       schema:
         type: string
+    ETag:
+      required: true
+      description: "The resource's current version as a strong entity-tag (RFC 9110 §8.8.3). Send it back as `If-Match` on `PUT`, `PATCH` or `DELETE` to refuse the write if someone else changed the resource in between. Opaque: compare it, never parse it. It validates writes only — a read never answers `304` from it."
+      schema:
+        type: string
   responses:
     Success:
       description: Success
@@ -6834,6 +6958,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
       description: The request conflicts with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PreconditionFailed:
+      description: "The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`."
       content:
         application/json:
           schema:
@@ -13393,6 +13523,9 @@ x-error-codes:
   PAYMENT_REFUND_EXCEEDS_REMAINING:
     status: 422
     description: The refund asks for more than the payment still has left to give back.
+  PRECONDITION_FAILED:
+    status: 412
+    description: The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend.
   RATE_LIMITED:
     status: 429
     description: The caller exceeded a rate-limit budget. Carries a `Retry-After` hint.
