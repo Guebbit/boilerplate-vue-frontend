@@ -29,7 +29,7 @@ describe('The customer journey', () => {
         // ── Guest: browse via the nav, meet the wall ────────────────────────────────
         cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
-        cy.get('#products-list-page tbody tr').should('have.length', 1);
+        cy.get('[data-test=product-card]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
 
         cy.get('#product-target').should('exist');
@@ -107,11 +107,8 @@ describe('The customer journey', () => {
         // ── The shelf recovered — same product, same count as the journey began with ─
         // The walk's toasts stack over the table's action column until dismissed — close them
         // the way a person does before clicking through the list again.
-        // One multi-click command rather than `.each` over a snapshot: a toast that times out
-        // between the snapshot and its click leaves `.each` holding a detached element.
-        cy.get('body').then(($body) => {
-            if ($body.find('.v-alert__close button').length > 0)
-                cy.get('.v-alert__close button').click({ multiple: true });
+        cy.get('.v-alert').each((alert) => {
+            cy.wrap(alert).find('.v-alert__close button').click();
         });
         cy.get('.v-alert').should('not.exist');
         cy.navigateTo('/en/products');

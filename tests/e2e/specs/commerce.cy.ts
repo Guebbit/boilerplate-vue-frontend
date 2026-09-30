@@ -51,7 +51,7 @@ describe('Commerce', () => {
 
         // ── Checkout lands straight on the new order's own page ─────────────────────
         cy.get('#order-target').should('exist');
-        cy.get('[data-test=order-shipping]').should('contain.text', 'express');
+        cy.get('[data-test=order-shipping]').should('contain.text', 'Express');
 
         // ── Pay: the decline first, then the bank challenge, then a method that works ─
         cy.get('[data-test=payment-panel]').should('exist');

@@ -33,7 +33,7 @@ describe('the catalogue renders whatever the dataset holds', () => {
     it('renders the public list without sideways scroll', () => {
         cy.visit('/en/products');
         cy.get('#products-list-page').should('exist');
-        cy.get('[data-test=list-row]').should('have.length.at.least', 1);
+        cy.get('[data-test=product-card]').should('have.length.at.least', 1);
         assertNoHorizontalOverflow();
     });
 
