@@ -33,6 +33,9 @@
         "filter-deleted-only": "Solo eliminati",
         "deleted": "Eliminato"
     },
+    "session-expired": {
+        "message": "La tua sessione è scaduta. Accedi di nuovo."
+    },
     "reauth-dialog": {
         "title": "Confermaci che sei tu",
         "intro": "Questa azione richiede una verifica recente della password. Inserisci la tua password per continuare.",

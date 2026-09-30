@@ -54,6 +54,7 @@ describe('FR8 · My session expired while I was typing', () => {
         cy.step('nothing typed was lost, and I was never sent to login');
         cy.get('[data-test=address-dialog]').should('not.exist');
         cy.contains('[data-test=address-item]', STREET).should('exist');
+        cy.contains('Your session has expired').should('not.exist');
         cy.url().should('include', '/profile');
     });
 });

@@ -6,13 +6,15 @@
  * the dialog hosts) are stubbed: none of that is this file's own behaviour, already proven by
  * their own specs.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 
 /** A trivial leaf component, so `<RouterView />` has something real to render. */
@@ -107,5 +109,37 @@ describe('LayoutDefault — the matched view', () => {
     it('does not center an ordinary route', () =>
         router.push('/plain').then(() => {
             expect(mountLayout().html()).not.toContain('min-h-[60vh]');
+        }));
+});
+
+describe('LayoutDefault — a session that died on its own', () => {
+    it('says so and re-enters the current route through the guard, forced past the duplicate check', () =>
+        router.push('/plain?tab=1').then(() => {
+            const replace = vi.spyOn(router, 'replace');
+            mountLayout();
+
+            useSessionStore().expiredSignal += 1;
+
+            return flushPromises().then(() => {
+                expect(useNotificationsStore().messages.map((entry) => entry.message)).toContain(
+                    'Your session has expired. Please sign in again.'
+                );
+                expect(replace).toHaveBeenCalledWith(
+                    expect.objectContaining({ path: '/plain', query: { tab: '1' }, force: true })
+                );
+            });
+        }));
+
+    it('does nothing for an explicit logout, which never bumps the signal', () =>
+        router.push('/plain').then(() => {
+            const replace = vi.spyOn(router, 'replace');
+            replace.mockClear();
+            mountLayout();
+
+            useSessionStore().clearSession();
+
+            return flushPromises().then(() => {
+                expect(replace).not.toHaveBeenCalled();
+            });
         }));
 });

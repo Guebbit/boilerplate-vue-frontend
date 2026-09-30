@@ -33,6 +33,9 @@
         "filter-deleted-only": "Deleted only",
         "deleted": "Deleted"
     },
+    "session-expired": {
+        "message": "Your session has expired. Please sign in again."
+    },
     "reauth-dialog": {
         "title": "Confirm it's you",
         "intro": "This action needs a recent password check. Enter your password to continue.",

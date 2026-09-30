@@ -72,10 +72,11 @@ describe('AC4 · My laptop was stolen', () => {
             cy.navigateViaMenu('account', '/en/returns');
             cy.wait('@refresh').its('response.statusCode').should('equal', 401);
 
-            cy.step('and the next full page load lands on login');
-            cy.visit('/en/profile');
-            cy.url().should('include', '/login');
+            cy.step('the tab says so and sends me to login, remembering where I was going');
+            cy.contains('Your session has expired').should('exist');
             cy.get('#login-page').should('exist');
+            cy.url().should('include', '/login').and('include', 'continue');
+            cy.get('[data-test=user-menu]').should('not.exist');
         });
     });
 

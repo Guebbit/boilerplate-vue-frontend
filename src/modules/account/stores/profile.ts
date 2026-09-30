@@ -5,7 +5,7 @@
  * account deletion each reuse the shared `selectedIdentifier`/`fetchTarget`/`updateTarget`
  * primitives rather than duplicating request/cache logic per action.
  */
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -403,6 +403,15 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 session.isAuth ? fetchProfile(true).then(() => undefined) : undefined
             )
         );
+
+    // A session that died on its own leaves the last person's record in the cache, and the shell
+    // is about to re-run the route guard: drop it so nothing of theirs can flash.
+    watch(
+        () => session.expiredSignal,
+        () => {
+            resetAll();
+        }
+    );
 
     /**
      * Drops the cached record and the session it belongs to. Used once the account itself is
