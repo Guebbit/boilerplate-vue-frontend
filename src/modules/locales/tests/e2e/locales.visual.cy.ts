@@ -17,7 +17,13 @@ sweepVisual(
         // The board's header counts arrive with the LAST language's baselines, well after the
         // first row: a row-ready baseline photographs the counts half-computed.
         ['locales-dictionary', '/en/locales/dictionary', '[data-test=dictionary-missing-count]'],
-        ['locale-entries', '/en/locales/it', '[data-test=list-row]'],
+        {
+            name: 'locale-entries',
+            route: '/en/locales/it',
+            readySelector: '[data-test=list-row]',
+            // "Updated" is the moment an entry was last written, which is this run's boot time.
+            redact: ['#locale-entries-page tbody td:nth-child(4)']
+        },
         {
             // The generic translation door has no static path — it needs a real product's id —
             // so `route`/`readySelector` only get the sweep past its own list-row wait; `prepare`
