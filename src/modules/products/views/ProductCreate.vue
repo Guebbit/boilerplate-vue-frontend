@@ -12,11 +12,11 @@ export default {
  * store's multipart-aware `createProduct`. See `translation-tab-errors.ts` for how a validation
  * failure reaches the right tab's badge.
  */
-import { ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import {
     productsSchema,
@@ -24,30 +24,25 @@ import {
     productsOnHandDefault
 } from '@/modules/products/schemas.ts';
 import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
-import {
-    translationTabErrorCountsFromZodError,
-    translationTabErrorCountsFromServerError
-} from '@/modules/products/composables/translation-tab-errors.ts';
-import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
+import { useTranslatedEntityForm } from '@/modules/products/composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { toCreateTranslations } from '@/modules/products/composables/translations-body.ts';
+import { toRequestBody } from '@/infrastructure/utils/forms.ts';
+import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
+import { loadShopCurrency, shopCurrency } from '@/infrastructure/shop-currency.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
 /**
- * Localized dictionary helper, with the active locale reference used to revalidate the form.
- *
- * The APP's interface language, unrelated to which language TAB is open below — an editor writing
- * Italian product copy while using an English admin is the normal case.
+ * Localized dictionary helper.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
  * Toast helper for submission failures.
@@ -105,119 +100,6 @@ const createSchema = productsSchema.pick({ price: true, translations: true }).ex
 const card = ref<InstanceType<typeof FormCard>>();
 
 /**
- * Toolkit form state and submit handler. `price` starts at 0 — the contract's own minimum — so
- * the field opens already valid instead of an error waiting to be revealed.
- */
-const {
-    form,
-    formErrors,
-    showFormErrors: showErrors,
-    isSubmitting,
-    handleSubmit,
-    applyServerErrors
-} = useStructureFormValidation<ProductCreateForm>(
-    {
-        price: 0,
-        active: true,
-        requiresShipping: true,
-        noWithdrawal: false,
-        onHand: productsOnHandDefault,
-        translations: {}
-    },
-    createSchema,
-    {
-        // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
-        // failed submit actually needs it, not while the card is still mounting.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
-        formElement: () => card.value?.formElement,
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
-
-/**
- * Which language tabs are open, fallback locale first — derived from `form.translations` itself
- * (every present, non-`null` key) rather than tracked separately, so a `resetForm()` cannot leave
- * the tab bar out of sync with the data it is supposed to reflect.
- */
-const openTags = useTranslationTabOrder(() => form.value.translations, fallbackLocale);
-
-/**
- * The tab currently shown.
- */
-const activeTab = ref<string>();
-
-/**
- * Seeds the fallback locale's tab once it is known, and defaults the active tab to the first one
- * open. The fallback slot is never removed on a create — a product with nothing to fall back to
- * cannot be created at all — so this only ever ADDS the key, never re-checks it later.
- */
-watch(
-    fallbackLocale,
-    (fallback) => {
-        if (!fallback || fallback in form.value.translations) return;
-        form.value.translations = {
-            ...form.value.translations,
-            [fallback]: { title: '', description: '' }
-        };
-        activeTab.value ??= fallback;
-    },
-    { immediate: true }
-);
-
-/**
- * Opens a new, empty language tab.
- *
- * @param tag - The locale to open.
- */
-const handleAddLocale = (tag: string) => {
-    form.value.translations = { ...form.value.translations, [tag]: { title: '', description: '' } };
-    activeTab.value = tag;
-};
-
-/**
- * Drops a language tab. A create has nothing stored server-side yet, so this simply removes the
- * key — unlike an edit's removal, it never becomes a `null` slot.
- *
- * @param tag - The locale to close. The fallback tag is never offered this action (see
- *  `TranslationTabs`), so it is never reached here either.
- */
-const handleRemoveLocale = (tag: string) => {
-    const { [tag]: _removed, ...rest } = form.value.translations;
-    form.value.translations = rest;
-    if (activeTab.value === tag) activeTab.value = openTags.value[0];
-};
-
-/**
- * Per-locale error counts for the tab badges — computed independently of
- * `useStructureFormValidation`'s own `formErrors`, which collapses every `translations.*` issue
- * into one flat bucket (see `translation-tab-errors.ts`). Only populated once a submit has
- * revealed errors, so a pristine form shows no badges.
- */
-const tabErrorCounts = ref<Record<string, number>>({});
-
-watch(
-    [showErrors, () => form.value],
-    ([showing]) => {
-        if (!showing) {
-            tabErrorCounts.value = {};
-            return;
-        }
-        const result = createSchema.safeParse(form.value);
-        tabErrorCounts.value = result.success
-            ? {}
-            : translationTabErrorCountsFromZodError(result.error);
-    },
-    { deep: true }
-);
-
-/**
- * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
- */
-const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
-
-/**
  * This form's own blocked state — a create that failed blocks the visitor from proceeding past
  * this one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a
  * toast — see docs/theory/request-flow.md.
@@ -229,6 +111,64 @@ const {
 } = useBlockingError();
 
 /**
+ * Toolkit form state, language tabs and the failure tail, shared with the edit form. `price`
+ * starts at 0 — the contract's own minimum — so the field opens already valid instead of an error
+ * waiting to be revealed. The fallback locale's tab is seeded once it is known: a product with
+ * nothing to fall back to cannot be created at all.
+ */
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit,
+    openTags,
+    activeTab,
+    tabErrorCounts,
+    handleAddLocale,
+    handleRemoveLocale,
+    handleSubmitFailure
+} = useTranslatedEntityForm<ProductCreateForm>({
+    initial: {
+        price: 0,
+        active: true,
+        requiresShipping: true,
+        noWithdrawal: false,
+        onHand: productsOnHandDefault,
+        translations: {}
+    },
+    schema: createSchema,
+    // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
+    // failed submit actually needs it, not while the card is still mounting.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+    formElement: () => card.value?.formElement,
+    fallbackLocale,
+    seedFallback: true,
+    reportSubmitError
+});
+
+/**
+ * The shop's currency decides how many decimals the price input takes: a JPY shop has no cents to
+ * type, a KWD shop has three. Asked here as well as at boot, so a failed boot read is retried.
+ */
+void loadShopCurrency();
+
+/**
+ * Decimal places the price field accepts — the shop currency's own minor unit.
+ */
+const pricePrecision = computed(() => currencyDigits(shopCurrency.value));
+
+/**
+ * Smallest increment the price input's stepper buttons move by, matching {@link pricePrecision}.
+ */
+const priceStep = computed(() => 10 ** -pricePrecision.value);
+
+/**
+ * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
+ */
+const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
+
+/**
  * Validates the form and creates the product.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
@@ -238,38 +178,31 @@ const {
  */
 const submitForm = () => {
     clearSubmitError();
-    return handleSubmit(() =>
-        trackUpload(form.value.imageUpload, (options) =>
-            createProduct(
-                {
-                    price: form.value.price!,
-                    active: form.value.active,
-                    requiresShipping: form.value.requiresShipping,
-                    noWithdrawal: form.value.noWithdrawal,
-                    weight: form.value.weight,
-                    taxClass: form.value.taxClass,
-                    onHand: form.value.onHand,
-                    categories: form.value.categories,
-                    tags: form.value.tags,
-                    translations: toCreateTranslations(form.value.translations),
-                    imageUpload: form.value.imageUpload
-                },
-                { requestOptions: options }
-            )
-        ).then((newProduct) => {
-            if (!newProduct) return;
-            addMessage(t('product-create-page.success-create'));
-            // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
-            void router.push(
-                routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
-            );
+    return handleSubmit(() => {
+        const { imageUpload, translations, price } = form.value;
+        if (price === undefined) return;
+        // No baseline: a create sends everything the form holds. What the helper adds is the
+        // spelling — a cleared weight or category list is omitted rather than sent empty — and a
+        // blank description is dropped from each locale (`toCreateTranslations`).
+        return toRequestBody('CreateProductBody', {
+            ...form.value,
+            translations: toCreateTranslations(translations),
+            imageUpload: undefined
         })
-    ).catch((error) => {
-        const serverTabErrors = translationTabErrorCountsFromServerError(error);
-        if (Object.keys(serverTabErrors).length > 0)
-            tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
-    });
+            .then((body) =>
+                trackUpload(imageUpload, (options) =>
+                    createProduct({ ...body, imageUpload }, { requestOptions: options })
+                )
+            )
+            .then((newProduct) => {
+                if (!newProduct) return;
+                addMessage(t('product-create-page.success-create'));
+                // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+                void router.push(
+                    routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
+                );
+            });
+    }).catch(handleSubmitFailure);
 };
 </script>
 
@@ -343,9 +276,10 @@ const submitForm = () => {
                 v-model="form.price"
                 :label="t('product-create-page.label-price')"
                 :min="0"
-                :step="0.01"
-                :precision="2"
+                :step="priceStep"
+                :precision="pricePrecision"
                 control-variant="stacked"
+                :suffix="shopCurrency"
                 :error-messages="showErrors ? formErrors.price : []"
                 data-test="product-price-field"
                 class="mb-2 mt-4"

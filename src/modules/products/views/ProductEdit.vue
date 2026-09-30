@@ -17,15 +17,11 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
-import {
-    translationTabErrorCountsFromZodError,
-    translationTabErrorCountsFromServerError
-} from '@/modules/products/composables/translation-tab-errors.ts';
-import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
+import { useTranslatedEntityForm } from '@/modules/products/composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
@@ -44,21 +40,21 @@ import {
     formatFlag,
     currencyDigits
 } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
+import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { toPatchTranslations } from '@/modules/products/composables/translations-body.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
 /**
- * Localized dictionary helper, with the active locale reference used to revalidate the form.
+ * Localized dictionary helper.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
  * Toast helper for submission failures.
@@ -132,7 +128,9 @@ const loadAdminProduct = (productId: string) => {
  * its third decimal through a 2-decimal input, and a JPY product would accept cents `toMinorUnits`
  * then silently rounds away server-side.
  */
-const pricePrecision = computed(() => currencyDigits(adminProduct.value?.currency ?? 'EUR'));
+const pricePrecision = computed(() =>
+    currencyDigits(adminProduct.value?.currency ?? shopCurrency.value)
+);
 
 /**
  * Smallest increment the price input's stepper buttons move by, matching {@link pricePrecision}.
@@ -169,10 +167,40 @@ const editSchema = productsSchema.pick({ price: true, translations: true }).exte
 });
 
 /**
- * Toolkit form state and submit handler.
+ * The `<form>` element, for scroll-to-first-invalid.
  */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * This form's own blocked state — a save that failed blocks the visitor from proceeding past this
+ * one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a toast
+ * — see docs/theory/request-flow.md.
+ */
+const {
+    message: submitError,
+    report: reportSubmitError,
+    warn: warnSubmit,
+    clear: clearSubmitError
+} = useBlockingError();
+
+/**
+ * The save came back 412: someone else edited this product since it was loaded. The warning shows
+ * through {@link submitError}; "reload latest" re-reads the admin record, which re-hydrates the
+ * form and refreshes the `ETag` the next save sends (`infrastructure/http/etag.ts`).
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest,
+    clear: clearStale
+} = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
+    id ? loadAdminProduct(id) : Promise.resolve()
+);
+
+/**
+ * Toolkit form state, language tabs and the failure tail, shared with the create form. A tab
+ * removed from the fetched record goes out as `null`; one opened this session is just dropped.
+ */
 const {
     form,
     formErrors,
@@ -181,12 +209,20 @@ const {
     resetForm,
     handleSubmit,
     activateAutoHydrate,
-    applyServerErrors
-} = useStructureFormValidation<ProductEditForm>({ translations: {} }, editSchema, {
+    openTags,
+    activeTab,
+    tabErrorCounts,
+    handleAddLocale,
+    handleRemoveLocale,
+    handleSubmitFailure
+} = useTranslatedEntityForm<ProductEditForm>({
+    initial: { translations: {} },
+    schema: editSchema,
     formElement,
-    revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
+    fallbackLocale,
+    stored: () => adminProduct.value?.translations,
+    onStale: handleStaleSave,
+    reportSubmitError
 });
 
 /**
@@ -221,40 +257,6 @@ activateAutoHydrate(
 );
 
 /**
- * Which language tabs were present on the LAST loaded admin record — the ones whose removal must
- * send `null` rather than simply dropping the key (see `handleRemoveLocale`). A plain snapshot
- * rather than something derived from `form`: it has to stay fixed against the CURRENT form state
- * changing underneath it, or a removed-then-readded tab could no longer tell "existed on the
- * server" from "opened this session".
- */
-const originalTags = ref<string[]>([]);
-
-watch(adminProduct, (product) => {
-    if (product) originalTags.value = Object.keys(product.translations);
-});
-
-/**
- * Which language tabs are open, fallback locale first — derived from `form.translations` itself
- * (every present, non-`null` key) rather than tracked separately, so a `resetForm()` cannot leave
- * the tab bar out of sync with the data it is supposed to reflect.
- *
- * The fallback tag is prepended only once `form.translations` actually has an entry for it —
- * never manufactured here — which is what keeps this safe against `fetchActiveLocales()` (an
- * independent fetch) resolving before `loadAdminProduct()` does: a fallback with no entry yet
- * simply has no tab, rather than an active one whose `form.translations[tag]` is `undefined`.
- */
-const openTags = useTranslationTabOrder(() => form.value.translations, fallbackLocale);
-
-/**
- * The tab currently shown, defaulted to the first one open once the admin record has loaded.
- */
-const activeTab = ref<string>();
-
-watch(openTags, (tags) => {
-    activeTab.value ??= tags[0];
-});
-
-/**
  * Loads the admin record whenever the route's product id changes, and resets the open tab: a
  * route change while this view stays mounted (editing product A, then B) must not leave B's form
  * open on whichever tab A happened to be on.
@@ -269,66 +271,6 @@ watch(
 );
 
 /**
- * Opens a language tab — a genuinely new one starts blank, one removed earlier this session
- * (still carrying its original content in the admin record) comes back with that content rather
- * than blank, so undoing a removal costs nothing.
- *
- * @param tag - The locale to open.
- */
-const handleAddLocale = (tag: string) => {
-    const restored = adminProduct.value?.translations[tag];
-    form.value.translations = {
-        ...form.value.translations,
-        [tag]: restored ?? { title: '', description: '' }
-    };
-    activeTab.value = tag;
-};
-
-/**
- * Closes a language tab. One the admin record already had a row for is marked `null` — the
- * PATCH's delete signal, still riding in this same submit — rather than simply forgotten; one
- * opened only this session, never saved, is dropped outright, since there is nothing server-side
- * for a `null` to delete.
- *
- * @param tag - The locale to close. The fallback tag is never offered this action (see
- *  `TranslationTabs`), so it is never reached here either.
- */
-const handleRemoveLocale = (tag: string) => {
-    if (originalTags.value.includes(tag)) {
-        form.value.translations = { ...form.value.translations, [tag]: null };
-    } else {
-        const { [tag]: _removed, ...rest } = form.value.translations;
-        form.value.translations = rest;
-    }
-    // `openTags` is derived from `form.translations`, already mutated above, so it no longer
-    // lists `tag` by the time this reads it.
-    if (activeTab.value === tag) activeTab.value = openTags.value[0];
-};
-
-/**
- * Per-locale error counts for the tab badges — computed independently of
- * `useStructureFormValidation`'s own `formErrors`, which collapses every `translations.*` issue
- * into one flat bucket (see `translation-tab-errors.ts`). Only populated once a submit has
- * revealed errors.
- */
-const tabErrorCounts = ref<Record<string, number>>({});
-
-watch(
-    [showFormErrors, () => form.value],
-    ([showing]) => {
-        if (!showing) {
-            tabErrorCounts.value = {};
-            return;
-        }
-        const result = editSchema.safeParse(form.value);
-        tabErrorCounts.value = result.success
-            ? {}
-            : translationTabErrorCountsFromZodError(result.error);
-    },
-    { deep: true }
-);
-
-/**
  * Hero heading — the admin record's own resolved title, the route id while loading, or the
  * generic page title as a last resort.
  */
@@ -340,32 +282,6 @@ const heroTitle = computed(
  * Hero subheading.
  */
 const heroDescription = computed(() => formatText(adminProduct.value?.description));
-
-/**
- * This form's own blocked state — a save that failed blocks the visitor from proceeding past this
- * one submit button, so it renders through {@link InlineErrorAlert} next to it rather than a toast
- * — see docs/theory/request-flow.md.
- */
-const {
-    message: submitError,
-    report: reportSubmitError,
-    warn: warnSubmit,
-    clear: clearSubmitError
-} = useBlockingError();
-
-/**
- * The save came back 412: someone else edited this product since it was loaded. The warning shows
- * through {@link submitError}; "reload latest" re-reads the admin record, which re-hydrates the
- * form and refreshes the `ETag` the next save sends (`infrastructure/http/etag.ts`).
- */
-const {
-    isStale,
-    handle: handleStaleSave,
-    reloadLatest,
-    clear: clearStale
-} = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
-    id ? loadAdminProduct(id) : Promise.resolve()
-);
 
 /**
  * Validates the form and persists the product changes.
@@ -422,13 +338,7 @@ const submitForm = () => {
                 // and the reload itself (not what it returns) is the point.
                 return loadAdminProduct(id).then(() => undefined);
             });
-    }).catch((error) => {
-        if (handleStaleSave(error)) return;
-        const serverTabErrors = translationTabErrorCountsFromServerError(error);
-        if (Object.keys(serverTabErrors).length > 0)
-            tabErrorCounts.value = { ...tabErrorCounts.value, ...serverTabErrors };
-        applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
-    });
+    }).catch(handleSubmitFailure);
 };
 </script>
 

@@ -8,6 +8,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import {
     getCart,
     getCartSummary,
@@ -287,10 +288,9 @@ export const useCartStore = defineStore('cart', () => {
                     // shape, rather than dropping it to `undefined`, is what keeps the header badge
                     // from falling back to `summarySeed`'s stale count from before checkout ran.
                     // The currency itself survives the empty — the order was just frozen from the
-                    // same basket this cart is still showing, so its own is the same one; `'EUR'`
-                    // never actually reads here, it only satisfies the type for a cart the caller
-                    // never `fetchCart`/`fetchSummary`'d before checking out.
-                    cart.value = emptyCart(liveSummary.value?.currency ?? 'EUR');
+                    // same basket this cart is still showing, so its own is the same one; the shop's
+                    // only reads for a cart the caller never `fetchCart`/`fetchSummary`'d.
+                    cart.value = emptyCart(liveSummary.value?.currency ?? shopCurrency.value);
                     mintCheckoutIdempotencyKey();
                     return response.data;
                 })

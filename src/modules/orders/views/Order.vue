@@ -12,6 +12,7 @@ export default {
  * `actions`, and mounts the payment/transfer-instructions/shipment panels as
  * self-contained published-language components.
  */
+import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -148,10 +149,10 @@ const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice ===
 
 /**
  * The order's own frozen currency (FA37) — every price on this page is `currentOrder`'s own money,
- * never the shop's current default. `'EUR'` only stands in for an order that predates this field,
- * per the API's own note on `Order.currency`.
+ * never the shop's current default. The shop's currency only stands in for an order that predates
+ * this field, per the API's own note on `Order.currency`.
  */
-const orderCurrency = computed(() => currentOrder.value?.currency ?? 'EUR');
+const orderCurrency = computed(() => currentOrder.value?.currency ?? shopCurrency.value);
 
 /**
  * The cancel button's own blocked state — its own dedicated control, so a failure blocks it in

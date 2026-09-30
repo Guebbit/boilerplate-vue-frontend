@@ -29,6 +29,7 @@ import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
+import { loadShopCurrency } from '@/infrastructure/shop-currency.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { registerLocaleContributors } from '@/i18n';
@@ -138,6 +139,10 @@ const bootstrapApplication = () =>
                     }
                 );
             }
+
+            // The shop's currency, for every price label and input; fire-and-forget, and never
+            // rejects (a failure is logged and the next reader retries).
+            void loadShopCurrency();
 
             // Obtain the observability store (Grafana Faro + Umami).
             const observability = useObservabilityStore();
