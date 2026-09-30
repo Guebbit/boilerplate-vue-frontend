@@ -1,3 +1,4 @@
+// requires-module: cart, delivery, inventory, orders, payments, products
 /**
  * The money and the logistics, walked honestly: the customer chooses shipping and watches its
  * cost freeze onto the order, pays with the declined card first (the API's demo provider refuses

@@ -1,3 +1,4 @@
+// requires-module: cart, inventory, orders, products
 /**
  * One honest walk through the shop, as the two people who actually use it: a guest who browses
  * and hits the sign-in wall, then a customer who filters, buys, checks out, cancels and watches

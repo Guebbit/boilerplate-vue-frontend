@@ -4,15 +4,15 @@ This page groups the `package.json` scripts by job instead of raw list order.
 
 ## Development scripts
 
-| Script               | Job                                                                                                                               | Read more                         |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `dev`                | Start Vite dev server on `:8080` with HMR — the port comes from `VITE_APP_PORT` in `.env`, not from the script                    | [Runtime](./runtime.md)           |
-| `preview`            | Preview the production build locally                                                                                              | [Runtime](./runtime.md)           |
-| `backend:demo`       | Boot the paired backend's in-memory demo (`BACKEND_DEMO_COMMAND` in `.env`), the one the e2e shards start                         | [Demo profile](./demo-profile.md) |
-| `demo:remove`        | Delete every module `src/demo-modules.ts` names, and its line in `src/modules.ts` — the shop demo, gone                           | [Demo profile](./demo-profile.md) |
-| `measure:demo-strip` | Report-only: copy the checkout to a scratch directory, strip the demo modules, and run type-check, lint and build on what is left | [Demo profile](./demo-profile.md) |
-| `prepare`            | Runs on `npm install`: installs the husky git hooks                                                                               | [Testing](./testing-and-docs.md)  |
-| `update:all`         | `npm-check-updates -u`: bump every dependency range in `package.json` (then review and install)                                   | [Runtime](./runtime.md)           |
+| Script               | Job                                                                                                                                                                             | Read more                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `dev`                | Start Vite dev server on `:8080` with HMR — the port comes from `VITE_APP_PORT` in `.env`, not from the script                                                                  | [Runtime](./runtime.md)           |
+| `preview`            | Preview the production build locally                                                                                                                                            | [Runtime](./runtime.md)           |
+| `backend:demo`       | Boot the paired backend's in-memory demo (`BACKEND_DEMO_COMMAND` in `.env`), the one the e2e shards start                                                                       | [Demo profile](./demo-profile.md) |
+| `demo:remove`        | Delete every module `src/demo-modules.ts` names, and its line in `src/modules.ts` — the shop demo, gone (and the cross-module specs that name it in a `requires-module` header) | [Demo profile](./demo-profile.md) |
+| `measure:demo-strip` | Report-only: copy the checkout to a scratch directory, strip the demo modules, and run type-check, lint and build on what is left                                               | [Demo profile](./demo-profile.md) |
+| `prepare`            | Runs on `npm install`: installs the husky git hooks                                                                                                                             | [Testing](./testing-and-docs.md)  |
+| `update:all`         | `npm-check-updates -u`: bump every dependency range in `package.json` (then review and install)                                                                                 | [Runtime](./runtime.md)           |
 
 ## Container scripts
 

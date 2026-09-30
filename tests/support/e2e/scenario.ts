@@ -23,6 +23,8 @@
 export interface ScenarioAccount {
     email: string;
     password: string;
+    /** Single-use backup codes, published only for the two-factor persona. */
+    backupCodes?: string[];
 }
 
 /** The whole answer — see this module's own docblock. */
@@ -35,8 +37,26 @@ export interface ScenarioDescription {
     subjects: Record<string, string>;
 }
 
-/** Which seeded account a command means. Every backend that can pair with this repo seeds all four. */
-export type E2ERole = 'admin' | 'user' | 'editor' | 'moderator';
+/**
+ * Which seeded account a command means. Every backend that can pair with this repo seeds all
+ * eight: the four roles, then the personas — a customer in one particular state each.
+ *
+ * | persona        | state                                                         |
+ * | -------------- | ------------------------------------------------------------- |
+ * | `unverified`   | signed up, never proved the address                           |
+ * | `twoFactor`    | email 2FA armed, with known single-use `backupCodes`          |
+ * | `pendingEmail` | asked to change address, has not confirmed                    |
+ * | `banned`       | switched off — a login is refused                             |
+ */
+export type E2ERole =
+    | 'admin'
+    | 'user'
+    | 'editor'
+    | 'moderator'
+    | 'unverified'
+    | 'twoFactor'
+    | 'pendingEmail'
+    | 'banned';
 
 /** What a profile with nothing to say about itself answers — see {@link seedAccount}'s throw. */
 const NOTHING_DESCRIBED: ScenarioDescription = { scenario: null, accounts: {}, subjects: {} };

@@ -1,3 +1,4 @@
+// requires-module: cart, orders, products
 /**
  * The storefront surface the customer release added: facet chips on the listing, stock and
  * add-to-cart on the product page, and the order page's cancel and buy-again. The API enforces

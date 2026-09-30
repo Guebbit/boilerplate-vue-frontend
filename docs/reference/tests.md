@@ -58,6 +58,7 @@ reconciled against a manifest field here. See
 | `tests/cross-cutting/module-coupling.spec.ts`            | A module's `@api` calls stay inside its declared `MODULE_EDGES` coupling — the contract-level twin of the import boundary.                                            | [Strategic DDD](../theory/strategic-ddd.md)                |
 | `tests/cross-cutting/module-file-shapes.spec.ts`         | Every file in a module folder matches a named shape; a stray helpers folder or utils file fails by name.                                                              | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/module-groups.spec.ts`              | Every enabled module sits on the `foundation` / `shop` axis.                                                                                                          | [Modules](../theory/modules.md)                            |
+| `tests/cross-cutting/journey-headers.spec.ts`            | Every journey names the modules it needs on a `// requires-module:` line, and only real ones — so `demo:remove` can delete it.                                        | [Journeys](#journeys--stories-that-cross-modules)          |
 | `tests/cross-cutting/route-name-coupling.spec.ts`        | A module naming a sibling's route is either a declared edge or guarded by `router.hasRoute`.                                                                          | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/sitemap-document.spec.ts`           | The route table on the sitemap page is exactly what the enabled modules contribute; also regenerates it.                                                              | [Sitemap & Access Control](../theory/sitemap.md)           |
 | `tests/cross-cutting/badge-name.spec.ts`                 | Every count the app renders is announced as a count, not as "Badge".                                                                                                  | [Accessibility Testing](../tools/accessibility-testing.md) |
@@ -107,33 +108,82 @@ reconciled against a manifest field here. See
 
 ### `tests/unit/ui/` and `tests/unit/scripts/`
 
-| File                                                     | What it guarantees                                                                                                                                          | Read next                                        |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `tests/unit/ui/form-counter-input.spec.ts`               | The counter's bounds and emitted value.                                                                                                                     | [UI Kit](./src-ui.md)                            |
-| `tests/unit/ui/form-image-upload.spec.ts`                | File selection, preview and the limits it enforces.                                                                                                         | [UI Kit](./src-ui.md)                            |
-| `tests/unit/ui/list-pagination.spec.ts`                  | Page maths and the events a parent listens for.                                                                                                             | [UI Kit](./src-ui.md)                            |
-| `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`      | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md)   |
-| `tests/unit/scripts/pairing/spec-identity.spec.ts`       | The cross-repo shared-file list, and that this checkout matches the sibling.                                                                                | [Contracts](./contracts.md)                      |
-| `tests/unit/scripts/pairing/paired-backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong.                                                                        | [Scripts & Hooks](./scripts.md)                  |
-| `tests/unit/scripts/mutation/baseline.spec.ts`           | The ratchet reads a Stryker report into per-file scores correctly.                                                                                          | [Mutation Testing](../tools/mutation-testing.md) |
+| File                                                     | What it guarantees                                                                                                                                          | Read next                                         |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `tests/unit/ui/form-counter-input.spec.ts`               | The counter's bounds and emitted value.                                                                                                                     | [UI Kit](./src-ui.md)                             |
+| `tests/unit/ui/form-image-upload.spec.ts`                | File selection, preview and the limits it enforces.                                                                                                         | [UI Kit](./src-ui.md)                             |
+| `tests/unit/ui/list-pagination.spec.ts`                  | Page maths and the events a parent listens for.                                                                                                             | [UI Kit](./src-ui.md)                             |
+| `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`      | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md)    |
+| `tests/unit/scripts/demo/demo-remove-tests.spec.ts`      | `demo:remove` deletes a spec by its `requires-module` header or an import of a removed module, keeps the rest, and the header check can fail.               | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/step-prefix.spec.ts`             | A failure message gets the `[step: …]` line once, and not before a step starts.                                                                             | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/pairing/spec-identity.spec.ts`       | The cross-repo shared-file list, and that this checkout matches the sibling.                                                                                | [Contracts](./contracts.md)                       |
+| `tests/unit/scripts/pairing/paired-backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong.                                                                        | [Scripts & Hooks](./scripts.md)                   |
+| `tests/unit/scripts/mutation/baseline.spec.ts`           | The ratchet reads a Stryker report into per-file scores correctly.                                                                                          | [Mutation Testing](../tools/mutation-testing.md)  |
 
 ## `tests/e2e/` — a real browser against a real backend
 
-| File                               | What it guarantees                                                           | Read next                                                  |
-| ---------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `tests/e2e/specs/storefront.cy.ts` | Browsing the catalogue: listing, search, detail.                             | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/commerce.cy.ts`   | Cart and checkout against real API responses.                                | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/journey.cy.ts`    | The full visitor journey end to end, the one spec that crosses every domain. | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/locale.cy.ts`     | Switching language re-enters the route and the copy follows.                 | [Live E2E](../tools/live-e2e.md)                           |
-| `tests/e2e/specs/uploads.cy.ts`    | The multipart image path, including a file the API must refuse.              | [Security](../tools/security.md)                           |
-| `tests/e2e/specs/resilience.cy.ts` | What the app does when the API is slow, unreachable, or answers an error.    | [Observability](../tools/observability.md)                 |
-| `tests/e2e/specs/a11y.cy.ts`       | The accessibility sweep over every reachable route.                          | [Accessibility Testing](../tools/accessibility-testing.md) |
-| `tests/e2e/visual/visual.cy.ts`    | The visual-regression run: each baseline screenshot compared pixel-wise.     | [Visual Regression](../tools/visual-regression.md)         |
+| File                               | What it guarantees                                                                                                    | Read next                                                  |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `tests/e2e/specs/storefront.cy.ts` | Browsing the catalogue: listing, search, detail.                                                                      | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/commerce.cy.ts`   | Cart and checkout against real API responses.                                                                         | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/journey.cy.ts`    | The full visitor journey end to end, the one spec that crosses every domain.                                          | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/locale.cy.ts`     | Switching language re-enters the route and the copy follows.                                                          | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/e2e/specs/uploads.cy.ts`    | The multipart image path, including a file the API must refuse.                                                       | [Security](../tools/security.md)                           |
+| `tests/e2e/specs/resilience.cy.ts` | What the app does when the API is slow, unreachable, or answers an error.                                             | [Observability](../tools/observability.md)                 |
+| `tests/e2e/specs/a11y.cy.ts`       | The accessibility sweep over every reachable route.                                                                   | [Accessibility Testing](../tools/accessibility-testing.md) |
+| `tests/e2e/specs/harness.cy.ts`    | The journey harness: `cy.travel` moves the demo clock, and the four persona accounts sign in as their state promises. | [Journeys](#journeys--stories-that-cross-modules)          |
+| `tests/e2e/visual/visual.cy.ts`    | The visual-regression run: each baseline screenshot compared pixel-wise.                                              | [Visual Regression](../tools/visual-regression.md)         |
 
 | Pattern                                | What it is                                                                                                                                                                                   | Read next                                          |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | `tests/e2e/visual/__snapshots__/*.png` | The committed visual baselines — what a page is _supposed_ to look like. A failure diff is never committed: recording a failure as expected output is how a regression becomes the baseline. | [Visual Regression](../tools/visual-regression.md) |
 | `tests/e2e/fixtures/*`                 | Files the browser suites upload, including one that is deliberately not an image.                                                                                                            | [Security](../tools/security.md)                   |
+
+### Journeys — stories that cross modules
+
+A story that walks **one** module lives in that module's `tests/e2e/`. A story that crosses
+several lives in `tests/e2e/specs/journeys/<id>-<slug>.cy.ts` — the existing glob already matches.
+
+```mermaid
+flowchart LR
+    S["journey spec"] -->|"// requires-module: a, b"| R["demo:remove deletes it<br/>with those modules"]
+    S -->|"cy.step(name)"| F["a failure says which step"]
+    S -->|"cy.travel(ms) + trigger the job"| C["demo backend's clock"]
+    S -->|"cy.loginAs('twoFactor')"| P["persona accounts"]
+```
+
+- **The header is mandatory.** A first line `// requires-module: cart, orders` (or `none`) names
+  the modules the spec needs. `npm run demo:remove` deletes a spec whose header names a removed
+  module (`scripts/demo/demo-remove-tests.ts`), and `tests/cross-cutting/journey-headers.spec.ts`
+  refuses a journey with none, or one naming something that is not a module.
+- **One story per file:** one `describe('CU1 · …')`, one arc `it`. Setup the story does not care
+  about goes through `cy.apiAs('admin', …)`; what the story is about goes through the UI.
+- **`cy.step(name)`** starts a named phase. The name is prefixed onto a failure's message, since
+  `cy.log` never reaches the terminal.
+- **`cy.travel(ms)`** moves the demo backend's clock forward (`POST /__test/clock`); the browser's
+  clock does not move. It runs no job: trigger the reaction through its own door (the reservation
+  sweep is `POST /inventory/reservations/sweep`). Open a time journey with `cy.skipUnlessDemo()`.
+  A jump beyond 7 days ends the session — log in again.
+- **Personas** are `E2ERole`s beside the four staff roles: `unverified`, `twoFactor` (with
+  `backupCodes`), `pendingEmail`, `banned`. Their state is seeded, so a journey starts in it.
+
+#### The journey catalogue
+
+One row per journey. **A journey's lane adds its row in the same commit as its spec** — the row is
+how a reader finds the story without opening the file.
+
+| Column  | Means                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------- |
+| ID      | The plan's id (`CU1`, `OP4`, `AC3`, …), which is also the spec's file prefix                |
+| Story   | One line: who does what, ending in what is proven                                           |
+| Persona | Who signs in — an `E2ERole` (`user`, `admin`, `twoFactor`, …)                               |
+| Tier    | `@smoke` (runs on every push) or `nightly` (the full matrix); `—` until the tiers are wired |
+| Spec    | The file name inside the journeys folder                                                    |
+
+| ID  | Story | Persona | Tier | Spec |
+| --- | ----- | ------- | ---- | ---- |
+
+No journey is built yet.
 
 ## `tests/support/` — the harness
 
@@ -147,6 +197,7 @@ No assertions live here.
 | `tests/support/stub.ts`                             | The one sanctioned cast for a hand-built stub, and the reason double casts can be banned everywhere else.                                                                                                                                                                                                                      | [Repository Root](./root.md)                               |
 | `tests/support/e2e/e2e.ts`                          | Cypress's support entry point — what loads before every browser spec.                                                                                                                                                                                                                                                          | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/commands.ts`                     | The custom commands the specs are written in, including `cy.loginAs()`, `cy.restore()` — the latter branching on which backend profile is running — and the chrome navigation trio `cy.navigateTo(path)`, `cy.navigateViaMenu(menu, path)`, `cy.logout()`, which address the bar and its menus by `href` rather than by label. | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/support/e2e/journey.ts`                      | `cy.step()` and `cy.travel()` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                                                                                                                         | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/a11y-sweep.ts`                   | The reusable accessibility pass a spec applies to a page.                                                                                                                                                                                                                                                                      | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/support/e2e/visual-sweep.ts`                 | The reusable screenshot-and-compare pass.                                                                                                                                                                                                                                                                                      | [Visual Regression](../tools/visual-regression.md)         |
 | `tests/support/e2e/visual-task.ts`                  | The Node-side task behind it — image comparison cannot run in the browser.                                                                                                                                                                                                                                                     | [Visual Regression](../tools/visual-regression.md)         |
