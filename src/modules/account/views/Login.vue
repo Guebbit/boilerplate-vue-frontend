@@ -281,7 +281,7 @@ const submitForm = () => {
                     v-for="provider in oauthProviders"
                     :key="provider"
                     :data-test="`oauth-${provider}`"
-                    :href="oauthStartUrl(provider, continueTo)"
+                    :href="oauthStartUrl(provider, { continueTo, locale })"
                     variant="outlined"
                     size="large"
                     block

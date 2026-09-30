@@ -77,6 +77,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     getPaymentByOrder: 'payments',
     getProductAdmin: 'products',
     getProductById: 'products',
+    getProductSettings: 'products',
     getReturnById: 'returns',
     getSessions: 'account',
     getShipmentByOrder: 'delivery',

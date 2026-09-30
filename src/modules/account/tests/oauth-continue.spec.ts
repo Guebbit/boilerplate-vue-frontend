@@ -68,7 +68,9 @@ beforeEach(() => {
     currentQuery = {};
     vi.mocked(orvalMutator).mockClear();
     instance.defaults.baseURL = '';
-    return loadLocale('en');
+    return loadLocale('en').then(() => {
+        i18n.global.locale.value = 'en';
+    });
 });
 
 describe.each<[string, Component]>([
@@ -79,15 +81,27 @@ describe.each<[string, Component]>([
         currentQuery = { continue: '/cart' };
         return mountView(View).then((wrapper) => {
             expect(wrapper.get('[data-test=oauth-google]').attributes('href')).toBe(
-                '/account/oauth/google?continue=%2Fcart'
+                '/account/oauth/google?continue=%2Fcart&locale=en'
             );
         });
     });
 
+    it('carries the active language as ?locale=, so a login with no continue target keeps it', () =>
+        loadLocale('it')
+            .then(() => {
+                i18n.global.locale.value = 'it';
+                return mountView(View);
+            })
+            .then((wrapper) => {
+                expect(wrapper.get('[data-test=oauth-google]').attributes('href')).toBe(
+                    '/account/oauth/google?locale=it'
+                );
+            }));
+
     it('omits ?continue= when the page has none', () =>
         mountView(View).then((wrapper) => {
             expect(wrapper.get('[data-test=oauth-google]').attributes('href')).toBe(
-                '/account/oauth/google'
+                '/account/oauth/google?locale=en'
             );
         }));
 
@@ -95,7 +109,7 @@ describe.each<[string, Component]>([
         currentQuery = { continue: '//evil.example' };
         return mountView(View).then((wrapper) => {
             expect(wrapper.get('[data-test=oauth-google]').attributes('href')).toBe(
-                '/account/oauth/google'
+                '/account/oauth/google?locale=en'
             );
         });
     });
@@ -104,7 +118,7 @@ describe.each<[string, Component]>([
         currentQuery = { continue: ['/cart', '/checkout'] };
         return mountView(View).then((wrapper) => {
             expect(wrapper.get('[data-test=oauth-google]').attributes('href')).toBe(
-                '/account/oauth/google'
+                '/account/oauth/google?locale=en'
             );
         });
     });

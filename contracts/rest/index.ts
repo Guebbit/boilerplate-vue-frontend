@@ -2612,6 +2612,18 @@ export interface CatalogueFacetsEnvelope {
     data: CatalogueFacetsResponse;
 }
 
+export interface ProductSettingsResponse {
+    /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
+    currency: string;
+}
+
+export interface ProductSettingsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ProductSettingsResponse;
+}
+
 export interface ReplaceProductRequest {
     translations: ProductTranslationsWrite;
     /**
@@ -4129,6 +4141,11 @@ export type StartOAuthLoginParams = {
      * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
      */
     continue?: string;
+    /**
+     * The language tag (`it`, `pt-BR`) of the page the visitor started from. Saved as a cookie for the round trip and echoed back as `?locale=` on the frontend redirect, so a visitor with no `continue` target and no saved language preference lands in the language they were reading. Anything not shaped like a tag is dropped silently, like `continue`.
+     * @maxLength 35
+     */
+    locale?: string;
 };
 
 export type CompleteOAuthLoginParams = {
@@ -5895,7 +5912,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise.
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -6483,6 +6500,19 @@ export const getCatalogueFacets = (
 ) => {
     return orvalMutator<CatalogueFacetsEnvelope>(
         { url: `/products/categories`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * What the catalogue as a whole is configured with, as opposed to any one product: today the currency every price is quoted in (`NODE_DEFAULT_CURRENCY`). A create form reads it to size its price input before a product exists to ask. Public and cheap to read; it never changes without a redeploy.
+ * @summary The shop's catalogue settings
+ */
+export const getProductSettings = (
+    options?: SecondParameter<typeof orvalMutator<ProductSettingsEnvelope>>
+) => {
+    return orvalMutator<ProductSettingsEnvelope>(
+        { url: `/products/settings`, method: 'GET' },
         options
     );
 };
@@ -8160,6 +8190,7 @@ export type CreateProductWithMultipartResult = NonNullable<
 >;
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
+export type GetProductSettingsResult = NonNullable<Awaited<ReturnType<typeof getProductSettings>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>;
 export type ReplaceProductByIdWithMultipartResult = NonNullable<

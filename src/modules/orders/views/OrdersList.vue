@@ -12,6 +12,7 @@ export default {
  * gated on the signed-in role. The RF-reference lookup beside it is `payments`' own
  * `OrderReferenceSearch`, mounted here rather than reimplemented: the page stays a list.
  */
+import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -428,7 +429,7 @@ const handleHardDelete = (orderId: string) =>
             </template>
 
             <template v-slot:[`item.totalPrice`]="{ item }">
-                {{ formatCurrency(item.totalPrice, item.currency ?? 'EUR') }}
+                {{ formatCurrency(item.totalPrice, item.currency ?? shopCurrency) }}
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
