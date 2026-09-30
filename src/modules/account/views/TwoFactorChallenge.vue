@@ -205,7 +205,7 @@ onUnmounted(twoFactor.clearChallenge);
                     {{ t('two-factor-challenge-page.link-back-to-login') }}
                 </RouterLink>
             </template>
-            <template v-else>
+            <template v-else-if="challenge">
                 <p class="mb-4 opacity-80">{{ t('two-factor-challenge-page.intro') }}</p>
 
                 <v-select
