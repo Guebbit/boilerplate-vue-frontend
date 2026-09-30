@@ -232,6 +232,7 @@ how a reader finds the story without opening the file.
 | AC3  | After the fresh-login window lapses, checkout and the data export open the re-auth dialog: a wrong password is refused, cancel abandons, the right one carries on (demo only, it moves the clock)                                                                 | `user`                               | `@smoke` | `ac3-prove-it-is-still-you.cy.ts`       |
 | N2   | The customer withdraws from a delivered order inside the window: a return opens already approved; the warehouse receives it keeping a handling deduction; the refund is paid minus the deduction, the ledger shows the restock and a credit note is issued        | `user`, then `warehouse`             | nightly  | `n2-withdraw-after-delivery.cy.ts`      |
 | CU11 | The customer cancels a paid order after a second confirmation: the card is refunded whole, the units return to the shelf and a credit note is listed on the order (no cancel mail exists)                                                                         | `user`                               | nightly  | `cu11-cancel-paid-order.cy.ts`          |
+| OP4  | A moderator refunds a delivered order (refund only): the cancel buttons stay shut, the order stays delivered, the payment reads refunded, and the customer sees the refund and its credit note                                                                    | `moderator`, then `user`             | nightly  | `op4-refund-delivered-order.cy.ts`      |
 
 ## `tests/support/` — the harness
 
