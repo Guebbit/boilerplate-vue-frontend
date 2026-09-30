@@ -7,13 +7,14 @@
  * fetch never runs; the order is seeded directly into the dictionary instead.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Order from '@/modules/orders/views/Order.vue';
 import { useOrdersStore } from '@/modules/orders/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { reorder as apiReorder } from '@api';
+import { reorder as apiReorder, listOrderCreditNotes, getOrderCreditNote } from '@api';
+import { downloadBlob } from '@guebbit/js-toolkit';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -32,8 +33,18 @@ import type { Order as OrderType } from '@types';
  */
 vi.mock('@api', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@api')>();
-    return { ...actual, reorder: vi.fn(actual.reorder) };
+    return {
+        ...actual,
+        reorder: vi.fn(actual.reorder),
+        listOrderCreditNotes: vi.fn(() => Promise.resolve({ data: [] })),
+        getOrderCreditNote: vi.fn(() => Promise.resolve(new Blob(['%PDF-1.4'])))
+    };
 });
+
+vi.mock('@guebbit/js-toolkit', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@guebbit/js-toolkit')>()),
+    downloadBlob: vi.fn()
+}));
 
 wireModulesIntoCore();
 
@@ -156,6 +167,89 @@ describe('the invoice buttons', () => {
         const viewButton = wrapper.get('[data-test=order-view-invoice]');
         expect(viewButton.attributes('disabled')).toBeUndefined();
         expect(viewButton.text()).toContain('View invoice');
+
+        wrapper.unmount();
+    });
+});
+
+/**
+ * An invoiced order, the only kind that can carry credit notes.
+ */
+const invoicedOrder = (): OrderType => ({
+    ...BASE_ORDER,
+    items: [lineWith(null)],
+    actions: { ...BASE_ORDER.actions!, invoice: true }
+});
+
+describe('the credit notes', () => {
+    const NOTE = {
+        id: 'cn1',
+        number: 'CN-2026-0001',
+        issuedAt: '2026-09-30T10:00:00.000Z',
+        currency: 'EUR',
+        grandTotal: 9.99,
+        refundId: 'r1'
+    };
+
+    beforeEach(() => {
+        vi.mocked(listOrderCreditNotes).mockClear();
+        vi.mocked(getOrderCreditNote).mockClear();
+        vi.mocked(downloadBlob).mockClear();
+    });
+
+    it('are not requested for an order with no invoice', async () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        await flushPromises();
+
+        expect(listOrderCreditNotes).not.toHaveBeenCalled();
+        expect(wrapper.find('[data-test=order-credit-note-row]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('show no row for an invoiced order that was never refunded', async () => {
+        const wrapper = mountOrder(invoicedOrder());
+        await flushPromises();
+
+        expect(listOrderCreditNotes).toHaveBeenCalledWith('o1');
+        expect(wrapper.find('[data-test=order-credit-note-row]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+
+    it('list one row per note, and download only the clicked one', async () => {
+        const second = { ...NOTE, id: 'cn2', number: 'CN-2026-0002' };
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ data: [NOTE, second] } as never);
+        const wrapper = mountOrder(invoicedOrder());
+        await flushPromises();
+
+        const rows = wrapper.findAll('[data-test=order-credit-note-row]');
+        expect(rows).toHaveLength(2);
+        expect(rows[0].text()).toContain('CN-2026-0001');
+
+        await rows[1].get('[data-test=order-download-credit-note]').trigger('click');
+        await flushPromises();
+
+        expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn2');
+        expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
+            expect.any(Blob),
+            'order-o1-credit-note-CN-2026-0002.pdf'
+        );
+
+        wrapper.unmount();
+    });
+
+    it('block the download in place when the server refuses it', async () => {
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ data: [NOTE] } as never);
+        vi.mocked(getOrderCreditNote).mockRejectedValueOnce(new Error('rate limited'));
+        const wrapper = mountOrder(invoicedOrder());
+        await flushPromises();
+
+        await wrapper.get('[data-test=order-download-credit-note]').trigger('click');
+        await flushPromises();
+
+        expect(downloadBlob).not.toHaveBeenCalled();
+        expect(wrapper.get('[data-test=order-credit-note-error]').text()).not.toBe('');
 
         wrapper.unmount();
     });

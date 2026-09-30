@@ -60,6 +60,8 @@
         "button-go-to-edit": "Modifica ordine",
         "button-download-invoice": "Scarica fattura",
         "button-view-invoice": "Visualizza fattura",
+        "button-download-credit-note": "Scarica nota di credito",
+        "label-credit-note": "Nota di credito {number} · {date} · {amount}",
         "label-order-number": "Ordine n. {number}",
         "label-updated-at": "Aggiornato il",
         "button-cancel": "Annulla ordine",

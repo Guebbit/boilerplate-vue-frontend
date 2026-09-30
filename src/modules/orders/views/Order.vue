@@ -13,7 +13,7 @@ export default {
  * self-contained published-language components.
  */
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -50,6 +50,7 @@ import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
     EMPTY_VALUE,
     formatText,
+    formatDate,
     formatDateTime,
     formatCurrency,
     formatPercent
@@ -61,6 +62,7 @@ import { WithdrawalPanel } from '@/modules/returns';
 import { ShipmentPanel, ShippingMethodName } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import type { CreditNoteSummary } from '@types';
 
 /**
  * Generic translation and notification accessors.
@@ -82,7 +84,8 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, fetchOrder, fetchInvoice, cancelOrder } = useOrdersStore();
+const { watchOrder, fetchOrder, fetchInvoice, fetchCreditNotes, fetchCreditNote, cancelOrder } =
+    useOrdersStore();
 
 /**
  * The session, for the `meta.can` rules that gate the "History" link and the "Edit" button — a
@@ -315,6 +318,83 @@ const viewInvoice = () =>
         if (tab) tab.addEventListener('load', () => URL.revokeObjectURL(url));
         else URL.revokeObjectURL(url);
     });
+
+/**
+ * The order's credit notes, oldest first — one per settled refund. The list itself says which
+ * exist; a boolean flag could not pick among several partial-refund notes.
+ */
+const creditNotes = ref<CreditNoteSummary[]>([]);
+
+/**
+ * Which credit note is being downloaded, so only that row's button spins. `undefined` when none.
+ */
+const creditNoteLoadingId = ref<string>();
+
+/**
+ * The credit-note download's own blocked state, separate from the invoice's.
+ */
+const {
+    message: creditNoteError,
+    report: reportCreditNoteError,
+    clear: clearCreditNoteError
+} = useBlockingError();
+
+/**
+ * Reloads {@link creditNotes}. Runs for invoiced orders only — a credit note reverses an invoice,
+ * so an order without one has none. A failure leaves the list as it was: the section is
+ * supplementary, and the order itself is still fully usable.
+ *
+ * @returns A promise resolving once the list is replaced.
+ */
+const loadCreditNotes = () => {
+    if (!id || !invoiceAvailable.value) {
+        creditNotes.value = [];
+        return Promise.resolve();
+    }
+    return fetchCreditNotes(id)
+        .then((list) => {
+            creditNotes.value = list;
+        })
+        .catch(() => {
+            creditNotes.value = [];
+        });
+};
+
+/**
+ * Refetches the notes whenever the order's invoiced/refunded state moves. The refund path writes
+ * the note after the response, so this reacts to the order changing rather than to a click.
+ */
+watch(
+    () => [
+        id,
+        invoiceAvailable.value,
+        currentOrder.value?.status,
+        currentOrder.value?.paymentStatus
+    ],
+    loadCreditNotes,
+    { immediate: true }
+);
+
+/**
+ * Downloads one credit note as a PDF file — one note per click, since each download counts
+ * against the invoicing rate limit.
+ *
+ * @param note - The note the visitor picked.
+ * @returns A promise resolving once the download has been triggered.
+ */
+const downloadCreditNote = (note: CreditNoteSummary) => {
+    if (!id) return;
+    creditNoteLoadingId.value = note.id;
+    clearCreditNoteError();
+    return fetchCreditNote(id, note.id)
+        .then((blob) => {
+            if (blob) downloadBlob(blob, `order-${id}-credit-note-${note.number}.pdf`);
+        })
+        .catch((error: unknown) => reportCreditNoteError(error))
+        .finally(() => {
+            creditNoteLoadingId.value = undefined;
+        });
+};
 
 /**
  * Selects and (re)fetches the order whenever the route id changes.
@@ -715,6 +795,44 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     :message="invoiceError"
                     class="w-full"
                     data-test="order-invoice-error"
+                />
+                <ul
+                    v-if="creditNotes.length > 0"
+                    class="w-full flex flex-col gap-2"
+                    data-test="order-credit-notes"
+                >
+                    <li
+                        v-for="note in creditNotes"
+                        :key="note.id"
+                        class="flex flex-wrap items-center gap-2"
+                        data-test="order-credit-note-row"
+                    >
+                        <span class="text-sm">
+                            {{
+                                t('order-target-page.label-credit-note', {
+                                    number: note.number,
+                                    date: formatDate(note.issuedAt),
+                                    amount: formatCurrency(note.grandTotal, note.currency)
+                                })
+                            }}
+                        </span>
+                        <v-btn
+                            variant="tonal"
+                            color="tertiary"
+                            data-test="order-download-credit-note"
+                            :disabled="loading || creditNoteLoadingId !== undefined"
+                            :loading="creditNoteLoadingId === note.id"
+                            @click="downloadCreditNote(note)"
+                        >
+                            <Download :size="16" class="mr-1" aria-hidden="true" />
+                            {{ t('order-target-page.button-download-credit-note') }}
+                        </v-btn>
+                    </li>
+                </ul>
+                <InlineErrorAlert
+                    :message="creditNoteError"
+                    class="w-full"
+                    data-test="order-credit-note-error"
                 />
                 <span
                     v-if="currentOrder?.orderNumber"
