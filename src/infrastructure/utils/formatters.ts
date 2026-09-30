@@ -21,7 +21,7 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
  * (em dash, `N/A`, ...) without touching the code; falls back to an em dash.
  */
 export const EMPTY_VALUE =
-    runtimeValue('APP_EMPTY_VALUE') ?? import.meta.env.VITE_APP_EMPTY_VALUE ?? '—';
+    runtimeValue('APP_EMPTY_VALUE') || import.meta.env.VITE_APP_EMPTY_VALUE || '—';
 
 /*
  * The formatting lives in `@guebbit/js-toolkit`, which is pure: it takes the locale and the
