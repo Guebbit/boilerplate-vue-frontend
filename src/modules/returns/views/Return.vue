@@ -135,6 +135,7 @@ onMounted(refresh);
                         :value="
                             formatCurrency(currentReturn.handlingDeduction, currentReturn.currency)
                         "
+                        data-test="return-deduction"
                     />
                     <ItemDetailField
                         v-if="currentReturn.declineReason"
