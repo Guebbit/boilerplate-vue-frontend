@@ -8,9 +8,9 @@ The demo profile ([The demo profile](./demo-profile.md)) runs the same API this 
 
 Three places:
 
-- **On every PR**, as the required `test-e2e-live` job in `.github/workflows/ci.yml`. That job delegates to `e2e-live.yml` through `workflow_call` rather than duplicating its setup — one definition of the datastores, the sibling checkout and the seeding, so the gate and the nightly cannot drift apart.
+- **On every PR**, as the required `test-e2e-live` job in `.github/workflows/ci.yml`. That job delegates to `e2e-live.yml` through `workflow_call` rather than duplicating its setup — one definition of the services, the sibling checkout and the seeding, so the gate and the nightly cannot drift apart.
 - **Nightly**, via `e2e-live.yml`'s own `cron` (03:15 UTC, plus `workflow_dispatch`). This answers a question no PR run can: does `main` still agree with the _backend's_ default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
-- **By hand**, with the boot sequence below.
+- **By hand**, with [the recipe](#the-recipe) below. It is the same recipe: `e2e-live.yml` is this page, service for service and variable for variable, so change one and change the other.
 
 **Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else — but that no longer leaves a branch uncovered, because the PR gate runs the same job against the branch.
 
@@ -30,7 +30,7 @@ What carries the weight in between:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["npm run compose:restart\nnpm run host -- db:bootstrap\nNODE_RATE_LIMIT_MAX=1000 npm run host -- dev\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
+    Boot["Mongo replica set, Redis, RabbitMQ,\nMailpit, webhook-tester\nnpm run host -- db:bootstrap\nnpm run host -- e2e:serve\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_liveProfile=true"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -48,40 +48,89 @@ flowchart TB
     class Backend data;
 ```
 
-## Boot sequence
+## The recipe
+
+One recipe, for CI and for a person. The backend needs five things around it, and a live run is
+one lane at a time: every run binds the same ports (27017, 6379, 5672, 1025/8025, 3070, 3000).
+
+### 1. Services
+
+Plain `docker run` (or `podman run`) is enough; nothing needs compose.
 
 ```sh
-# terminal 1 — backend
-cd boilerplate-node-backend
-npm run compose:restart
-npm run host -- db:bootstrap
+# Mongo must be a REPLICA SET: the backend runs transactions, a standalone mongod refuses them.
+# The member host must be 127.0.0.1.
+docker run -d --name e2e-mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+docker exec e2e-mongo mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
-# terminal 2 — frontend
-cd boilerplate-vue-frontend
-npm run test:e2e:live
+docker run -d --name e2e-redis -p 6379:6379 redis:8
+docker run -d --name e2e-rabbit -p 5672:5672 rabbitmq:4-management
+
+# Mail: an SMTP catcher with an HTTP API. cy.emailTo() reads it; cy.restore() empties it.
+docker run -d --name e2e-mailpit -p 1025:1025 -p 8025:8025 \
+  -e MP_SMTP_AUTH_ACCEPT_ANY=true -e MP_SMTP_AUTH_ALLOW_INSECURE=true axllent/mailpit
+
+# Webhooks land here; the specs read it to check the delivery and its signature.
+docker run -d --name e2e-webhooks -p 3070:8080 \
+  -e AUTO_CREATE_SESSIONS=true -e STORAGE_DRIVER=memory \
+  ghcr.io/tarampampam/webhook-tester:2.3.0
 ```
 
-### Raise the backend's rate limits, or the suite fails halfway through
+`analytics.cy.ts` also needs Umami and its Postgres (see [below](#point-the-backend-at-umami-or-the-analytics-spec-fails-with-umami-running)). Without them that one spec fails; the rest do not need it.
+
+### 2. Backend
+
+The backend repo's compose file carries the same services under `--profile integrations`, if you have compose.
+
+```sh
+cd boilerplate-node-backend
+
+# What the backend needs to boot without a .env; throwaway values.
+export NODE_ENV=development            # the seeder's public demo passwords, and the webhook sink, need it
+export NODE_CLUSTER_WORKERS=1          # else one worker per core, all fighting over port 3000
+export NODE_PSEUDONYM_KEY=any-throwaway-value
+export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
+export NODE_FRONTEND_URL=http://localhost:8085
+export NODE_WEBHOOK_DEMO_SINK_URL=http://127.0.0.1:3070   # the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
+
+# Mail into Mailpit. `e2e:serve` refuses any SMTP host but localhost, 127.0.0.1, ::1 or mailpit,
+# so a live run cannot send real mail. NODE_MAIL_TRANSPORT=log sends nothing at all, but then
+# no mailed link or code can be read back.
+export NODE_MAIL_TRANSPORT=smtp NODE_SMTP_HOST=127.0.0.1 NODE_SMTP_PORT=1025 \
+       NODE_SMTP_USER=e2e NODE_SMTP_PASS=e2e NODE_SMTP_SENDER='E2E <noreply@example.com>'
+
+# Volume budgets only (see below). Payments, invoicing and returns keep their defaults.
+export NODE_RATE_LIMIT_MAX=100000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDRESS_MAX=1000 \
+       NODE_SIGNUP_RATE_LIMIT_MAX=1000 NODE_RESET_RATE_LIMIT_MAX=1000
+
+npm run host -- db:bootstrap    # migrate + seed
+npm run host -- e2e:serve       # the backend, marked as an e2e run
+```
+
+`host` is a PREFIX runner: it points the database and Redis at 127.0.0.1 and runs whatever `npm run` script follows the `--`. Nothing waits for the backend: with none listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
+
+### 3. Frontend
+
+```sh
+cd boilerplate-vue-frontend
+MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
+```
+
+Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend_path)), which reseeds through the backend checkout. It needs the same `NODE_ENV`, `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too; CI puts them on the command itself.
+
+With no `MAILPIT_URL`, the mail-driven specs report as skipped (`cy.skipUnlessMailbox()`) rather than failing. `test:e2e:live` builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
+
+Run `npm run check:spec-identity` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
+
+### Raise the volume budgets, or the suite fails halfway through
 
 The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a person browsing. This suite is not a person: 85 specs drive real page loads, real logins and real uploads from one address, and `uploads.cy.ts` alone clears 100 requests a minute on its own. Past the budget the API answers **429**, the app bounces to `/login`, and the failure reads as "login is broken" rather than "we ran out of allowance". That is a genuinely expensive hour of debugging, because every assertion downstream fails for a reason unrelated to what it was testing.
 
-Boot the backend with the same allowance its own test suites use (`boilerplate-node-backend/tests/support/setup.ts` sets `1000`):
+The recipe raises exactly the volume buckets: the global one (`100000` — `1000` a minute still gave 429s on login), the credential pair (per account named, per address calling), signup and password reset. They are separate buckets, so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Payments, invoicing and returns stay at their defaults. Do not raise any of these in a deployed environment — the small credential budget is what makes password guessing expensive, and the buckets are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
 
-```sh
-# terminal 1 — backend, for a live E2E run
-NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDRESS_MAX=1000 npm run host -- dev
-```
+The variables go in front of `compose:restart` when the backend runs in its container — they are declared in `docker-compose.yml` precisely so a run can raise them from the shell.
 
-The same three go in front of `compose:restart` when the backend runs in its container — they are
-declared in `docker-compose.yml` precisely so a run can raise them from the shell.
-
-This covers the BROWSER's traffic only. `cy.restore()` is several hundred API requests of its own
-now that the backend builds its demo shop by driving it, and those are deliberately kept off these
-buckets entirely: the seeder counts in its own memory rather than the deployment's Redis, so it
-neither spends a real visitor's allowance nor inherits what one already spent. See
-`boilerplate-node-backend/scenarios/rate-limits.ts`.
-
-All three are needed and they are separate buckets: the global one covers browsing, and the credential budget is itself a pair — one per account named, one per address calling — so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
+This covers the BROWSER's traffic only. `cy.restore()` is several hundred API requests of its own now that the backend builds its demo shop by driving it, and those are deliberately kept off these buckets entirely: the seeder counts in its own memory rather than the deployment's Redis, so it neither spends a real visitor's allowance nor inherits what one already spent. See `boilerplate-node-backend/scenarios/rate-limits.ts`.
 
 ### Why `test:e2e:live` runs on Chromium, not Cypress' default Electron
 
@@ -95,52 +144,19 @@ backend's upload response is faster/smaller) and stay on Electron.
 
 ### Point the backend at Umami, or the analytics spec fails with Umami running
 
-`compose:restart` starts Umami on `:3080`, and the frontend's tracker finds it on its own — `VITE_UMAMI_SRC` and `VITE_UMAMI_WEBSITE_ID` in `.env-example` already name it. The **backend** is the half that does not: `NODE_UMAMI_*` is commented out there, because the compose stack sets it on the `app` service, and `npm run host` runs the backend outside that service. So a backend booted the way this page describes emits nothing, logs `Analytics provider is 'umami' but ... events are being discarded`, and carries on.
+`compose:restart` starts Umami on `:3080`, and the frontend's tracker finds it on its own — `VITE_UMAMI_SRC` and `VITE_UMAMI_WEBSITE_ID` in `.env-example` already name it. The **backend** is the half that does not: `NODE_UMAMI_*` is commented out there, because the compose stack sets it on the `app` service, and `npm run host` runs the backend outside that service. So a backend booted the way the recipe above describes emits nothing, logs `Analytics provider is 'umami' but ... events are being discarded`, and carries on.
 
-That failure is quiet in the worst way. `analytics.cy.ts` asserts that ONE add-to-cart writes ONE row, and with the backend silent the frontend's own row is still written — one row, spec green, for exactly the wrong reason. Its control assertion catches the mirror case (a silent _frontend_) but nothing catches a silent backend except knowing to set these:
+That failure is quiet in the worst way. `analytics.cy.ts` asserts that ONE add-to-cart writes ONE row, and with the backend silent the frontend's own row is still written — one row, spec green, for exactly the wrong reason. Its control assertion catches the mirror case (a silent _frontend_) but nothing catches a silent backend except knowing to set these, in step 2:
 
 ```sh
-# terminal 1 — backend, for a live E2E run (with the rate limits above)
-NODE_ANALYTICS_PROVIDER=umami \
-NODE_UMAMI_INGEST_HOST=http://localhost:3080 \
-NODE_UMAMI_WEBSITE_ID=00000000-0000-4000-8000-000000000001 \
-npm run host -- dev
+export NODE_ANALYTICS_PROVIDER=umami \
+       NODE_UMAMI_INGEST_HOST=http://localhost:3080 NODE_UMAMI_HOST=http://localhost:3080 \
+       NODE_UMAMI_WEBSITE_ID=00000000-0000-4000-8000-000000000001
 ```
 
 `INGEST_HOST` is `localhost:3080` and not the compose stack's `http://umami:3000`: that hostname resolves only from inside the job network, and `host` puts the process outside it. The website id is the fixed UUID `umami-init` stamps, and it must match the frontend's — both trackers writing into **one** website is the arrangement `analytics.cy.ts` exists to police, not an accident to tidy up.
 
 The `test-e2e-live` CI job sets all of this itself, including the two `VITE_UMAMI_*` build variables, since a runner has no `.env`.
-
-`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- scenario:apply:reset` uses to restore state between specs. `test:e2e:live` itself builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
-
-Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
-
-Run `npm run check:spec-identity` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
-
-### Point the backend at Mailpit, or the mail-driven specs skip
-
-The flows that hinge on a mailed code or link — 2FA, password reset, email verification — read the
-mail back with `cy.emailTo()`. Against the demo profile that is the in-process outbox; against a
-live backend it is [Mailpit](https://mailpit.axllent.org/), an SMTP catcher with an HTTP API.
-`cy.restore()` empties it along with the database, so a spec never reads the previous spec's mail.
-
-```bash
-# the catcher: SMTP on 1025, HTTP API on 8025
-podman run -d --name mailpit -p 1025:1025 -p 8025:8025 \
-  -e MP_SMTP_AUTH_ACCEPT_ANY=true -e MP_SMTP_AUTH_ALLOW_INSECURE=true axllent/mailpit
-
-# terminal 1 — backend: mail into it, and link back to the preview
-NODE_MAIL_TRANSPORT=smtp NODE_SMTP_HOST=localhost NODE_SMTP_PORT=1025 \
-NODE_SMTP_USER=dev NODE_SMTP_PASS=dev NODE_SMTP_SENDER='Dev <noreply@example.com>' \
-NODE_FRONTEND_URL=http://localhost:8085 npm run dev
-
-# terminal 2 — frontend
-MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
-```
-
-With no `MAILPIT_URL`, those specs report as skipped (`cy.skipUnlessMailbox()`) rather than
-failing. Mailpit belongs to test environments only: a deployment configures its own provider
-through `NODE_SMTP_*`, and neither repo names one. `e2e-live.yml` runs it as a service.
 
 ## `BACKEND_PATH`
 
