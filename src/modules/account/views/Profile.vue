@@ -284,9 +284,14 @@ const {
 const pendingEmailActionInFlight = ref(false);
 
 /**
- * Re-sends the pending-email confirmation link. There is no dedicated resend endpoint: sending
- * `PATCH /account` with the SAME address already parked in `pendingEmail` is the backend's
- * documented resend path.
+ * Re-sends the pending-email confirmation link: cancels the change, then asks for the same
+ * address again.
+ *
+ * Why two calls: the backend treats a PATCH carrying the address already parked in
+ * `pendingEmail` as a no-op (a double-submitted save must not mail twice), and has no resend
+ * endpoint for an email change. A fresh request is the only door that mints a new link, and the
+ * cancel revokes the link already delivered so exactly one stays live. The old address hears of
+ * it again, which is what a new request owes it.
  *
  * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
  *  place ({@link pendingEmailError}).
@@ -296,7 +301,8 @@ const resendPendingEmail = () => {
     if (!pendingEmail || pendingEmailActionInFlight.value) return;
     clearPendingEmailError();
     pendingEmailActionInFlight.value = true;
-    return updateProfile({ email: pendingEmail })
+    return cancelPendingEmailChange()
+        .then(() => updateProfile({ email: pendingEmail }))
         .then(() => addMessage(t('profile-page.pending-email-resent')))
         .catch((error) => reportPendingEmailError(error))
         .finally(() => {

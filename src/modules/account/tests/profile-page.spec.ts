@@ -212,7 +212,7 @@ describe('the email field, and a pending change', () => {
         });
     });
 
-    it('shows the parked address, and resend sends PATCH /account with it — not the current one', () => {
+    it('shows the parked address, and resend cancels it then asks for the same address again', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
 
@@ -224,6 +224,9 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
+                // The backend ignores a PATCH with the address already parked, so a resend that
+                // skipped the cancel would mail nothing.
+                expect(calledCancelPendingEmail()).toBe(true);
                 const patch = lastAccountPatch();
                 expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toEqual({
                     email: 'new@example.com'
