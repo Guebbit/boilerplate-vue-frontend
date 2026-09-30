@@ -136,6 +136,7 @@
         "npm-check-updates": "^22.2.3",
         "npm-run-all2": "^8.0.4",
         "orval": "^8.17.0",
+        "otplib": "^13.5.0",
         "pixelmatch": "^7.2.0",
         "pngjs": "^7.0.0",
         "prettier": "^3.8.1",
