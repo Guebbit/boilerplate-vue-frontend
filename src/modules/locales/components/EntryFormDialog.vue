@@ -10,7 +10,7 @@
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '@/modules/locales/schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -59,10 +59,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
- * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * The heading's id, so the dialog is announced by its title rather than as "dialog".
@@ -117,7 +116,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="560" :fullscreen="mobile" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="560" :fullscreen="fullscreen" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="entry-form">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">

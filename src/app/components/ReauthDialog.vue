@@ -9,7 +9,7 @@
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -31,9 +31,9 @@ const reauthDialog = useReauthPromptStore();
 const { reauthing } = storeToRefs(useSessionStore());
 
 /**
- * Vuetify's breakpoint flag: the dialog goes fullscreen below `sm`.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
@@ -112,7 +112,7 @@ const submit = () => {
     <v-dialog
         v-model="isOpen"
         max-width="420"
-        :fullscreen="mobile"
+        :fullscreen="fullscreen"
         persistent
         role="alertdialog"
         :aria-labelledby="titleId"

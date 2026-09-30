@@ -14,7 +14,7 @@
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { userRoleOptions } from '@/modules/users/domain';
 import type {
@@ -51,10 +51,9 @@ const isOpen = defineModel<boolean>({ required: true });
 const { t } = useI18n();
 
 /**
- * Whether the viewport is phone-sized — the dialog goes fullscreen there, same as every other
- * dialog in this app.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * The signed-in admin's own id, to warn them specifically when they are deactivating themselves.
@@ -163,7 +162,12 @@ const handleCancel = () => {
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" :fullscreen="mobile" data-test="user-access-dialog">
+    <v-dialog
+        v-model="isOpen"
+        max-width="480"
+        :fullscreen="fullscreen"
+        data-test="user-access-dialog"
+    >
         <v-card v-if="target" class="p-5">
             <template v-if="step === 'pick'">
                 <h2 class="mb-4 text-lg font-semibold">
