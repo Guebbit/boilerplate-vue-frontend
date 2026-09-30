@@ -7,6 +7,10 @@
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 import { expectMailTemplate } from '../../../../../tests/support/e2e/commands';
+import {
+    loginToChallenge,
+    submitBackupCode
+} from '../../../../../tests/support/e2e/security-steps';
 
 describe('Two-factor authentication', () => {
     beforeEach(() => {
@@ -109,6 +113,13 @@ describe('Two-factor authentication', () => {
                 cy.get('[data-test=backup-codes-confirm-saved]').click();
                 cy.get('[data-test=backup-codes-continue]').click();
                 cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
+
+                // ── The old code is dead, not merely different from the new first one ──────
+                cy.logout();
+                loginToChallenge(seedAccount('user'));
+                submitBackupCode(firstCode.trim());
+                cy.get('[data-test=two-factor-challenge-submit-error]').should('not.be.empty');
+                cy.get('#two-factor-challenge-page').should('exist');
             });
     });
 
