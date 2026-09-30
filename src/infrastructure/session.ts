@@ -20,6 +20,7 @@ import {
     requestEmailVerification as apiRequestEmailVerification
 } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
+import type { PermissionAction } from '@api/permission-actions';
 import {
     getTokenFromResponse,
     getPayloadFromResponse,
@@ -71,26 +72,12 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
     unpackRules(packed as PackRule<RawRuleOf<MongoAbility>>[]);
 
 /**
- * The concrete actions a screen may ask about — CASL's own vocabulary, as
- * `shared/authorization-keys.yaml` declares it. Beyond CRUD: `checkout` (`cart.self.checkout`),
- * `override` (`orders.any.override`), `sweep` (`inventory.any.sweep`) and `start`
- * (`delivery.any.start`) and `receive` (`returns.any.receive`) — one action per non-CRUD write the contract actually exposes.
- *
- * `manage` is deliberately absent from what a CLIENT may ask for: no key in the shared file
- * declares that action, and there is no wildcard of any kind to expand into one — every key
- * spells out its own concrete action, so asking for `manage` always answers no. A screen asks for
- * the action it actually performs.
+ * The concrete actions a screen may ask about — generated from `actions:` in the backend's
+ * `shared/authorization-keys.yaml`, which `sync:frontend` hands over. `manage` is deliberately
+ * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
+ * answers no. A screen asks for the action it actually performs.
  */
-export type PermissionAction =
-    | 'read'
-    | 'create'
-    | 'update'
-    | 'delete'
-    | 'checkout'
-    | 'override'
-    | 'sweep'
-    | 'start'
-    | 'receive';
+export type { PermissionAction } from '@api/permission-actions';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.

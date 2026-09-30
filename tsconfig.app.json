@@ -3,7 +3,13 @@
     // The application and the generated client, and nothing from `tests/`: `support/e2e` needs
     // Cypress' ambient types and `support/unit` needs Vitest's, so both belong to their own
     // projects rather than to this one.
-    "include": ["contracts/rest", "contracts/asyncapi.generated.ts", "src/**/*", "src/**/*.vue"],
+    "include": [
+        "contracts/rest",
+        "contracts/asyncapi.generated.ts",
+        "contracts/permission-actions.ts",
+        "src/**/*",
+        "src/**/*.vue"
+    ],
     "exclude": ["src/modules/*/tests/**"],
     "compilerOptions": {
         "target": "ESNext",
@@ -25,7 +31,8 @@
             "@api": ["./contracts/rest/index"],
             "@api/schemas": ["./contracts/rest/schemas.zod"],
             "@api/error-codes": ["./contracts/rest/error-codes"],
-            "@api/routes": ["./contracts/rest/routes"]
+            "@api/routes": ["./contracts/rest/routes"],
+            "@api/permission-actions": ["./contracts/permission-actions"]
         }
     }
 }

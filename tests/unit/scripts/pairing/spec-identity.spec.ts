@@ -119,10 +119,11 @@ describe('SHARED_FILES', () => {
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
-        // And nothing else. Two files, both produced in the backend, which is what makes a fork
+        expect(frontendPaths).toContain('contracts/authorization-keys.yaml');
+        // And nothing else. Three files, all produced in the backend, which is what makes a fork
         // answerable at all — `spectral.yaml` and the three shared scripts are gone, along with
         // the Node backend's own copy of them.
-        expect(frontendPaths.size).toBe(2);
+        expect(frontendPaths.size).toBe(3);
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {
