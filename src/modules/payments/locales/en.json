@@ -45,6 +45,7 @@
         "label-reference": "Reference",
         "button-copy-iban": "Copy IBAN",
         "button-copy-reference": "Copy reference",
+        "copy-failed": "Could not copy — select the text and copy it by hand.",
         "hint-reference": "Write this reference in your transfer's description exactly as shown, so we can match your payment to this order."
     },
     "order-reference-search": {
