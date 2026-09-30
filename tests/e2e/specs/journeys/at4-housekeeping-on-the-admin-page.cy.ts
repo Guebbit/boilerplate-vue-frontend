@@ -10,13 +10,10 @@
  * which a platform-only operator lacks (that refusal is the roles lane's, not this story's).
  */
 
-/**
- * Whether this run is against the live stack, where the broker exists and so queues are listed.
- *
- * @returns a chain yielding true on the live profile
- */
-const isLive = (): Cypress.Chainable<boolean> =>
-    cy.env(['liveProfile']).then(({ liveProfile }) => liveProfile === true);
+/** The slice of `GET /observability/health` this story reads: each worker queue's parked depth. */
+interface HealthLike {
+    data: { queues?: { name: string; parked: number }[] };
+}
 
 describe('AT4 · Housekeeping on the admin page', () => {
     beforeEach(() => {
@@ -34,12 +31,17 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.visit('/en/admin');
         cy.wait('@health');
         cy.get('[data-test=admin-overview-refresh]').should('not.be.disabled').click();
-        cy.wait('@health').its('response.statusCode').should('equal', 200);
+        cy.wait('@health').then(({ response }) => {
+            expect(response?.statusCode).to.equal(200);
+            cy.wrap((response?.body as HealthLike).data.queues ?? []).as('queues');
+        });
         cy.wait('@overview').its('response.statusCode').should('equal', 200);
 
-        cy.step('worker queues are listed only where a broker exists');
-        isLive().then((live) => {
-            cy.get('[data-test=parked-queue-row]').should(live ? 'exist' : 'not.exist');
+        cy.step('a row per worker queue the broker answered for, and none where it is off');
+        // The queues exist only when the broker is enabled (`NODE_RABBITMQ_ENABLED`), which the demo
+        // backend and the live recipe both leave off; the page must agree with whatever was sent.
+        cy.get<{ name: string }[]>('@queues').then((queues) => {
+            cy.get('[data-test=parked-queue-row]').should('have.length', queues.length);
         });
 
         cy.step('cancelling the token clean-up sends nothing; confirming sends it');
@@ -56,9 +58,11 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.get('[data-test=list-row]').should('have.length.gte', 1);
         cy.get('[data-test=filter-action] input').type('auth.login');
         cy.get('[data-test=search-submit]').click();
-        cy.get('[data-test=list-row]').should('have.length.gte', 1);
-        cy.get('[data-test=list-row]').each(($row) => {
-            expect($row.text()).to.contain('auth.login');
+        // Retried as one assertion: the list is refetched on the press, and a read at once can be
+        // the page from before it.
+        cy.get('[data-test=list-row]').should(($rows) => {
+            expect($rows.length).to.be.greaterThan(0);
+            for (const row of $rows.toArray()) expect(row.textContent).to.contain('auth.login');
         });
         cy.get('[data-test=filter-action] input').clear();
         cy.get('[data-test=filter-action] input').type('no.such.action');
