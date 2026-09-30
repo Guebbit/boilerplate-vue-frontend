@@ -193,8 +193,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
     });
 
     /**
-     * Updates the current user's own profile through `PATCH /account` — this call only ever sends
-     * the fields the caller actually changed (AUDIT_0924 D17d: `PUT /account` would clear every
+     * Updates the current user's own profile through `PATCH /account` — a PATCH merges what it
+     * sends, so a field the caller leaves out stays as it is (a `PUT /account` would clear every
      * field left out instead, RFC 9110 §9.3.4).
      *
      * Its own endpoint, not `PATCH /users/{id}`: the users writes sit behind the admin guard, and
@@ -353,7 +353,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
-     * unlike the reset flow. Other sessions stay signed in; the sessions panel is where they end.
+     * unlike the reset flow.
      *
      * The API revokes every OTHER session on success and answers with a fresh access token for
      * THIS one (plus fresh session cookies), so the token is adopted here the way login adopts

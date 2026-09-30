@@ -51,7 +51,7 @@ interface FileShape {
 const FILE_SHAPES: readonly FileShape[] = [
     {
         match: /^module\.ts$/,
-        what: 'The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales.'
+        what: 'The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys, slots and locale reset.'
     },
     {
         match: /^index\.ts$/,

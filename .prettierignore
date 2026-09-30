@@ -17,9 +17,9 @@ contracts/rest/routes.ts
 docker/*.conf
 *.insomnia*
 Insomnia_*.json
-# Stryker output. `reports/stryker-incremental.json` is committed on purpose (CI can only reuse
-# what is in the repo), but Stryker writes it, not a person — so a local mutation run would fail
-# the format gate on a file nobody edited.
+# Stryker output. `reports/` is gitignored (the incremental cache in it is read by nothing
+# automated), but Stryker writes it, not a person — so a local mutation run would fail the format
+# gate on a file nobody edited.
 reports
 
 # The REST contract, copied verbatim from the backend's `redocly bundle` output and hash-compared

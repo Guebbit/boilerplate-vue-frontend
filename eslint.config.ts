@@ -450,8 +450,7 @@ const vueSfcConventionRules = {
  * NOT here (`class`, `id`, `type`, `name`, `variant`…) are markup, not copy.
  *
  * This governs templates. Technician-facing strings — console output, thrown
- * `Error` messages, analytics event names — are deliberately English; see the i18n
- * section of README.md.
+ * `Error` messages, analytics event names — are deliberately English.
  */
 const bareStringsInTemplateRule = {
     'vue/no-bare-strings-in-template': [

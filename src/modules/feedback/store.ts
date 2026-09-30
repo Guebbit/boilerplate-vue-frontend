@@ -41,9 +41,8 @@ export const useFeedbackStore = defineStore('feedback', () => {
      * structured-CRUD primitive. No `list`/`get`/`create`: the inbox is only ever read as a
      * search page, and the public submit is not an inbox record (see {@link submitContact}).
      *
-     * `search:` is `POST /feedback/search`, never `GET /feedback`: the GET answers
-     * `Cache-Control: private, max-age=30`, so a reload inside that window is a browser cache hit
-     * that hands back a row just deleted. A POST is never browser-cached.
+     * `search:` is `POST /feedback/search`, never `GET /feedback`: the filters and the page travel
+     * in a body, and a POST is never browser-cached, so a reload cannot hand back a row just deleted.
      */
     const {
         itemDictionary: requests,

@@ -16,8 +16,9 @@ name: CI
 #   - supply chain    audit
 #   - adoption        demo-strip-measure — report-only, like audit (FE-D4)
 #
-# The slow and non-hermetic suites live elsewhere on a nightly schedule: e2e-live.yml (against a
-# real backend) and mutation.yml.
+# The slow and non-hermetic suites live in their own workflows: e2e-live.yml (against a real
+# backend; this file calls it as the `test-e2e-live` job and it also runs nightly) and
+# mutation.yml (nightly only).
 
 on:
     # Run on every PR and on direct pushes to main.

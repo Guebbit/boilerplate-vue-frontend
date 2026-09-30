@@ -101,8 +101,7 @@ const {
 } = useBlockingError();
 
 /**
- * Spends the token; success lands on the profile (a live session shows the banner gone) or the
- * login when there is none.
+ * Spends the token; success goes to Home, where a live session shows the banner gone.
  *
  * @returns A promise resolving once the confirmation settles: success is a toast, a failure
  *  blocks the form in place ({@link confirmError}).
