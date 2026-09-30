@@ -145,6 +145,7 @@ const submitForm = () => {
                     size="large"
                     block
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                     class="mt-4"
                 >
                     {{ t('account-delete-confirm-page.button-submit') }}

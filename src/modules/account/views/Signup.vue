@@ -339,6 +339,7 @@ const submitForm = () => {
                     size="large"
                     block
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                     class="mt-2"
                 >
                     {{ t('signup-page.button-submit') }}

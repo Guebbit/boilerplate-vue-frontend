@@ -35,6 +35,11 @@ const props = defineProps<{
      * The tenant preselected on open.
      */
     initialTenant?: string;
+    /**
+     * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
+     * second click cannot send the write twice.
+     */
+    saving?: boolean;
 }>();
 
 /**
@@ -261,7 +266,8 @@ const handleImport = () => {
                     <v-btn
                         type="submit"
                         color="primary"
-                        :disabled="!parsedEntries"
+                        :loading="saving"
+                        :disabled="!parsedEntries || saving"
                         data-test="import-submit"
                     >
                         {{ t('entries-import.button-import') }}

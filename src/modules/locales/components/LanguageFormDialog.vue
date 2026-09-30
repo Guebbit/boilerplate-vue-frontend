@@ -31,6 +31,11 @@ const props = defineProps<{
      * The language being edited; absent means the dialog creates one.
      */
     language?: LocaleCapability;
+    /**
+     * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
+     * second click cannot send the write twice.
+     */
+    saving?: boolean;
 }>();
 
 /**
@@ -87,21 +92,22 @@ const titleId = useId();
  * what every entry references, so the API keeps it immutable — and a field that is sometimes
  * required is a field nobody can read the rule of.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation<{
-    tag: string;
-    name: string;
-    nativeName: string;
-    direction: LocaleDirection;
-    active: boolean;
-}>(
-    { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
-    computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
-    {
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
+const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
+    useStructureFormValidation<{
+        tag: string;
+        name: string;
+        nativeName: string;
+        direction: LocaleDirection;
+        active: boolean;
+    }>(
+        { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
+        computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
+        {
+            revalidateOn: locale,
+            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
+    );
 
 /*
  * Refill on every open rather than on mount: the dialog is a single instance the page reuses, so
@@ -130,6 +136,12 @@ const directionOptions = computed(() => [
  * Validates and emits, or shows the form's errors — `handleSubmit`'s job either way.
  */
 const handleSave = () => handleSubmit((fields) => emit('save', fields));
+
+/**
+ * The parent's save fails after this form validated clean; a refusal that names one of its fields
+ * is put on that field through this, and the parent blocks the dialog only when it returns false.
+ */
+defineExpose({ applyServerErrors });
 </script>
 
 <template>
@@ -189,7 +201,13 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
                         Never disabled on validity: a submit that cannot be pressed explains
                         nothing, while `handleSubmit` shows the messages and says so.
                     -->
-                    <v-btn type="submit" color="primary" data-test="language-save">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        data-test="language-save"
+                        :loading="saving"
+                        :disabled="saving"
+                    >
                         {{ t('locale-form.button-save') }}
                     </v-btn>
                 </div>

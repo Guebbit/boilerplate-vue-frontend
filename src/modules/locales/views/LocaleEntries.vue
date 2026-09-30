@@ -95,6 +95,13 @@ const rowActionSize = useTouchFriendlySize();
 const entryFormOpen = ref(false);
 
 /**
+ * The add-entry dialog, reached for its `applyServerErrors` when a save names a field.
+ */
+const entryDialog = ref<{
+    applyServerErrors: (error: unknown, options: { onUnmapped: () => void }) => boolean;
+}>();
+
+/**
  * The add-entry dialog's own blocked state — the form already validated clean, so anything here
  * is a save failure the dialog stays open for, rendered through its `error` slot.
  */
@@ -212,7 +219,14 @@ const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
             addMessage(t('locale-entries-page.success-add'));
             return Promise.all([search(true), refreshRunningLocale(tag.value)]);
         })
-        .catch((error: unknown) => reportAddError(error));
+        .catch((error: unknown) => {
+            // A duplicate key names its field; anything else blocks the dialog.
+            if (entryDialog.value)
+                entryDialog.value.applyServerErrors(error, {
+                    onUnmapped: () => reportAddError(error)
+                });
+            else reportAddError(error);
+        });
 };
 
 /**
@@ -539,9 +553,11 @@ const handleExport = () => {
         />
 
         <EntryFormDialog
+            ref="entryDialog"
             v-model="entryFormOpen"
             :tenants="tenants"
             :initial-tenant="filters.tenant"
+            :saving="loading"
             @save="handleAdd"
         >
             <template #error>
@@ -552,6 +568,7 @@ const handleExport = () => {
             v-model="importOpen"
             :tenants="tenants"
             :initial-tenant="filters.tenant"
+            :saving="loading"
             @import="handleImport"
         >
             <template #error>

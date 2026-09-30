@@ -141,6 +141,7 @@ const submitForm = () => {
                     block
                     data-test="verify-submit"
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                 >
                     {{ t('verify-email-confirm-page.button-submit') }}
                 </v-btn>

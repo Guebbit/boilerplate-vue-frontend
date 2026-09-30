@@ -5,7 +5,7 @@
  * the write itself is the store's, already proven in `store.spec.ts`.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import RecordOfflinePaymentForm from '@/modules/payments/components/RecordOfflinePaymentForm.vue';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
@@ -119,6 +119,58 @@ describe('RecordOfflinePaymentForm', () => {
             .trigger('submit')
             .then(() => {
                 expect(wrapper.emitted('recorded')).toBeUndefined();
+            });
+    });
+
+    it('puts a refusal that names a field on that field, not in the banner', () => {
+        const payments = usePaymentsStore();
+        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue({
+            success: false,
+            status: 422,
+            message: 'Unprocessable Entity',
+            errors: [
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Reference already used',
+                    details: { field: 'reference' },
+                    field: 'reference'
+                }
+            ]
+        });
+        const wrapper = mountForm();
+
+        return wrapper
+            .get('form')
+            .trigger('submit')
+            .then(() => flushPromises())
+            .then(() => {
+                expect(wrapper.get('[data-test=record-offline-reference]').text()).toContain(
+                    'Reference already used'
+                );
+                expect(wrapper.find('[data-test=record-offline-payment-error]').exists()).toBe(
+                    false
+                );
+            });
+    });
+
+    it('blocks the form in place for a refusal that names no field', () => {
+        const payments = usePaymentsStore();
+        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue({
+            success: false,
+            status: 409,
+            message: 'in flight',
+            errors: [{ code: 'PAYMENT_IN_FLIGHT', message: 'in flight' }]
+        });
+        const wrapper = mountForm();
+
+        return wrapper
+            .get('form')
+            .trigger('submit')
+            .then(() => flushPromises())
+            .then(() => {
+                expect(wrapper.get('[data-test=record-offline-payment-error]').text()).toContain(
+                    'in flight'
+                );
             });
     });
 });

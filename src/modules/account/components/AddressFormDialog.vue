@@ -149,7 +149,7 @@ const addressSchema = z.object({
  * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state
  * change, not a focus move.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } =
+const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
@@ -202,7 +202,10 @@ const handleSave = () =>
                 addMessage(t('profile-page.addresses-saved'));
                 open.value = false;
             })
-            .catch((error: unknown) => reportSaveError(error));
+            .catch((error: unknown) => {
+                // A refusal that names a field lands on it; anything else blocks the dialog.
+                applyServerErrors(error, { onUnmapped: () => reportSaveError(error) });
+            });
     });
 </script>
 
@@ -289,6 +292,7 @@ const handleSave = () =>
                         color="primary"
                         data-test="address-save"
                         :loading="loading"
+                        :disabled="loading"
                     >
                         {{ t('profile-page.addresses-save') }}
                     </v-btn>

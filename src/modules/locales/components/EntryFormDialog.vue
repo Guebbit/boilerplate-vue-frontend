@@ -29,6 +29,11 @@ const props = defineProps<{
      * The tenant preselected on open — whatever the page's tenant filter is on.
      */
     initialTenant?: string;
+    /**
+     * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
+     * second click cannot send the write twice.
+     */
+    saving?: boolean;
 }>();
 
 /**
@@ -72,15 +77,12 @@ const defaultTenant = computed(() => props.initialTenant ?? props.tenants.at(0)?
 /**
  * Field state, errors and submit gating, validated against {@link localesEntrySchema}.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation(
-    { tenant: '', key: '', value: '' },
-    localesEntrySchema,
-    {
+const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
+    useStructureFormValidation({ tenant: '', key: '', value: '' }, localesEntrySchema, {
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
+    });
 
 /*
  * Refill on every open rather than on mount: the dialog is a single instance the page reuses, so
@@ -105,6 +107,13 @@ const handleSave = () =>
     handleSubmit(({ tenant, key, value }) => {
         emit('save', { tenant, key, value });
     });
+
+/**
+ * The parent's save fails after this form validated clean (a duplicate key names `key`); a
+ * refusal that names one of its fields is put on that field through this, and the parent blocks
+ * the dialog only when it returns false.
+ */
+defineExpose({ applyServerErrors });
 </script>
 
 <template>
@@ -146,7 +155,13 @@ const handleSave = () =>
                         Never disabled on validity: a submit that cannot be pressed explains
                         nothing, while `handleSubmit` shows the messages and says so.
                     -->
-                    <v-btn type="submit" color="primary" data-test="entry-save">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        data-test="entry-save"
+                        :loading="saving"
+                        :disabled="saving"
+                    >
                         {{ t('entry-form.button-save') }}
                     </v-btn>
                 </div>

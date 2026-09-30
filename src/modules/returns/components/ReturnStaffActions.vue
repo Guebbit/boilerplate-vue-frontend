@@ -89,7 +89,8 @@ const {
     form: declineForm,
     formErrors: declineErrors,
     showFormErrors: showDeclineErrors,
-    handleSubmit: handleDeclineSubmit
+    handleSubmit: handleDeclineSubmit,
+    applyServerErrors: applyDeclineErrors
 } = useStructureFormValidation({ reason: '' }, declineSchema, {
     formElement: declineElement,
     revalidateOn: locale,
@@ -119,7 +120,8 @@ const {
     form: receiveForm,
     formErrors: receiveErrors,
     showFormErrors: showReceiveErrors,
-    handleSubmit: handleReceiveSubmit
+    handleSubmit: handleReceiveSubmit,
+    applyServerErrors: applyReceiveErrors
 } = useStructureFormValidation({ handlingDeduction: '' }, receiveSchema, {
     formElement: receiveElement,
     revalidateOn: locale,
@@ -132,16 +134,26 @@ const {
  *
  * @param move - The store call.
  * @param success - The toast key.
+ * @param applyFieldErrors - The submitting form's own `applyServerErrors`, so a refusal that
+ *  names one of its fields lands on it; absent for a move with no form.
  * @returns A promise settling once the move finished.
  */
-const run = (move: () => Promise<unknown>, success: string) => {
+const run = (
+    move: () => Promise<unknown>,
+    success: string,
+    applyFieldErrors?: (error: unknown, options: { onUnmapped: () => void }) => boolean
+) => {
     clearMoveError();
     return move()
         .then(() => {
             addMessage(t(success));
             emit('changed');
         })
-        .catch((error: unknown) => reportMoveError(error));
+        .catch((error: unknown) => {
+            if (applyFieldErrors)
+                applyFieldErrors(error, { onUnmapped: () => reportMoveError(error) });
+            else reportMoveError(error);
+        });
 };
 
 /**
@@ -159,7 +171,11 @@ const handleApprove = () =>
  */
 const submitDecline = () =>
     handleDeclineSubmit(({ reason }) =>
-        run(() => decline(props.item.id, reason), 'return-staff-actions.success-decline')
+        run(
+            () => decline(props.item.id, reason),
+            'return-staff-actions.success-decline',
+            applyDeclineErrors
+        )
     );
 
 /**
@@ -177,7 +193,8 @@ const submitReceive = () =>
                         ? undefined
                         : { handlingDeduction: Number(handlingDeduction) }
                 ),
-            'return-staff-actions.success-receive'
+            'return-staff-actions.success-receive',
+            applyReceiveErrors
         )
     );
 </script>

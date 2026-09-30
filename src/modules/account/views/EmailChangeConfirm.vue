@@ -138,6 +138,7 @@ const submitForm = () => {
                     block
                     data-test="email-change-submit"
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                 >
                     {{ t('email-change-confirm-page.button-submit') }}
                 </v-btn>
