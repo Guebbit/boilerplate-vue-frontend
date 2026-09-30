@@ -243,6 +243,7 @@ how a reader finds the story without opening the file.
 | OP10 | An editor creates a product in two languages with price, weight, tax class, category, tag and image, then deactivates, soft-deletes, restores and erases it; a guest sees each state, in both languages and in the facets                                         | `editor`, guest                      | nightly  | `op10-editors-product-cradle-to-grave.cy.ts` |
 | OP14 | An admin edits and cancels an order and forces a parcel through ship and deliver with a reason each time; "history" opens the audit page narrowed to that order (and to a user), and the reasons are on record                                                    | `admin`                              | nightly  | `op14-audit-trail-follows-the-action.cy.ts`  |
 | OP15 | A moderator soft-deletes a paid order, which leaves its customer, and restores it; a paid order refuses a hard delete, an unpaid one is destroyed and its units return to the shelf                                                                               | `moderator`                          | nightly  | `op15-order-housekeeping.cy.ts`              |
+| AT1  | An editor registers a language switched off, fills its dictionary three ways, exports it, switches it on so a guest is offered it and reads it on the storefront; the fallback `en` refuses deletion, the new one deletes                                         | `editor`, guest                      | nightly  | `at1-launch-a-new-language.cy.ts`            |
 
 ## `tests/support/` — the harness
 
