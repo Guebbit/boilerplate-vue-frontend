@@ -106,6 +106,7 @@
         "button-add": "Aggiungi",
         "button-remove": "Rimuovi",
         "button-remove-named": "Rimuovi {method}",
+        "button-replace-named": "Sostituisci {method}",
         "backup-codes-remaining": "{count} codici di backup rimasti",
         "backup-codes-remaining-zero": "Nessun codice di backup rimasto — un dispositivo perso richiede il recupero assistito da un amministratore.",
         "backup-codes-title": "Salva i tuoi codici di backup",

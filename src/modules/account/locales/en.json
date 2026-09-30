@@ -106,6 +106,7 @@
         "button-add": "Add",
         "button-remove": "Remove",
         "button-remove-named": "Remove {method}",
+        "button-replace-named": "Replace {method}",
         "backup-codes-remaining": "{count} backup codes left",
         "backup-codes-remaining-zero": "No backup codes left — a lost device means admin-assisted recovery.",
         "backup-codes-title": "Save your backup codes",

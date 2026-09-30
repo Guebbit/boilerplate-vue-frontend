@@ -205,3 +205,20 @@ describe('ProfileTwoFactor: regenerating backup codes', () => {
             });
     });
 });
+
+describe('ProfileTwoFactor: replacing an armed method', () => {
+    it('names the method on the replace button, not a bare "Add"', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+
+        return flushPromises().then(() => {
+            const button = wrapper.get('[data-test=two-factor-replace-totp]').text();
+            expect(button).toMatch(/^Replace\b/);
+            expect(button).not.toBe('Add');
+        });
+    });
+});

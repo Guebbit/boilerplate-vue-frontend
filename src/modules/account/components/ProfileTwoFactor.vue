@@ -274,7 +274,11 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                             :data-test="`two-factor-replace-${row.method}`"
                             @click="openEnroll(row.method)"
                         >
-                            {{ t('two-factor.button-add') }}
+                            {{
+                                t('two-factor.button-replace-named', {
+                                    method: methodLabel(row.method)
+                                })
+                            }}
                         </v-btn>
                         <v-btn
                             variant="text"
