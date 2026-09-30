@@ -191,7 +191,9 @@ const handleDelete = (subscription: WebhookSubscription) =>
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
+                        {{ t('generic.reset') }}
+                    </v-btn>
                     <v-spacer />
                     <v-btn color="secondary" :to="routerLinkI18n({ name: 'WebhookCreate' })">
                         <Plus :size="16" class="mr-1" aria-hidden="true" />

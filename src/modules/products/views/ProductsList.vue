@@ -380,6 +380,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         v-if="isStaff"
                         v-model="filters.id"
                         :label="t('products-list-page.filter-id')"
+                        data-test="filter-id"
                         hide-details
                     />
                     <v-number-input
@@ -428,11 +429,13 @@ const handleHardDelete = (productId: string, title: string) =>
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary">
+                    <v-btn type="submit" color="primary" data-test="search-submit">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
+                        {{ t('generic.reset') }}
+                    </v-btn>
                     <v-spacer />
                     <v-btn
                         v-if="session.can('create', 'Product')"

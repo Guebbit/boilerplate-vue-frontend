@@ -65,6 +65,7 @@ watch(
             :length="length"
             :total-visible="7"
             :aria-label="ariaLabel"
+            data-test="pagination"
             density="comfortable"
             class="mt-4"
         />

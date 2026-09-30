@@ -300,17 +300,20 @@ const handleHardDelete = (userId: string, username: string) =>
                     <v-text-field
                         v-model="filters.text"
                         :label="t('users-list-page.filter-text')"
+                        data-test="filter-text"
                         maxlength="200"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.id"
                         :label="t('users-list-page.filter-id')"
+                        data-test="filter-id"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.email"
                         :label="t('users-list-page.filter-email')"
+                        data-test="filter-email"
                         hide-details
                     />
                     <v-text-field
@@ -325,6 +328,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         :items="activeOptions"
                         item-title="label"
                         item-value="value"
+                        data-test="filter-active"
                         hide-details
                     />
                     <v-select
@@ -343,7 +347,9 @@ const handleHardDelete = (userId: string, username: string) =>
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
+                        {{ t('generic.reset') }}
+                    </v-btn>
                     <v-spacer />
                     <v-btn color="secondary" :to="routerLinkI18n({ name: 'UserCreate' })">
                         <UserPlus :size="16" class="mr-1" aria-hidden="true" />
