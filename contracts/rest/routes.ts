@@ -92,6 +92,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/payments\/webhook$/, schemaName: "ReceivePaymentWebhookResponse", bodySchemaName: "ReceivePaymentWebhookBody", module: "payments" },
     { method: "GET", pattern: /^\/products\/categories$/, schemaName: "GetCatalogueFacetsResponse", bodySchemaName: undefined, module: "products" },
     { method: "POST", pattern: /^\/products\/search$/, schemaName: "SearchProductsResponse", bodySchemaName: "SearchProductsBody", module: "products" },
+    { method: "GET", pattern: /^\/products\/settings$/, schemaName: "GetProductSettingsResponse", bodySchemaName: undefined, module: "products" },
     { method: "DELETE", pattern: /^\/products$/, schemaName: "DeleteProductResponse", bodySchemaName: "DeleteProductBody", module: "products" },
     { method: "GET", pattern: /^\/products$/, schemaName: "ListProductsResponse", bodySchemaName: undefined, module: "products" },
     { method: "POST", pattern: /^\/products$/, schemaName: "CreateProductResponse", bodySchemaName: "CreateProductBody", module: "products" },

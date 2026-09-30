@@ -2580,12 +2580,14 @@ export const ListOAuthProvidersResponse = zod.strictObject({
 export const StartOAuthLoginParams = zod.strictObject({
     provider: zod.string()
 });
+export const startOAuthLoginQueryLocaleMax = 35;
 export const StartOAuthLoginQueryParams = zod.strictObject({
-    continue: zod.string().optional()
+    continue: zod.string().optional(),
+    locale: zod.string().max(startOAuthLoginQueryLocaleMax).optional()
 });
 export const StartOAuthLoginResponse = zod.void();
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise.
  * @summary Complete an OAuth login
  */
 export const CompleteOAuthLoginParams = zod.strictObject({
@@ -3496,6 +3498,18 @@ export const GetCatalogueFacetsResponse = zod.strictObject({
                 count: zod.number().min(1)
             })
         )
+    })
+});
+/**
+ * What the catalogue as a whole is configured with, as opposed to any one product: today the currency every price is quoted in (`NODE_DEFAULT_CURRENCY`). A create form reads it to size its price input before a product exists to ask. Public and cheap to read; it never changes without a redeploy.
+ * @summary The shop's catalogue settings
+ */
+export const GetProductSettingsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        currency: zod.string()
     })
 });
 /**

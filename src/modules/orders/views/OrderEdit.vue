@@ -12,6 +12,7 @@ export default {
  * on the `actions` the server attaches to the loaded record. `status` is not a form field: it
  * moves only through the cancel and override actions below.
  */
+import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -396,7 +397,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
                     :value="
-                        formatCurrency(currentOrder?.totalPrice, currentOrder?.currency ?? 'EUR')
+                        formatCurrency(
+                            currentOrder?.totalPrice,
+                            currentOrder?.currency ?? shopCurrency
+                        )
                     "
                     accent="tertiary"
                 />
