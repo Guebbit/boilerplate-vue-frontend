@@ -39,10 +39,11 @@ flowchart LR
         HTTP -->|typed data| Store
         Store --> Resp
     else 401
-        HTTP -->|redirect| Login["Login\n?continue=…"]
-    else 5xx
-        HTTP -->|navigate| Error["/error/500"]
-        HTTP -->|captureException| Faro["Grafana Faro"]
+        HTTP -->|refresh, replay once| Backend
+        HTTP -->|REAUTH_REQUIRED| Step["Step-up prompt\n(ReauthDialog)"]
+    else any other failure
+        HTTP -->|normalised envelope| Store
+        Store -->|rejects to| Caller["Call site\ntoast or in-place alert,\nreported to Faro"]
     end
 
     classDef user fill:#f0fdf4,stroke:#16a34a,color:#111827;
@@ -55,7 +56,7 @@ flowchart LR
     class Template,Comp view;
     class Store store;
     class Fn,HTTP,Backend http;
-    class Login,Error,Faro err;
+    class Step,Caller err;
 ```
 
 ## Observability signals
@@ -98,18 +99,18 @@ flowchart LR
 | Composable                                   | Encapsulates form state, validation, and list logic for one domain                                                                                |
 | Pinia store                                  | Orchestrates API calls, holds reactive data, exposes actions                                                                                      |
 | Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                              |
-| `src/infrastructure/http/index.ts`           | Single axios instance; request/response interceptors; shapes errors into `IResponseReject`                                                        |
+| `src/infrastructure/http/index.ts`           | Single axios instance; request/response interceptors; shapes errors into `AxiosResponseErrorData`                                                 |
 | Router guards                                | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
 
 ## Cross-cutting strategies
 
 ### Auth-first routing
 
-Route guards run on every navigation. A `401` during a guarded navigation redirects to Login with `?continue=` preserved so the user lands back after login.
+Route guards run on every navigation. A guard that refuses a guest redirects to Login with `?continue=` preserved so the user lands back after login. A `401` on an API call is not a redirect: the interceptor renews the token and replays the request once, and only a dead session (the refresh answered 401/403) signs the visitor out.
 
 ### Interceptors own error shape
 
-All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `IResponseReject` envelope. Views and stores never parse raw axios errors.
+All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `AxiosResponseErrorData` envelope — a transport failure included, as `status: 0`. Views and stores never parse raw axios errors; the call site decides whether the visitor sees a toast or an in-place alert, and reports a real failure to Faro (see below).
 
 ### Analytics is not this repo's call to make
 

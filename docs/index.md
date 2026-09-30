@@ -18,7 +18,7 @@ features:
     - title: This repo's specific shape
       details: Vue 3 + Pinia + Vue Router + Vue I18n + OpenAPI-generated axios client, shipped as one SPA package.
     - title: Domains are deletable
-      details: Four tiers and a module registry. Adding a domain is one folder plus one line; removing it is rm -rf plus that line.
+      details: Five tiers and a module registry. Adding a domain is one folder plus one line; removing it is rm -rf plus that line.
     - title: Layers stay visible
       details: Views, composables, stores, generated API client, and HTTP interceptors each keep a small, clear job.
     - title: Tooling is part of the boilerplate
@@ -109,7 +109,7 @@ flowchart LR
     Stores --> Views[Views: platform shell + modules]
     Views --> Router[Vue Router]
     Views --> I18N[Vue I18n]
-    Realtime --> RTClients[SSE + WS clients]
+    Realtime --> RTClients[SSE client]
     RTClients --> Stores
 
     Stores --> Obs[Grafana Faro + Umami\nobservability store]

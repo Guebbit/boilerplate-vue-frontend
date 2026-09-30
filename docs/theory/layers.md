@@ -45,8 +45,8 @@ only after the fact. `cart` and `products` once needed each other; the product p
 now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge
 points one way.
 
-The sixteen modules in this build are `account`, `admin`, `api-keys`, `cart`, `delivery`, `demo`,
-`feedback`, `inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users`,
+The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `demo`, `feedback`,
+`inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `users`,
 `webhooks` and `wishlist`.
 
 `demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
@@ -213,7 +213,7 @@ For a product flow you typically move through:
 - `src/modules/<name>/composables/<useThing>.ts` (optional — products has two,
   `use-active-locales.ts` and `translation-tab-errors.ts`)
 - `src/modules/products/store.ts`
-- `contracts/rest/index.ts` → `getProducts()`
+- `contracts/rest/index.ts` → `listProducts()`
 - `src/infrastructure/http/index.ts`
 
 The same shape repeats for every entity. The entity names are examples.

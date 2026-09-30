@@ -1,6 +1,6 @@
 # Modules
 
-`src/modules/` is most of the repository, and almost none of it is unique. Fourteen domains are
+`src/modules/` is most of the repository, and almost none of it is unique. Every domain is
 built from the same dozen file shapes, so this page explains each **shape** once and then says
 which module carries which.
 

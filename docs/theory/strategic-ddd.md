@@ -53,14 +53,14 @@ and the kinds differ enormously in what they cost when the upstream moves:
 | Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
 | `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `inventory → products` |
-| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `products → cart`      |
+| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → products`  |
 | `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
 
 ### Where the map lives
 
 In the docblock at the top of each module's `module.ts`, in prose, next to the imports it describes.
-`cart` reaches five siblings, and its docblock says how it depends on each: two `conformist` reads,
-two `customer-supplier` calls, one `published-language`. The last is the cheapest relationship in
+`cart` reaches four siblings, and its docblock says how it depends on each: three `published-language`
+vocabularies (`delivery`, `payments`, `account`) and one `customer-supplier` read (`products`). `published-language` is the cheapest relationship in
 the table and the one to copy: `delivery` publishes a component and no storage at all.
 
 This used to be a `dependsOn` field on the manifest — a typed array of `{ module, as, because }`

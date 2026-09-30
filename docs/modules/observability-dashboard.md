@@ -58,7 +58,7 @@ feeds the realtime playground, the other screen this same module owns.
 All five are registered through this module's manifest, so enabling the domain turns their contract
 validation on and deleting the folder turns it off. There is no shared table to remember to edit.
 
-## Why `types.ts` exists here and nowhere else
+## Why `types.ts` exists here
 
 ::: warning A KPI tile is not a response shape
 The generated types describe exactly what each endpoint returns. A tile showing _requests per second,
@@ -71,8 +71,7 @@ a glance which shapes came from the contract and which this client invented. Put
 `src/types/` would blur exactly that line.
 :::
 
-This is the only module in either repository with a `types.ts`, and the file-shape catalogue
-(`tests/cross-cutting/module-file-shapes.spec.ts`) says so.
+Only a module with view-only shapes carries a `types.ts` — [`webhooks`](./webhooks.md) has one too, for its delivery filter bar — and the file-shape catalogue (`tests/cross-cutting/module-file-shapes.spec.ts`) says what one is for.
 
 ## The audit table reads somebody else's writes
 

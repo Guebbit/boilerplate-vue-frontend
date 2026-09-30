@@ -35,7 +35,7 @@ flowchart TD
     D -.->|"409 · method can't<br/>carry the weight"| K["clear the method<br/>and say why"]
     D -.->|"404 · a line's product<br/>left the catalogue"| L["name the lines"]
     D -.->|"404 · address or<br/>method gone"| I["reopen that step"]
-    D -.->|"transport failed"| J["CHECKOUT_REQUEST_FAILED"]
+    D -.->|"transport failed"| J["generic checkout error,<br/>same Idempotency-Key on retry"]
 
     classDef ui fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef call fill:#ede9fe,stroke:#7c3aed,color:#111827;
@@ -70,7 +70,7 @@ the boundary — two numbers this screen already owns for its own totals — not
 | `404`     | One or more lines' products left the catalogue (`CART_PRODUCT_UNAVAILABLE`)                          | Name the lines — `title` absent for a hard-deleted product, since there is nothing left to read one off.                                         |
 | `404`     | The address or the shipping method named no longer exists                                            | Reopen that step rather than failing the whole flow.                                                                                             |
 | `422`     | The resolved address's country isn't on the ship-to list (`CART_SHIP_TO_COUNTRY_NOT_SUPPORTED`, E12) | Say so — the country select already narrows a NEW address to the list, so the fix is picking or adding one, not a field this screen can correct. |
-| transport | The request never reached the API                                                                    | The one thing the server cannot report, so this client reports it.                                                                               |
+| transport | The request never reached the API                                                                    | Show the generic checkout error. The `Idempotency-Key` is kept, so a retry is the same attempt.                                                  |
 
 ::: warning Two of these are lists, and rendering either as one message throws away the useful half
 `CART_INSUFFICIENT_STOCK`'s `errors[0].details.lines` carries `productId`, `title`, `requested` and
@@ -79,19 +79,12 @@ the boundary — two numbers this screen already owns for its own totals — not
 game.
 :::
 
-## The one analytics event this module owns
+## Analytics
 
-`CHECKOUT_REQUEST_FAILED` is emitted here, and it is the only checkout event this client reports.
-Every other one — `checkout_completed`, `checkout_failed` — is emitted by the backend.
-
-::: tip Why the split is that lopsided
-Both repositories write into one Umami website, and **each name has exactly one emitter**. Anything
-with an API call behind it is reported by the server, where it cannot be blocked by an extension,
-lost with the tab, or forged from a console.
-
-What is left for the client is what no request can carry — and a checkout that never reached the API
-is precisely that.
-:::
+This client emits no checkout event. Every one — `checkout_completed`, `checkout_failed` — is
+reported by the backend handler that decided it, so each name has exactly one emitter and none can be
+blocked by an extension, lost with the tab or forged from a console. A checkout that never reached
+the API is visible as a failed request span in Faro instead.
 
 ## After a success
 

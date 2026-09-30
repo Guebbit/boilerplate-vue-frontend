@@ -95,17 +95,17 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 ## Files
 
-| File                              | What it is                                                                                                                                                  | Explained in                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/ShipmentPanel.vue`    | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `components/ShippingSelector.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `index.ts`                        | The public barrel: the only surface a sibling module may import.                                                                                            | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `locales/it.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `module.ts`                       | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
-| `response-schemas.ts`             | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
-| `store.ts`                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/store.spec.ts`             | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
+| File                              | What it is                                                                                                                                                                                        | Explained in                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `components/ShipmentPanel.vue`    | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                          | [read](../theory/layers.md)           |
+| `components/ShippingSelector.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                          | [read](../theory/layers.md)           |
+| `index.ts`                        | The public barrel: the only surface a sibling module may import.                                                                                                                                  | [read](../theory/strategic-ddd.md)    |
+| `locales/en.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                   | [read](../tools/i18n.md)              |
+| `locales/it.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                   | [read](../tools/i18n.md)              |
+| `module.ts`                       | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys, slots and locale reset. | [read](../theory/modules.md)          |
+| `response-schemas.ts`             | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                                | [read](../api/openapi-workflow.md)    |
+| `store.ts`                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                            | [read](../tools/state-and-routing.md) |
+| `tests/store.spec.ts`             | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                    | [read](../tools/unit-testing.md)      |
 
 ## Working on it
 

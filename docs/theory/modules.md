@@ -76,8 +76,8 @@ Making the tier explicit moved five things and deleted the exemption:
 | `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     | <!-- doc-paths:ignore --> |
 | `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app | <!-- doc-paths:ignore --> |
 
-**This mirrors the backend**, which made the same split at the same time — the four tiers there are
-`app → modules → kernel → infrastructure`, with `ui` being the one tier a backend has no use for.
+**This mirrors the backend**, which made the same split at the same time — the tiers there are
+`app → modules → kernel → infrastructure`, and `ui` is the one tier a backend has no use for — this repo's fifth.
 
 ### The `infrastructure` / `kernel` line
 

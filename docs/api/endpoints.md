@@ -1,7 +1,7 @@
 # Endpoints
 
 All HTTP endpoints grouped by domain. These are what the generated client in `contracts/rest/index.ts` calls.
-The **Auth** column shows the minimum access level the backend requires.
+The **Auth** column shows what the backend requires: `none`, `user` (a signed-in visitor), or `permission` (a rule the caller's own `GET /account/abilities` must grant, e.g. `update Product` — there is no `admin` level). The tables list the common operations; `contracts/rest/routes.ts` is the complete, generated list.
 
 > The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.
 
@@ -24,7 +24,7 @@ flowchart TD
 
     API -->|"4xx / 5xx"| E["{ success: false, status, message, errors[] }"]
     API -.->|"no answer at all"| X["transport failure"]
-    E --> N["onResponseReject normalises,<br/>adding x-request-id / x-trace-id"]
+    E --> N["onResponseReject normalises,<br/>adding x-request-id / traceparent"]
     X --> N
     N --> R["The store's .catch receives that envelope —<br/>never an Error, which is the point"]
 ```
@@ -71,12 +71,12 @@ flowchart LR
 
 Used by the Admin Dashboard. See [Observability Endpoints](./observability.md) for response shapes and the composable that fetches them.
 
-| Method | Endpoint                          | Auth  | Description                                 |
-| ------ | --------------------------------- | ----- | ------------------------------------------- |
-| GET    | `/observability/events`           | none  | SSE stream: live metrics snapshot every 5 s |
-| GET    | `/observability/health`           | admin | Full health snapshot                        |
-| GET    | `/observability/metrics/overview` | admin | Curated KPI JSON                            |
-| GET    | `/observability/audit`            | admin | Recent audit events                         |
+| Method | Endpoint                          | Auth       | Description                                 |
+| ------ | --------------------------------- | ---------- | ------------------------------------------- |
+| GET    | `/observability/events`           | none       | SSE stream: live metrics snapshot every 5 s |
+| GET    | `/observability/health`           | permission | Full health snapshot                        |
+| GET    | `/observability/metrics/overview` | permission | Curated KPI JSON                            |
+| GET    | `/observability/audit`            | permission | Recent audit events                         |
 
 ## Account & Auth
 
@@ -95,73 +95,81 @@ JWT-based authentication. Login returns an `accessToken` in the body and sets a 
 
 ## Products
 
-Read endpoints are public. Write endpoints require admin.
+Read endpoints are public. Write endpoints require a permission. `PUT` replaces a record whole; `PATCH` merges the fields it sends.
 
-| Method | Endpoint           | Auth  | Description           |
-| ------ | ------------------ | ----- | --------------------- |
-| GET    | `/products`        | none  | List products         |
-| POST   | `/products/search` | none  | Search with filters   |
-| GET    | `/products/:id`    | none  | Single product detail |
-| POST   | `/products`        | admin | Create product        |
-| PUT    | `/products`        | admin | Bulk update products  |
-| PUT    | `/products/:id`    | admin | Update single product |
-| DELETE | `/products`        | admin | Bulk delete products  |
-| DELETE | `/products/:id`    | admin | Delete single product |
+| Method | Endpoint                | Auth       | Description                                    |
+| ------ | ----------------------- | ---------- | ---------------------------------------------- |
+| GET    | `/products`             | none       | List products                                  |
+| POST   | `/products/search`      | none       | Search with filters, or read a batch of ids    |
+| GET    | `/products/categories`  | none       | Catalogue facets: categories and tags, counted |
+| GET    | `/products/:id`         | none       | Single product detail                          |
+| GET    | `/products/:id/admin`   | permission | Every language a product has a row for         |
+| POST   | `/products`             | permission | Create product                                 |
+| PUT    | `/products/:id`         | permission | Replace a product                              |
+| PATCH  | `/products/:id`         | permission | Update the fields sent                         |
+| DELETE | `/products/:id`         | permission | Soft-delete a product                          |
+| POST   | `/products/:id/restore` | permission | Undo a soft delete                             |
+| DELETE | `/products/:id/hard`    | permission | Delete for good                                |
 
 ## Cart
 
 Per-user. Items are scoped to the authenticated user.
 
-| Method | Endpoint           | Auth | Description             |
-| ------ | ------------------ | ---- | ----------------------- |
-| GET    | `/cart`            | user | Get current cart        |
-| GET    | `/cart/summary`    | user | Cart totals             |
-| POST   | `/cart`            | user | Add item to cart        |
-| PUT    | `/cart/:productId` | user | Update item quantity    |
-| DELETE | `/cart/:productId` | user | Remove item from cart   |
-| DELETE | `/cart`            | user | Clear entire cart       |
-| POST   | `/cart/checkout`   | user | Checkout → create order |
+| Method | Endpoint                 | Auth | Description                                   |
+| ------ | ------------------------ | ---- | --------------------------------------------- |
+| GET    | `/cart`                  | user | Get current cart, with its shipping options   |
+| GET    | `/cart/summary`          | user | Cart totals only                              |
+| POST   | `/cart`                  | user | Add item to cart (grows a line already there) |
+| PUT    | `/cart/:productId`       | user | Set an item's exact quantity                  |
+| DELETE | `/cart/:productId`       | user | Remove item from cart                         |
+| DELETE | `/cart/all`              | user | Clear the entire cart                         |
+| PUT    | `/cart/shipping-method`  | user | Choose (or clear) the shipping method         |
+| POST   | `/cart/checkout`         | user | Checkout → create order                       |
+| POST   | `/cart/reorder/:orderId` | user | Copy a past order back into the cart          |
 
 ## Orders
 
-Regular users see only their own orders. Admins can write to any order.
+Regular users see only their own orders. A permission is needed to write to any order.
 
-| Method | Endpoint              | Auth  | Description           |
-| ------ | --------------------- | ----- | --------------------- |
-| GET    | `/orders`             | user  | List own orders       |
-| POST   | `/orders/search`      | user  | Search own orders     |
-| GET    | `/orders/:id`         | user  | Single order detail   |
-| GET    | `/orders/:id/invoice` | user  | Download invoice PDF  |
-| POST   | `/orders`             | admin | Create order manually |
-| PUT    | `/orders`             | admin | Bulk update orders    |
-| PUT    | `/orders/:id`         | admin | Update single order   |
-| DELETE | `/orders`             | admin | Bulk delete orders    |
-| DELETE | `/orders/:id`         | admin | Delete single order   |
+| Method | Endpoint                      | Auth       | Description                                 |
+| ------ | ----------------------------- | ---------- | ------------------------------------------- |
+| GET    | `/orders`                     | user       | List own orders                             |
+| POST   | `/orders/search`              | user       | Search own orders                           |
+| GET    | `/orders/:id`                 | user       | Single order detail                         |
+| GET    | `/orders/:id/invoice`         | user       | Download invoice PDF                        |
+| POST   | `/orders`                     | permission | Create order manually                       |
+| PUT    | `/orders/:id`                 | permission | Replace an order                            |
+| PATCH  | `/orders/:id`                 | permission | Update the fields sent                      |
+| POST   | `/orders/:id/cancel`          | user       | Cancel an order that may still be cancelled |
+| POST   | `/orders/:id/status-override` | permission | Move an order to a status by hand           |
+| DELETE | `/orders/:id`                 | permission | Soft-delete an order                        |
 
 ## Users (admin)
 
 Full user management. Self-service actions (`GET /account`, `DELETE /account`) live under `/account`.
 
-| Method | Endpoint        | Auth  | Description        |
-| ------ | --------------- | ----- | ------------------ |
-| GET    | `/users`        | admin | List all users     |
-| POST   | `/users/search` | admin | Search users       |
-| GET    | `/users/:id`    | admin | Single user detail |
-| POST   | `/users`        | admin | Create user        |
-| PUT    | `/users`        | admin | Bulk update users  |
-| PUT    | `/users/:id`    | admin | Update single user |
-| DELETE | `/users`        | admin | Bulk delete users  |
-| DELETE | `/users/:id`    | admin | Delete single user |
+| Method | Endpoint             | Auth       | Description            |
+| ------ | -------------------- | ---------- | ---------------------- |
+| GET    | `/users`             | permission | List all users         |
+| POST   | `/users/search`      | permission | Search users           |
+| GET    | `/users/:id`         | permission | Single user detail     |
+| POST   | `/users`             | permission | Create user            |
+| PUT    | `/users/:id`         | permission | Replace a user         |
+| PATCH  | `/users/:id`         | permission | Update the fields sent |
+| DELETE | `/users/:id`         | permission | Soft-delete a user     |
+| POST   | `/users/:id/restore` | permission | Undo a soft delete     |
 
 ## Feedback
 
 Contact form submissions from any visitor.
 
-| Method | Endpoint            | Auth  | Description            |
-| ------ | ------------------- | ----- | ---------------------- |
-| POST   | `/feedback/contact` | none  | Submit a contact form  |
-| GET    | `/feedback`         | admin | List all feedback      |
-| PUT    | `/feedback/:id`     | admin | Update feedback status |
+| Method | Endpoint            | Auth       | Description                  |
+| ------ | ------------------- | ---------- | ---------------------------- |
+| POST   | `/feedback/contact` | none       | Submit a contact form        |
+| GET    | `/feedback`         | permission | List all feedback            |
+| POST   | `/feedback/search`  | permission | Search feedback              |
+| PATCH  | `/feedback/:id`     | permission | Update the feedback's status |
+| DELETE | `/feedback/:id`     | permission | Delete a feedback request    |
 
 ## SSE
 

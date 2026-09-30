@@ -3,7 +3,7 @@
 **The first hour in the codebase.** Every other page here explains a concept; this one names the
 files, in order, and says what to skip.
 
-The repository is ~11,500 lines of source across 12 modules. You do not need to read them. Nine
+The repository is a large body of source across many modules. You do not need to read them. Nine
 files carry the shape of the whole thing, and every module is a variation on one of them.
 
 ::: tip Before the code
@@ -61,7 +61,7 @@ not by importing into them.
 
 ### 2 · `src/modules.ts` — what this build ships
 
-Twelve domains, one array. Identical in spirit to the backend's file of the same name.
+Every domain, one array. Identical in spirit to the backend's file of the same name.
 
 **Take away:** deleting a domain is `rm -rf` plus removing one line.
 
@@ -157,7 +157,7 @@ generated code inherits all of the above without knowing it exists.
 ## The five rules the code assumes you know
 
 1. **A module is a value.** One typed object per domain, listed in `src/modules.ts`.
-2. **Four tiers, pointing downward.** `ui` knows nothing; `infrastructure` and `kernel` know no
+2. **Five tiers, pointing downward.** `ui` knows nothing; `infrastructure` and `kernel` know no
    domain; `modules/*` know each other only through a sibling's public barrel; `app` assembles.
 3. **The contract is an output.** `@api` and `@types` are generated from `openapi.yaml`. Never edit
    generated files, and never hand-write a request type.

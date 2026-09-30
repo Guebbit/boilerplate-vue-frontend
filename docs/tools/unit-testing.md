@@ -11,7 +11,7 @@ The layer that answers: **does this one piece of logic — a component, a store,
 | [jsdom](https://github.com/jsdom/jsdom)                      | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.environment.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
 | [Pinia](https://pinia.vuejs.org/) (`createPinia()` per test) | Stores under test get a fresh instance every time — no state leaks between tests                                                                                                                                   |
 | `vi.mock()`                                                  | Replaces `@api` (the generated client), `@/infrastructure/observability`, etc. with hand-written stubs                                                                                                             |
-| [msw/node](https://mswjs.io/docs/integrations/node)          | The _one_ place this layer mocks HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, see below                                                                                                    |
+| [msw/node](https://mswjs.io/docs/integrations/node)          | The transport specs mock HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, `step-up.spec.ts` and the two `http-validate-*.spec.ts`, see below                                                   |
 
 ## Where it sits
 
@@ -20,7 +20,7 @@ The layer that answers: **does this one piece of logic — a component, a store,
 flowchart TB
     Source["src/**\ncore · ui · platform · modules"] --> Unit["Vitest\ntests/unit/**/*.spec.ts"]
     Unit --> ModuleMock["vi.mock('@api', ...)\nhand-written return values"]
-    Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(http-refresh.spec.ts only)"]
+    Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(the transport specs only)"]
     Unit --> Coverage[("v8 coverage\nnpm run test:unit:coverage")]
     Unit --> Mutation["Stryker\nmutation-tests THIS layer\nsee Mutation Testing"]
 
@@ -52,9 +52,9 @@ const mountCounter = (props = {}) =>
 
 `tests/unit/ui/form-counter-input.spec.ts` and `tests/unit/app/app-navigation.spec.ts` are the two examples.
 
-### Store tests — `vi.mock('@api', ...)`
+### Store tests — stubbing the network boundary
 
-Every domain store (`cart`, `orders`, `products`, `users`) is tested by mocking the generated API client at the module boundary, not by hitting a network at all:
+A domain store is tested by stubbing where the network starts, not by hitting one: most store specs mock `@api` (the generated client, as below), and the rest mock `orvalMutator` so the real generated client and request/response validation still run:
 
 ```ts
 vi.mock('@api', () => ({
@@ -65,9 +65,9 @@ vi.mock('@api', () => ({
 
 `createPinia()` + `setActivePinia()` in a `beforeEach` gives every test a clean store. This is the layer that catches a store forgetting to fire (or over-firing) an analytics event, or mishandling a not-yet-fetched empty state — see `src/modules/cart/tests/store.spec.ts`'s header comment for the two specific regressions this pattern was built to catch.
 
-### The one exception — a real HTTP server for the refresh flow
+### The exception — a real HTTP server for the transport specs
 
-`tests/unit/infrastructure/http/http-refresh.spec.ts` is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
+`tests/unit/infrastructure/http/http-refresh.spec.ts` (and, on the same approach, `step-up.spec.ts` and the two `http-validate-*.spec.ts`) is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
 
 ```ts
 const server = setupServer(

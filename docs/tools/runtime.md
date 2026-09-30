@@ -10,7 +10,6 @@
 | [Vite](https://vite.dev/)                                                   | Dev server + production bundler              | `vite.config.ts`; dev on `:8080`, production via `npm run build`                     |
 | [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)             | `.vue` SFC support in Vite                   | transforms SFCs in both dev and build                                                |
 | [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files       | runs in `npm run build` and CI                                                       |
-| [Sass / sass-embedded](https://sass-lang.com/)                              | SCSS authoring                               | `src/styles/` global styles; design tokens from `@guebbit/css-toolkit`               |
 | [Axios](https://axios-http.com/)                                            | HTTP client                                  | used by the generated API client; interceptors in `src/infrastructure/http/index.ts` |
 
 ## Runtime visual
@@ -20,7 +19,7 @@
 flowchart LR
     Vite --> SFC[".vue SFCs\n@vitejs/plugin-vue"]
     SFC --> Components[Components + views]
-    SFC --> Styles[Sass styles]
+    SFC --> Styles[CSS: Vuetify + Tailwind]
     Components --> Pinia[Pinia stores]
     Pinia --> Axios[Axios\nsrc/infrastructure/http/index.ts]
     Axios --> API[Generated client\ncontracts/rest/index.ts]

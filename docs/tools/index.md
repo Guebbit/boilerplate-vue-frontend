@@ -10,7 +10,7 @@ This section explains **why dependencies exist** and where they fit in the app.
 %%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 75}}}%%
 flowchart LR
     subgraph Core["Core stack"]
-        Runtime[Runtime\nVue 3 · Vite · TypeScript · Sass]
+        Runtime[Runtime\nVue 3 · Vite · TypeScript]
         Security[Security\nJWT handling · route guards]
         StateRouting[State & Routing\nPinia · Vue Router · Vue I18n]
     end
@@ -49,7 +49,7 @@ flowchart LR
 | Group         | Page                                                  | What you'll find                                                                                                              |
 | ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Overview      | **[Tools Explained](./tools-explained.md)**           | "What is X and why is it here?" for every tool: plain-English definition, problem it solves, and how it's wired in this repo. |
-| Setup         | **[Runtime](./runtime.md)**                           | Vue 3, Vite, TypeScript, Sass, @vitejs/plugin-vue: the framework-level packages that make the app build and run.              |
+| Setup         | **[Runtime](./runtime.md)**                           | Vue 3, Vite, TypeScript, @vitejs/plugin-vue: the framework-level packages that make the app build and run.                    |
 | Setup         | **[Security](./security.md)**                         | How the FE handles JWT access tokens, refresh cookies, and route guards.                                                      |
 | Setup         | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern.                                                                             |
 | Setup         | **[Package Scripts](./package-scripts.md)**           | What every `npm run <script>` does and when to reach for it.                                                                  |
