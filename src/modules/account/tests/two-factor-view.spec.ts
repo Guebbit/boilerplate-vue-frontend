@@ -221,4 +221,42 @@ describe('ProfileTwoFactor: replacing an armed method', () => {
             expect(button).not.toBe('Add');
         });
     });
+
+    it('a cancelled replace re-reads the status, so the panel stops listing the disarmed method', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+
+        return flushPromises()
+            .then(() => {
+                // Starting the replace disarms the method on the server before anything is proved.
+                responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+                    method: 'totp',
+                    delivers: false,
+                    secret: 'JBSWY3DPEHPK3PXP',
+                    otpauthUri: 'otpauth://totp/x'
+                });
+                responses['GET /account/2fa'] = orvalEnvelope({
+                    enabled: false,
+                    methods: [],
+                    available: [{ method: 'totp', delivers: false, enrollable: true }],
+                    backupCodesRemaining: 0
+                });
+                return wrapper.get('[data-test=two-factor-replace-totp]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() =>
+                document.body
+                    .querySelector<HTMLButtonElement>('[data-test=two-factor-enroll-cancel]')
+                    ?.click()
+            )
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.find('[data-test=two-factor-armed]').exists()).toBe(false);
+                expect(wrapper.find('[data-test=two-factor-add-totp]').exists()).toBe(true);
+            });
+    });
 });

@@ -85,8 +85,10 @@ const setup = ref<TwoFactorSetup>();
  * otherwise leave that interval ticking in the store for the rest of the session.
  */
 const closeAndClear = () => {
-    twoFactor.clearSetup();
     emit('close');
+    // Re-read the status too: a replace disarms the method before its new code is proved, so a
+    // cancel would otherwise leave the panel listing a factor the server no longer holds.
+    void twoFactor.abandonSetup();
 };
 
 onMounted(() => {

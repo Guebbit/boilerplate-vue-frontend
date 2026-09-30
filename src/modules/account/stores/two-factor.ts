@@ -281,6 +281,18 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     };
 
     /**
+     * Drops a pending enrollment and re-reads the account's status. Starting a setup disarms a
+     * method that was already armed, so walking away from it leaves the server's truth different
+     * from the list still on screen; only a re-read tells them apart.
+     *
+     * @returns A promise resolving once `status` reflects what the server now holds.
+     */
+    const abandonSetup = () => {
+        clearSetup();
+        return fetchStatus();
+    };
+
+    /**
      * Opens the login-time challenge, from `useAuthStore().login()`'s `mfa` branch.
      *
      * @param outcome - The `mfa` branch of a {@link LoginOutcome}.
@@ -394,6 +406,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         disableAll,
         regenerateBackupCodes,
         clearSetup,
+        abandonSetup,
 
         beginLoginChallenge,
         beginOAuthChallenge,
