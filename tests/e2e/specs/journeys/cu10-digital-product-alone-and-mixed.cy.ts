@@ -2,15 +2,16 @@
 /**
  * @module
  * CU10 · A digital product, alone and mixed. A video course ships nothing, so a basket holding only
- * that asks for no shipping method, no address and charges no delivery. Put a physical product beside
- * it and delivery comes back — priced on the physical line only, never on the course.
+ * that asks for no shipping method and no address, says so in one line, and charges no delivery. Put a
+ * physical product beside it and delivery comes back: a method and an address are asked for again.
+ *
+ * The free-shipping line counts the whole basket, course included, and the cart quotes exactly what
+ * the order then charges. A shipping choice left behind by a basket that has since gone digital-only
+ * (the last physical line removed) is ignored, not refused.
  *
  * The physical line is the made-to-order bowl (`product.noWithdrawal`, EU Art. 16(c)), so the same
  * order also proves that line carries its no-withdrawal notice and the digital one does not. Nothing
  * is paid: the story stops at the orders the checkout writes.
- *
- * The proof that delivery ignores the course is the threshold: bowl 80 plus course 29 is 109, past
- * standard's free-from-100 line, yet delivery is still charged because the bowl alone is under it.
  */
 import {
     addToCartFromStorefront,
@@ -33,21 +34,17 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.visit('/en');
     });
 
-    it('a course alone ships nothing; beside a physical line only that line is shipped and priced', () => {
+    it('a course alone ships nothing; beside a physical line shipping is back and the whole basket is priced', () => {
         cy.step('the customer puts the digital course alone in the cart');
         cy.loginAs('user');
-        // The seeded customer's cart still remembers the shipping method of their last checkout,
-        // and checkout refuses that method on a basket with nothing to ship (409, with no control
-        // on the page to clear it). The story starts from a cart with no method chosen.
-        cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: null });
         addToCartFromStorefront('product.digital');
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);
 
         cy.step('no shipping step, no address, no delivery cost: the basket can be bought at once');
         cy.get('[data-test=cart-summary]').should('exist');
-        // The selector's own heading still renders, but with no method to choose from.
-        cy.get('[data-test^=shipping-method-]').should('not.exist');
+        cy.get('[data-test=cart-no-shipping]').should('exist');
+        cy.get('[data-test=shipping-selector]').should('not.exist');
         cy.get('[data-test=address-picker]').should('not.exist');
         cy.get('[data-test=cart-shipping-cost]').should('not.exist');
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
@@ -72,31 +69,54 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 2);
 
-        cy.step('shipping is back: standard, to the default address, past the free-shipping line');
+        cy.step('shipping is back: standard, to the default address, and the whole basket counts');
+        cy.get('[data-test=cart-no-shipping]').should('not.exist');
         cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=address-picker]').should('exist');
         // Bowl 80 plus course 29: the basket as a whole is past standard's free-from-100 line.
-        centsOf('[data-test=cart-items-total]').should('be.greaterThan', cents('100.00'));
+        const cart = { items: 0, shipping: 0 };
+        centsOf('[data-test=cart-items-total]').then((items) => {
+            cart.items = items;
+            expect(items).to.be.greaterThan(cents('100.00'));
+        });
+        centsOf('[data-test=cart-shipping-cost]').then((shipping) => {
+            cart.shipping = shipping;
+        });
         // Forced: the toasts of the two add-to-carts sit over the foot of the page, and the button
         // is at the foot. `not.be.disabled` still guards it.
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
 
         cy.step(
-            'the order froze that delivery, and only the bowl says it cannot be withdrawn from'
+            'the order charges what the cart quoted, and only the bowl cannot be withdrawn from'
         );
         cy.get('#order-target').should('exist');
         cy.get('[data-test=order-item-line-total]').should('have.length', 2);
         cy.get('[data-test=order-shipping]').should('exist');
         cy.get('[data-test=order-shipping-address]').should('exist');
         cy.get('[data-test=order-item-no-withdrawal]').should('have.length', 1);
-        // What the order charges is the authority on delivery. The cart's own preview prices it on
-        // every line, course included, so it reads free here and is not compared.
-        centsOf('[data-test=order-shipping]').should('equal', cents('5.00'));
+        centsOf('[data-test=order-shipping]').should((shipping) => {
+            expect(shipping, 'the order froze the quote').to.equal(cart.shipping);
+            expect(shipping, 'free: the whole basket is past the line').to.equal(0);
+        });
         idFromLocation().then((orderId) => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.shippingMethod).to.equal('standard');
                 expect(order?.items).to.have.length(2);
             });
         });
+
+        cy.step('a choice left behind by a basket that went digital-only is ignored at checkout');
+        addToCartFromStorefront('product.noWithdrawal');
+        addToCartFromStorefront('product.digital');
+        cy.goToCart();
+        cy.get('[data-test=shipping-method-standard]').click();
+        cy.subjectProduct('product.noWithdrawal').then(({ title }) => {
+            cy.contains('[data-test=cart-item]', title).find('[data-test=cart-remove]').click();
+        });
+        cy.get('[data-test=cart-item]').should('have.length', 1);
+        cy.get('[data-test=cart-no-shipping]').should('exist');
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
+        cy.get('#order-target').should('exist');
+        cy.get('[data-test=order-shipping]').should('not.exist');
     });
 });

@@ -5,9 +5,9 @@
  * customer checks out first, which holds it; the second shopper is refused, naming the shortfall.
  * When the customer cancels, the hold is released and the second shopper's next attempt goes through.
  *
- * The second shopper is the editor, who holds the checkout key like any buyer. That matters beyond
- * convenience: a staff account reads the product page uncached, so its "in stock" count is the
- * live one on every profile. The customer never re-reads the product page here.
+ * The second shopper is the editor, who holds the checkout key like any buyer. Both shoppers also
+ * read the product page's count along the way: it follows the hold and the release, because every
+ * stock write clears the server cache and the browser revalidates the page.
  */
 import { addToCartFromStorefront, idFromLocation } from '../../../support/e2e/steps';
 
@@ -53,6 +53,10 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 cy.get('#order-target').should('exist');
                 expectAvailable(productId, 0);
                 idFromLocation().then((orderId) => {
+                    cy.step("the customer's own page for it now says out of stock");
+                    cy.visit(`/en/products/${productId}`);
+                    cy.get('[data-test=product-stock]').should('contain.text', 'Out of stock');
+
                     cy.step(
                         'the second shopper sees it gone, and checkout refuses with the shortfall'
                     );
@@ -79,6 +83,8 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.get('[data-test=app-dialog-confirm]').click();
                     cy.get('[data-test=order-cancel]').should('not.exist');
                     expectAvailable(productId, 1);
+                    cy.visit(`/en/products/${productId}`);
+                    cy.get('[data-test=product-stock]').should('not.contain.text', 'Out of stock');
 
                     cy.step('the second shopper tries again and gets it');
                     cy.switchUser('editor');
