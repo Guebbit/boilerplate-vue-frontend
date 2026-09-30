@@ -18,7 +18,10 @@ import {
 } from '../../../support/e2e/steps';
 import { mailedLinkUrl } from '../../../support/e2e/commands';
 
-/** How many units make the basket clear a thousand, so the total needs a thousands separator. */
+/**
+ * How many units make the basket clear a thousand. Whether a four-digit Italian amount is grouped
+ * (`1.020,00`) or not (`1020,00`) depends on the browser's ICU version, so the spec accepts both.
+ */
 const UNITS = 15;
 
 /**
@@ -69,8 +72,8 @@ describe('CU16 · A whole purchase in Italian', () => {
             cy.get('[data-test=cart-total]').should(($total) => {
                 expect(
                     unspaced($total.text()),
-                    'dot for thousands, comma for cents, the symbol after'
-                ).to.match(/^\d{1,3}(\.\d{3})+,\d{2}€$/);
+                    'comma for cents, the symbol after, a dot only for grouped thousands'
+                ).to.match(/^\d+(\.\d{3})*,\d{2}€$/);
             });
             // The same amount however it is spelled: the basket, shipping free above the line.
             shouldShowCents('[data-test=cart-total]', (total) => {
