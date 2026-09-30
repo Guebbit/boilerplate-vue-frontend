@@ -235,6 +235,7 @@ how a reader finds the story without opening the file.
 | OP4  | A moderator refunds a delivered order (refund only): the cancel buttons stay shut, the order stays delivered, the payment reads refunded, and the customer sees the refund and its credit note                                                                    | `moderator`, then `user`             | nightly  | `op4-refund-delivered-order.cy.ts`      |
 | OP5  | An admin cancels one paid order only (the money stays captured, refund only works later) and cancels-and-refunds another in one press; credit notes are issued and the stock is back                                                                              | `admin`                              | nightly  | `op5-cancel-only-or-refund.cy.ts`       |
 | OP23 | A moderator cancels a cash-paid order: the page says the refund is owed, refund only records it by hand, the invoice still downloads and a credit note joins it                                                                                                   | `moderator`                          | nightly  | `op23-cash-goes-back-by-hand.cy.ts`     |
+| OP22 | Support approves one defective-goods request and declines another with a reason, the warehouse receives the approved one keeping a deduction, the ledger shows the restock, and the customer reads both; the returns filters narrow the queue                     | `support`, `warehouse`, then `user`  | nightly  | `op22-defective-item-comes-back.cy.ts`  |
 
 ## `tests/support/` — the harness
 
