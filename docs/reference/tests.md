@@ -230,6 +230,7 @@ how a reader finds the story without opening the file.
 | OP1  | The admin takes a paid express order through start, ship (code required) and deliver, each button only in its own state; the customer sees the parcel and is mailed the code                                                                                      | `admin`, then `user`                 | `@smoke` | `op1-fulfil-paid-order.cy.ts`           |
 | OP13 | A guest, an editor, a moderator and a customer each get exactly their own menus, buttons and pages, and are turned back from the rest                                                                                                                             | guest, `editor`, `moderator`, `user` | `@smoke` | `op13-each-role-sees-what-it-may.cy.ts` |
 | AC3  | After the fresh-login window lapses, checkout and the data export open the re-auth dialog: a wrong password is refused, cancel abandons, the right one carries on (demo only, it moves the clock)                                                                 | `user`                               | `@smoke` | `ac3-prove-it-is-still-you.cy.ts`       |
+| N2   | The customer withdraws from a delivered order inside the window: a return opens already approved; the warehouse receives it keeping a handling deduction; the refund is paid minus the deduction, the ledger shows the restock and a credit note is issued        | `user`, then `warehouse`             | nightly  | `n2-withdraw-after-delivery.cy.ts`      |
 
 ## `tests/support/` — the harness
 
