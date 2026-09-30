@@ -146,7 +146,8 @@
         "expired": "Questa richiesta è scaduta. Effettua di nuovo il login.",
         "link-use-backup-code": "Usa un codice di backup",
         "link-use-code": "Usa un codice metodo",
-        "link-back-to-login": "Torna al login"
+        "link-back-to-login": "Torna al login",
+        "locked-out": "Troppi codici errati. Accedi di nuovo."
     },
     "password-reset-request-page": {
         "page-title": "Reimposta password",

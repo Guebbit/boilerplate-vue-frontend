@@ -122,17 +122,23 @@ describe('AC16 · Two-factor, the awkward edges', () => {
         cy.step('five wrong guesses are answered as wrong, the sixth is refused outright');
         for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1) guess('000000', 422);
         guess('000000', 429);
-        cy.get('[data-test=two-factor-challenge-submit-error]').should('not.be.empty');
+
+        cy.step('that is terminal: the page says why, and the only way on is a fresh login');
+        cy.get('[data-test=two-factor-challenge-locked-out]').should('not.be.empty');
+        cy.get('[data-test=two-factor-challenge-submit]').should('not.exist');
+        cy.get('[data-test=two-factor-challenge-back-to-login]').click();
+        cy.get('#login-page').should('exist');
 
         cy.step('a new login, and a challenge that has expired cannot be submitted');
         submitLoginForm(EMAIL, PASSWORD);
         cy.get('#two-factor-challenge-page').should('exist');
+        cy.get('[data-test=two-factor-challenge-back-to-login]').should('exist');
         // The countdown reads the browser's own clock, so that is the one to move.
         cy.clock(Date.now(), ['Date']);
         cy.tick(PAST_CHALLENGE_MS);
         cy.get('[data-test=two-factor-challenge-submit]').should('be.disabled');
 
-        cy.step('and the way back to login is offered');
+        cy.step('and the way back to login is offered, as it was all along');
         cy.get('[data-test=two-factor-challenge-back-to-login]').click();
         cy.get('#login-page').should('exist');
     });

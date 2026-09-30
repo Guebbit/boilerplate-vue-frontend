@@ -6,7 +6,7 @@
  * expired challenge used to leave nobody without, a disabled submit button its only way forward.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TwoFactorChallenge from '@/modules/account/views/TwoFactorChallenge.vue';
 import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
@@ -103,5 +103,76 @@ describe('TwoFactorChallenge — an expired challenge', () => {
         const status = mountChallenge().find('form [role=status]');
 
         expect(status.text()).toContain('expired');
+    });
+});
+
+describe('TwoFactorChallenge — the way back to login', () => {
+    it('is offered while the challenge is still live, not only once it has expired', () => {
+        useTwoFactorStore().beginLoginChallenge(
+            challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
+            false
+        );
+
+        expect(
+            mountChallenge().find('[data-test=two-factor-challenge-back-to-login]').exists()
+        ).toBe(true);
+    });
+
+    it('a 429 on a guess is terminal: the challenge is dropped, the reason shown, only login offered', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(
+            challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
+            false
+        );
+        vi.spyOn(store, 'submitLoginCode').mockRejectedValue({
+            success: false,
+            status: 429,
+            message: 'Too Many Requests',
+            errors: [{ code: 'RATE_LIMITED', message: 'Too many requests' }]
+        });
+        const wrapper = mountChallenge();
+
+        return wrapper
+            .get('[data-test=two-factor-challenge-code] input')
+            .setValue('000000')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(store.challenge).toBeUndefined();
+                expect(
+                    wrapper.find('[data-test=two-factor-challenge-locked-out]').text()
+                ).toContain('sign in again');
+                expect(wrapper.find('[data-test=two-factor-challenge-submit]').exists()).toBe(
+                    false
+                );
+                expect(
+                    wrapper.find('[data-test=two-factor-challenge-back-to-login]').exists()
+                ).toBe(true);
+            });
+    });
+
+    it('a wrong code (422) is not terminal: the form stays for another try', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(
+            challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
+            false
+        );
+        vi.spyOn(store, 'submitLoginCode').mockRejectedValue({
+            success: false,
+            status: 422,
+            message: 'Unprocessable Entity',
+            errors: [{ code: 'VALIDATION', message: 'That code is wrong.' }]
+        });
+        const wrapper = mountChallenge();
+
+        return wrapper
+            .get('[data-test=two-factor-challenge-code] input')
+            .setValue('000000')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(store.challenge).toBeDefined();
+                expect(wrapper.find('[data-test=two-factor-challenge-submit]').exists()).toBe(true);
+            });
     });
 });

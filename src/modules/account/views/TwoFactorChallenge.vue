@@ -24,6 +24,7 @@ import {
 } from '@/modules/account/composables/use-countdown.ts';
 import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { isRateLimited } from '@/infrastructure/utils/errors.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
@@ -101,6 +102,12 @@ const activeMethod = computed(() =>
 const usingBackupCode = ref(false);
 
 /**
+ * Whether the challenge's guess budget ran out (a 429 on submit). Terminal: the challenge is
+ * cleared, so this flag is what keeps the page up to say why and offer the way back.
+ */
+const lockedOut = ref(false);
+
+/**
  * The code being typed, submitted against the live challenge.
  */
 const code = ref('');
@@ -167,7 +174,14 @@ const handleSubmit = () => {
         .submitLoginCode(code.value)
         .then(() => redirectAfterLogin())
         .then(() => undefined)
-        .catch((error) => reportSubmitError(error));
+        .catch((error: unknown) => {
+            reportSubmitError(error);
+            // A 429 on a guess is the per-challenge budget running out: no further code can
+            // work on this challenge, so it is dropped and the way out is a fresh login.
+            if (!isRateLimited(error)) return;
+            lockedOut.value = true;
+            twoFactor.clearChallenge();
+        });
 };
 
 // A spent or abandoned challenge must not survive to the next visit to this route.
@@ -175,124 +189,139 @@ onUnmounted(twoFactor.clearChallenge);
 </script>
 
 <template>
-    <div v-if="challenge" id="two-factor-challenge-page">
+    <div v-if="challenge || lockedOut" id="two-factor-challenge-page">
         <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <p class="mb-4 opacity-80">{{ t('two-factor-challenge-page.intro') }}</p>
-
-            <v-select
-                v-if="challenge.methods.length > 1"
-                v-model="selectedMethod"
-                :items="
-                    challenge.methods.map((entry) => ({
-                        value: entry.method,
-                        title: methodLabel(entry.method)
-                    }))
-                "
-                :label="t('two-factor-challenge-page.label-method')"
-                class="mb-2"
-            />
-
-            <template v-if="activeMethod?.delivers">
-                <v-btn
-                    variant="tonal"
-                    block
-                    class="mb-4"
-                    :disabled="secondsUntilResend > 0"
-                    :loading="loading"
-                    data-test="two-factor-challenge-send"
-                    @click="handleSend"
-                >
-                    {{
-                        secondsUntilResend > 0
-                            ? t('two-factor-challenge-page.button-resend-in', {
-                                  seconds: secondsUntilResend
-                              })
-                            : t('two-factor-challenge-page.button-send')
-                    }}
-                </v-btn>
-                <!-- Announces the delivery so a screen-reader user learns a code was sent without
-                     having to discover the toast. -->
-                <p v-if="delivery" role="status" class="mb-4 text-sm opacity-80">
-                    {{ t('two-factor.sent-to', { target: delivery.sentTo }) }}
-                </p>
+            <template v-if="lockedOut">
                 <InlineErrorAlert
-                    :message="sendError"
-                    :type="sendErrorType"
+                    :message="t('two-factor-challenge-page.locked-out')"
                     class="mb-4"
-                    data-test="two-factor-challenge-send-error"
+                    data-test="two-factor-challenge-locked-out"
                 />
-            </template>
-
-            <form novalidate @submit.prevent="handleSubmit">
-                <v-text-field
-                    v-model="code"
-                    autocomplete="one-time-code"
-                    :inputmode="usingBackupCode ? 'text' : 'numeric'"
-                    :label="
-                        usingBackupCode
-                            ? t('two-factor-challenge-page.label-backup-code')
-                            : t('two-factor-challenge-page.label-code')
-                    "
-                    class="mb-2"
-                    data-test="two-factor-challenge-code"
-                />
-
-                <!-- The challenge's own ticking countdown, distinct from the resend cooldown
-                     above — NOT a live region: re-rendering `role="status"` every second is what
-                     used to flood a screen reader with "299… 298… 297…" (FA82). The paired live
-                     region right below speaks only at 60/30/10s and expired. -->
-                <p class="mb-1 text-sm opacity-70">
-                    {{
-                        secondsUntilChallengeExpires > 0
-                            ? t('two-factor-challenge-page.expires-in', {
-                                  seconds: secondsUntilChallengeExpires
-                              })
-                            : t('two-factor-challenge-page.expired')
-                    }}
-                </p>
-                <p role="status" class="sr-only">{{ challengeExpiryAnnouncement }}</p>
-
                 <RouterLink
-                    v-if="secondsUntilChallengeExpires <= 0"
                     :to="routerLinkI18n({ name: 'Login' })"
-                    class="text-link mb-4 block text-sm hover:underline"
+                    class="text-link block text-center text-sm hover:underline"
                     data-test="two-factor-challenge-back-to-login"
                 >
                     {{ t('two-factor-challenge-page.link-back-to-login') }}
                 </RouterLink>
+            </template>
+            <template v-else>
+                <p class="mb-4 opacity-80">{{ t('two-factor-challenge-page.intro') }}</p>
 
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :disabled="secondsUntilChallengeExpires <= 0"
-                    :loading="loading"
-                    data-test="two-factor-challenge-submit"
-                >
-                    {{ t('two-factor-challenge-page.button-submit') }}
-                </v-btn>
-                <InlineErrorAlert
-                    :message="submitError"
-                    :type="submitErrorType"
-                    class="mt-4"
-                    data-test="two-factor-challenge-submit-error"
+                <v-select
+                    v-if="challenge.methods.length > 1"
+                    v-model="selectedMethod"
+                    :items="
+                        challenge.methods.map((entry) => ({
+                            value: entry.method,
+                            title: methodLabel(entry.method)
+                        }))
+                    "
+                    :label="t('two-factor-challenge-page.label-method')"
+                    class="mb-2"
                 />
-            </form>
 
-            <div class="mt-4 flex justify-center">
-                <v-btn
-                    variant="text"
-                    data-test="two-factor-challenge-use-backup-code"
-                    @click="usingBackupCode = !usingBackupCode"
-                >
-                    {{
-                        usingBackupCode
-                            ? t('two-factor-challenge-page.link-use-code')
-                            : t('two-factor-challenge-page.link-use-backup-code')
-                    }}
-                </v-btn>
-            </div>
+                <template v-if="activeMethod?.delivers">
+                    <v-btn
+                        variant="tonal"
+                        block
+                        class="mb-4"
+                        :disabled="secondsUntilResend > 0"
+                        :loading="loading"
+                        data-test="two-factor-challenge-send"
+                        @click="handleSend"
+                    >
+                        {{
+                            secondsUntilResend > 0
+                                ? t('two-factor-challenge-page.button-resend-in', {
+                                      seconds: secondsUntilResend
+                                  })
+                                : t('two-factor-challenge-page.button-send')
+                        }}
+                    </v-btn>
+                    <!-- Announces the delivery so a screen-reader user learns a code was sent without
+                     having to discover the toast. -->
+                    <p v-if="delivery" role="status" class="mb-4 text-sm opacity-80">
+                        {{ t('two-factor.sent-to', { target: delivery.sentTo }) }}
+                    </p>
+                    <InlineErrorAlert
+                        :message="sendError"
+                        :type="sendErrorType"
+                        class="mb-4"
+                        data-test="two-factor-challenge-send-error"
+                    />
+                </template>
+
+                <form novalidate @submit.prevent="handleSubmit">
+                    <v-text-field
+                        v-model="code"
+                        autocomplete="one-time-code"
+                        :inputmode="usingBackupCode ? 'text' : 'numeric'"
+                        :label="
+                            usingBackupCode
+                                ? t('two-factor-challenge-page.label-backup-code')
+                                : t('two-factor-challenge-page.label-code')
+                        "
+                        class="mb-2"
+                        data-test="two-factor-challenge-code"
+                    />
+
+                    <!-- The challenge's own ticking countdown, distinct from the resend cooldown
+                     above — NOT a live region: re-rendering `role="status"` every second is what
+                     used to flood a screen reader with "299… 298… 297…" (FA82). The paired live
+                     region right below speaks only at 60/30/10s and expired. -->
+                    <p class="mb-1 text-sm opacity-70">
+                        {{
+                            secondsUntilChallengeExpires > 0
+                                ? t('two-factor-challenge-page.expires-in', {
+                                      seconds: secondsUntilChallengeExpires
+                                  })
+                                : t('two-factor-challenge-page.expired')
+                        }}
+                    </p>
+                    <p role="status" class="sr-only">{{ challengeExpiryAnnouncement }}</p>
+
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'Login' })"
+                        class="text-link mb-4 block text-sm hover:underline"
+                        data-test="two-factor-challenge-back-to-login"
+                    >
+                        {{ t('two-factor-challenge-page.link-back-to-login') }}
+                    </RouterLink>
+
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        size="large"
+                        block
+                        :disabled="secondsUntilChallengeExpires <= 0"
+                        :loading="loading"
+                        data-test="two-factor-challenge-submit"
+                    >
+                        {{ t('two-factor-challenge-page.button-submit') }}
+                    </v-btn>
+                    <InlineErrorAlert
+                        :message="submitError"
+                        :type="submitErrorType"
+                        class="mt-4"
+                        data-test="two-factor-challenge-submit-error"
+                    />
+                </form>
+
+                <div class="mt-4 flex justify-center">
+                    <v-btn
+                        variant="text"
+                        data-test="two-factor-challenge-use-backup-code"
+                        @click="usingBackupCode = !usingBackupCode"
+                    >
+                        {{
+                            usingBackupCode
+                                ? t('two-factor-challenge-page.link-use-code')
+                                : t('two-factor-challenge-page.link-use-backup-code')
+                        }}
+                    </v-btn>
+                </div>
+            </template>
         </v-card>
     </div>
 </template>
