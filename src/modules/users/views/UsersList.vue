@@ -24,6 +24,8 @@ import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { User } from '@types';
 
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -137,31 +139,37 @@ const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
 ]);
 
 /**
+ * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: pageCurrent,
+    pageSize: pageSize,
+    params: {
+        text: 'string',
+        id: 'string',
+        email: 'string',
+        username: 'string',
+        active: 'boolean',
+        deleted: 'boolean'
+    }
+});
+
+/**
  * Search function bound to the store's reactive `filters`/pagination, reporting
  * a failed request as a toast.
  */
 const { search } = watchSearchUsers({ onError: (error) => notifyErrorMessages(addMessage, error) });
 
 /**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise, resolving once the page is loaded.
+ * Apply and clear, both restarting from the first page and keeping the URL in step.
  */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page from the API.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page: pageCurrent,
+    search,
+    onApplied: syncUrl
+});
 
 /**
  * The row actions' own blocked state — delete and hard-delete share one instance, since both

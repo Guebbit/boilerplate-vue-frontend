@@ -21,6 +21,8 @@ import { useReturnsStore } from '@/modules/returns/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { ReturnStatus, ReturnReason } from '@/types/enums.ts';
@@ -95,6 +97,16 @@ const reasonChoice = useAnyFilterChoice(
 const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
 
 /**
+ * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: pageCurrent,
+    pageSize: pageSize,
+    params: { status: Object.values(ReturnStatus), reason: Object.values(ReturnReason) }
+});
+
+/**
  * Search bound to the store's reactive filters and pagination; a failed request is a toast.
  */
 const { search } = watchSearchReturns({
@@ -102,25 +114,14 @@ const { search } = watchSearchReturns({
 });
 
 /**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise.
+ * Apply and clear, both restarting from the first page and keeping the URL in step.
  */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page.
- *
- * @returns The search promise.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page: pageCurrent,
+    search,
+    onApplied: syncUrl
+});
 </script>
 
 <template>
