@@ -218,8 +218,9 @@ how a reader finds the story without opening the file.
 | Tier    | `@smoke`: the spec carries the tag, so its live run happens on every push. `nightly`: untagged, live only in the nightly matrix. Every journey runs on demo on every push either way. See [Live E2E — Tiers](../tools/live-e2e.md#tiers) |
 | Spec    | The file name inside the journeys folder                                                                                                                                                                                                 |
 
-| ID   | Story                                                                                                                                                                                                 | Persona                              | Tier     | Spec                                    |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------- | --------------------------------------- |
+| ID  | Story                                                                                                                                                                                                                                                             | Persona     | Tier     | Spec                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------- | -------------------------- |
+| CU1 | A visitor with no account signs up, verifies by mail, puts two products in the cart, adds an address in the checkout dialog and pays by card; cart, order lines and VAT rows agree in cents, the invoice downloads as a PDF and the order mail links to the order | new account | `@smoke` | `cu1-first-purchase.cy.ts` |
 
 ## `tests/support/` — the harness
 
