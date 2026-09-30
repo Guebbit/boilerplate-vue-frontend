@@ -244,6 +244,7 @@ how a reader finds the story without opening the file.
 | FR9  | A guest opens an order link, logs in on the page shown and lands on that order; another customer's order or return is a not-found page, not a page stuck loading (JB3)                                                                                            | guest, `user`, `editor`              | nightly  | `fr9-a-link-i-was-sent.cy.ts`            |
 | FR10 | A guest finds the buy button off; Log in brings them back to the product, where one click adds it; Sign up carries no way back, so a new account starts at home (pinned on purpose)                                                                               | guest, `user`, new account           | nightly  | `fr10-i-added-to-cart-as-a-guest.cy.ts`  |
 | FR2  | After paying by card the customer presses Back, Forward and reloads: Back lands on an empty cart, the order stays paid with no second payment on offer, and the API holds one settled payment                                                                     | `user`                               | nightly  | `fr2-back-button-after-paying.cy.ts`     |
+| FR7  | The API stops answering mid-session: a search gets a sentence in a toast and the page stays, the health banner shows on the browser's next check, a half-typed message keeps every word, and once the API answers the same button works                           | guest                                | nightly  | `fr7-the-api-goes-away.cy.ts`            |
 
 ## `tests/support/` — the harness
 
