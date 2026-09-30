@@ -22,7 +22,7 @@ const SLOW_MS = 1500;
  * @param pattern - URL glob to slow
  * @param alias - alias to wait on and to count calls through
  */
-const slow = (method: string, pattern: string, alias: string): void => {
+const slow = (method: 'GET' | 'POST' | 'DELETE', pattern: string, alias: string): void => {
     cy.intercept(method, pattern, (request) => {
         request.on('response', (response) => {
             response.setDelay(SLOW_MS);
