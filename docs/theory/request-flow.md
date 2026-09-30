@@ -120,6 +120,44 @@ this repo would have to remember to make. This repo's own part is consent: `anal
 persists the visitor's choice, and `http/interceptors.ts`'s `onRequest` forwards it as
 `X-Analytics-Consent` on every request that qualifies.
 
+### Conditional writes
+
+The API versions a few records — a product, a user, an order, the caller's own account — with an
+`ETag` on the read and an optional `If-Match` on the write; a stale one is a `412`. The rules are
+the backend's ([Write Methods](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/write-methods.md#conditional-writes-etag-and-if-match));
+this repo's part is that no edit form has to remember any of it.
+
+```mermaid
+sequenceDiagram
+    participant F as Edit form
+    participant I as etag.ts (interceptors)
+    participant A as API
+    F->>A: GET /products/1/admin
+    A-->>I: 200 + ETag "100"
+    Note over I: remembers "100" for /products/1
+    F->>A: PATCH /products/1
+    Note over I: adds If-Match: "100"
+    A-->>F: 200 + ETag "200"
+    Note over I: replaces it with "200"
+    F->>A: PATCH /products/1 (someone else saved meanwhile)
+    A-->>F: 412 PRECONDITION_FAILED
+    Note over F: warns, offers "reload latest"
+```
+
+- **`src/infrastructure/http/etag.ts` is the whole transport half.** A success interceptor keeps the
+  tag a read, PUT or PATCH answered with; a request interceptor sends it as `If-Match` on the next
+  PUT, PATCH or DELETE of that path. `/products/{id}/admin` and `/…/hard` are views of the same
+  resource. A resource never read here is written unconditionally — the API's own default.
+- **An action forgets the tag.** `POST /orders/1/cancel` changes the row and answers no tag, so
+  everything held under that path is dropped rather than sent stale. A sign-out drops all of them.
+- **A form handles the refusal with `useStaleRecord`** (`src/infrastructure/utils/use-stale-record.ts`):
+  a `412` becomes a _warning_ through the form's own `useBlockingError` — nothing is wrong with the
+  request, the record moved — plus a "reload latest" button that re-reads the record, re-hydrates the
+  form and, by that read, refreshes the tag. The stale edit is never resent on its own.
+- **Where it is wired:** `ProductEdit.vue`, `UserEdit.vue` and the profile form. Anything built on the
+  generated client gets the header for free; only a form that wants to _answer_ a 412 needs the
+  composable.
+
 ### Blocked vs ambient failures
 
 A caught error reaches the visitor one of two ways, chosen by what failed, not by the status code:
