@@ -443,3 +443,51 @@ describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
                 });
         }));
 });
+
+describe('a cart with nothing to ship', () => {
+    const DIGITAL_CART: CartResponse = {
+        ...A_CART,
+        shipping: { required: false, selected: null, options: [] }
+    };
+
+    /**
+     * Mounts the page over a cart whose shipping is not required, with the selector stubbed to a
+     * marker so its absence, rather than its contents, is what the cases read.
+     */
+    const mountDigital = () => {
+        const cart = useCartStore();
+        cart.cart = DIGITAL_CART;
+        vi.spyOn(cart, 'fetchCart').mockResolvedValue(DIGITAL_CART);
+        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        const wrapper = mount(Cart, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    LayoutDefault: { template: '<div><slot /></div>' },
+                    ShippingSelector: { template: '<div data-test="shipping-selector" />' },
+                    PaymentMethodSelector: { template: '<div />' }
+                }
+            }
+        });
+        return flushPromises().then(() => wrapper);
+    };
+
+    it('says so in one line instead of showing an empty shipping heading', () =>
+        mountDigital().then((wrapper) => {
+            expect(wrapper.find('[data-test=shipping-selector]').exists()).toBe(false);
+            expect(wrapper.get('[data-test=cart-no-shipping]').text()).toBe(
+                i18n.global.t('cart-page.no-shipping-needed')
+            );
+        }));
+
+    it('can be checked out at once, with no method or address chosen', () =>
+        mountDigital().then((wrapper) => {
+            expect(wrapper.find('[data-test=address-picker]').exists()).toBe(false);
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
+        }));
+
+    it('still shows the selector for a cart that ships', () =>
+        mountCart().then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-no-shipping]').exists()).toBe(false);
+        }));
+});

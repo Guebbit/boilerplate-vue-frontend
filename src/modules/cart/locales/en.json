@@ -15,6 +15,7 @@
         "label-items-total": "Items",
         "label-shipping-cost": "Shipping",
         "label-total": "Total",
+        "no-shipping-needed": "Nothing in this cart needs shipping.",
         "label-notes": "Order notes (optional)",
         "button-remove": "Remove",
         "button-clear": "Clear cart",
