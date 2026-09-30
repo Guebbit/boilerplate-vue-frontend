@@ -6,7 +6,8 @@ FROM node:24-alpine
 WORKDIR /app
 
 # Copies package.json and package-lock.json from the host folder into the /app in the image
-COPY package*.json ./
+# .npmrc rides along: its legacy-peer-deps decides what `npm ci` expects in the lockfile.
+COPY package*.json .npmrc ./
 
 # Install all dependencies (including devDependencies for Vite dev server)
 RUN npm ci
