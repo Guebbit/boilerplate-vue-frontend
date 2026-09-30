@@ -59,8 +59,9 @@ const handleToggle = () => {
 };
 
 // The heart needs to know what is already saved; fire-and-forget, it is decoration on the page.
+// Shared: a grid mounts one heart per card, and they all wait on the same single read.
 onMounted(() => {
-    if (isAuth.value) void wishlist.fetchWishlist();
+    if (isAuth.value) void wishlist.ensureWishlist();
 });
 </script>
 

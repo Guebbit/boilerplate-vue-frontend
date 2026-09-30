@@ -9,7 +9,9 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { nextTick } from 'vue';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -103,6 +105,54 @@ describe('moveToCart', () => {
                 // The cross-module effect: the cart is re-read so the header's badge cannot
                 // lag a write this store initiated.
                 expect(requestedUrls().at(-1)).toBe('/cart');
+            });
+    });
+});
+
+describe('ensureWishlist', () => {
+    it('costs one read however many hearts ask, and none after it has answered', () => {
+        const store = useWishlistStore();
+        return Promise.all([store.ensureWishlist(), store.ensureWishlist(), store.ensureWishlist()])
+            .then(() => store.ensureWishlist())
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/wishlist']);
+                expect(store.isSaved('p1')).toBe(true);
+            });
+    });
+
+    it('reads again after a failed read, so one bad answer is not cached for good', () => {
+        responses['GET /wishlist'] = Promise.reject(new Error('down'));
+        const store = useWishlistStore();
+        return store
+            .ensureWishlist()
+            .catch(() => undefined)
+            .then(() => {
+                responses['GET /wishlist'] = orvalEnvelope({ items: [{ productId: 'p1' }] });
+                return store.ensureWishlist();
+            })
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/wishlist', '/wishlist']);
+            });
+    });
+});
+
+describe('when the person changes', () => {
+    it('forgets the saved lines and asks again for the next person', () => {
+        const session = useSessionStore();
+        const store = useWishlistStore();
+        session.viewer = { id: 'a', email: 'a@x.test', role: 'customer', verified: true };
+        return store
+            .ensureWishlist()
+            .then(() => {
+                session.viewer = undefined;
+                return nextTick();
+            })
+            .then(() => {
+                expect(store.items).toEqual([]);
+                return store.ensureWishlist();
+            })
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/wishlist', '/wishlist']);
             });
     });
 });

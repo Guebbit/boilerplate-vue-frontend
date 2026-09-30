@@ -19,6 +19,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useCartStore } from '@/modules/cart/store';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { nextTick } from 'vue';
 import {
     getCart,
     getCartSummary,
@@ -146,6 +148,19 @@ vi.mock('@api', () => ({
     reorder: vi.fn(() => Promise.resolve(RESPONSES.reordered)),
     getProductById: vi.fn((id: string) => Promise.resolve(RESPONSES.product(id)))
 }));
+
+/**
+ * Signs a viewer in directly: the watcher reads `viewer.id`, not how it got there.
+ *
+ * @param id - the viewer's id; `undefined` signs out
+ */
+const signInAs = (id?: string) => {
+    useSessionStore().viewer =
+        id === undefined
+            ? undefined
+            : { id, email: `${id}@x.test`, role: 'customer', verified: true };
+    return nextTick();
+};
 
 describe('useCartStore', () => {
     beforeEach(() => {
@@ -481,6 +496,58 @@ describe('useCartStore', () => {
                 expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result).toEqual(CART);
             });
+        });
+    });
+
+    /**
+     * A cart belongs to one person. The store outlives a logout (the tab does), so a second
+     * person signing in on the same tab must not meet the first one's lines in the header.
+     */
+    describe('when the person changes', () => {
+        it('empties the cart, the badge seed and the pending checkout attempt on logout', () => {
+            const store = useCartStore();
+            return signInAs('a')
+                .then(() => store.fetchSummary())
+                .then(() => store.fetchCart())
+                .then(() => store.checkout().catch(() => undefined))
+                .then(() => {
+                    const keyBefore = lastIdempotencyKey();
+                    return signInAs().then(() => {
+                        expect(store.cart).toBeUndefined();
+                        expect(store.badgeQuantity).toBeUndefined();
+                        expect(store.badgeMoney).toBeUndefined();
+                        return store.checkout().then(() => {
+                            expect(lastIdempotencyKey()).not.toBe(keyBefore);
+                        });
+                    });
+                });
+        });
+
+        it('empties it when another account takes over without a logout in between', () => {
+            const store = useCartStore();
+            return signInAs('a')
+                .then(() => store.fetchCart())
+                .then(() => signInAs('b'))
+                .then(() => {
+                    expect(store.cart).toBeUndefined();
+                });
+        });
+
+        it('keeps the cart for the same person, and for the first sign-in', () => {
+            const store = useCartStore();
+            return store
+                .fetchCart()
+                .then(() => signInAs('a'))
+                .then(() => {
+                    expect(store.cart).toEqual(CART);
+                    const session = useSessionStore();
+                    // A refreshed record of the same person is not a change of person.
+                    session.viewer = { ...session.viewer!, email: 'new@x.test' };
+                    return nextTick();
+                })
+                .then(() => {
+                    expect(store.cart).toEqual(CART);
+                });
         });
     });
 

@@ -58,9 +58,8 @@ const { message: error, report: reportError, clear: clearError } = useBlockingEr
 
 /**
  * Adds one unit to the cart. `POST /cart` is "add": the server grows a line the shopper already
- * has, so no read-then-increment happens here — which also means a cart left in memory by a
- * PREVIOUS account (logout resets only the profile store, not this one) can never leak its
- * quantity into this one's.
+ * has, so no read-then-increment happens here: the quantity added is never computed from a local
+ * copy of the cart.
  *
  * @returns Nothing; a failure blocks the button in place ({@link error}).
  */
