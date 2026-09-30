@@ -239,6 +239,7 @@ how a reader finds the story without opening the file.
 | CU19 | The customer checks out by bank transfer, then pays the same order by card: the transfer panel goes, the order says card (JB8), and the admin searching the RF reference finds a paid order with no offline form                                                  | `user`, then `admin`                 | nightly  | `cu19-transfer-order-paid-by-card.cy.ts`   |
 | CU4  | A slow-settling card leaves the order honestly waiting (no invoice, no card form, one Finish button) until Finish reads the provider; and money that lands after the customer cancelled is refunded, never kept                                                   | `user`                               | nightly  | `cu4-card-slow-to-settle.cy.ts`            |
 | AC5  | The account with an unconfirmed new address resends the mail (a fresh link, the first one dead), cancels (every link dead, the old address still signs in) and is refused a taken address in words (JB15)                                                         | `pendingEmail`                       | nightly  | `ac5-changed-my-mind-about-my-email.cy.ts` |
+| AC6  | The customer downloads the GDPR export: a file on disk that matches the API's answer, holding their profile, addresses and orders, with no password, token or secret under any key and nothing of the admin's or staff's                                          | `user`                               | nightly  | `ac6-give-me-my-data.cy.ts`                |
 
 ## `tests/support/` — the harness
 
