@@ -48,13 +48,13 @@ Always import from the `@api` alias:
 
 ```ts
 // Functions
-import { getProducts, createProduct } from '@api';
+import { listProducts, createProduct } from '@api';
 
 // Types
 import type { Product, CreateProductRequest } from '@api';
 
-// Zod schemas
-import { ProductSchema } from '@api/schemas';
+// Zod schemas: one per request body / response, named after the operation
+import { CreateProductBody, ListProductsResponse } from '@api/schemas';
 ```
 
 Call generated functions from inside Pinia stores, not from view templates:
@@ -62,14 +62,14 @@ Call generated functions from inside Pinia stores, not from view templates:
 ```ts
 // src/modules/products/store.ts
 import { defineStore } from 'pinia';
-import { getProducts } from '@api';
+import { listProducts } from '@api';
 
 export const useProductsStore = defineStore('products', () => {
     const products = ref<Product[]>([]);
 
     const fetchProducts = () =>
-        getProducts().then(({ data }) => {
-            products.value = data;
+        listProducts().then(({ data }) => {
+            products.value = data.items;
         });
 
     return { products, fetchProducts };
@@ -79,6 +79,6 @@ export const useProductsStore = defineStore('products', () => {
 ## API style used in this repo
 
 - Resource-oriented URLs (`/products`, `/products/:id`, `/orders/search`).
-- Consistent envelope: `{ data: T }` for success; `IResponseReject` for errors (shaped by `src/infrastructure/http/index.ts`).
+- Consistent envelope: `{ data: T }` for success; `AxiosResponseErrorData` for errors (shaped by `src/infrastructure/http/index.ts`).
 - Auth levels: `none` → `user` → `admin`.
 - Treat sample entities (`users`, `products`, `orders`, `cart`, `admin`) as pattern examples, not product law.
