@@ -1048,24 +1048,26 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
                 .min(getObservabilityMetricsOverviewResponseDataAuthSignupSuccessMin)
                 .optional()
         }),
-        business: zod.strictObject({
-            checkoutSuccess: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessCheckoutSuccessMin)
-                .optional(),
-            ordersCreated: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessOrdersCreatedMin)
-                .optional(),
-            lowStockProducts: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessLowStockProductsMin)
-                .optional(),
-            reservedUnits: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataBusinessReservedUnitsMin)
-                .optional()
-        }),
+        business: zod
+            .strictObject({
+                checkoutSuccess: zod
+                    .number()
+                    .min(getObservabilityMetricsOverviewResponseDataBusinessCheckoutSuccessMin)
+                    .optional(),
+                ordersCreated: zod
+                    .number()
+                    .min(getObservabilityMetricsOverviewResponseDataBusinessOrdersCreatedMin)
+                    .optional(),
+                lowStockProducts: zod
+                    .number()
+                    .min(getObservabilityMetricsOverviewResponseDataBusinessLowStockProductsMin)
+                    .optional(),
+                reservedUnits: zod
+                    .number()
+                    .min(getObservabilityMetricsOverviewResponseDataBusinessReservedUnitsMin)
+                    .optional()
+            })
+            .optional(),
         database: zod.strictObject({
             queriesTotal: zod
                 .number()
