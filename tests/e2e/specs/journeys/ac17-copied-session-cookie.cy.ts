@@ -12,6 +12,7 @@
  * profile adds.
  */
 import { refreshDevice, type Device } from '../../../support/e2e/harness';
+import { letTimePass } from '../../../support/e2e/security-steps';
 
 /** Longer than the backend's 10 s rotation grace window. */
 const PAST_GRACE_MS = 11_000;
@@ -39,14 +40,6 @@ const refreshCookieValue = (): Cypress.Chainable<string> =>
         .getCookie('jwt')
         .should('exist')
         .then((cookie) => String(cookie?.value));
-
-/** Lets the rotation grace window pass: the demo clock jumps, a live backend is waited out. */
-const passGraceWindow = (): Cypress.Chainable<unknown> =>
-    cy.env(['liveProfile']).then(({ liveProfile }) => {
-        if (liveProfile !== true) return cy.travel(PAST_GRACE_MS);
-        // eslint-disable-next-line cypress/no-unnecessary-waiting -- a live backend's clock cannot be moved; the grace window is real time
-        return cy.wait(PAST_GRACE_MS);
-    });
 
 /** Signs in with "remember me" ticked, so the refresh cookie outlives the browser session. */
 const loginRememberingMe = (): void => {
@@ -79,7 +72,7 @@ describe('AC17 · Someone copied my session cookie', () => {
             refreshCookieValue().should('not.equal', copied);
 
             cy.step('the grace window passes, and the thief replays the copy: refused');
-            passGraceWindow();
+            letTimePass(PAST_GRACE_MS);
             thiefWith(copied).then((thief) => {
                 refreshDevice(thief).its('status').should('equal', 401);
             });

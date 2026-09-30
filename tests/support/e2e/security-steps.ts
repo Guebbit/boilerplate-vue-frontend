@@ -79,3 +79,17 @@ export const loginDeviceWith = (email: string, password: string): Cypress.Chaina
         .then(({ apiUrl }) =>
             cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password })
         );
+
+/**
+ * Lets time pass: the demo backend's clock jumps, a live backend is waited out in real time.
+ * For a window measured in seconds (a resend cooldown, a token's grace period) that both
+ * profiles have; a journey that needs a long jump uses `cy.travel` and is demo-only.
+ *
+ * @param ms - how long, in milliseconds
+ */
+export const letTimePass = (ms: number): Cypress.Chainable<unknown> =>
+    cy.env(['liveProfile']).then(({ liveProfile }) => {
+        if (liveProfile !== true) return cy.travel(ms);
+        // A live backend's clock cannot be moved, so the window is waited out in real time.
+        return cy.wait(ms);
+    });
