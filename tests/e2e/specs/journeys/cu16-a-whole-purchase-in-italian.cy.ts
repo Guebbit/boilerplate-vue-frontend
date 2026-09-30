@@ -16,7 +16,7 @@ import {
     shouldShowCents,
     sumCents
 } from '../../../support/e2e/steps';
-import { mailedLinkUrl } from '../../../support/e2e/commands';
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /**
  * How many units make the basket clear a thousand. Whether a four-digit Italian amount is grouped
@@ -113,9 +113,10 @@ describe('CU16 · A whole purchase in Italian', () => {
             cy.emailTo(email, (mail) => mail.subject.includes('Ordine ricevuto'));
             cy.emailTo(email, (mail) => mail.subject.includes('Pagamento ricevuto')).then(
                 (paid) => {
-                    expect(mailedLinkUrl(paid), 'the receipt mail points at /it').to.contain(
-                        '/it/'
-                    );
+                    expect(
+                        mailMentions(paid, '/it/orders/'),
+                        'the receipt mail links to /it'
+                    ).to.equal(true);
                 }
             );
         });
