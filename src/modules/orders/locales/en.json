@@ -11,7 +11,7 @@
         "button-hard-delete": "Hard delete",
         "confirm-hard-delete": "This will permanently delete order {id}. This cannot be undone. Continue?",
         "success-hard-delete": "Order permanently deleted",
-        "column-id": "ID",
+        "column-order": "Order",
         "column-status": "Status",
         "column-total": "Total",
         "column-date": "Date",

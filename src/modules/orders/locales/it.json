@@ -11,7 +11,7 @@
         "button-hard-delete": "Eliminazione definitiva",
         "confirm-hard-delete": "Questo eliminerà definitivamente l'ordine {id}. L'operazione non può essere annullata. Continuare?",
         "success-hard-delete": "Ordine eliminato definitivamente",
-        "column-id": "ID",
+        "column-order": "Ordine",
         "column-status": "Stato",
         "column-total": "Totale",
         "column-date": "Data",
