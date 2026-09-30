@@ -242,6 +242,7 @@ how a reader finds the story without opening the file.
 | OP9  | A customer checks out by card and never pays; the demo clock passes the hold and the admin presses the sweep: the order is cancelled, its units are back, the ledger says expire, the customer is mailed and the pay form is gone (demo only)                     | `user`, then `admin`                 | nightly  | `op9-expired-holds-are-swept.cy.ts`          |
 | OP10 | An editor creates a product in two languages with price, weight, tax class, category, tag and image, then deactivates, soft-deletes, restores and erases it; a guest sees each state, in both languages and in the facets                                         | `editor`, guest                      | nightly  | `op10-editors-product-cradle-to-grave.cy.ts` |
 | OP14 | An admin edits and cancels an order and forces a parcel through ship and deliver with a reason each time; "history" opens the audit page narrowed to that order (and to a user), and the reasons are on record                                                    | `admin`                              | nightly  | `op14-audit-trail-follows-the-action.cy.ts`  |
+| OP15 | A moderator soft-deletes a paid order, which leaves its customer, and restores it; a paid order refuses a hard delete, an unpaid one is destroyed and its units return to the shelf                                                                               | `moderator`                          | nightly  | `op15-order-housekeeping.cy.ts`              |
 
 ## `tests/support/` — the harness
 
