@@ -512,6 +512,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :value="formatText(currentOrder.notes)"
                         :icon="FileText"
                         full-width
+                        data-test="order-notes"
                     />
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('order-target-page.loading') }}</p>

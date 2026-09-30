@@ -350,7 +350,11 @@ const submitForm = () => {
                 :disabled="isSubmitting"
                 class="mt-2"
             />
-            <v-switch v-model="form.active" :label="t('product-create-page.label-active')" />
+            <v-switch
+                v-model="form.active"
+                :label="t('product-create-page.label-active')"
+                data-test="product-active-field"
+            />
             <v-switch
                 v-model="form.requiresShipping"
                 :label="t('product-create-page.label-requires-shipping')"

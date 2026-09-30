@@ -256,6 +256,7 @@ onUnmounted(twoFactor.clearChallenge);
                     v-if="secondsUntilChallengeExpires <= 0"
                     :to="routerLinkI18n({ name: 'Login' })"
                     class="text-link mb-4 block text-sm hover:underline"
+                    data-test="two-factor-challenge-back-to-login"
                 >
                     {{ t('two-factor-challenge-page.link-back-to-login') }}
                 </RouterLink>

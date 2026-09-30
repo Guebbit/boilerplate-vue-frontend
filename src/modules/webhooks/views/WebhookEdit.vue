@@ -214,6 +214,7 @@ watchSubscription(() => id);
                     />
                     <v-switch
                         v-model="form.enabled"
+                        data-test="webhook-enabled"
                         :label="t('webhook-edit-page.label-enabled')"
                     />
 

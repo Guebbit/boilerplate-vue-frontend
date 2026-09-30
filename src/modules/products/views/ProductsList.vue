@@ -384,6 +384,7 @@ const handleHardDelete = (productId: string, title: string) =>
                     />
                     <v-number-input
                         v-model="filters.minPrice"
+                        data-test="filter-min-price"
                         :label="t('products-list-page.filter-min-price')"
                         :min="0"
                         control-variant="hidden"
@@ -391,6 +392,7 @@ const handleHardDelete = (productId: string, title: string) =>
                     />
                     <v-number-input
                         v-model="filters.maxPrice"
+                        data-test="filter-max-price"
                         :label="t('products-list-page.filter-max-price')"
                         :min="0"
                         control-variant="hidden"
