@@ -2025,6 +2025,9 @@ export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
 export const exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const exportAccountDataResponseDataOrdersItemBillingAddressCountryRegExp = new RegExp(
+    '^[A-Z]{2}$'
+);
 export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
 export const exportAccountDataResponseDataPaymentsItemAmountRefundedMin = 0;
 export const exportAccountDataResponseDataPaymentsItemRefundsItemAmountMin = 0;
@@ -2188,6 +2191,20 @@ export const ExportAccountDataResponse = zod.strictObject({
                             .string()
                             .regex(
                                 exportAccountDataResponseDataOrdersItemShippingAddressCountryRegExp
+                            ),
+                        phone: zod.string().optional()
+                    })
+                    .optional(),
+                billingAddress: zod
+                    .strictObject({
+                        fullName: zod.string(),
+                        street: zod.string(),
+                        city: zod.string(),
+                        zip: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(
+                                exportAccountDataResponseDataOrdersItemBillingAddressCountryRegExp
                             ),
                         phone: zod.string().optional()
                     })
@@ -4377,6 +4394,7 @@ export const checkoutBodyPaymentMethodDefault = `card`;
 export const CheckoutBody = zod.strictObject({
     notes: zod.string().min(1).optional(),
     addressId: zod.string().optional(),
+    billingAddressId: zod.string().optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).default(checkoutBodyPaymentMethodDefault)
 });
 export const checkoutResponseDataItemsItemProductPriceMin = 0;
@@ -4400,6 +4418,7 @@ export const checkoutResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const checkoutResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const checkoutResponseDataShippingCostMin = 0;
 export const checkoutResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const checkoutResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const CheckoutResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -4474,6 +4493,16 @@ export const CheckoutResponse = zod.strictObject({
                 city: zod.string(),
                 zip: zod.string(),
                 country: zod.string().regex(checkoutResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(checkoutResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -4698,6 +4727,7 @@ export const listOrdersResponseDataItemsItemTaxSummaryItemTaxAmountMin = 0;
 export const listOrdersResponseDataItemsItemTaxSummaryItemGrossAmountMin = 0;
 export const listOrdersResponseDataItemsItemShippingCostMin = 0;
 export const listOrdersResponseDataItemsItemShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const listOrdersResponseDataItemsItemBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const listOrdersResponseDataMetaPageDefault = 1;
 export const listOrdersResponseDataMetaPageMax = 10000;
 export const listOrdersResponseDataMetaPageSizeDefault = 10;
@@ -4807,6 +4837,18 @@ export const ListOrdersResponse = zod.strictObject({
                         country: zod
                             .string()
                             .regex(listOrdersResponseDataItemsItemShippingAddressCountryRegExp),
+                        phone: zod.string().optional()
+                    })
+                    .optional(),
+                billingAddress: zod
+                    .strictObject({
+                        fullName: zod.string(),
+                        street: zod.string(),
+                        city: zod.string(),
+                        zip: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(listOrdersResponseDataItemsItemBillingAddressCountryRegExp),
                         phone: zod.string().optional()
                     })
                     .optional(),
@@ -4941,6 +4983,7 @@ export const createOrderResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const createOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const createOrderResponseDataShippingCostMin = 0;
 export const createOrderResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createOrderResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const CreateOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5015,6 +5058,16 @@ export const CreateOrderResponse = zod.strictObject({
                 city: zod.string(),
                 zip: zod.string(),
                 country: zod.string().regex(createOrderResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(createOrderResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -5139,6 +5192,9 @@ export const searchOrdersResponseDataItemsItemShippingCostMin = 0;
 export const searchOrdersResponseDataItemsItemShippingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const searchOrdersResponseDataItemsItemBillingAddressCountryRegExp = new RegExp(
+    '^[A-Z]{2}$'
+);
 export const searchOrdersResponseDataMetaPageDefault = 1;
 export const searchOrdersResponseDataMetaPageMax = 10000;
 export const searchOrdersResponseDataMetaPageSizeDefault = 10;
@@ -5248,6 +5304,18 @@ export const SearchOrdersResponse = zod.strictObject({
                         country: zod
                             .string()
                             .regex(searchOrdersResponseDataItemsItemShippingAddressCountryRegExp),
+                        phone: zod.string().optional()
+                    })
+                    .optional(),
+                billingAddress: zod
+                    .strictObject({
+                        fullName: zod.string(),
+                        street: zod.string(),
+                        city: zod.string(),
+                        zip: zod.string(),
+                        country: zod
+                            .string()
+                            .regex(searchOrdersResponseDataItemsItemBillingAddressCountryRegExp),
                         phone: zod.string().optional()
                     })
                     .optional(),
@@ -5363,6 +5431,7 @@ export const getOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const getOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const getOrderByIdResponseDataShippingCostMin = 0;
 export const getOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getOrderByIdResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const GetOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5437,6 +5506,16 @@ export const GetOrderByIdResponse = zod.strictObject({
                 city: zod.string(),
                 zip: zod.string(),
                 country: zod.string().regex(getOrderByIdResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(getOrderByIdResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -5522,6 +5601,7 @@ export const replaceOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const replaceOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const replaceOrderByIdResponseDataShippingCostMin = 0;
 export const replaceOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceOrderByIdResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const ReplaceOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5602,6 +5682,18 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(replaceOrderByIdResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod
+                    .string()
+                    .regex(replaceOrderByIdResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -5687,6 +5779,7 @@ export const updateOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const updateOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const updateOrderByIdResponseDataShippingCostMin = 0;
 export const updateOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateOrderByIdResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const UpdateOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5767,6 +5860,16 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(updateOrderByIdResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(updateOrderByIdResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -5868,6 +5971,7 @@ export const restoreOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const restoreOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const restoreOrderByIdResponseDataShippingCostMin = 0;
 export const restoreOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const restoreOrderByIdResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const RestoreOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5948,6 +6052,18 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(restoreOrderByIdResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod
+                    .string()
+                    .regex(restoreOrderByIdResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -6046,6 +6162,7 @@ export const cancelOrderByIdResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const cancelOrderByIdResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const cancelOrderByIdResponseDataShippingCostMin = 0;
 export const cancelOrderByIdResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const cancelOrderByIdResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const CancelOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6129,6 +6246,16 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 phone: zod.string().optional()
             })
             .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(cancelOrderByIdResponseDataBillingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string().optional(),
@@ -6208,6 +6335,7 @@ export const overrideOrderStatusResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const overrideOrderStatusResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const overrideOrderStatusResponseDataShippingCostMin = 0;
 export const overrideOrderStatusResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const overrideOrderStatusResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const OverrideOrderStatusResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6294,6 +6422,18 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(overrideOrderStatusResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod
+                    .string()
+                    .regex(overrideOrderStatusResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -6562,6 +6702,7 @@ export const getOrderByReferenceResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const getOrderByReferenceResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const getOrderByReferenceResponseDataShippingCostMin = 0;
 export const getOrderByReferenceResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getOrderByReferenceResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const GetOrderByReferenceResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -6648,6 +6789,18 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(getOrderByReferenceResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod
+                    .string()
+                    .regex(getOrderByReferenceResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -7110,6 +7263,7 @@ export const startFulfilmentResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const startFulfilmentResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const startFulfilmentResponseDataShippingCostMin = 0;
 export const startFulfilmentResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const startFulfilmentResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const StartFulfilmentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7190,6 +7344,16 @@ export const StartFulfilmentResponse = zod.strictObject({
                 country: zod
                     .string()
                     .regex(startFulfilmentResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(startFulfilmentResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -7319,6 +7483,7 @@ export const fulfillOrderResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const fulfillOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const fulfillOrderResponseDataShippingCostMin = 0;
 export const fulfillOrderResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const fulfillOrderResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const FulfillOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7393,6 +7558,16 @@ export const FulfillOrderResponse = zod.strictObject({
                 city: zod.string(),
                 zip: zod.string(),
                 country: zod.string().regex(fulfillOrderResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(fulfillOrderResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),
@@ -7588,6 +7763,7 @@ export const createReturnResponseDataTaxSummaryItemTaxAmountMin = 0;
 export const createReturnResponseDataTaxSummaryItemGrossAmountMin = 0;
 export const createReturnResponseDataShippingCostMin = 0;
 export const createReturnResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createReturnResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const CreateReturnResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -7662,6 +7838,16 @@ export const CreateReturnResponse = zod.strictObject({
                 city: zod.string(),
                 zip: zod.string(),
                 country: zod.string().regex(createReturnResponseDataShippingAddressCountryRegExp),
+                phone: zod.string().optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string().regex(createReturnResponseDataBillingAddressCountryRegExp),
                 phone: zod.string().optional()
             })
             .optional(),

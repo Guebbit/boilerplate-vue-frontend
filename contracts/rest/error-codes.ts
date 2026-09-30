@@ -12,7 +12,7 @@ export const ERROR_CODES = {
     ANTIBOT_VERIFICATION_FAILED: 'ANTIBOT_VERIFICATION_FAILED',
     /** 400 — A malformed request the body parser or a library refused before any route ran. */
     BAD_REQUEST: 'BAD_REQUEST',
-    /** 409 — The cart is all-digital and needs no shipping address. */
+    /** 409 — Nothing in this checkout ships to an address (all-digital, or a method that ships to none), so a shipping `addressId` cannot apply. */
     CART_ADDRESS_NOT_APPLICABLE: 'CART_ADDRESS_NOT_APPLICABLE',
     /** 404 — The named address does not exist, or does not belong to the caller. */
     CART_ADDRESS_NOT_FOUND: 'CART_ADDRESS_NOT_FOUND',
@@ -20,6 +20,8 @@ export const ERROR_CODES = {
     CART_ADDRESS_REQUIRED: 'CART_ADDRESS_REQUIRED',
     /** 409 — This order total exceeds the bank-transfer payment method's configured ceiling. */
     CART_BANK_TRANSFER_LIMIT: 'CART_BANK_TRANSFER_LIMIT',
+    /** 422 — No billing address could be resolved — none was named, nothing ships, and the address book has no default. */
+    CART_BILLING_ADDRESS_REQUIRED: 'CART_BILLING_ADDRESS_REQUIRED',
     /** 409 — The cart changed between the request that read it and this write — reload and retry. */
     CART_CHANGED: 'CART_CHANGED',
     /** 409 — Checkout was attempted on a cart with no lines. */

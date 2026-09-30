@@ -559,6 +559,7 @@ export interface Order {
      */
     shippingCost?: number;
     shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
     payBy?: string;
     readonly orderNumber?: string;
@@ -2947,8 +2948,10 @@ export interface CheckoutRequest {
      * @minLength 1
      */
     notes?: string;
-    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
+    /** Which of the caller's saved addresses to SHIP to — meaningful only when a line ships to an address. Omitted, the default address is used; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. Sent for a basket that ships to no address (all-digital, or a pickup method) it refuses with 409, `CART_ADDRESS_NOT_APPLICABLE`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
     addressId?: Id;
+    /** Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`. */
+    billingAddressId?: Id;
     /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. */
     paymentMethod?: PaymentMethodId;
 }
