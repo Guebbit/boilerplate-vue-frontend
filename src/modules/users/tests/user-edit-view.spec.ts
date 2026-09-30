@@ -248,3 +248,66 @@ describe('UserEdit', () => {
             });
     });
 });
+
+/** How many times the record was read. */
+const userReads = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(([config]) => config.method === 'GET' && config.url === '/users/u1')
+        .length;
+
+describe('UserEdit — a save answered 412', () => {
+    /** The reject envelope `onResponseReject` builds for the API's 412. */
+    const PRECONDITION_FAILED = {
+        success: false,
+        status: 412,
+        message: 'Precondition Failed',
+        errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
+    };
+
+    /** Answers every GET as usual and every PATCH with the 412. */
+    const mockRefusedPatch = () => {
+        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+            config.method === 'PATCH'
+                ? // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
+                  Promise.reject(PRECONDITION_FAILED)
+                : Promise.resolve(
+                      parseOrvalFixture(config.method, config.url, orvalEnvelope(loadedUser))
+                  )
+        );
+    };
+
+    /** Mounts, edits the username, submits, and settles. */
+    const submitRefused = () => {
+        mockRefusedPatch();
+        const wrapper = mountPage();
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-username] input').setValue('ada2'))
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => wrapper);
+    };
+
+    it('warns that someone else changed the user, and offers to reload', () =>
+        submitRefused().then((wrapper) => {
+            const alert = wrapper.get('[data-test=user-edit-submit-error]');
+            expect(alert.text()).toContain(i18n.global.t('generic.error-stale-record'));
+            expect(alert.classes().join(' ')).toContain('warning');
+            expect(wrapper.find('[data-test=user-edit-reload-latest]').exists()).toBe(true);
+        }));
+
+    it('re-reads the user past the store cache on "reload latest", and clears the warning', () =>
+        submitRefused().then((wrapper) => {
+            const readsBefore = userReads();
+            return wrapper
+                .get('[data-test=user-edit-reload-latest]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(userReads()).toBe(readsBefore + 1);
+                    expect(wrapper.find('[data-test=user-edit-reload-latest]').exists()).toBe(
+                        false
+                    );
+                });
+        }));
+});

@@ -120,6 +120,8 @@ export const ERROR_CODES = {
     PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
     /** 422 — The refund asks for more than the payment still has left to give back. */
     PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
+    /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */
+    PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. */

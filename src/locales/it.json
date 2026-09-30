@@ -15,6 +15,8 @@
         "no-data": "Nessun dato disponibile",
         "cancel": "Annulla",
         "confirm": "Conferma",
+        "error-stale-record": "Qualcun altro ha modificato questo elemento mentre lo stavi modificando. Ricarica per vedere la sua versione: le modifiche non salvate andranno perse.",
+        "action-reload-latest": "Ricarica l'ultima versione",
         "fix-errors": "Correggi gli errori evidenziati nel modulo.",
         "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio.",
         "notifications": "Notifiche",

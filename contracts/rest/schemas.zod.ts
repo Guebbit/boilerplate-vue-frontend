@@ -1334,6 +1334,10 @@ export const GetAccountResponse = zod.strictObject({
  * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Replace own profile
  */
+export const replaceAccountHeaderIfMatchMax = 200;
+export const ReplaceAccountHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceAccountHeaderIfMatchMax).optional()
+});
 export const replaceAccountBodyUsernameMin = 3;
 export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const ReplaceAccountBody = zod.strictObject({
@@ -1375,6 +1379,10 @@ export const ReplaceAccountResponse = zod.strictObject({
  * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
  * @summary Update own profile
  */
+export const updateAccountHeaderIfMatchMax = 200;
+export const UpdateAccountHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateAccountHeaderIfMatchMax).optional()
+});
 export const updateAccountBodyUsernameMin = 3;
 export const updateAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const UpdateAccountBody = zod.strictObject({
@@ -2772,6 +2780,10 @@ export const GetUserByIdResponse = zod.strictObject({
 export const ReplaceUserByIdParams = zod.strictObject({
     id: zod.string()
 });
+export const replaceUserByIdHeaderIfMatchMax = 200;
+export const ReplaceUserByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceUserByIdHeaderIfMatchMax).optional()
+});
 export const replaceUserByIdBodyPasswordMin = 8;
 export const replaceUserByIdBodyPasswordRegExp = new RegExp(
     '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
@@ -2825,6 +2837,10 @@ export const ReplaceUserByIdResponse = zod.strictObject({
  */
 export const UpdateUserByIdParams = zod.strictObject({
     id: zod.string()
+});
+export const updateUserByIdHeaderIfMatchMax = 200;
+export const UpdateUserByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateUserByIdHeaderIfMatchMax).optional()
 });
 export const updateUserByIdBodyPasswordMin = 8;
 export const updateUserByIdBodyPasswordRegExp = new RegExp(
@@ -2883,6 +2899,10 @@ export const DeleteUserByIdParams = zod.strictObject({
 export const DeleteUserByIdQueryParams = zod.strictObject({
     hardDelete: zod.boolean().optional()
 });
+export const deleteUserByIdHeaderIfMatchMax = 200;
+export const DeleteUserByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteUserByIdHeaderIfMatchMax).optional()
+});
 export const deleteUserByIdBodyHardDeleteDefault = false;
 export const DeleteUserByIdBody = zod.strictObject({
     hardDelete: zod.boolean().default(deleteUserByIdBodyHardDeleteDefault)
@@ -2931,6 +2951,10 @@ export const RestoreUserByIdResponse = zod.strictObject({
  */
 export const HardDeleteUserByIdParams = zod.strictObject({
     id: zod.string()
+});
+export const hardDeleteUserByIdHeaderIfMatchMax = 200;
+export const HardDeleteUserByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(hardDeleteUserByIdHeaderIfMatchMax).optional()
 });
 export const HardDeleteUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -3531,6 +3555,10 @@ export const GetProductByIdResponse = zod.strictObject({
 export const ReplaceProductByIdParams = zod.strictObject({
     id: zod.string()
 });
+export const replaceProductByIdHeaderIfMatchMax = 200;
+export const ReplaceProductByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceProductByIdHeaderIfMatchMax).optional()
+});
 export const replaceProductByIdBodyPriceMin = 0;
 export const replaceProductByIdBodyWeightMin = 0;
 export const ReplaceProductByIdBody = zod.strictObject({
@@ -3616,6 +3644,10 @@ export const ReplaceProductByIdResponse = zod.strictObject({
 export const UpdateProductByIdParams = zod.strictObject({
     id: zod.string()
 });
+export const updateProductByIdHeaderIfMatchMax = 200;
+export const UpdateProductByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateProductByIdHeaderIfMatchMax).optional()
+});
 export const updateProductByIdBodyPriceMin = 0;
 export const updateProductByIdBodyWeightMin = 0;
 export const UpdateProductByIdBody = zod.strictObject({
@@ -3689,6 +3721,10 @@ export const DeleteProductByIdParams = zod.strictObject({
 });
 export const DeleteProductByIdQueryParams = zod.strictObject({
     hardDelete: zod.boolean().optional()
+});
+export const deleteProductByIdHeaderIfMatchMax = 200;
+export const DeleteProductByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteProductByIdHeaderIfMatchMax).optional()
 });
 export const deleteProductByIdBodyHardDeleteDefault = false;
 export const DeleteProductByIdBody = zod.strictObject({
@@ -3800,6 +3836,10 @@ export const RestoreProductByIdResponse = zod.strictObject({
  */
 export const HardDeleteProductByIdParams = zod.strictObject({
     id: zod.string()
+});
+export const hardDeleteProductByIdHeaderIfMatchMax = 200;
+export const HardDeleteProductByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(hardDeleteProductByIdHeaderIfMatchMax).optional()
 });
 export const HardDeleteProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5380,6 +5420,10 @@ export const GetOrderByIdResponse = zod.strictObject({
 export const ReplaceOrderByIdParams = zod.strictObject({
     id: zod.string()
 });
+export const replaceOrderByIdHeaderIfMatchMax = 200;
+export const ReplaceOrderByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceOrderByIdHeaderIfMatchMax).optional()
+});
 export const ReplaceOrderByIdBody = zod.strictObject({
     email: zod.email()
 });
@@ -5540,6 +5584,10 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
  */
 export const UpdateOrderByIdParams = zod.strictObject({
     id: zod.string()
+});
+export const updateOrderByIdHeaderIfMatchMax = 200;
+export const UpdateOrderByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateOrderByIdHeaderIfMatchMax).optional()
 });
 export const UpdateOrderByIdBody = zod.strictObject({
     email: zod.email().optional()
@@ -5704,6 +5752,10 @@ export const DeleteOrderByIdParams = zod.strictObject({
 });
 export const DeleteOrderByIdQueryParams = zod.strictObject({
     hardDelete: zod.boolean().optional()
+});
+export const deleteOrderByIdHeaderIfMatchMax = 200;
+export const DeleteOrderByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteOrderByIdHeaderIfMatchMax).optional()
 });
 export const deleteOrderByIdBodyHardDeleteDefault = false;
 export const DeleteOrderByIdBody = zod.strictObject({
@@ -5878,6 +5930,10 @@ export const RestoreOrderByIdResponse = zod.strictObject({
  */
 export const HardDeleteOrderByIdParams = zod.strictObject({
     id: zod.string()
+});
+export const hardDeleteOrderByIdHeaderIfMatchMax = 200;
+export const HardDeleteOrderByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(hardDeleteOrderByIdHeaderIfMatchMax).optional()
 });
 export const HardDeleteOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
