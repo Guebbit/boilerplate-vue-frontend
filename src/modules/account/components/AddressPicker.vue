@@ -8,8 +8,9 @@ export default {
 /**
  * @module
  * Checkout's address choice: a radio per saved entry, bound to `defineModel`, mirroring
- * `ShippingSelector.vue`'s own shape. An empty book offers the same add-address dialog the
- * profile page uses (`AddressFormDialog.vue`) rather than a second copy of that form.
+ * `ShippingSelector.vue`'s own shape. The add-address dialog is the profile page's own
+ * (`AddressFormDialog.vue`), reachable whether or not the book is empty — a second delivery place is
+ * a normal checkout need — and the entry it saves becomes the choice.
  */
 import { onMounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -57,15 +58,26 @@ onMounted(() => {
 });
 
 /**
- * Pre-selects the book's default entry: whenever the list loads or changes and nothing valid is
- * chosen — nothing yet, or the chosen entry no longer exists — falls back to the `default` one,
- * or the first. Runs `immediate` so it also covers the add-address dialog's own save, needing no
- * separate handler for that case. Never overrides a still-valid manual choice.
+ * Keeps the choice sensible as the list changes:
+ *
+ * - an entry that appeared in a book that already had some is the visitor's own add — choose it;
+ * - otherwise, with nothing valid chosen (nothing yet, or the entry is gone), fall back to the
+ *   `default` one, or the first.
+ *
+ * A still-valid manual choice is never overridden by the fallback. `immediate`, so it also covers
+ * a book already loaded at mount.
  */
 watch(
     addresses,
-    (list) => {
+    (list, previous) => {
         if (list.length === 0) return;
+        const added = previous?.length
+            ? list.find((address) => !previous.some(({ id }) => id === address.id))
+            : undefined;
+        if (added) {
+            addressId.value = added.id;
+            return;
+        }
         if (addressId.value && list.some((address) => address.id === addressId.value)) return;
         addressId.value = (list.find((address) => address.default) ?? list[0]).id;
     },
@@ -93,20 +105,18 @@ watch(
                 </template>
             </v-radio>
         </v-radio-group>
-        <template v-else>
-            <p class="mb-2 opacity-70" data-test="address-picker-empty">
-                {{ t('address-picker.empty') }}
-            </p>
-            <v-btn
-                variant="tonal"
-                size="small"
-                data-test="address-picker-add"
-                @click="dialogOpen = true"
-            >
-                <Plus :size="16" class="mr-1" aria-hidden="true" />
-                {{ t('address-picker.add') }}
-            </v-btn>
-        </template>
+        <p v-else class="mb-2 opacity-70" data-test="address-picker-empty">
+            {{ t('address-picker.empty') }}
+        </p>
+        <v-btn
+            variant="tonal"
+            size="small"
+            data-test="address-picker-add"
+            @click="dialogOpen = true"
+        >
+            <Plus :size="16" class="mr-1" aria-hidden="true" />
+            {{ t('address-picker.add') }}
+        </v-btn>
         <AddressFormDialog v-model="dialogOpen" :ship-to-countries="shipToCountries" />
     </div>
 </template>
