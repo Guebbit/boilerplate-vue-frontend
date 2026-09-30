@@ -1502,7 +1502,7 @@ export type ObservabilityMetricsSummaryProcess = {
 export interface ObservabilityMetricsSummary {
     http: ObservabilityMetricsSummaryHttp;
     auth: ObservabilityMetricsSummaryAuth;
-    business: ObservabilityMetricsSummaryBusiness;
+    business?: ObservabilityMetricsSummaryBusiness;
     database: ObservabilityMetricsSummaryDatabase;
     process: ObservabilityMetricsSummaryProcess;
     timestamp: string;

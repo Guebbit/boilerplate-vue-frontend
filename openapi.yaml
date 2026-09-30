@@ -8776,7 +8776,6 @@ components:
       required:
         - http
         - auth
-        - business
         - database
         - process
         - timestamp
