@@ -57,7 +57,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel, TransferInstructionsPanel } from '@/modules/payments';
 import { WithdrawalPanel } from '@/modules/returns';
-import { ShipmentPanel } from '@/modules/delivery';
+import { ShipmentPanel, ShippingMethodName } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -84,8 +84,8 @@ const { id } = defineProps<{
 const { watchOrder, fetchOrder, fetchInvoice, cancelOrder } = useOrdersStore();
 
 /**
- * The session, for the `meta.can` rule that gates the "History" link — a reader who cannot read
- * the audit trail should not see a link that 403s.
+ * The session, for the `meta.can` rules that gate the "History" link and the "Edit" button — a
+ * reader who cannot read the audit trail or edit the order should not see a link that 403s.
  */
 const session = useSessionStore();
 
@@ -482,10 +482,13 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <ItemDetailField
                         v-if="currentOrder?.shippingMethod"
                         :label="t('order-target-page.label-shipping')"
-                        :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0, orderCurrency)}`"
                         :icon="Truck"
                         data-test="order-shipping"
-                    />
+                    >
+                        <ShippingMethodName :id="currentOrder.shippingMethod" />
+                        —
+                        {{ formatCurrency(currentOrder.shippingCost ?? 0, orderCurrency) }}
+                    </ItemDetailField>
                     <ItemDetailField
                         v-if="shippingAddressText"
                         :label="t('order-target-page.label-shipping-address')"
@@ -676,8 +679,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     data-test="order-cancel-error"
                 />
                 <v-btn
-                    v-if="currentOrder"
+                    v-if="currentOrder && session.can('update', 'Order')"
                     color="secondary"
+                    data-test="go-to-edit"
                     :to="routerLinkI18n({ name: 'OrderEdit', params: { id: currentOrder.id } })"
                 >
                     {{ t('order-target-page.button-go-to-edit') }}

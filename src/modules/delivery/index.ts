@@ -1,6 +1,6 @@
 /**
  * @module
- * Delivery — public barrel. Two components, and nothing else.
+ * Delivery — public barrel. Three components, and nothing else.
  *
  * The store is not here on purpose. Both siblings that use this module mount a component that
  * fetches its own state — the cart the selector, orders the parcel panel — so neither has to learn
@@ -10,3 +10,4 @@
 
 export { default as ShippingSelector } from './components/ShippingSelector.vue';
 export { default as ShipmentPanel } from './components/ShipmentPanel.vue';
+export { default as ShippingMethodName } from './components/ShippingMethodName.vue';

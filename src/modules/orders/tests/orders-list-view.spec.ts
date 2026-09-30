@@ -180,3 +180,81 @@ describe('OrdersList — a soft-deleted row', () => {
         expect(restore).toHaveBeenCalledWith('gone');
     });
 });
+
+/** Grants the key that makes a viewer staff on orders: editing other people's. */
+const signInAsOrderEditor = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'operator@example.com', role: 'owner' };
+    session.setAbilities({ tenant: [['update', 'Order']], platform: [] });
+};
+
+/**
+ * A customer's list is already only their own orders, so the search-by-id/user/product/email boxes
+ * and the transfer queue are staff tools, not theirs (FA38).
+ */
+describe('OrdersList — which filters a viewer sees', () => {
+    it('shows a customer only the filters that narrow their own list', () => {
+        const wrapper = mountList();
+
+        expect(wrapper.text()).not.toContain('User ID');
+        expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(false);
+        expect(wrapper.find('[data-test="filter-status"]').exists()).toBe(true);
+    });
+
+    it('shows staff the lookups and the transfer queue as well', () => {
+        signInAsOrderEditor();
+
+        const wrapper = mountList();
+
+        expect(wrapper.text()).toContain('User ID');
+        expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(true);
+    });
+});
+
+/**
+ * The header sorts the WHOLE result, on the server: a click on an API-sortable column becomes
+ * `filters.sort` and a fresh search, a column the API cannot sort by stays inert.
+ */
+const mountWithRows = async () => {
+    vi.mocked(searchOrders).mockResolvedValue(
+        asStub<Awaited<ReturnType<typeof searchOrders>>>(
+            contractResponse(schemas.SearchOrdersResponse, {
+                items: [order('o-1')],
+                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+            })
+        )
+    );
+    const wrapper = mount(OrdersList, {
+        global: {
+            plugins: [router, vuetify, i18n],
+            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+        }
+    });
+    await flushPromises();
+    return wrapper;
+};
+
+const headOf = (wrapper: Awaited<ReturnType<typeof mountWithRows>>, title: string) =>
+    wrapper.findAll('th').find((head) => head.text().includes(title));
+
+describe('OrdersList — sorting from the header', () => {
+    it('sends the clicked column to the API as the sort, and keeps it in the store', async () => {
+        const wrapper = await mountWithRows();
+
+        await headOf(wrapper, 'Status')?.trigger('click');
+        await flushPromises();
+
+        expect(useOrdersStore().filters.sort).toBe('status');
+        expect(searchOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ sort: ['status'] })
+        );
+    });
+
+    it('leaves the derived total column inert', async () => {
+        const wrapper = await mountWithRows();
+
+        expect(headOf(wrapper, 'Total')?.classes()).not.toContain('v-data-table__th--sortable');
+        expect(headOf(wrapper, 'Status')?.classes()).toContain('v-data-table__th--sortable');
+    });
+});

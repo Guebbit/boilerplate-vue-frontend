@@ -31,6 +31,9 @@ import { OrderStatus } from '@/types/enums.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
+import { useServerSort } from '@/ui/composables/use-server-sort.ts';
+import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
+import { OrderSortItem } from '@/types/enums.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -94,6 +97,12 @@ const {
 const session = useSessionStore();
 
 /**
+ * Whether the viewer works the orders of OTHER people: the search-by-id/user/product/email boxes
+ * and the transfer queue mean nothing to a customer, whose list is already only their own.
+ */
+const isStaff = computed(() => session.can('update', 'Order'));
+
+/**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
@@ -127,7 +136,8 @@ const { sync: syncUrl } = useListUrlState({
         email: 'string',
         status: Object.values(OrderStatus),
         paymentMethod: 'string',
-        deleted: 'boolean'
+        deleted: 'boolean',
+        sort: 'string'
     }
 });
 
@@ -220,6 +230,17 @@ const { handleSearch, handleReset } = useListSearch({
 });
 
 /**
+ * The columns the API can order by (the contract's `OrderSort` enum) — the table's other headers
+ * stay inert rather than reorder one page.
+ */
+const sortableKeys = sortFieldsOf(OrderSortItem);
+
+/**
+ * The header's sort state, kept in `filters.sort` so it travels in the URL and the request.
+ */
+const { sortBy } = useServerSort({ filters, apply: handleSearch });
+
+/**
  * The row actions' own blocked state — delete and hard-delete share one instance, since both
  * are write actions behind a confirm dialog rather than a form with its own field to block: the
  * table keeps working either way, so one alert above it is where a failure belongs. A search
@@ -303,21 +324,25 @@ const handleHardDelete = (orderId: string) =>
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                     <v-text-field
+                        v-if="isStaff"
                         v-model="filters.id"
                         :label="t('orders-list-page.filter-id')"
                         hide-details
                     />
                     <v-text-field
+                        v-if="isStaff"
                         v-model="filters.userId"
                         :label="t('orders-list-page.filter-user-id')"
                         hide-details
                     />
                     <v-text-field
+                        v-if="isStaff"
                         v-model="filters.productId"
                         :label="t('orders-list-page.filter-product-id')"
                         hide-details
                     />
                     <v-text-field
+                        v-if="isStaff"
                         v-model="filters.email"
                         :label="t('orders-list-page.filter-email')"
                         hide-details
@@ -344,6 +369,7 @@ const handleHardDelete = (orderId: string) =>
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
                 <v-checkbox
+                    v-if="isStaff"
                     v-model="awaitingTransferOnly"
                     :label="t('orders-list-page.filter-awaiting-transfer')"
                     data-test="filter-awaiting-transfer"
@@ -377,6 +403,8 @@ const handleHardDelete = (orderId: string) =>
         <DataTable
             v-else
             v-model="selectedOrderId"
+            v-model:sort-by="sortBy"
+            :server-sort-keys="sortableKeys"
             :headers="tableHeaders"
             :items="pageItemList"
             :caption="t('orders-list-page.table-caption')"
