@@ -4,7 +4,7 @@
  * runtime array plus the union type derived from it.
  *
  * SHARED SCRIPT — byte-identical in both repos of the pair, and both write a
- * `permission-actions.ts` beside their other generated contract types. The input is the SAME
+ * a `permission-actions` module beside their other generated contract types. The input is the SAME
  * document in both: the backend reads its `shared/authorization-keys.yaml`, the frontend the copy
  * `sync:frontend` hands it (`contracts/authorization-keys.yaml`).
  *
