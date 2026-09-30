@@ -240,6 +240,7 @@ how a reader finds the story without opening the file.
 | CU4  | A slow-settling card leaves the order honestly waiting (no invoice, no card form, one Finish button) until Finish reads the provider; and money that lands after the customer cancelled is refunded, never kept                                                   | `user`                               | nightly  | `cu4-card-slow-to-settle.cy.ts`          |
 | VI1  | A guest narrows the catalogue by tag and price band, sorts it and pages it; the address carries the view, so a reload, Back and a fresh visit of the copied link restore it; Reset clears it and nonsense ends in the empty state                                 | guest                                | nightly  | `vi1-browse-the-catalogue.cy.ts`         |
 | VI2  | A guest finds their way: Home link and logo, footer pages, FAQ to contact, the theme kept, a locale fallback, a wrong address, and a pulled product landing on a not-found page instead of loading forever (JB3)                                                  | guest                                | nightly  | `vi2-find-your-way-around.cy.ts`         |
+| VI3  | A guest writes from the Italian site with no name: acknowledged, the operator mailed in the shop's language, a honeypot-filling bot dropped silently, and the sixth message refused in words with the text kept                                                   | guest                                | nightly  | `vi3-a-guest-writes-to-the-shop.cy.ts`   |
 
 ## `tests/support/` — the harness
 
