@@ -282,6 +282,7 @@ const handlePageChange = (page: number) => {
                     :disabled="item.status === 'in-flight' || props.replayingIds.has(item.id)"
                     :loading="props.replayingIds.has(item.id)"
                     :aria-label="t('webhook-deliveries-page.button-replay-named', { id: item.id })"
+                    data-test="webhook-delivery-replay"
                     @click="emit('replay', item.id)"
                 >
                     <RotateCw :size="14" class="mr-1" aria-hidden="true" />

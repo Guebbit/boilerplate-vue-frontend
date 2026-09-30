@@ -93,7 +93,11 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                     >
                         {{ t('realtime-playground-page.button-connect') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="disconnectObservability">
+                    <v-btn
+                        variant="tonal"
+                        data-test="realtime-disconnect"
+                        @click="disconnectObservability"
+                    >
                         {{ t('realtime-playground-page.button-disconnect') }}
                     </v-btn>
                     <v-switch

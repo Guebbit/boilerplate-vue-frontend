@@ -222,6 +222,7 @@ const handleConfirm = () => {
                     class="mb-4"
                     :disabled="secondsUntilResend > 0"
                     :loading="sendingCode"
+                    data-test="two-factor-resend"
                     @click="handleResend"
                 >
                     {{
