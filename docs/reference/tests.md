@@ -225,6 +225,7 @@ how a reader finds the story without opening the file.
 | N1   | The customer withdraws from a paid, undispatched order: two steps, then the order is cancelled, refunded whole (delivery included), the stock is back and the acknowledgement is mailed                                                                           | `user`                               | `@smoke` | `n1-withdraw-before-dispatch.cy.ts`     |
 | OP1  | The admin takes a paid express order through start, ship (code required) and deliver, each button only in its own state; the customer sees the parcel and is mailed the code                                                                                      | `admin`, then `user`                 | `@smoke` | `op1-fulfil-paid-order.cy.ts`           |
 | OP13 | A guest, an editor, a moderator and a customer each get exactly their own menus, buttons and pages, and are turned back from the rest                                                                                                                             | guest, `editor`, `moderator`, `user` | `@smoke` | `op13-each-role-sees-what-it-may.cy.ts` |
+| AC3  | After the fresh-login window lapses, checkout and the data export open the re-auth dialog: a wrong password is refused, cancel abandons, the right one carries on (demo only, it moves the clock)                                                                 | `user`                               | `@smoke` | `ac3-prove-it-is-still-you.cy.ts`       |
 
 ## `tests/support/` — the harness
 
