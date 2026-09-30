@@ -149,5 +149,18 @@
     },
     "engines": {
         "node": "^24"
+    },
+    "allowScripts": {
+        "@hyperjump/json-pointer@0.9.8": true,
+        "@hyperjump/json-schema@0.23.5": true,
+        "@hyperjump/json-schema-core@0.28.5": true,
+        "@hyperjump/pact@0.2.5": true,
+        "cypress@15.18.1": true,
+        "esbuild@0.28.1": true,
+        "esbuild@0.21.5": true,
+        "msw@2.15.0": true,
+        "unrs-resolver@1.12.2": true,
+        "vue-demi@0.14.10": true,
+        "@scarf/scarf": false
     }
 }
