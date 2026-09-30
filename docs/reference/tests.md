@@ -238,6 +238,7 @@ how a reader finds the story without opening the file.
 | OP22 | Support approves one defective-goods request and declines another with a reason, the warehouse receives the approved one keeping a deduction, the ledger shows the restock, and the customer reads both; the returns filters narrow the queue                     | `support`, `warehouse`, then `user`  | nightly  | `op22-defective-item-comes-back.cy.ts`   |
 | CU19 | The customer checks out by bank transfer, then pays the same order by card: the transfer panel goes, the order says card (JB8), and the admin searching the RF reference finds a paid order with no offline form                                                  | `user`, then `admin`                 | nightly  | `cu19-transfer-order-paid-by-card.cy.ts` |
 | CU4  | A slow-settling card leaves the order honestly waiting (no invoice, no card form, one Finish button) until Finish reads the provider; and money that lands after the customer cancelled is refunded, never kept                                                   | `user`                               | nightly  | `cu4-card-slow-to-settle.cy.ts`          |
+| OP8  | The warehouse records a delivery and writes off damaged units, narrows the board to low stock, and reads each movement back in the ledger with its reason and note; the count follows each step as staff see it (guests see a cached one, OP21)                   | `warehouse`                          | nightly  | `op8-day-in-the-stock-room.cy.ts`        |
 
 ## `tests/support/` — the harness
 
