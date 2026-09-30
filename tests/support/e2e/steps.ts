@@ -136,15 +136,19 @@ export const signInWith = (email: string, password: string): void => {
 
 /**
  * Puts a seeded product in the cart the way a shopper does: the products page, the category
- * chip that narrows to it, its card, "add to cart". The caller must already be on a page with the
- * app bar.
+ * chip that narrows to it (or, for a product with no category, its own title in the search box),
+ * its card, "add to cart". The caller must already be on a page with the app bar.
  *
  * @param name - a `product.*` guarantee name
  */
 export const addToCartFromStorefront = (name: string): void => {
     cy.navigateTo('/en/products');
-    cy.filterByNarrowestCategoryOf(name);
-    openProductCard(name);
+    cy.subjectProduct(name).then((product) => {
+        if (product.categories?.length) {
+            cy.filterByNarrowestCategoryOf(name);
+            openProductCard(name);
+        } else searchAndOpenProduct(name);
+    });
     addOpenProductToCart();
 };
 
