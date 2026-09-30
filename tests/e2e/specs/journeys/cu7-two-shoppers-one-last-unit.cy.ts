@@ -17,14 +17,16 @@ interface ProductLike {
 }
 
 /**
- * The units a shopper could buy right now, read as the admin.
+ * Asserts the units a shopper could buy right now, read as the admin.
  *
  * @param productId - the product to read
+ * @param units - how many are expected to be free
  */
-const availableNow = (productId: string): Cypress.Chainable<number | undefined> =>
-    cy
-        .apiAs<ProductLike>('admin', 'GET', `/products/${productId}`)
-        .then((product) => product?.available);
+const expectAvailable = (productId: string, units: number): void => {
+    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should((product) => {
+        expect(product?.available, `${String(units)} free`).to.equal(units);
+    });
+};
 
 describe('CU7 · Two shoppers, one last unit', () => {
     beforeEach(() => {
@@ -37,7 +39,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
         cy.subjectId('product.lowStock').then((productId) => {
             cy.subjectProduct('product.lowStock').then(({ title }) => {
                 cy.step('both shoppers have the last unit in their cart');
-                availableNow(productId).should('equal', 1);
+                expectAvailable(productId, 1);
                 cy.loginAs('user');
                 addToCartFromStorefront('product.lowStock');
                 // Adding never looks at stock, so the editor's cart can hold it too.
@@ -49,7 +51,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 cy.get('[data-test=shipping-method-pickup]').click();
                 cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
                 cy.get('#order-target').should('exist');
-                availableNow(productId).should('equal', 0);
+                expectAvailable(productId, 0);
                 idFromLocation().then((orderId) => {
                     cy.step(
                         'the second shopper sees it gone, and checkout refuses with the shortfall'
@@ -76,7 +78,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.get('[data-test=order-cancel]').click();
                     cy.get('[data-test=app-dialog-confirm]').click();
                     cy.get('[data-test=order-cancel]').should('not.exist');
-                    availableNow(productId).should('equal', 1);
+                    expectAvailable(productId, 1);
 
                     cy.step('the second shopper tries again and gets it');
                     cy.switchUser('editor');
@@ -85,7 +87,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.goToCart();
                     cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
                     cy.get('#order-target').should('exist');
-                    availableNow(productId).should('equal', 0);
+                    expectAvailable(productId, 0);
                 });
             });
         });
