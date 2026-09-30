@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import { loadScenario, seedAccount, type E2ERole } from './scenario';
+import { withScenario } from '../../../scripts/e2e/reset-command';
 import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
 
@@ -31,7 +32,8 @@ declare global {
              *   in-memory database and replays the copy that process built at boot.
              * - live profile: runs the backend's own restore command, which rebuilds the real
              *   database and writes its description to a file. With no `LIVE_RESET_COMMAND` in
-             *   `.env` there is no such command, and nothing is restored.
+             *   `.env` there is no such command, and nothing is restored. Naming a scenario needs a
+             *   `{scenario}` placeholder in that command, and throws without one.
              *
              * Both land on a scenario in the backend's own registry, which is why the same specs
              * work against either. Afterwards `cy.subjectId()` answers for the scenario just
@@ -314,7 +316,7 @@ Cypress.Commands.add(
                 // https://mailpit.axllent.org/docs/api-v1/view.html#delete-/api/v1/messages
                 if (mailpitUrl)
                     cy.request({ method: 'DELETE', url: `${String(mailpitUrl)}/api/v1/messages` });
-                return resetLiveDatabase(liveResetCommand);
+                return resetLiveDatabase(withScenario(liveResetCommand, scenario));
             })
             // Re-read rather than kept: a different scenario promises different rows, and
             // under the live profile the reset that just ran is what WROTE the description.
