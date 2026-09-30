@@ -6,6 +6,7 @@
  *
  * Plain functions over `cy`, like `steps.ts`; they name no state of their own.
  */
+import type { Device } from './harness';
 
 /**
  * Types credentials into the login form and submits, without asserting where it leads — a
@@ -63,3 +64,18 @@ export const dismissBackupCodes = (): void => {
     cy.get('[data-test=backup-codes-continue]').click();
     cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
 };
+
+/**
+ * Signs in as a second device with credentials the seed does not know — an account whose
+ * password a journey has already changed. `loginDevice` covers the seeded ones.
+ *
+ * @param email - the account's address
+ * @param password - its current password
+ * @returns a chain yielding the device, for `refreshDevice` and `requestAsDevice`
+ */
+export const loginDeviceWith = (email: string, password: string): Cypress.Chainable<Device> =>
+    cy
+        .env(['apiUrl'])
+        .then(({ apiUrl }) =>
+            cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password })
+        );
