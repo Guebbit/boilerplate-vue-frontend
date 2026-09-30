@@ -5,7 +5,7 @@
  * six-digit code a person would type, and the exact link they would click, token included.
  */
 import { describe, expect, it } from 'vitest';
-import { parseMailpitMessage } from '../../../../scripts/e2e/mail-message';
+import { mailMentions, parseMailpitMessage } from '../../../../scripts/e2e/mail-message';
 
 describe('parseMailpitMessage', () => {
     it('lifts a delivered code out of the rendered body', () => {
@@ -15,7 +15,7 @@ describe('parseMailpitMessage', () => {
             HTML: '<h1>Hi Ada</h1><p>Use this code:</p><p style="font-size: 2rem">482913</p><p>It expires in 10 minutes.</p>'
         });
 
-        expect(email).toEqual({
+        expect(email).toMatchObject({
             to: 'ada@example.com',
             subject: 'Your sign-in code',
             lines: ['code: 482913']
@@ -54,5 +54,60 @@ describe('parseMailpitMessage', () => {
 
         expect(email.lines).toEqual([]);
         expect(email.token).toBeUndefined();
+    });
+});
+
+describe('parseMailpitMessage — attachments and text', () => {
+    it('lists the attachment file names, and keeps the visible text', () => {
+        const email = parseMailpitMessage('ada@example.com', {
+            Subject: 'Your order',
+            Text: '',
+            HTML: '<p>Thanks for ordering.</p>',
+            Attachments: [{ FileName: 'invoice-2026-000001.pdf' }]
+        });
+
+        expect(email.attachments).toEqual(['invoice-2026-000001.pdf']);
+        expect(email.text).toBe('Thanks for ordering.');
+    });
+
+    it('keeps every link, so a mail can be told apart by the page it points at', () => {
+        const email = parseMailpitMessage('ada@example.com', {
+            Subject: 'Payment received',
+            Text: '',
+            HTML: '<a href="http://localhost:8085/en/orders/abc123?lang=en&amp;x=1">View</a>'
+        });
+
+        expect(email.links).toEqual(['http://localhost:8085/en/orders/abc123?lang=en&x=1']);
+        expect(mailMentions(email, '/orders/abc123')).toBe(true);
+    });
+
+    it('reports no attachments key at all when there are none', () => {
+        const email = parseMailpitMessage('ada@example.com', {
+            Subject: 'Hi',
+            Text: 'plain',
+            HTML: '<p>plain</p>',
+            Attachments: []
+        });
+
+        expect(email).not.toHaveProperty('attachments');
+    });
+});
+
+describe('mailMentions', () => {
+    const inbox = { to: 'a@b.c', subject: 'Shipped', text: 'Tracking code: TRK-42 7' };
+    const outbox = { to: 'a@b.c', subject: 'Shipped', lines: ['trackingCode: TRK-E2E-0001'] };
+
+    it('finds the needle in an inbox body and in the outbox variables alike', () => {
+        expect(mailMentions(inbox, 'TRK-42')).toBe(true);
+        expect(mailMentions(outbox, 'TRK-E2E-0001')).toBe(true);
+    });
+
+    it('ignores whitespace, since a reference is grouped differently on screen and in a mail', () => {
+        expect(mailMentions(inbox, 'TRK-4 27')).toBe(true);
+    });
+
+    it('says no when the needle is nowhere', () => {
+        expect(mailMentions(inbox, 'TRK-99')).toBe(false);
+        expect(mailMentions(outbox, 'TRK-99')).toBe(false);
     });
 });

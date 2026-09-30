@@ -120,6 +120,8 @@ reconciled against a manifest field here. See
 | `tests/unit/scripts/e2e/webhook-sink.spec.ts`            | The sink records what arrives, checks the Standard Webhooks signature, and refuses a port that is taken.                                                    | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/e2e/antibot-backend.spec.ts`         | The antibot backend's environment is altcha with a secret and a low cost, and the live workflow boots its matrix entry with the same values.                | [Live E2E](../tools/live-e2e.md#the-antibot-run)  |
 | `tests/unit/scripts/e2e/step-prefix.spec.ts`             | A failure message gets the `[step: …]` line once, and not before a step starts.                                                                             | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/cents.spec.ts`                   | A money text reads as an integer count of cents in any locale, so amounts compare without caring how each is spelled.                                       | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/mail-message.spec.ts`            | A Mailpit message reads back as the outbox's shape (code, link, attachments, text), and `mailMentions` finds a needle in either.                            | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/pairing/spec-identity.spec.ts`       | The cross-repo shared-file list, and that this checkout matches the sibling.                                                                                | [Contracts](./contracts.md)                       |
 | `tests/unit/scripts/pairing/paired-backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong.                                                                        | [Scripts & Hooks](./scripts.md)                   |
 | `tests/unit/scripts/mutation/baseline.spec.ts`           | The ratchet reads a Stryker report into per-file scores correctly.                                                                                          | [Mutation Testing](../tools/mutation-testing.md)  |
@@ -193,6 +195,10 @@ flowchart LR
 - **`webhookSink`** (demo only): `clear()` starts the listener and forgets, `requests()` reads what
   arrived, each with `signatureValid` against the seeded subscription's known secret. Clear first,
   then trigger the replay. On live the `webhook-tester` service plays this part.
+- **`cy.emailTo(address, matches?)`** keeps looking until an email passes `matches` — a sign-up's
+  verify mail, then the order's, go to one address. `mailMentions(email, needle)` asks one question
+  of both profiles: an inbox gives a body and its links, the outbox gives `key: value` lines.
+  No mail carries an invoice: the PDF is issued on payment and fetched from the order page.
 - **`cy.grantClipboard()`** lets the page read the clipboard (over the DevTools protocol, so a
   Chromium-family browser); **`cy.stubWindowOpen()`** stubs `window.open` as `@windowOpen`. Call
   either after `cy.visit()`.
@@ -212,10 +218,8 @@ how a reader finds the story without opening the file.
 | Tier    | `@smoke`: the spec carries the tag, so its live run happens on every push. `nightly`: untagged, live only in the nightly matrix. Every journey runs on demo on every push either way. See [Live E2E — Tiers](../tools/live-e2e.md#tiers) |
 | Spec    | The file name inside the journeys folder                                                                                                                                                                                                 |
 
-| ID  | Story | Persona | Tier | Spec |
-| --- | ----- | ------- | ---- | ---- |
-
-No journey is built yet.
+| ID   | Story                                                                                                                                                                                                 | Persona                              | Tier     | Spec                                    |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------- | --------------------------------------- |
 
 ## `tests/support/` — the harness
 
@@ -231,6 +235,7 @@ No assertions live here.
 | `tests/support/e2e/commands.ts`                     | The custom commands the specs are written in, including `cy.loginAs()`, `cy.restore()` — the latter branching on which backend profile is running — and the chrome navigation trio `cy.navigateTo(path)`, `cy.navigateViaMenu(menu, path)`, `cy.logout()`, which address the bar and its menus by `href` rather than by label. | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/journey.ts`                      | `cy.step()`, `cy.travel()`, `cy.grantClipboard()` and `cy.stubWindowOpen()` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                                                                           | [Live E2E](../tools/live-e2e.md)                           |
 | `tests/support/e2e/harness.ts`                      | Typed doors onto the Node-side tasks: `loginDevice`, `refreshDevice`, `requestAsDevice`, `postPaymentWebhook` and `webhookSink` — see [Journeys](#journeys--stories-that-cross-modules).                                                                                                                                       | [Live E2E](../tools/live-e2e.md)                           |
+| `tests/support/e2e/steps.ts`                        | Steps two journeys walk identically: a product into the cart through the storefront, the address dialog, signup and sign-in with an account the seed does not know, money read as cents, and `eventually` for a consequence the backend reaches through an event.                                                              |
 | `tests/support/e2e/a11y-sweep.ts`                   | The reusable accessibility pass a spec applies to a page.                                                                                                                                                                                                                                                                      | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/support/e2e/visual-sweep.ts`                 | The reusable screenshot-and-compare pass.                                                                                                                                                                                                                                                                                      | [Visual Regression](../tools/visual-regression.md)         |
 | `tests/support/e2e/visual-task.ts`                  | The Node-side task behind it — image comparison cannot run in the browser.                                                                                                                                                                                                                                                     | [Visual Regression](../tools/visual-regression.md)         |

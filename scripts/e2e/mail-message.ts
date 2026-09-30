@@ -22,6 +22,12 @@ export interface MailedEmail {
     token?: string;
     /** `code: <digits>` and `linkUrl: <url>`, when the message carries them. */
     lines?: string[];
+    /** What a reader sees, for a message read from an inbox. The demo outbox records `lines` instead. */
+    text?: string;
+    /** Every link in the body, for a message read from an inbox — the demo outbox keeps only `linkUrl`. */
+    links?: string[];
+    /** File names of the attachments, never their bytes. Absent when there are none. */
+    attachments?: string[];
 }
 
 /** The fields of a Mailpit message this module reads — see Mailpit's `GET /api/v1/message/{ID}`. */
@@ -32,6 +38,8 @@ export interface MailpitMessage {
     Text: string;
     /** The subject line. */
     Subject: string;
+    /** The attachments, when the message has any. */
+    Attachments?: { FileName: string }[];
 }
 
 /** A delivered 2FA code: six digits, standing alone. */
@@ -77,10 +85,36 @@ export const parseMailpitMessage = (to: string, message: MailpitMessage): Mailed
     const linkUrl = actionLink(message.HTML);
     const token = linkUrl ? /[&?]token=([^&]+)/.exec(linkUrl)?.[1] : undefined;
 
+    const links = [...message.HTML.matchAll(HREF_PATTERN)].map(([, href]) =>
+        href.replaceAll('&amp;', '&')
+    );
+    const attachments = (message.Attachments ?? []).map(({ FileName }) => FileName);
+
     return {
         to,
         subject: message.Subject,
         ...(token && { token: decodeURIComponent(token) }),
-        lines: [...(code ? [`code: ${code}`] : []), ...(linkUrl ? [`linkUrl: ${linkUrl}`] : [])]
+        lines: [...(code ? [`code: ${code}`] : []), ...(linkUrl ? [`linkUrl: ${linkUrl}`] : [])],
+        text,
+        links,
+        ...(attachments.length > 0 && { attachments })
     };
+};
+
+/** A string with every run of whitespace removed — how {@link mailMentions} compares. */
+const squash = (value: string): string => value.replaceAll(/\s+/g, '').toLowerCase();
+
+/**
+ * Whether an email says `needle` anywhere a reader — or the demo outbox's variable dump — would
+ * show it. One question for both profiles: an inbox gives a body, the outbox gives `key: value`
+ * lines, and a spec asking "does it carry the tracking code" should not care which it was handed.
+ *
+ * @param email - a received email
+ * @param needle - the text to look for, compared with whitespace ignored
+ */
+export const mailMentions = (email: MailedEmail, needle: string): boolean => {
+    const wanted = squash(needle);
+    return [...(email.lines ?? []), ...(email.links ?? []), email.text ?? '', email.subject].some(
+        (haystack) => squash(haystack).includes(wanted)
+    );
 };
