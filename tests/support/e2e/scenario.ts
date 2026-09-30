@@ -39,7 +39,7 @@ export interface ScenarioDescription {
 
 /**
  * Which seeded account a command means. Every backend that can pair with this repo seeds all
- * eight: the four roles, then the personas — a customer in one particular state each.
+ * twelve: the four roles, the personas — a customer in one particular state each — and the staff.
  *
  * | persona        | state                                                         |
  * | -------------- | ------------------------------------------------------------- |
@@ -47,6 +47,13 @@ export interface ScenarioDescription {
  * | `twoFactor`    | email 2FA armed, with known single-use `backupCodes`          |
  * | `pendingEmail` | asked to change address, has not confirmed                    |
  * | `banned`       | switched off — a login is refused                             |
+ *
+ * | staff       | holds                                                          |
+ * | ----------- | -------------------------------------------------------------- |
+ * | `manager`   | the shop `manager` role                                        |
+ * | `warehouse` | the shop `warehouse` role                                      |
+ * | `support`   | the shop `support` role                                        |
+ * | `operator`  | the platform `operator` role only — no shop membership at all  |
  */
 export type E2ERole =
     | 'admin'
@@ -56,7 +63,11 @@ export type E2ERole =
     | 'unverified'
     | 'twoFactor'
     | 'pendingEmail'
-    | 'banned';
+    | 'banned'
+    | 'manager'
+    | 'warehouse'
+    | 'support'
+    | 'operator';
 
 /** What a profile with nothing to say about itself answers — see {@link seedAccount}'s throw. */
 const NOTHING_DESCRIBED: ScenarioDescription = { scenario: null, accounts: {}, subjects: {} };
