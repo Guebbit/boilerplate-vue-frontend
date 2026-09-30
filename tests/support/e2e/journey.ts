@@ -37,6 +37,27 @@ declare global {
              * @param ms - how far forward, in milliseconds; never negative
              */
             travel(ms: number): Chainable<void>;
+
+            /**
+             * Lets the page read and write the clipboard, so a copy button can be proved by reading
+             * back what it copied (`cy.window().then((w) => w.navigator.clipboard.readText())`).
+             * Without the grant the browser refuses the read in an automated run.
+             *
+             * Granted over the Chrome DevTools Protocol, so it needs a Chromium-family browser
+             * (Electron, Chrome, Chromium); call it after `cy.visit()` — the grant is for the
+             * app's origin.
+             */
+            grantClipboard(): Chainable<void>;
+
+            /**
+             * Replaces `window.open` with a stub aliased `@windowOpen`, so a "view invoice" button
+             * can be proved by what it asked to open (`cy.get('@windowOpen').should('be.calledWith', …)`)
+             * instead of spawning a tab Cypress cannot follow.
+             *
+             * The stub lives on the current `window`: call it after `cy.visit()`, and again after a
+             * full page reload.
+             */
+            stubWindowOpen(): Chainable<void>;
         }
     }
 }
@@ -94,4 +115,33 @@ Cypress.Commands.add(
             cy.request('POST', `${String(apiUrl)}/__test/clock`, { advanceMs: ms });
         });
     })
+);
+
+Cypress.Commands.add(
+    'grantClipboard',
+    asStub<Cypress.CommandFn<'grantClipboard'>>(() => {
+        Cypress.log({ name: 'grantClipboard', displayName: 'CLIPBOARD', message: 'read + write' });
+        // `Browser.grantPermissions`: https://chromedevtools.github.io/devtools-protocol/tot/Browser/#method-grantPermissions
+        // Sent through Cypress' own CDP channel: https://docs.cypress.io/api/cypress-api/automation
+        return cy.wrap(
+            Cypress.automation('remote:debugger:protocol', {
+                command: 'Browser.grantPermissions',
+                params: {
+                    permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+                    // The origin the page runs on, as the browser names it.
+                    origin: new URL(String(Cypress.config('baseUrl'))).origin
+                }
+            }),
+            { log: false }
+        );
+    })
+);
+
+Cypress.Commands.add(
+    'stubWindowOpen',
+    asStub<Cypress.CommandFn<'stubWindowOpen'>>(() =>
+        cy.window({ log: false }).then((win) => {
+            cy.stub(win, 'open').as('windowOpen');
+        })
+    )
 );
