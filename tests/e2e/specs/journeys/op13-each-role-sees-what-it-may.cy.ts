@@ -1,4 +1,4 @@
-// requires-module: account, audit-logs, locales, orders, products, users
+// requires-module: account, locales, observability, orders, products, users
 /**
  * @module
  * OP13 · Each role sees what it may, and nothing more. A guest, an editor, a moderator and a

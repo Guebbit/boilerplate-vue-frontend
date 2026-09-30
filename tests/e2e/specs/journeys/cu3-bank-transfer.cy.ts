@@ -1,4 +1,4 @@
-// requires-module: account, cart, delivery, inventory, invoicing, orders, payments, products
+// requires-module: account, cart, delivery, inventory, orders, payments, products
 /**
  * @module
  * CU3 · Bank transfer, both sides. The customer checks out by bank transfer and is shown where to

@@ -1,4 +1,4 @@
-// requires-module: account, cart, delivery, inventory, invoicing, orders, payments, products
+// requires-module: account, cart, delivery, inventory, orders, payments, products
 /**
  * @module
  * CU1 · First purchase, from nothing. A visitor with no account signs up, proves the address
