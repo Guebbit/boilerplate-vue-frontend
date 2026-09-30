@@ -245,6 +245,7 @@ how a reader finds the story without opening the file.
 | OP15 | A moderator soft-deletes a paid order, which leaves its customer, and restores it; a paid order refuses a hard delete, an unpaid one is destroyed and its units return to the shelf                                                                               | `moderator`                          | nightly  | `op15-order-housekeeping.cy.ts`              |
 | AT1  | An editor registers a language switched off, fills its dictionary three ways, exports it, switches it on so a guest is offered it and reads it on the storefront; the fallback `en` refuses deletion, the new one deletes                                         | `editor`, guest                      | nightly  | `at1-launch-a-new-language.cy.ts`            |
 | AT2  | An editor fixes a Spanish cell on the dictionary board and the storefront shows it, clears it and it falls back, completes a key so the incomplete filter drops it, and replaces a dictionary from a file without touching another tenant                         | `editor`                             | nightly  | `at2-fix-a-typo-in-the-dictionary.cy.ts`     |
+| AT4  | The admin refreshes the overview, clears expired tokens, filters the platform audit tab, and connects and disconnects the realtime stream (demo: no broker, so no parked queues)                                                                                  | `admin`                              | nightly  | `at4-housekeeping-on-the-admin-page.cy.ts`   |
 
 ## `tests/support/` — the harness
 
