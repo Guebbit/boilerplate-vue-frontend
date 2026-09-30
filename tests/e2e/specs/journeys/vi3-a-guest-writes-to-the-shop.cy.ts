@@ -10,7 +10,7 @@
  *
  * The budget is the backend's own on the live profile. The demo backend raises every budget to
  * 100000, so there the sixth answer is stubbed with the envelope the real limiter sends
- * (`RATE_LIMITED`, the localized sentence) and the story still proves the form's reaction.
+ * (`RATE_LIMITED`, the sentence in the guest's own language: Italian here) and the story still proves the form's reaction.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -20,12 +20,12 @@ const SENDER = 'vi3.guest@example.com';
 /** The budget's size: five messages pass, the sixth is refused (`NODE_SUBMISSION_RATE_LIMIT_MAX`). */
 const BUDGET = 5;
 
-/** What the real limiter answers with: the shared error envelope and its localized sentence. */
+/** What the real limiter answers with: the shared error envelope and its sentence, in the language the request asked for. */
 const TOO_MANY = {
     success: false,
     status: 429,
     message: 'Too Many Requests',
-    errors: [{ code: 'RATE_LIMITED', message: 'Too many requests. Try again shortly.' }]
+    errors: [{ code: 'RATE_LIMITED', message: 'Troppe richieste. Riprova tra poco.' }]
 };
 
 /** One ticket as far as this story reads it. */

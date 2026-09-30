@@ -10,7 +10,7 @@
  * Two parts. An order delivered long ago is shut on any profile. The walk up to the deadline moves the
  * demo backend's clock, so it runs on the demo profile only.
  */
-import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
+import type { Device, DeviceResponse } from '../../../../scripts/e2e/device-session';
 
 /** One hour, in milliseconds. */
 const HOUR_MS = 60 * 60 * 1000;
@@ -32,14 +32,28 @@ interface RefusalBody {
  * @param orderId - the order to withdraw from
  */
 const apiRefusesWithdrawal = (orderId: string): void => {
-    loginDevice('user').then((device) => {
-        requestAsDevice(device, 'POST', '/returns', { orderId, reason: 'withdrawal' }).should(
-            (answer) => {
-                expect(answer.status).to.be.within(400, 499);
-                const codes = ((answer.body as RefusalBody).errors ?? []).map(({ code }) => code);
-                expect(codes).to.include('RETURN_WINDOW_CLOSED');
-            }
-        );
+    // The harness's tasks are called directly, not through `support/e2e/harness`: importing that
+    // module would import `scenario.ts` too, and this spec would then keep its own copy of the
+    // backend's description, stale after every live reset.
+    cy.env(['apiUrl']).then(({ apiUrl }) => {
+        cy.accountOf('user').then(({ email, password }) => {
+            cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password }).then(
+                (device) => {
+                    cy.task<DeviceResponse>('deviceRequest', {
+                        device,
+                        method: 'POST',
+                        path: '/returns',
+                        body: { orderId, reason: 'withdrawal' }
+                    }).should((answer) => {
+                        expect(answer.status).to.be.within(400, 499);
+                        const codes = ((answer.body as RefusalBody).errors ?? []).map(
+                            ({ code }) => code
+                        );
+                        expect(codes).to.include('RETURN_WINDOW_CLOSED');
+                    });
+                }
+            );
+        });
     });
 };
 
