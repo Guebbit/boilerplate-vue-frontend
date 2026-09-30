@@ -244,6 +244,7 @@ how a reader finds the story without opening the file.
 | OP14 | An admin edits and cancels an order and forces a parcel through ship and deliver with a reason each time; "history" opens the audit page narrowed to that order (and to a user), and the reasons are on record                                                    | `admin`                              | nightly  | `op14-audit-trail-follows-the-action.cy.ts`  |
 | OP15 | A moderator soft-deletes a paid order, which leaves its customer, and restores it; a paid order refuses a hard delete, an unpaid one is destroyed and its units return to the shelf                                                                               | `moderator`                          | nightly  | `op15-order-housekeeping.cy.ts`              |
 | AT1  | An editor registers a language switched off, fills its dictionary three ways, exports it, switches it on so a guest is offered it and reads it on the storefront; the fallback `en` refuses deletion, the new one deletes                                         | `editor`, guest                      | nightly  | `at1-launch-a-new-language.cy.ts`            |
+| AT2  | An editor fixes a Spanish cell on the dictionary board and the storefront shows it, clears it and it falls back, completes a key so the incomplete filter drops it, and replaces a dictionary from a file without touching another tenant                         | `editor`                             | nightly  | `at2-fix-a-typo-in-the-dictionary.cy.ts`     |
 
 ## `tests/support/` — the harness
 
