@@ -131,18 +131,20 @@ Per-user. Items are scoped to the authenticated user.
 
 Regular users see only their own orders. A permission is needed to write to any order.
 
-| Method | Endpoint                      | Auth       | Description                                 |
-| ------ | ----------------------------- | ---------- | ------------------------------------------- |
-| GET    | `/orders`                     | user       | List own orders                             |
-| POST   | `/orders/search`              | user       | Search own orders                           |
-| GET    | `/orders/:id`                 | user       | Single order detail                         |
-| GET    | `/orders/:id/invoice`         | user       | Download invoice PDF                        |
-| POST   | `/orders`                     | permission | Create order manually                       |
-| PUT    | `/orders/:id`                 | permission | Replace an order                            |
-| PATCH  | `/orders/:id`                 | permission | Update the fields sent                      |
-| POST   | `/orders/:id/cancel`          | user       | Cancel an order that may still be cancelled |
-| POST   | `/orders/:id/status-override` | permission | Move an order to a status by hand           |
-| DELETE | `/orders/:id`                 | permission | Soft-delete an order                        |
+| Method | Endpoint                                 | Auth       | Description                                 |
+| ------ | ---------------------------------------- | ---------- | ------------------------------------------- |
+| GET    | `/orders`                                | user       | List own orders                             |
+| POST   | `/orders/search`                         | user       | Search own orders                           |
+| GET    | `/orders/:id`                            | user       | Single order detail                         |
+| GET    | `/orders/:id/invoice`                    | user       | Download invoice PDF                        |
+| GET    | `/orders/:id/credit-notes`               | user       | List the order's credit notes               |
+| GET    | `/orders/:id/credit-notes/:creditNoteId` | user       | Download one credit note PDF                |
+| POST   | `/orders`                                | permission | Create order manually                       |
+| PUT    | `/orders/:id`                            | permission | Replace an order                            |
+| PATCH  | `/orders/:id`                            | permission | Update the fields sent                      |
+| POST   | `/orders/:id/cancel`                     | user       | Cancel an order that may still be cancelled |
+| POST   | `/orders/:id/status-override`            | permission | Move an order to a status by hand           |
+| DELETE | `/orders/:id`                            | permission | Soft-delete an order                        |
 
 ## Users (admin)
 
