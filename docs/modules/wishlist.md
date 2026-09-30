@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — the visitor's saved products, and the move-to-cart exit.
-**Depends on** — [`cart`](./cart.md), so the header badge cannot lag a write this module started.
+**Depends on** — [`cart`](./cart.md), so the header badge cannot lag a write this module started, and [`products`](./products.md), for the titles of its saved lines.
 **Breaks if you change** — the refresh after move-to-cart. It is the only reason the edge exists.
 :::
 
@@ -13,10 +13,10 @@
 | **Store**               | `wishlist`                                                                     |
 | **Menu entries**        | `Wishlist`                                                                     |
 | **API calls**           | 4                                                                              |
-| **Depends on**          | [`cart`](./cart.md)                                                            |
-| **Depended on by**      | [`products`](./products.md)                                                    |
+| **Depends on**          | [`cart`](./cart.md) · [`products`](./products.md)                              |
+| **Depended on by**      | —                                                                              |
 | **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | `useWishlistStore`                                                             |
+| **Publishes**           | —                                                                              |
 | **Backend counterpart** | `wishlist` in `boilerplate-node-backend`                                       |
 
 ## The map
@@ -24,8 +24,8 @@
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    products["products"] ==>|"customer-supplier"| wishlist["<b>wishlist</b>"]
     wishlist["<b>wishlist</b>"] -->|"conformist"| cart["cart"]
+    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -35,7 +35,7 @@ flowchart LR
     class wishlist self;
 ```
 
-- `products` → **customer-supplier** — The heart asks the wishlist store to save the product.
+- → `products` **customer-supplier** — Joins its saved lines to their product records (`useProductLines`).
 - → `cart` **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
 
 ## The story
@@ -49,15 +49,16 @@ lag a write this module initiated. That one call is the whole of the `wishlist �
 is why the edge is `conformist` rather than `customer-supplier` — the cart is never asked to write.
 
 ::: tip Why this is a line and not a loop
-The reverse arrow does not exist. The cart never reads the wishlist. That is what keeps
-`products → wishlist → cart → orders` a chain rather than a cycle — and a cycle would crash
+The reverse arrows do not exist. The cart never reads the wishlist, and the product page never
+imports it. That is what keeps `wishlist → cart → products` a chain rather than a cycle — and a
+cycle would crash
 `npm run lint` outright, from `assertAcyclicModuleEdges`'s whole-graph walk in `eslint.config.ts`,
 rather than surface on the first navigation with a blank screen.
 :::
 
-The heart on a product card is [`products`](./products.md) asking this store to save — the arrow
-pointing in, and `customer-supplier` for the same reason add-to-cart is: it asks this store to
-write.
+The heart on the product page is contributed by this module's manifest to the `product-actions`
+slot [`products`](./products.md) owns (`components/WishlistToggle.vue`), so the page never imports
+this module.
 
 ## State
 

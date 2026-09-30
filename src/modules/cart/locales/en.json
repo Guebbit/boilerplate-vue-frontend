@@ -1,4 +1,9 @@
 {
+    "add-to-cart-button": {
+        "label": "Add to cart",
+        "out-of-stock": "Out of stock",
+        "success": "Product added to cart."
+    },
     "cart-page": {
         "page-title": "My Cart",
         "empty-cart": "Your cart is empty",

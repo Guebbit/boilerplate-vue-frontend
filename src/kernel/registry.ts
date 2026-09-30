@@ -20,6 +20,7 @@ import type { Component, Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/i18n';
+import type { SlotName, Slots } from '@/kernel/slots';
 
 /**
  * Where an entry lives in the shell's chrome.
@@ -149,6 +150,22 @@ export interface AppModule {
      * (`account` contributes only Profile, `cart` only Cart) simply omits it.
      */
     navigation?: AppNavigationEntry[];
+
+    /**
+     * Components this domain contributes to slots another module owns — see `kernel/slots.ts`.
+     * Contributed here, not imported by the owner, so the owning view never learns who fills it.
+     */
+    slots?: Slots;
+
+    /**
+     * `resourceKey` prefixes the shell's corner activity indicator answers to for this domain —
+     * `'account'` matches `accountProfile`, `accountAuth`, …. Opt-in: a module that omits it never
+     * lights the indicator, which is the right default for one whose requests are background noise
+     * (the observability stream) rather than something the visitor asked for.
+     *
+     * Declared here so a new module's stores show activity without anyone editing the layout.
+     */
+    loadingKeys?: string[];
 
     /**
      * Lazy loader for the response-envelope schemas of the endpoints this domain calls, keyed by
@@ -343,6 +360,28 @@ export const collectModuleResponseSchemas = (
     appModules
         .map((appModule) => appModule.responseSchemas)
         .filter((loader): loader is () => Promise<ResponseSchemaRoute[]> => loader !== undefined);
+
+/**
+ * Merge every enabled module's slot contributions, per slot, in module order.
+ *
+ * @param appModules - the enabled module list
+ */
+export const collectModuleSlots = (appModules: AppModule[]): Slots => {
+    const merged: Slots = {};
+    for (const appModule of appModules)
+        for (const [name, components] of Object.entries(appModule.slots ?? {}))
+            // `Object.entries` widens the key to `string`; every key of a `Slots` is a `SlotName`.
+            merged[name as SlotName] = [...(merged[name as SlotName] ?? []), ...components];
+    return merged;
+};
+
+/**
+ * Collect every enabled module's loading-indicator prefixes, flat.
+ *
+ * @param appModules - the enabled module list
+ */
+export const collectModuleLoadingKeys = (appModules: AppModule[]): string[] =>
+    appModules.flatMap((appModule) => appModule.loadingKeys ?? []);
 
 /**
  * Collect every enabled module's locale-reset callback, for the locale guard to run after an

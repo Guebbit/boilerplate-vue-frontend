@@ -20,6 +20,7 @@ import routes from './routes';
  */
 export default {
     name: 'users',
+    loadingKeys: ['users'],
     routes,
     navigation: [
         {

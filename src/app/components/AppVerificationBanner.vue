@@ -15,8 +15,7 @@ import { onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useSessionStore } from '@/infrastructure/session.ts';
-import { emailVerifyResendRetryAfter, useProfileStore } from '@/modules/account';
+import { emailVerifyResendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**
@@ -36,10 +35,10 @@ const { addMessage } = useNotificationsStore();
 const { viewer } = storeToRefs(useSessionStore());
 
 /**
- * Re-sends the address-verification email. Reaches into the account module the way
- * `ReauthDialog` reaches for `useAuthStore()`: the shell renders it, the module owns the call.
+ * Re-sends the address-verification email — the session store owns the call, since it also owns
+ * the `verified` flag this banner keys on.
  */
-const { requestEmailVerification } = useProfileStore();
+const { requestEmailVerification } = useSessionStore();
 
 /**
  * Seconds left on the server's own resend cooldown, counted down to re-enable the button. Zero

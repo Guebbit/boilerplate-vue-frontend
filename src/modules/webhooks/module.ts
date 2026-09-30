@@ -21,6 +21,7 @@ import routes from './routes';
  */
 export default {
     name: 'webhooks',
+    loadingKeys: ['webhooks'],
     routes,
     navigation: [
         {

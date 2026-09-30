@@ -2,7 +2,7 @@
 /**
  * @module
  * Step-up re-authentication prompt: mounted once by `LayoutDefault.vue`, beside `<DialogHost />`.
- * One password field. On submit it calls `useAuthStore().reauth()` itself — the interceptor that
+ * One password field. On submit it calls `useSessionStore().reauth()` itself — the interceptor that
  * opened it only needed to know when a fresh session exists, not how one gets there — and a wrong
  * password stays open for another try rather than closing.
  */
@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { useAuthStore } from '@/modules/account';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
@@ -28,7 +28,7 @@ const reauthDialog = useReauthPromptStore();
 /**
  * Whether a re-authentication call is in flight.
  */
-const { reauthing } = storeToRefs(useAuthStore());
+const { reauthing } = storeToRefs(useSessionStore());
 
 /**
  * Vuetify's breakpoint flag: the dialog goes fullscreen below `sm`.
@@ -94,7 +94,7 @@ const isOpen = computed({
  */
 const submit = () => {
     if (!password.value) return;
-    return useAuthStore()
+    return useSessionStore()
         .reauth(password.value)
         .then(() => {
             reauthDialog.resolveStepUp();

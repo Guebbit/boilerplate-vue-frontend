@@ -4,9 +4,9 @@
 **Owns** — the visitor's own account: login (password, social, second factor), signup, profile,
 password reset, deletion.
 **Depends on** — [`users`](./users.md), and only for its field rules.
-**Breaks if you change** — nothing outside this folder, with one exception: the step-up prompt.
+**Breaks if you change** — nothing outside this folder. The step-up prompt lives with the session:
 `infrastructure/http/step-up.ts` parks a `REAUTH_REQUIRED` 401 and waits for
-`app/components/ReauthDialog.vue`, which calls this module's `reauth()`. Every flow behind the
+`app/components/ReauthDialog.vue`, which calls the session store's `reauth()`. Every flow behind the
 backend's freshness gate — email change, account delete, session revoke, checkout, payments, 2FA
 management — is answered through that one prompt.
 :::
@@ -79,8 +79,8 @@ Six stores, listed by what each one's setup function returns — an internal ref
 
 | Store                   | File                   | Surface                                                                                                                                                                                                                                                                                                    |
 | ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `accountAuth`           | `stores/auth.ts`       | `login` · `reauth` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                            |
-| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `updateOwnRole` · `changePassword` · `requestEmailVerification` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete`                                                                                     |
+| `accountAuth`           | `stores/auth.ts`       | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
+| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `updateOwnRole` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete`                                                                                                                  |
 | `accountSessions`       | `stores/sessions.ts`   | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
 | `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
 | `accountOAuthProviders` | `stores/oauth.ts`      | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
@@ -315,7 +315,7 @@ flowchart TD
     S -->|yes| P["park the request"]
     P --> SF["requestFreshSession()<br/>single-flight"]
     SF --> D["ReauthDialog.vue<br/>one prompt, N parked requests"]
-    D -->|password proven| RA["stores/auth reauth()<br/>adopts the rotated token"]
+    D -->|password proven| RA["session store reauth()<br/>adopts the rotated token"]
     RA --> RP["replay the request once<br/>(_dontRetry)"]
     D -->|cancelled| REJ["normalized rejection"]
 
@@ -329,7 +329,10 @@ Both this and the token refresh de-duplicate through the same `infrastructure/ht
 helper: several requests failing in the same tick must join one attempt, never start one each. For
 the dialog that is the difference between one prompt and five stacked on top of each other.
 
-`ReauthDialog.vue` lives in `app/`, and the store holding its open/closed state lives in
+`ReauthDialog.vue` lives in `app/` and the call it makes lives in the session store (`infrastructure/session.ts`),
+so the shell never imports this module — nor does the "resend verification" banner, which reads the
+session viewer's `verified` flag and calls the session store's `requestEmailVerification()`. The
+store holding the dialog's open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
 infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.
 

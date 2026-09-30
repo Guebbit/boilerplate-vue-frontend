@@ -4,7 +4,7 @@
  * seeds the cart count on auth), response schemas and locale loaders for the app
  * registry — see `AppModule`.
  */
-import { computed, watch } from 'vue';
+import { computed, defineAsyncComponent, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { ShoppingCart } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
@@ -17,31 +17,30 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 /**
  * The shopping cart, and the checkout that turns it into an order.
  *
- * Nearly every arrow points AT this module: orders reaches the cart barrel for the reorder button,
- * products for "add to cart", wishlist for its move-to-cart exit. The first two are
- * `customer-supplier` — they ask this store to write a line — and `wishlist` is `conformist`: the
- * move itself is a wishlist endpoint, and this store is only asked to refetch. Either way the cart
- * is the one publishing a store, while the modules it depends on publish components and schemas.
- *
- * Four arrows go out. Three are `published-language`: `delivery`, whose `ShippingSelector` the
- * checkout mounts without ever learning what a shipping rate is; `payments`, whose
- * `PaymentMethodSelector` the checkout mounts the same way — this store never learns what a
- * payment method costs to offer, only which ids exist; and `account`, whose `AddressPicker` the
- * checkout mounts when the chosen method needs an address, reusing that module's own add-address
- * dialog rather than knowing anything about the address book itself.
- *
- * The fourth, `products`, is the one real cycle in `MODULE_EDGES` today: `store.ts`'s
- * `getProductById` reads a line's current title/price, read-only, against `products`'s own
- * arrow into this module for "add to cart" — a genuine two-way coupling, not an oversight, and
- * grandfathered past `assertAcyclicModuleEdges` (`scripts/module-edges.ts`) until it is either
- * merged into one module or split by which side owns the state, per `docs/theory/layers.md`.
- *
- * Checkout is the one screen where price, stock, address and shipping have to agree at once,
+ * Orders reaches the cart barrel for the reorder button, and wishlist for its move-to-cart exit;
+both are `customer-supplier` or `conformist` — they ask this store to write a line or refetch.
+The product page's "add to cart" arrives the other way round: this manifest contributes the
+button to the `product-actions` slot the products module owns, so `products` never imports the
+cart.
+
+Four arrows go out. Three are `published-language`: `delivery`, whose `ShippingSelector` the
+checkout mounts without ever learning what a shipping rate is; `payments`, whose
+`PaymentMethodSelector` the checkout mounts the same way — this store never learns what a
+payment method costs to offer, only which ids exist; and `account`, whose `AddressPicker` the
+checkout mounts when the chosen method needs an address, reusing that module's own add-address
+dialog rather than knowing anything about the address book itself.
+
+The fourth, `products`, is `customer-supplier`: the cart page reads its lines' current title and
+price from the products dictionary (`useProductLines`, one batched read) instead of asking per
+line, and the products store owns the language reset those records need.
+
+Checkout is the one screen where price, stock, address and shipping have to agree at once,
  * and the only place this client holds a multi-step flow of its own. Every other module points
  * at it.
  */
 export default {
     name: 'cart',
+    loadingKeys: ['cart'],
     routes,
     navigation: [
         {
@@ -94,9 +93,8 @@ export default {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
     },
-    // `productTitles` is the cart store's join against products' resolved, language-dependent
-    // titles (the cart's own lines carry no text of their own) — a language switch has to wipe
-    // it. `useCartStore()` runs inside the callback, never at module scope: Pinia is not
-    // installed yet when this manifest is evaluated.
-    resetOnLocaleChange: () => useCartStore().resetProductTitles()
+    // The product page's "add to cart": lazy, so the button does not join the eager entry chunk.
+    slots: {
+        'product-actions': [defineAsyncComponent(() => import('./components/AddToCartButton.vue'))]
+    }
 } satisfies AppModule;

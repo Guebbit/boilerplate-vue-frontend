@@ -10,18 +10,16 @@ import { createPinia } from 'pinia';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import vuetify from '@/ui/vuetify';
 
-const session = {
-    viewer: ref<{ email: string; verified: boolean } | undefined>(undefined)
-};
-
 const requestEmailVerification = vi.fn();
 
-vi.mock('@/infrastructure/session.ts', () => ({
-    useSessionStore: () => session
-}));
+const session = {
+    viewer: ref<{ email: string; verified: boolean } | undefined>(undefined),
+    requestEmailVerification
+};
 
-vi.mock('@/modules/account/stores/profile.ts', () => ({
-    useProfileStore: () => ({ requestEmailVerification })
+vi.mock('@/infrastructure/session.ts', () => ({
+    useSessionStore: () => session,
+    emailVerifyResendRetryAfter: () => undefined
 }));
 
 vi.mock('vue-i18n', async (importOriginal) => {

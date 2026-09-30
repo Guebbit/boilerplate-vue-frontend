@@ -2,12 +2,12 @@
  * `ReauthDialog` (FA123/FA131) — never mounted anywhere before this: `step-up.spec.ts` says so
  * explicitly, driving `useReauthPromptStore()` directly to cover the INTERCEPTOR's park/replay
  * mechanics instead. This is the other half — the dialog's own job once the store is open: submit
- * calls `useAuthStore().reauth()`, success resolves the prompt, a wrong password shows inline and
+ * calls `useSessionStore().reauth()`, success resolves the prompt, a wrong password shows inline and
  * stays open, and closing any other way (cancel) rejects it.
  *
  * `useReauthPromptStore` is the REAL store, not mocked — its open/close wiring is exactly what
- * this component exists to drive, so faking it would test nothing. `useAuthStore` is mocked: its
- * own `reauth()` call is `auth.spec.ts`'s job, not this dialog's.
+ * this component exists to drive, so faking it would test nothing. `useSessionStore` is mocked: its
+ * own `reauth()` call is `session.spec.ts`'s job, not this dialog's.
  *
  * The 401-vs-anything-else branch this dialog's error message takes is a separate, narrower
  * concern covered by `reauth-dialog-error-message.spec.ts` (FA80) — kept in its own file since it
@@ -26,8 +26,8 @@ import vuetify from '@/ui/vuetify';
 const reauth = vi.fn();
 const reauthing = ref(false);
 
-vi.mock('@/modules/account/stores/auth.ts', () => ({
-    useAuthStore: () => ({ reauth, reauthing })
+vi.mock('@/infrastructure/session.ts', () => ({
+    useSessionStore: () => ({ reauth, reauthing })
 }));
 
 const mountDialog = () =>

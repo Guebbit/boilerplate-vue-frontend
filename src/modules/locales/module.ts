@@ -25,6 +25,7 @@ import routes from './routes';
  */
 export default {
     name: 'locales',
+    loadingKeys: ['locales'],
     routes,
     /*
      * One menu entry, not two: the dictionary board is reached from the languages board's own

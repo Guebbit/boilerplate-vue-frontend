@@ -2,22 +2,22 @@
 
 ::: tip At a glance
 **Owns** — the catalogue screens: public list and detail, admin create and edit.
-**Depends on** — [`cart`](./cart.md) and [`wishlist`](./wishlist.md), because the buttons on a product card write into them.
+**Depends on** — nothing but its own locales. [`cart`](./cart.md) and [`wishlist`](./wishlist.md) depend on it, and put their buttons on the product page through the `product-actions` slot.
 **Breaks if you change** — `useProductsStore`'s shape. [`inventory`](./inventory.md) reads it as-is.
 :::
 
-| Fact                    | This module                                                              |
-| ----------------------- | ------------------------------------------------------------------------ |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules. |
-| **Screens**             | 4 — `ProductsList` · `ProductCreate` · `ProductTarget` · `ProductEdit`   |
-| **Store**               | `products`                                                               |
-| **Menu entries**        | `ProductsList`                                                           |
-| **API calls**           | 10                                                                       |
-| **Depends on**          | [`cart`](./cart.md) · [`wishlist`](./wishlist.md)                        |
-| **Depended on by**      | [`inventory`](./inventory.md)                                            |
-| **Languages**           | `en` · `it`                                                              |
-| **Publishes**           | `useProductsStore`                                                       |
-| **Backend counterpart** | `products` in `boilerplate-node-backend`                                 |
+| Fact                    | This module                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.          |
+| **Screens**             | 4 — `ProductsList` · `ProductCreate` · `ProductTarget` · `ProductEdit`            |
+| **Store**               | `products`                                                                        |
+| **Menu entries**        | `ProductsList`                                                                    |
+| **API calls**           | 10                                                                                |
+| **Depends on**          | —                                                                                 |
+| **Depended on by**      | [`inventory`](./inventory.md) · [`cart`](./cart.md) · [`wishlist`](./wishlist.md) |
+| **Languages**           | `en` · `it`                                                                       |
+| **Publishes**           | `useProductsStore` · `useProductLines`                                            |
+| **Backend counterpart** | `products` in `boilerplate-node-backend`                                          |
 
 ## The map
 
@@ -25,8 +25,8 @@
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
     inventory["inventory"] -->|"conformist"| products["<b>products</b>"]
-    products["<b>products</b>"] ==>|"customer-supplier"| cart["cart"]
-    products["<b>products</b>"] ==>|"customer-supplier"| wishlist["wishlist"]
+    cart["cart"] ==>|"customer-supplier"| products["<b>products</b>"]
+    wishlist["wishlist"] ==>|"customer-supplier"| products["<b>products</b>"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -38,18 +38,20 @@ flowchart LR
 ```
 
 - `inventory` → **conformist** — Reads `useProductsStore` as it is, to name products in the receipt select and the ledger titles.
-- → `cart` **customer-supplier** — Add-to-cart asks the cart store to write a line.
-- → `wishlist` **customer-supplier** — The heart asks the wishlist store to save the product.
+- `cart` → **customer-supplier** — Reads its lines' products through `useProductLines`.
+- `wishlist` → **customer-supplier** — Same join for its saved lines.
 
 ## The story
 
-The catalogue is where the arrows start. Four screens, one store, and two of the three edges on
-this page exist because of two buttons on a product card: **add to cart** and **the heart**.
+The catalogue is the supplier the shop's other screens read. Four screens, one store, and no
+arrows out: the two buttons on a product page — **add to cart** and **the heart** — are not
+imported here. The page renders a `product-actions` slot (`src/kernel/slots.ts`) and
+[`cart`](./cart.md) and [`wishlist`](./wishlist.md) each contribute their button from their own
+manifest, so this module never learns either exists.
 
-Both are `customer-supplier` rather than something looser, and the distinction is the useful part:
-this module does not render a cart or a wishlist, it _asks_ those stores to write a line. Their
-surfaces are shaped by that demand — which is why both publish a store through their barrel while
-this module publishes one too, for a different reason.
+What it publishes for them is `fetchProductsByIds`, behind `useProductLines`: one batched
+`POST /products/search` for a set of id-only lines, landing in the same dictionary the product
+page reads.
 
 ::: tip The one arrow pointing in
 [`inventory`](./inventory.md) reads `useProductsStore` as it is, to name products in its receipt
@@ -71,11 +73,11 @@ operation.
 
 Store `products`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                          | What it is                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `facets` · `products` · `selectedProductId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                             | The refs the setup function returns — the only writable surface. |
-| **Getters** | `productsList` · `currentProduct` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                     | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchFacets` · `addProduct` · `fetchProducts` · `fetchPaginationProducts` · `watchSearchProducts` · `fetchProduct` · `watchProduct` · `createProduct` · `updateProduct` · `deleteProduct` · `hardDeleteProduct` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                 | What it is                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `facets` · `products` · `selectedProductId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                    | The refs the setup function returns — the only writable surface. |
+| **Getters** | `productsList` · `currentProduct` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                            | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchFacets` · `fetchProductsByIds` · `addProduct` · `fetchProducts` · `fetchPaginationProducts` · `watchSearchProducts` · `fetchProduct` · `watchProduct` · `createProduct` · `updateProduct` · `deleteProduct` · `hardDeleteProduct` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -162,7 +164,7 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 ## Related pages
 
 - [Modules overview](./index.md) — the whole context map
-- [`cart`](./cart.md) · [`wishlist`](./wishlist.md) — where the two buttons write
+- [`cart`](./cart.md) · [`wishlist`](./wishlist.md) — the modules that contribute the product page's buttons
 - [State & Routing](../tools/state-and-routing.md) — what a store is and how a view reads one
 - [Sitemap & Access Control](../theory/sitemap.md) — every screen in the app, and who may reach it
 - [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated client and Zod schemas come from

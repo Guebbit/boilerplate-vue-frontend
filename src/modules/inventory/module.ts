@@ -23,6 +23,7 @@ import routes from './routes';
  */
 export default {
     name: 'inventory',
+    loadingKeys: ['inventory'],
     routes,
     navigation: [
         {

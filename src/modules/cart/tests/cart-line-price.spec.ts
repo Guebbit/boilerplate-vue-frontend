@@ -1,8 +1,8 @@
 /**
  * @module
  * FA32b: the cart's own line prices — unit price × quantity, in the resolved product's currency.
- * Unlike `cart-view.spec.ts`, `resolveTitles` runs for REAL here (only `@api`'s
- * `getProductById` is mocked), since the price is exactly what that lookup resolves.
+ * Unlike `cart-view.spec.ts`, the products read runs for REAL here (only `@api`'s
+ * `searchProducts` is mocked), since the price is exactly what that lookup resolves.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -10,7 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
-import { getProductById } from '@api';
+import { searchProducts } from '@api';
 import * as schemas from '@api/schemas';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -24,13 +24,11 @@ wireModulesIntoCore();
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
-    getProductById: vi.fn(() =>
+    searchProducts: vi.fn(() =>
         Promise.resolve(
-            contractResponse(schemas.GetProductByIdResponse, {
-                id: 'p1',
-                title: 'Widget',
-                price: 9.99,
-                currency: 'GBP'
+            contractResponse(schemas.SearchProductsResponse, {
+                items: [{ id: 'p1', title: 'Widget', price: 9.99, currency: 'GBP' }],
+                meta: { totalItems: 1, page: 1, pageSize: 1, totalPages: 1 }
             })
         )
     )
@@ -84,14 +82,15 @@ beforeEach(() => {
 describe('a cart line price (FA32b)', () => {
     it('shows the unit price and the line total once the product resolves', () =>
         mountCart().then((wrapper) => {
-            expect(getProductById).toHaveBeenCalledWith('p1');
+            // One batched read for every line, sized to the batch (the endpoint's default page is 10).
+            expect(searchProducts).toHaveBeenCalledWith({ id: ['p1'], page: 1, pageSize: 1 });
             const priceText = wrapper.get('[data-test=cart-line-price]').text();
             expect(priceText).toContain('£9.99');
             expect(priceText).toContain('£29.97');
         }));
 
     it('shows nothing before the product has resolved', () => {
-        vi.mocked(getProductById).mockReturnValue(new Promise(() => undefined));
+        vi.mocked(searchProducts).mockReturnValue(new Promise(() => undefined));
         const cart = useCartStore();
         cart.cart = CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(CART);

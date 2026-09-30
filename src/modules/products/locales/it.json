@@ -1,4 +1,7 @@
 {
+    "product-lines": {
+        "unavailable": "Non più disponibile"
+    },
     "products-list-page": {
         "page-title": "Lista prodotti",
         "button-view": "Visualizza",
@@ -54,10 +57,6 @@
         "label-updated-at": "Aggiornato il",
         "label-stock": "Disponibilità",
         "out-of-stock": "Esaurito",
-        "button-add-to-cart": "Aggiungi al carrello",
-        "success-add-to-cart": "Prodotto aggiunto al carrello.",
-        "button-save-wishlist": "Salva nei desideri",
-        "button-unsave-wishlist": "Salvato",
         "login-to-buy": "Accedi per acquistare o salvare questo prodotto.",
         "image-alt": "Foto di {name}"
     },

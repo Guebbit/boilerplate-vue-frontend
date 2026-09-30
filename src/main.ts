@@ -32,7 +32,12 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { registerLocaleContributors } from '@/i18n';
-import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry.ts';
+import {
+    collectModuleLocales,
+    collectModuleResponseSchemas,
+    collectModuleSlots
+} from '@/kernel/registry.ts';
+import { SLOTS_KEY } from '@/kernel/slots.ts';
 import { enabledModules } from '@/modules.ts';
 
 /*
@@ -106,6 +111,9 @@ const bootstrapApplication = () =>
             // Anything a component's render/setup/watcher throws with nothing downstream to
             // catch it lands here instead of a blank page — see vue-error-handler.ts (FA74).
             app.config.errorHandler = handleUncaughtVueError;
+
+            // Extension points: what every enabled module contributes to another module's slots.
+            app.provide(SLOTS_KEY, collectModuleSlots(enabledModules));
 
             app.mount('#app');
 

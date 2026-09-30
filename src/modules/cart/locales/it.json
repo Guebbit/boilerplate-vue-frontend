@@ -1,4 +1,9 @@
 {
+    "add-to-cart-button": {
+        "label": "Aggiungi al carrello",
+        "out-of-stock": "Esaurito",
+        "success": "Prodotto aggiunto al carrello."
+    },
     "cart-page": {
         "page-title": "Il mio carrello",
         "empty-cart": "Il tuo carrello è vuoto",

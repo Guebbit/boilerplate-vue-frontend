@@ -22,6 +22,7 @@ import routes from './routes';
  */
 export default {
     name: 'returns',
+    loadingKeys: ['returns'],
     routes,
     navigation: [
         {

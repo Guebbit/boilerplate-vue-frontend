@@ -1,4 +1,8 @@
 {
+    "wishlist-toggle": {
+        "button-save": "Save to wishlist",
+        "button-unsave": "Saved"
+    },
     "wishlist-page": {
         "page-title": "Wishlist",
         "empty": "Nothing saved yet",

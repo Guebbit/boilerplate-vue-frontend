@@ -18,6 +18,7 @@ import routes from './routes';
  */
 export default {
     name: 'api-keys',
+    loadingKeys: ['api-keys'],
     routes,
     navigation: [
         {

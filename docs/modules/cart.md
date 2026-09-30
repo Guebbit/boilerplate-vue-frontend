@@ -6,18 +6,18 @@
 **Breaks if you change** — `badgeQuantity`. The shell's header reads it through the manifest.
 :::
 
-| Fact                    | This module                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.            |
-| **Screens**             | 1 — `Cart`                                                                          |
-| **Store**               | `cart`                                                                              |
-| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)              |
-| **API calls**           | 9                                                                                   |
-| **Depends on**          | [`delivery`](./delivery.md)                                                         |
-| **Depended on by**      | [`orders`](./orders.md) · [`products`](./products.md) · [`wishlist`](./wishlist.md) |
-| **Languages**           | `en` · `it`                                                                         |
-| **Publishes**           | `useCartStore`                                                                      |
-| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                                |
+| Fact                    | This module                                                              |
+| ----------------------- | ------------------------------------------------------------------------ |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules. |
+| **Screens**             | 1 — `Cart`                                                               |
+| **Store**               | `cart`                                                                   |
+| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)   |
+| **API calls**           | 9                                                                        |
+| **Depends on**          | [`delivery`](./delivery.md) · [`products`](./products.md)                |
+| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                    |
+| **Languages**           | `en` · `it`                                                              |
+| **Publishes**           | `useCartStore`                                                           |
+| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                     |
 
 ## The map
 
@@ -25,9 +25,9 @@
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
     orders["orders"] ==>|"customer-supplier"| cart["<b>cart</b>"]
-    products["products"] ==>|"customer-supplier"| cart["<b>cart</b>"]
     wishlist["wishlist"] -->|"conformist"| cart["<b>cart</b>"]
     cart["<b>cart</b>"] -.->|"published-language"| delivery["delivery"]
+    cart["<b>cart</b>"] ==>|"customer-supplier"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -39,21 +39,25 @@ flowchart LR
 ```
 
 - `orders` → **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
-- `products` → **customer-supplier** — Add-to-cart asks the cart store to write a line.
 - `wishlist` → **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
+- → `products` **customer-supplier** — Reads its lines' title and price from the products dictionary in one batched read (`useProductLines`).
 - → `delivery` **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
 
 ## The story
 
-**Nearly every arrow on this client points at this module.** [`orders`](./orders.md) reaches the
-barrel for the reorder button, [`products`](./products.md) for add-to-cart, and
-[`wishlist`](./wishlist.md) for its move-to-cart exit. The first two are `customer-supplier` — they
-ask this store to write a line — and `wishlist` is `conformist`: the move itself is a wishlist
-endpoint, and this store is only asked to refetch. Either way the cart is the one publishing a
-store, while the module it depends on publishes a component.
+[`orders`](./orders.md) reaches the barrel for the reorder button and [`wishlist`](./wishlist.md)
+for its move-to-cart exit. `orders` is `customer-supplier` — it asks this store to write a line —
+and `wishlist` is `conformist`: the move itself is a wishlist endpoint, and this store is only
+asked to refetch.
 
-The one arrow going out is [`delivery`](./delivery.md), and it is `published-language`: the checkout
-mounts `ShippingSelector` and never learns what a shipping rate is.
+The product page's "add to cart" arrives the other way round. This module's manifest contributes
+`components/AddToCartButton.vue` to the `product-actions` slot that [`products`](./products.md)
+owns (see `src/kernel/slots.ts`), so `products` never imports the cart and the graph stays a DAG.
+
+[`delivery`](./delivery.md) is `published-language`: the checkout mounts `ShippingSelector` and
+never learns what a shipping rate is. [`products`](./products.md) is `customer-supplier`: the page
+holds lines as ids only and joins them to their product records in one `POST /products/search`
+per hundred ids, through `useProductLines` — the same records the product page reads.
 
 ::: tip The badge and its total are the only reactive things this module lends the shell
 `badgeQuantity` (every unit in the cart) is handed to the main navigation as a **badge accessor**,
@@ -84,11 +88,11 @@ first error and returns a verdict (`cart-changed`, `insufficient-stock`, `addres
 
 Store `cart`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                 | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `cart` · `productTitles`                                                                                                                                | The refs the setup function returns — the only writable surface. |
-| **Getters** | `cartItems` · `cartSummary` · `badgeQuantity` · `badgeTotal` · `badgeCurrency` · `loading`                                                              | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchSummary` · `fetchCart` · `titleOf` · `resolveTitles` · `checkout` · `reorder` · `addCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                   | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `cart`                                                                                                                    | The refs the setup function returns — the only writable surface. |
+| **Getters** | `cartItems` · `cartSummary` · `badgeQuantity` · `badgeTotal` · `badgeCurrency` · `loading`                                | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchSummary` · `fetchCart` · `checkout` · `reorder` · `addCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -154,7 +158,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `tests/e2e/cart.visual.cy.ts`      | Cypress visual suite — pixel diffs against the committed baselines.                                                                                           | [read](../tools/component-testing.md) |
 | `tests/cart-view.spec.ts`          | Vitest suite — `cart-view`, in isolation.                                                                                                                     | [read](../tools/unit-testing.md)      |
 | `tests/checkout-errors.spec.ts`    | Vitest suite — `checkout-errors`, in isolation.                                                                                                               | [read](../tools/unit-testing.md)      |
-| `tests/product-titles.spec.ts`     | Vitest suite — `product-titles`, in isolation.                                                                                                                | [read](../tools/unit-testing.md)      |
+| `tests/add-to-cart-button.spec.ts` | Vitest suite — `add-to-cart-button`, in isolation.                                                                                                            | [read](../tools/unit-testing.md)      |
 | `tests/quantity.spec.ts`           | Vitest suite — `quantity`, in isolation.                                                                                                                      | [read](../tools/unit-testing.md)      |
 | `tests/routes.spec.ts`             | Vitest suite — the route records and the `meta.access` each one declares.                                                                                     | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`              | Vitest suite — this domain's store, with the transport mocked.                                                                                                | [read](../tools/unit-testing.md)      |
@@ -187,7 +191,7 @@ npm run regenerate
 ## Related pages
 
 - [The checkout flow](./cart-checkout.md) — the screen, the errors, and what the server decides
-- [`products`](./products.md) · [`wishlist`](./wishlist.md) · [`orders`](./orders.md) — the three modules that write here
+- [`wishlist`](./wishlist.md) · [`orders`](./orders.md) — the modules that write here; [`products`](./products.md) — where the product page's button is hosted
 - [State & Routing](../tools/state-and-routing.md) — stores, and where the header reads this one
 - [Layers](../theory/layers.md) — why a view holds no fetching logic
 - [Product Analytics](../tools/umami.md) — why every cart and checkout event is the backend's to report, not this module's

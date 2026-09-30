@@ -28,6 +28,7 @@ import routes from './routes';
  */
 export default {
     name: 'orders',
+    loadingKeys: ['orders'],
     routes,
     navigation: [
         {

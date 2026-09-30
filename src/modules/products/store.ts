@@ -69,6 +69,22 @@ export type UpdateProductData = Omit<UpdateProductRequest, 'taxClass' | 'rateTyp
 };
 
 /**
+ * How many ids one `POST /products/search` accepts — the contract's own cap on `id`.
+ */
+const SEARCH_ID_BATCH = 100;
+
+/**
+ * Splits ids into request-sized batches.
+ *
+ * @param ids - Every id still to fetch.
+ * @returns Consecutive slices of at most {@link SEARCH_ID_BATCH}.
+ */
+const idBatches = (ids: string[]): string[][] =>
+    Array.from({ length: Math.ceil(ids.length / SEARCH_ID_BATCH) }, (_, index) =>
+        ids.slice(index * SEARCH_ID_BATCH, (index + 1) * SEARCH_ID_BATCH)
+    );
+
+/**
  * Products CRUD, paginated search and image upload.
  *
  * The endpoints are declared once, up front, and `useStructureCrudApi` derives the whole store
@@ -103,6 +119,7 @@ export const useProductsStore = defineStore('products', () => {
         deleteOne: deleteProduct,
         deleteTarget,
         fetchAny,
+        fetchMultiple,
         resetAll
     } = useStructureCrudApi<
         Product,
@@ -288,6 +305,33 @@ export const useProductsStore = defineStore('products', () => {
         fetchAny(() => getProductAdmin(productId).then((response) => response.data));
 
     /**
+     * Reads many products at once — the join a cart or wishlist needs for its lines, in one
+     * request per {@link SEARCH_ID_BATCH} ids instead of one per line.
+     *
+     * Goes through the toolkit's `fetchMultiple`, so every record lands in the same
+     * {@link products} dictionary the product page reads, and `forced` makes a cart opened
+     * after a price change show the new price rather than a cached one. `pageSize` is set to
+     * the batch length because the endpoint's default page is 10. An id the caller may not see
+     * (deleted, inactive) is simply not answered: its slot comes back `undefined`.
+     *
+     * @param productIds - The products to load; duplicates are folded.
+     * @returns A promise resolving with one entry per distinct id, `undefined` where none came back.
+     */
+    const fetchProductsByIds = (productIds: string[]) =>
+        fetchMultiple(
+            (missing) =>
+                Promise.all(
+                    idBatches(missing).map((batch) =>
+                        searchProducts({ id: batch, page: 1, pageSize: batch.length }).then(
+                            (response) => response.data.items
+                        )
+                    )
+                ).then((batches) => batches.flat()),
+            [...new Set(productIds)],
+            { forced: true }
+        );
+
+    /**
      * The catalogue's filter chips: every public category and tag with its count. Fetched once
      * per visit to the listing — the API caches it under the products tag, so the counts follow
      * catalogue writes without this store having to know when they happen.
@@ -313,6 +357,7 @@ export const useProductsStore = defineStore('products', () => {
     return {
         facets,
         fetchFacets,
+        fetchProductsByIds,
         products,
         productsList,
         addProduct,

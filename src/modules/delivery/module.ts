@@ -20,6 +20,7 @@ import type { AppModule } from '@/kernel/registry';
  */
 export default {
     name: 'delivery',
+    loadingKeys: ['delivery'],
     routes: [],
     responseSchemas: () => import('./response-schemas').then((m) => m.deliveryResponseSchemas),
     locales: {

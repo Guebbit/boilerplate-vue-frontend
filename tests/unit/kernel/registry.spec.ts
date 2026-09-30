@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import {
     assertUniqueRoutes,
     collectLocaleSensitiveResets,
+    collectModuleLoadingKeys,
     collectModuleNavigation,
     collectModuleRoutes,
     groupNavigation,
@@ -204,5 +205,17 @@ describe('groupNavigation', () => {
         groupNavigation(entries);
 
         expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
+    });
+});
+
+describe('collectModuleLoadingKeys', () => {
+    it('flattens the prefixes of the modules that opt in and skips the rest', () => {
+        const modules: AppModule[] = [
+            { ...makeModule('account'), loadingKeys: ['account'] },
+            makeModule('observability'),
+            { ...makeModule('webhooks'), loadingKeys: ['webhooks', 'hooks-extra'] }
+        ];
+
+        expect(collectModuleLoadingKeys(modules)).toEqual(['account', 'webhooks', 'hooks-extra']);
     });
 });
