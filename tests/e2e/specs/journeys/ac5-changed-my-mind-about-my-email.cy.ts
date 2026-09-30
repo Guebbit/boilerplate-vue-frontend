@@ -13,23 +13,10 @@
  * already parked, so a resend that sent only that mailed nothing.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
-import type { MailedEmail } from '../../../../scripts/e2e/mail-message';
+import { carriesAnotherLink } from '../../../support/e2e/steps';
 
 /** The pending-email notice's text carries the address; this finds it without copying it here. */
 const ADDRESS_PATTERN = /\S+@\S+\.[^\s—]+/;
-
-/**
- * Whether a mail carries a confirmation link other than `known` — how the spec tells the second
- * mail from the first when both sit in one inbox.
- *
- * @param known - the link already seen
- */
-const carriesAnotherLink =
-    (known: string) =>
-    (email: MailedEmail): boolean =>
-        email.lines?.some(
-            (line) => line.startsWith('linkUrl: ') && line !== `linkUrl: ${known}`
-        ) === true;
 
 /**
  * Presses "resend" on the pending notice.
