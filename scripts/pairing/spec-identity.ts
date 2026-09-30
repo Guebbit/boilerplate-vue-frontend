@@ -83,7 +83,13 @@ export const SHARED_FILES: readonly SharedFile[] = [
      * document minus the sections no API client can reach, and it is that subset this repo
      * receives as its own `asyncapi.yaml`.
      */
-    { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' }
+    { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' },
+    /*
+     * The authorization keys, read here only for `actions:` — `gen:api` turns that list into
+     * `contracts/permission-actions.ts`, so the frontend's `PermissionAction` cannot drift from the
+     * vocabulary the backend enforces.
+     */
+    { backend: 'shared/authorization-keys.yaml', frontend: 'contracts/authorization-keys.yaml' }
 ] as const;
 
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';
