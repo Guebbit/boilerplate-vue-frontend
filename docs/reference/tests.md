@@ -241,6 +241,7 @@ how a reader finds the story without opening the file.
 | AC5  | The account with an unconfirmed new address resends the mail (a fresh link, the first one dead), cancels (every link dead, the old address still signs in) and is refused a taken address in words (JB15)                                                         | `pendingEmail`                       | nightly  | `ac5-changed-my-mind-about-my-email.cy.ts`  |
 | AC6  | The customer downloads the GDPR export: a file on disk that matches the API's answer, holding their profile, addresses and orders, with no password, token or secret under any key and nothing of the admin's or staff's                                          | `user`                               | nightly  | `ac6-give-me-my-data.cy.ts`                 |
 | AC7  | The customer deletes the account with a paid express order and an unpaid transfer order open: the paid order is detached but whole and staff still ship it, the unpaid one has its personal details scrubbed by the sweep (demo only, it runs the job lever)      | `user`, then `admin`                 | nightly  | `ac7-delete-account-with-open-orders.cy.ts` |
+| AC14 | The customer edits username, phone and website (kept after a reload, a cleared phone stored as nothing), uploads and removes an avatar, loses a save to a second device (412, then "reload latest" shows its value) and resets a half-typed form                  | `user`                               | nightly  | `ac14-my-details-and-my-picture.cy.ts`      |
 
 ## `tests/support/` — the harness
 

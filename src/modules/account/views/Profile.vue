@@ -432,7 +432,7 @@ const cancelPendingEmail = () => {
                     >
                         {{ t('profile-page.button-submit') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="resetForm">
+                    <v-btn variant="tonal" data-test="profile-reset-form" @click="resetForm">
                         {{ t('profile-page.reset-form') }}
                     </v-btn>
                 </div>
