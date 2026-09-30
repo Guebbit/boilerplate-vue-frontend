@@ -67,6 +67,19 @@ const guess = (code: string, expectedStatus: number): void => {
     cy.wait('@guess').its('response.statusCode').should('equal', expectedStatus);
 };
 
+/**
+ * The "your two-factor settings changed" mail. Only the demo outbox records which template a mail
+ * came from; an SMTP inbox has only the rendered message, so live skips the template check.
+ *
+ * @param address - the recipient
+ */
+const expectChangeNoticeMailed = (address: string): void => {
+    cy.env(['liveProfile']).then(({ liveProfile }) => {
+        if (liveProfile === true) return;
+        cy.emailTo(address, (mail) => mail.template === 'account.two-factor-changed');
+    });
+};
+
 describe('AC16 · Two-factor, the awkward edges', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -95,10 +108,22 @@ describe('AC16 · Two-factor, the awkward edges', () => {
         cy.get('[data-test=two-factor-unavailable]').should('not.exist');
         armEmailFromPanel(true);
 
-        cy.step('replacing it names the method, and cancelling shows what the server holds');
+        cy.step(
+            'replacing it names the method, and asks for a code: an email-only account mails itself one'
+        );
         cy.get('[data-test=two-factor-replace-email]').should('contain.text', 'Email');
         cy.get('[data-test=two-factor-replace-email]').click();
         cy.get('[data-test=app-dialog-confirm]').click();
+        cy.get('[data-test=two-factor-code-prompt-input] input').type('000000');
+        cy.get('[data-test=two-factor-code-prompt-submit]').click();
+        cy.get('[data-test=two-factor-code-prompt-error]').should('not.be.empty');
+        cy.get('[data-test=two-factor-enroll]').should('not.exist');
+        cy.get('[data-test=two-factor-code-prompt-send]').click();
+        cy.get('[data-test=two-factor-code-prompt-input] input').clear();
+        cy.typeMailedTwoFactorCode(EMAIL, '[data-test=two-factor-code-prompt-input] input');
+        cy.get('[data-test=two-factor-code-prompt-submit]').click();
+
+        cy.step('cancelling the enrolment shows what the server holds');
         cy.get('[data-test=two-factor-enroll]').should('be.visible');
         // Cancel only once the setup has answered: that call is what disarms the old factor.
         cy.get('[data-test=two-factor-resend]').should('be.visible');
@@ -134,12 +159,35 @@ describe('AC16 · Two-factor, the awkward edges', () => {
         cy.get('#two-factor-challenge-page').should('exist');
         cy.get('[data-test=two-factor-challenge-back-to-login]').should('exist');
         // The countdown reads the browser's own clock, so that is the one to move.
-        cy.clock(Date.now(), ['Date']);
-        cy.tick(PAST_CHALLENGE_MS);
+        cy.clock(Date.now(), ['Date']).as('browserClock');
+        cy.get('@browserClock').invoke('tick', PAST_CHALLENGE_MS);
         cy.get('[data-test=two-factor-challenge-submit]').should('be.disabled');
+        cy.get('[data-test=two-factor-challenge-back-to-login]').should('exist');
+        // Put the real time back: the steps below sign in for real.
+        cy.get('@browserClock').invoke('restore');
 
         cy.step('and the way back to login is offered, as it was all along');
         cy.get('[data-test=two-factor-challenge-back-to-login]').click();
         cy.get('#login-page').should('exist');
+
+        cy.step(
+            'an email-only account turns 2FA off by mailing itself the code, spending no backup code'
+        );
+        submitLoginForm(EMAIL, PASSWORD);
+        cy.get('[data-test=two-factor-challenge-send]').click();
+        cy.typeMailedTwoFactorCode(EMAIL, '[data-test=two-factor-challenge-code] input');
+        cy.get('[data-test=two-factor-challenge-submit]').click();
+        cy.get('#home-page').should('exist');
+        cy.visit('/en/profile');
+        cy.get('[data-test=two-factor-disable-all]').click();
+        cy.get('[data-test=app-dialog-confirm]').click();
+        cy.get('[data-test=two-factor-code-prompt-send]').click();
+        cy.typeMailedTwoFactorCode(EMAIL, '[data-test=two-factor-code-prompt-input] input');
+        cy.get('[data-test=two-factor-code-prompt-submit]').click();
+        cy.get('[data-test=two-factor-armed]').should('not.exist');
+        cy.get('[data-test=two-factor-add-email]').should('exist');
+
+        cy.step('and the account holder was told, out of band');
+        expectChangeNoticeMailed(EMAIL);
     });
 });

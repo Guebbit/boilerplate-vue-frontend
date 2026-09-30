@@ -668,7 +668,11 @@ Cypress.Commands.add('logout', () => {
 const TWO_FACTOR_CODE_PREFIX = 'code: ';
 
 Cypress.Commands.add('typeMailedTwoFactorCode', (address: string, selector: string) => {
-    cy.emailTo(address).then((sent) => {
+    // Only a mail that carries a code: the change notice sent after an enrollment lands in the
+    // same inbox, and is the newest one until the next code arrives.
+    cy.emailTo(address, (mail) =>
+        Boolean(mail.lines?.some((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX)))
+    ).then((sent) => {
         const codeLine = sent.lines?.find((line) => line.startsWith(TWO_FACTOR_CODE_PREFIX));
         // Asserted rather than asserted-away: without the line there is no code to type, and a
         // silent `undefined` here would fail later as an unrelated "wrong code".
