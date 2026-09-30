@@ -71,6 +71,9 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through; `isLoading` backs the per-action computeds below.
      */
+    // Every keyed `fetchAny` below is a WRITE that only borrows a key for its loading flag. The
+    // toolkit caches a keyed read for an hour, so each carries `forced: true` — without it a second
+    // setup, remove or regenerate in one page load answers from the cache and never reaches the API.
     const { loading, isLoading, fetchAny } = useStructureRestApi({
         resourceKey: 'accountTwoFactor',
         queryClient
@@ -181,7 +184,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                             });
                         return payload;
                     }),
-                { key: ['setup'] }
+                { key: ['setup'], forced: true }
             )
         );
 
@@ -203,7 +206,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     resendAvailableAt.value = undefined;
                     return fetchStatus().then(() => result);
                 }),
-            { key: ['confirm'] }
+            { key: ['confirm'], forced: true }
         );
 
     /**
@@ -216,7 +219,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const removeMethod = (method: string, code: string) =>
         fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()), {
-            key: ['remove']
+            key: ['remove'],
+            forced: true
         });
 
     /**
@@ -227,7 +231,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const disableAll = (code: string) =>
         fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()), {
-            key: ['disable']
+            key: ['disable'],
+            forced: true
         });
 
     /**
@@ -247,7 +252,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     const result = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
                     return fetchStatus().then(() => result);
                 }),
-            { key: ['regenerate'] }
+            { key: ['regenerate'], forced: true }
         );
 
     /**

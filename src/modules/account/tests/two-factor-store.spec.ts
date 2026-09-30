@@ -257,6 +257,57 @@ describe('the enrollment machine', () => {
     });
 });
 
+describe('every write reaches the API each time', () => {
+    it('a second setup, a second removal and a second regeneration are not answered from the cache', () => {
+        responses['POST /account/2fa/methods/email/setup'] = orvalEnvelope({
+            method: 'email',
+            delivers: true,
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
+        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
+            backupCodes: ['aaa-111'],
+            backupCodesRemaining: 10
+        });
+        const store = useTwoFactorStore();
+        return store
+            .setupMethod('email')
+            .then(() => store.setupMethod('email'))
+            .then(() => store.removeMethod('email', '111111'))
+            .then(() => store.removeMethod('email', '222222'))
+            .then(() => store.regenerateBackupCodes('111111'))
+            .then(() => store.regenerateBackupCodes('222222'))
+            .then(() => {
+                const urls = requestedUrls();
+                expect(urls.filter((url) => url.endsWith('/setup'))).toHaveLength(2);
+                expect(urls.filter((url) => url === '/account/2fa/methods/email')).toHaveLength(2);
+                expect(urls.filter((url) => url === '/account/2fa/backup-codes')).toHaveLength(2);
+            });
+    });
+
+    it('a second confirm and a second disable are not answered from the cache either', () => {
+        responses['POST /account/2fa/methods/email/confirm'] = orvalEnvelope({
+            method: 'email',
+            backupCodes: [],
+            backupCodesRemaining: 10
+        });
+        responses['DELETE /account/2fa'] = orvalEnvelope();
+        const store = useTwoFactorStore();
+        return store
+            .confirmMethod('email', '111111')
+            .then(() => store.confirmMethod('email', '222222'))
+            .then(() => store.disableAll('111111'))
+            .then(() => store.disableAll('222222'))
+            .then(() => {
+                const urls = requestedUrls();
+                expect(urls.filter((url) => url.endsWith('/confirm'))).toHaveLength(2);
+                expect(urls.filter((url) => url === '/account/2fa')).toHaveLength(2 + 4);
+            });
+    });
+});
+
 describe('the resend countdown', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
