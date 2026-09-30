@@ -604,6 +604,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             <article
                                 v-for="item in currentOrder.items"
                                 :key="'order-item-' + item.product.id"
+                                data-test="order-item"
                                 class="rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
                             >
                                 <div class="flex items-start gap-3">

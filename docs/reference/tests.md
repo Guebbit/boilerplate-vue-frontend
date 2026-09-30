@@ -232,6 +232,7 @@ how a reader finds the story without opening the file.
 | AC3  | After the fresh-login window lapses, checkout and the data export open the re-auth dialog: a wrong password is refused, cancel abandons, the right one carries on (demo only, it moves the clock)                                                                 | `user`                               | `@smoke` | `ac3-prove-it-is-still-you.cy.ts`       |
 | CU2  | A new account shops without opening the mail: the till refuses with the API's own sentence, the banner offers a resend, and after the mailed link is spent the same cart checks out                                                                               | new account                          | nightly  | cu2-unverified-cannot-buy-yet.cy.ts     |
 | CU9  | The customer meets the delivery rules: free standard shipping at the threshold, express refused for a too-heavy basket and not offered after a reload, a non-ship-to address refused at checkout, pickup with no address                                          | `user`                               | nightly  | cu9-shipping-rules-at-the-till.cy.ts    |
+| CU12 | The customer opens an order whose products were left, re-pictured and deleted: each picture follows the live catalogue or the app's stand-in, and buy-again brings back only what is still sold and names what it dropped                                         | `user`                               | nightly  | cu12-buy-again-catalogue-changed.cy.ts  |
 
 ## `tests/support/` — the harness
 
