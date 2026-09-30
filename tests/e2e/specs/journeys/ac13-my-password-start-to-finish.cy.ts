@@ -153,6 +153,13 @@ describe('AC13 · My password, start to finish', () => {
                         .type(BREACHED);
                     cy.get('[data-test=password-breach-warning]').should('be.visible');
 
+                    cy.step('submitting it anyway is refused, and does not burn the link');
+                    submitReset(BREACHED);
+                    cy.get(
+                        '[data-test=password-reset-confirm-error], #password-reset-confirm-page .v-messages__message'
+                    ).should('contain.text', 'data breach');
+                    cy.get('#password-reset-confirm-page').should('exist');
+
                     cy.step('a good password replaces it, and the notice is mailed');
                     submitReset(RESET);
                     cy.get('#login-page').should('exist');
