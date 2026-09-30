@@ -33,6 +33,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
 import { AddressPicker } from '@/modules/account';
+import { useProductLines } from '@/modules/products';
 
 /**
  * Translation function.
@@ -58,11 +59,14 @@ const {
     removeCartItem,
     clearCart,
     setShippingMethod,
-    checkout: placeOrder,
-    titleOf,
-    moneyOf,
-    resolveTitles
+    checkout: placeOrder
 } = useCartStore();
+
+/**
+ * The lines' product join: one batched read, then title and price off the products dictionary —
+ * the record the product page shows, not a copy this store keeps.
+ */
+const { loadProducts, productOf, titleOf } = useProductLines();
 
 /**
  * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear (FA39): both
@@ -338,7 +342,7 @@ onBeforeUnmount(flushPending);
  * Load cart on mount
  */
 onMounted(() =>
-    fetchCart().then((cart) => resolveTitles((cart?.items ?? []).map(({ productId }) => productId)))
+    fetchCart().then((cart) => loadProducts((cart?.items ?? []).map(({ productId }) => productId)))
 );
 </script>
 
@@ -428,17 +432,17 @@ onMounted(() =>
                     <p class="mt-1 opacity-80" role="status">
                         {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
                     </p>
-                    <!-- FA32b: absent until `resolveTitles` has answered for this line — no price
+                    <!-- FA32b: absent until the product read has answered for this line — no price
                          guessed ahead of the server's own answer. -->
                     <p
-                        v-if="moneyOf(item.productId)"
+                        v-if="productOf(item.productId)"
                         class="mt-1 opacity-80"
                         data-test="cart-line-price"
                     >
                         {{
                             formatCurrency(
-                                moneyOf(item.productId)?.price,
-                                moneyOf(item.productId)?.currency ?? ''
+                                productOf(item.productId)?.price,
+                                productOf(item.productId)?.currency ?? ''
                             )
                         }}
                         ×
@@ -446,8 +450,8 @@ onMounted(() =>
                         =
                         {{
                             formatCurrency(
-                                (moneyOf(item.productId)?.price ?? 0) * lineQuantity(item),
-                                moneyOf(item.productId)?.currency ?? ''
+                                (productOf(item.productId)?.price ?? 0) * lineQuantity(item),
+                                productOf(item.productId)?.currency ?? ''
                             )
                         }}
                     </p>

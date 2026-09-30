@@ -19,6 +19,7 @@ import type { AppModule } from '@/kernel/registry';
  */
 export default {
     name: 'payments',
+    loadingKeys: ['payments'],
     routes: [],
     responseSchemas: () => import('./response-schemas').then((m) => m.paymentsResponseSchemas),
     locales: {

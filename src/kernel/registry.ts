@@ -20,6 +20,7 @@ import type { Component, Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/i18n';
+import type { SlotName, Slots } from '@/kernel/slots';
 
 /**
  * Where an entry lives in the shell's chrome.
@@ -151,6 +152,22 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
 
     /**
+     * Components this domain contributes to slots another module owns — see `kernel/slots.ts`.
+     * Contributed here, not imported by the owner, so the owning view never learns who fills it.
+     */
+    slots?: Slots;
+
+    /**
+     * `resourceKey` prefixes the shell's corner activity indicator answers to for this domain —
+     * `'account'` matches `accountProfile`, `accountAuth`, …. Opt-in: a module that omits it never
+     * lights the indicator, which is the right default for one whose requests are background noise
+     * (the observability stream) rather than something the visitor asked for.
+     *
+     * Declared here so a new module's stores show activity without anyone editing the layout.
+     */
+    loadingKeys?: string[];
+
+    /**
      * Lazy loader for the response-envelope schemas of the endpoints this domain calls, keyed by
      * method + path pattern. Contributed here rather than held in one shared table so that a
      * domain's contract validation arrives and leaves with its folder.
@@ -168,24 +185,6 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-
-    /**
-     * Wipes this domain's locale-sensitive cache(s) — a product title in a Pinia dictionary keyed
-     * by id alone, with nothing about the key that says which language filled it in. Called by
-     * the locale guard once a language switch has actually happened — never on an ordinary
-     * navigation that keeps the same one. A module with no server-text cache (or one already
-     * keyed/refetched per locale) simply omits it: having the callback IS the flag, so there is
-     * no separate declaration to forget.
-     *
-     * A callback rather than a store reference: the kernel must not know Pinia exists, so a
-     * module wires its own store's reset action (or several, or a partial one that spares
-     * unrelated state) in here rather than exposing the store itself.
-     *
-     * May return a promise — a module reaching its store through a lazy `import()` (FA81) has no
-     * synchronous alternative — and the locale guard awaits it before resolving the navigation, so
-     * a page rendered right after a switch never reads a not-yet-wiped cache.
-     */
-    resetOnLocaleChange?: () => void | Promise<void>;
 }
 
 /**
@@ -345,17 +344,26 @@ export const collectModuleResponseSchemas = (
         .filter((loader): loader is () => Promise<ResponseSchemaRoute[]> => loader !== undefined);
 
 /**
- * Collect every enabled module's locale-reset callback, for the locale guard to run after an
- * actual language switch.
+ * Merge every enabled module's slot contributions, per slot, in module order.
  *
  * @param appModules - the enabled module list
  */
-export const collectLocaleSensitiveResets = (
-    appModules: AppModule[]
-): (() => void | Promise<void>)[] =>
-    appModules.flatMap((appModule) =>
-        appModule.resetOnLocaleChange ? [appModule.resetOnLocaleChange] : []
-    );
+export const collectModuleSlots = (appModules: AppModule[]): Slots => {
+    const merged: Slots = {};
+    for (const appModule of appModules)
+        for (const [name, components] of Object.entries(appModule.slots ?? {}))
+            // `Object.entries` widens the key to `string`; every key of a `Slots` is a `SlotName`.
+            merged[name as SlotName] = [...(merged[name as SlotName] ?? []), ...components];
+    return merged;
+};
+
+/**
+ * Collect every enabled module's loading-indicator prefixes, flat.
+ *
+ * @param appModules - the enabled module list
+ */
+export const collectModuleLoadingKeys = (appModules: AppModule[]): string[] =>
+    appModules.flatMap((appModule) => appModule.loadingKeys ?? []);
 
 /**
  * Group every enabled module's dictionary loaders by locale code, for

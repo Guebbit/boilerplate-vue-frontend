@@ -76,8 +76,8 @@ Making the tier explicit moved five things and deleted the exemption:
 | `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     | <!-- doc-paths:ignore --> |
 | `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app | <!-- doc-paths:ignore --> |
 
-**This mirrors the backend**, which made the same split at the same time — the four tiers there are
-`app → modules → kernel → infrastructure`, with `ui` being the one tier a backend has no use for.
+**This mirrors the backend**, which made the same split at the same time — the tiers there are
+`app → modules → kernel → infrastructure`, and `ui` is the one tier a backend has no use for — this repo's fifth.
 
 ### The `infrastructure` / `kernel` line
 
@@ -189,10 +189,12 @@ describe, because a reader meets a claim and the code it describes in the same p
 
 Each optional field replaced a shared file that used to enumerate domains — the navigation list,
 the response-schema table, the locale bundle. That is most of the point: `src/modules.ts` is the
-only place that HAS to. One hand-kept list is still left —
-`LayoutDefault.vue`'s `SIDE_LOADING_KEYS`, the domain-store prefixes the corner loading indicator
-answers to — and it is exactly the trap this pattern otherwise avoids: a module with a store and no
-entry there is simply invisible to the indicator, not an error.
+only place that HAS to. The corner loading indicator follows the same rule: a module opts its
+stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.vue` collects them.
+A module that omits the field is invisible to the indicator, which is the right default for one
+whose requests are background noise. `slots` lets a module contribute components to a place another
+module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist buttons — so the owner
+never imports its contributors.
 
 Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
 than a manifest field: `eslint.config.ts`'s `MODULE_EDGES` map names, per module, which siblings it

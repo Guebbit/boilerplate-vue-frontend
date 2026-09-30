@@ -44,6 +44,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from '../pairing/paired-backend-path';
+import {
+    exportedNames,
+    missingScripts,
+    staleListings,
+    unknownContractImports,
+    unnamedOn,
+    type DocumentPage,
+    type FactFinding
+} from './document-facts';
 
 /** The repo root, two levels up from `scripts/docs/`. This package is ESM — no `__dirname`. */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -68,7 +77,16 @@ const MIN_REFERENCES = 200;
  * absent belongs in the findings.
  */
 const ALLOWED: { prefix: string; reason: string }[] = [
-    { prefix: 'reports/', reason: 'written by a test/mutation run, absent until one happens' },
+    {
+        prefix: 'reports/a11y/',
+        reason: 'written by the accessibility sweep, absent until one runs'
+    },
+    { prefix: 'reports/e2e/', reason: 'written by the sharded e2e runner, absent until one runs' },
+    { prefix: 'reports/mutation/', reason: 'written by a Stryker run, absent until one happens' },
+    { prefix: 'reports/visual-diff/', reason: 'written by a visual-regression run' },
+    { prefix: 'reports/audit/', reason: 'written by an audit prompt run' },
+    { prefix: 'reports/test-report.json', reason: 'written by `test:unit:report`' },
+    { prefix: 'reports/stryker-incremental.json', reason: "Stryker's local cache, gitignored" },
     { prefix: 'coverage/', reason: 'written by a coverage run, absent until one happens' },
     { prefix: 'node_modules/', reason: 'a dependency path, cited to locate one — not our tree' },
     { prefix: 'tests/e2e/videos/', reason: 'Cypress artefacts, written by a run' },
@@ -152,11 +170,17 @@ const anchorPageFor = (pages: string[]): Map<string, string> => {
 };
 
 /**
- * Whether an allowlist entry covers this token — the directory itself as well as what is under
- * it, since a page naming `reports` and a page naming `reports/mutation/` make the same claim.
+ * Whether an allowlist entry covers this token — what is under an entry, and any directory on the
+ * way to one, since a page naming `reports` and a page naming `reports/mutation/` make the same
+ * claim about the same run output.
  */
 const allowed = (token: string): boolean =>
-    ALLOWED.some(({ prefix }) => token === prefix.replace(/\/$/, '') || token.startsWith(prefix));
+    ALLOWED.some(
+        ({ prefix }) =>
+            token === prefix.replace(/\/$/, '') ||
+            token.startsWith(prefix) ||
+            prefix.startsWith(`${token}/`)
+    );
 
 /**
  * `tsconfig.app.json`'s path aliases, as `@/` → `src/`, read rather than transcribed — a second
@@ -393,6 +417,76 @@ const scanPage = (
     return scan;
 };
 
+/** The page that must name every script `package.json` defines. */
+const SCRIPTS_PAGE = 'docs/tools/package-scripts.md';
+
+/** The page that must name every runtime dependency, and only installed ones. */
+const DEPENDENCIES_PAGE = 'docs/tools/package-dependencies.md';
+
+/**
+ * Scripts the docs tell a reader to run in the PAIRED BACKEND, so they are not in this repo's
+ * `package.json`. Named, not read from the peer: a script cited here that is neither this repo's
+ * nor on this list is a finding, and the peer's own scripts (some of which share a name with a
+ * script this repo REMOVED) must not be able to excuse it.
+ */
+const BACKEND_SCRIPTS: readonly string[] = ['host', 'sync:frontend', 'demo'];
+
+/**
+ * A `package.json`'s script and dependency names.
+ *
+ * @returns The scripts, dependencies and dev dependencies of this repo.
+ */
+const readPackage = (): {
+    scripts: string[];
+    dependencies: string[];
+    devDependencies: string[];
+} => {
+    // Every `package.json` in this repo declares all three maps.
+    const json = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as Record<
+        'scripts' | 'dependencies' | 'devDependencies',
+        Record<string, unknown>
+    >;
+    return {
+        scripts: Object.keys(json.scripts),
+        dependencies: Object.keys(json.dependencies),
+        devDependencies: Object.keys(json.devDependencies)
+    };
+};
+
+/**
+ * What the docs claim about `package.json` and the generated contract, checked — see
+ * `document-facts.ts`.
+ *
+ * @param pages - Every tracked docs page, read.
+ * @returns Every claim that does not hold.
+ */
+const factFindings = (pages: DocumentPage[]): FactFinding[] => {
+    const own = readPackage();
+    const contractIndex = readFileSync(path.join(ROOT, 'contracts/rest/index.ts'), 'utf8');
+    const contractSchemas = readFileSync(path.join(ROOT, 'contracts/rest/schemas.zod.ts'), 'utf8');
+    const byPath = new Map(pages.map((page) => [page.path, page]));
+    const scriptsPage = byPath.get(SCRIPTS_PAGE);
+    const dependenciesPage = byPath.get(DEPENDENCIES_PAGE);
+
+    return [
+        ...missingScripts(pages, new Set([...own.scripts, ...BACKEND_SCRIPTS])),
+        ...(scriptsPage ? unnamedOn(scriptsPage, own.scripts, 'script') : []),
+        ...(dependenciesPage
+            ? [
+                  ...unnamedOn(dependenciesPage, own.dependencies, 'dependency'),
+                  ...staleListings(
+                      dependenciesPage,
+                      new Set([...own.dependencies, ...own.devDependencies])
+                  )
+              ]
+            : []),
+        ...unknownContractImports(pages, {
+            '@api': exportedNames(contractIndex),
+            '@api/schemas': exportedNames(contractSchemas)
+        })
+    ];
+};
+
 const run = (): number => {
     const aliases = readAliases();
     const own = trackedTargets(ROOT);
@@ -428,6 +522,10 @@ const run = (): number => {
 
     const findings: Finding[] = [];
     let references = 0;
+    const documentPages = pages.map((page) => ({
+        path: page,
+        text: readFileSync(path.join(ROOT, page), 'utf8')
+    }));
 
     const context = { aliases, roots, own: own.targets, peer: peerTargets, anchorsOf };
 
@@ -437,6 +535,8 @@ const run = (): number => {
         references += scan.tokens.length;
         for (const token of scan.findings) findings.push({ page, token });
     }
+
+    const facts = factFindings(documentPages);
 
     if (pages.length < MIN_PAGES || references < MIN_REFERENCES) {
         console.error(
@@ -448,11 +548,20 @@ const run = (): number => {
         return 1;
     }
 
-    if (findings.length === 0) {
+    if (findings.length === 0 && facts.length === 0) {
         console.log(
             `[docs-references] ${pages.length} pages, ${references} references, all resolved.`
         );
         return 0;
+    }
+
+    if (facts.length > 0) {
+        console.error(
+            `[docs-references] ${facts.length} claims about scripts, dependencies or the contract that do not hold:\n`
+        );
+        for (const { page, problem } of facts) console.error(`  ${page}: ${problem}`);
+        console.error('');
+        if (findings.length === 0) return 1;
     }
 
     console.error(

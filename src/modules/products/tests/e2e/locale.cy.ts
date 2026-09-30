@@ -5,12 +5,12 @@
  * cannot stand in for them.
  *
  * `useProductsStore`'s dictionary is keyed by product id alone, so nothing about the cached
- * record says which language filled it in. A switch has to WIPE it and refetch, or a product
- * page reads the language the visitor just left — no foundation module registers
- * `resetOnLocaleChange` (only `products`, `orders` and `cart` do), so there is no page to move
+ * record says which language filled it in. A switch has to drop it and refetch, or a product
+ * page reads the language the visitor just left. The store scopes its cache by locale
+ * (`dependsOn`), and no foundation module holds server text that way, so there is no page to move
  * this to instead of deleting it with the module.
  */
-describe('switching language wipes and refetches locale-sensitive stores', () => {
+describe('switching language drops and refetches locale-sensitive stores', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();

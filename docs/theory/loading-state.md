@@ -55,9 +55,9 @@ flowchart TB
     Silent(["rendered by nothing"])
 
     K1 -->|MAIN_LOADING_KEYS| Overlay
-    K2 -->|SIDE_LOADING_KEYS| Corner
+    K2 -->|"loadingKeys"| Corner
     K3 -->|prefix 'account'| Corner
-    K4 -->|SIDE_LOADING_KEYS| Corner
+    K4 -->|"loadingKeys"| Corner
     K3 -->|exact key| Button
     K5 --> Silent
 ```
@@ -66,7 +66,7 @@ Three levels, one dictionary:
 
 - **Full-page overlay** — `isLoading(MAIN_LOADING_KEYS)`, today just `core`: app bootstrap, the
   only thing allowed to block the screen.
-- **Corner indicator** — `isLoading(SIDE_LOADING_KEYS)`, one prefix per domain store. A prefix
+- **Corner indicator** — `useIsLoading` over every module's `loadingKeys` (declared on its manifest), one prefix per domain store. A prefix
   matches every action key under it, so a store's own postfixed calls come along for free.
 - **One control** — `getLoading('accountProfile:avatar-upload')`, exposed as a named computed by
   the store that owns the key (`uploadingAvatar`, `sendingCode`, `mutatingWithCode`, …). Components

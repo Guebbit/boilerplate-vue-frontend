@@ -82,8 +82,6 @@ beforeEach(() => {
         'PATCH /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
-        // Carries the server's resend cooldown, which the banner counts down — see `resendAfter`.
-        'POST /account/verify-request': orvalEnvelope({ resendAfter: 60 }),
         'POST /account/verify-confirm': orvalEnvelope(),
         'POST /account/email-change-confirm': orvalEnvelope(),
         // Every collection is an array the fixture is free to leave empty; only `exportedAt` and
@@ -419,14 +417,4 @@ describe('the self-service actions', () => {
                 ]);
             });
     });
-
-    it('requestEmailVerification asks for the re-send and reports the cooldown', () =>
-        useProfileStore()
-            .requestEmailVerification()
-            .then((resendAfter) => {
-                expect(requestedUrls().at(-1)).toBe('/account/verify-request');
-                // The server's number, not one this client chose — that is the whole point of
-                // returning it.
-                expect(resendAfter).toBe(60);
-            }));
 });

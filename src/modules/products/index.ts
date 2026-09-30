@@ -1,6 +1,7 @@
 /**
  * @module
- * Products — public barrel: one named export forwarding the module's store. The only surface a
+ * Products — public barrel: the store, and the composable that joins id-only lines (cart,
+ * wishlist) to their product records. The only surface a
  * sibling module may import — lint enforces that reaching `@/modules/products/store` directly
  * from another module is an error, not a shortcut.
  *
@@ -9,3 +10,4 @@
  */
 
 export { useProductsStore } from './store';
+export { useProductLines } from './composables/use-product-lines';

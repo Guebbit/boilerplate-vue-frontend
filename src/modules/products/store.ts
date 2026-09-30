@@ -11,6 +11,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { ref } from 'vue';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { getCurrentLocale } from '@/i18n';
 import {
     listProducts,
     searchProducts,
@@ -69,6 +70,22 @@ export type UpdateProductData = Omit<UpdateProductRequest, 'taxClass' | 'rateTyp
 };
 
 /**
+ * How many ids one `POST /products/search` accepts — the contract's own cap on `id`.
+ */
+const SEARCH_ID_BATCH = 100;
+
+/**
+ * Splits ids into request-sized batches.
+ *
+ * @param ids - Every id still to fetch.
+ * @returns Consecutive slices of at most {@link SEARCH_ID_BATCH}.
+ */
+const idBatches = (ids: string[]): string[][] =>
+    Array.from({ length: Math.ceil(ids.length / SEARCH_ID_BATCH) }, (_, index) =>
+        ids.slice(index * SEARCH_ID_BATCH, (index + 1) * SEARCH_ID_BATCH)
+    );
+
+/**
  * Products CRUD, paginated search and image upload.
  *
  * The endpoints are declared once, up front, and `useStructureCrudApi` derives the whole store
@@ -103,7 +120,7 @@ export const useProductsStore = defineStore('products', () => {
         deleteOne: deleteProduct,
         deleteTarget,
         fetchAny,
-        resetAll
+        fetchMultiple
     } = useStructureCrudApi<
         Product,
         string,
@@ -230,6 +247,16 @@ export const useProductsStore = defineStore('products', () => {
             resourceKey: 'products',
             queryClient,
             /**
+             * Cache scope: the language the request carried.
+             *
+             * Every cached record's server text (`title`, `description`) was resolved in the
+             * caller's language, so it is only valid under it. Keyed on the locale, a switch reads
+             * a different scope — nothing stale can be served — and the toolkit cancels and drops
+             * the old one once no watcher shows it.
+             * https://github.com/Guebbit/vue-toolkit (`dependsOn` in `useStructureRestApi`)
+             */
+            dependsOn: () => [getCurrentLocale()],
+            /**
              * Five minutes instead of the toolkit's one-hour default.
              *
              * Products are the one resource here that a visitor sees and an admin edits at the
@@ -288,6 +315,33 @@ export const useProductsStore = defineStore('products', () => {
         fetchAny(() => getProductAdmin(productId).then((response) => response.data));
 
     /**
+     * Reads many products at once — the join a cart or wishlist needs for its lines, in one
+     * request per {@link SEARCH_ID_BATCH} ids instead of one per line.
+     *
+     * Goes through the toolkit's `fetchMultiple`, so every record lands in the same
+     * {@link products} dictionary the product page reads, and `forced` makes a cart opened
+     * after a price change show the new price rather than a cached one. `pageSize` is set to
+     * the batch length because the endpoint's default page is 10. An id the caller may not see
+     * (deleted, inactive) is simply not answered: its slot comes back `undefined`.
+     *
+     * @param productIds - The products to load; duplicates are folded.
+     * @returns A promise resolving with one entry per distinct id, `undefined` where none came back.
+     */
+    const fetchProductsByIds = (productIds: string[]) =>
+        fetchMultiple(
+            (missing) =>
+                Promise.all(
+                    idBatches(missing).map((batch) =>
+                        searchProducts({ id: batch, page: 1, pageSize: batch.length }).then(
+                            (response) => response.data.items
+                        )
+                    )
+                ).then((batches) => batches.flat()),
+            [...new Set(productIds)],
+            { forced: true }
+        );
+
+    /**
      * The catalogue's filter chips: every public category and tag with its count. Fetched once
      * per visit to the listing — the API caches it under the products tag, so the counts follow
      * catalogue writes without this store having to know when they happen.
@@ -313,6 +367,7 @@ export const useProductsStore = defineStore('products', () => {
     return {
         facets,
         fetchFacets,
+        fetchProductsByIds,
         products,
         productsList,
         addProduct,
@@ -336,23 +391,6 @@ export const useProductsStore = defineStore('products', () => {
         updateProduct,
         deleteProduct,
         hardDeleteProduct,
-        restoreProduct,
-        /**
-         * Forget everything a language switch invalidated: the cached records AND the cached
-         * RESPONSES behind them.
-         *
-         * Every record's `title` and `description` were resolved server-side against the caller's
-         * language, so after a switch both are wrong. Dropping the records alone is not enough —
-         * the toolkit answers a repeat fetch from its own query cache while that entry is still
-         * fresh, so the next read puts the old language straight back and no request is ever made.
-         * `resetAll()` drops every entry of this resource under the current scope — records, lists
-         * and searches alike.
-         *
-         * The module manifest wires this into `resetOnLocaleChange`, which
-         * `src/app/guards/locale-choice.ts` runs once a switch has actually happened.
-         */
-        resetForLocaleChange: () => {
-            resetAll();
-        }
+        restoreProduct
     };
 });

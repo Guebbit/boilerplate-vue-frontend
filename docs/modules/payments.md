@@ -1,23 +1,23 @@
 # payments
 
 ::: tip At a glance
-**Owns** — `PaymentPanel`: the payment behind an order, as a component rather than a page.
+**Owns** — the payment behind an order, as components rather than a page: `PaymentPanel`, `PaymentMethodSelector`, `TransferInstructionsPanel`, `RecordOfflinePaymentForm`, `OrderReferenceSearch`, and the `useOrderRefund` composable.
 **Depends on** — nothing. It is mounted, it does not mount.
-**Breaks if you change** — `PaymentPanel`'s props. [`orders`](./orders.md) mounts it.
+**Breaks if you change** — those components' props. [`orders`](./orders.md) mounts the panel and the staff forms; [`cart`](./cart.md) mounts `PaymentMethodSelector`.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | _none_ — this module routes to nothing                                         |
-| **Store**               | `payments`                                                                     |
-| **Menu entries**        | _none_                                                                         |
-| **API calls**           | 5                                                                              |
-| **Depends on**          | _nothing_                                                                      |
-| **Depended on by**      | [`orders`](./orders.md)                                                        |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | `PaymentPanel` · `useOrderRefund`                                              |
-| **Backend counterpart** | `payments` in `boilerplate-node-backend`                                       |
+| Fact                    | This module                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.                                                                  |
+| **Screens**             | _none_ — this module routes to nothing                                                                                                          |
+| **Store**               | `payments`                                                                                                                                      |
+| **Menu entries**        | _none_                                                                                                                                          |
+| **API calls**           | 8                                                                                                                                               |
+| **Depends on**          | _nothing_                                                                                                                                       |
+| **Depended on by**      | [`orders`](./orders.md) · [`cart`](./cart.md)                                                                                                   |
+| **Languages**           | `en` · `it`                                                                                                                                     |
+| **Publishes**           | `PaymentPanel` · `PaymentMethodSelector` · `TransferInstructionsPanel` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
+| **Backend counterpart** | `payments` in `boilerplate-node-backend`                                                                                                        |
 
 ## The map
 
@@ -109,18 +109,18 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 ## Files
 
-| File                              | What it is                                                                                                                                                  | Explained in                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/PaymentPanel.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `composables/use-order-refund.ts` | Reusable reactive logic for this domain — the tier between a store and a component.                                                                         | [read](../theory/layers.md)           |
-| `index.ts`                        | The public barrel: the only surface a sibling module may import.                                                                                            | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `locales/it.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `module.ts`                       | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
-| `response-schemas.ts`             | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
-| `store.ts`                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/store.spec.ts`             | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/use-order-refund.spec.ts`  | Vitest suite — the `useOrderRefund` composable, in isolation.                                                                                               | [read](../tools/unit-testing.md)      |
+| File                              | What it is                                                                                                                                                                          | Explained in                          |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `components/PaymentPanel.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
+| `composables/use-order-refund.ts` | Reusable reactive logic for this domain — the tier between a store and a component.                                                                                                 | [read](../theory/layers.md)           |
+| `index.ts`                        | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
+| `locales/en.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `locales/it.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `module.ts`                       | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
+| `response-schemas.ts`             | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `store.ts`                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
+| `tests/store.spec.ts`             | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
+| `tests/use-order-refund.spec.ts`  | Vitest suite — the `useOrderRefund` composable, in isolation.                                                                                                                       | [read](../tools/unit-testing.md)      |
 
 ## Working on it
 

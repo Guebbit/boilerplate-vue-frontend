@@ -11,7 +11,7 @@
  */
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
@@ -35,6 +35,11 @@ const props = defineProps<{
      * The tenant preselected on open.
      */
     initialTenant?: string;
+    /**
+     * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
+     * second click cannot send the write twice.
+     */
+    saving?: boolean;
 }>();
 
 /**
@@ -55,10 +60,9 @@ const isOpen = defineModel<boolean>({ required: true });
 const { t } = useI18n();
 
 /**
- * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
- * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /*
  * Deliberately NOT on `useStructureFormValidation`, unlike the two form dialogs beside it. What this validates is
@@ -174,7 +178,7 @@ const handleImport = () => {
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="640" :fullscreen="mobile" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="640" :fullscreen="fullscreen" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="entries-import">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}
@@ -261,7 +265,8 @@ const handleImport = () => {
                     <v-btn
                         type="submit"
                         color="primary"
-                        :disabled="!parsedEntries"
+                        :loading="saving"
+                        :disabled="!parsedEntries || saving"
                         data-test="import-submit"
                     >
                         {{ t('entries-import.button-import') }}

@@ -5,7 +5,7 @@
  * exists", not a yes/no. Lives in `infrastructure/` rather than `ui/` because `step-up.ts` reads
  * it directly and the infrastructure tier may not import `ui` — see `eslint.config.ts`'s tier
  * rules. `app/components/ReauthDialog.vue` is the only renderer; the actual
- * `POST /account/reauth` call and token adoption happen there, through `useAuthStore().reauth()`.
+ * `POST /account/reauth` call and token adoption happen there, through `useSessionStore().reauth()`.
  */
 
 import { ref, computed } from 'vue';

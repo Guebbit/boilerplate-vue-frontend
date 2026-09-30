@@ -202,6 +202,7 @@ const submitForm = () => {
                     size="large"
                     block
                     :loading="isSubmitting"
+                    :disabled="isSubmitting"
                     class="mt-4"
                 >
                     {{ t('password-reset-confirm-page.button-submit') }}

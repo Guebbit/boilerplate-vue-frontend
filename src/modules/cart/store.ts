@@ -17,8 +17,7 @@ import {
     clearCart,
     setCartShippingMethod,
     checkout as apiCheckout,
-    reorder as apiReorder,
-    getProductById
+    reorder as apiReorder
 } from '@api';
 import type {
     CartItem,
@@ -323,89 +322,6 @@ export const useCartStore = defineStore('cart', () => {
             })
         );
 
-    /**
-     * Product titles keyed by id, for the lines the API answers as ids only — this store's and the
-     * wishlist's, whose `CartItem` / `WishlistItem` carry a `productId` and nothing else. A line
-     * headed by its id alone reads as a UUID to a screen reader.
-     *
-     * Lives here rather than in products because `products → cart` is a declared edge, and the
-     * reverse would close a loop. The read goes through the contract directly — `@api` is
-     * infrastructure, not a sibling — and a title that cannot be fetched simply stays absent: the
-     * id is still rendered, so nothing is lost, only prettiness.
-     */
-    const productTitles = ref<Record<string, string>>({});
-
-    /**
-     * The shipping half of the same per-product read `productTitles` needs — cached alongside
-     * it rather than fetched again, since `resolveTitles` already pulls the whole `Product` down.
-     * Keyed the same way, absent for the same reason: a product `resolveTitles` has not (yet, or
-     * ever) resolved.
-     */
-    const productShipping = ref<Record<string, { requiresShipping?: boolean }>>({});
-
-    /**
-     * The money half of the same per-product read (FA32b) — a line's unit price and the currency
-     * it is in, off the same `resolveTitles` response. Absent until resolved, the same as
-     * {@link productShipping}; the cart shows no price for that line until then rather than a
-     * guessed one.
-     */
-    const productMoney = ref<Record<string, { price: number; currency: string }>>({});
-
-    /**
-     * The title of one product, or its id while unknown.
-     *
-     * @param productId - The product.
-     * @returns Something a human can call the line by.
-     */
-    const titleOf = (productId: string) => productTitles.value[productId] ?? productId;
-
-    /**
-     * One line's unit price and currency (FA32b), or `undefined` before {@link resolveTitles} has
-     * answered for it.
-     *
-     * @param productId - The product.
-     * @returns The line's money, or `undefined`.
-     */
-    const moneyOf = (productId: string) => productMoney.value[productId];
-
-    /**
-     * Resolves the titles not yet known, one request each, failures ignored. Also fills
-     * {@link productShipping} and {@link productMoney} for the same ids, off the same response.
-     *
-     * @param productIds - The lines' products.
-     * @returns A promise settling when every lookup has answered one way or the other.
-     */
-    const resolveTitles = (productIds: string[]) =>
-        Promise.allSettled(
-            [...new Set(productIds)]
-                .filter((productId) => !(productId in productTitles.value))
-                .map((productId) =>
-                    getProductById(productId).then(({ data }) => {
-                        productTitles.value = { ...productTitles.value, [productId]: data.title };
-                        productShipping.value = {
-                            ...productShipping.value,
-                            [productId]: { requiresShipping: data.requiresShipping }
-                        };
-                        productMoney.value = {
-                            ...productMoney.value,
-                            [productId]: { price: data.price, currency: data.currency }
-                        };
-                    })
-                )
-        ).then(() => productTitles.value);
-
-    /**
-     * Drops every resolved title, so the next `resolveTitles` call re-fetches instead of
-     * rendering a name resolved in the language the visitor just left.
-     *
-     * The module manifest wires this into `resetOnLocaleChange`. Only this join is wiped:
-     * `cart`/`cartSummary` hold no translated text (`CartItem` is `{ productId, quantity }`), and
-     * a language switch must never cost the visitor their cart.
-     */
-    const resetProductTitles = () => {
-        productTitles.value = {};
-    };
-
     return {
         cart,
         cartItems,
@@ -417,11 +333,6 @@ export const useCartStore = defineStore('cart', () => {
 
         loading,
         fetchCart,
-        productTitles,
-        titleOf,
-        moneyOf,
-        resolveTitles,
-        resetProductTitles,
         checkout,
         reorder,
         addCartItem: addCartItemAction,

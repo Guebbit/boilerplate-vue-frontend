@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — the visitor's saved products, and the move-to-cart exit.
-**Depends on** — [`cart`](./cart.md), so the header badge cannot lag a write this module started.
+**Depends on** — [`cart`](./cart.md), so the header badge cannot lag a write this module started, and [`products`](./products.md), for the titles of its saved lines.
 **Breaks if you change** — the refresh after move-to-cart. It is the only reason the edge exists.
 :::
 
@@ -13,10 +13,10 @@
 | **Store**               | `wishlist`                                                                     |
 | **Menu entries**        | `Wishlist`                                                                     |
 | **API calls**           | 4                                                                              |
-| **Depends on**          | [`cart`](./cart.md)                                                            |
-| **Depended on by**      | [`products`](./products.md)                                                    |
+| **Depends on**          | [`cart`](./cart.md) · [`products`](./products.md)                              |
+| **Depended on by**      | —                                                                              |
 | **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | `useWishlistStore`                                                             |
+| **Publishes**           | —                                                                              |
 | **Backend counterpart** | `wishlist` in `boilerplate-node-backend`                                       |
 
 ## The map
@@ -24,8 +24,8 @@
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    products["products"] ==>|"customer-supplier"| wishlist["<b>wishlist</b>"]
     wishlist["<b>wishlist</b>"] -->|"conformist"| cart["cart"]
+    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -35,7 +35,7 @@ flowchart LR
     class wishlist self;
 ```
 
-- `products` → **customer-supplier** — The heart asks the wishlist store to save the product.
+- → `products` **customer-supplier** — Joins its saved lines to their product records (`useProductLines`).
 - → `cart` **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
 
 ## The story
@@ -49,15 +49,16 @@ lag a write this module initiated. That one call is the whole of the `wishlist �
 is why the edge is `conformist` rather than `customer-supplier` — the cart is never asked to write.
 
 ::: tip Why this is a line and not a loop
-The reverse arrow does not exist. The cart never reads the wishlist. That is what keeps
-`products → wishlist → cart → orders` a chain rather than a cycle — and a cycle would crash
+The reverse arrows do not exist. The cart never reads the wishlist, and the product page never
+imports it. That is what keeps `wishlist → cart → products` a chain rather than a cycle — and a
+cycle would crash
 `npm run lint` outright, from `assertAcyclicModuleEdges`'s whole-graph walk in `eslint.config.ts`,
 rather than surface on the first navigation with a blank screen.
 :::
 
-The heart on a product card is [`products`](./products.md) asking this store to save — the arrow
-pointing in, and `customer-supplier` for the same reason add-to-cart is: it asks this store to
-write.
+The heart on the product page is contributed by this module's manifest to the `product-actions`
+slot [`products`](./products.md) owns (`components/WishlistToggle.vue`), so the page never imports
+this module.
 
 ## State
 
@@ -98,23 +99,23 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 ## Files
 
-| File                                   | What it is                                                                                                                                                  | Explained in                          |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `index.ts`                             | The public barrel: the only surface a sibling module may import.                                                                                            | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `locales/it.json`                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `module.ts`                            | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                  | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                            | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
-| `store.ts`                             | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/wishlist.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                 | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
-| `tests/e2e/wishlist.cy.ts`             | Cypress suite — the `wishlist` screens, in a browser.                                                                                                       | [read](../tools/component-testing.md) |
-| `tests/e2e/wishlist.visual.cy.ts`      | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                 | Vitest suite — the route records and the `meta.access` each one declares.                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                  | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/wishlist-view.spec.ts`          | Vitest suite — `wishlist-view`, in isolation.                                                                                                               | [read](../tools/unit-testing.md)      |
-| `views/Wishlist.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
+| File                                   | What it is                                                                                                                                                                          | Explained in                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `index.ts`                             | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
+| `locales/en.json`                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `locales/it.json`                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `module.ts`                            | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
+| `response-schemas.ts`                  | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `routes.ts`                            | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
+| `store.ts`                             | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
+| `tests/e2e/__snapshots__/wishlist.png` | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
+| `tests/e2e/a11y.cy.ts`                 | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
+| `tests/e2e/wishlist.cy.ts`             | Cypress suite — the `wishlist` screens, in a browser.                                                                                                                               | [read](../tools/component-testing.md) |
+| `tests/e2e/wishlist.visual.cy.ts`      | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
+| `tests/routes.spec.ts`                 | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/store.spec.ts`                  | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
+| `tests/wishlist-view.spec.ts`          | Vitest suite — `wishlist-view`, in isolation.                                                                                                                                       | [read](../tools/unit-testing.md)      |
+| `views/Wishlist.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 
 ## Working on it
 

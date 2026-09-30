@@ -2,17 +2,17 @@
 /**
  * @module
  * Step-up re-authentication prompt: mounted once by `LayoutDefault.vue`, beside `<DialogHost />`.
- * One password field. On submit it calls `useAuthStore().reauth()` itself — the interceptor that
+ * One password field. On submit it calls `useSessionStore().reauth()` itself — the interceptor that
  * opened it only needed to know when a fresh session exists, not how one gets there — and a wrong
  * password stays open for another try rather than closing.
  */
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { useAuthStore } from '@/modules/account';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
@@ -28,12 +28,12 @@ const reauthDialog = useReauthPromptStore();
 /**
  * Whether a re-authentication call is in flight.
  */
-const { reauthing } = storeToRefs(useAuthStore());
+const { reauthing } = storeToRefs(useSessionStore());
 
 /**
- * Vuetify's breakpoint flag: the dialog goes fullscreen below `sm`.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
@@ -94,7 +94,7 @@ const isOpen = computed({
  */
 const submit = () => {
     if (!password.value) return;
-    return useAuthStore()
+    return useSessionStore()
         .reauth(password.value)
         .then(() => {
             reauthDialog.resolveStepUp();
@@ -112,7 +112,7 @@ const submit = () => {
     <v-dialog
         v-model="isOpen"
         max-width="420"
-        :fullscreen="mobile"
+        :fullscreen="fullscreen"
         persistent
         role="alertdialog"
         :aria-labelledby="titleId"

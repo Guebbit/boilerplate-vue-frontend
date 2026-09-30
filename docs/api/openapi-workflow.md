@@ -1,15 +1,18 @@
 # OpenAPI Workflow
 
-## OpenAPI is the source of truth
+## The backend owns the contract
 
-For this boilerplate, the safest order is:
+`openapi.yaml` and `asyncapi.yaml` are **owned by the backend**, which builds them from per-module
+fragments. This repo never edits them: they arrive here through the backend's `npm run
+sync:frontend`, and everything else in `contracts/` is generated from them.
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
-    Idea[Need a new endpoint\nor payload change] --> Spec[Edit openapi.yaml]
-    Spec --> Lint[npm run lint:openapi]
-    Lint --> Generate[npm run gen:api]
+    Idea[Need a new endpoint\nor payload change] --> Spec[Edit the module's contract\nin the backend]
+    Spec --> Regen[Backend: npm run regenerate]
+    Regen --> Sync[Backend: npm run sync:frontend]
+    Sync --> Generate[Here: npm run regenerate]
     Generate --> Update[Update stores / views\nif signatures changed]
     Update --> Test[npm run test]
 
@@ -18,34 +21,34 @@ flowchart LR
     classDef tooling fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef app fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class Idea change;
-    class Spec contract;
-    class Lint,Generate tooling;
+    class Spec,Regen,Sync contract;
+    class Generate tooling;
     class Update,Test app;
 ```
 
-If the contract changes, always start with the contract. Coordinate with the backend team — both repos share `openapi.yaml` as the contract.
+If the contract changes, always start with the contract, in the backend.
 
 ## Keeping the two copies in sync
 
-`openapi.yaml` and `asyncapi.yaml` are **duplicated by hand** in the frontend and backend repos. There is deliberately no shared package, submodule or cross-repo CI check: the two repos are published as a matched pair but must stay independently clonable.
+The two repos stay independently clonable, so each carries its own copy of the contract. What
+keeps the copies identical is `npm run check:spec-identity`: it compares this repo's `openapi.yaml`
+and `asyncapi.yaml` with the backend's `boilerplate-node-backend/openapi.yaml` and `boilerplate-node-backend/asyncapi.public.yaml` (the async contract
+minus the internal queues no API client can reach), skips when the backend is not on disk, and is
+fatal under CI (the `spec-identity` job).
 
-The cost of that decision is that nothing detects cross-repo drift — and it has happened: the backend added an endpoint and the frontend's copy sat 39 lines behind for days, so the generated client described an API the backend no longer had.
-
-**Whenever the backend's spec changes**, copy both specs over and regenerate, by hand:
+**Whenever the backend's spec changes**, the backend copies both files over with `npm run
+sync:frontend`; here you regenerate and read the diff:
 
 ```bash
-cp ../boilerplate-node-backend/openapi.yaml .
-cp ../boilerplate-node-backend/asyncapi.yaml .
-npm run gen:api
-npm run gen:asyncapi
-npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
+npm run regenerate     # gen:api + gen:asyncapi, then Prettier over contracts/rest
+npm run check:spec-identity
 ```
 
-There is deliberately **no script** for this. Syncing is a judgement call, not a chore to automate: the copy is followed by reading the diff and deciding which stores and views have to change with it.
+Reading the diff is the human step: a spec change may require store or view updates. To confirm parity by hand,
+`diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
 
-Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
-
-CI cannot catch a stale _copy_; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
+CI catches both kinds of drift: a spec edited **within this repo** without regenerating (see
+below) and a copy that has fallen behind the backend (`spec-identity`).
 
 ## Freshness enforcement in CI
 
@@ -85,11 +88,11 @@ contracts/rest/
 
 ```ts
 // Axios functions + TS types — always via @api alias
-import { getProducts, createProduct } from '@api';
+import { listProducts, createProduct } from '@api';
 import type { Product, CreateProductRequest } from '@api';
 
 // Zod schemas — always via @api/schemas alias
-import { ProductSchema, CreateProductRequestSchema } from '@api/schemas';
+import { CreateProductBody, ListProductsResponse } from '@api/schemas';
 ```
 
 Never import from the file path directly (`../../contracts/rest/index.ts`) — always use the alias.
@@ -99,12 +102,12 @@ Never import from the file path directly (`../../contracts/rest/index.ts`) — a
 Orval generates enums as `as const` objects (not TypeScript `enum` declarations). Use them with `z.nativeEnum()` or for runtime checks:
 
 ```ts
-import { UpdateFeedbackRequestStatusRequestStatus } from '@api';
+import { RecordOfflinePaymentRequestMethod } from '@api';
 
-const schema = z.nativeEnum(UpdateFeedbackRequestStatusRequestStatus);
+const schema = z.nativeEnum(RecordOfflinePaymentRequestMethod);
 ```
 
-Naming convention: schema name + property name, PascalCase. Example: `UpdateFeedbackRequestStatusRequest.status` → `UpdateFeedbackRequestStatusRequestStatus`.
+Naming convention: schema name + property name, PascalCase. Example: `RecordOfflinePaymentRequest.method` → `RecordOfflinePaymentRequestMethod`.
 
 ## Orval configuration
 
@@ -119,8 +122,9 @@ Every target listed here must also appear in the `api-freshness` CI job's pathsp
 
 ### Multipart operations generate two functions
 
-Seven operations accept the same payload as either JSON or `multipart/form-data` — everything
-with an optional image: `signup`, create/update user, create/update product. Orval only emits
+Eight operations accept the same payload as either JSON or `multipart/form-data` — everything
+with an optional image: replace/update the account, create and replace/update a user, create and
+replace/update a product. Orval only emits
 `FormData` encoding for operations with a **single** request content type; given two, it passes
 the body straight to the mutator and generates no encoding at all.
 

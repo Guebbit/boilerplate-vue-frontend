@@ -71,6 +71,13 @@ const rowActionSize = useTouchFriendlySize();
 const formOpen = ref(false);
 
 /**
+ * The language dialog, reached for its `applyServerErrors` when a save names a field.
+ */
+const languageDialog = ref<{
+    applyServerErrors: (error: unknown, options: { onUnmapped: () => void }) => boolean;
+}>();
+
+/**
  * The row being edited; absent means the dialog is creating one.
  */
 const editing = ref<LocaleCapability | undefined>();
@@ -146,7 +153,14 @@ const handleSave = (fields: {
         .then(() => {
             formOpen.value = false;
         })
-        .catch((error: unknown) => reportSaveError(error));
+        .catch((error: unknown) => {
+            // A duplicate tag names its field; anything else blocks the dialog.
+            if (languageDialog.value)
+                languageDialog.value.applyServerErrors(error, {
+                    onUnmapped: () => reportSaveError(error)
+                });
+            else reportSaveError(error);
+        });
 };
 
 /**
@@ -365,7 +379,13 @@ onMounted(() => {
             </template>
         </DataTable>
 
-        <LanguageFormDialog v-model="formOpen" :language="editing" @save="handleSave">
+        <LanguageFormDialog
+            ref="languageDialog"
+            v-model="formOpen"
+            :language="editing"
+            :saving="loading"
+            @save="handleSave"
+        >
             <template #error>
                 <InlineErrorAlert :message="saveError" data-test="language-form-error" />
             </template>

@@ -161,6 +161,13 @@ const newKey = ref('');
 const languageFormOpen = ref(false);
 
 /**
+ * The language dialog, reached for its `applyServerErrors` when a save names a field.
+ */
+const languageDialog = ref<{
+    applyServerErrors: (error: unknown, options: { onUnmapped: () => void }) => boolean;
+}>();
+
+/**
  * The create-language dialog's own blocked state — the form already validated clean, so anything
  * here is a save failure the dialog stays open for, rendered through its `error` slot.
  */
@@ -314,7 +321,14 @@ const handleCreateLanguage = (fields: {
             addMessage(t('locales-dictionary-page.success-language'));
             return loadLanguage(fields.tag);
         })
-        .catch((error: unknown) => reportCreateLanguageError(error));
+        .catch((error: unknown) => {
+            // A duplicate tag names its field; anything else blocks the dialog.
+            if (languageDialog.value)
+                languageDialog.value.applyServerErrors(error, {
+                    onUnmapped: () => reportCreateLanguageError(error)
+                });
+            else reportCreateLanguageError(error);
+        });
 };
 
 // A tenant switch is a different board: different keys, different page count, stale drafts.
@@ -560,7 +574,12 @@ onMounted(() => {
             :aria-label="t('locales-dictionary-page.pagination-label')"
         />
 
-        <LanguageFormDialog v-model="languageFormOpen" @save="handleCreateLanguage">
+        <LanguageFormDialog
+            ref="languageDialog"
+            v-model="languageFormOpen"
+            :saving="loading"
+            @save="handleCreateLanguage"
+        >
             <template #error>
                 <InlineErrorAlert :message="createLanguageError" data-test="language-form-error" />
             </template>

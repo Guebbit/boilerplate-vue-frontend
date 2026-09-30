@@ -4,7 +4,6 @@
  * login/signup/reset calls, and each action chains a `.then` into the session/profile stores it
  * coordinates rather than awaiting them stepwise.
  */
-import { computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
@@ -16,8 +15,7 @@ import {
     LoginRequestRemember,
     signup as apiSignup,
     requestPasswordReset as apiRequestPasswordReset,
-    confirmPasswordReset as apiConfirmPasswordReset,
-    reauth as apiReauth
+    confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
 import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
@@ -59,10 +57,10 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const session = useSessionStore();
 
     /**
-     * The toolkit's REST slice for this store: `isLoading` backs {@link reauthing}, and every
-     * action below goes through `fetchAny`.
+     * The toolkit's REST slice for this store: every action below goes
+     * through `fetchAny`.
      */
-    const { isLoading, fetchAny } = useStructureRestApi({
+    const { fetchAny } = useStructureRestApi({
         resourceKey: 'accountAuth',
         queryClient
     });
@@ -123,30 +121,6 @@ export const useAuthStore = defineStore('accountAuth', () => {
             if (!outcome) throw new Error('login(): fetchAny resolved without a value');
             return outcome;
         });
-
-    /**
-     * Re-proves the caller's password to answer a `REAUTH_REQUIRED` 401, without ending the
-     * session. Adopts the rotated access token exactly as {@link changePassword} in
-     * `stores/profile.ts` does after a password change — dropping it would leave the stale token
-     * in the store, and the request the step-up interceptor is about to replay would 401 again.
-     *
-     * @param password - The credential being re-proven.
-     * @returns A promise resolving once the fresh token is stored.
-     */
-    const reauth = (password: string) =>
-        fetchAny(
-            () =>
-                apiReauth({ password }).then((data) => {
-                    session.setAccessToken(getTokenFromResponse(data));
-                }),
-            { key: ['reauth'] }
-        );
-
-    /**
-     * Whether a re-proof is in flight — the step-up dialog's own spinner, so it does not answer
-     * to a login or a signup running behind it.
-     */
-    const reauthing = computed(() => isLoading(['reauth']));
 
     /**
      * `Idempotency-Key` for `signup` (B10) — a network error or a 5xx during the round trip
@@ -285,10 +259,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
     };
 
     return {
-        reauthing,
-
         login,
-        reauth,
         signup,
         setAvatarAfterSignup,
         requestPasswordReset,

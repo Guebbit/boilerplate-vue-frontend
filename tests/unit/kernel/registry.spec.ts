@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import {
     assertUniqueRoutes,
-    collectLocaleSensitiveResets,
+    collectModuleLoadingKeys,
     collectModuleNavigation,
     collectModuleRoutes,
     groupNavigation,
@@ -149,25 +149,6 @@ describe('sortNavigation', () => {
     });
 });
 
-describe('collectLocaleSensitiveResets', () => {
-    it('collects the reset callback of every module that declares one', () => {
-        const productsReset = vi.fn();
-        const cartReset = vi.fn();
-
-        const resets = collectLocaleSensitiveResets([
-            { ...makeModule('products'), resetOnLocaleChange: productsReset },
-            { ...makeModule('cart'), resetOnLocaleChange: cartReset },
-            makeModule('wishlist')
-        ]);
-
-        expect(resets).toEqual([productsReset, cartReset]);
-    });
-
-    it('returns nothing for a build with no locale-sensitive module at all', () => {
-        expect(collectLocaleSensitiveResets([makeModule('orders')])).toEqual([]);
-    });
-});
-
 describe('groupNavigation', () => {
     it('buckets entries by section, defaulting an unplaced one to main', () => {
         const groups = groupNavigation([
@@ -204,5 +185,17 @@ describe('groupNavigation', () => {
         groupNavigation(entries);
 
         expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
+    });
+});
+
+describe('collectModuleLoadingKeys', () => {
+    it('flattens the prefixes of the modules that opt in and skips the rest', () => {
+        const modules: AppModule[] = [
+            { ...makeModule('account'), loadingKeys: ['account'] },
+            makeModule('observability'),
+            { ...makeModule('webhooks'), loadingKeys: ['webhooks', 'hooks-extra'] }
+        ];
+
+        expect(collectModuleLoadingKeys(modules)).toEqual(['account', 'webhooks', 'hooks-extra']);
     });
 });

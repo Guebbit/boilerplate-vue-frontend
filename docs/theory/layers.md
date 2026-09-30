@@ -41,12 +41,12 @@ Two modules that each need the other are not a dependency pair: either they are 
 of them is holding state that belongs to the other. A cycle anywhere in `MODULE_EDGES` fails every
 `npm run lint` — a top-level check in `eslint.config.ts`, `scripts/module-edges.ts`'s
 `assertAcyclicModuleEdges` — so this is a rule for review at the moment a new edge is proposed, not
-only after the fact. One real cycle predates the check and is grandfathered by name
-(`KNOWN_CYCLE_EDGES`) rather than hidden: `cart` and `products` do need each other today, for two
-different reasons, and resolving that for real still means one of the two outcomes above.
+only after the fact. `cart` and `products` once needed each other; the product page's buttons
+now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge
+points one way.
 
-The sixteen modules in this build are `account`, `admin`, `api-keys`, `cart`, `delivery`, `demo`,
-`feedback`, `inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users`,
+The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `demo`, `feedback`,
+`inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `users`,
 `webhooks` and `wishlist`.
 
 `demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
@@ -62,8 +62,8 @@ flowchart LR
     orders --> delivery
     orders --> payments
     cart --> delivery
-    products --> cart
-    products --> wishlist
+    cart --> products
+    wishlist --> products
     wishlist --> cart
     inventory --> products
     account --> users
@@ -77,7 +77,7 @@ flowchart LR
 ```
 
 Read an arrow as "imports from, through the target's barrel". `orders → payments` because
-checkout settles a payment; `products → wishlist` because the product page writes a wishlist line.
+checkout settles a payment; `wishlist → products` because the saved lines are joined to their product records.
 Nothing points back, which is what keeps the graph a DAG.
 
 ::: tip This list goes stale
@@ -213,7 +213,7 @@ For a product flow you typically move through:
 - `src/modules/<name>/composables/<useThing>.ts` (optional — products has two,
   `use-active-locales.ts` and `translation-tab-errors.ts`)
 - `src/modules/products/store.ts`
-- `contracts/rest/index.ts` → `getProducts()`
+- `contracts/rest/index.ts` → `listProducts()`
 - `src/infrastructure/http/index.ts`
 
 The same shape repeats for every entity. The entity names are examples.

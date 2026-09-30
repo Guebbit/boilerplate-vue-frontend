@@ -11,10 +11,9 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
-import { ERROR_CODES } from '@api/error-codes';
+import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User, AccountExportResponse, EmailVerificationRequested } from '@types';
+import type { User, AccountExportResponse } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -23,7 +22,6 @@ import {
     updateAccountWithMultipart as apiUpdateAccountWithMultipart,
     cancelPendingEmailChange as apiCancelPendingEmailChange,
     changePassword as apiChangePassword,
-    requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
     updateUserById as apiUpdateUserById,
@@ -63,17 +61,6 @@ const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undef
  * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
  * See `docs/theory/modules.md` for why this domain is split this many ways.
  */
-
-/**
- * The server's own resend cooldown from a `requestEmailVerification` 429, or `undefined` when the
- * rejection was something else. A component wires but does not call the API, so this is where the
- * one code it needs to recognise (`EMAIL_VERIFY_RESEND_TOO_SOON`) lives instead.
- *
- * @param error - The rejected value `requestEmailVerification()` threw.
- * @returns Seconds to wait, or `undefined`.
- */
-export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>
-    getRetryAfter(error, ERROR_CODES.EMAIL_VERIFY_RESEND_TOO_SOON);
 
 export const useProfileStore = defineStore('accountProfile', () => {
     /**
@@ -206,8 +193,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
     });
 
     /**
-     * Updates the current user's own profile through `PATCH /account` — this call only ever sends
-     * the fields the caller actually changed (AUDIT_0924 D17d: `PUT /account` would clear every
+     * Updates the current user's own profile through `PATCH /account` — a PATCH merges what it
+     * sends, so a field the caller leaves out stays as it is (a `PUT /account` would clear every
      * field left out instead, RFC 9110 §9.3.4).
      *
      * Its own endpoint, not `PATCH /users/{id}`: the users writes sit behind the admin guard, and
@@ -366,7 +353,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
-     * unlike the reset flow. Other sessions stay signed in; the sessions panel is where they end.
+     * unlike the reset flow.
      *
      * The API revokes every OTHER session on success and answers with a fresh access token for
      * THIS one (plus fresh session cookies), so the token is adopted here the way login adopts
@@ -384,21 +371,6 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 session.setAccessToken(getTokenFromResponse(data));
             })
         );
-
-    /**
-     * Re-sends the email-verification link — for the mail that never arrived. Signup already
-     * sends the first one.
-     *
-     * @returns The server's own cooldown in seconds. A caller that counts this down never sees
-     *  the 429 the endpoint answers inside it — the number is the server's, never the client's,
-     *  so the two cannot disagree.
-     */
-    const requestEmailVerification = (): Promise<number> =>
-        fetchAny(() =>
-            apiRequestEmailVerification().then(
-                (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
-            )
-        ).then((seconds) => seconds ?? 0);
 
     /**
      * Spends the emailed verification token. Public — the visitor following the link is not
@@ -504,7 +476,6 @@ export const useProfileStore = defineStore('accountProfile', () => {
         cancelPendingEmailChange,
         updateOwnRole,
         changePassword,
-        requestEmailVerification,
         confirmEmailVerification,
         confirmEmailChange,
         requestAccountDelete,

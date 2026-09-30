@@ -14,7 +14,7 @@ export default {
 import { computed, ref, useId, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
@@ -66,10 +66,9 @@ const offerSetAsDefault = computed(() => !editing && addresses.value.length > 0)
 const setAsDefaultOnAdd = ref(false);
 
 /**
- * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating at
- * a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
@@ -149,7 +148,7 @@ const addressSchema = z.object({
  * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state
  * change, not a focus move.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } =
+const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
@@ -202,12 +201,20 @@ const handleSave = () =>
                 addMessage(t('profile-page.addresses-saved'));
                 open.value = false;
             })
-            .catch((error: unknown) => reportSaveError(error));
+            .catch((error: unknown) => {
+                // A refusal that names a field lands on it; anything else blocks the dialog.
+                applyServerErrors(error, { onUnmapped: () => reportSaveError(error) });
+            });
     });
 </script>
 
 <template>
-    <v-dialog v-model="open" max-width="480" :fullscreen="mobile" :aria-labelledby="dialogTitleId">
+    <v-dialog
+        v-model="open"
+        max-width="480"
+        :fullscreen="fullscreen"
+        :aria-labelledby="dialogTitleId"
+    >
         <v-card class="p-6" data-test="address-dialog">
             <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
                 {{ editing ? t('profile-page.addresses-edit') : t('profile-page.addresses-add') }}
@@ -289,6 +296,7 @@ const handleSave = () =>
                         color="primary"
                         data-test="address-save"
                         :loading="loading"
+                        :disabled="loading"
                     >
                         {{ t('profile-page.addresses-save') }}
                     </v-btn>

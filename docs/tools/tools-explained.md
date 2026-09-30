@@ -97,18 +97,6 @@ this diagram exists to prevent.
 
 ---
 
-### Sass / sass-embedded
-
-**What it is.** Sass is a CSS preprocessor that adds variables, nesting, mixins, and functions on top of plain CSS.
-
-**Problem it solves.** Plain CSS has no shared variables or reusable patterns. Sass lets you define design tokens once and use them everywhere, keeping styles consistent and maintainable.
-
-**In this repo.** Global styles live in `src/styles/` (theme, main). Shared design tokens come from `@guebbit/css-toolkit`.
-
-→ [Runtime](./runtime.md)
-
----
-
 ### Pinia
 
 **What it is.** Pinia is the official state management library for Vue 3. Stores are defined with `defineStore()` and are fully typed and devtools-integrated.
@@ -165,7 +153,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** `fetch` requires manual error checking, JSON parsing, and has no interceptor system. Axios makes it easy to attach auth headers on every request and intercept errors globally.
 
-**In this repo.** A single axios instance lives in `src/infrastructure/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `IResponseReject` and handle `401`/`403`/`5xx` redirects.
+**In this repo.** A single axios instance lives in `src/infrastructure/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `AxiosResponseErrorData`, renew an expired token and replay the request once on a `401`, and park a `REAUTH_REQUIRED` for the step-up prompt. Nothing redirects: what a failure looks like is the call site's decision.
 
 → [Runtime](./runtime.md)
 
@@ -259,10 +247,10 @@ this diagram exists to prevent.
 
 ---
 
-### @guebbit/css-toolkit + @guebbit/vue-toolkit
+### @guebbit/vue-toolkit
 
-**What they are.** Internal shared libraries providing SCSS design tokens (`css-toolkit`) and reusable Vue components and composables (`vue-toolkit`).
+**What it is.** An internal shared library of reusable Vue composables and stores — the REST/CRUD resource stores, form validation, notifications and loading state.
 
-**Problem they solve.** Prevents duplication of base styles and low-level UI components across multiple boilerplate variants.
+**Problem it solves.** Prevents duplication of the same store and form plumbing across multiple boilerplate variants.
 
-**In this repo.** Imported in `src/styles/` and used directly in components where needed.
+**In this repo.** Imported by the domain stores (`useStructureRestApi`, `useStructureCrudApi`) and by every form (`useStructureFormValidation`).

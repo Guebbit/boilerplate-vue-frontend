@@ -28,6 +28,8 @@ import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { collectModuleLoadingKeys } from '@/kernel/registry';
+import { enabledModules } from '@/modules';
 
 /**
  * The active route, read for `meta.title`/`meta.customHero`/`meta.centered` — the three things a
@@ -118,23 +120,11 @@ const legalLinks = STATIC_PAGES.map((page) => ({
 const MAIN_LOADING_KEYS = ['core'];
 
 /**
- * Loading keys the discreet corner indicator answers to — one prefix per domain store, matching
- * every action key under it. A key in neither list is deliberately invisible: listing them is
- * what separates "the app is doing something the visitor asked for" from "a request exists".
+ * Loading keys the discreet corner indicator answers to — each enabled module's own `loadingKeys`
+ * prefixes. A key nobody declares is deliberately invisible: opting in is what separates "the app
+ * is doing something the visitor asked for" from "a request exists".
  */
-const SIDE_LOADING_KEYS = [
-    'account',
-    'cart',
-    'delivery',
-    'feedback',
-    'inventory',
-    'locales',
-    'orders',
-    'payments',
-    'products',
-    'users',
-    'wishlist'
-];
+const SIDE_LOADING_KEYS = collectModuleLoadingKeys(enabledModules);
 
 /**
  * Reads `core`'s own manual flag — only `Playground.vue` still sets one by hand, so this stays
@@ -154,6 +144,14 @@ const isMainLoading = computed(() => isLoading(MAIN_LOADING_KEYS));
  * writes to any more.
  */
 const isSideLoading = useIsLoading(SIDE_LOADING_KEYS, queryClient);
+
+/**
+ * The indicator's own visibility. `useIsLoading` reads an empty prefix list as "every resource",
+ * so a build whose modules declare no `loadingKeys` must not light it for all traffic.
+ */
+const showSideLoading = computed(
+    () => SIDE_LOADING_KEYS.length > 0 && isSideLoading.value && !isMainLoading.value
+);
 
 /**
  * Reactive toast queue, rendered below as one `v-alert` per visible message.
@@ -308,7 +306,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         <!-- Discreet corner loader (background activity) -->
         <v-fade-transition>
             <div
-                v-show="isSideLoading && !isMainLoading"
+                v-show="showSideLoading"
                 class="fixed bottom-4 left-4 z-[9998]"
                 role="status"
                 data-test="activity-indicator"

@@ -13,7 +13,7 @@
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDisplay } from 'vuetify';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -31,6 +31,11 @@ const props = defineProps<{
      * The language being edited; absent means the dialog creates one.
      */
     language?: LocaleCapability;
+    /**
+     * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
+     * second click cannot send the write twice.
+     */
+    saving?: boolean;
 }>();
 
 /**
@@ -67,10 +72,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
- * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
-const { mobile } = useDisplay();
+const fullscreen = useFullscreenDialog();
 
 /**
  * Whether the dialog is editing an existing language rather than creating one.
@@ -87,21 +91,22 @@ const titleId = useId();
  * what every entry references, so the API keeps it immutable — and a field that is sometimes
  * required is a field nobody can read the rule of.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation<{
-    tag: string;
-    name: string;
-    nativeName: string;
-    direction: LocaleDirection;
-    active: boolean;
-}>(
-    { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
-    computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
-    {
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
+const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
+    useStructureFormValidation<{
+        tag: string;
+        name: string;
+        nativeName: string;
+        direction: LocaleDirection;
+        active: boolean;
+    }>(
+        { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
+        computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
+        {
+            revalidateOn: locale,
+            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
+    );
 
 /*
  * Refill on every open rather than on mount: the dialog is a single instance the page reuses, so
@@ -130,10 +135,16 @@ const directionOptions = computed(() => [
  * Validates and emits, or shows the form's errors — `handleSubmit`'s job either way.
  */
 const handleSave = () => handleSubmit((fields) => emit('save', fields));
+
+/**
+ * The parent's save fails after this form validated clean; a refusal that names one of its fields
+ * is put on that field through this, and the parent blocks the dialog only when it returns false.
+ */
+defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" :fullscreen="mobile" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="480" :fullscreen="fullscreen" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="language-form">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
@@ -189,7 +200,13 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
                         Never disabled on validity: a submit that cannot be pressed explains
                         nothing, while `handleSubmit` shows the messages and says so.
                     -->
-                    <v-btn type="submit" color="primary" data-test="language-save">
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        data-test="language-save"
+                        :loading="saving"
+                        :disabled="saving"
+                    >
                         {{ t('locale-form.button-save') }}
                     </v-btn>
                 </div>

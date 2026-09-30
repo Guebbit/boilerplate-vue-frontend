@@ -4,44 +4,65 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 
 ## Route table
 
-Every screen the enabled modules contribute, generated from their route records — the same records
-each [module page](../modules/) renders, so the two cannot disagree.
+Every screen the enabled modules contribute, generated from their route records by
+`tests/cross-cutting/sitemap-document.spec.ts`, which fails when this table drifts. Regenerate it with
+`UPDATE_SITEMAP=1 npx vitest run tests/cross-cutting/sitemap-document.spec.ts`, then
+`npx prettier --write docs/theory/sitemap.md`.
 
-| Module                                         | Path                     | Route name             | Access   | Permission                   | View                             |
-| ---------------------------------------------- | ------------------------ | ---------------------- | -------- | ---------------------------- | -------------------------------- |
-| [`account`](../modules/account.md)             | `login`                  | `Login`                | `guest`  | —                            | `views/Login.vue`                |
-| [`account`](../modules/account.md)             | `signup`                 | `Signup`               | `guest`  | —                            | `views/Signup.vue`               |
-| [`account`](../modules/account.md)             | `password-reset`         | `PasswordResetRequest` | `guest`  | —                            | `views/PasswordResetRequest.vue` |
-| [`account`](../modules/account.md)             | `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | —                            | `views/PasswordResetConfirm.vue` |
-| [`account`](../modules/account.md)             | `account-delete/confirm` | `AccountDeleteConfirm` | `public` | —                            | `views/AccountDeleteConfirm.vue` |
-| [`account`](../modules/account.md)             | `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | —                            | `views/VerifyEmailConfirm.vue`   |
-| [`account`](../modules/account.md)             | `profile`                | `Profile`              | `auth`   | —                            | `views/Profile.vue`              |
-| [`account`](../modules/account.md)             | `logout`                 | `Logout`               | `public` | —                            | `—`                              |
-| [`cart`](../modules/cart.md)                   | `cart`                   | `Cart`                 | `auth`   | —                            | `views/Cart.vue`                 |
-| [`demo`](../modules/demo.md)                   | `playground`             | `Playground`           | `public` | —                            | `views/Playground.vue`           |
-| [`feedback`](../modules/feedback.md)           | `contact`                | `Contact`              | `public` | —                            | `views/Contact.vue`              |
-| [`feedback`](../modules/feedback.md)           | `feedback`               | `FeedbackInbox`        | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`        |
-| [`inventory`](../modules/inventory.md)         | `inventory`              | `InventoryLedger`      | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`      |
-| [`locales`](../modules/locales.md)             | `locales`                | `LocalesList`          | `auth`   | `update Locale`              | `views/LocalesList.vue`          |
-| [`locales`](../modules/locales.md)             | `locales/dictionary`     | `LocalesDictionary`    | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`    |
-| [`locales`](../modules/locales.md)             | `locales/:tag`           | `LocaleEntries`        | `auth`   | `update Locale`              | `views/LocaleEntries.vue`        |
-| [`observability`](../modules/observability.md) | `admin`                  | `Admin`                | `auth`   | `read ObservabilitySnapshot` | `views/Admin.vue`                |
-| [`observability`](../modules/observability.md) | `audit`                  | `AuditLog`             | `auth`   | `read AuditLog`              | `views/AuditLog.vue`             |
-| [`observability`](../modules/observability.md) | `playground/realtime`    | `RealtimePlayground`   | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`   |
-| [`orders`](../modules/orders.md)               | `orders`                 | `OrdersList`           | `auth`   | —                            | `views/OrdersList.vue`           |
-| [`orders`](../modules/orders.md)               | `orders/:id`             | `OrderTarget`          | `auth`   | —                            | `views/Order.vue`                |
-| [`orders`](../modules/orders.md)               | `orders/:id/edit`        | `OrderEdit`            | `auth`   | `update Order`               | `views/OrderEdit.vue`            |
-| [`products`](../modules/products.md)           | `products`               | `ProductsList`         | `public` | —                            | `views/ProductsList.vue`         |
-| [`products`](../modules/products.md)           | `products/create`        | `ProductCreate`        | `auth`   | `create Product`             | `views/ProductCreate.vue`        |
-| [`products`](../modules/products.md)           | `products/:id`           | `ProductTarget`        | `public` | —                            | `views/Product.vue`              |
-| [`products`](../modules/products.md)           | `products/:id/edit`      | `ProductEdit`          | `auth`   | `update Product`             | `views/ProductEdit.vue`          |
-| [`users`](../modules/users.md)                 | `users`                  | `UsersList`            | `auth`   | `read User`                  | `views/UsersList.vue`            |
-| [`users`](../modules/users.md)                 | `users/create`           | `UserCreate`           | `auth`   | `create User`                | `views/UserCreate.vue`           |
-| [`users`](../modules/users.md)                 | `users/:id`              | `UserTarget`           | `auth`   | `read User`                  | `views/User.vue`                 |
-| [`users`](../modules/users.md)                 | `users/:id/edit`         | `UserEdit`             | `auth`   | `update User`                | `views/UserEdit.vue`             |
-| [`wishlist`](../modules/wishlist.md)           | `wishlist`               | `Wishlist`             | `auth`   | —                            | `views/Wishlist.vue`             |
+<!-- sitemap:start -->
 
-31 screens across 11 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
+| Module                                         | Path                                   | Route name             | Access   | Permission                   | View                             |
+| ---------------------------------------------- | -------------------------------------- | ---------------------- | -------- | ---------------------------- | -------------------------------- |
+| [`account`](../modules/account.md)             | `login`                                | `Login`                | `guest`  | —                            | `views/Login.vue`                |
+| [`account`](../modules/account.md)             | `signup`                               | `Signup`               | `guest`  | —                            | `views/Signup.vue`               |
+| [`account`](../modules/account.md)             | `login/2fa`                            | `TwoFactorChallenge`   | `guest`  | —                            | `views/TwoFactorChallenge.vue`   |
+| [`account`](../modules/account.md)             | `password-reset`                       | `PasswordResetRequest` | `guest`  | —                            | `views/PasswordResetRequest.vue` |
+| [`account`](../modules/account.md)             | `password-reset/confirm`               | `PasswordResetConfirm` | `guest`  | —                            | `views/PasswordResetConfirm.vue` |
+| [`account`](../modules/account.md)             | `account-delete/confirm`               | `AccountDeleteConfirm` | `public` | —                            | `views/AccountDeleteConfirm.vue` |
+| [`account`](../modules/account.md)             | `verify-email/confirm`                 | `VerifyEmailConfirm`   | `public` | —                            | `views/VerifyEmailConfirm.vue`   |
+| [`account`](../modules/account.md)             | `email-change/confirm`                 | `EmailChangeConfirm`   | `public` | —                            | `views/EmailChangeConfirm.vue`   |
+| [`account`](../modules/account.md)             | `oauth/callback`                       | `OAuthCallback`        | `public` | —                            | `views/OAuthCallback.vue`        |
+| [`account`](../modules/account.md)             | `profile`                              | `Profile`              | `auth`   | —                            | `views/Profile.vue`              |
+| [`account`](../modules/account.md)             | `logout`                               | `Logout`               | `public` | —                            | `—`                              |
+| [`api-keys`](../modules/api-keys.md)           | `api-keys`                             | `ApiKeysList`          | `auth`   | `read ApiKey`                | `views/ApiKeysList.vue`          |
+| [`api-keys`](../modules/api-keys.md)           | `api-keys/create`                      | `ApiKeyCreate`         | `auth`   | `create ApiKey`              | `views/ApiKeyCreate.vue`         |
+| [`cart`](../modules/cart.md)                   | `cart`                                 | `Cart`                 | `auth`   | —                            | `views/Cart.vue`                 |
+| [`demo`](../modules/demo.md)                   | `playground`                           | `Playground`           | `public` | —                            | `views/Playground.vue`           |
+| [`feedback`](../modules/feedback.md)           | `contact`                              | `Contact`              | `public` | —                            | `views/Contact.vue`              |
+| [`feedback`](../modules/feedback.md)           | `feedback`                             | `FeedbackInbox`        | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`        |
+| [`inventory`](../modules/inventory.md)         | `inventory`                            | `InventoryLedger`      | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`      |
+| [`locales`](../modules/locales.md)             | `locales`                              | `LocalesList`          | `auth`   | `update Locale`              | `views/LocalesList.vue`          |
+| [`locales`](../modules/locales.md)             | `locales/dictionary`                   | `LocalesDictionary`    | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`    |
+| [`locales`](../modules/locales.md)             | `locales/:tag`                         | `LocaleEntries`        | `auth`   | `update Locale`              | `views/LocaleEntries.vue`        |
+| [`locales`](../modules/locales.md)             | `locales/translations/:entityType/:id` | `EntityTranslations`   | `auth`   | `read Translation`           | `views/EntityTranslations.vue`   |
+| [`observability`](../modules/observability.md) | `admin`                                | `Admin`                | `auth`   | `read ObservabilitySnapshot` | `views/Admin.vue`                |
+| [`observability`](../modules/observability.md) | `audit`                                | `AuditLog`             | `auth`   | `read AuditLog`              | `views/AuditLog.vue`             |
+| [`observability`](../modules/observability.md) | `playground/realtime`                  | `RealtimePlayground`   | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`   |
+| [`orders`](../modules/orders.md)               | `orders`                               | `OrdersList`           | `auth`   | —                            | `views/OrdersList.vue`           |
+| [`orders`](../modules/orders.md)               | `orders/:id`                           | `OrderTarget`          | `auth`   | —                            | `views/Order.vue`                |
+| [`orders`](../modules/orders.md)               | `orders/:id/edit`                      | `OrderEdit`            | `auth`   | `update Order`               | `views/OrderEdit.vue`            |
+| [`products`](../modules/products.md)           | `products`                             | `ProductsList`         | `public` | —                            | `views/ProductsList.vue`         |
+| [`products`](../modules/products.md)           | `products/create`                      | `ProductCreate`        | `auth`   | `create Product`             | `views/ProductCreate.vue`        |
+| [`products`](../modules/products.md)           | `products/:id`                         | `ProductTarget`        | `public` | —                            | `views/Product.vue`              |
+| [`products`](../modules/products.md)           | `products/:id/edit`                    | `ProductEdit`          | `auth`   | `update Product`             | `views/ProductEdit.vue`          |
+| [`returns`](../modules/returns.md)             | `returns`                              | `ReturnsList`          | `auth`   | —                            | `views/ReturnsList.vue`          |
+| [`returns`](../modules/returns.md)             | `returns/:id`                          | `ReturnTarget`         | `auth`   | —                            | `views/Return.vue`               |
+| [`users`](../modules/users.md)                 | `users`                                | `UsersList`            | `auth`   | `read User`                  | `views/UsersList.vue`            |
+| [`users`](../modules/users.md)                 | `users/create`                         | `UserCreate`           | `auth`   | `create User`                | `views/UserCreate.vue`           |
+| [`users`](../modules/users.md)                 | `users/:id`                            | `UserTarget`           | `auth`   | `read User`                  | `views/User.vue`                 |
+| [`users`](../modules/users.md)                 | `users/:id/edit`                       | `UserEdit`             | `auth`   | `update User`                | `views/UserEdit.vue`             |
+| [`webhooks`](../modules/webhooks.md)           | `webhooks/subscriptions`               | `WebhooksList`         | `auth`   | `read WebhookSubscription`   | `views/WebhooksList.vue`         |
+| [`webhooks`](../modules/webhooks.md)           | `webhooks/subscriptions/create`        | `WebhookCreate`        | `auth`   | `create WebhookSubscription` | `views/WebhookCreate.vue`        |
+| [`webhooks`](../modules/webhooks.md)           | `webhooks/subscriptions/:id`           | `WebhookTarget`        | `auth`   | `read WebhookSubscription`   | `views/WebhookTarget.vue`        |
+| [`webhooks`](../modules/webhooks.md)           | `webhooks/subscriptions/:id/edit`      | `WebhookEdit`          | `auth`   | `update WebhookSubscription` | `views/WebhookEdit.vue`          |
+| [`webhooks`](../modules/webhooks.md)           | `webhooks/deliveries`                  | `WebhookDeliveries`    | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`    |
+| [`wishlist`](../modules/wishlist.md)           | `wishlist`                             | `Wishlist`             | `auth`   | —                            | `views/Wishlist.vue`             |
+
+44 screens across 14 modules.
+
+<!-- sitemap:end -->
+
+Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
 `meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
 `GET /account/abilities`. Together they are the only place a screen's requirement is declared; a
 menu entry inherits both rather than restating them. There is no `admin` level: a screen names the

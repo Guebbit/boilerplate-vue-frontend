@@ -6,7 +6,7 @@ each row go deeper.
 ## The 30-second version
 
 ```bash
-npm run test:module -- src/modules/products   # one module, unit-level, seconds
+npm run test:unit -- src/modules/products     # one module, unit-level, seconds
 npm run test:unit                             # every unit test
 npm run test:report                           # WHERE the time and the failures are, per module
 npm run complete                              # the whole gate, exactly as CI runs it
@@ -19,7 +19,7 @@ know _which domain_, the third line is the one.
 
 | Command                            | Answers                                                   | Time    | Gate?             |
 | ---------------------------------- | --------------------------------------------------------- | ------- | ----------------- |
-| `test:module -- <path>`            | Did I break the module I'm editing?                       | seconds | —                 |
+| `test:unit -- <path>`              | Did I break the module I'm editing?                       | seconds | —                 |
 | `test:unit`                        | Did I break a unit anywhere?                              | ~9s     | ✅                |
 | `test:unit:coverage`               | …and what is still unexercised?                           | ~25s    | ✅                |
 | `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
@@ -40,8 +40,8 @@ the suite twice (FA99).
 **One module's unit tests** — the path is the filter:
 
 ```bash
-npm run test:module -- src/modules/products
-npm run test:module -- src/modules/cart/tests/store.spec.ts
+npm run test:unit -- src/modules/products
+npm run test:unit -- src/modules/cart/tests/store.spec.ts
 ```
 
 **One e2e spec** — via `E2E_SPEC`, because `start-server-and-test` takes exactly three arguments

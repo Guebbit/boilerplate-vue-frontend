@@ -28,6 +28,7 @@ import routes from './routes';
  */
 export default {
     name: 'orders',
+    loadingKeys: ['orders'],
     routes,
     navigation: [
         {
@@ -43,14 +44,5 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
-    },
-    // Every cached order embeds its lines' resolved, language-dependent product text, so a
-    // language switch has to wipe it. A dynamic `import('./store')` rather than a top-level one:
-    // this manifest is evaluated eagerly for every enabled module, and a static import would
-    // pull the whole store into that same eager chunk for a callback that only fires after a
-    // real switch.
-    // Returned, not `void`-ed: the locale guard awaits this so a page it lets through never
-    // renders off a cache the reset hasn't reached yet.
-    resetOnLocaleChange: () =>
-        import('./store').then(({ useOrdersStore }) => useOrdersStore().resetForLocaleChange())
+    }
 } satisfies AppModule;

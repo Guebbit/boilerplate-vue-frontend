@@ -7,6 +7,7 @@
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { getCurrentLocale } from '@/i18n';
 import {
     listOrders,
     searchOrders,
@@ -78,8 +79,7 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteOne: deleteOrder,
         deleteTarget,
         updateTarget,
-        fetchAny,
-        resetAll
+        fetchAny
     } = useStructureCrudApi<
         Order,
         string,
@@ -119,6 +119,15 @@ export const useOrdersStore = defineStore('orders', () => {
         {
             resourceKey: 'orders',
             queryClient,
+            /**
+             * Cache scope: the language the request carried.
+             *
+             * Every cached order embeds its lines' `OrderLineProduct` (title and description),
+             * resolved in the caller's language, so it is only valid under it. Keyed on the
+             * locale, a switch reads a different scope — nothing stale can be served — and the
+             * toolkit cancels and drops the old one once no watcher shows it.
+             */
+            dependsOn: () => [getCurrentLocale()],
             /**
              * 5 000 instead of the toolkit's 100 000 default.
              *
@@ -244,22 +253,6 @@ export const useOrdersStore = defineStore('orders', () => {
         overrideStatus,
         hardDeleteOrder,
         restoreOrder,
-        fetchInvoice,
-        /**
-         * Forget everything a language switch invalidated: the cached orders AND the cached
-         * RESPONSES behind them.
-         *
-         * Every cached order embeds its lines' `OrderLineProduct`, title and description
-         * included, resolved server-side in whatever language the request carried. Dropping the
-         * records alone is not enough — the toolkit answers a repeat fetch from its own query
-         * cache while that entry is still fresh, so the next read puts the old language straight
-         * back without making a request. `resetAll()` drops every entry of this resource under
-         * the current scope — records, lists and searches alike.
-         *
-         * The module manifest wires this into `resetOnLocaleChange`.
-         */
-        resetForLocaleChange: () => {
-            resetAll();
-        }
+        fetchInvoice
     };
 });

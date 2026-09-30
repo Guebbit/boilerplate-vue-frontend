@@ -23,6 +23,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { FeedbackRequestStatus } from '@/types/enums.ts';
@@ -90,6 +92,16 @@ const statusChoice = useAnyFilterChoice(
 const isFiltered = computed(() => Object.values(filters.value).some(Boolean));
 
 /**
+ * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: pageCurrent,
+    pageSize: pageSize,
+    params: { text: 'string', email: 'string', status: Object.values(FeedbackRequestStatus) }
+});
+
+/**
  * Search function bound to the store's reactive `filters`/pagination, reporting a failed request
  * as a toast.
  */
@@ -98,25 +110,14 @@ const { search } = watchSearchRequests({
 });
 
 /**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise, resolving once the page is loaded.
+ * Apply and clear, both restarting from the first page and keeping the URL in step.
  */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page from the API.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page: pageCurrent,
+    search,
+    onApplied: syncUrl
+});
 
 /**
  * The row actions' own blocked state — a status move and a delete share one instance, since

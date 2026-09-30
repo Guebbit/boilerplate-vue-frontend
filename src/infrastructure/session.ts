@@ -15,13 +15,20 @@ import {
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
-    updateAccount as apiUpdateAccount
+    updateAccount as apiUpdateAccount,
+    reauth as apiReauth,
+    requestEmailVerification as apiRequestEmailVerification
 } from '@api';
-import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { ERROR_CODES } from '@api/error-codes';
+import {
+    getTokenFromResponse,
+    getPayloadFromResponse,
+    getRetryAfter
+} from '@/infrastructure/http/envelope.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type { Abilities, PackedRules } from '@types';
+import type { Abilities, EmailVerificationRequested, PackedRules } from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -180,6 +187,17 @@ const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
  * @param name - Cookie name.
  */
 const clearCookie = (name: string) => writeCookie(name, '', 0);
+
+/**
+ * The server's own resend cooldown from a `requestEmailVerification` 429, or `undefined` when the
+ * rejection was something else. The banner wires but does not call the API, so the one code it
+ * needs to recognise (`EMAIL_VERIFY_RESEND_TOO_SOON`) lives here beside the call.
+ *
+ * @param error - The rejected value `requestEmailVerification()` threw.
+ * @returns Seconds to wait, or `undefined`.
+ */
+export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>
+    getRetryAfter(error, ERROR_CODES.EMAIL_VERIFY_RESEND_TOO_SOON);
 
 /**
  * Store instance: see the module doc above for the `isAuth` derivation rule.
@@ -538,6 +556,44 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * Whether a re-proof is in flight — the step-up dialog's own spinner, so it does not answer
+     * to a login or a signup running behind it.
+     */
+    const reauthing = ref(false);
+
+    /**
+     * Proves the password again and adopts the rotated access token — the step-up prompt's one
+     * call. Lives here, not in `account`, because the shell renders the prompt on every page and
+     * a session is what it renews.
+     *
+     * @param password - The visitor's current password.
+     * @returns A promise resolving once the fresh token is stored; rejects with the API's error
+     *  (a 401 means a wrong password).
+     */
+    const reauth = (password: string): Promise<void> => {
+        reauthing.value = true;
+        return apiReauth({ password })
+            .then((data) => {
+                setAccessToken(getTokenFromResponse(data));
+            })
+            .finally(() => {
+                reauthing.value = false;
+            });
+    };
+
+    /**
+     * Asks for the address-verification email to be sent again — the shell banner's one action,
+     * so it rides with the `verified` flag it acts on.
+     *
+     * @returns The server's own cooldown in seconds. A caller that counts this down never sees
+     *  the 429 the endpoint answers inside it — the number is the server's, never the client's.
+     */
+    const requestEmailVerification = (): Promise<number> =>
+        apiRequestEmailVerification().then(
+            (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
+        );
+
+    /**
      * Ends THIS session only: the refresh cookie's token is revoked server-side and local state is
      * cleared. Other devices keep their own tokens — `logoutAll` is the one that ends everything.
      *
@@ -580,6 +636,9 @@ export const useSessionStore = defineStore('session', () => {
         refreshToken,
         loadViewer,
         persistLocalePreference,
+        reauthing,
+        reauth,
+        requestEmailVerification,
         clearSession,
         logout,
         logoutAll

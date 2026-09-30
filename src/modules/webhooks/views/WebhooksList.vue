@@ -22,6 +22,8 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { WebhookSubscription } from '@types';
 
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -105,6 +107,16 @@ const tableHeaders = computed<CoreDataTableHeader<WebhookSubscription>[]>(() => 
 ]);
 
 /**
+ * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: pageCurrent,
+    pageSize: pageSize,
+    params: { enabled: 'boolean' }
+});
+
+/**
  * Search function bound to the store's reactive `filters`/pagination, reporting a failed request
  * as a toast.
  */
@@ -113,25 +125,14 @@ const { search } = watchSubscriptionsSearch({
 });
 
 /**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise, resolving once the page is loaded.
+ * Apply and clear, both restarting from the first page and keeping the URL in step.
  */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page from the API.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page: pageCurrent,
+    search,
+    onApplied: syncUrl
+});
 
 /**
  * The row action's own blocked state — delete is the table's only write action, behind a confirm

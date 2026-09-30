@@ -19,8 +19,8 @@ import vuetify from '@/ui/vuetify';
 
 const reauthMock = vi.fn();
 
-vi.mock('@/modules/account/stores/auth.ts', () => ({
-    useAuthStore: () => ({ reauth: reauthMock, reauthing: ref(false) })
+vi.mock('@/infrastructure/session.ts', () => ({
+    useSessionStore: () => ({ reauth: reauthMock, reauthing: ref(false) })
 }));
 
 // Identity `t`, so an assertion reads the dictionary KEY rather than a translation that would

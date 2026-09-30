@@ -33,6 +33,7 @@ config_entry() {
     config_entry 'API_URL' "${VITE_API_URL:-}"
     config_entry 'API_SSE' "${VITE_API_SSE:-}"
     config_entry 'APP_NAME' "${VITE_APP_NAME:-}"
+    config_entry 'APP_LOGO' "${VITE_APP_LOGO:-}"
     config_entry 'LOCALE_TENANT' "${VITE_LOCALE_TENANT:-}"
     config_entry 'APP_DEFAULT_LOCALE' "${VITE_APP_DEFAULT_LOCALE:-}"
     config_entry 'APP_FALLBACK_LOCALE' "${VITE_APP_FALLBACK_LOCALE:-}"

@@ -32,6 +32,7 @@ import routes from './routes';
  */
 export default {
     name: 'account',
+    loadingKeys: ['account'],
     routes,
     navigation: [
         {

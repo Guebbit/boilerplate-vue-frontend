@@ -30,6 +30,7 @@ interface ImportMetaEnv {
     readonly VITE_APP_FALLBACK_LOCALE?: string;
     readonly VITE_APP_LOG_LEVEL?: string;
     readonly VITE_APP_LOG_SCOPES?: string;
+    readonly VITE_APP_LOGO?: string;
     readonly VITE_APP_NAME?: string;
     readonly VITE_AXIOS_TIMEOUT?: string;
     readonly VITE_FARO_APP_NAME?: string;

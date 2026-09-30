@@ -20,6 +20,7 @@ import routes from './routes';
  */
 export default {
     name: 'feedback',
+    loadingKeys: ['feedback'],
     routes,
     navigation: [
         {

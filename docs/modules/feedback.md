@@ -99,7 +99,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | ------------------------ | ------------------------------------- |
 | `GET /feedback`          | `ListFeedbackRequestsResponse`        |
 | `POST /feedback/search`  | `SearchFeedbackRequestsResponse`      |
-| `PUT /feedback/{id}`     | `UpdateFeedbackRequestStatusResponse` |
+| `PATCH /feedback/{id}`   | `UpdateFeedbackRequestStatusResponse` |
 | `DELETE /feedback/{id}`  | `DeleteFeedbackRequestResponse`       |
 | `POST /feedback/contact` | `CreateFeedbackRequestResponse`       |
 
@@ -119,22 +119,22 @@ None.
 
 ## Files
 
-| File                                  | What it is                                                                                                                                                  | Explained in                          |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `locales/en.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `locales/it.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `module.ts`                           | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                 | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                           | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
-| `store.ts`                            | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/contact.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                           | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.cy.ts`            | Cypress suite — the `feedback` screens, in a browser.                                                                                                       | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.visual.cy.ts`     | Cypress visual suite — pixel diffs against the committed baselines.                                                                                         | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                | Vitest suite — the route records and the `meta.access` each one declares.                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                 | Vitest suite — this domain's store, with the transport mocked.                                                                                              | [read](../tools/unit-testing.md)      |
-| `views/Contact.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
-| `views/FeedbackInbox.vue`             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
+| File                                  | What it is                                                                                                                                                                          | Explained in                          |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `locales/en.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `locales/it.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
+| `module.ts`                           | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
+| `response-schemas.ts`                 | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `routes.ts`                           | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
+| `store.ts`                            | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
+| `tests/e2e/__snapshots__/contact.png` | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
+| `tests/e2e/a11y.cy.ts`                | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
+| `tests/e2e/feedback.cy.ts`            | Cypress suite — the `feedback` screens, in a browser.                                                                                                                               | [read](../tools/component-testing.md) |
+| `tests/e2e/feedback.visual.cy.ts`     | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
+| `tests/routes.spec.ts`                | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/store.spec.ts`                 | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
+| `views/Contact.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+| `views/FeedbackInbox.vue`             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 
 ## Working on it
 

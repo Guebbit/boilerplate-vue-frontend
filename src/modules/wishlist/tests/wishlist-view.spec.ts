@@ -8,9 +8,8 @@
  * with no href, so it agrees with any location at all; only a resolved href proves
  * `routerLinkI18n` and `ProductTarget` produce a URL the app can actually match.
  *
- * The seeded title differs from the id on purpose. `titleOf` falls back to the id
- * (`cart/store.ts`), so a title left unresolved makes `titleOf(id) === id` and a link built from
- * the title would pass while being wrong.
+ * The seeded title differs from the id on purpose, so a link built from the title instead of
+ * the id would fail here rather than pass by coincidence.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -18,7 +17,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Wishlist from '@/modules/wishlist/views/Wishlist.vue';
 import { useWishlistStore } from '../store';
-import { useCartStore } from '@/modules/cart';
+import { useProductsStore } from '@/modules/products';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -28,7 +27,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /**
- * The saved product, and the title the cart store resolves for it — deliberately not the id.
+ * The saved product, and the title the products store holds for it — deliberately not the id.
  */
 const PRODUCT_ID = '01J8ZQ7X4M0000000000000001';
 const PRODUCT_TITLE = 'Wireless Headphones';
@@ -55,14 +54,14 @@ const router = createRouter({
  */
 const mountWishlist = (productIds: string[]) => {
     const wishlist = useWishlistStore();
-    const cart = useCartStore();
+    const products = useProductsStore();
 
     wishlist.items = productIds.map((productId) => ({ productId }));
-    cart.productTitles = { [PRODUCT_ID]: PRODUCT_TITLE };
-    // `onMounted` fetches and then resolves titles; both are seeded above, so both are answered
-    // from state rather than from a transport this spec does not exercise.
+    products.addProduct({ id: PRODUCT_ID, title: PRODUCT_TITLE, price: 1, currency: 'EUR' });
+    // `onMounted` fetches the lines and then the products; both are seeded above, so both are
+    // answered from state rather than from a transport this spec does not exercise.
     vi.spyOn(wishlist, 'fetchWishlist').mockResolvedValue(wishlist.items);
-    vi.spyOn(cart, 'resolveTitles').mockResolvedValue(cart.productTitles);
+    vi.spyOn(products, 'fetchProductsByIds').mockResolvedValue([]);
 
     return mount(Wishlist, {
         global: {
@@ -107,9 +106,11 @@ describe('the item list', () => {
         const wrapper = mountWishlist([PRODUCT_ID, other]);
 
         expect(wrapper.findAll('[data-test=wishlist-item]')).toHaveLength(2);
-        // The second line has no resolved title, so it reads as its own id — the documented
-        // fallback, and the reason the first line's title must differ from its id above.
-        expect(wrapper.findAll('[data-test=wishlist-item] h2 a').at(1)?.text()).toBe(other);
+        // The second product is not in the dictionary (deleted, or hidden from this shopper):
+        // it reads as unavailable, never as its raw id, which a screen reader would spell out.
+        expect(wrapper.findAll('[data-test=wishlist-item] h2 a').at(1)?.text()).toBe(
+            'No longer available'
+        );
     });
 
     it('names the product in both action labels, by title rather than by id', () => {

@@ -14,14 +14,6 @@
  * The i18n module is mocked so `supportedLanguages` / `loadedLanguages` are controlled by the
  * test rather than by whichever files happen to sit in `src/locales/` — the suite must not change
  * meaning the day a translation is added.
- *
- * `@/modules` is mocked with two invented, made-up domains rather than the real registry — the
- * "resets locale-sensitive stores" describe block below is about the WIRING (does `localeChoice`
- * call every enabled module's `resetOnLocaleChange`?), not about any one domain's store shape.
- * Asserting against `useProductsStore`/`useCartStore`/`useOrdersStore` would tie a guard-level
- * test to the shop, and deleting the shop would break a test that is not about the shop at all —
- * see `docs/theory/modules.md`, "Deleting a domain", and `tests/unit/app/app-navigation.spec.ts`
- * for the same pattern.
  */
 
 import { asStub } from '../../../support/stub';
@@ -81,21 +73,6 @@ vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     getLocales: () => getLocalesMock(),
     getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
-}));
-
-/**
- * Two invented modules standing in for the enabled registry: one locale-sensitive, one not — see
- * the file-level doc for why these are made up rather than real domains. Hoisted because the
- * mock factory below reads them eagerly and `vi.mock` runs before this file's body.
- */
-const { resetAlphaDomain } = vi.hoisted(() => ({ resetAlphaDomain: vi.fn() }));
-
-vi.mock('@/modules', () => ({
-    enabledModules: [
-        { name: 'alpha-domain', routes: [], resetOnLocaleChange: resetAlphaDomain },
-        // No `resetOnLocaleChange` at all — proves only locale-SENSITIVE modules fire.
-        { name: 'beta-domain', routes: [] }
-    ]
 }));
 
 const { fetchLanguageApi, localeChoice } = await import('@/app/guards/locale-choice');
@@ -323,67 +300,5 @@ describe('localeChoice', () => {
                     )
                 );
             });
-    });
-});
-
-/**
- * A language switch fires every locale-sensitive module's `resetOnLocaleChange`, and ONLY that —
- * never on a navigation that keeps the same language, and never a module that declares none.
- * `collectLocaleSensitiveResets` (`kernel/registry.spec.ts`) proves the collection step in
- * isolation; this proves the guard actually wires it in, against `alpha-domain`/`beta-domain`
- * (see the file-level doc) rather than any real domain's store.
- */
-describe('localeChoice — locale-sensitive resets', () => {
-    it('fires every locale-sensitive module once the active language actually changes', () => {
-        i18nState.loadedLanguages = ['en', 'it'];
-        i18nState.currentLocale = 'en';
-
-        return localeChoice(routeTo({ params: { locale: 'it' } })).then(() => {
-            expect(resetAlphaDomain).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    it('does not fire when the locale is already active', () => {
-        i18nState.loadedLanguages = ['en'];
-        i18nState.currentLocale = 'en';
-
-        return localeChoice(routeTo({ params: { locale: 'en' } })).then(() => {
-            expect(resetAlphaDomain).not.toHaveBeenCalled();
-        });
-    });
-
-    /**
-     * FA81 turned `products`/`orders`' resets into a lazy `import('./store').then(...)` — the
-     * regression this pins: the guard used to fire resets and settle in the SAME tick, so a
-     * module reaching its store asynchronously could still be mid-reset once the navigation this
-     * guard gates had already resolved, letting the next page render off a stale cache.
-     */
-    it('does not settle until an asynchronous reset actually finishes', () => {
-        i18nState.loadedLanguages = ['en', 'it'];
-        i18nState.currentLocale = 'en';
-
-        let resolveReset!: () => void;
-        resetAlphaDomain.mockReturnValueOnce(
-            new Promise<void>((resolve) => (resolveReset = resolve))
-        );
-
-        let settled = false;
-        const navigation = localeChoice(routeTo({ params: { locale: 'it' } })).then(() => {
-            settled = true;
-        });
-
-        return (
-            Promise.resolve()
-                // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- deliberate: returning a THENABLE here (not a plain value) adds an extra microtask hop, which is the point — it lets every microtask this test's mocked reset already queued run first
-                .then(() => Promise.resolve())
-                .then(() => {
-                    expect(settled).toBe(false);
-                    resolveReset();
-                    return navigation;
-                })
-                .then(() => {
-                    expect(settled).toBe(true);
-                })
-        );
     });
 });

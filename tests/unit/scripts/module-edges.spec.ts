@@ -6,11 +6,7 @@
  * lint time, which this suite does not load — a fixture graph is what a unit test can drive.
  */
 import { describe, expect, it } from 'vitest';
-import {
-    assertAcyclicModuleEdges,
-    KNOWN_CYCLE_EDGES,
-    MODULE_EDGES
-} from '../../../scripts/module-edges';
+import { assertAcyclicModuleEdges, MODULE_EDGES } from '../../../scripts/module-edges';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,18 +23,8 @@ const moduleFolderNames = (): string[] => {
 };
 
 describe('assertAcyclicModuleEdges', () => {
-    it('passes the real MODULE_EDGES with its one grandfathered edge skipped', () => {
-        expect(() =>
-            assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames(), KNOWN_CYCLE_EDGES)
-        ).not.toThrow();
-    });
-
-    it('pins down exactly the cycle KNOWN_CYCLE_EDGES exists to grandfather', () => {
-        // Without the exemption, the real graph throws — proving the exemption is load-bearing
-        // and not a dead parameter nobody's build ever exercises.
-        expect(() => assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames())).toThrow(
-            'MODULE_EDGES has a cycle: cart -> products -> cart.'
-        );
+    it('passes the real MODULE_EDGES', () => {
+        expect(() => assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames())).not.toThrow();
     });
 
     it('refuses a direct cycle between two modules', () => {

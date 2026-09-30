@@ -18,7 +18,7 @@ import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
-import { assertAcyclicModuleEdges, KNOWN_CYCLE_EDGES, MODULE_EDGES } from './scripts/module-edges';
+import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
 
 /**
@@ -55,7 +55,7 @@ const moduleFolderNames = readdirSync(fileURLToPath(new URL('src/modules', impor
 // A cycle, or a key naming a module already deleted, must fail every `npm run lint` — see FA73.
 // `moduleDependencyPolicies` below only ever checks a module against its OWN `MODULE_EDGES`
 // entry, so this is the one place the graph is walked as a whole.
-assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames, KNOWN_CYCLE_EDGES);
+assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames);
 
 /**
  * The "one door" and `MODULE_EDGES` coupling, as `eslint-plugin-boundaries` policies — one array
@@ -450,8 +450,7 @@ const vueSfcConventionRules = {
  * NOT here (`class`, `id`, `type`, `name`, `variant`…) are markup, not copy.
  *
  * This governs templates. Technician-facing strings — console output, thrown
- * `Error` messages, analytics event names — are deliberately English; see the i18n
- * section of README.md.
+ * `Error` messages, analytics event names — are deliberately English.
  */
 const bareStringsInTemplateRule = {
     'vue/no-bare-strings-in-template': [

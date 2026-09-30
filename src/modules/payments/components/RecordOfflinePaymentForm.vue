@@ -90,16 +90,13 @@ const schema = z.object({
 /**
  * Field state, errors and submit gating.
  */
-const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValidation(
-    { method: methods[0], reference: '', receivedAt: '' },
-    schema,
-    {
+const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
+    useStructureFormValidation({ method: methods[0], reference: '', receivedAt: '' }, schema, {
         formElement,
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
+    });
 
 /**
  * This form's own blocked state — the order is no longer payable, or a card charge is still
@@ -132,7 +129,10 @@ const submitForm = () =>
                 form.value.receivedAt = '';
                 emit('recorded');
             })
-            .catch((error: unknown) => reportRecordError(error));
+            .catch((error: unknown) => {
+                // A refusal that names a field lands on it; a lost race has none and blocks here.
+                applyServerErrors(error, { onUnmapped: () => reportRecordError(error) });
+            });
     });
 </script>
 

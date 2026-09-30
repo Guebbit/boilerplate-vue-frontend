@@ -104,16 +104,17 @@ const schema = computed(() =>
 /**
  * Field state, errors and submit gating, seeded with the mode's default amount sign.
  */
-const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValidation(
-    { productId: '', amount: props.mode === 'receipt' ? 10 : -1, note: '' },
-    schema,
-    {
-        formElement,
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
+const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
+    useStructureFormValidation(
+        { productId: '', amount: props.mode === 'receipt' ? 10 : -1, note: '' },
+        schema,
+        {
+            formElement,
+            revalidateOn: locale,
+            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
+    );
 
 /**
  * Keeps the currently chosen product resolvable in `productOptions` even once a later search
@@ -162,7 +163,10 @@ const submitForm = () =>
                 return productsStore.fetchProducts();
             })
             .then(() => undefined)
-            .catch((error: unknown) => reportSubmitError(error));
+            .catch((error: unknown) => {
+                // A refusal that names a field lands on it; the 409 has no field, so it blocks here.
+                applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
+            });
     });
 </script>
 

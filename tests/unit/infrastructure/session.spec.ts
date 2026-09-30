@@ -23,6 +23,8 @@ const getMyAbilitiesMock = vi.fn();
 const refreshTokenMock = vi.fn();
 const logoutMock = vi.fn();
 const logoutAllMock = vi.fn();
+const reauthMock = vi.fn();
+const requestEmailVerificationMock = vi.fn();
 
 // Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
 // `any` — one disable per line rather than retyping the mocks against the full generated
@@ -38,6 +40,10 @@ vi.mock('@api', () => ({
     logout: () => logoutMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
+    reauth: (body: { password: string }) => reauthMock(body),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
+    requestEmailVerification: () => requestEmailVerificationMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
@@ -548,5 +554,48 @@ describe('refreshToken', () => {
         return refreshing.then(() => {
             expect(store.accessToken).toBeUndefined();
         });
+    });
+});
+
+describe('reauth', () => {
+    it('adopts the rotated token and raises its own flag meanwhile', () => {
+        reauthMock.mockResolvedValue(contractResponse(schemas.ReauthResponse, { token: 'fresh' }));
+        const store = useSessionStore();
+
+        const pending = store.reauth('hunter2');
+        expect(store.reauthing).toBe(true);
+        expect(reauthMock).toHaveBeenCalledWith({ password: 'hunter2' });
+
+        return pending.then(() => {
+            expect(store.accessToken).toBe('fresh');
+            expect(store.reauthing).toBe(false);
+        });
+    });
+
+    it('lowers the flag and keeps the old token when the password is refused', () => {
+        reauthMock.mockRejectedValue(new Error('401'));
+        const store = signedIn();
+
+        return store
+            .reauth('wrong')
+            .catch(() => undefined)
+            .then(() => {
+                expect(store.reauthing).toBe(false);
+                expect(store.accessToken).toBe('token');
+            });
+    });
+});
+
+describe('requestEmailVerification', () => {
+    it("resolves with the server's own resend cooldown", () => {
+        requestEmailVerificationMock.mockResolvedValue(
+            contractResponse(schemas.RequestEmailVerificationResponse, { resendAfter: 60 })
+        );
+
+        return useSessionStore()
+            .requestEmailVerification()
+            .then((resendAfter) => {
+                expect(resendAfter).toBe(60);
+            });
     });
 });

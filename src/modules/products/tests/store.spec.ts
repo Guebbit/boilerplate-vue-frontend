@@ -1,8 +1,8 @@
 /**
  * @module
  * Unit coverage of the products store's own logic: which branch a create/update call takes (JSON
- * vs multipart), how `translations` is encoded on each, and `resetForLocaleChange`'s cache
- * role. The CRUD wrappers are thin over `@guebbit/vue-toolkit`, so testing them would be testing
+ * vs multipart), how `translations` is encoded on each, and how the cache is scoped by
+ * the active language. The CRUD wrappers are thin over `@guebbit/vue-toolkit`, so testing them would be testing
  * the toolkit — the multipart branch and the `translations` encoding are what's actually this
  * repo's logic.
  *
@@ -16,6 +16,9 @@
 import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { effectScope, nextTick } from 'vue';
+import { flushPromises } from '@vue/test-utils';
+import { i18n } from '@/i18n';
 
 import { useProductsStore } from '@/modules/products/store';
 import { orvalMutator } from '@/infrastructure/http';
@@ -108,6 +111,12 @@ const respondWithItems = (items: unknown[]) =>
  * The JSON body of the most recent request — what `POST /products/search` reads.
  */
 const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
+
+/**
+ * How many `GET /products/p1` requests the transport has seen.
+ */
+const productReads = () =>
+    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/products/p1').length;
 
 describe('useProductsStore', () => {
     beforeEach(() => {
@@ -659,23 +668,48 @@ describe('useProductsStore', () => {
      */
 
     /**
-     * `resetForLocaleChange` is what the module manifest's `resetOnLocaleChange` calls — see
-     * `products/module.ts`, and `tests/unit/app/guards/locale-choice.spec.ts` for the guard side.
-     * What belongs HERE is only that the store surfaces it and that calling it empties the
-     * dictionary; the cache-invalidation machinery underneath is the toolkit's own suite's job.
-     *
-     * It clears the cached RESPONSES as well as the records, which is the half that was missing:
-     * dropping the dictionary alone let the next read come straight back out of the query cache,
-     * in the language the visitor had just left, without making a request at all.
+     * The cache is scoped by the active locale (`dependsOn`): a record's `title`/`description` were
+     * resolved server-side in one language, so after a switch the next read must not find it. The
+     * invalidation machinery itself is the toolkit's suite's job; what belongs here is that this
+     * store actually declares the dependency.
      */
-    it('resetForLocaleChange empties the product dictionary', () => {
+    it('serves nothing cached under the language the visitor just left', async () => {
         const store = useProductsStore();
         store.addProduct(PRODUCT);
         expect(store.products.p1).toBeDefined();
 
-        store.resetForLocaleChange();
+        try {
+            i18n.global.locale.value = 'it';
+            await nextTick();
 
-        expect(store.products.p1).toBeUndefined();
+            expect(store.products.p1).toBeUndefined();
+        } finally {
+            i18n.global.locale.value = 'en';
+        }
+    });
+
+    /**
+     * The other half of the same scoping: a product page that is open when the language switches
+     * gets its record again without asking, because the toolkit's watcher re-runs under the new
+     * scope. Nothing in the view has to notice the switch.
+     */
+    it('refetches the product on show when the language switches', async () => {
+        const store = useProductsStore();
+        const scope = effectScope();
+        scope.run(() => store.watchProduct(() => 'p1'));
+        await flushPromises();
+        const before = productReads();
+        expect(before).toBeGreaterThan(0);
+
+        try {
+            i18n.global.locale.value = 'it';
+            await flushPromises();
+
+            expect(productReads()).toBe(before + 1);
+        } finally {
+            i18n.global.locale.value = 'en';
+            scope.stop();
+        }
     });
 
     /**

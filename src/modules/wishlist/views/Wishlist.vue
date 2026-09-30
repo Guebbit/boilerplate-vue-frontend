@@ -18,7 +18,7 @@ import { Heart, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
-import { useCartStore } from '@/modules/cart';
+import { useProductLines } from '@/modules/products';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
@@ -68,9 +68,10 @@ const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 const { items, loading } = storeToRefs(useWishlistStore());
 
 /**
- * The saved products' titles — the wishlist answers ids only, and the cart store holds the join.
+ * The saved products' titles — the wishlist answers ids only, and the products store holds the
+ * records.
  */
-const { titleOf, resolveTitles } = useCartStore();
+const { titleOf, loadProducts } = useProductLines();
 
 /**
  * The saved lines' own blocked state — moving a line to the cart or removing it has no per-line
@@ -110,11 +111,11 @@ const handleRemove = (productId: string) => {
 };
 
 /**
- * Loads the wishlist on mount, then resolves the saved products' titles from the cart store's
- * cache so each line has a name to render.
+ * Loads the wishlist on mount, then the saved products in one batch so each line has a name to
+ * render.
  */
 onMounted(() =>
-    fetchWishlist().then((lines) => resolveTitles((lines ?? []).map(({ productId }) => productId)))
+    fetchWishlist().then((lines) => loadProducts((lines ?? []).map(({ productId }) => productId)))
 );
 </script>
 
