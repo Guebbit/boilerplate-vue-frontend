@@ -16,7 +16,7 @@
  * clients set it once in an interceptor, so declaring it 33 times would only add a
  * redundant argument to every generated function. This paragraph is its contract.
  *
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 0.1.0
  */
 import * as zod from 'zod';
 /**
