@@ -503,6 +503,30 @@ describe('refreshToken', () => {
         });
     });
 
+    it('reads the API envelope a real rejection arrives as, not only a raw axios error', () => {
+        refreshTokenMock.mockRejectedValue({
+            success: false,
+            status: 401,
+            message: 'Unauthorized',
+            errors: [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }]
+        });
+        const store = signedIn();
+
+        return store.refreshToken().then(() => {
+            expect(store.isAuth).toBe(false);
+            expect(store.expiredSignal).toBe(1);
+        });
+    });
+
+    it('does not end the session on an envelope that is a 5xx', () => {
+        refreshTokenMock.mockRejectedValue({ success: false, status: 503, errors: [] });
+        const store = signedIn();
+
+        return store.refreshToken().then(() => {
+            expect(store.expiredSignal).toBe(0);
+        });
+    });
+
     it('ends the session on a definitive 403 the same way', () => {
         refreshTokenMock.mockRejectedValue({ response: { status: 403 } });
         const store = signedIn();

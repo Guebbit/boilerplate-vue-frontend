@@ -90,3 +90,14 @@ export const webhookSink = {
      */
     requests: (): Cypress.Chainable<SinkRequest[]> => cy.task<SinkRequest[]>('webhookSinkRequests')
 };
+
+/**
+ * The code an authenticator app shows for a TOTP secret — read the secret off the enrolment screen,
+ * then type this. The backend accepts a step only once, so the code that confirms an enrolment is
+ * step 0 and every later one must be a step further on.
+ *
+ * @param secret - the base32 secret the enrolment dialog displays
+ * @param stepsFromNow - how many 30-second steps ahead of now; 0 by default
+ */
+export const totpCodeFor = (secret: string, stepsFromNow = 0): Cypress.Chainable<string> =>
+    cy.task<string>('totpCode', { secret, stepsFromNow });

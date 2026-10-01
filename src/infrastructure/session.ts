@@ -50,7 +50,12 @@ const sessionChannel =
  * @param error - The rejection `apiRefreshToken` settled with.
  */
 const isDefinitiveAuthFailure = (error: unknown): boolean => {
-    const status = (error as AxiosError | undefined)?.response?.status;
+    // Two shapes: the raw axios error, and the API's envelope that `onResponseReject` turns every
+    // rejection into before a caller sees it — the real one, which carries `status` on top.
+    const { response, status: envelopeStatus } = (error ?? {}) as Partial<AxiosError> & {
+        status?: number;
+    };
+    const status = response?.status ?? envelopeStatus;
     return status === 401 || status === 403;
 };
 

@@ -106,6 +106,8 @@
         "button-add": "Add",
         "button-remove": "Remove",
         "button-remove-named": "Remove {method}",
+        "button-replace-named": "Replace {method}",
+        "button-email-code": "Email me a code",
         "backup-codes-remaining": "{count} backup codes left",
         "backup-codes-remaining-zero": "No backup codes left — a lost device means admin-assisted recovery.",
         "backup-codes-title": "Save your backup codes",
@@ -145,7 +147,8 @@
         "expired": "This challenge has expired. Please log in again.",
         "link-use-backup-code": "Use a backup code instead",
         "link-use-code": "Use a method code instead",
-        "link-back-to-login": "Back to login"
+        "link-back-to-login": "Back to login",
+        "locked-out": "Too many wrong codes. Please sign in again."
     },
     "password-reset-request-page": {
         "page-title": "Reset password",

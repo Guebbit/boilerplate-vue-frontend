@@ -106,6 +106,8 @@
         "button-add": "Aggiungi",
         "button-remove": "Rimuovi",
         "button-remove-named": "Rimuovi {method}",
+        "button-replace-named": "Sostituisci {method}",
+        "button-email-code": "Inviami un codice via email",
         "backup-codes-remaining": "{count} codici di backup rimasti",
         "backup-codes-remaining-zero": "Nessun codice di backup rimasto — un dispositivo perso richiede il recupero assistito da un amministratore.",
         "backup-codes-title": "Salva i tuoi codici di backup",
@@ -145,7 +147,8 @@
         "expired": "Questa richiesta è scaduta. Effettua di nuovo il login.",
         "link-use-backup-code": "Usa un codice di backup",
         "link-use-code": "Usa un codice metodo",
-        "link-back-to-login": "Torna al login"
+        "link-back-to-login": "Torna al login",
+        "locked-out": "Troppi codici errati. Accedi di nuovo."
     },
     "password-reset-request-page": {
         "page-title": "Reimposta password",

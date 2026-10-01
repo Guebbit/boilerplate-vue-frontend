@@ -9,6 +9,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { orvalMutator } from '@/infrastructure/http';
 import { createPinia, setActivePinia } from 'pinia';
 import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue';
 import { i18n, loadLocale } from '@/i18n';
@@ -33,7 +34,11 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
+        const entry = responses[key];
+        return typeof entry === 'object' && entry !== null && '__reject' in entry
+            ? // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
+              Promise.reject(entry.__reject)
+            : Promise.resolve(parseOrvalFixture(config.method, config.url, entry));
     })
 }));
 
@@ -202,6 +207,230 @@ describe('ProfileTwoFactor: regenerating backup codes', () => {
             .then(() => {
                 const codes = document.body.querySelector('[data-test=backup-codes-list]');
                 expect(codes?.textContent).toContain('ccc-333');
+            });
+    });
+});
+
+describe('ProfileTwoFactor: replacing an armed method', () => {
+    it('names the method on the replace button, not a bare "Add"', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+
+        return flushPromises().then(() => {
+            const button = wrapper.get('[data-test=two-factor-replace-totp]').text();
+            expect(button).toMatch(/^Replace\b/);
+            expect(button).not.toBe('Add');
+        });
+    });
+
+    it('a cancelled replace re-reads the status, so the panel stops listing the disarmed method', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+
+        return flushPromises()
+            .then(() => {
+                // Starting the replace disarms the method on the server before anything is proved.
+                responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+                    method: 'totp',
+                    delivers: false,
+                    secret: 'JBSWY3DPEHPK3PXP',
+                    otpauthUri: 'otpauth://totp/x'
+                });
+                responses['GET /account/2fa'] = orvalEnvelope({
+                    enabled: false,
+                    methods: [],
+                    available: [{ method: 'totp', delivers: false, enrollable: true }],
+                    backupCodesRemaining: 0
+                });
+                return wrapper.get('[data-test=two-factor-replace-totp]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => submitPromptCode('123456'))
+            .then(() =>
+                document.body
+                    .querySelector<HTMLButtonElement>('[data-test=two-factor-enroll-cancel]')
+                    ?.click()
+            )
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.find('[data-test=two-factor-armed]').exists()).toBe(false);
+                expect(wrapper.find('[data-test=two-factor-add-totp]').exists()).toBe(true);
+            });
+    });
+});
+
+/**
+ * Types a code into the open shared code prompt and submits it.
+ *
+ * @param code - what to type
+ */
+const submitPromptCode = (code: string) => {
+    const input = document.body.querySelector<HTMLInputElement>(
+        '[data-test=two-factor-code-prompt-input] input'
+    );
+    input!.value = code;
+    input?.dispatchEvent(new Event('input'));
+    return flushPromises()
+        .then(() =>
+            document.body
+                .querySelector<HTMLButtonElement>('[data-test=two-factor-code-prompt-submit]')
+                ?.click()
+        )
+        .then(flushPromises);
+};
+
+/** The bodies every `setup` call carried, oldest first. */
+const setupBodies = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.map((call) => call[0] as { url: string; data?: unknown })
+        .filter((config) => config.url.endsWith('/setup'))
+        .map((config) => config.data);
+
+describe('ProfileTwoFactor: changing factors needs a factor', () => {
+    beforeEach(() => {
+        vi.mocked(orvalMutator).mockClear();
+    });
+
+    it('the account’s FIRST factor opens its dialog straight away, asking for no code', () => {
+        const wrapper = mountPanel({
+            enabled: false,
+            methods: [],
+            available: [{ method: 'totp', delivers: false, enrollable: true }],
+            backupCodesRemaining: 0
+        });
+        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+            method: 'totp',
+            delivers: false,
+            secret: 'JBSWY3DPEHPK3PXP',
+            otpauthUri: 'otpauth://totp/x'
+        });
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=two-factor-add-totp]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(
+                    document.body.querySelector('[data-test=two-factor-code-prompt-input]')
+                ).toBeNull();
+                expect(setupBodies()).toEqual([undefined]);
+            });
+    });
+
+    it('a replace asks for a code first, and starts the setup only with it', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+            method: 'totp',
+            delivers: false,
+            secret: 'JBSWY3DPEHPK3PXP',
+            otpauthUri: 'otpauth://totp/x'
+        });
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=two-factor-replace-totp]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(setupBodies()).toEqual([]);
+                return submitPromptCode('123456');
+            })
+            .then(() => {
+                expect(setupBodies()).toEqual([{ code: '123456' }]);
+                // The dialog opened on the answer the prompt obtained: no second setup.
+                expect(document.body.textContent).toContain('JBSWY3DPEHPK3PXP');
+            });
+    });
+
+    it('a wrong code stays in the prompt for another try, and opens no enrollment', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+        responses['POST /account/2fa/methods/totp/setup'] = {
+            __reject: {
+                success: false,
+                status: 422,
+                message: 'Unprocessable Entity',
+                errors: [{ code: 'VALIDATION', message: 'That code didn’t work.' }]
+            }
+        };
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=two-factor-replace-totp]').trigger('click'))
+            .then(flushPromises)
+            .then(() => submitPromptCode('000000'))
+            .then(() => {
+                expect(
+                    document.body.querySelector('[data-test=two-factor-code-prompt-error]')
+                        ?.textContent
+                ).toContain('didn’t work');
+                expect(document.body.querySelector('[data-test=two-factor-enroll]')).toBeNull();
+            });
+    });
+
+    it('an account whose factor is delivered can mail itself the code the prompt asks for', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [{ method: 'email', delivers: true, enrolledAt: '2026-01-01T00:00:00Z' }],
+            available: [{ method: 'totp', delivers: false, enrollable: true }],
+            backupCodesRemaining: 3
+        });
+        responses['POST /account/2fa/methods/email/send'] = orvalEnvelope({
+            method: 'email',
+            sentTo: 'a***a@example.com',
+            resendAfter: 30,
+            expiresAt: '2026-01-01T00:10:00.000Z'
+        });
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=two-factor-regenerate-codes]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                const send = document.body.querySelector<HTMLButtonElement>(
+                    '[data-test=two-factor-code-prompt-send]'
+                );
+                expect(send).not.toBeNull();
+                send?.click();
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(
+                    vi
+                        .mocked(orvalMutator)
+                        .mock.calls.map((call) => (call[0] as { url: string }).url)
+                ).toContain('/account/2fa/methods/email/send');
+            });
+    });
+
+    it('offers no send button to an account whose factor is a device', () => {
+        const wrapper = mountPanel({
+            enabled: true,
+            methods: [ARMED_TOTP],
+            available: [],
+            backupCodesRemaining: 3
+        });
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=two-factor-regenerate-codes]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(
+                    document.body.querySelector('[data-test=two-factor-code-prompt-send]')
+                ).toBeNull();
             });
     });
 });

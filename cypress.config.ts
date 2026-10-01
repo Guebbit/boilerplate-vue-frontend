@@ -38,6 +38,7 @@ import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
+import { totpCode } from './scripts/e2e/totp';
 import {
     SINGLE_PROCESS_SINK_PORT,
     startWebhookSink,
@@ -178,6 +179,12 @@ export default defineConfig({
                  */
                 postPaymentWebhook: (request: Parameters<typeof postPaymentWebhook>[0]) =>
                     postPaymentWebhook(request),
+                /*
+                 * The authenticator code for a TOTP secret, at a step relative to now — see
+                 * `scripts/e2e/totp.ts`. Node-side, because the browser bundle carries no crypto
+                 * library for it.
+                 */
+                totpCode: (request: Parameters<typeof totpCode>[0]) => totpCode(request),
                 /*
                  * The webhook sink this process hosts (demo profile): what arrived, and forget it.
                  * See `scripts/e2e/webhook-sink.ts`. Both ask for the sink, which starts it if the

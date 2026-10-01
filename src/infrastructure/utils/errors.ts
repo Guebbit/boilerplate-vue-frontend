@@ -141,3 +141,12 @@ export const notifyErrorMessages = (
  */
 export const isPreconditionFailed = (error: unknown): boolean =>
     !isTransportFailure(error) && (error as { status: number }).status === 412;
+
+/**
+ * Whether a rejected call was refused because a rate-limit budget ran out (HTTP 429).
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when the API answered 429.
+ */
+export const isRateLimited = (error: unknown): boolean =>
+    !isTransportFailure(error) && (error as { status: number }).status === 429;

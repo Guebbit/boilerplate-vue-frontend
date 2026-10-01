@@ -13,6 +13,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     getTwoFactorStatus as apiGetTwoFactorStatus,
     setupTwoFactorMethod as apiSetupTwoFactorMethod,
+    sendTwoFactorMethodCode as apiSendTwoFactorMethodCode,
     confirmTwoFactorMethod as apiConfirmTwoFactorMethod,
     removeTwoFactorMethod as apiRemoveTwoFactorMethod,
     disableTwoFactor as apiDisableTwoFactor,
@@ -71,6 +72,9 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through; `isLoading` backs the per-action computeds below.
      */
+    // Every keyed `fetchAny` below is a WRITE that only borrows a key for its loading flag. The
+    // toolkit caches a keyed read for an hour, so each carries `forced: true` — without it a second
+    // setup, remove or regenerate in one page load answers from the cache and never reaches the API.
     const { loading, isLoading, fetchAny } = useStructureRestApi({
         resourceKey: 'accountTwoFactor',
         queryClient
@@ -154,6 +158,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * before the click reaches here.
      *
      * @param method - Wire name of the method to enroll, e.g. `'email'`, `'totp'`.
+     * @param code - A code from an armed factor, or a backup code. Required once any factor is
+     *  armed (a replace, or a second method); the account's first factor sends none.
      * @returns A promise resolving with the setup payload — `delivers` says which half to render,
      *  and (for a device method) `secret`/`otpauthUri`. Never cached here: the payload carries the
      *  TOTP secret, so the caller (`TwoFactorEnroll.vue`) holds it in a component-local ref instead
@@ -161,11 +167,11 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      *  their own one-time secrets. A `TWO_FACTOR_RESEND_TOO_SOON` 429 still rejects, but starts the
      *  resend cooldown first — see {@link applyResendCooldown}.
      */
-    const setupMethod = (method: string) =>
+    const setupMethod = (method: string, code?: string) =>
         applyResendCooldown(
             fetchAny(
                 () =>
-                    apiSetupTwoFactorMethod(method).then((data) => {
+                    apiSetupTwoFactorMethod(method, code ? { code } : undefined).then((data) => {
                         const payload = getPayloadFromResponse<TwoFactorSetup>(data);
                         if (
                             payload?.delivers &&
@@ -181,7 +187,28 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                             });
                         return payload;
                     }),
-                { key: ['setup'] }
+                { key: ['setup'], forced: true }
+            )
+        );
+
+    /**
+     * Mails the signed-in account a code for one ARMED delivered method, so an account whose only
+     * factor is delivered can prove itself to the change it is about to make without spending a
+     * backup code. Starts the resend cooldown from the answer, or from a 429's own `retryAfter`.
+     *
+     * @param method - Wire name of an armed delivered method, e.g. `'email'`.
+     * @returns A promise resolving with the delivery: where it went, and when it may be re-sent.
+     */
+    const sendMethodCode = (method: string) =>
+        applyResendCooldown(
+            fetchAny(
+                () =>
+                    apiSendTwoFactorMethodCode(method).then((data) => {
+                        const payload = getPayloadFromResponse<TwoFactorDelivery>(data);
+                        if (payload) trackDelivery(payload);
+                        return payload;
+                    }),
+                { key: ['send'], forced: true }
             )
         );
 
@@ -203,7 +230,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     resendAvailableAt.value = undefined;
                     return fetchStatus().then(() => result);
                 }),
-            { key: ['confirm'] }
+            { key: ['confirm'], forced: true }
         );
 
     /**
@@ -216,7 +243,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const removeMethod = (method: string, code: string) =>
         fetchAny(() => apiRemoveTwoFactorMethod(method, { code }).then(() => fetchStatus()), {
-            key: ['remove']
+            key: ['remove'],
+            forced: true
         });
 
     /**
@@ -227,7 +255,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const disableAll = (code: string) =>
         fetchAny(() => apiDisableTwoFactor({ code }).then(() => fetchStatus()), {
-            key: ['disable']
+            key: ['disable'],
+            forced: true
         });
 
     /**
@@ -247,7 +276,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     const result = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
                     return fetchStatus().then(() => result);
                 }),
-            { key: ['regenerate'] }
+            { key: ['regenerate'], forced: true }
         );
 
     /**
@@ -255,7 +284,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      * first send or its resend button. Per-action rather than the store-wide `loading`, which
      * every 2FA call shares: bound to a button, that made confirming look like resending.
      */
-    const sendingCode = computed(() => isLoading(['setup']));
+    const sendingCode = computed(() => isLoading(['setup']) || isLoading(['send']));
 
     /**
      * Whether {@link confirmMethod} is proving a code right now.
@@ -278,6 +307,18 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
      */
     const clearSetup = () => {
         resendAvailableAt.value = undefined;
+    };
+
+    /**
+     * Drops a pending enrollment and re-reads the account's status. Starting a setup disarms a
+     * method that was already armed, so walking away from it leaves the server's truth different
+     * from the list still on screen; only a re-read tells them apart.
+     *
+     * @returns A promise resolving once `status` reflects what the server now holds.
+     */
+    const abandonSetup = () => {
+        clearSetup();
+        return fetchStatus();
     };
 
     /**
@@ -389,11 +430,13 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
 
         fetchStatus,
         setupMethod,
+        sendMethodCode,
         confirmMethod,
         removeMethod,
         disableAll,
         regenerateBackupCodes,
         clearSetup,
+        abandonSetup,
 
         beginLoginChallenge,
         beginOAuthChallenge,

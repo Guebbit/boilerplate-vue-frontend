@@ -11,7 +11,7 @@
  * is the sole place that still runs it, on every page change.
  */
 import { computed, watch } from 'vue';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
@@ -28,6 +28,7 @@ import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { collectModuleLoadingKeys } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
@@ -171,6 +172,30 @@ const { hideMessage } = useNotificationsStore();
  */
 const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'error' =>
     type === 'success' || type === 'warning' || type === 'error' ? type : 'info';
+
+/**
+ * The router, for the re-evaluation a dead session triggers below.
+ */
+const router = useRouter();
+
+/**
+ * The session store's own counter, bumped only when a session died on its own (a refresh the
+ * server definitively refused) and never on an explicit logout.
+ */
+const { expiredSignal } = storeToRefs(useSessionStore());
+
+/**
+ * A session that died on its own: say so, then re-enter the current route. A forced `replace` to
+ * the same address runs the route guard again, which sends a protected page to login with `?continue=` and
+ * leaves a public one where it is, so the visitor is never left on a signed-in-looking page whose
+ * every request fails.
+ */
+watch(expiredSignal, () => {
+    useNotificationsStore().addMessage(t('session-expired.message'));
+    // `force`: a navigation to the address already shown is otherwise dropped as a duplicate,
+    // and the guard is exactly what has to run again.
+    void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
+});
 
 /*
  * The layout preloads nothing.
