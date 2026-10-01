@@ -1,10 +1,10 @@
 # returns
 
 ::: tip At a glance
-**Owns** — the customer's own returns, the staff queue that approves and receives them, and the EU
-"withdraw from contract here" button.
+**Owns** — the customer's own returns (a returns form for faulty or wrong goods and part-orders),
+the staff queue that approves and receives them, and the EU "withdraw from contract here" button.
 **Depends on** — nothing. [`orders`](./orders.md) mounts its `WithdrawalPanel`.
-**Breaks if you change** — the order page's withdrawal control.
+**Breaks if you change** — the order page's withdrawal control and returns form.
 :::
 
 | Fact                    | This module                             |
@@ -29,7 +29,9 @@ order by route name, guarded by `linkIfRouted`, so no edge points the other way.
 ```mermaid
 flowchart LR
     orders["orders (Order.vue)"] -.->|mounts| panel["WithdrawalPanel"]
-    panel --> store["returns store"]
+    panel --> form["ReturnRequestForm"]
+    form --> store["returns store"]
+    panel --> store
     list["ReturnsList"] --> store
     detail["Return"] --> store
     detail --> staff["ReturnStaffActions"]
@@ -50,8 +52,17 @@ is `POST /returns`. What comes back depends on where the goods are, and the stor
 **The button is server-driven.** `WithdrawalPanel` shows it when `Order.actions.withdraw` is true and
 prints `Order.actions.withdrawUntil`; it never counts the fourteen days. Clicking asks once more —
 the directive wants a confirmation step — and the backend mails the acknowledgement with the date and
-time. The panel also lists the returns already opened on that order, so a customer sees what became
-of a withdrawal.
+time. A withdrawal takes no reason and always the whole order. The panel also lists the returns
+already opened on that order, so a customer sees what became of a withdrawal.
+
+**The returns form is for everything else.** Once an order has shipped, `ReturnRequestForm` lets the
+customer tick the lines that come back, set a quantity for each, pick a reason (defective, wrong item
+or other — `withdrawal` is the button, not a choice here) and add a note. It sends only the ticked
+lines, so part of an order can go back; the same product can be returned again until nothing is left.
+What is left is arithmetic in `domain/returnable-lines.ts`: ordered less what every not-declined return on
+the order holds, leaving out goods with no right of withdrawal. The server re-checks all of it (too
+many, an excluded line, a closed window) and its message shows in the form. Staff then approve or
+decline the return like any other.
 
 **Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (with the
 reason the customer is told) and receive (with an optional handling deduction) from the three

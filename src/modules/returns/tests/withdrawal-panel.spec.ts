@@ -9,12 +9,15 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import WithdrawalPanel from '@/modules/returns/components/WithdrawalPanel.vue';
+import ReturnRequestForm from '@/modules/returns/components/ReturnRequestForm.vue';
 import { useReturnsStore } from '@/modules/returns/store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aReturn, anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
+import type { Order } from '@types';
 
 wireModulesIntoCore();
 
@@ -36,7 +39,15 @@ const router = createRouter({
  * @param existing - the returns already opened on the order
  * @returns the wrapper and the store
  */
-const mountPanel = (props: { canWithdraw?: boolean; withdrawUntil?: string }, existing = []) => {
+const mountPanel = (
+    props: {
+        canWithdraw?: boolean;
+        withdrawUntil?: string;
+        orderStatus?: string;
+        items?: Order['items'];
+    },
+    existing = []
+) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'fetchOrderReturns').mockResolvedValue(existing);
     vi.spyOn(store, 'openReturn').mockResolvedValue({
@@ -128,5 +139,57 @@ describe('WithdrawalPanel', () => {
 
         expect(wrapper.findAll('[data-test=order-return]')).toHaveLength(1);
         expect(wrapper.get('[data-test=order-return]').text()).toContain('Withdrawal');
+    });
+
+    describe('returns form', () => {
+        /**
+         * One order line of a single product.
+         */
+        const SHIRT: Order['items'] = [
+            {
+                product: { id: 'p1', title: 'Shirt', price: 30, taxRate: 0.22 },
+                quantity: 1,
+                locale: 'en',
+                current: null,
+                taxAmount: 0,
+                netAmount: 0
+            }
+        ];
+
+        it('is offered once the goods have shipped, with no withdrawal button needed', async () => {
+            const { wrapper } = mountPanel({ orderStatus: 'delivered', items: SHIRT });
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=return-request]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=withdraw-button]').exists()).toBe(false);
+        });
+
+        it('is not offered before the goods have shipped', async () => {
+            const { wrapper } = mountPanel({ orderStatus: 'paid', items: SHIRT });
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=withdrawal-panel]').exists()).toBe(false);
+        });
+
+        it('is not offered once every unit is already in a return', async () => {
+            const { wrapper } = mountPanel({ orderStatus: 'delivered', items: SHIRT }, [
+                aReturn({ status: 'requested' })
+            ] as never);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=return-request]').exists()).toBe(false);
+        });
+
+        it('tells the page and re-reads the list when a return was opened', async () => {
+            const { wrapper, store } = mountPanel({ orderStatus: 'shipped', items: SHIRT });
+            await flushPromises();
+            const calls = vi.mocked(store.fetchOrderReturns).mock.calls.length;
+
+            emitOn(wrapper.getComponent(ReturnRequestForm), 'opened');
+            await flushPromises();
+
+            expect(wrapper.emitted('opened')).toHaveLength(1);
+            expect(vi.mocked(store.fetchOrderReturns).mock.calls.length).toBe(calls + 1);
+        });
     });
 });

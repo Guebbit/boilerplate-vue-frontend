@@ -7,12 +7,14 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a), and what has
- * become of any withdrawal or return already opened on the order. The button shows only when the
- * server says so (`Order.actions.withdraw`) — this component never counts the fourteen days — and
- * asks once more before it acts: the directive wants a confirmation step, not a single click.
+ * The order page's returns corner: the EU "withdraw from contract here" button (Consumer Rights
+ * Directive Art. 11a), the returns form for faulty or wrong goods and part-orders, and what has
+ * become of any withdrawal or return already opened on the order. The withdrawal button shows
+ * only when the server says so (`Order.actions.withdraw`) — this component never counts the
+ * fourteen days — and asks once more before it acts: the directive wants a confirmation step, not
+ * a single click, and no reason. The returns form is offered once goods have shipped.
  */
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -22,7 +24,9 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import type { Return } from '@types';
+import { isReturnableOrderStatus, returnableLines } from '../domain/returnable-lines.ts';
+import ReturnRequestForm from './ReturnRequestForm.vue';
+import type { Order, Return } from '@types';
 
 /**
  * The order this panel belongs to, and what the server said about the button.
@@ -33,6 +37,10 @@ const props = defineProps<{
     canWithdraw?: boolean;
     /** `Order.actions.withdrawUntil` — the last instant a withdrawal is valid, once the clock runs. */
     withdrawUntil?: string;
+    /** The order's status: goods must have shipped before anything can come back. */
+    orderStatus?: string;
+    /** The order's lines, which the returns form offers for selection. */
+    items?: Order['items'];
 }>();
 
 /**
@@ -70,6 +78,16 @@ const { loading } = storeToRefs(useReturnsStore());
  * The returns already opened on this order.
  */
 const opened = ref<Return[]>([]);
+
+/**
+ * The lines the returns form offers: none until the goods have shipped, and none once every
+ * returnable unit is already in a return.
+ */
+const returnLines = computed(() =>
+    isReturnableOrderStatus(props.orderStatus)
+        ? returnableLines(props.items ?? [], opened.value)
+        : []
+);
 
 /**
  * The withdrawal button's own blocked state — a closed window or an order that moved on arrives as
@@ -118,12 +136,23 @@ const handleWithdraw = () =>
                 .catch((error: unknown) => reportWithdrawError(error));
         });
 
+/**
+ * A return from the form went through: re-read this order's list (it shrinks what is left to
+ * offer) and tell the page.
+ *
+ * @returns A promise settling once the list is reloaded.
+ */
+const handleReturnOpened = () => {
+    emit('opened');
+    return loadOpened();
+};
+
 onMounted(loadOpened);
 </script>
 
 <template>
     <section
-        v-if="canWithdraw || opened.length > 0"
+        v-if="canWithdraw || opened.length > 0 || returnLines.length > 0"
         class="flex flex-col gap-3"
         data-test="withdrawal-panel"
     >
@@ -148,6 +177,13 @@ onMounted(loadOpened);
             </v-btn>
             <InlineErrorAlert :message="withdrawError" data-test="withdraw-error" />
         </template>
+
+        <ReturnRequestForm
+            v-if="returnLines.length > 0"
+            :order-id="orderId"
+            :lines="returnLines"
+            @opened="handleReturnOpened"
+        />
 
         <ul v-if="opened.length > 0" class="m-0 flex list-none flex-col gap-2 p-0">
             <li

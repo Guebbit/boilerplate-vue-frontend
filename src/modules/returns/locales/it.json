@@ -50,8 +50,22 @@
         "success-decline": "Reso rifiutato.",
         "success-receive": "Merce ricevuta e cliente rimborsato."
     },
+    "returns-request": {
+        "button-open": "Restituisci merce",
+        "label-lines": "Cosa vuoi restituire?",
+        "label-quantity": "Quantità (fino a {max})",
+        "label-reason": "Motivo",
+        "label-note": "Qualcosa da dirci? (facoltativo)",
+        "button-submit": "Richiedi il reso",
+        "button-cancel": "Annulla",
+        "error-reason-required": "Scegli un motivo",
+        "error-note-too-long": "La nota è troppo lunga (massimo 1000 caratteri)",
+        "error-lines-required": "Scegli almeno un articolo da restituire",
+        "error-quantity-invalid": "Inserisci una quantità intera, da 1 fino a quanto puoi ancora restituire",
+        "success": "Reso richiesto. Lo esamineremo e ti scriveremo via email."
+    },
     "withdrawal-panel": {
-        "title": "Diritto di recesso",
+        "title": "Resi e recesso",
         "until": "Puoi recedere da questo contratto fino al {date}.",
         "until-delivery": "Puoi recedere da questo contratto. Il periodo di recesso inizia alla consegna della merce.",
         "button": "Recedi dal contratto qui",
