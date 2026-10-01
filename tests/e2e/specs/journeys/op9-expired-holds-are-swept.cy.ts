@@ -66,8 +66,12 @@ describe('OP9 · Expired holds are swept', () => {
                     cy.travel(PAST_CARD_HOLD_MS);
                     cy.switchUser('admin');
                     cy.visit('/en/inventory');
+                    cy.intercept('POST', '**/inventory/reservations/sweep').as('sweep');
                     cy.get('[data-test=sweep-submit]').click();
                     cy.get('[data-test=app-dialog-confirm]').click();
+                    // The order is read straight after: wait for the sweep to have answered, or a
+                    // loaded machine reads it while the sweep is still running.
+                    cy.wait('@sweep').its('response.statusCode').should('equal', 200);
                     cy.get('[data-test=sweep-error]').should('not.exist');
 
                     cy.step('the order is cancelled and the units are back');
