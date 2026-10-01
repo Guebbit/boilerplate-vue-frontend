@@ -200,7 +200,9 @@ const runCheckout = () =>
         // Only when the chosen method actually needs one: the picker unmounts on pickup but
         // leaves `addressId` holding its last value, and the backend now refuses an address
         // paired with a method that can't use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
-        ...(shippingMethodRequiresAddress.value && addressId.value !== undefined
+        ...(cartShipping.value?.required &&
+        shippingMethodRequiresAddress.value &&
+        addressId.value !== undefined
             ? { addressId: addressId.value }
             : {}),
         ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
@@ -523,7 +525,21 @@ onMounted(() =>
                         <dd class="text-right font-medium">{{ cartSummary.totalQuantity }}</dd>
                     </dl>
                     <v-divider class="my-3" />
+                    <!--
+                        A basket with nothing to ship (every line digital) has no method to
+                        choose, so the selector is replaced by one plain line rather than shown as
+                        an empty heading. The line promises nothing about how a digital good
+                        arrives: no channel delivers one yet.
+                    -->
+                    <p
+                        v-if="cartShipping && !cartShipping.required"
+                        class="opacity-80"
+                        data-test="cart-no-shipping"
+                    >
+                        {{ t('cart-page.no-shipping-needed') }}
+                    </p>
                     <ShippingSelector
+                        v-else
                         v-model="shippingMethodId"
                         v-model:requires-address="shippingMethodRequiresAddress"
                         v-model:ship-to-countries="shipToCountries"
@@ -535,7 +551,7 @@ onMounted(() =>
                         basket, or `pickup`, never renders this at all.
                     -->
                     <AddressPicker
-                        v-if="shippingMethodRequiresAddress"
+                        v-if="cartShipping?.required && shippingMethodRequiresAddress"
                         v-model="addressId"
                         :ship-to-countries="shipToCountries"
                         class="mt-3"
