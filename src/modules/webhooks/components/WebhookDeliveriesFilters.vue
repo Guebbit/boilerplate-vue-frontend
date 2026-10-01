@@ -192,6 +192,7 @@ const handlePageChange = (page: number) => {
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
                     <v-select
                         v-model="subscriptionChoice"
+                        data-test="webhook-delivery-filter-subscription"
                         :items="subscriptionOptions"
                         item-title="label"
                         item-value="value"
@@ -201,6 +202,7 @@ const handlePageChange = (page: number) => {
                     />
                     <v-select
                         v-model="statusChoice"
+                        data-test="webhook-delivery-filter-status"
                         :items="statusOptions"
                         item-title="label"
                         item-value="value"
@@ -244,8 +246,18 @@ const handlePageChange = (page: number) => {
                 {{ subscriptionLabel(item.subscriptionId) }}
             </template>
 
+            <template v-slot:[`item.eventType`]="{ item }">
+                <span data-test="webhook-delivery-event">{{ item.eventType }}</span>
+            </template>
+
             <template v-slot:[`item.status`]="{ item }">
-                <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="statusColor(item.status)"
+                    data-test="webhook-delivery-status"
+                    :data-status="item.status"
+                >
                     {{ statusLabel(item.status) }}
                 </v-chip>
             </template>

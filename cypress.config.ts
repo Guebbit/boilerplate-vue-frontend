@@ -42,8 +42,10 @@ import { totpCode } from './scripts/e2e/totp';
 import {
     SINGLE_PROCESS_SINK_PORT,
     startWebhookSink,
+    verifiesStandardWebhook,
     type WebhookSink
 } from './scripts/e2e/webhook-sink';
+import { readWebhookTester } from './scripts/e2e/webhook-tester';
 
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
@@ -196,6 +198,31 @@ export default defineConfig({
                         sink.clear();
                         return null;
                     }),
+                /*
+                 * Whether a received delivery verifies under a signing secret the journey holds
+                 * (a rotated one, say), not just the seeded one the sink checks. See
+                 * `scripts/e2e/webhook-sink.ts`.
+                 */
+                webhookSignatureValid: (request: {
+                    headers: Record<string, string>;
+                    body: string;
+                    secret: string;
+                }) =>
+                    verifiesStandardWebhook(
+                        {
+                            id: request.headers['webhook-id'],
+                            timestamp: request.headers['webhook-timestamp'],
+                            signature: request.headers['webhook-signature']
+                        },
+                        request.body,
+                        request.secret
+                    ),
+                /*
+                 * What the live profile's `webhook-tester` captured for a subscription's session.
+                 * See `scripts/e2e/webhook-tester.ts`.
+                 */
+                webhookTesterRequests: (subscriptionUrl: string) =>
+                    readWebhookTester(subscriptionUrl),
                 compareVisualSnapshot: (options: Parameters<typeof compareSnapshot>[0]) =>
                     compareSnapshot(options),
                 /*
