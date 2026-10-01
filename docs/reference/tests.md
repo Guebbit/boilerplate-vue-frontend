@@ -248,6 +248,7 @@ how a reader finds the story without opening the file.
 | IN1  | The admin mints a read-only key with an expiry in the form and sees its secret once; the script reads with it, is refused a write (403), and gets 401 once the admin revokes it                                                                                   | `admin`, then a script               | `nightly` | `in1-a-key-does-what-it-was-given.cy.ts`    |
 | IN2  | A second admin mints a read key and the moderator bans them in the user form: the key is refused (403, still recognised) until the admin is unbanned                                                                                                              | second admin, `moderator`            | `nightly` | `in2-banning-the-minter-bans-the-key.cy.ts` |
 | IN3  | A customer buys through the storefront and the receiver gets order.created, signed with the subscription secret; a rotation signs with both secrets, and once the old one is removed only the new one verifies (demo: the admin replays it, there is no broker)   | `user`, then `admin`                 | `nightly` | `in3-an-order-fires-a-signed-webhook.cy.ts` |
+| IN4  | Replays against a dead endpoint each count as an attempt and show why; a delivery replayed while its subscription is off is refused on the row, and once it is on the same Replay delivers it; the log filters by status                                          | `admin`                              | `nightly` | `in4-replay-a-failed-delivery.cy.ts`        |
 
 ## `tests/support/` — the harness
 
