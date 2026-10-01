@@ -28,6 +28,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import TwoFactorEnroll from '@/modules/account/components/TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from '@/modules/account/components/TwoFactorBackupCodes.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Translation function.
@@ -62,11 +63,21 @@ onMounted(twoFactor.fetchStatus);
 const enrolling = ref<string>();
 
 /**
+ * Hands focus back to the control that opened the enrolment dialog once it closes.
+ */
+useReturnFocus(() => enrolling.value !== undefined);
+
+/**
  * The one-time backup codes to reveal, from either a first-factor confirm or a regenerate — held
  * here, not in the store: this is the same "never park a secret in a store" idiom `api-keys`/
  * `webhooks` use for their own one-time secrets.
  */
 const revealedBackupCodes = ref<string[]>();
+
+/**
+ * Hands focus back to the control that opened the backup-codes dialog once it closes.
+ */
+useReturnFocus(() => revealedBackupCodes.value !== undefined);
 
 /**
  * Closes `TwoFactorEnroll.vue`, opening the backup-codes reveal when it armed the FIRST factor.
@@ -125,6 +136,11 @@ type CodePromptRequest =
  * for a code before they proceed.
  */
 const codePrompt = ref<CodePromptRequest>();
+
+/**
+ * Hands focus back to the control that opened the code prompt once it closes.
+ */
+useReturnFocus(() => codePrompt.value !== undefined);
 
 /**
  * The code being typed into that prompt. Cleared each time the prompt opens.

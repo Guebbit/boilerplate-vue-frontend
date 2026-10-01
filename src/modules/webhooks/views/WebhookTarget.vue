@@ -29,6 +29,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import {
     formatText,
     formatDateTime,
@@ -110,6 +111,11 @@ const subscriptionStatus = computed(() =>
  * `rotateSecret`).
  */
 const revealedSecret = ref<string>();
+
+/**
+ * Hands focus back to the control that opened the one-time secret dialog once it closes.
+ */
+useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * Whether a rotate/remove/delete call is in flight, disabling the secret-ring buttons while one

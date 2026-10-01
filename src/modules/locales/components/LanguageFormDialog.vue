@@ -14,6 +14,7 @@
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -75,6 +76,11 @@ const { addMessage } = useNotificationsStore();
  * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
 const fullscreen = useFullscreenDialog();
+
+/**
+ * Hands focus back to the control that opened the language dialog once it closes.
+ */
+useReturnFocus(() => isOpen.value);
 
 /**
  * Whether the dialog is editing an existing language rather than creating one.
