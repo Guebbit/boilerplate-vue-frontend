@@ -329,24 +329,28 @@ const handleHardDelete = (orderId: string) =>
                         v-if="isStaff"
                         v-model="filters.id"
                         :label="t('orders-list-page.filter-id')"
+                        data-test="filter-id"
                         hide-details
                     />
                     <v-text-field
                         v-if="isStaff"
                         v-model="filters.userId"
                         :label="t('orders-list-page.filter-user-id')"
+                        data-test="filter-user-id"
                         hide-details
                     />
                     <v-text-field
                         v-if="isStaff"
                         v-model="filters.productId"
                         :label="t('orders-list-page.filter-product-id')"
+                        data-test="filter-product-id"
                         hide-details
                     />
                     <v-text-field
                         v-if="isStaff"
                         v-model="filters.email"
                         :label="t('orders-list-page.filter-email')"
+                        data-test="filter-email"
                         hide-details
                     />
                     <v-select
@@ -379,11 +383,13 @@ const handleHardDelete = (orderId: string) =>
                     class="mt-2"
                 />
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary">
+                    <v-btn type="submit" color="primary" data-test="search-submit">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
-                    <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
+                        {{ t('generic.reset') }}
+                    </v-btn>
                 </div>
             </form>
         </v-card>

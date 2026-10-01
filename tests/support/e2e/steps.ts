@@ -227,3 +227,34 @@ export const carriesAnotherLink =
         email.lines?.some(
             (line) => line.startsWith('linkUrl: ') && line !== `linkUrl: ${known}`
         ) === true;
+
+/**
+ * The ids of the rows a staff list shows right now, in order — read off each row's "view" link, so
+ * no title or email is copied into a spec.
+ *
+ * @returns a chain yielding the ids
+ */
+export const listedIds = (): Cypress.Chainable<string[]> =>
+    cy.get('body').then(($body) =>
+        $body
+            .find('[data-test=row-view]')
+            .toArray()
+            .map((link) => String(link.getAttribute('href')).split('/').at(-1) ?? '')
+    );
+
+/**
+ * Presses "search" and waits until the list has finished answering. Needs `cy.trackNetwork()`
+ * to have been called before the visit.
+ */
+export const submitSearch = (): void => {
+    cy.get('[data-test=search-submit]').click();
+    cy.settleNetwork();
+};
+
+/**
+ * Presses "reset" and waits until the list has finished answering.
+ */
+export const resetSearch = (): void => {
+    cy.get('[data-test=search-reset]').click();
+    cy.settleNetwork();
+};

@@ -339,7 +339,11 @@ onMounted(() => {
                     A static-only language has no dynamic record behind it: nothing to list, edit
                     or delete until someone registers it with "Add language".
                 -->
-                <div v-if="item.source !== 'static'" class="flex flex-wrap gap-1">
+                <div
+                    v-if="item.source !== 'static'"
+                    class="flex flex-wrap gap-1"
+                    :data-language="item.tag"
+                >
                     <v-btn
                         :size="rowActionSize"
                         variant="tonal"

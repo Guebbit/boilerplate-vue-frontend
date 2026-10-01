@@ -105,6 +105,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                         density="compact"
                         hide-details
                         class="flex-none"
+                        data-test="realtime-raw-events"
                         :label="t('realtime-playground-page.label-raw-events')"
                     />
                 </div>

@@ -84,8 +84,12 @@ const confirmClearExpiredTokens = () =>
     <div id="admin-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <v-tabs v-model="activeTab" color="primary">
-                <v-tab value="overview">{{ t('admin-page.tab-overview') }}</v-tab>
-                <v-tab value="audit">{{ t('admin-page.tab-audit') }}</v-tab>
+                <v-tab value="overview" data-test="admin-tab-overview">{{
+                    t('admin-page.tab-overview')
+                }}</v-tab>
+                <v-tab value="audit" data-test="admin-tab-audit">{{
+                    t('admin-page.tab-audit')
+                }}</v-tab>
             </v-tabs>
             <v-spacer />
             <v-btn
