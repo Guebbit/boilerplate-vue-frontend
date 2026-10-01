@@ -52,7 +52,9 @@ describe('CU2 · An unverified account cannot buy yet', () => {
             country: 'Italy'
         });
         cy.get('[data-test=address-dialog]').should('not.exist');
-        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+        // Forced: the "address saved" toast sits over the foot of the page, where the button is.
+        // `not.be.disabled` still guards it.
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
         cy.get('[data-test=cart-checkout-error]').should(
             'contain.text',
             'confirm your email address'
