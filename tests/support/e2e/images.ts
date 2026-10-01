@@ -36,12 +36,22 @@ export const pollForImageSource = (
     pattern: RegExp,
     deadline: number = Date.now() + DIGEST_TIMEOUT_MS
 ): Cypress.Chainable<string> =>
-    cy.get(selector).then(($image) => {
-        const source = $image.attr('src') ?? '';
-        if (pattern.test(source) || Date.now() >= deadline) return cy.wrap(source);
-        // eslint-disable-next-line cypress/no-unnecessary-waiting -- polling a queue worker neither app drives directly; bounded by `deadline`, not trusted to be long enough
-        return cy
-            .wait(DIGEST_POLL_INTERVAL_MS, { log: false })
-            .then(() => cy.reload())
-            .then(() => pollForImageSource(selector, pattern, deadline));
-    });
+    cy
+        .get(selector)
+        // A freshly (re)loaded page paints the bundled placeholder until the record has arrived,
+        // so reading `src` at once would see the stand-in on every pass. Wait it out; a record
+        // whose digest is pending carries the pending image, which is not the placeholder.
+        .should(($image) => {
+            const source = $image.attr('src') ?? '';
+            expect(source, 'a src that is not the placeholder').to.match(/\S/);
+            expect(source).not.to.contain('no-image-placeholder');
+        })
+        .then(($image) => {
+            const source = $image.attr('src') ?? '';
+            if (pattern.test(source) || Date.now() >= deadline) return cy.wrap(source);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting -- polling a queue worker neither app drives directly; bounded by `deadline`, not trusted to be long enough
+            return cy
+                .wait(DIGEST_POLL_INTERVAL_MS, { log: false })
+                .then(() => cy.reload())
+                .then(() => pollForImageSource(selector, pattern, deadline));
+        });
