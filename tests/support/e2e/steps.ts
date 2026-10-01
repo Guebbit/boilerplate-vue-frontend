@@ -2,6 +2,7 @@
 
 import { cents } from '../../../scripts/e2e/cents';
 import type { E2ERole } from './scenario';
+import type { MailedEmail } from '../../../scripts/e2e/mail-message';
 
 export { cents, sumCents } from '../../../scripts/e2e/cents';
 
@@ -213,3 +214,16 @@ export const eventually = <T>(
         // eslint-disable-next-line cypress/no-unnecessary-waiting -- the consequence has no event the browser can wait on
         return cy.wait(500).then(() => eventually(read, isDone, attemptsLeft - 1));
     });
+
+/**
+ * Whether a mail carries a confirmation link other than `known` — how the spec tells the second
+ * mail from the first when both sit in one inbox.
+ *
+ * @param known - the link already seen
+ */
+export const carriesAnotherLink =
+    (known: string) =>
+    (email: MailedEmail): boolean =>
+        email.lines?.some(
+            (line) => line.startsWith('linkUrl: ') && line !== `linkUrl: ${known}`
+        ) === true;
