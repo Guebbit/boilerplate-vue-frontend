@@ -2,13 +2,15 @@
 /**
  * @module
  * CU15 · A different address, and a note for the shop. The customer already has one saved
- * address; at checkout they add a second, deliver there, leave a note, and the order carries both.
- * The admin opens the same order and reads the note.
+ * address; at checkout they add a second, deliver there, invoice the first, leave a note, and the
+ * order carries both addresses apart. The admin opens the same order and reads the note.
  *
  * The story is about checkout not forcing the book's one entry on a customer with somewhere else
  * to be: the add button is there with an entry already saved, the new place becomes the choice,
- * and what the order froze is the place picked, not the default. The address book is read back
- * from the profile, which shares it. Nothing here pays.
+ * and what the order froze is the place picked, not the default. Billing has its own choice: it
+ * follows the shipping place ("same as shipping") until the customer names another entry, and adding
+ * to the shipping picker never moves it. The address book is read back from the profile, which
+ * shares it. Nothing here pays.
  */
 import {
     addToCartFromStorefront,
@@ -54,6 +56,13 @@ describe('CU15 · A different address, and a note for the shop', () => {
             .find('input')
             .should('be.checked');
 
+        cy.step('billing still follows the shipping place, then is pointed at the first address');
+        cy.get('[data-test=billing-address-picker-same] input').should('be.checked');
+        cy.contains('[data-test^=billing-address-picker-]', 'Via Pino 7').click();
+        cy.contains('[data-test^=billing-address-picker-]', 'Via Pino 7')
+            .find('input')
+            .should('be.checked');
+
         cy.step('leaves a note and checks out');
         cy.textareaIn('cart-notes').type(NOTE);
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
@@ -64,6 +73,9 @@ describe('CU15 · A different address, and a note for the shop', () => {
             .should('contain.text', 'Via dei Coralli 12')
             .and('contain.text', 'Roma');
         cy.get('[data-test=order-shipping-address]').should('not.contain.text', 'Via Pino 7');
+        cy.get('[data-test=order-billing-address]')
+            .should('contain.text', 'Via Pino 7')
+            .and('not.contain.text', 'Via dei Coralli 12');
         cy.get('[data-test=order-notes]').should('contain.text', NOTE);
 
         idFromLocation().then((orderId) => {
@@ -79,6 +91,7 @@ describe('CU15 · A different address, and a note for the shop', () => {
                 'contain.text',
                 'Via dei Coralli 12'
             );
+            cy.get('[data-test=order-billing-address]').should('contain.text', 'Via Pino 7');
         });
     });
 });

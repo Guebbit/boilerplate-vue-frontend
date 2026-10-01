@@ -7889,6 +7889,8 @@ components:
           description: What that method cost at checkout time — a later rate change cannot re-price history.
         shippingAddress:
           $ref: "#/components/schemas/OrderAddress"
+        billingAddress:
+          $ref: "#/components/schemas/OrderAddress"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethodId"
         payBy:
@@ -11941,7 +11943,11 @@ components:
         addressId:
           allOf:
             - $ref: "#/components/schemas/Id"
-          description: "Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`."
+          description: "Which of the caller's saved addresses to SHIP to — meaningful only when a line ships to an address. Omitted, the default address is used; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. Sent for a basket that ships to no address (all-digital, or a pickup method) it refuses with 409, `CART_ADDRESS_NOT_APPLICABLE`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`."
+        billingAddressId:
+          allOf:
+            - $ref: "#/components/schemas/Id"
+          description: Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`.
         paymentMethod:
           allOf:
             - $ref: "#/components/schemas/PaymentMethodId"
@@ -13532,7 +13538,7 @@ x-error-codes:
     description: A malformed request the body parser or a library refused before any route ran.
   CART_ADDRESS_NOT_APPLICABLE:
     status: 409
-    description: The cart is all-digital and needs no shipping address.
+    description: Nothing in this checkout ships to an address (all-digital, or a method that ships to none), so a shipping `addressId` cannot apply.
   CART_ADDRESS_NOT_FOUND:
     status: 404
     description: The named address does not exist, or does not belong to the caller.
@@ -13542,6 +13548,9 @@ x-error-codes:
   CART_BANK_TRANSFER_LIMIT:
     status: 409
     description: This order total exceeds the bank-transfer payment method's configured ceiling.
+  CART_BILLING_ADDRESS_REQUIRED:
+    status: 422
+    description: No billing address could be resolved — none was named, nothing ships, and the address book has no default.
   CART_CHANGED:
     status: 409
     description: The cart changed between the request that read it and this write — reload and retry.

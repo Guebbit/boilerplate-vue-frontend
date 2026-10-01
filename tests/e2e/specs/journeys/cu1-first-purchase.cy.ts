@@ -65,6 +65,8 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         cy.get('[data-test=cart-item]').should('have.length', 2);
         cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=address-picker-empty]').should('exist');
+        // Billing is offered beside it and defaults to the shipping address.
+        cy.get('[data-test=billing-address-picker-same] input').should('be.checked');
         cy.get('[data-test=address-picker-add]').click();
         fillAddressDialog({
             label: 'Home',
@@ -100,6 +102,10 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         cy.step('reads the order page against the cart');
         cy.get('[data-test=order-number]').invoke('text').should('match', /\d/);
         cy.get('[data-test=order-item-line-total]').should('have.length', 2);
+        // Billing was left on "same as the shipping address", so the order carries the one
+        // address twice: shipped to it and invoiced to it.
+        cy.get('[data-test=order-shipping-address]').should('contain.text', 'Via Emilia 1');
+        cy.get('[data-test=order-billing-address]').should('contain.text', 'Via Emilia 1');
         cy.get('[data-test=order-item-line-total]').then(($lines) => {
             const sum = sumCents($lines.toArray().map((line) => line.textContent ?? ''));
             expect(sum, 'the order lines add up to the cart items').to.equal(cart.items);

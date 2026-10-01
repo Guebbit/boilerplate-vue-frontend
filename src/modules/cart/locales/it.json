@@ -26,6 +26,7 @@
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",
         "shortfall-line": "{title}: richiesti {requested}, disponibili solo {available}",
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",
+        "error-billing-address-required": "Ogni ordine richiede un indirizzo di fatturazione per la fattura — scegline o aggiungine uno per continuare.",
         "error-shipping-method-weight": "Il tuo carrello è troppo pesante per il metodo di spedizione scelto — scegline un altro.",
         "error-shipping-method-generic": "Non è stato possibile impostare quel metodo di spedizione — scegline un altro.",
         "error-ship-to-country-not-supported": "Non spediamo al paese di quell'indirizzo — scegli o aggiungi un indirizzo in un paese che serviamo.",

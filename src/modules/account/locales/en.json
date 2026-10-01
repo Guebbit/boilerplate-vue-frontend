@@ -211,5 +211,11 @@
         "title": "Shipping address",
         "empty": "You have no saved addresses yet.",
         "add": "Add an address"
+    },
+    "billing-address-picker": {
+        "title": "Billing address",
+        "same": "Same as the shipping address",
+        "empty": "You have no saved addresses yet — add the address this order is invoiced to.",
+        "add": "Add an address"
     }
 }

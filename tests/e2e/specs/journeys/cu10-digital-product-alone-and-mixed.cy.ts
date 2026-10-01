@@ -2,8 +2,11 @@
 /**
  * @module
  * CU10 · A digital product, alone and mixed. A video course ships nothing, so a basket holding only
- * that asks for no shipping method and no address, says so in one line, and charges no delivery. Put a
- * physical product beside it and delivery comes back: a method and an address are asked for again.
+ * that asks for no shipping method and no shipping address, says so in one line, and charges no
+ * delivery. It still asks whom to invoice, and the order carries that billing address and no
+ * shipping one: the account's default address is not frozen as a place nothing was sent to. Put a
+ * physical product beside it and delivery comes back: a method and a shipping address are asked for
+ * again, and billing defaults to "same as shipping".
  *
  * The free-shipping line counts the whole basket, course included, and the cart quotes exactly what
  * the order then charges. A shipping choice left behind by a basket that has since gone digital-only
@@ -24,6 +27,8 @@ import {
 interface OrderLike {
     shippingCost?: number | null;
     shippingMethod?: string | null;
+    shippingAddress?: { street: string } | null;
+    billingAddress?: { street: string } | null;
     items: unknown[];
 }
 
@@ -41,25 +46,37 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);
 
-        cy.step('no shipping step, no address, no delivery cost: the basket can be bought at once');
+        cy.step('no shipping step, no shipping address, no delivery cost; billing is asked alone');
         cy.get('[data-test=cart-summary]').should('exist');
         cy.get('[data-test=cart-no-shipping]').should('exist');
         cy.get('[data-test=shipping-selector]').should('not.exist');
         cy.get('[data-test=address-picker]').should('not.exist');
         cy.get('[data-test=cart-shipping-cost]').should('not.exist');
+        // Nothing ships, so there is no shipping address to be "the same as": the book's entries
+        // alone, the default already chosen.
+        cy.get('[data-test=billing-address-picker]').should('exist');
+        cy.get('[data-test=billing-address-picker-same]').should('not.exist');
+        cy.get('[data-test=billing-address-picker] input[type=radio]:checked').should(
+            'have.length',
+            1
+        );
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 
-        // The order does still freeze the account's default address ("rides on the order unused",
-        // BE `cart/services/checkout.ts`), so this step asserts the method and cost, not the address.
-        cy.step('the order carries no delivery at all, and no no-withdrawal notice');
+        cy.step('the order carries no delivery, no shipping address and no no-withdrawal notice');
         cy.get('#order-target').should('exist');
         cy.get('[data-test=order-item-line-total]').should('have.length', 1);
         cy.get('[data-test=order-shipping]').should('not.exist');
+        cy.get('[data-test=order-shipping-address]').should('not.exist');
+        cy.get('[data-test=order-billing-address]').should('exist');
         cy.get('[data-test=order-item-no-withdrawal]').should('not.exist');
         idFromLocation().then((orderId) => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.shippingMethod ?? null, 'nothing to ship by').to.equal(null);
                 expect(order?.shippingCost ?? 0, 'nothing to charge for').to.equal(0);
+                expect(order?.shippingAddress ?? null, 'nowhere was sent to').to.equal(null);
+                expect(order?.billingAddress?.street, 'but the invoice has an address').to.be.a(
+                    'string'
+                );
             });
         });
 
@@ -73,6 +90,7 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.get('[data-test=cart-no-shipping]').should('not.exist');
         cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=address-picker]').should('exist');
+        cy.get('[data-test=billing-address-picker-same] input').should('be.checked');
         // Bowl 80 plus course 29: the basket as a whole is past standard's free-from-100 line.
         const cart = { items: 0, shipping: 0 };
         centsOf('[data-test=cart-items-total]').then((items) => {
@@ -102,6 +120,9 @@ describe('CU10 · A digital product, alone and mixed', () => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.shippingMethod).to.equal('standard');
                 expect(order?.items).to.have.length(2);
+                expect(order?.billingAddress, 'same as shipping').to.deep.equal(
+                    order?.shippingAddress
+                );
             });
         });
 
@@ -118,5 +139,6 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
         cy.get('#order-target').should('exist');
         cy.get('[data-test=order-shipping]').should('not.exist');
+        cy.get('[data-test=order-shipping-address]').should('not.exist');
     });
 });

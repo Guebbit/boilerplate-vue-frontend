@@ -25,6 +25,15 @@ describe('classifyCheckoutError', () => {
         ).toEqual({ kind: 'address-not-found' });
     });
 
+    it('names CART_BILLING_ADDRESS_REQUIRED', () => {
+        expect(
+            classifyCheckoutError({
+                status: 422,
+                errors: [{ code: 'CART_BILLING_ADDRESS_REQUIRED', message: 'x' }]
+            })
+        ).toEqual({ kind: 'billing-address-required' });
+    });
+
     it('names CART_SHIPPING_METHOD_WEIGHT', () => {
         expect(
             classifyCheckoutError({

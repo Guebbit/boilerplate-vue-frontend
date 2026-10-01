@@ -137,6 +137,22 @@ const shipToCountries = ref<string[]>([]);
 const addressId = ref<string | undefined>();
 
 /**
+ * The chosen billing address's entry id. `undefined` means "same as the shipping address" while
+ * {@link shipsToAddress} holds; otherwise the picker always holds an entry (the book's
+ * default until the visitor picks), so checkout never asks the API to guess.
+ */
+const billingAddressId = ref<string | undefined>();
+
+/**
+ * Whether the shipping address is asked at all — a physical basket under a method that needs one.
+ * It is the one condition under which billing can be "the same as" it; otherwise (a digital-only
+ * basket, or a pickup) billing is asked on its own.
+ */
+const shipsToAddress = computed(
+    () => cartShipping.value?.required === true && shippingMethodRequiresAddress.value === true
+);
+
+/**
  * The chosen payment method — optional; the API defaults an omitted choice to `card`.
  */
 const paymentMethodId = ref<PaymentMethodId | undefined>();
@@ -153,6 +169,9 @@ const notes = ref('');
  * re-deriving it from the lines: the server already decided.
  */
 const canCheckout = computed(() => {
+    // Billing is asked on its own when nothing ships to an address: an entry must be chosen
+    // (the picker pre-selects the default, so this only holds back an empty book).
+    if (!shipsToAddress.value && billingAddressId.value === undefined) return false;
     if (!cartShipping.value?.required) return true;
     if (shippingMethodId.value === undefined) return false;
     return !shippingMethodRequiresAddress.value || addressId.value !== undefined;
@@ -205,6 +224,10 @@ const runCheckout = () =>
         addressId.value !== undefined
             ? { addressId: addressId.value }
             : {}),
+        // The billing entry the visitor named; left out, the API reads it as "same as shipping".
+        ...(billingAddressId.value === undefined
+            ? {}
+            : { billingAddressId: billingAddressId.value }),
         ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
         ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
     })
@@ -237,6 +260,10 @@ const runCheckout = () =>
             }
             if (verdict.kind === 'address-not-found') {
                 addMessage(t('cart-page.error-address-not-found'));
+                return;
+            }
+            if (verdict.kind === 'billing-address-required') {
+                addMessage(t('cart-page.error-billing-address-required'));
                 return;
             }
             if (verdict.kind === 'shipping-method-weight') {
@@ -551,9 +578,21 @@ onMounted(() =>
                         basket, or `pickup`, never renders this at all.
                     -->
                     <AddressPicker
-                        v-if="cartShipping?.required && shippingMethodRequiresAddress"
+                        v-if="shipsToAddress"
                         v-model="addressId"
                         :ship-to-countries="shipToCountries"
+                        class="mt-3"
+                    />
+                    <!--
+                        Every order carries a billing address for its invoice, so this is always
+                        asked: "same as the shipping address" when something ships to one, the
+                        book's entries alone otherwise. It binds no ship-to list — an invoice may
+                        go anywhere.
+                    -->
+                    <AddressPicker
+                        v-model="billingAddressId"
+                        purpose="billing"
+                        :same-as-shipping="shipsToAddress"
                         class="mt-3"
                     />
                     <PaymentMethodSelector v-model="paymentMethodId" />
