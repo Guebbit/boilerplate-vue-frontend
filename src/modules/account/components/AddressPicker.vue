@@ -137,6 +137,7 @@ watch(dialogOpen, (open) => {
  *
  * - an entry that appeared in a book that already had some, from this picker's own dialog, is the
  *   visitor's own add — choose it;
+ * - a book that loads empty drops a choice that points at an entry no longer in it;
  * - otherwise, with nothing valid chosen (nothing yet, or the entry is gone), fall back to the
  *   `default` one, or the first — unless "same as the shipping address" is on offer, which is
  *   itself the standing choice.
@@ -147,7 +148,13 @@ watch(dialogOpen, (open) => {
 watch(
     addresses,
     (list, previous) => {
-        if (list.length === 0) return;
+        if (list.length === 0) {
+            // A book that LOADED empty (a fresh array after the mount-time read) leaves any
+            // restored choice pointing at an entry that is gone; the mount-time call is skipped,
+            // since an empty list there only means the read has not answered yet.
+            if (previous !== undefined) addressId.value = undefined;
+            return;
+        }
         const added =
             addingHere && previous?.length
                 ? list.find((address) => !previous.some(({ id }) => id === address.id))

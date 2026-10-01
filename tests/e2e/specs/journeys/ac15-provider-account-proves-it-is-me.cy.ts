@@ -9,7 +9,7 @@
  * Demo only: the fake OAuth provider exists only there, and time passes by moving the demo
  * backend's clock (`cy.travel`), past the 300 s window that guards money.
  */
-import { addToCartFromStorefront } from '../../../support/e2e/steps';
+import { addToCartFromStorefront, fillAddressDialog } from '../../../support/e2e/steps';
 
 /** Past the critical window (300 s), inside the access token's own life (600 s). */
 const PAST_CRITICAL_MS = 400_000;
@@ -34,11 +34,23 @@ describe('AC15 · A provider account proves it is still the owner', () => {
         addToCartFromStorefront('product.rich');
         cy.goToCart();
         cy.get('[data-test=shipping-method-pickup]').click();
+        // A new account's book is empty and the invoice needs an address, even for a pickup.
+        cy.get('[data-test=billing-address-picker-add]').click();
+        fillAddressDialog({
+            label: 'Home',
+            fullName: 'Ada Lovelace',
+            street: 'Via Emilia 1',
+            zip: '41121',
+            city: 'Modena',
+            country: 'Italy'
+        });
+        cy.get('[data-test=address-dialog]').should('not.exist');
 
         cy.step('the fresh-login window lapses, and checkout opens the dialog');
         cy.travel(PAST_CRITICAL_MS);
         cy.intercept('POST', '**/cart/checkout').as('checkout');
-        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+        // Forced: the "address saved" toast can sit over the foot of the page, where the button is.
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click({ force: true });
         cy.wait('@checkout').its('response.statusCode').should('equal', 401);
         cy.get('[data-test=reauth-dialog]').should('be.visible');
 

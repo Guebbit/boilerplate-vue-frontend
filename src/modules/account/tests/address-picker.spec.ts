@@ -111,6 +111,20 @@ describe('AddressPicker — the pre-select watcher', () => {
             expect(lastChosen(wrapper)).toBe('a2');
         });
     });
+
+    it('drops a restored choice once the book loads empty, and not before it has answered', () => {
+        // A checkout draft restored an id whose entry was deleted since: the store is empty at
+        // mount, so the picker must wait for the read rather than clear the choice at once.
+        const { store, wrapper } = mountPicker([], 'gone');
+        expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+        // The read answers with an empty book — a fresh array, as `readAddressesResponse` writes.
+        store.addresses = [];
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+        });
+    });
 });
 
 describe('AddressPicker — adding a place at checkout', () => {
