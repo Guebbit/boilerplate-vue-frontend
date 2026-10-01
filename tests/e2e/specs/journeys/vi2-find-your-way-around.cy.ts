@@ -65,6 +65,11 @@ describe('VI2 · Find your way around', () => {
         cy.location('pathname').should('equal', '/en/products');
         cy.get('#products-list-page').should('exist');
 
+        cy.step('an address with no locale keeps its path');
+        cy.visit('/products');
+        cy.location('pathname').should('equal', '/en/products');
+        cy.get('#products-list-page').should('exist');
+
         cy.step('a page that does not exist says so, and its Home button works');
         cy.visit('/en/no-such-page');
         cy.get('#error-page').should('exist');
