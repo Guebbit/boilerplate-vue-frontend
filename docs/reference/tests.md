@@ -247,6 +247,7 @@ how a reader finds the story without opening the file.
 | AC3  | After the fresh-login window lapses, checkout and the data export open the re-auth dialog: a wrong password is refused, cancel abandons, the right one carries on (demo only, it moves the clock)                                                                 | `user`                               | `@smoke`  | `ac3-prove-it-is-still-you.cy.ts`           |
 | IN1  | The admin mints a read-only key with an expiry in the form and sees its secret once; the script reads with it, is refused a write (403), and gets 401 once the admin revokes it                                                                                   | `admin`, then a script               | `nightly` | `in1-a-key-does-what-it-was-given.cy.ts`    |
 | IN2  | A second admin mints a read key and the moderator bans them in the user form: the key is refused (403, still recognised) until the admin is unbanned                                                                                                              | second admin, `moderator`            | `nightly` | `in2-banning-the-minter-bans-the-key.cy.ts` |
+| IN3  | A customer buys through the storefront and the receiver gets order.created, signed with the subscription secret; a rotation signs with both secrets, and once the old one is removed only the new one verifies (demo: the admin replays it, there is no broker)   | `user`, then `admin`                 | `nightly` | `in3-an-order-fires-a-signed-webhook.cy.ts` |
 
 ## `tests/support/` — the harness
 
