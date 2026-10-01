@@ -38,6 +38,7 @@ describe('Cart', () => {
             cy.get('body').then((bodyElement) => {
                 if (bodyElement.find('[data-test=cart-clear]').length > 0) {
                     cy.wrap(bodyElement).find('[data-test=cart-clear]').first().click();
+                    cy.get('[data-test=app-dialog-confirm]').click();
                 }
             });
             cy.contains('Your cart is empty').should('be.visible');
@@ -114,9 +115,21 @@ describe('Cart', () => {
                 });
         });
 
-        it('clears the entire cart when clicking Clear cart', () => {
+        it('clears the entire cart when clicking Clear cart and confirming', () => {
             cy.get('[data-test=cart-clear]').click();
+            cy.get('[data-test=app-dialog-confirm]').click();
             cy.contains('Your cart is empty').should('be.visible');
+        });
+
+        it('keeps the cart when the Clear cart question is declined', () => {
+            cy.get('[data-test=cart-item]')
+                .its('length')
+                .then((initialLength) => {
+                    cy.get('[data-test=cart-clear]').click();
+                    cy.get('[data-test=app-dialog-cancel]').click();
+                    cy.get('[data-test=app-dialog-confirm]').should('not.exist');
+                    cy.get('[data-test=cart-item]').should('have.length', initialLength);
+                });
         });
 
         it('checks out and redirects to the new order', () => {

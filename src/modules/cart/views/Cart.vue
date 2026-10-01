@@ -27,6 +27,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import type { CartItem, PaymentMethodId } from '@types';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -324,16 +325,27 @@ const removeLine = (productId: string) => {
 };
 
 /**
- * Empties the whole cart, forgetting every line's pending step first (FA34): a queued step for a
- * line this is about to wipe would otherwise fire afterward and put that line back.
+ * Empties the whole cart after an explicit confirmation — the same dialog cancelling an order
+ * uses, since a clear is destructive and cannot be undone.
  *
- * @returns A promise resolving once the clear settles; a failure blocks the line actions in place
- *  ({@link lineActionError}).
+ * Forgets every line's pending step once the shopper accepts (FA34): a queued step for a line this
+ * is about to wipe would otherwise fire afterward and put that line back. A declined dialog
+ * touches nothing, pending steps included.
+ *
+ * @returns A promise resolving once the shopper declines or the clear settles; a failure blocks
+ *  the line actions in place ({@link lineActionError}).
  */
 const handleClearCart = () => {
-    forgetAll();
-    clearLineActionError();
-    return clearCart().catch((error: unknown) => reportLineActionError(error));
+    // The line count is what the question names: a bulk action has no single row to point at.
+    const count = cartItems.value.length;
+    return useDialogStore()
+        .confirm({ message: t('cart-page.confirm-clear', { count }, count), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            forgetAll();
+            clearLineActionError();
+            return clearCart().catch((error: unknown) => reportLineActionError(error));
+        });
 };
 
 onBeforeUnmount(flushPending);
