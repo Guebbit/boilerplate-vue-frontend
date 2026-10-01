@@ -9,6 +9,7 @@ import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
@@ -64,6 +65,11 @@ const isOpen = computed({
         if (!open) dialogStore.answer(false);
     }
 });
+
+/**
+ * Hands focus back to the control that opened the confirmation once it closes.
+ */
+useReturnFocus(() => isOpen.value);
 </script>
 
 <template>

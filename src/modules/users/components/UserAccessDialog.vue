@@ -15,6 +15,7 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { userRoleOptions } from '@/modules/users/domain';
 import type {
@@ -54,6 +55,11 @@ const { t } = useI18n();
  * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
 const fullscreen = useFullscreenDialog();
+
+/**
+ * Hands focus back to the control that opened the access dialog once it closes.
+ */
+useReturnFocus(() => isOpen.value);
 
 /**
  * The signed-in admin's own id, to warn them specifically when they are deactivating themselves.

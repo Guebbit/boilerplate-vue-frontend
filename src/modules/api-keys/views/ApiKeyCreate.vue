@@ -25,6 +25,7 @@ import { getFirstApiError } from '@/infrastructure/http/envelope.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { MintApiKeyRequest } from '@types';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
@@ -72,6 +73,11 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
  * but this component; the store's own cache never sees it (`store.ts`'s `mintCredential`).
  */
 const revealedSecret = ref<string>();
+
+/**
+ * Hands focus back to the control that opened the one-time secret dialog once it closes.
+ */
+useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * Reads the offending permission keys off a mint refusal — `details.permissions`, named exactly,

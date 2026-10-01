@@ -39,6 +39,11 @@ filters and page kept in the URL, and the apply and reset handlers — `use-serv
 `filters.sort` to a table's header or a select and re-searches from page 1, and `use-fullscreen-dialog.ts`
 is the one flag every dialog binds so it fills the screen on a phone.
 
+`use-return-focus.ts` hands focus back to the control that opened a dialog once it closes. A dialog
+with no `activator` has nobody for Vuetify to return focus to, so Escape would otherwise drop a
+keyboard user on the page body; every dialog calls it with its open flag, and the
+[FR12 journey](./tests.md#journeys--stories-that-cross-modules) proves it end to end.
+
 ## Organisms
 
 | File                                    | What it is                                                                                                                                                                        | Read next                                                  |

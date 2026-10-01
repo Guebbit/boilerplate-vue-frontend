@@ -15,6 +15,7 @@ import { computed, ref, useId, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
@@ -69,6 +70,11 @@ const setAsDefaultOnAdd = ref(false);
  * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
  */
 const fullscreen = useFullscreenDialog();
+
+/**
+ * Hands focus back to the control that opened the address dialog once it closes.
+ */
+useReturnFocus(() => open.value);
 
 /**
  * The dialog's fields: every `AddressInput` string, optional ones as empty strings.

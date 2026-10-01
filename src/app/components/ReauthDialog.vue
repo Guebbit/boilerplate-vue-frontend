@@ -12,6 +12,7 @@ import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { reauthSendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
@@ -170,6 +171,11 @@ const isOpen = computed({
         if (!open) reauthDialog.rejectStepUp(new Error('REAUTH_CANCELLED'));
     }
 });
+
+/**
+ * Hands focus back to the control that opened the re-authentication prompt once it closes.
+ */
+useReturnFocus(() => isOpen.value);
 
 /**
  * The tagged body for whichever method is on show; `undefined` while its field is empty.

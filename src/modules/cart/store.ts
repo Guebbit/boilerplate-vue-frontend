@@ -28,6 +28,7 @@ import type {
     CheckoutRequest
 } from '@types';
 import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
+import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 
 /**
  * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
@@ -121,6 +122,16 @@ export const useCartStore = defineStore('cart', () => {
     const mintCheckoutIdempotencyKey = () => {
         checkoutIdempotencyKey.value = crypto.randomUUID();
     };
+
+    /**
+     * Drops everything held for the previous person: the cart, the badge's seed and any pending
+     * checkout attempt. Runs when the viewer signs out or another account takes the tab over.
+     */
+    useResetOnViewerChange(() => {
+        cart.value = undefined;
+        summarySeed.value = undefined;
+        mintCheckoutIdempotencyKey();
+    });
 
     /**
      * Fetches the lightweight summary. Resolves with nothing for a guest — a 401 here means "no

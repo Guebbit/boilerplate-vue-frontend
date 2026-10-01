@@ -26,6 +26,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
@@ -90,6 +91,11 @@ const createdSubscriptionId = ref<string>();
  * but this component; the store's own cache never sees it (`store.ts`'s `createSubscription`).
  */
 const revealedSecret = ref<string>();
+
+/**
+ * Hands focus back to the control that opened the one-time secret dialog once it closes.
+ */
+useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * This form's own blocked state — a single dedicated submit, so a failed create blocks it in
