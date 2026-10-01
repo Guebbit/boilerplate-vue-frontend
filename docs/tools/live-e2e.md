@@ -125,6 +125,7 @@ export NODE_ENV=development            # the seeder's public demo passwords, and
 export NODE_CLUSTER_WORKERS=1          # else one worker per core, all fighting over port 3000
 export NODE_PSEUDONYM_KEY=any-throwaway-value
 export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
+export NODE_RABBITMQ_URL=amqp://guest:guest@127.0.0.1:5672   # the backend's .env may carry `amqp://rabbitmq:5672`, which shadows HOST/PORT: no broker, no webhook sends, no error
 export NODE_FRONTEND_URL=http://localhost:8085
 export NODE_WEBHOOK_DEMO_SINK_URL=http://127.0.0.1:3070   # the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
 export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
