@@ -215,7 +215,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Infrastructure metrics tell you the app is healthy but not whether users are completing signups or dropping off at checkout. Umami answers product questions from a user perspective.
 
-**In this repo.** The tracker script is injected when `VITE_UMAMI_WEBSITE_ID` is set, and that is all this app asks of it: pageviews are automatic, and every custom event is emitted by the backend into the same website. Disabled (no-op) when the id is absent.
+**In this repo.** The tracker script is injected when `VITE_UMAMI_WEBSITE_ID` is set and the visitor has accepted the consent banner, and that is all this app asks of it: pageviews are automatic, and every custom event is emitted by the backend into the same website. Disabled (no-op) when the id is absent.
 
 → [Umami](./umami.md) · [Observability](./observability.md)
 

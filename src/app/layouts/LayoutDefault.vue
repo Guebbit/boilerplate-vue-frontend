@@ -22,6 +22,10 @@ import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanner.vue';
+import {
+    isAnalyticsConsentEnabled,
+    useAnalyticsConsentStore
+} from '@/infrastructure/analytics-consent.ts';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import PageHeader from '@/ui/molecules/PageHeader.vue';
@@ -154,6 +158,16 @@ const showSideLoading = computed(
 );
 
 /**
+ * Whether the footer offers "Privacy choices" — only when Umami is configured, same as the banner.
+ */
+const analyticsConsentEnabled = isAnalyticsConsentEnabled();
+
+/**
+ * The guest consent store, whose `reopen()` the footer link calls.
+ */
+const analyticsConsent = useAnalyticsConsentStore();
+
+/**
  * Reactive toast queue, rendered below as one `v-alert` per visible message.
  */
 const { messages } = storeToRefs(useNotificationsStore());
@@ -198,7 +212,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
 
         <!-- Rides every page too, same reasoning as the verification banner: a guest who never
              saw this outside checkout has never actually been asked. Renders nothing unless
-             VITE_ANALYTICS_GUEST_CONSENT is on. -->
+             Umami is configured. -->
         <AppAnalyticsConsentBanner />
 
         <AppNavigation />
@@ -250,6 +264,16 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
                 >
                     {{ t(`static-pages.${link.page}.title`) }}
                 </RouterLink>
+                <!-- Reopens the consent banner, so a visitor can withdraw as easily as they agreed. -->
+                <button
+                    v-if="analyticsConsentEnabled"
+                    type="button"
+                    class="underline opacity-80"
+                    data-test="privacy-choices-link"
+                    @click="analyticsConsent.reopen()"
+                >
+                    {{ t('analytics-consent.privacy-choices') }}
+                </button>
             </nav>
         </v-footer>
 

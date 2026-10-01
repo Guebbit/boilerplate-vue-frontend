@@ -17,7 +17,7 @@ const cookieJar = () =>
             .map((pair) => pair.split('=') as [string, string])
     );
 
-const { useAnalyticsConsentStore, isAnalyticsGuestConsentEnabled } =
+const { useAnalyticsConsentStore, isAnalyticsConsentEnabled } =
     await import('@/infrastructure/analytics-consent.ts');
 
 beforeEach(() => {
@@ -61,20 +61,83 @@ describe('useAnalyticsConsentStore', () => {
     });
 });
 
-describe('isAnalyticsGuestConsentEnabled', () => {
-    afterEach(() => vi.unstubAllEnvs());
-
-    it('is off by default', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', undefined);
-
-        expect(isAnalyticsGuestConsentEnabled()).toBe(false);
+describe('promptOpen, reopen and the Umami tracker', () => {
+    beforeEach(() => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
+        localStorage.clear();
+        document.head.innerHTML = '';
     });
 
-    it('is on only for the exact string "true"', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
-        expect(isAnalyticsGuestConsentEnabled()).toBe(true);
+    afterEach(() => vi.unstubAllEnvs());
 
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', '1');
-        expect(isAnalyticsGuestConsentEnabled()).toBe(false);
+    it('prompts while unknown, stops once answered, and prompts again after reopen()', () => {
+        const store = useAnalyticsConsentStore();
+        expect(store.promptOpen).toBe(true);
+
+        store.deny();
+        expect(store.promptOpen).toBe(false);
+
+        store.reopen();
+        expect(store.promptOpen).toBe(true);
+
+        store.grant();
+        expect(store.promptOpen).toBe(false);
+    });
+
+    it('loads no tracker before the visitor answers', () => {
+        useAnalyticsConsentStore().syncTracker();
+
+        expect(document.querySelector('script[data-website-id]')).toBeNull();
+        expect(localStorage.getItem('umami.disabled')).toBe('1');
+    });
+
+    it('loads the tracker only after grant()', () => {
+        useAnalyticsConsentStore().grant();
+
+        expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
+        expect(localStorage.getItem('umami.disabled')).toBeNull();
+    });
+
+    it('a later deny() silences the tracker through umami.disabled', () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        store.deny();
+
+        expect(localStorage.getItem('umami.disabled')).toBe('1');
+    });
+
+    it('syncTracker() on a fresh load honours a stored grant', () => {
+        useAnalyticsConsentStore().grant();
+        document.head.innerHTML = '';
+        setActivePinia(createPinia());
+
+        useAnalyticsConsentStore().syncTracker();
+
+        expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
+    });
+
+    it('loads the tracker unasked when VITE_UMAMI_REQUIRE_CONSENT is false', () => {
+        vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
+
+        useAnalyticsConsentStore().syncTracker();
+
+        expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
+    });
+});
+
+describe('isAnalyticsConsentEnabled', () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('is off while Umami has no website id', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+
+        expect(isAnalyticsConsentEnabled()).toBe(false);
+    });
+
+    it('is on whenever Umami is configured, with no other flag', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+
+        expect(isAnalyticsConsentEnabled()).toBe(true);
     });
 });

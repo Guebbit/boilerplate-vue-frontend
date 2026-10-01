@@ -22,7 +22,6 @@ interface ViteTypeOptions {
  */
 // eslint-disable-next-line unicorn/prevent-abbreviations -- fixed Vite ambient-type name; renaming it stops the declaration merge that makes it work
 interface ImportMetaEnv {
-    readonly VITE_ANALYTICS_GUEST_CONSENT?: string;
     readonly VITE_API_SSE?: string;
     readonly VITE_API_URL?: string;
     readonly VITE_APP_DEFAULT_LOCALE?: string;
@@ -41,6 +40,7 @@ interface ImportMetaEnv {
     readonly VITE_MAX_UPLOAD_BYTES?: string;
     readonly VITE_UMAMI_SRC?: string;
     readonly VITE_UMAMI_WEBSITE_ID?: string;
+    readonly VITE_UMAMI_REQUIRE_CONSENT?: string;
     readonly VITE_VALIDATE_REQUESTS?: string;
     readonly VITE_VALIDATE_RESPONSES?: string;
 }

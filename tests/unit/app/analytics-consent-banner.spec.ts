@@ -1,5 +1,5 @@
 /**
- * `AppAnalyticsConsentBanner` — FA-D5's three states: hidden while the flag is off, shown once
+ * `AppAnalyticsConsentBanner` — FA-D5's three states: hidden while Umami is unconfigured, shown while
  * while the guest's choice is `unknown`, and gone again the moment either button is pressed.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import vuetify from '@/ui/vuetify';
 
 const grant = vi.fn();
 const deny = vi.fn();
+const promptOpen = { value: true };
 const consentChoice = { value: 'unknown' as 'unknown' | 'granted' | 'denied' };
 let flagEnabled = true;
 
@@ -18,10 +19,13 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
         get choice() {
             return consentChoice.value;
         },
+        get promptOpen() {
+            return promptOpen.value;
+        },
         grant,
         deny
     }),
-    isAnalyticsGuestConsentEnabled: () => flagEnabled
+    isAnalyticsConsentEnabled: () => flagEnabled
 }));
 
 vi.mock('vue-i18n', async (importOriginal) => {
@@ -35,12 +39,13 @@ const mountBanner = () =>
 beforeEach(() => {
     flagEnabled = true;
     consentChoice.value = 'unknown';
+    promptOpen.value = true;
     grant.mockReset();
     deny.mockReset();
 });
 
 describe('AppAnalyticsConsentBanner', () => {
-    it('renders nothing when the build flag is off, whatever the choice', () => {
+    it('renders nothing when Umami is not configured, whatever the choice', () => {
         flagEnabled = false;
 
         expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(false);
@@ -50,14 +55,23 @@ describe('AppAnalyticsConsentBanner', () => {
         expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(true);
     });
 
+    it('shows the banner again for an answered visitor once reopened', () => {
+        consentChoice.value = 'granted';
+        promptOpen.value = true;
+
+        expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(true);
+    });
+
     it('hides the banner once granted', () => {
         consentChoice.value = 'granted';
+        promptOpen.value = false;
 
         expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(false);
     });
 
     it('hides the banner once denied', () => {
         consentChoice.value = 'denied';
+        promptOpen.value = false;
 
         expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(false);
     });

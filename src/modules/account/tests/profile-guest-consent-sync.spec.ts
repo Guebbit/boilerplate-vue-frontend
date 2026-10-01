@@ -67,8 +67,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('the guest-consent sync', () => {
-    it('does nothing when the feature flag is off, even with an answered guest cookie', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', undefined);
+    it('does nothing when Umami is not configured, even with an answered guest cookie', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
         useAnalyticsConsentStore().grant();
 
         return useProfileStore()
@@ -79,7 +79,7 @@ describe('the guest-consent sync', () => {
     });
 
     it('does nothing while the guest never answered the banner', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         // choice defaults to 'unknown' — no cookie was ever set.
 
         return useProfileStore()
@@ -90,7 +90,7 @@ describe('the guest-consent sync', () => {
     });
 
     it('does nothing for an account that already recorded its own preference', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         useAnalyticsConsentStore().grant();
         responses['GET /account'] = orvalEnvelope({
             ...NEVER_ASKED_USER,
@@ -105,7 +105,7 @@ describe('the guest-consent sync', () => {
     });
 
     it('saves a granted guest choice onto a never-asked account via PATCH /account', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         useAnalyticsConsentStore().grant();
 
         return useProfileStore()
@@ -116,7 +116,7 @@ describe('the guest-consent sync', () => {
     });
 
     it('saves a denied guest choice too', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         useAnalyticsConsentStore().deny();
         responses['PATCH /account'] = orvalEnvelope({
             ...NEVER_ASKED_USER,
@@ -131,7 +131,7 @@ describe('the guest-consent sync', () => {
     });
 
     it('fires only once per session, even across repeated fetches', () => {
-        vi.stubEnv('VITE_ANALYTICS_GUEST_CONSENT', 'true');
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         useAnalyticsConsentStore().grant();
         const store = useProfileStore();
 

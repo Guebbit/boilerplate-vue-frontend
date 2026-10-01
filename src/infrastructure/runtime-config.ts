@@ -30,6 +30,7 @@ export interface RuntimeConfig {
     FARO_ENVIRONMENT?: string;
     UMAMI_SRC?: string;
     UMAMI_WEBSITE_ID?: string;
+    UMAMI_REQUIRE_CONSENT?: string;
 }
 
 /**

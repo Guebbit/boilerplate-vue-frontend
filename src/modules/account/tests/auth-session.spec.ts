@@ -230,6 +230,24 @@ describe('logout', () => {
             });
     });
 
+    it('resets the Umami identity and falls back to the guest answer, which is none', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        const identify = vi.fn();
+        globalThis.umami = { identify };
+        const auth = useAuthStore();
+
+        return auth
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => auth.logout())
+            .then(() => {
+                expect(identify).toHaveBeenCalledWith({ id: null });
+                // No guest answer on record, so the tracker is silenced once the account is gone.
+                expect(localStorage.getItem('umami.disabled')).toBe('1');
+                delete globalThis.umami;
+                vi.unstubAllEnvs();
+            });
+    });
+
     it('drops the cached profile, so the next visitor is not served this one', () => {
         const auth = useAuthStore();
 

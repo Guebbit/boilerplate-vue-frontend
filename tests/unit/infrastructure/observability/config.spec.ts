@@ -11,7 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     originToRegExp,
     readFaroConfig,
-    readUmamiConfig
+    readUmamiConfig,
+    readUmamiRequireConsent
 } from '@/infrastructure/observability/config';
 
 /**
@@ -25,7 +26,8 @@ const TELEMETRY_VARIABLES = [
     'VITE_FARO_ENVIRONMENT',
     'VITE_API_URL',
     'VITE_UMAMI_SRC',
-    'VITE_UMAMI_WEBSITE_ID'
+    'VITE_UMAMI_WEBSITE_ID',
+    'VITE_UMAMI_REQUIRE_CONSENT'
 ] as const;
 
 beforeEach(() => {
@@ -108,6 +110,29 @@ describe('readUmamiConfig', () => {
         };
 
         expect(readUmamiConfig()).toMatchObject({ websiteId: 'runtime-site' });
+    });
+});
+
+describe('readUmamiRequireConsent', () => {
+    it('defaults to true, so consent is required unless a deployer opts out', () => {
+        expect(readUmamiRequireConsent()).toBe(true);
+    });
+
+    it('is false only for an explicit "false"', () => {
+        vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
+        expect(readUmamiRequireConsent()).toBe(false);
+
+        vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', '0');
+        expect(readUmamiRequireConsent()).toBe(true);
+    });
+
+    it('a runtime-configured value wins over the build-time one', () => {
+        vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'true');
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
+            UMAMI_REQUIRE_CONSENT: 'false'
+        };
+
+        expect(readUmamiRequireConsent()).toBe(false);
     });
 });
 

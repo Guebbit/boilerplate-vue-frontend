@@ -12,6 +12,7 @@ import { VueQueryPlugin } from '@tanstack/vue-query';
 import { i18n } from '@/i18n';
 import { mergeRemoteLocales } from '@/infrastructure/locale-overrides.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 
 import App from './App.vue';
@@ -151,9 +152,10 @@ const bootstrapApplication = () =>
             // Captures uncaught errors and starts tracing fetch/XHR to the API.
             void observability.initFaro();
 
-            // Umami = product analytics. Injects the tracker script; the pageview for this
-            // load is tracked automatically, so boot needs no custom event of its own.
-            observability.initUmami();
+            // Umami = product analytics. Loads only if this visitor already said yes (the guest
+            // cookie) or the build opts out of consent; a signed-in account's own answer
+            // arrives with its profile. The pageview is tracked by the script itself.
+            useAnalyticsConsentStore().syncTracker();
 
             return router.isReady().then(() => {
                 // Signal to Cypress (or any test runner) that the app is fully ready: Vue is

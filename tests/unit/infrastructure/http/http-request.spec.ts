@@ -28,7 +28,7 @@ vi.mock('pinia', async (importOriginal) => ({
 
 /** Mutable per test — `useAnalyticsConsentStore().choice`'s current value. */
 const analyticsConsentChoice = { value: 'unknown' as 'unknown' | 'granted' | 'denied' };
-/** Mutable per test — whether `VITE_ANALYTICS_GUEST_CONSENT` is on. */
+/** Mutable per test — whether Umami is configured (consent is asked). */
 let analyticsGuestConsentEnabled = false;
 
 vi.mock('@/infrastructure/analytics-consent.ts', () => ({
@@ -37,7 +37,7 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
             return analyticsConsentChoice.value;
         }
     }),
-    isAnalyticsGuestConsentEnabled: () => analyticsGuestConsentEnabled
+    isAnalyticsConsentEnabled: () => analyticsGuestConsentEnabled
 }));
 
 // `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a

@@ -6,6 +6,9 @@
  * module-level singletons, so there is no init-order problem — callable from components and
  * equally from non-setup contexts (stores, router), as long as the call is inside a function.
  *
+ * Umami loads only after the visitor consents (`setUmamiConsent`), unless the build opts out with
+ * `VITE_UMAMI_REQUIRE_CONSENT=false`.
+ *
  * Umami is here for its PAGEVIEWS only — the tag writes them itself, including SPA route changes.
  * This app emits no custom events: everything with an API request behind it is reported by the
  * backend, from the handler that decided it. So there is no `track()` here to call.
@@ -18,6 +21,7 @@ import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
 import {
     readFaroConfig,
     readUmamiConfig,
+    readUmamiRequireConsent,
     originToRegExp
 } from '@/infrastructure/observability/config.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
@@ -125,6 +129,29 @@ const describeApiRejectError = (envelope: ApiRejectEnvelope): string =>
 interface UmamiTracker {
     identify?: (data: Record<string, unknown>) => void;
 }
+
+/**
+ * The `localStorage` key the Umami tracker checks before every send: any truthy value silences it.
+ * https://umami.is/docs/tracker-configuration
+ */
+const UMAMI_OPT_OUT_KEY = 'umami.disabled';
+
+/**
+ * Sets or clears the tracker's own opt-out switch. Storage can be blocked (private mode, a
+ * browser setting) and then there is nothing to flip, so a refusal is swallowed: the script is
+ * only ever injected on consent, and a blocked-storage visitor who never consented never loads it.
+ *
+ * @param disabled - `true` to silence the tracker, `false` to let it send again.
+ */
+const setUmamiOptOut = (disabled: boolean): void => {
+    // eslint-disable-next-line no-restricted-syntax -- `localStorage` access itself throws when storage is blocked; there is no non-throwing probe
+    try {
+        if (disabled) localStorage.setItem(UMAMI_OPT_OUT_KEY, '1');
+        else localStorage.removeItem(UMAMI_OPT_OUT_KEY);
+    } catch {
+        logger.debug('observability', '[Umami] localStorage unavailable, opt-out not persisted');
+    }
+};
 
 /**
  * Augments the global scope: `umami` exists once the tracker script above has loaded.
@@ -264,12 +291,16 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Clears the user identity from Faro. Call on logout / account deletion.
+     * Clears the user identity from Faro and Umami. Call on logout / account deletion.
      */
     const unidentifyUser = (): void => {
         if (faroReady.value && faro) {
             faro.api.resetUser();
         }
+
+        // Umami has no reset call: identifying with a null id is how a later pageview stops
+        // carrying the previous user's id (best-effort, same v2.11+ caveat as `identifyUser`).
+        globalThis.umami?.identify?.({ id: null });
     };
 
     /**
@@ -343,11 +374,10 @@ export const useObservabilityStore = defineStore('observability', () => {
             script.src = config.src;
             script.dataset.websiteId = config.websiteId;
             // A one-time email token travels as a `?token=` query param on the confirm pages
-            // (verification, password reset, account deletion, email change) — Umami's own two
-            // flags are what keep it out of every pageview this tag records on its own.
+            // (verification, password reset, account deletion, email change) — Umami's own
+            // flag is what keeps it out of every pageview this tag records on its own.
             // https://umami.is/docs/tracker-configuration
             script.dataset.excludeSearch = 'true';
-            script.dataset.excludeHash = 'true';
             document.head.append(script);
         }
 
@@ -355,6 +385,28 @@ export const useObservabilityStore = defineStore('observability', () => {
         logger.debug('observability', '[Umami] Tracker injected →', config.src);
 
         return true;
+    };
+
+    /**
+     * Applies the visitor's consent to Umami: granted loads the tracker and lifts the opt-out;
+     * withdrawn silences it through `umami.disabled` (the script, if already loaded, stays inert
+     * until the page is reloaded). With `VITE_UMAMI_REQUIRE_CONSENT=false` consent is ignored and
+     * the tracker always loads. Idempotent — callers invoke it on every change of the answer.
+     *
+     * @param granted - Whether the visitor currently consents to analytics.
+     * @returns `true` when the tracker is loaded and enabled afterwards.
+     */
+    const setUmamiConsent = (granted: boolean): boolean => {
+        // No website id, no tracker: nothing to gate, and no reason to touch storage.
+        if (!readUmamiConfig()) return false;
+
+        if (readUmamiRequireConsent() && !granted) {
+            setUmamiOptOut(true);
+            return false;
+        }
+
+        setUmamiOptOut(false);
+        return initUmami();
     };
 
     return {
@@ -365,6 +417,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         // Init
         initFaro,
         initUmami,
+        setUmamiConsent,
 
         // Unified API
         identifyUser,
