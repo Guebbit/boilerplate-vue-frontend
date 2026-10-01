@@ -207,13 +207,21 @@ const handleRevoke = (apiKey: ApiKey) =>
             </template>
 
             <template v-slot:[`item.status`]="{ item }">
-                <v-chip size="small" variant="tonal" :color="statusColor[statusOf(item)]">
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="statusColor[statusOf(item)]"
+                    data-test="api-key-status"
+                    :data-status="statusOf(item)"
+                >
                     {{ t(`api-keys-list-page.status-${statusOf(item)}`) }}
                 </v-chip>
             </template>
 
             <template v-slot:[`item.lastUsedAt`]="{ item }">
-                {{ item.lastUsedAt ? formatDate(item.lastUsedAt) : EMPTY_VALUE }}
+                <span data-test="api-key-last-used" :data-used="item.lastUsedAt ? 'yes' : 'no'">
+                    {{ item.lastUsedAt ? formatDate(item.lastUsedAt) : EMPTY_VALUE }}
+                </span>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">

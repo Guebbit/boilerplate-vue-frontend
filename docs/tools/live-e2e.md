@@ -238,6 +238,7 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 | `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs)   |
 | `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`, `cy.emailTo()` |
 | `scripts/e2e/mail-message.ts`                    | A Mailpit message read back into the outbox's shape                 |
+| `scripts/e2e/webhook-tester.ts`                  | A `webhook-tester` session, read in the demo sink's shape           |
 | `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file  |
 | `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                  |
 

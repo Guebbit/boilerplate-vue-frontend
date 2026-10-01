@@ -16,6 +16,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { DEMO_WEBHOOK_SECRET } from './webhook-demo-secret';
 
 /** The port a single-process demo run (`npm run test:e2e:serial` and friends) hosts the sink on. */
 export const SINGLE_PROCESS_SINK_PORT = 3200;
@@ -32,13 +33,8 @@ export const SHARD_SINK_PORT_BASE = 3201;
  */
 export const sinkUrlForPort = (port: number): string => `http://127.0.0.1:${String(port)}`;
 
-/**
- * The seeded demo subscription's signing secret — the backend's `WEBHOOK_DEMO_SECRET`
- * (`scenarios/webhooks.ts`), a fixed public demo value. The `whsec_` half decodes to
- * "demo-webhook-secret-do-not-use-in-production".
- */
-export const DEMO_WEBHOOK_SECRET =
-    'whsec_ZGVtby13ZWJob29rLXNlY3JldC1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24=';
+/** The seeded subscription's signing secret, still reachable from here for the sink's own readers. */
+export { DEMO_WEBHOOK_SECRET } from './webhook-demo-secret';
 
 /** One request the sink received. */
 export interface SinkRequest {

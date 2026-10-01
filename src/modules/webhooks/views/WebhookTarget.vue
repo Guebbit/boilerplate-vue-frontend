@@ -319,7 +319,11 @@ const handleDelete = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="secretId in currentSubscription.secretIds" :key="secretId">
+                            <tr
+                                v-for="secretId in currentSubscription.secretIds"
+                                :key="secretId"
+                                data-test="webhook-secret-row"
+                            >
                                 <td class="font-mono text-sm">{{ secretId }}</td>
                                 <td>
                                     <v-btn
