@@ -30,7 +30,7 @@ import {
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import {
     useAnalyticsConsentStore,
-    isAnalyticsGuestConsentEnabled
+    isAnalyticsConsentEnabled
 } from '@/infrastructure/analytics-consent.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 
@@ -141,6 +141,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     // fresh on every fetch — this store also refetches right after a consent
                     // toggle (`updateProfile`), which is what turns a withdrawal into an unidentify.
                     const obs = useObservabilityStore();
+                    // The account's own answer rules Umami while signed in, over the guest cookie.
+                    obs.setUmamiConsent(payload.analyticsConsent === true);
                     if (payload.analyticsConsent === true) obs.identifyUser(payload.id);
                     else obs.unidentifyUser();
                     // Keep the shell's projection in step with the record just loaded, rules
@@ -282,7 +284,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * FA-D5: the one place a guest's cookie-held consent choice crosses over into the account —
-     * a no-op unless ALL of: the feature is built (`VITE_ANALYTICS_GUEST_CONSENT`), this account
+     * a no-op unless ALL of: Umami is configured (so consent is asked at all), this account
      * has never recorded a preference of its own (`analyticsConsent` absent — signup always sends
      * one, so this is an OAuth signup or an admin-created account), the browser holds an answered
      * guest cookie, and this store has not already tried the sync this session.
@@ -294,7 +296,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const syncGuestAnalyticsConsent = (payload: User): Promise<unknown> => {
         if (
             guestConsentSyncSettled.value ||
-            !isAnalyticsGuestConsentEnabled() ||
+            !isAnalyticsConsentEnabled() ||
             payload.analyticsConsent !== undefined
         )
             return Promise.resolve();
@@ -461,6 +463,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 // Clear user identity from observability tools
                 const obs = useObservabilityStore();
                 obs.unidentifyUser();
+                // Back to the guest cookie's answer: the account's no longer applies.
+                useAnalyticsConsentStore().syncTracker();
                 clearSession();
             })
         );

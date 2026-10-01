@@ -56,6 +56,51 @@ describe('useObservabilityStore', () => {
         delete globalThis.umami;
     });
 
+    describe('setUmamiConsent', () => {
+        beforeEach(() => localStorage.clear());
+
+        it('does nothing without a website id', () => {
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+
+            expect(useObservabilityStore().setUmamiConsent(false)).toBe(false);
+            expect(localStorage.getItem('umami.disabled')).toBeNull();
+        });
+
+        it('withholds the tracker and sets umami.disabled without consent', () => {
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+
+            expect(useObservabilityStore().setUmamiConsent(false)).toBe(false);
+            expect(document.querySelector('script[data-website-id]')).toBeNull();
+            expect(localStorage.getItem('umami.disabled')).toBe('1');
+        });
+
+        it('loads the tracker and lifts umami.disabled on consent', () => {
+            localStorage.setItem('umami.disabled', '1');
+            const store = readyStore();
+
+            expect(store.setUmamiConsent(true)).toBe(true);
+            expect(localStorage.getItem('umami.disabled')).toBeNull();
+        });
+
+        it('ignores consent when VITE_UMAMI_REQUIRE_CONSENT is false', () => {
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
+
+            expect(useObservabilityStore().setUmamiConsent(false)).toBe(true);
+            expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
+        });
+
+        it('survives blocked storage', () => {
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new Error('blocked');
+            });
+
+            expect(() => useObservabilityStore().setUmamiConsent(false)).not.toThrow();
+            vi.restoreAllMocks();
+        });
+    });
+
     describe('initUmami', () => {
         it('stays off, and injects nothing, when no website id is configured', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
@@ -123,8 +168,15 @@ describe('useObservabilityStore', () => {
             expect(() => useObservabilityStore().identifyUser('u1')).not.toThrow();
         });
 
-        it('unidentifyUser is a no-op', () => {
+        it('unidentifyUser is a no-op without a tracker', () => {
             expect(() => useObservabilityStore().unidentifyUser()).not.toThrow();
+        });
+
+        it('unidentifyUser resets the Umami identity', () => {
+            const tracker = installUmamiTracker();
+            useObservabilityStore().unidentifyUser();
+
+            expect(tracker.identify).toHaveBeenCalledWith({ id: null });
         });
 
         it('captureException is a no-op, whatever it is handed', () => {

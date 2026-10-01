@@ -33,6 +33,11 @@ registerCypressGrep();
 
 beforeEach(() => {
     cy.clearCookies();
+    // A build with Umami configured asks for analytics consent on every first visit, and the
+    // banner would shift every page (and every visual baseline). Declining is the neutral answer:
+    // no tracker, no `X-Analytics-Consent` header — what these specs ran under before the banner
+    // followed Umami's config. A spec about consent itself clears or overrides the cookie.
+    cy.setCookie('analyticsConsent', 'denied');
     cy.clearAllSessionStorage();
 });
 

@@ -34,14 +34,13 @@ name like `http://app:3000`, even when both stacks run in containers.
 
 ## Application
 
-| Variable                       | Purpose                                                                                                                                                                                                                                                                                                               |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_NAME`                | The product name shown after every page title in the browser tab (`<page> — <name>`) and alone on a route with none. The one variable to change first when rebranding                                                                                                                                                 |
-| `VITE_APP_LOGO`                | The app bar's logo: a path under the base (a file in `public/images/`) or an absolute URL. Unset uses the bundled logo. The other half of rebranding, beside `VITE_APP_NAME`                                                                                                                                          |
-| `VITE_APP_BASE_URL`            | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root. A production container still serves from `/` unchanged — a reverse proxy in front maps the public sub-path back to it, see [Docker and Podman](docker-and-podman.md#sub-path-deployments) |
-| `VITE_APP_PORT`                | Dev-server port. Read in `vite.config.ts` via `loadEnv`, so the server and the compose publish always agree                                                                                                                                                                                                           |
-| `VITE_APP_EMPTY_VALUE`         | Placeholder for empty/unavailable display values (default `—`)                                                                                                                                                                                                                                                        |
-| `VITE_ANALYTICS_GUEST_CONSENT` | Ships the guest analytics-consent banner (`true` = on). Off by default — a fresh deployment captures no guest-triggered event server-side either way, since the backend requires the header this banner's acceptance turns on. See [Umami](./umami.md) and `boilerplate-node-backend/docs/tools/analytics.md#consent` |
+| Variable               | Purpose                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_NAME`        | The product name shown after every page title in the browser tab (`<page> — <name>`) and alone on a route with none. The one variable to change first when rebranding                                                                                                                                                 |
+| `VITE_APP_LOGO`        | The app bar's logo: a path under the base (a file in `public/images/`) or an absolute URL. Unset uses the bundled logo. The other half of rebranding, beside `VITE_APP_NAME`                                                                                                                                          |
+| `VITE_APP_BASE_URL`    | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root. A production container still serves from `/` unchanged — a reverse proxy in front maps the public sub-path back to it, see [Docker and Podman](docker-and-podman.md#sub-path-deployments) |
+| `VITE_APP_PORT`        | Dev-server port. Read in `vite.config.ts` via `loadEnv`, so the server and the compose publish always agree                                                                                                                                                                                                           |
+| `VITE_APP_EMPTY_VALUE` | Placeholder for empty/unavailable display values (default `—`)                                                                                                                                                                                                                                                        |
 
 ## Locales
 
@@ -82,14 +81,15 @@ together.
 Every value here is optional, and an empty one disables the integration rather than pointing it at
 nothing. See [Observability](./observability.md).
 
-| Variable                | Purpose                                                    |
-| ----------------------- | ---------------------------------------------------------- |
-| `VITE_FARO_URL`         | Grafana Faro receiver URL — Alloy `/collect` (empty = off) |
-| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)             |
-| `VITE_FARO_APP_VERSION` | App version reported to Faro                               |
-| `VITE_FARO_ENVIRONMENT` | Faro environment tag (defaults to Vite `MODE`)             |
-| `VITE_UMAMI_WEBSITE_ID` | [Umami](./umami.md) website id (empty = off)               |
-| `VITE_UMAMI_SRC`        | Umami tracker script URL                                   |
+| Variable                     | Purpose                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `VITE_FARO_URL`              | Grafana Faro receiver URL — Alloy `/collect` (empty = off)                                       |
+| `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                   |
+| `VITE_FARO_APP_VERSION`      | App version reported to Faro                                                                     |
+| `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                   |
+| `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                     |
+| `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                         |
+| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default) loads Umami only after the visitor accepts the banner; `false` loads it unasked |
 
 ## `security.txt`
 

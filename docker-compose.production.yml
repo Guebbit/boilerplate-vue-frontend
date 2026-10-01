@@ -44,6 +44,7 @@ services:
             VITE_FARO_ENVIRONMENT: '${VITE_FARO_ENVIRONMENT:-production}'
             VITE_UMAMI_SRC: '${VITE_UMAMI_SRC:-}'
             VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
+            VITE_UMAMI_REQUIRE_CONSENT: '${VITE_UMAMI_REQUIRE_CONSENT:-}'
             # /.well-known/security.txt — published only when both CONTACT and EXPIRES are set.
             VITE_SECURITY_CONTACT: '${VITE_SECURITY_CONTACT:-}'
             VITE_SECURITY_EXPIRES: '${VITE_SECURITY_EXPIRES:-}'

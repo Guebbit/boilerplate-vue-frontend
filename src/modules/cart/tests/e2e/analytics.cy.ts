@@ -207,6 +207,8 @@ describe('Analytics, end to end', () => {
         const since = Date.now() - 60 * 1000;
 
         cy.restore();
+        // Umami's tag loads only after consent, so the pageview control below needs a yes.
+        cy.setCookie('analyticsConsent', 'granted');
 
         umamiSession().then((session) => {
             eventCounts(session, since).then((before) => {

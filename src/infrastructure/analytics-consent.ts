@@ -3,12 +3,15 @@
  * Guest analytics consent (FA-D5): unknown / granted / denied, persisted in a first-party cookie
  * the same way `session.ts` persists `isAuth`/`rememberMe` — through `@guebbit/js-toolkit`'s
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
- * Gated entirely behind `VITE_ANALYTICS_GUEST_CONSENT`: `AppAnalyticsConsentBanner` only renders,
- * and `http/interceptors.ts`'s `onRequest` only reads this store, when the build turns it on.
+ * Gated by Umami being configured (`isAnalyticsConsentEnabled`): the banner, the footer link and
+ * `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
+ * Umami itself: it loads only after `granted`, and a withdrawal silences it.
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie, setCookie } from '@guebbit/js-toolkit';
+import { readUmamiConfig } from '@/infrastructure/observability/config.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 /**
  * Name of the first-party cookie holding the visitor's own choice.
@@ -28,15 +31,12 @@ const COOKIE_DAYS = 365;
 export type AnalyticsConsentChoice = 'unknown' | 'granted' | 'denied';
 
 /**
- * Whether this build ships the guest consent banner at all — off by default, so the demo (and any
- * deployment that hasn't decided it needs one) never shows it. `AppAnalyticsConsentBanner.vue` and
- * `http/interceptors.ts`'s `onRequest` both gate on this, so a build with the flag off behaves as
- * if the feature did not exist, whatever an older build's cookie might still say.
+ * Whether the app asks for analytics consent at all: exactly when Umami is configured. Without
+ * a website id there is no tracker to gate, so no banner, no footer link, no header.
  *
- * @returns `true` only when `VITE_ANALYTICS_GUEST_CONSENT` is exactly `'true'`.
+ * @returns `true` when `VITE_UMAMI_WEBSITE_ID` (or its runtime twin) is set.
  */
-export const isAnalyticsGuestConsentEnabled = (): boolean =>
-    import.meta.env.VITE_ANALYTICS_GUEST_CONSENT === 'true';
+export const isAnalyticsConsentEnabled = (): boolean => readUmamiConfig() !== undefined;
 
 /**
  * Reads the cookie a previous visit may have left, defaulting to `unknown` for anything else — a
@@ -75,20 +75,50 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
     const choice = ref<AnalyticsConsentChoice>(readStoredChoice());
 
     /**
+     * Whether the banner was reopened from the "privacy choices" link, so an answered visitor can
+     * change their mind (GDPR Art. 7(3): withdrawing is as easy as consenting).
+     */
+    const reopened = ref(false);
+
+    /**
+     * Whether the banner should be on screen: not yet answered, or deliberately reopened.
+     */
+    const promptOpen = computed(() => choice.value === 'unknown' || reopened.value);
+
+    /**
+     * Pushes the current answer to Umami: load it on `granted`, silence it otherwise. Called at
+     * boot, on every answer and after a logout (the account's own answer stops applying then).
+     */
+    const syncTracker = () => {
+        useObservabilityStore().setUmamiConsent(choice.value === 'granted');
+    };
+
+    /**
      * Records that the visitor accepted analytics tracking.
      */
     const grant = () => {
         choice.value = 'granted';
+        reopened.value = false;
         writeStoredChoice('granted');
+        syncTracker();
     };
 
     /**
-     * Records that the visitor declined analytics tracking.
+     * Records that the visitor declined analytics tracking (also the withdrawal path).
      */
     const deny = () => {
         choice.value = 'denied';
+        reopened.value = false;
         writeStoredChoice('denied');
+        syncTracker();
     };
 
-    return { choice, grant, deny };
+    /**
+     * Shows the banner again, whatever was answered before.
+     */
+    const reopen = () => {
+        reopened.value = true;
+    };
+
+    return { choice, promptOpen, grant, deny, reopen, syncTracker };
 });

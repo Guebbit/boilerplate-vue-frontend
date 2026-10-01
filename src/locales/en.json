@@ -58,7 +58,8 @@
     },
     "analytics-consent": {
         "banner-label": "Analytics consent",
-        "message": "We'd like to measure how the catalogue is searched and browsed. Nothing is tracked until you say yes.",
+        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is tracked until you say yes, and you can change your mind any time from \"Privacy choices\" in the footer.",
+        "privacy-choices": "Privacy choices",
         "button-accept": "Accept",
         "button-decline": "Decline"
     },
@@ -320,7 +321,7 @@
         "privacy": {
             "title": "Privacy",
             "paragraphs": [
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Analytics: when it is configured, this site measures pageviews with a self-hosted Umami tracker, but only after you accept the analytics banner. That includes the address of each page, your browser language and screen size, and the page you came from. Decline, or withdraw from \"Privacy choices\" in the footer, and the tracker does not load or stops sending. If you are signed in, your account id is attached to what is recorded.",
                 "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                 "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]

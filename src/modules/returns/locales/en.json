@@ -50,8 +50,22 @@
         "success-decline": "Return declined.",
         "success-receive": "Goods received and the customer paid back."
     },
+    "returns-request": {
+        "button-open": "Return goods",
+        "label-lines": "What are you sending back?",
+        "label-quantity": "Quantity (up to {max})",
+        "label-reason": "Reason",
+        "label-note": "Anything we should know? (optional)",
+        "button-submit": "Request return",
+        "button-cancel": "Cancel",
+        "error-reason-required": "Choose a reason",
+        "error-note-too-long": "The note is too long (1000 characters at most)",
+        "error-lines-required": "Pick at least one item to send back",
+        "error-quantity-invalid": "Enter a whole quantity, from 1 up to what you can still return",
+        "success": "Return requested. We will review it and email you."
+    },
     "withdrawal-panel": {
-        "title": "Right of withdrawal",
+        "title": "Returns and withdrawal",
         "until": "You may withdraw from this contract until {date}.",
         "until-delivery": "You may withdraw from this contract. The withdrawal period starts when the goods are delivered.",
         "button": "Withdraw from contract here",

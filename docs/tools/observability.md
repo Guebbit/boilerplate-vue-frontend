@@ -79,13 +79,12 @@ The trace-propagation origin is derived from `VITE_API_URL`.
 ### What it captures
 
 - **Pageviews** — automatic. The tracker script hooks SPA history changes, so there is **no manual `page_view` event** in the router.
-- **Custom product events** via `track()`.
-- **User identity** via `identifyUser()` after login (best-effort; Umami `identify` is optional).
+- **User identity** via `identifyUser()` once the profile loads with `analyticsConsent` true, reset by `unidentifyUser()` on logout (best-effort; Umami `identify` is optional).
+- **Nothing before consent** — the tracker loads only after the visitor accepts the banner; see [Umami: Consent](./umami.md#consent).
 
 ### Rules
 
 - **No PII** — never send email, name, or personal data in event properties.
-- **Fire-and-forget** — never `await` a `track()` call.
 - **Check the backend first** — see below. Almost every event worth having belongs there.
 
 ### Event taxonomy
@@ -117,10 +116,11 @@ fact, because a name emitted from both sides writes two rows nothing downstream 
 
 ### Environment variables
 
-| Variable                | Purpose                                                            |
-| ----------------------- | ------------------------------------------------------------------ |
-| `VITE_UMAMI_WEBSITE_ID` | Umami website id (from the Umami dashboard) — empty disables Umami |
-| `VITE_UMAMI_SRC`        | Tracker script URL (default `http://localhost:3080/script.js`)     |
+| Variable                     | Purpose                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `VITE_UMAMI_WEBSITE_ID`      | Umami website id (from the Umami dashboard) — empty disables Umami               |
+| `VITE_UMAMI_SRC`             | Tracker script URL (default `http://localhost:3080/script.js`)                   |
+| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default): the tracker loads only after consent. `false` loads it unasked |
 
 ### External references
 

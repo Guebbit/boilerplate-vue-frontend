@@ -83,6 +83,19 @@ export function readUmamiConfig(): UmamiConfig | undefined {
 }
 
 /**
+ * Whether Umami waits for the visitor's consent before loading (`VITE_UMAMI_REQUIRE_CONSENT`).
+ * On by default: only an explicit `false` turns it off, for a deployer who has their own legal
+ * basis for loading the tracker unasked. Mirrors the backend's `NODE_ANALYTICS_REQUIRE_CONSENT`.
+ *
+ * @returns `false` only when the value is exactly `false`; anything else, or unset, is `true`.
+ */
+export function readUmamiRequireConsent(): boolean {
+    const value =
+        runtimeValue('UMAMI_REQUIRE_CONSENT') ?? import.meta.env.VITE_UMAMI_REQUIRE_CONSENT?.trim();
+    return value?.toLowerCase() !== 'false';
+}
+
+/**
  * The Umami origin as a single-element array of anchored patterns, or an empty one when analytics
  * is off or its `src` carries no recognisable origin.
  *

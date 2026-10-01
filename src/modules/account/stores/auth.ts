@@ -19,6 +19,7 @@ import {
 } from '@api';
 import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { useProfileStore } from './profile.ts';
 
@@ -243,6 +244,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
         useObservabilityStore().unidentifyUser();
         return session.logout().then(() => {
             useProfileStore().resetAll();
+            // Back to the guest cookie's answer: the account's no longer applies.
+            useAnalyticsConsentStore().syncTracker();
         });
     };
 
@@ -255,6 +258,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
         useObservabilityStore().unidentifyUser();
         return session.logoutAll().then(() => {
             useProfileStore().resetAll();
+            useAnalyticsConsentStore().syncTracker();
         });
     };
 

@@ -13,7 +13,7 @@
         "label-email": "Email",
         "label-password": "Password",
         "text-terms": "Accetto i {terms} e la {privacy}",
-        "text-analytics-consent": "Condividi dati di utilizzo anonimi per aiutarci a migliorare il prodotto",
+        "text-analytics-consent": "Condividi dati di utilizzo per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
         "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno.",
         "avatar-upload-failed": "Il tuo account è pronto, ma non è stato possibile caricare l'immagine del profilo. Puoi aggiungerla dal tuo profilo."
@@ -31,7 +31,7 @@
         "label-website": "Website",
         "label-language": "Lingua",
         "language-hint": "La lingua in cui si apre questo account. Si salva insieme al resto del profilo.",
-        "label-analytics-consent": "Condividi le analisi di utilizzo in forma anonima",
+        "label-analytics-consent": "Condividi le analisi di utilizzo",
         "analytics-consent-hint": "Puoi revocarlo in qualsiasi momento — avrà effetto al prossimo salvataggio.",
         "label-password": "Password",
         "label-passwordConfirm": "Conferma Password",

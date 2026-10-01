@@ -9,7 +9,7 @@ import { translate, getCurrentLocale } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     useAnalyticsConsentStore,
-    isAnalyticsGuestConsentEnabled
+    isAnalyticsConsentEnabled
 } from '@/infrastructure/analytics-consent.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { toPathname } from './url.ts';
@@ -80,7 +80,7 @@ export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) 
 
     if (
         !accessToken.value &&
-        isAnalyticsGuestConsentEnabled() &&
+        isAnalyticsConsentEnabled() &&
         useAnalyticsConsentStore().choice === 'granted'
     ) {
         // The backend decodes this the way it decodes any other boolean-shaped header/query value

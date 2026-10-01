@@ -6,7 +6,7 @@
  * the dialog hosts) are stubbed: none of that is this file's own behaviour, already proven by
  * their own specs.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
@@ -15,6 +15,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 
 /** A trivial leaf component, so `<RouterView />` has something real to render. */
@@ -142,4 +143,29 @@ describe('LayoutDefault — a session that died on its own', () => {
                 expect(replace).not.toHaveBeenCalled();
             });
         }));
+});
+
+describe('LayoutDefault — the privacy choices link', () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('is absent when Umami is not configured', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+
+        return router.push('/plain').then(() => {
+            expect(mountLayout().find('[data-test="privacy-choices-link"]').exists()).toBe(false);
+        });
+    });
+
+    it('reopens the consent banner of an answered visitor', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        useAnalyticsConsentStore().grant();
+        expect(useAnalyticsConsentStore().promptOpen).toBe(false);
+
+        return router
+            .push('/plain')
+            .then(() => mountLayout().get('[data-test="privacy-choices-link"]').trigger('click'))
+            .then(() => {
+                expect(useAnalyticsConsentStore().promptOpen).toBe(true);
+            });
+    });
 });
