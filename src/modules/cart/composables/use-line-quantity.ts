@@ -154,6 +154,23 @@ export const useLineQuantity = (
     };
 
     /**
+     * Hands every outstanding step to `send` and drops it, timers included — for `pagehide`.
+     *
+     * The page is going away, so a normal request would be cancelled with it and a timer would
+     * never fire. The caller's `send` must be one that survives the page (a keepalive request).
+     *
+     * @param send - delivers one line's quantity to the server
+     */
+    const sendPendingKeepalive = (send: (productId: string, quantity: number) => void) => {
+        for (const [productId, quantity] of Object.entries(pending.value)) {
+            if (quantity === undefined) continue;
+            senders.get(productId)?.cancel();
+            send(productId, quantity);
+        }
+        pending.value = {};
+    };
+
+    /**
      * Forgets every line's pending step: cancels every timer and drops the whole map (FA34).
      *
      * For "Clear cart" — a queued step for a line the clear is about to wipe would otherwise fire
@@ -186,5 +203,13 @@ export const useLineQuantity = (
         });
     };
 
-    return { quantityOf, stepQuantity, forget, forgetAll, flushPending, settle };
+    return {
+        quantityOf,
+        stepQuantity,
+        forget,
+        forgetAll,
+        flushPending,
+        sendPendingKeepalive,
+        settle
+    };
 };
