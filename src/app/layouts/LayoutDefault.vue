@@ -268,7 +268,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
                 <button
                     v-if="analyticsConsentEnabled"
                     type="button"
-                    class="underline opacity-80"
+                    class="cursor-pointer border-0 bg-transparent p-0 text-on-surface underline opacity-80"
                     data-test="privacy-choices-link"
                     @click="analyticsConsent.reopen()"
                 >
