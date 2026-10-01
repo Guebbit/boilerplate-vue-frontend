@@ -160,6 +160,8 @@ An axe sweep reads the DOM and asks whether the markup is well-formed. It cannot
 | The confirmation dialog keeps focus inside; Escape declines                                | `DialogHost.vue`                                  |
 | A facet chip toggles `aria-pressed` with Enter and with Space                              | `ProductsList.vue`                                |
 
+Each case is one control. The FR12 [journey](../reference/tests.md#journeys--stories-that-cross-modules) walks a whole purchase with no mouse, the address and cancel dialogs included, so a trap on any page between the bar and a refunded order fails there too.
+
 `cypress-real-events` is what makes this possible: Cypress' own `.type('{tab}')` dispatches an event and moves nothing, because focus traversal is the browser's behaviour rather than a handler's. `cy.realPress()` sends the keystroke through the DevTools Protocol, so the browser performs it. The trade is Chromium only, which is every headless run here.
 
 ## Before any of it runs: the lint plugin
