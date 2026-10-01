@@ -2,14 +2,16 @@
 /**
  * @module
  * N2 · Withdraw after delivery. The parcel has arrived and the customer still has the EU
- * withdrawal right (Consumer Rights Directive Art. 9: fourteen days from delivery). Unlike N1 there
- * is now something to send back, so the button opens a return — born `approved`, since a
- * withdrawal is a right and not a favour. When the goods come back the warehouse may keep part of
- * the money for handling damage (Art. 14(2)); the rest, delivery included, goes back to the card.
+ * withdrawal right (Consumer Rights Directive Art. 9: at least fourteen days from delivery; the
+ * shop offers 30 by default). Unlike N1 there is now something to send back, so the button opens a
+ * return — born `approved`, since a withdrawal is a right and not a favour. When the goods come
+ * back the warehouse may keep part of the money for handling damage (Art. 14(2)); the rest,
+ * delivery included, goes back to the card.
  *
  * The figures are the point: refund = what was paid − the deduction, read off the screen in cents
  * and checked against what the payment says it took, so a rounding or a forgotten delivery charge
- * cannot pass. The subject is `order.deliveredRecent`: `order.delivered` is weeks past its window.
+ * cannot pass. The subject is `order.withdrawal-open`: delivered a day back by standard shipping,
+ * inside the window whatever period the deployment offers (`order.delivered` is weeks past it).
  */
 import { centsOf, eventually, idFromLocation, orderNumberShown } from '../../../support/e2e/steps';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
@@ -43,7 +45,7 @@ describe('N2 · Withdraw after delivery', () => {
     });
 
     it('opens an approved return, and the warehouse refunds what was paid minus the deduction', () => {
-        cy.subjectId('order.deliveredRecent').then((orderId) => {
+        cy.subjectId('order.withdrawal-open').then((orderId) => {
             cy.step('the customer finds the withdrawal window open on a delivered order');
             cy.loginAs('user');
             cy.visit(`/en/orders/${orderId}`);

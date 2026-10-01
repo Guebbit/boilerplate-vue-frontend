@@ -127,9 +127,10 @@ describe('CU17 · The cart does the maths', () => {
                 });
 
                 cy.step(
-                    'clears the cart: no count, and the empty state leads back to the catalogue'
+                    'clears the cart after confirming: no count, and the empty state leads back to the catalogue'
                 );
                 cy.get('[data-test=cart-clear]').click();
+                cy.get('[data-test=app-dialog-confirm]').click();
                 cy.get('[data-test=cart-item]').should('not.exist');
                 cy.get(BAR_BADGE).should('not.exist');
                 cy.contains('Browse products').click();

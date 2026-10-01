@@ -11,7 +11,7 @@ export default {
  * Directive Art. 11a), the returns form for faulty or wrong goods and part-orders, and what has
  * become of any withdrawal or return already opened on the order. The withdrawal button shows
  * only when the server says so (`Order.actions.withdraw`) — this component never counts the
- * fourteen days — and asks once more before it acts: the directive wants a confirmation step, not
+ * withdrawal period — and asks once more before it acts: the directive wants a confirmation step, not
  * a single click, and no reason. The returns form is offered once goods have shipped.
  */
 import { computed, onMounted, ref } from 'vue';

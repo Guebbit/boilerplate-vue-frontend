@@ -50,7 +50,7 @@ is `POST /returns`. What comes back depends on where the goods are, and the stor
 | 200            | before dispatch — the order was cancelled and refunded, no `Return` | `{ kind: 'cancelled', order }` |
 
 **The button is server-driven.** `WithdrawalPanel` shows it when `Order.actions.withdraw` is true and
-prints `Order.actions.withdrawUntil`; it never counts the fourteen days. Clicking asks once more —
+prints `Order.actions.withdrawUntil`; it never counts the withdrawal period. Clicking asks once more —
 the directive wants a confirmation step — and the backend mails the acknowledgement with the date and
 time. A withdrawal takes no reason and always the whole order. The panel also lists the returns
 already opened on that order, so a customer sees what became of a withdrawal.
