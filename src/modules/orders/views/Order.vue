@@ -19,8 +19,9 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { leftOutByReorder } from '@/modules/orders/domain';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -201,17 +202,27 @@ const {
 
 /**
  * Copies this order's lines back into the cart and goes there — products that have since left
- * the catalogue are skipped server-side, and the cart page shows what actually landed.
+ * the catalogue are skipped server-side, so the toast names what the cart did NOT get.
  *
- * @returns Nothing; success is reported as a toast and navigates to the cart, a failure blocks
+ * @returns Nothing; the outcome is reported as a toast and navigates to the cart, a failure blocks
  *  the button in place ({@link reorderError}).
  */
 const handleReorder = () => {
-    if (!currentOrder.value) return;
+    const order = currentOrder.value;
+    if (!order) return;
     clearReorderError();
-    reorder(currentOrder.value.id)
-        .then(() => {
-            addMessage(t('order-target-page.success-reorder'));
+    reorder(order.id)
+        .then((cart) => {
+            const leftOut = leftOutByReorder(
+                order.items,
+                (cart?.items ?? []).map(({ productId }) => productId)
+            );
+            if (leftOut.length === 0) addMessage(t('order-target-page.success-reorder'));
+            else
+                addMessage(
+                    t('order-target-page.warning-reorder-left-out', { titles: leftOut.join(', ') }),
+                    EToastType.WARNING
+                );
             return router.push(routerLinkI18n({ name: 'Cart' }));
         })
         .catch((error) => reportReorderError(error));
@@ -593,6 +604,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             <article
                                 v-for="item in currentOrder.items"
                                 :key="'order-item-' + item.product.id"
+                                data-test="order-item"
                                 class="rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
                             >
                                 <div class="flex items-start gap-3">

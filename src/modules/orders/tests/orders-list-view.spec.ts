@@ -258,3 +258,31 @@ describe('OrdersList — sorting from the header', () => {
         expect(headOf(wrapper, 'Status')?.classes()).toContain('v-data-table__th--sortable');
     });
 });
+
+/**
+ * The first column names an order the way its mail and invoice do: by number, with the id only as
+ * the fallback for an order minted without one.
+ */
+describe('OrdersList — the order column', () => {
+    it('shows the order number, and the id when there is none', async () => {
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    items: [{ ...order('o-numbered'), orderNumber: '2026-0042' }, order('o-plain')],
+                    meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
+                })
+            )
+        );
+
+        const wrapper = mount(OrdersList, {
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            }
+        });
+        await flushPromises();
+
+        const shown = wrapper.findAll('[data-test="row-order-number"]').map((cell) => cell.text());
+        expect(shown).toEqual(['2026-0042', 'o-plain']);
+    });
+});
