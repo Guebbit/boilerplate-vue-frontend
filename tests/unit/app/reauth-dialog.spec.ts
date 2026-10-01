@@ -9,7 +9,7 @@
  * this component exists to drive, so faking it would test nothing. `useSessionStore` is mocked: its
  * own `reauth()` call is `session.spec.ts`'s job, not this dialog's.
  *
- * The 401-vs-anything-else branch this dialog's error message takes is a separate, narrower
+ * The 422-vs-anything-else branch this dialog's error message takes is a separate, narrower
  * concern covered by `reauth-dialog-error-message.spec.ts` (FA80) — kept in its own file since it
  * needs a real (unstubbed) `VDialog` and an identity `t`, neither of which this file uses.
  */
@@ -81,10 +81,10 @@ describe('ReauthDialog', () => {
     });
 
     it('shows an inline error and stays open when reauth() rejects', () => {
-        // A 401-shaped reject, exactly as `onResponseReject` produces it — the dialog's own
-        // 401-vs-anything-else branch (FA80) is what picks this fixed wording over the failure's
+        // A 422-shaped reject, exactly as `onResponseReject` produces it — the dialog's own
+        // 422-vs-anything-else branch (FA80) is what picks this fixed wording over the failure's
         // raw message, covered in full by `reauth-dialog-error-message.spec.ts`.
-        reauth.mockRejectedValue({ status: 401 });
+        reauth.mockRejectedValue({ status: 422 });
         const wrapper = mountDialog();
         // Deliberately never settles in this case: a wrong password keeps the prompt open rather
         // than rejecting the caller's promise.

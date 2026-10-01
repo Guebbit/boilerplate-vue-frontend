@@ -148,8 +148,10 @@ declare global {
              * when there is none; an empty inbox is an answer too.
              *
              * @param address - the recipient to look for
+             * @param matches - keeps looking until an email passes it, for a flow that mails
+             *  several times to one address (a sign-up's verify mail, then the order's); newest first
              */
-            emailTo(address: string): Chainable<MailedEmail>;
+            emailTo(address: string, matches?: MailFilter): Chainable<MailedEmail>;
 
             /**
              * Follows a main-navigation entry from the desktop bar, by the path it links to.
@@ -239,6 +241,9 @@ declare global {
     }
 }
 
+/** Which of an address's emails a spec means — see `emailTo`'s `matches`. */
+export type MailFilter = (email: MailedEmail) => boolean;
+
 /** Mirrors `DemoOutboxEmail` in the backend's `src/infrastructure/adapters/demo-outbox.ts`. */
 export interface DemoOutboxEmail {
     to: string;
@@ -246,6 +251,7 @@ export interface DemoOutboxEmail {
     template: string;
     token?: string;
     lines?: string[];
+    attachments?: string[];
 }
 
 // `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
@@ -499,8 +505,9 @@ const DEMO_OUTBOX_ATTEMPTS = 20;
  * Same poll shape as {@link mailpitEmailTo} below, for the same reason.
  *
  * @param address - the recipient
+ * @param matches - which of the address's emails counts; the outbox is newest first
  */
-const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
+const demoOutboxEmailTo = (address: string, matches: MailFilter): Cypress.Chainable<MailedEmail> =>
     pollUntilFound<DemoOutboxEmail>(
         () =>
             cy
@@ -508,7 +515,7 @@ const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
                 .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
                 .then((response): Cypress.Chainable<DemoOutboxEmail | undefined> => {
                     const { emails } = response.body as { emails: DemoOutboxEmail[] };
-                    return cy.wrap(emails.find(({ to }) => to === address));
+                    return cy.wrap(emails.find((email) => email.to === address && matches(email)));
                 }),
         DEMO_OUTBOX_ATTEMPTS,
         `an email to ${address} in the demo outbox`
@@ -519,45 +526,88 @@ const demoOutboxEmailTo = (address: string): Cypress.Chainable<MailedEmail> =>
 const MAILPIT_ATTEMPTS = 20;
 
 /**
- * The newest Mailpit message to an address, polled: the send leaves the backend and arrives in
- * Mailpit a moment later, and nothing tells the browser when. Mailpit's search answers newest
- * first. https://mailpit.axllent.org/docs/api-v1/
+ * One Mailpit message, read in full and parsed into the outbox shape.
+ *
+ * @param mailpitUrl - Mailpit's HTTP root
+ * @param address - the recipient it was found for
+ * @param id - Mailpit's id for the message
+ */
+const readMailpitMessage = (
+    mailpitUrl: string,
+    address: string,
+    id: string
+): Cypress.Chainable<MailedEmail> =>
+    cy
+        .request(`${mailpitUrl}/api/v1/message/${id}`)
+        .then((message) =>
+            parseMailpitMessage(address, message.body as Parameters<typeof parseMailpitMessage>[1])
+        );
+
+/**
+ * The first of `ids`, read in order, that `matches` — or `undefined` when none does (yet).
+ *
+ * @param mailpitUrl - Mailpit's HTTP root
+ * @param address - the recipient
+ * @param ids - message ids, newest first
+ * @param matches - which email the caller means
+ */
+const firstMailpitMatch = (
+    mailpitUrl: string,
+    address: string,
+    ids: string[],
+    matches: MailFilter
+): Cypress.Chainable<MailedEmail | undefined> => {
+    const [next, ...rest] = ids;
+    if (next === undefined) return cy.wrap<MailedEmail | undefined>(undefined);
+    return readMailpitMessage(mailpitUrl, address, next).then((email) =>
+        matches(email)
+            ? cy.wrap<MailedEmail | undefined>(email)
+            : firstMailpitMatch(mailpitUrl, address, rest, matches)
+    );
+};
+
+/**
+ * The newest Mailpit message to an address that passes `matches`, polled: the send leaves the
+ * backend and arrives in Mailpit a moment later, and nothing tells the browser when. Mailpit's
+ * search answers newest first. https://mailpit.axllent.org/docs/api-v1/
  *
  * @param mailpitUrl - Mailpit's HTTP root, e.g. `http://localhost:8025`
  * @param address - the recipient
+ * @param matches - which of the address's emails counts
  */
-const mailpitEmailTo = (mailpitUrl: string, address: string): Cypress.Chainable<MailedEmail> =>
-    pollUntilFound<{ ID: string }>(
+const mailpitEmailTo = (
+    mailpitUrl: string,
+    address: string,
+    matches: MailFilter
+): Cypress.Chainable<MailedEmail> =>
+    pollUntilFound<MailedEmail>(
         () =>
             cy
                 .request(
                     `${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"${address}"`)}`
                 )
-                .then((response): Cypress.Chainable<{ ID: string } | undefined> => {
-                    const [newest] = (response.body as { messages: { ID: string }[] }).messages;
-                    return cy.wrap<{ ID: string } | undefined>(newest);
-                }),
+                .then((response) =>
+                    firstMailpitMatch(
+                        mailpitUrl,
+                        address,
+                        (response.body as { messages: { ID: string }[] }).messages.map(
+                            ({ ID }) => ID
+                        ),
+                        matches
+                    )
+                ),
         MAILPIT_ATTEMPTS,
         `an email to ${address} in Mailpit`
-    ).then((newest) =>
-        cy
-            .request(`${mailpitUrl}/api/v1/message/${newest.ID}`)
-            .then((message) =>
-                parseMailpitMessage(
-                    address,
-                    message.body as Parameters<typeof parseMailpitMessage>[1]
-                )
-            )
     );
 
 // Profile-aware: the demo outbox, or the live stack's Mailpit — see the declaration above.
-Cypress.Commands.add('emailTo', (address: string) =>
+Cypress.Commands.add('emailTo', (address: string, matches: MailFilter = () => true) =>
     cy
         .env(['liveProfile', 'mailpitUrl'])
         .then(({ liveProfile, mailpitUrl }) =>
             liveProfile === true
-                ? mailpitEmailTo(String(mailpitUrl), address)
-                : demoOutboxEmailTo(address)
+                ? mailpitEmailTo(String(mailpitUrl), address, matches)
+                : demoOutboxEmailTo(address, matches)
         )
 );
 

@@ -694,6 +694,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                 v-for="row in currentOrder.taxSummary"
                                 :key="'tax-rate-' + row.rate"
                                 class="flex items-center justify-between gap-3 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
+                                data-test="order-tax-row"
                             >
                                 <v-chip size="small" variant="tonal" color="tertiary">
                                     {{ formatPercent(row.rate) }}
@@ -701,11 +702,15 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-vat-net')
                                 }}</span>
-                                <strong>{{ formatCurrency(row.netAmount, orderCurrency) }}</strong>
+                                <strong data-test="order-tax-row-net">{{
+                                    formatCurrency(row.netAmount, orderCurrency)
+                                }}</strong>
                                 <span class="opacity-75">{{
                                     t('order-target-page.label-vat-tax')
                                 }}</span>
-                                <strong>{{ formatCurrency(row.taxAmount, orderCurrency) }}</strong>
+                                <strong data-test="order-tax-row-tax">{{
+                                    formatCurrency(row.taxAmount, orderCurrency)
+                                }}</strong>
                             </div>
                             <div class="flex items-center justify-between gap-3 px-1 text-sm">
                                 <span class="opacity-75">{{

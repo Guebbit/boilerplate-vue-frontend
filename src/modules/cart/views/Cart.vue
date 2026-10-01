@@ -552,20 +552,24 @@ onMounted(() =>
                     <v-divider class="my-3" />
                     <dl class="grid grid-cols-[1fr_auto] gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-total') }}</dt>
-                        <dd class="text-right font-medium">
+                        <dd class="text-right font-medium" data-test="cart-items-total">
                             {{ formatCurrency(cartSummary.itemsTotal, cartSummary.currency) }}
                         </dd>
                         <dt v-if="shippingMethodId" class="opacity-70">
                             {{ t('cart-page.label-shipping-cost') }}
                         </dt>
-                        <dd v-if="shippingMethodId" class="text-right font-medium">
+                        <dd
+                            v-if="shippingMethodId"
+                            class="text-right font-medium"
+                            data-test="cart-shipping-cost"
+                        >
                             {{ formatCurrency(cartSummary.shippingCost, cartSummary.currency) }}
                         </dd>
                     </dl>
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
-                        <span class="text-xl font-bold" role="status">
+                        <span class="text-xl font-bold" role="status" data-test="cart-total">
                             {{ formatCurrency(cartSummary.totalPrice, cartSummary.currency) }}
                         </span>
                     </div>
