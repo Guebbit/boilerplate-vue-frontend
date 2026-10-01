@@ -18,6 +18,7 @@
         "label-notes": "Order notes (optional)",
         "button-remove": "Remove",
         "button-clear": "Clear cart",
+        "confirm-clear": "Remove the item from your cart? | Remove all {count} items from your cart?",
         "button-checkout": "Order with obligation to pay",
         "success-checkout": "Order placed successfully!",
         "error-cart-changed": "Your cart changed on the server since this page loaded — it has been refreshed, please review it and try again.",

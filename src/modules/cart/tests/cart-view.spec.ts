@@ -14,6 +14,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
 import { useProductsStore } from '@/modules/products';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout } from '@api';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -108,6 +109,8 @@ const mountCart = () => {
     // the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
     vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
     const checkoutSpy = vi.spyOn(cart, 'checkout');
+    // Spied before mounting for the same reason as `checkout`: the component captures it at setup.
+    const clearSpy = vi.spyOn(cart, 'clearCart').mockResolvedValue(A_CART);
 
     // `defineComponent` at a top level, not inline in `stubs` below: TypeScript-ESLint cannot
     // fully resolve `this.$emit`'s type when the call is nested straight inside the object
@@ -131,7 +134,7 @@ const mountCart = () => {
             }
         }
     });
-    return flushPromises().then(() => ({ wrapper, checkoutSpy, cart }));
+    return flushPromises().then(() => ({ wrapper, checkoutSpy, clearSpy, cart }));
 };
 
 beforeEach(() => {
@@ -396,6 +399,77 @@ describe('the checkout payload', () => {
                 expect(checkoutSpy).toHaveBeenCalledOnce();
                 expect(checkoutSpy.mock.calls[0]?.[0]).not.toHaveProperty('addressId');
             });
+    });
+});
+
+describe('the Clear cart button asks before it empties the basket', () => {
+    it('asks a destructive question that names how many lines go, and clears nothing yet', () => {
+        // Never answered: the dialog host is not mounted here, so the question just stays open.
+        const confirmSpy = vi
+            .spyOn(useDialogStore(), 'confirm')
+            .mockReturnValue(new Promise(() => {}));
+
+        return mountCart().then(({ wrapper, clearSpy }) =>
+            wrapper
+                .get('[data-test=cart-clear]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(confirmSpy).toHaveBeenCalledExactlyOnceWith({
+                        message: i18n.global.t(
+                            'cart-page.confirm-clear',
+                            { count: A_CART.items.length },
+                            A_CART.items.length
+                        ),
+                        color: 'error'
+                    });
+                    expect(clearSpy).not.toHaveBeenCalled();
+                })
+        );
+    });
+
+    it('clears the cart once the shopper accepts', () => {
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+
+        return mountCart().then(({ wrapper, clearSpy }) =>
+            wrapper
+                .get('[data-test=cart-clear]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(clearSpy).toHaveBeenCalledOnce();
+                })
+        );
+    });
+
+    it('leaves the cart alone when the shopper declines', () => {
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+
+        return mountCart().then(({ wrapper, clearSpy }) =>
+            wrapper
+                .get('[data-test=cart-clear]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(clearSpy).not.toHaveBeenCalled();
+                })
+        );
+    });
+
+    it('blocks the line actions in place when the accepted clear is refused', () => {
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+
+        return mountCart().then(({ wrapper, clearSpy }) => {
+            clearSpy.mockRejectedValueOnce(checkoutRejection(500, 'INTERNAL_ERROR'));
+
+            return wrapper
+                .get('[data-test=cart-clear]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(wrapper.find('[data-test=cart-line-action-error]').exists()).toBe(true);
+                });
+        });
     });
 });
 
