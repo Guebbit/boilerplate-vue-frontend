@@ -20,7 +20,12 @@ import vuetify from '@/ui/vuetify';
 const reauthMock = vi.fn();
 
 vi.mock('@/infrastructure/session.ts', () => ({
-    useSessionStore: () => ({ reauth: reauthMock, reauthing: ref(false) })
+    reauthSendRetryAfter: () => undefined,
+    useSessionStore: () => ({
+        reauth: reauthMock,
+        reauthMethods: () => Promise.resolve(['password']),
+        reauthing: ref(false)
+    })
 }));
 
 // Identity `t`, so an assertion reads the dictionary KEY rather than a translation that would
@@ -71,6 +76,16 @@ const submitPassword = (password: string) =>
         .then((input) => new DOMWrapper(input).setValue(password))
         .then(() => new DOMWrapper(document.querySelector('form')).trigger('submit'));
 
+/**
+ * A call that rejects with the API's own reject envelope — a plain object, exactly as
+ * `onResponseReject` produces it. A function, so the rejection exists only once the dialog calls.
+ *
+ * @param envelope - the status (and message) the rejected call carries
+ */
+const rejectsWith = (envelope: { status: number; message?: string }) => (): Promise<never> =>
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the reject envelope is a plain object, not an Error
+    Promise.reject(envelope);
+
 beforeEach(() => {
     reauthMock.mockReset();
 });
@@ -83,8 +98,7 @@ afterEach(() => {
 
 describe('ReauthDialog — a failed attempt', () => {
     it('shows the wrong-password message for a 422', () => {
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 422 }));
+        reauthMock.mockImplementation(rejectsWith({ status: 422 }));
         openDialog();
 
         return submitPassword('nope').then(() =>
@@ -95,8 +109,7 @@ describe('ReauthDialog — a failed attempt', () => {
     });
 
     it('shows the failure’s own message for anything other than a 422', () => {
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 500, message: 'Server exploded' }));
+        reauthMock.mockImplementation(rejectsWith({ status: 500, message: 'Server exploded' }));
         openDialog();
 
         return submitPassword('whatever').then(() =>
@@ -110,8 +123,7 @@ describe('ReauthDialog — a failed attempt', () => {
     });
 
     it('does not call a 401 a wrong password — that status means the session is gone', () => {
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 401, message: 'Unauthorized' }));
+        reauthMock.mockImplementation(rejectsWith({ status: 401, message: 'Unauthorized' }));
         openDialog();
 
         return submitPassword('whatever').then(() =>
@@ -125,8 +137,7 @@ describe('ReauthDialog — a failed attempt', () => {
     });
 
     it('clears the password field either way, so a retry starts from empty', () => {
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- simulating the API's own reject envelope, a plain object, exactly as `onResponseReject` produces it
-        reauthMock.mockReturnValue(Promise.reject({ status: 422 }));
+        reauthMock.mockImplementation(rejectsWith({ status: 422 }));
         openDialog();
 
         return submitPassword('nope')

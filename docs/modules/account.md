@@ -133,7 +133,9 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
 | `POST /account/password`                     | `ChangePasswordResponse`           |
 | `DELETE /account/pending-email`              | `CancelPendingEmailChangeResponse` |
+| `GET /account/reauth`                        | `GetReauthMethodsResponse`         |
 | `POST /account/reauth`                       | `ReauthResponse`                   |
+| `POST /account/reauth/methods/{method}/send` | `SendReauthCodeResponse`           |
 | `POST /account/reset`                        | `RequestPasswordResetResponse`     |
 | `POST /account/reset-confirm`                | `ConfirmPasswordResetResponse`     |
 | `GET /account/sessions`                      | `GetSessionsResponse`              |
@@ -315,7 +317,7 @@ flowchart TD
     S -->|yes| P["park the request"]
     P --> SF["requestFreshSession()<br/>single-flight"]
     SF --> D["ReauthDialog.vue<br/>one prompt, N parked requests"]
-    D -->|password proven| RA["session store reauth()<br/>adopts the rotated token"]
+    D -->|password or mailed code proven| RA["session store reauth()<br/>adopts the rotated token"]
     RA --> RP["replay the request once<br/>(_dontRetry)"]
     D -->|cancelled| REJ["normalized rejection"]
 
@@ -324,6 +326,19 @@ flowchart TD
     class S gate;
     class RP,RA ok;
 ```
+
+**Which proof the dialog asks for is the server's answer, not the client's guess.** On open it calls
+`GET /account/reauth` (`reauthMethods()` on the session store) and shows the first method listed:
+
+- `password` — the password field.
+- `email` — an account with no password (it signed up through a provider): a "send code" button
+  (`sendReauthCode()`, locked for the server's own `resendAfter`, or a 429's `retryAfter`) and a
+  field for the mailed code. The body sent is tagged, `{ method: 'email', code }`.
+- empty — no password and no way to mail: a dead end told as one, not a form nobody can pass.
+
+A wrong answer is a 422 and the dialog says "code" or "password" by the method on show; it stays
+open either way. See the backend's
+[step-up for an account with no password](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#step-up-for-an-account-with-no-password).
 
 Both this and the token refresh de-duplicate through the same `infrastructure/http/single-flight.ts`
 helper: several requests failing in the same tick must join one attempt, never start one each. For

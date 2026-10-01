@@ -24,6 +24,8 @@ const refreshTokenMock = vi.fn();
 const logoutMock = vi.fn();
 const logoutAllMock = vi.fn();
 const reauthMock = vi.fn();
+const getReauthMethodsMock = vi.fn();
+const sendReauthCodeMock = vi.fn();
 const requestEmailVerificationMock = vi.fn();
 
 // Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
@@ -41,7 +43,11 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    reauth: (body: { password: string }) => reauthMock(body),
+    reauth: (body: unknown) => reauthMock(body),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
+    getReauthMethods: () => getReauthMethodsMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
+    sendReauthCode: (method: string) => sendReauthCodeMock(method),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     requestEmailVerification: () => requestEmailVerificationMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
@@ -586,9 +592,9 @@ describe('reauth', () => {
         reauthMock.mockResolvedValue(contractResponse(schemas.ReauthResponse, { token: 'fresh' }));
         const store = useSessionStore();
 
-        const pending = store.reauth('hunter2');
+        const pending = store.reauth({ method: 'password', password: 'hunter2' });
         expect(store.reauthing).toBe(true);
-        expect(reauthMock).toHaveBeenCalledWith({ password: 'hunter2' });
+        expect(reauthMock).toHaveBeenCalledWith({ method: 'password', password: 'hunter2' });
 
         return pending.then(() => {
             expect(store.accessToken).toBe('fresh');
@@ -601,11 +607,43 @@ describe('reauth', () => {
         const store = signedIn();
 
         return store
-            .reauth('wrong')
+            .reauth({ method: 'password', password: 'wrong' })
             .catch(() => undefined)
             .then(() => {
                 expect(store.reauthing).toBe(false);
                 expect(store.accessToken).toBe('token');
+            });
+    });
+});
+
+describe('reauthMethods and sendReauthCode', () => {
+    it('lists the methods the server offers this account', () => {
+        getReauthMethodsMock.mockResolvedValue(
+            contractResponse(schemas.GetReauthMethodsResponse, { methods: ['email'] })
+        );
+
+        return useSessionStore()
+            .reauthMethods()
+            .then((methods) => {
+                expect(methods).toEqual(['email']);
+            });
+    });
+
+    it("resolves the code send with the server's own cooldown", () => {
+        sendReauthCodeMock.mockResolvedValue(
+            contractResponse(schemas.SendReauthCodeResponse, {
+                method: 'email',
+                sentTo: 'a***b@example.com',
+                resendAfter: 30,
+                expiresAt: '2030-01-01T00:00:00.000Z'
+            })
+        );
+
+        return useSessionStore()
+            .sendReauthCode()
+            .then((resendAfter) => {
+                expect(sendReauthCodeMock).toHaveBeenCalledWith('email');
+                expect(resendAfter).toBe(30);
             });
     });
 });

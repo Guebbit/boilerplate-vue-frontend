@@ -17,6 +17,8 @@ import {
     logoutAll as apiLogoutAll,
     updateAccount as apiUpdateAccount,
     reauth as apiReauth,
+    getReauthMethods as apiGetReauthMethods,
+    sendReauthCode as apiSendReauthCode,
     requestEmailVerification as apiRequestEmailVerification
 } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
@@ -30,7 +32,15 @@ import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type { Abilities, EmailVerificationRequested, PackedRules } from '@types';
+import type {
+    Abilities,
+    EmailVerificationRequested,
+    PackedRules,
+    ReauthMethod,
+    ReauthMethods,
+    ReauthRequest,
+    TwoFactorDelivery
+} from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -191,6 +201,15 @@ const clearCookie = (name: string) => writeCookie(name, '', 0);
  */
 export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>
     getRetryAfter(error, ERROR_CODES.EMAIL_VERIFY_RESEND_TOO_SOON);
+
+/**
+ * The seconds a refused step-up code send still has to wait, read off its 429.
+ *
+ * @param error - The rejected value `sendReauthCode()` threw.
+ * @returns Seconds to wait, or `undefined` when this was not that refusal.
+ */
+export const reauthSendRetryAfter = (error: unknown): number | undefined =>
+    getRetryAfter(error, ERROR_CODES.TWO_FACTOR_RESEND_TOO_SOON);
 
 /**
  * Store instance: see the module doc above for the `isAuth` derivation rule.
@@ -557,17 +576,17 @@ export const useSessionStore = defineStore('session', () => {
     const reauthing = ref(false);
 
     /**
-     * Proves the password again and adopts the rotated access token — the step-up prompt's one
-     * call. Lives here, not in `account`, because the shell renders the prompt on every page and
-     * a session is what it renews.
+     * Proves who the visitor is again and adopts the rotated access token — the step-up prompt's
+     * one write. Lives here, not in `account`, because the shell renders the prompt on every page
+     * and a session is what it renews.
      *
-     * @param password - The visitor's current password.
+     * @param proof - The tagged body: a password, or the code mailed to an account with none.
      * @returns A promise resolving once the fresh token is stored; rejects with the API's error
-     *  (a 422 means a wrong password — the API keeps 401 for "your session is gone").
+     *  (a 422 means a wrong password or code — the API keeps 401 for "your session is gone").
      */
-    const reauth = (password: string): Promise<void> => {
+    const reauth = (proof: ReauthRequest): Promise<void> => {
         reauthing.value = true;
-        return apiReauth({ password })
+        return apiReauth(proof)
             .then((data) => {
                 setAccessToken(getTokenFromResponse(data));
             })
@@ -575,6 +594,29 @@ export const useSessionStore = defineStore('session', () => {
                 reauthing.value = false;
             });
     };
+
+    /**
+     * Which ways this account can answer the step-up prompt, in the order to offer them. The
+     * server decides: the kernel that raises the challenge cannot see whether the account has a
+     * password.
+     *
+     * @returns The methods; empty when the account has no password and mail cannot be delivered.
+     */
+    const reauthMethods = (): Promise<ReauthMethod[]> =>
+        apiGetReauthMethods().then(
+            (data) => getPayloadFromResponse<ReauthMethods>(data)?.methods ?? []
+        );
+
+    /**
+     * Mails the visitor their step-up code — only an account with no password may ask.
+     *
+     * @returns The server's own resend cooldown in seconds; counting it down means the 429 the
+     *  endpoint answers inside it is never met.
+     */
+    const sendReauthCode = (): Promise<number> =>
+        apiSendReauthCode('email').then(
+            (data) => getPayloadFromResponse<TwoFactorDelivery>(data)?.resendAfter ?? 0
+        );
 
     /**
      * Asks for the address-verification email to be sent again — the shell banner's one action,
@@ -633,6 +675,8 @@ export const useSessionStore = defineStore('session', () => {
         persistLocalePreference,
         reauthing,
         reauth,
+        reauthMethods,
+        sendReauthCode,
         requestEmailVerification,
         clearSession,
         logout,
