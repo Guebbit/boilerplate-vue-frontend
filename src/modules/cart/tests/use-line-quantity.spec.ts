@@ -269,3 +269,42 @@ describe('useLineQuantity — FA34: checkout and clear must not race a pending s
         });
     });
 });
+
+describe('useLineQuantity — a step still in its debounce when the page goes away', () => {
+    it('hands every outstanding step to the keepalive sender, for the number the visitor stopped on', () => {
+        const { update } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+        const send = vi.fn();
+
+        lines.stepQuantity('p1', 2, 1);
+        lines.stepQuantity('p1', 2, 1);
+        lines.stepQuantity('p2', 1, -1);
+        lines.sendPendingKeepalive(send);
+
+        expect(send).toHaveBeenCalledTimes(2);
+        expect(send).toHaveBeenCalledWith('p1', 4);
+        expect(send).toHaveBeenCalledWith('p2', 1);
+    });
+
+    it('does not send the same step a second time when its timer would have fired', () => {
+        const { update } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+
+        lines.stepQuantity('p1', 2, 1);
+        lines.sendPendingKeepalive(vi.fn());
+        vi.advanceTimersByTime(DELAY * 2);
+
+        expect(update).not.toHaveBeenCalled();
+        expect(lines.quantityOf('p1', 2)).toBe(2);
+    });
+
+    it('sends nothing when no step is waiting', () => {
+        const { update } = makeUpdate();
+        const lines = useLineQuantity(update, vi.fn(), DELAY);
+        const send = vi.fn();
+
+        lines.sendPendingKeepalive(send);
+
+        expect(send).not.toHaveBeenCalled();
+    });
+});

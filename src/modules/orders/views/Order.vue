@@ -12,6 +12,7 @@ export default {
  * `actions`, and mounts the payment/transfer-instructions/shipment panels as
  * self-contained published-language components.
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -423,6 +424,11 @@ const downloadCreditNote = (note: CreditNoteSummary) => {
 };
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and (re)fetches the order whenever the route id changes.
  *
  * The forced fetch below is not a duplicate of it. The list seeds the cache with SUMMARY rows,
@@ -432,7 +438,7 @@ const downloadCreditNote = (note: CreditNoteSummary) => {
  * `GET /orders/:id` serves it. Drop the forced fetch and the page renders with no action buttons
  * at all for anyone who arrived from the list, which looks like an order nothing may be done to.
  */
-watchOrder(() => id);
+watchOrder(() => id, { onError: onMissingRecord });
 
 /**
  * Forces the one re-fetch a list-cache arrival needs to gain `actions` — see the composable's

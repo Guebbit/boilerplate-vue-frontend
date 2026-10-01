@@ -158,6 +158,24 @@ describe('unknown routes', () => {
             })
         ));
 
+    // An address with no locale but a real page's name keeps its path: `/products` is the products
+    // page under the default locale, not an unsupported locale that falls back to Home.
+    it('keeps the path of a locale-less address for a page the app serves', () =>
+        loadRouter().then((router) =>
+            router.push('/products?tag=a').then(() => {
+                expect(router.currentRoute.value.name).toBe('ProductsList');
+                expect(router.currentRoute.value.params.locale).not.toBe('products');
+                expect(router.currentRoute.value.query.tag).toBe('a');
+            })
+        ));
+
+    it('keeps a deeper locale-less path too', () =>
+        loadRouter().then((router) =>
+            router.push('/faq').then(() => {
+                expect(router.currentRoute.value.name).toBe('StaticFaq');
+            })
+        ));
+
     // A single unknown segment is indistinguishable from a locale: `/:locale` matches it, the
     // empty child matches the rest, and `localeChoice` then rewrites the unsupported locale to
     // the default one. So `/nonsense` lands on Home, not on the 404 page — the top-level

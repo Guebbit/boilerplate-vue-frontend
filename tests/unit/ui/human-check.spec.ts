@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { fetchAntibotConfig, fetchAntibotChallenge } from '@/infrastructure/http/antibot.ts';
+import { logger } from '@/infrastructure/utils/logger.ts';
 import { asStub } from '../../support/stub.ts';
 
 // Side-effect only: HumanCheck imports 'altcha' to register <altcha-widget>. Mocked to an empty
@@ -112,5 +113,26 @@ describe('HumanCheck — provider branching', () => {
         await flushPromises();
 
         expect(asStub<{ token?: string }>(wrapper.vm).token).toBeUndefined();
+    });
+});
+
+describe('HumanCheck — an API that cannot be reached', () => {
+    it('renders no widget, logs it, and leaves no unhandled rejection behind', async () => {
+        const warned = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+        // What the http layer rejects with when nothing answered at all.
+        vi.mocked(fetchAntibotConfig).mockRejectedValue({
+            success: false,
+            status: 0,
+            message: 'Could not reach the server.',
+            errors: [{ code: 'NETWORK_ERROR', message: 'Could not reach the server.' }]
+        });
+
+        const wrapper = mount(HumanCheck);
+        await flushPromises();
+
+        expect(wrapper.find('[data-test=human-check-altcha]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=human-check-turnstile]').exists()).toBe(false);
+        expect(warned).toHaveBeenCalledTimes(1);
+        warned.mockRestore();
     });
 });

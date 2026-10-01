@@ -79,6 +79,13 @@ order and the header keeps showing items the server has already turned into one.
 Stepping a line's quantity does not call the store directly. `composables/use-line-quantity.ts`
 debounces per-product clicks into one trailing request each — three quick clicks on `+` used to put
 three requests in flight, and the cart ended up showing whichever one the server answered LAST.
+A step still inside its debounce when the page goes away (a reload, a closed tab) is not lost: on
+`pagehide` the view hands it to `sendKeepalive` (`src/infrastructure/http/keepalive.ts`), a `fetch` with
+`keepalive`, because axios's request is cancelled with the page and `sendBeacon` can send neither a
+`PUT` nor the bearer header.
+What only the browser knows at checkout — the note, the payment choice and a picked address — lives
+in `sessionStorage` under the signed-in user's id (`composables/use-checkout-draft.ts`). A reload
+puts it back; checkout and the end of a session drop it. The delivery method is the server cart's.
 Classifying a checkout rejection is pure, too: `domain/checkout-errors.ts` reads the envelope's
 first error and returns a verdict (`cart-changed`, `insufficient-stock`, `address-not-found`,
 `other`) — the view decides what each one says and does. See

@@ -13,6 +13,7 @@ export default {
  * codes, and the `UserAccessDialog` shortcut for changing role/active status
  * without opening the full edit form.
  */
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -120,9 +121,14 @@ const userStatus = computed(() =>
 );
 
 /**
+ * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Selects and (re)fetches the user whenever the route id changes.
  */
-watchUser(() => id);
+watchUser(() => id, { onError: onMissingRecord });
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.

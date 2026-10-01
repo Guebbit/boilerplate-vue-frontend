@@ -154,6 +154,22 @@ declare global {
             emailTo(address: string, matches?: MailFilter): Chainable<MailedEmail>;
 
             /**
+             * The newest email whose subject contains some text, whoever it went to — for a mail
+             * whose recipient is the deployment's own choice (the operator's contact mailbox), so
+             * a spec cannot name the address. Polled like {@link emailTo}; fails when none comes.
+             *
+             * @param subject - text the subject must contain; make it unique to the story
+             */
+            emailAbout(subject: string): Chainable<MailedEmail>;
+
+            /**
+             * The subject of every email the profile's mailbox holds right now, newest first — for
+             * an assertion that a mail was NOT sent, which has no email to read. Read it only
+             * after a mail that was sent has arrived, so "nothing yet" cannot pass for "nothing".
+             */
+            sentSubjects(): Chainable<string[]>;
+
+            /**
              * Follows a main-navigation entry from the desktop bar, by the path it links to.
              *
              * The bar is icon-only, so a label is the wrong handle: it is a tooltip and an
@@ -608,6 +624,93 @@ Cypress.Commands.add('emailTo', (address: string, matches: MailFilter = () => tr
             liveProfile === true
                 ? mailpitEmailTo(String(mailpitUrl), address, matches)
                 : demoOutboxEmailTo(address, matches)
+        )
+);
+
+/**
+ * The demo outbox's whole content, newest first.
+ */
+const demoOutboxAll = (): Cypress.Chainable<DemoOutboxEmail[]> =>
+    cy
+        .env(['apiUrl'])
+        .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__test/emails`))
+        .then((response) => (response.body as { emails: DemoOutboxEmail[] }).emails);
+
+/** What Mailpit's message list carries per message — see `GET /api/v1/messages`. */
+interface MailpitListed {
+    ID: string;
+    Subject: string;
+}
+
+/**
+ * Mailpit's message list, newest first. https://mailpit.axllent.org/docs/api-v1/
+ *
+ * @param mailpitUrl - Mailpit's HTTP root
+ */
+const mailpitAll = (mailpitUrl: string): Cypress.Chainable<MailpitListed[]> =>
+    cy
+        .request(`${mailpitUrl}/api/v1/messages?limit=200`)
+        .then((response) => (response.body as { messages: MailpitListed[] }).messages);
+
+/**
+ * The newest Mailpit message whose subject contains `subject`, read in full, polled.
+ *
+ * @param mailpitUrl - Mailpit's HTTP root
+ * @param subject - text the subject must contain
+ */
+const mailpitEmailAbout = (mailpitUrl: string, subject: string): Cypress.Chainable<MailedEmail> =>
+    pollUntilFound<MailedEmail>(
+        () =>
+            mailpitAll(mailpitUrl).then((messages): Cypress.Chainable<MailedEmail | undefined> => {
+                const found = messages.find((message) => message.Subject.includes(subject));
+                if (!found) return cy.wrap<MailedEmail | undefined>(undefined);
+                return cy.request(`${mailpitUrl}/api/v1/message/${found.ID}`).then((response) => {
+                    const body = response.body as Parameters<typeof parseMailpitMessage>[1] & {
+                        To: { Address: string }[];
+                    };
+                    return cy.wrap<MailedEmail | undefined>(
+                        parseMailpitMessage(body.To[0]?.Address ?? '', body)
+                    );
+                });
+            }),
+        MAILPIT_ATTEMPTS,
+        `an email about "${subject}" in Mailpit`
+    );
+
+/**
+ * The newest demo-outbox email whose subject contains `subject`, polled.
+ *
+ * @param subject - text the subject must contain
+ */
+const demoOutboxEmailAbout = (subject: string): Cypress.Chainable<MailedEmail> =>
+    pollUntilFound<DemoOutboxEmail>(
+        () =>
+            demoOutboxAll().then((emails) =>
+                cy.wrap(emails.find((email) => email.subject.includes(subject)))
+            ),
+        DEMO_OUTBOX_ATTEMPTS,
+        `an email about "${subject}" in the demo outbox`
+    ).then((email) => cy.wrap<MailedEmail>(email));
+
+Cypress.Commands.add('emailAbout', (subject: string) =>
+    cy
+        .env(['liveProfile', 'mailpitUrl'])
+        .then(({ liveProfile, mailpitUrl }) =>
+            liveProfile === true
+                ? mailpitEmailAbout(String(mailpitUrl), subject)
+                : demoOutboxEmailAbout(subject)
+        )
+);
+
+Cypress.Commands.add('sentSubjects', () =>
+    cy
+        .env(['liveProfile', 'mailpitUrl'])
+        .then(({ liveProfile, mailpitUrl }) =>
+            liveProfile === true
+                ? mailpitAll(String(mailpitUrl)).then((messages) =>
+                      messages.map(({ Subject }) => Subject)
+                  )
+                : demoOutboxAll().then((emails) => emails.map(({ subject }) => subject))
         )
 );
 

@@ -118,6 +118,23 @@ export const giveAnAddress = (role: E2ERole): Cypress.Chainable<unknown> =>
     });
 
 /**
+ * Fills the signup form already on screen and submits it — the half `signUp` shares with a story
+ * that reached the form by clicking through to it.
+ *
+ * @param email - the new account's address
+ * @param password - a password that clears the strength rule
+ */
+export const fillSignupForm = (email: string, password: string): void => {
+    cy.get('[type=email]').should('not.be.disabled').clear();
+    cy.get('[type=email]').type(email);
+    cy.get('[type=password]').eq(0).type(password);
+    cy.get('[type=password]').eq(1).type(password);
+    // Specifically the required one: the optional analytics checkbox shares the form.
+    cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
+    cy.get('#signup-page button[type="submit"]').click();
+};
+
+/**
  * Creates an account through the signup form and leaves the page on Home, signed in and
  * unverified — `POST /account/signup` sets the session itself.
  *
@@ -126,13 +143,7 @@ export const giveAnAddress = (role: E2ERole): Cypress.Chainable<unknown> =>
  */
 export const signUp = (email: string, password: string): void => {
     cy.visit('/en/signup');
-    cy.get('[type=email]').should('not.be.disabled').clear();
-    cy.get('[type=email]').type(email);
-    cy.get('[type=password]').eq(0).type(password);
-    cy.get('[type=password]').eq(1).type(password);
-    // Specifically the required one: the optional analytics checkbox shares the form.
-    cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
-    cy.get('#signup-page button[type="submit"]').click();
+    fillSignupForm(email, password);
     cy.get('#home-page').should('exist');
 };
 

@@ -11,6 +11,7 @@ import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { useCartStore } from './store';
+import { clearCheckoutDrafts } from './composables/use-checkout-draft';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 
@@ -66,8 +67,11 @@ export default {
                 const { isAuth } = storeToRefs(useSessionStore());
                 watch(
                     isAuth,
-                    (auth) => {
+                    (auth, wasAuth) => {
                         if (auth) void cartStore.fetchSummary();
+                        // Only the real end of a session: a reload starts signed out and is restored a
+                        // moment later, and must keep its checkout draft.
+                        if (wasAuth && !auth) clearCheckoutDrafts();
                     },
                     { immediate: true }
                 );

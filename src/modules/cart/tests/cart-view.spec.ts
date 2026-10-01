@@ -16,15 +16,25 @@ import { useCartStore } from '@/modules/cart/store.ts';
 import { useProductsStore } from '@/modules/products';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout } from '@api';
+import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
+import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
+import {
+    readCheckoutDraft,
+    writeCheckoutDraft
+} from '@/modules/cart/composables/use-checkout-draft.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import type { CartResponse } from '@types';
+import type { CartResponse, Order } from '@types';
 
 wireModulesIntoCore();
+
+// The keepalive door is stubbed: what matters here is WHAT the page hands it on `pagehide`.
+vi.mock('@/infrastructure/http/keepalive.ts', () => ({ sendKeepalive: vi.fn() }));
 
 /**
  * `checkout` alone is wrapped, real implementation and all (`vi.fn(actual.checkout)` calls
@@ -168,7 +178,10 @@ const mountCart = () => {
 };
 
 beforeEach(() => {
+    sessionStorage.clear();
+    vi.clearAllMocks();
     setActivePinia(createPinia());
+    useSessionStore().viewer = asStub<SessionViewer>({ id: 'u1', email: 'u1@example.com' });
     return loadLocale('en').then(() => router.push('/en/cart').then(() => router.isReady()));
 });
 
@@ -705,4 +718,70 @@ describe('a cart with nothing to ship', () => {
         mountCart().then(({ wrapper }) => {
             expect(wrapper.find('[data-test=cart-no-shipping]').exists()).toBe(false);
         }));
+});
+
+describe('a reload in the middle of checkout', () => {
+    it('puts the note back, and keeps typing saved for the next reload', () => {
+        writeCheckoutDraft('u1', { notes: 'Ring twice' });
+
+        return mountCart().then(({ wrapper }) => {
+            const field = wrapper.get('[data-test=cart-notes] textarea');
+            expect((field.element as HTMLTextAreaElement).value).toBe('Ring twice');
+
+            return field.setValue('Ring three times').then(() => {
+                expect(readCheckoutDraft('u1').notes).toBe('Ring three times');
+            });
+        });
+    });
+
+    it('sends the restored note, payment choice and address with the order', () => {
+        writeCheckoutDraft('u1', {
+            notes: 'Ring twice',
+            paymentMethodId: 'bank_transfer',
+            addressId: 'addr-2'
+        });
+
+        return mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockResolvedValue(undefined);
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    // `pickup` needs no address, so the address is not sent; the rest are.
+                    expect(checkoutSpy.mock.calls[0]?.[0]).toMatchObject({
+                        notes: 'Ring twice',
+                        paymentMethod: 'bank_transfer'
+                    });
+                });
+        });
+    });
+
+    it('forgets the draft once the order is placed', () => {
+        writeCheckoutDraft('u1', { notes: 'Ring twice' });
+
+        return mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockResolvedValue(asStub<Order>({ id: 'order-1' }));
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(readCheckoutDraft('u1')).toEqual({ notes: '' });
+                });
+        });
+    });
+
+    it('sends a quantity still in its debounce by a request that outlives the page', () => {
+        return mountCart().then(({ wrapper }) => {
+            return wrapper
+                .get('[data-test=cart-increase]')
+                .trigger('click')
+                .then(() => {
+                    globalThis.dispatchEvent(new Event('pagehide'));
+
+                    expect(sendKeepalive).toHaveBeenCalledWith('PUT', '/cart/p1', { quantity: 3 });
+                });
+        });
+    });
 });

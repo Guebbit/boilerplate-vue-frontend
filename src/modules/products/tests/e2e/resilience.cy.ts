@@ -9,20 +9,13 @@
  * naming a title or a count stays green.
  */
 
-/** How much horizontal slack a page gets before it counts as overflowing — see the central file. */
-const MAX_HORIZONTAL_OVERFLOW_PX = 1;
+import {
+    assertNoHorizontalOverflow,
+    assertRouteIsHealthy
+} from '../../../../../tests/support/e2e/resilience';
 
 /** The default page size in `ProductsList.vue`'s `pageSizeOptions`. */
 const DEFAULT_PAGE_SIZE = 10;
-
-const assertNoHorizontalOverflow = () => {
-    cy.document().then((pageDocument) => {
-        expect(
-            pageDocument.body.scrollWidth,
-            'page scrolls sideways — something is wider than the viewport'
-        ).to.be.at.most(pageDocument.documentElement.clientWidth + MAX_HORIZONTAL_OVERFLOW_PX);
-    });
-};
 
 describe('the catalogue renders whatever the dataset holds', () => {
     beforeEach(() => {
@@ -30,11 +23,9 @@ describe('the catalogue renders whatever the dataset holds', () => {
         cy.restore();
     });
 
-    it('renders the public list without sideways scroll', () => {
-        cy.visit('/en/products');
-        cy.get('#products-list-page').should('exist');
+    it('serves the public list quietly and inside the viewport', () => {
+        assertRouteIsHealthy('/en/products', '#products-list-page');
         cy.get('[data-test=product-card]').should('have.length.at.least', 1);
-        assertNoHorizontalOverflow();
     });
 
     /**
@@ -86,7 +77,9 @@ describe('lists tolerate being empty', () => {
             .type('zzzz-no-such-product-zzzz');
         cy.get('#products-list-page form [type=submit]').click();
 
-        cy.get('[data-test=list-row]').should('not.exist');
+        // A guest is served the grid, never the staff table, so the rows to look for are cards.
+        cy.get('[data-test=products-empty]').should('exist');
+        cy.get('[data-test=product-card]').should('not.exist');
         assertNoHorizontalOverflow();
     });
 });

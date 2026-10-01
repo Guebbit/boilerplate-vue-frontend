@@ -120,6 +120,6 @@
         "button-translations": "Traduzioni"
     },
     "navigation": {
-        "label-products-list": "@:generic.product"
+        "label-products-list": "prodotto | prodotti"
     }
 }

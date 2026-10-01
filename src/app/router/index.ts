@@ -105,6 +105,24 @@ const appName = brandName();
 const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
+ * Redirects for an address written without its locale (`/products`, `/orders/42`): each page's own
+ * first segment, sent to the same address under the default locale. Without them `/:locale` reads
+ * `products` as a locale, finds it unsupported, and lands on Home with the path gone. Declared
+ * ahead of `/:locale`, and only for segments the app really serves, so `/nonsense` is still read
+ * as an unsupported locale.
+ */
+const localeLessRedirects = [
+    ...new Set(
+        [...shellChildRoutes, ...moduleRoutes]
+            .map(({ path }) => path.split('/')[0])
+            .filter((segment) => segment !== '' && !segment.startsWith(':'))
+    )
+].map((segment): RouteRecordRaw => ({
+    path: `/${segment}/:rest(.*)*`,
+    redirect: (to) => `/${getDefaultLocale()}${to.fullPath}`
+}));
+
+/**
  * The application's router: locale-prefixed routes, module-contributed routes merged in via
  * the kernel registry, plus the top-level 404/redirect shells the shell owns itself.
  */
@@ -152,6 +170,8 @@ const router = createRouter({
             path: '/oauth/callback',
             redirect: (to) => oauthCallbackLocation(to.query)
         },
+        ...localeLessRedirects,
+
         {
             path: '/:locale',
             component: RouterView,

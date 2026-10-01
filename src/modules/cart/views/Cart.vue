@@ -28,6 +28,13 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import {
+    clearCheckoutDrafts,
+    readCheckoutDraft,
+    writeCheckoutDraft
+} from '@/modules/cart/composables/use-checkout-draft.ts';
+import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import type { CartItem, PaymentMethodId } from '@types';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -131,10 +138,20 @@ const shippingMethodRequiresAddress = ref<boolean>();
 const shipToCountries = ref<string[]>([]);
 
 /**
+ * The signed-in visitor, whose id keys the saved checkout draft.
+ */
+const { viewer } = storeToRefs(useSessionStore());
+
+/**
+ * What this visitor had typed or picked before the page last went away — empty on a first visit.
+ */
+const savedDraft = viewer.value ? readCheckoutDraft(viewer.value.id) : readCheckoutDraft('');
+
+/**
  * The chosen shipping address's entry id — required only when
  * {@link shippingMethodRequiresAddress} is true; omitted, checkout resolves the caller's default.
  */
-const addressId = ref<string | undefined>();
+const addressId = ref<string | undefined>(savedDraft.addressId);
 
 /**
  * The chosen billing address's entry id. `undefined` means "same as the shipping address" while
@@ -155,13 +172,28 @@ const shipsToAddress = computed(
 /**
  * The chosen payment method — optional; the API defaults an omitted choice to `card`.
  */
-const paymentMethodId = ref<PaymentMethodId | undefined>();
+const paymentMethodId = ref<PaymentMethodId | undefined>(savedDraft.paymentMethodId);
 
 /**
  * Free-text notes left at checkout — optional, trimmed to `undefined` when blank so an empty
  * textarea does not send an empty string the contract would rather see omitted.
  */
-const notes = ref('');
+const notes = ref(savedDraft.notes);
+
+/**
+ * Keeps the note, the payment choice and the address in the tab's own storage as they change, so a
+ * reload puts them back. Dropped by checkout and by logout (`module.ts`).
+ */
+watch([notes, paymentMethodId, addressId], () => {
+    if (viewer.value)
+        writeCheckoutDraft(viewer.value.id, {
+            notes: notes.value,
+            ...(paymentMethodId.value === undefined
+                ? {}
+                : { paymentMethodId: paymentMethodId.value }),
+            ...(addressId.value === undefined ? {} : { addressId: addressId.value })
+        });
+});
 
 /**
  * Whether checkout may run yet: a physical basket needs a method, and — only when that method
@@ -237,6 +269,7 @@ const runCheckout = () =>
             // guard is what lets `result.id` below type-check, and it is cheap insurance
             // against a client-side navigation to `/orders/undefined` either way.
             if (!result?.id) return;
+            clearCheckoutDrafts();
             addMessage(t('cart-page.success-checkout'));
             // `orders` is not one of cart's declared MODULE_EDGES reaches (FA86) — a build
             // shipping no orders module still completes the checkout, just with nowhere to SHOW
@@ -327,10 +360,8 @@ const {
  * number the visitor stopped on — rather than three racing requests whose last answer wins. The
  * reason that mattered, and why the delay is invisible, is in the composable.
  */
-const { quantityOf, stepQuantity, forget, forgetAll, flushPending, settle } = useLineQuantity(
-    updateCartItem,
-    (error: unknown) => reportLineActionError(error)
-);
+const { quantityOf, stepQuantity, forget, forgetAll, flushPending, sendPendingKeepalive, settle } =
+    useLineQuantity(updateCartItem, (error: unknown) => reportLineActionError(error));
 
 /**
  * @param item - The cart line.
@@ -377,7 +408,21 @@ const handleClearCart = () => {
         });
 };
 
-onBeforeUnmount(flushPending);
+/**
+ * A step still inside its debounce when the page goes away (a reload, a closed tab) is sent by a
+ * request that outlives the page, rather than lost with its timer.
+ */
+const onPageHide = () =>
+    sendPendingKeepalive((productId, quantity) => {
+        sendKeepalive('PUT', `/cart/${productId}`, { quantity });
+    });
+
+onMounted(() => window.addEventListener('pagehide', onPageHide));
+
+onBeforeUnmount(() => {
+    window.removeEventListener('pagehide', onPageHide);
+    flushPending();
+});
 
 /**
  * Load cart on mount
