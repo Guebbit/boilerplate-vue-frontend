@@ -72,17 +72,25 @@ const lastAccountPatch = () =>
         .findLast((call) => call.method?.toUpperCase() === 'PATCH' && call.url === '/account');
 
 /**
- * Whether `cancelPendingEmail` reached its own endpoint — the assertion for the cancel test below,
- * since the call carries no body worth inspecting.
+ * The calls `orvalMutator` has received for one endpoint — the assertion for the pending-email
+ * actions, whose calls carry no body worth inspecting.
+ *
+ * @param method - HTTP verb, any case
+ * @param url - the endpoint's path
  */
-const calledCancelPendingEmail = () =>
+const callsTo = (method: string, url: string) =>
     vi
         .mocked(orvalMutator)
-        .mock.calls.some(
+        .mock.calls.filter(
             (call) =>
-                (call[0] as { url: string; method?: string }).method?.toUpperCase() === 'DELETE' &&
-                (call[0] as { url: string }).url === '/account/pending-email'
+                (call[0] as { url: string; method?: string }).method?.toUpperCase() ===
+                    method.toUpperCase() && (call[0] as { url: string }).url === url
         );
+
+/**
+ * Whether `cancelPendingEmail` reached its own endpoint.
+ */
+const calledCancelPendingEmail = () => callsTo('DELETE', '/account/pending-email').length > 0;
 
 /**
  * Mounts the real page, every decorative sibling panel stubbed out — each owns its own fetch and
@@ -117,7 +125,9 @@ beforeEach(() => {
             subjects: []
         }),
         'PATCH /account': orvalEnvelope(USER),
-        'DELETE /account/pending-email': orvalEnvelope()
+        'DELETE /account/pending-email': orvalEnvelope(),
+        // A 204 has no body, which the contract models as `void`.
+        'POST /account/pending-email/resend': undefined
     };
     return loadLocale('en').then(() => router.push('/en/profile').then(() => router.isReady()));
 });
@@ -212,7 +222,7 @@ describe('the email field, and a pending change', () => {
         });
     });
 
-    it('shows the parked address, and resend cancels it then asks for the same address again', () => {
+    it('shows the parked address, and resend calls its own endpoint and nothing else', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
 
@@ -224,13 +234,41 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                // The backend ignores a PATCH with the address already parked, so a resend that
-                // skipped the cancel would mail nothing.
-                expect(calledCancelPendingEmail()).toBe(true);
-                const patch = lastAccountPatch();
-                expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toEqual({
-                    email: 'new@example.com'
+                expect(callsTo('POST', '/account/pending-email/resend')).toHaveLength(1);
+                // Neither a cancel nor a fresh request: those would mail the OLD address again.
+                expect(calledCancelPendingEmail()).toBe(false);
+                expect(lastAccountPatch()).toBeUndefined();
+                expect(wrapper.find('[data-test=pending-email-error]').exists()).toBe(false);
+            });
+    });
+
+    it('says why in place when the resend is refused inside the cooldown', () => {
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                vi.mocked(orvalMutator).mockRejectedValueOnce({
+                    success: false,
+                    status: 429,
+                    message: 'Too Many Requests',
+                    errors: [
+                        {
+                            code: 'EMAIL_VERIFY_RESEND_TOO_SOON',
+                            message: 'A verification email was just sent. Please wait a moment.',
+                            details: { retryAfter: 42 }
+                        }
+                    ]
                 });
+                return wrapper.get('[data-test=pending-email-resend]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.get('[data-test=pending-email-error]').text()).toContain(
+                    'just sent'
+                );
+                // The change is still pending: a refused resend touches nothing.
+                expect(wrapper.find('[data-test=pending-email-notice]').exists()).toBe(true);
             });
     });
 
@@ -246,7 +284,7 @@ describe('the email field, and a pending change', () => {
             });
     });
 
-    it('a double click on resend sends only one PATCH', () => {
+    it('a double click on resend sends only one request', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
 
@@ -260,14 +298,7 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                const patchesToAccount = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.filter(
-                        (call) =>
-                            (call[0] as { url: string; method?: string }).method?.toUpperCase() ===
-                                'PATCH' && (call[0] as { url: string }).url === '/account'
-                    );
-                expect(patchesToAccount).toHaveLength(1);
+                expect(callsTo('POST', '/account/pending-email/resend')).toHaveLength(1);
             });
     });
 
@@ -282,14 +313,7 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                const deletes = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.filter(
-                        (call) =>
-                            (call[0] as { url: string; method?: string }).method?.toUpperCase() ===
-                                'DELETE' &&
-                            (call[0] as { url: string }).url === '/account/pending-email'
-                    );
+                const deletes = callsTo('DELETE', '/account/pending-email');
                 expect(deletes).toHaveLength(1);
             });
     });
