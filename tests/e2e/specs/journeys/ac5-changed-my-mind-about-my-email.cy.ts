@@ -11,7 +11,10 @@
  *
  * Resend is its own call (JB15): the backend ignores a PATCH carrying the address already parked,
  * so `POST /account/pending-email/resend` is what mails the link again. It mails the NEW address
- * only, one send a minute; the old address heard of the request once and is not told again.
+ * only, one send a minute; the old address heard of the request once and is not told again. The
+ * button counts down the server's own `resendAfter`, and a press that lands inside the cooldown
+ * anyway (a reloaded page forgets the countdown) is refused in words and counts down the 429's
+ * `retryAfter`.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 import { carriesAnotherLink } from '../../../support/e2e/steps';
@@ -22,20 +25,28 @@ const ADDRESS_PATTERN = /\S+@\S+\.[^\s—]+/;
 /** The resend's cooldown on the server, plus a second to be safely past it. */
 const PAST_THE_COOLDOWN_MS = 61_000;
 
+/** How long a live run waits for the button to count itself down: the cooldown, with a margin. */
+const COUNTDOWN_TIMEOUT_MS = 70_000;
+
 /** The subject of the notice the OLD address gets when a change is requested (the `en` copy). */
 const NOTICE_SUBJECT = 'Your email address is changing';
 
+/** The pending notice's resend button. */
+const RESEND = '[data-test=pending-email-resend]';
+
 /**
- * Lets the resend's cooldown run out: the demo backend's clock is moved, a live one is waited on.
+ * Lets the resend's cooldown run out. The demo backend's clock is moved and the page reloaded
+ * (the browser's countdown does not move with it); a live backend has no movable clock, so the
+ * button's own countdown is waited out — which is the countdown being asserted.
  */
 const pastTheCooldown = (): void => {
     cy.env(['liveProfile']).then(({ liveProfile }) => {
         if (liveProfile !== true) {
             cy.travel(PAST_THE_COOLDOWN_MS);
+            cy.visit('/en/profile');
             return;
         }
-        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the live backend has no movable clock, and the cooldown is the server's own wall time
-        cy.wait(PAST_THE_COOLDOWN_MS);
+        cy.get(RESEND, { timeout: COUNTDOWN_TIMEOUT_MS }).should('not.be.disabled');
     });
 };
 
@@ -51,7 +62,7 @@ const noticesSent = (): Cypress.Chainable<number> =>
  * Presses "resend" on the pending notice.
  */
 const pressResend = (): void => {
-    cy.get('[data-test=pending-email-resend]').should('not.be.disabled').click();
+    cy.get(RESEND).should('not.be.disabled').click();
 };
 
 /**
@@ -101,11 +112,19 @@ describe('AC5 · I changed my mind about my new email', () => {
         });
         cy.get('[data-test=pending-email-notice]').should('exist');
 
-        cy.step('a second press inside the cooldown is refused in words, and mails nothing');
+        cy.step('the button counts the server’s cooldown down instead of inviting a second press');
+        cy.get(RESEND).should('be.disabled').and('contain.text', 'Resend in');
+
+        cy.step(
+            'a press that lands inside the cooldown anyway is refused in words, and counts down'
+        );
+        // A reloaded page forgets the countdown, which is the first press right after a change.
+        cy.visit('/en/profile');
         pressResend();
         cy.get('[data-test=pending-email-error]')
             .should('not.be.empty')
             .and('not.contain.text', 'Too Many');
+        cy.get(RESEND).should('be.disabled').and('contain.text', 'Resend in');
         cy.get('[data-test=pending-email-notice]').should('exist');
 
         cy.step('past the cooldown, resend replaces the link: the first no longer confirms');

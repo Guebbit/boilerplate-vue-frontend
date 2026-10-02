@@ -106,25 +106,6 @@ describe('orvalMutator contract validation', () => {
     });
 
     /**
-     * A 204 has no content, which the contract models as `void`; axios hands back `''` for it, so
-     * the validator has to be shown the absence, not that placeholder.
-     */
-    it('accepts a 204 for an operation the contract models as void', () => {
-        server.use(
-            http.post(
-                `${API}/account/pending-email/resend`,
-                () => new HttpResponse(null, { status: 204 })
-            )
-        );
-        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
-        return loadHttp().then(({ orvalMutator }) =>
-            expect(
-                orvalMutator({ url: '/account/pending-email/resend', method: 'POST' })
-            ).resolves.not.toMatchObject({ errors: [{ code: 'CONTRACT_MISMATCH' }] })
-        );
-    });
-
-    /**
      * a contract mismatch is this deployment's own defect, never something a shopper can
      * act on — the rejection a call site sees is the same generic envelope every unreadable
      * failure gets, never the raw "[contract] ... does not match the OpenAPI schema" diagnostic.

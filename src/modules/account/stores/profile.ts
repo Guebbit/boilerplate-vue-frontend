@@ -13,7 +13,7 @@ import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User, AccountExportResponse } from '@types';
+import type { User, AccountExportResponse, EmailVerificationRequested } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -325,10 +325,16 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * already delivered, so exactly one stays live. Nothing about the profile changes, so there is
      * nothing to refetch.
      *
-     * @returns A promise resolving once the mail is queued. A 429 rejects, inside the server's
-     *  cooldown, with the sentence the caller shows.
+     * @returns The server's own resend cooldown in seconds, for the button to count down (0 when
+     *  nothing was pending). A 429 inside the cooldown rejects instead; its `retryAfter` is the
+     *  same number, read by `emailVerifyResendRetryAfter`.
      */
-    const resendPendingEmail = () => fetchAny(() => apiResendPendingEmail().then(() => undefined));
+    const resendPendingEmail = (): Promise<number> =>
+        fetchAny(() =>
+            apiResendPendingEmail().then(
+                (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
+            )
+        );
 
     /**
      * Changes the visitor's OWN role, through the endpoint that owns roles.
