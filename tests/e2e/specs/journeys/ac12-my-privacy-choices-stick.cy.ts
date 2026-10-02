@@ -12,12 +12,14 @@
  * tag, the switch and the account's own record are the evidence. The consent build only: with no
  * Umami configured the story skips, like `consent.cy.ts`.
  *
- * The backend's side is probed through a second device of the account, one new cart line at a time:
- * a new line is a `cart_item_added` row, and a line added while consent was off must leave none.
+ * The backend's side is probed one new cart line at a time, in the browser: a new line is a
+ * `cart_item_added` row, and a line added while consent was off must leave none. The browser, not a
+ * script, because Umami discards an event whose user agent looks like a script's. A second device
+ * of the account only reads what the account holds.
  */
 import { loginDeviceWith, requestAsDevice } from '../../../support/e2e/harness';
 import type { Device } from '../../../support/e2e/harness';
-import { signInWith, signUp } from '../../../support/e2e/steps';
+import { addOpenProductToCart, signInWith, signUp } from '../../../support/e2e/steps';
 import { eventCounts, waitForEvent, withUmami } from '../../../support/e2e/umami';
 
 /** The tag Umami's loader injects, matched by the attribute only it sets. */
@@ -57,18 +59,17 @@ const storedConsent = (device: Device): Cypress.Chainable<unknown> =>
     );
 
 /**
- * Adds a seeded product to the account's cart through the second device: a new line, hence one
- * `cart_item_added` event if the account consents.
+ * Puts a seeded product in the cart from its own page: a new line, hence one `cart_item_added`
+ * event if the account consents. By its address, since a big shelf's category chip pages past what
+ * the helper that narrows by chip can count.
  *
- * @param device - the account's second device
  * @param name - a `product.*` guarantee name
  */
-const addLine = (device: Device, name: string): void => {
-    cy.subjectId(name).then((productId) => {
-        requestAsDevice(device, 'POST', '/cart', { productId, quantity: 1 })
-            .its('status')
-            .should('be.within', 200, 299);
+const addLine = (name: string): void => {
+    cy.subjectId(name).then((id) => {
+        cy.visit(`/en/products/${id}`);
     });
+    addOpenProductToCart();
 };
 
 describe('AC12 · My privacy choices stick', () => {
@@ -102,7 +103,7 @@ describe('AC12 · My privacy choices stick', () => {
             trackerIsSilenced(true);
 
             cy.step('a cart line added without consent is not recorded (checked at the end)');
-            addLine(device, 'product.rich');
+            addLine('product.rich');
 
             cy.step('the profile switch is off; turning it on and saving writes the account');
             cy.visit('/en/profile');
@@ -125,7 +126,7 @@ describe('AC12 · My privacy choices stick', () => {
             cy.get(TRACKER).should('exist');
 
             cy.step('a cart line added with consent is recorded');
-            addLine(device, 'product.inStock');
+            addLine('product.inStock');
 
             cy.step('logging out silences the tag: a guest who never answered has said nothing');
             cy.logout();
@@ -140,7 +141,7 @@ describe('AC12 · My privacy choices stick', () => {
             storedConsent(device).should('equal', true);
 
             cy.step('a cart line added after the new login is recorded too');
-            addLine(device, 'product.lowStock');
+            addLine('product.lowStock');
         });
 
         cy.step('Umami holds two rows for the story, not three: the unconsenting line left none');
