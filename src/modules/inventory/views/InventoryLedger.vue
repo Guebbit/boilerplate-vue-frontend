@@ -18,6 +18,7 @@ import StockMovementForm from '@/modules/inventory/components/StockMovementForm.
 import StockBoard from '@/modules/inventory/components/StockBoard.vue';
 import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
 import { useProductsStore } from '@/modules/products';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -47,6 +48,12 @@ const productsStore = useProductsStore();
  */
 const { productsList } = storeToRefs(productsStore);
 
+/**
+ * The session, asked whether the two forms are this account's to use: recording a receipt or an
+ * adjustment is `inventory.any.create`, which the manager (a reader of stock) does not hold.
+ */
+const session = useSessionStore();
+
 onMounted(() => {
     if (productsList.value.length === 0) void productsStore.fetchProducts();
 });
@@ -54,7 +61,7 @@ onMounted(() => {
 
 <template>
     <div id="inventory-page">
-        <div class="mb-6 grid gap-4 lg:grid-cols-2">
+        <div v-if="session.can('create', 'StockMovement')" class="mb-6 grid gap-4 lg:grid-cols-2">
             <StockMovementForm mode="receipt" />
             <StockMovementForm mode="adjust" />
         </div>

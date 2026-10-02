@@ -181,12 +181,20 @@ describe('OrdersList — a soft-deleted row', () => {
     });
 });
 
-/** Grants the key that makes a viewer staff on orders: editing other people's. */
-const signInAsOrderEditor = () => {
+/**
+ * Signs in with one read rule on orders: the wide one (`orders.any.read`, no owner pinned) makes a
+ * viewer staff, the narrow one (`orders.self.read`, pinned to their own id) does not.
+ *
+ * @param pinnedToOwner - whether the rule is the customer's own-orders read
+ */
+const signInReadingOrders = (pinnedToOwner: boolean) => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'operator@example.com', role: 'owner' };
-    session.setAbilities({ tenant: [['update', 'Order']], platform: [] });
+    session.setAbilities({
+        tenant: [['read', 'Order', pinnedToOwner ? { userId: 'u1' } : {}]],
+        platform: []
+    });
 };
 
 /**
@@ -202,8 +210,17 @@ describe('OrdersList — which filters a viewer sees', () => {
         expect(wrapper.find('[data-test="filter-status"]').exists()).toBe(true);
     });
 
-    it('shows staff the lookups and the transfer queue as well', () => {
-        signInAsOrderEditor();
+    it('shows a customer, who reads only their own, no lookups either', () => {
+        signInReadingOrders(true);
+
+        const wrapper = mountList();
+
+        expect(wrapper.text()).not.toContain('User ID');
+        expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(false);
+    });
+
+    it('shows whoever reads every order the lookups and the transfer queue, edit rights or not', () => {
+        signInReadingOrders(false);
 
         const wrapper = mountList();
 

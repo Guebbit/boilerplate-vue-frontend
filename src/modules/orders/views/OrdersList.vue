@@ -99,9 +99,11 @@ const session = useSessionStore();
 
 /**
  * Whether the viewer works the orders of OTHER people: the search-by-id/user/product/email boxes
- * and the transfer queue mean nothing to a customer, whose list is already only their own.
+ * and the transfer queue mean nothing to a customer, whose list is already only their own. The
+ * wide read (`orders.any.read`) is what makes the list theirs to search, so the warehouse and
+ * support, who read every order and edit none, get the filters too.
  */
-const isStaff = computed(() => session.can('update', 'Order'));
+const isStaff = computed(() => session.canOnOthers('read', 'Order'));
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap

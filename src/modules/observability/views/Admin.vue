@@ -15,6 +15,7 @@ import type { AdminTabKey } from '@/modules/observability/types.ts';
 import AdminOverviewTab from '@/modules/observability/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * i18n translator for this view's template and messages.
@@ -25,6 +26,12 @@ const { t } = useI18n();
  * Toast dispatcher used to report the token-purge outcome.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The session, asked whether the purge is this account's to press: the route is the platform
+ * operator's, the purge is `tokens.any.delete`, a shop key the operator does not hold.
+ */
+const session = useSessionStore();
 
 /**
  * Which tab — overview or audit — is currently shown.
@@ -93,6 +100,7 @@ const confirmClearExpiredTokens = () =>
             </v-tabs>
             <v-spacer />
             <v-btn
+                v-if="session.can('delete', 'AccountToken')"
                 variant="tonal"
                 color="error"
                 :loading="clearingExpiredTokens"

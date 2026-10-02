@@ -39,6 +39,7 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -146,11 +147,20 @@ const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
 const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 
 /**
- * Whether the order can still reach `paid` — the same gate the customer's own card form uses,
- * asked here for the operator's "record it by hand" form instead. An in-flight card charge is a
- * narrower case this flag does not see; the API's own 409 for it surfaces as that form's toast.
+ * The session, asked whether recording money is this account's to do: `payments.any.create`, which
+ * the manager (an order editor, not a payment one) does not hold.
  */
-const canRecordOffline = computed(() => currentOrder.value?.actions?.pay === true);
+const session = useSessionStore();
+
+/**
+ * Whether the order can still reach `paid` — the same gate the customer's own card form uses,
+ * asked here for the operator's "record it by hand" form instead — and the viewer may record a
+ * payment at all. An in-flight card charge is a narrower case this flag does not see; the API's
+ * own 409 for it surfaces as that form's toast.
+ */
+const canRecordOffline = computed(
+    () => currentOrder.value?.actions?.pay === true && session.can('create', 'Payment')
+);
 
 /**
  * The offline-payment refresh's own blocked state. The form's own submit failures surface inside

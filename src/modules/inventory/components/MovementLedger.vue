@@ -34,6 +34,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { StockMovementReason } from '@/types/enums.ts';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -57,6 +58,12 @@ const router = useRouter();
  */
 const orderTargetTo = (reference: string | null | undefined) =>
     reference ? linkIfRouted(router, 'OrderTarget', { id: reference }) : undefined;
+
+/**
+ * The session, asked whether the sweep is this account's to press: `inventory.any.sweep` is the
+ * admin's alone, so the warehouse and the manager read the ledger without the button.
+ */
+const session = useSessionStore();
 
 /**
  * Toast dispatcher for the sweep action's outcome.
@@ -301,6 +308,7 @@ onMounted(() => {
             {{ t('inventory-page.total-items', { total: movementsTotal }) }}
         </span>
         <v-btn
+            v-if="session.can('sweep', 'StockLevel')"
             variant="tonal"
             color="warning"
             size="small"

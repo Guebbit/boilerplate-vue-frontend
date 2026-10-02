@@ -55,8 +55,9 @@ const { id } = defineProps<{
 const { watchUser } = useUsersStore();
 
 /**
- * The session, for the `meta.can` rule that gates the "History" link — a reader who cannot read
- * the audit trail should not see a link that 403s.
+ * The session, for the `meta.can` rules that gate the buttons: "History" needs `audit.any.read`,
+ * Edit and the access buttons need `users.any.update`. A button the backend answers with 403 is
+ * a button not to show.
  */
 const session = useSessionStore();
 
@@ -317,7 +318,7 @@ const handleDisableTwoFactor = () => {
 
             <template #actions>
                 <v-btn
-                    v-if="currentUser"
+                    v-if="currentUser && session.can('update', 'User')"
                     color="secondary"
                     :to="routerLinkI18n({ name: 'UserEdit', params: { id: currentUser.id } })"
                 >
@@ -334,7 +335,10 @@ const handleDisableTwoFactor = () => {
                 >
                     {{ t('user-target-page.button-history') }}
                 </v-btn>
-                <div v-if="currentUser" class="flex flex-col gap-2">
+                <div
+                    v-if="currentUser && session.can('update', 'User')"
+                    class="flex flex-col gap-2"
+                >
                     <v-btn
                         variant="tonal"
                         color="secondary"
