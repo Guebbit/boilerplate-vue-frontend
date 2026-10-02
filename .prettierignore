@@ -42,3 +42,7 @@ openapi.yaml
 # concurrent session, and the way out people find is `--no-verify`, which costs the whole gate.
 .claude/
 CLAUDE.md
+
+# 2brain's generated documentation, index and state — the tool owns the formatting, and every
+# regeneration would otherwise fail `prettier:check` on files nobody edited.
+.2brain/
