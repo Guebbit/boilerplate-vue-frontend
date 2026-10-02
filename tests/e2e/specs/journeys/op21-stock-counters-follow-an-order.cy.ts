@@ -119,7 +119,9 @@ describe('OP21 · The stock counters follow an order', () => {
             cy.get('[data-test=adjust-delta] input').clear();
             cy.get('[data-test=adjust-delta] input').type(String(-(SHELF - FIRST_ORDER)));
             cy.get('[data-test=adjust-note] input').type('OP21 stocktake');
+            cy.intercept('POST', '**/inventory/**').as('adjust');
             cy.get('[data-test=adjust-submit]').click();
+            cy.wait('@adjust').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=adjust-error]').should('not.exist');
             boardShows(title, [0, 0, 0]);
 

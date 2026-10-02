@@ -109,13 +109,13 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.get('[data-test=reauth-dialog]').should('be.visible');
             answerAs('admin');
             cy.get('[data-test=reauth-dialog]').should('not.exist');
-            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.amountRefunded, 'refunded once, in full').to.equal(
-                        payment?.amount
-                    );
-                }
-            );
+            // The dialog closes once the password is accepted; the replayed refund lands just after.
+            eventually(
+                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                (payment) => payment?.amountRefunded === payment?.amount
+            ).should((payment) => {
+                expect(payment?.amountRefunded, 'refunded once, in full').to.equal(payment?.amount);
+            });
         });
 
         cy.step('a status forced by hand asks, and the right password forces it');
@@ -134,7 +134,10 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.get('[data-test=reauth-dialog]').should('be.visible');
             answerAs('admin');
             cy.get('[data-test=reauth-dialog]').should('not.exist');
-            cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
+            eventually(
+                () => cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`),
+                (order) => order?.status === 'delivered'
+            )
                 .its('status')
                 .should('equal', 'delivered');
         });
@@ -193,7 +196,10 @@ describe('OP20 · Staff prove it’s still them', () => {
             answerAs('moderator');
             cy.get('[data-test=row-hard-delete]').should('not.exist');
             loginDevice('moderator').then((device) => {
-                requestAsDevice(device, 'GET', `/users/${erasedId}`)
+                eventually(
+                    () => requestAsDevice(device, 'GET', `/users/${erasedId}`),
+                    (answer) => answer.status === 404
+                )
                     .its('status')
                     .should('equal', 404);
             });

@@ -127,7 +127,9 @@ describe('OP17 · A warehouse shift', () => {
             cy.get('[role=listbox] [role=option]').contains(title).click();
             cy.get('[data-test=receipt-quantity] input').clear();
             cy.get('[data-test=receipt-quantity] input').type('4');
+            cy.intercept('POST', '**/inventory/receipts').as('receipt');
             cy.get('[data-test=receipt-submit]').click();
+            cy.wait('@receipt').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=receipt-error]').should('not.exist');
             cy.apiAs<{ available: number }>('warehouse', 'GET', `/products/${product.id}`)
                 .its('available')

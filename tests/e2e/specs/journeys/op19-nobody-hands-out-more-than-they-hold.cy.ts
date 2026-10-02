@@ -47,10 +47,13 @@ const adminMenuLinks = (): Cypress.Chainable<string[]> => {
  */
 const grantRole = (userId: string, role: string): void => {
     cy.visit(`/en/users/${userId}`);
+    cy.intercept('PATCH', '**/users/*').as('grant');
     cy.get('[data-test=user-manage-access]').click();
     cy.pickOption('[data-test=user-access-role]', role);
     cy.get('[data-test=user-access-continue]').click();
     cy.get('[data-test=user-access-confirm]').click();
+    // The answer, whichever it is: what follows reads the role the backend now holds.
+    cy.wait('@grant');
 };
 
 /**
