@@ -109,6 +109,9 @@ const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, validation and submission wiring from the shared app-form composable.
+ *
+ * `active` starts on because the API's `CreateUserRequest.active` defaults to true: the switch
+ * shows what an omitted value would do.
  */
 const {
     form,
@@ -117,7 +120,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<UserCreateForm>({}, createSchema, {
+} = useStructureFormValidation<UserCreateForm>({ active: true }, createSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
