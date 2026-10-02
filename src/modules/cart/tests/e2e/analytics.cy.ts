@@ -98,6 +98,9 @@ describe('Analytics, end to end', () => {
         // reasons.
         const since = Date.now() - 60 * 1000;
 
+        // Umami's tag loads only after consent, so the visit below is only recorded with a yes.
+        cy.setCookie('analyticsConsent', 'granted');
+
         umamiSession().then((session) => {
             eventCounts(session, since).then((before) => {
                 pageviewCount(session, since).then((viewsBefore) => {
