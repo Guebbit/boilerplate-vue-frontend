@@ -15,7 +15,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn, anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { Order } from '@types';
 
@@ -50,10 +50,9 @@ const mountPanel = (
 ) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'fetchOrderReturns').mockResolvedValue(existing);
-    vi.spyOn(store, 'openReturn').mockResolvedValue({
-        kind: 'cancelled',
-        order: anOrder({ status: 'cancelled' })
-    });
+    vi.spyOn(store, 'openReturn').mockResolvedValue(
+        aReturn({ status: 'closed', reason: 'withdrawal', lines: [] })
+    );
     const wrapper = mount(WithdrawalPanel, {
         props: { orderId: 'o1', ...props },
         global: { plugins: [vuetify, i18n, router] }

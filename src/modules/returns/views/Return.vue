@@ -149,6 +149,13 @@ onMounted(refresh);
                 <h3 class="mt-6 text-base font-semibold">
                     {{ t('return-target-page.label-lines') }}
                 </h3>
+                <p
+                    v-if="currentReturn && currentReturn.lines.length === 0"
+                    class="m-0 mt-2 text-sm opacity-75"
+                    data-test="return-no-lines"
+                >
+                    {{ t('return-target-page.no-lines') }}
+                </p>
                 <ul v-if="currentReturn" class="m-0 mt-2 flex list-none flex-col gap-2 p-0">
                     <li
                         v-for="line in currentReturn.lines"

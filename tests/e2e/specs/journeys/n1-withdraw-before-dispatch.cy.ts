@@ -6,8 +6,9 @@
  * cancels the order, refunds every cent including delivery, puts the stock back and mails the
  * acknowledgement.
  *
- * Before dispatch there is no return to open — the order is simply cancelled (BE `returns`'
- * `create.ts`) — so the order page shows no return afterwards. After dispatch it would (N2).
+ * Before dispatch there are no goods to send back, so the return that records the withdrawal is
+ * born closed with no lines (BE `returns`' `create.ts`): the order page lists it as a closed
+ * withdrawal and offers no button any more. After dispatch the return is approved instead (N2).
  */
 import {
     addOpenProductToCart,
@@ -72,7 +73,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             cy.step('confirms, and the order is cancelled and refunded in full');
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test=order-cancel]').should('not.exist');
-            cy.get('[data-test=withdrawal-panel]').should('not.exist');
+            cy.get('[data-test=withdraw-button]').should('not.exist');
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('cancelled');
             });
@@ -87,8 +88,21 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
                     'the refund is the whole charge, delivery included'
                 ).to.equal(paid.cents);
             });
-            cy.get('[data-test=order-return]').should('not.exist');
+
+            cy.step('the withdrawal is on record as a closed return that expects no goods');
+            cy.get('[data-test=order-return]')
+                .should('have.length', 1)
+                .and('contain.text', 'Closed');
             cy.get('[data-test=order-return-status]').should('not.exist');
+            cy.apiAs<{ items: { reason: string; status: string; lines: unknown[] }[] }>(
+                'user',
+                'GET',
+                `/returns?orderId=${orderId}`
+            ).should((page) => {
+                expect(page?.items).to.have.length(1);
+                expect(page?.items[0]).to.include({ reason: 'withdrawal', status: 'closed' });
+                expect(page?.items[0].lines).to.have.length(0);
+            });
 
             cy.step('the stock is back on the shelf');
             cy.navigateTo('/en/products');

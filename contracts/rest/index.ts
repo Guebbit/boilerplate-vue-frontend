@@ -807,7 +807,7 @@ export interface ExportFeedbackTicket {
 }
 
 /**
- * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved`. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
  */
 export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
 
@@ -3505,6 +3505,7 @@ export interface Return {
      * @maxLength 1000
      */
     note?: string;
+    /** What is coming back. Empty on a withdrawal before dispatch — no goods are expected. */
     lines: ReturnLine[];
     /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
     returnPostage: ReturnReturnPostage;
@@ -7680,15 +7681,15 @@ export const listReturns = (
 
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
- * What follows depends on where the goods are. Once they have shipped, a return is written (201, with `Location`) — a withdrawal is born `approved`, any other reason waits for staff — and the customer gets an acknowledgement email carrying the exact date and time. Before dispatch there is nothing to send back, so a withdrawal cancels the order instead: refunded in full, stock released, acknowledgement mailed, and the answer is the cancelled `Order` (200), not a `Return`. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
+ * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
  * Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturn = (
     createReturnRequest: CreateReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope | ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
 ) => {
-    return orvalMutator<OrderEnvelope | ReturnEnvelope>(
+    return orvalMutator<ReturnEnvelope>(
         {
             url: `/returns`,
             method: 'POST',

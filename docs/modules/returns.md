@@ -42,12 +42,18 @@ flowchart LR
 ## The story
 
 A withdrawal is a return whose reason is `withdrawal`, so there is no separate endpoint: the button
-is `POST /returns`. What comes back depends on where the goods are, and the store reports which:
+is `POST /returns`, which always answers 201 and a `Return` (one endpoint, one resource, so the
+route table's one-schema-per-route rule holds). `openReturn` resolves with that `Return`; where the
+goods are only changes what it looks like:
 
-| Server answers | Meaning                                                             | `openReturn` resolves with     |
-| -------------- | ------------------------------------------------------------------- | ------------------------------ |
-| 201 + Location | the goods had shipped — a `Return` was written                      | `{ kind: 'return', created }`  |
-| 200            | before dispatch — the order was cancelled and refunded, no `Return` | `{ kind: 'cancelled', order }` |
+| Order was       | The `Return`                                                                          |
+| --------------- | ------------------------------------------------------------------------------------- |
+| shipped         | `approved`, with the lines coming back                                                |
+| before dispatch | `closed` at birth, no `lines`: the backend cancelled and refunded the order meanwhile |
+
+After a withdrawal the panel emits `opened`, the order page re-reads the order (now cancelled), and
+the panel lists the new `Return` like any other. The return page says "no goods are expected back"
+where its lines would be.
 
 **The button is server-driven.** `WithdrawalPanel` shows it when `Order.actions.withdraw` is true and
 prints `Order.actions.withdrawUntil`; it never counts the withdrawal period. Clicking asks once more —

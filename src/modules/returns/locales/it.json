@@ -35,6 +35,7 @@
         "label-deduction": "Trattenuto per la gestione",
         "label-decline-reason": "Perché è stato rifiutato",
         "label-lines": "Cosa torna indietro",
+        "no-lines": "Nessun articolo da restituire: l'ordine è stato annullato prima della spedizione.",
         "button-order": "Vai all'ordine",
         "button-list": "Torna ai resi"
     },
