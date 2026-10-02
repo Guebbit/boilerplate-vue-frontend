@@ -42,6 +42,8 @@ tags:
     description: Sending goods back — including the EU withdrawal button, which is a return with `reason` `withdrawal`.
   - name: Inventory
   - name: Feedback
+  - name: Examples
+    description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
   - name: System
     description: Public system endpoints (ping, liveness).
   - name: Observability
@@ -6945,6 +6947,384 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
+  /examples/published/{id}:
+    get:
+      tags:
+        - Examples
+      summary: Read a published example
+      description: Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
+      operationId: getPublishedExample
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The published example
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples:
+    get:
+      tags:
+        - Examples
+      summary: List examples
+      description: Returns the caller's own examples, newest first by default. A caller holding `examples.any.read` sees everyone's.
+      operationId: listExamples
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: sort
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            $ref: "#/components/schemas/ExampleSort"
+        - $ref: "#/components/parameters/TextParam"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ExampleStatus"
+      responses:
+        "200":
+          description: Example list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamplesResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+    post:
+      tags:
+        - Examples
+      summary: Create an example
+      description: Creates a draft example owned by the caller.
+      operationId: createExample
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExampleRequest"
+      responses:
+        "201":
+          description: Created example
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/search:
+    post:
+      tags:
+        - Examples
+      summary: Search examples (DTO-friendly)
+      description: Searches and filters examples via a JSON request body. Functionally equivalent to `GET /examples` with query parameters.
+      operationId: searchExamples
+      x-alias-of: listExamples
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchExamplesRequest"
+      responses:
+        "200":
+          description: Example search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamplesResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
+      - delete
+    get:
+      tags:
+        - Examples
+      summary: Read an example
+      description: Returns one example the caller may read — their own, or any when they hold `examples.any.read`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+      operationId: getExampleById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The example
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+    put:
+      tags:
+        - Examples
+      summary: Replace an example
+      description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+      operationId: replaceExampleById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceExampleRequest"
+      responses:
+        "200":
+          description: Replaced example
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+    patch:
+      tags:
+        - Examples
+      summary: Update an example
+      description: Merges a change into the example (RFC 7396, an omitted field is left unchanged).
+      operationId: updateExampleById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExampleRequest"
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/UpdateExampleRequest"
+      responses:
+        "200":
+          description: Updated example
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+    delete:
+      tags:
+        - Examples
+      summary: Delete an example
+      description: Permanently removes the example identified by `{id}`, and its cover image with it.
+      operationId: deleteExampleById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/{id}/cover:
+    put:
+      tags:
+        - Examples
+      summary: Set an example's cover image
+      description: Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
+      operationId: replaceExampleCover
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ReplaceExampleCoverRequestMultipart"
+      responses:
+        "200":
+          description: The example, with its new cover
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
 components:
   securitySchemes:
     bearerAuth:
@@ -8059,6 +8439,7 @@ components:
         - apiKeys
         - invoicing
         - returns
+        - examples
       properties:
         exportedAt:
           type: string
@@ -8147,6 +8528,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExportReturn"
+        examples:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
     AccountExportEnvelope:
       type: object
       additionalProperties: false
@@ -10590,6 +10975,52 @@ components:
               title:
                 type: string
         createdAt:
+          type: string
+          format: date-time
+    ExampleStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - archived
+    Example:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - body
+        - status
+        - userId
+        - ownerName
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+        body:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+        userId:
+          $ref: "#/components/schemas/Id"
+        ownerName:
+          type: string
+          description: The owner's display name.
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        publishedAt:
+          type: string
+          format: date-time
+          description: Stamped the first time the example is published, never moved again.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
     LoginTwoFactorRequest:
@@ -13717,6 +14148,137 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    ExampleEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Example"
+    ExampleSort:
+      type: array
+      minItems: 1
+      maxItems: 3
+      uniqueItems: true
+      items:
+        type: string
+        enum:
+          - createdAt
+          - -createdAt
+          - title
+          - -title
+          - status
+          - -status
+    ExamplesResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    ExamplesResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/ExamplesResponse"
+    CreateExampleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - body
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+    SearchExamplesRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          $ref: "#/components/schemas/Page"
+        pageSize:
+          $ref: "#/components/schemas/PageSize"
+        sort:
+          $ref: "#/components/schemas/ExampleSort"
+        text:
+          $ref: "#/components/schemas/Text"
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+    ReplaceExampleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - body
+        - status
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+    UpdateExampleRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+    ReplaceExampleCoverRequestMultipart:
+      type: object
+      additionalProperties: false
+      required:
+        - imageUpload
+      properties:
+        imageUpload:
+          type: string
+          format: binary
 x-error-codes:
   ANTIBOT_NO_CHALLENGE:
     status: 404

@@ -118,6 +118,16 @@ export interface ReturnClosedPayload {
   'refundAmount': number;
   'currency': string;
 }
+export interface ExamplePublishedEnvelope {
+  'type': ExamplePublishedEventType;
+  'timestamp': string;
+  'data': ExamplePublishedPayload;
+}
+export type ExamplePublishedEventType = "example.published";
+export interface ExamplePublishedPayload {
+  'exampleId': string;
+  'title': string;
+}
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
@@ -131,6 +141,7 @@ export type PaymentFailedEvent = PaymentFailedEnvelope;
 export type PaymentRefundedEvent = PaymentRefundedEnvelope;
 export type ReturnReceivedEvent = ReturnReceivedEnvelope;
 export type ReturnClosedEvent = ReturnClosedEnvelope;
+export type ExamplePublishedEvent = ExamplePublishedEnvelope;
 export type ReturnRequestedEvent = ReturnRequestedEnvelope;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
@@ -175,6 +186,14 @@ export const RETURN_CHANNELS = {
 
 /* Union of every "return." channel name */
 export type ReturnChannel = (typeof RETURN_CHANNELS)[keyof typeof RETURN_CHANNELS];
+
+/* Channel names in the "example." namespace */
+export const EXAMPLE_CHANNELS = {
+    PUBLISHED: 'example.published',
+} as const;
+
+/* Union of every "example." channel name */
+export type ExampleChannel = (typeof EXAMPLE_CHANNELS)[keyof typeof EXAMPLE_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",
