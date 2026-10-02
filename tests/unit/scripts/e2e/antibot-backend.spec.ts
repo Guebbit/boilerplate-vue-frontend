@@ -26,16 +26,20 @@ describe('ANTIBOT_BACKEND_ENV', () => {
         expect(Number(ANTIBOT_BACKEND_ENV.NODE_ANTIBOT_ALTCHA_COST)).toBeLessThan(100_000);
     });
 
+    it('pins the per-account login budget small, so the login check is reachable', () => {
+        // The check engages at half the budget: it must be a handful of wrong passwords away.
+        expect(Number(ANTIBOT_BACKEND_ENV.NODE_AUTH_RATE_LIMIT_MAX)).toBeLessThanOrEqual(10);
+    });
+
     it('is what the live workflow boots its antibot entry with', () => {
         const workflow = readFileSync(
             path.join(REPO_ROOT, '.github/workflows/e2e-live.yml'),
             'utf8'
         );
 
+        // What follows `||` is what every other entry boots with, so only the left half is the constant's.
         const missing = Object.entries(ANTIBOT_BACKEND_ENV)
-            .map(
-                ([name, value]) => `${name}: \${{ matrix.shard == 'antibot' && '${value}' || '' }}`
-            )
+            .map(([name, value]) => `${name}: \${{ matrix.shard == 'antibot' && '${value}' || `)
             .filter((line) => !workflow.includes(line));
 
         expect(missing).toEqual([]);
