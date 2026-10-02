@@ -90,7 +90,7 @@
         "label-tags": "Tags",
         "label-requires-shipping": "Requires shipping",
         "label-no-withdrawal": "No right of withdrawal",
-        "hint-no-withdrawal": "Personalised, sealed-hygiene or perishable goods (EU Art. 16): the customer cannot withdraw from these.",
+        "hint-no-withdrawal": "Personalised, sealed-hygiene or perishable goods (EU Art. 16): the customer cannot withdraw from these. Not for digital content: that right is lost only with the customer's express consent, which the shop cannot collect yet.",
         "button-submit": "Create product",
         "button-go-to-list": "Back to products list",
         "success-create": "Product created successfully"
@@ -111,7 +111,7 @@
         "label-tags": "Tags",
         "label-requires-shipping": "Requires shipping",
         "label-no-withdrawal": "No right of withdrawal",
-        "hint-no-withdrawal": "Personalised, sealed-hygiene or perishable goods (EU Art. 16): the customer cannot withdraw from these.",
+        "hint-no-withdrawal": "Personalised, sealed-hygiene or perishable goods (EU Art. 16): the customer cannot withdraw from these. Not for digital content: that right is lost only with the customer's express consent, which the shop cannot collect yet.",
         "button-submit": "Save changes",
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to product details",
