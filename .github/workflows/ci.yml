@@ -1,7 +1,8 @@
 name: CI
 
 # The merge gate. Everything here runs on every PR and on every push to main, and the aggregate
-# `ci` job at the bottom is the single check branch protection requires.
+# `ci` job at the bottom is the single check to require in branch protection. That rule is a GitHub
+# setting, not a file: nothing here enforces it until the repository owner creates it.
 #
 # Deliberately many small jobs rather than one `npm run complete`: they run in parallel, and
 # a red square names the thing that broke (formatting? contract? e2e?) without anyone opening a
@@ -14,7 +15,7 @@ name: CI
 #                     current, and the paired backend still agrees with it
 #   - correctness     typecheck, build, test-unit, test-e2e
 #   - supply chain    audit
-#   - adoption        demo-strip-measure — report-only, like audit (FE-D4)
+#   - adoption        demo-strip-measure — report-only: it is not in the `ci` job's `needs:`
 #
 # The slow and non-hermetic suites live in their own workflows: e2e-live.yml (against a real
 # backend; this file calls it as the `test-e2e-live` job and it also runs nightly) and
@@ -266,7 +267,7 @@ jobs:
         # is, measured rather than assumed. Deletes every module src/demo-modules.ts names from a
         # scratch copy and runs type-check-only, lint and build-only against what's left.
         #
-        # Deliberately NOT in the `ci` gate's `needs:` below, the same reasoning as `audit`: this
+        # Deliberately NOT in the `ci` gate's `needs:` below: this
         # is not expected to be green on its own — it does not edit src/modules.ts, so the
         # dangling imports it leaves behind ARE the measurement, the same punch list `npm run
         # demo:remove` (which DOES edit it) clears. A red square here is a signal to look, not a
@@ -606,8 +607,8 @@ jobs:
             - test-e2e
             - test-e2e-live
             - spec-identity
-            # `audit` and `demo-strip-measure` are deliberately excluded — see their own comments
-            # above.
+            # `demo-strip-measure` is deliberately excluded — see its own comment above. `audit`
+            # is listed, so a high-severity advisory in a production dependency blocks the merge.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
