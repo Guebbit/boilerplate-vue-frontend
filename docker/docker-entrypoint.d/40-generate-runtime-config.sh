@@ -5,9 +5,8 @@
 # https://github.com/nginxinc/docker-nginx/blob/master/entrypoint/docker-entrypoint.sh
 #
 # `src/infrastructure/runtime-config.ts` is the one reader; `index.html` loads this file before
-# the app bundle. See `FA93` in `FE_AUDIT_0925_6_DEPLOY_AND_TOOLING.md` for the design this
-# implements. Every value here already ships to the browser via the compiled bundle today — never
-# a secret.
+# the app bundle. Design and whitelist: `docs/tools/environment.md`, "Runtime configuration".
+# Every value here already ships to the browser via the compiled bundle today — never a secret.
 set -eu
 
 CONFIG_FILE="/usr/share/nginx/html/config.js"

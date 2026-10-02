@@ -96,6 +96,10 @@ const ALLOWED: { prefix: string; reason: string }[] = [
     { prefix: '.env', reason: 'a deployment writes it; only .env-example is tracked' },
     { prefix: 'docs/.vitepress/dist/', reason: 'the built site, written by docs:build' },
     { prefix: 'docs/.vitepress/cache/', reason: "vitepress's own scratch space" },
+    {
+        prefix: 'config.js',
+        reason: 'the container entrypoint writes it at start; it is never tracked'
+    },
     { prefix: 'dist/', reason: 'the build output, written by build' },
     { prefix: 'dist-e2e/', reason: 'the e2e build output' }
 ];
