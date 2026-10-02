@@ -60,6 +60,26 @@ the same one-way arrow the backend's `inventory → products` edge has, which is
 evidence that both context maps are describing the same system.
 :::
 
+## How fresh the numbers are
+
+Products are cached for **five minutes** (`staleTime` in `store.ts`), and an expired entry keeps
+rendering while the refetch runs. That window is the lists': a stock count a few minutes old on a
+grid is fine, because the server checks stock again at add-to-cart and at checkout.
+
+The **product page** does not wait for it. `Product.vue` watches its record with `staleTime: 0`, so
+every open renders the cached copy at once and swaps the fresh one in (stale-while-revalidate, the
+default behaviour of the query library the toolkit sits on). The shopper's own cart and checkout
+writes also end the window early, through `invalidateProductsCache` — the one handle `cart` reaches
+through the barrel.
+
+```mermaid
+flowchart LR
+    L["List read<br/>(5-minute window)"] --> C[("products cache")]
+    P["Product page opens"] -->|"staleTime 0: refetch"| C
+    W["Cart or checkout write"] -->|"invalidateProductsCache"| C
+    C -->|"cached copy at once,<br/>fresh copy swapped in"| V["What the shopper sees"]
+```
+
 ## The list is two presentations
 
 The catalogue is public, but what a viewer may do decides how it is shown: staff (anyone holding

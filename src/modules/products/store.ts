@@ -77,6 +77,26 @@ export type UpdateProductData = Omit<UpdateProductRequest, 'taxClass' | 'rateTyp
 };
 
 /**
+ * First segment of every products query key: the store's `resourceKey`.
+ */
+const PRODUCTS_RESOURCE_KEY = 'products';
+
+/**
+ * Marks everything cached about products stale, and refetches what is on screen.
+ *
+ * Exported through the barrel for a write in another module that moves the numbers a product page
+ * shows (the shopper's own cart and checkout move stock): cached copies keep rendering while the
+ * refetch runs, so nothing flickers. TanStack matches the key by PREFIX, so every list, page,
+ * search and record is reached:
+ * https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientinvalidatequeries
+ */
+export const invalidateProductsCache = (): void => {
+    // Fire-and-forget on purpose: it resolves once the on-screen refetches finish, and a failed
+    // background refetch leaves the cached copy showing; no caller has anything to do with either.
+    void queryClient.invalidateQueries({ queryKey: [PRODUCTS_RESOURCE_KEY] });
+};
+
+/**
  * How many ids one `POST /products/search` accepts — the contract's own cap on `id`.
  */
 const SEARCH_ID_BATCH = 100;
@@ -252,7 +272,7 @@ export const useProductsStore = defineStore('products', () => {
             })
         },
         {
-            resourceKey: 'products',
+            resourceKey: PRODUCTS_RESOURCE_KEY,
             queryClient,
             /**
              * Cache scope: the language the request carried.
@@ -265,13 +285,17 @@ export const useProductsStore = defineStore('products', () => {
              */
             dependsOn: () => [getCurrentLocale()],
             /**
-             * Five minutes instead of the toolkit's one-hour default.
+             * Five minutes instead of the toolkit's one-hour default — the LISTS' window.
              *
              * Products are the one resource here that a visitor sees and an admin edits at the
              * same time: a price change made in the admin has to reach the public list in
              * something like minutes, not at the end of a session. Read-through is still instant
              * — an expired entry keeps rendering while the refetch runs — so the cost of the
              * shorter window is a background request, not a spinner.
+             *
+             * The product PAGE does not wait for it: `Product.vue` refetches on every open, because
+             * that is where a stock number gets read. The shopper's own cart and checkout writes
+             * also end this window early (`invalidateProductsCache`).
              */
             staleTime: 5 * 60 * 1000
         }

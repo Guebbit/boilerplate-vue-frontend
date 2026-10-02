@@ -29,6 +29,7 @@ import type {
 } from '@types';
 import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
+import { invalidateProductsCache } from '@/modules/products';
 
 /**
  * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
@@ -181,6 +182,8 @@ export const useCartStore = defineStore('cart', () => {
                 cart.value = response.data;
                 // The basket just changed — any checkout attempt still pending is now stale (B19).
                 mintCheckoutIdempotencyKey();
+                // The shopper's own write: cached products are stale now, not in five minutes.
+                invalidateProductsCache();
                 return response.data;
             })
         );
@@ -198,6 +201,8 @@ export const useCartStore = defineStore('cart', () => {
                 cart.value = response.data;
                 // See addCartItemAction — a changed line means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
+                // The shopper's own write: cached products are stale now, not in five minutes.
+                invalidateProductsCache();
                 return response.data;
             })
         );
@@ -234,6 +239,8 @@ export const useCartStore = defineStore('cart', () => {
                 cart.value = response.data;
                 // See addCartItemAction — a changed basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
+                // The shopper's own write: cached products are stale now, not in five minutes.
+                invalidateProductsCache();
                 return response.data;
             })
         );
@@ -250,6 +257,8 @@ export const useCartStore = defineStore('cart', () => {
                 cart.value = response.data;
                 // See addCartItemAction — an emptied basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
+                // The shopper's own write: cached products are stale now, not in five minutes.
+                invalidateProductsCache();
                 return response.data;
             })
         );
@@ -303,6 +312,9 @@ export const useCartStore = defineStore('cart', () => {
                     // only reads for a cart the caller never `fetchCart`/`fetchSummary`'d.
                     cart.value = emptyCart(liveSummary.value?.currency ?? shopCurrency.value);
                     mintCheckoutIdempotencyKey();
+                    // The order reserved stock: every cached `available` is out of date.
+                    // The shopper's own write: cached products are stale now, not in five minutes.
+                    invalidateProductsCache();
                     return response.data;
                 })
                 .catch((error: unknown) => {
@@ -310,7 +322,13 @@ export const useCartStore = defineStore('cart', () => {
                     // the key so a retry is still the SAME attempt. Anything else — a 4xx like
                     // `CART_EMPTY`/`CART_CHANGED` — is a definitive answer, so the caller's next
                     // attempt needs a fresh one.
-                    if (!isRetryableFailure(error)) mintCheckoutIdempotencyKey();
+                    if (!isRetryableFailure(error)) {
+                        mintCheckoutIdempotencyKey();
+                        // A refusal (out of stock, a changed basket) is the server saying what the
+                        // cached products said differently.
+                        // The shopper's own write: cached products are stale now, not in five minutes.
+                        invalidateProductsCache();
+                    }
                     throw error;
                 })
         );
@@ -329,6 +347,8 @@ export const useCartStore = defineStore('cart', () => {
                 cart.value = response.data;
                 // See addCartItemAction — a refilled basket means a new checkout attempt (B19).
                 mintCheckoutIdempotencyKey();
+                // The shopper's own write: cached products are stale now, not in five minutes.
+                invalidateProductsCache();
                 return response.data;
             })
         );
