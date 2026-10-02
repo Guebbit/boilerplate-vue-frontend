@@ -78,6 +78,36 @@ beforeEach(() => {
 });
 
 describe('UserCreate', () => {
+    it('starts with the "Active" switch on, as the server defaults it', () => {
+        const { wrapper } = mountPage();
+
+        expect(wrapper.get<HTMLInputElement>('[data-test=user-active] input').element.checked).toBe(
+            true
+        );
+    });
+
+    it('sends active: false once the switch is turned off', () => {
+        const { wrapper, create } = mountPage();
+        create.mockResolvedValue(aUser({ id: 'u-new', email: 'ada@example.com' }));
+
+        return wrapper
+            .get('[data-test=user-active] input')
+            .setValue(false)
+            .then(() =>
+                fillAndSubmit(wrapper, {
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: GOOD_PASSWORD
+                })
+            )
+            .then(() => {
+                expect(create).toHaveBeenCalledWith(
+                    expect.objectContaining({ active: false }),
+                    expect.anything()
+                );
+            });
+    });
+
     it('refuses an address that is not one, and sends nothing', () => {
         const { wrapper, create } = mountPage();
 
@@ -108,7 +138,7 @@ describe('UserCreate', () => {
                         password: GOOD_PASSWORD,
                         sendSetupEmail: undefined,
                         role: undefined,
-                        active: undefined,
+                        active: true,
                         locale: undefined,
                         imageUpload: undefined
                     },

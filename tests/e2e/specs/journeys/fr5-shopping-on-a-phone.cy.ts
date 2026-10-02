@@ -62,7 +62,7 @@ describe('FR5 · Shopping on a phone', () => {
         fitsTheScreen();
         openDrawer();
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).should('be.visible');
-        cy.get(`${DRAWER} a[href="/en/signup"]`).should('be.visible');
+        cy.get(`${DRAWER} a[href^="/en/signup"]`).should('be.visible');
 
         cy.step('signs in through it');
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).click();

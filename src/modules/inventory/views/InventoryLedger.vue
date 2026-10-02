@@ -7,17 +7,15 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Inventory admin page. Fetches the shared product catalogue once here and lets `StockBoard`
- * and `MovementLedger` both read `useInventoryStore()` directly, so a write's reactivity carries
- * from one child to the other with no wiring of this page's own — the only wiring it does own is
- * the board's `history` emit into the ledger's exposed `focusProduct`.
+ * Inventory admin page. `StockBoard` and `MovementLedger` both read `useInventoryStore()`
+ * directly, so a write's reactivity carries from one child to the other with no wiring of this
+ * page's own — the only wiring it does own is the board's `history` emit into the ledger's exposed
+ * `focusProduct`.
  */
-import { onMounted, ref } from 'vue';
-import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
 import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
 import StockBoard from '@/modules/inventory/components/StockBoard.vue';
 import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
-import { useProductsStore } from '@/modules/products';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -34,22 +32,6 @@ import { useProductsStore } from '@/modules/products';
  * The ledger child instance, so its exposed `focusProduct` can be called from the board's emit.
  */
 const movementLedger = ref<InstanceType<typeof MovementLedger>>();
-
-/**
- * The catalogue three children share (both forms' product select, the ledger's product column
- * and filter) — fetched once here rather than by each of them, so a page load does not race
- * three simultaneous first-fetches against the same store.
- */
-const productsStore = useProductsStore();
-
-/**
- * The catalogue itself, read here only to decide whether the first fetch is still needed.
- */
-const { productsList } = storeToRefs(productsStore);
-
-onMounted(() => {
-    if (productsList.value.length === 0) void productsStore.fetchProducts();
-});
 </script>
 
 <template>

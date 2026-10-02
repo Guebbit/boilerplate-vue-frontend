@@ -59,6 +59,10 @@ through, so a view showing only the newest rows would misreport history as compl
 on availability, which is derived rather than stored, so the server does that sort in an aggregation
 rather than this client loading the catalogue to sort in memory.
 
+The ledger stores product ids, so its titles are joined the way the cart's are: the ids a page
+names and the products dictionary does not hold yet go out in one batched `POST /products/search`
+(`useProductLines`). A product the search will not return keeps showing its id.
+
 ## State
 
 Store `inventory`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.

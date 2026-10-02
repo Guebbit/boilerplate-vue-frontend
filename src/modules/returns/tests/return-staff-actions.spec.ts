@@ -130,4 +130,61 @@ describe('ReturnStaffActions', () => {
         expect(wrapper.emitted('changed')).toBeUndefined();
         expect(wrapper.find('[data-test=return-move-error]').exists()).toBe(true);
     });
+
+    it('shows the general error when a decline is rejected with no field errors', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'requested',
+                actions: { approve: false, decline: true, receive: false }
+            })
+        );
+        vi.mocked(store.decline).mockRejectedValue(new Error('connection lost'));
+
+        await wrapper.get('[data-test=return-decline-reason] input').setValue('Worn');
+        await wrapper.get('[data-test=return-decline-form]').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.emitted('changed')).toBeUndefined();
+        expect(wrapper.get('[data-test=return-move-error]').text()).toContain('connection lost');
+    });
+
+    it('shows the general error when a receive is rejected with no field errors', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({ actions: { approve: false, decline: false, receive: true } })
+        );
+        vi.mocked(store.receive).mockRejectedValue(new Error('already received'));
+
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test=return-move-error]').text()).toContain('already received');
+    });
+
+    it('puts a field error the server names on its field, with no general error', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({ actions: { approve: false, decline: false, receive: true } })
+        );
+        vi.mocked(store.receive).mockRejectedValue({
+            success: false,
+            status: 422,
+            message: 'Unprocessable Entity',
+            errors: [
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Deduction exceeds the refund',
+                    details: { field: 'handlingDeduction' },
+                    field: 'handlingDeduction'
+                }
+            ]
+        });
+
+        await wrapper.get('[data-test=return-receive-deduction] input').setValue('99');
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test=return-receive-deduction]').text()).toContain(
+            'Deduction exceeds the refund'
+        );
+        expect(wrapper.find('[data-test=return-move-error]').exists()).toBe(false);
+    });
 });

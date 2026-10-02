@@ -4,9 +4,8 @@
  * FR10 · I wanted to add it to my cart as a guest. A guest on a product page finds the buy button
  * switched off, not a wall: nothing to click until there is an account behind it. "Log in" in the
  * app bar takes them away and, once they are in, brings them BACK to that product, where one click
- * adds it. "Sign up" is different today: it carries no return address, so a new account starts on
- * the home page. The last step pins that, so the day it learns to come back this story is updated on
- * purpose instead of drifting.
+ * adds it. "Sign up" carries the same return address, so a new account lands on that product too, not
+ * on the home page.
  */
 import { addOpenProductToCart, fillSignupForm } from '../../../support/e2e/steps';
 
@@ -25,7 +24,7 @@ describe('FR10 · I wanted to add it to my cart as a guest', () => {
         cy.apiAs('user', 'DELETE', '/cart/all');
     });
 
-    it('a guest cannot buy, logging in brings them back to the product to buy it, and signing up starts at home', () => {
+    it('a guest cannot buy, and logging in or signing up brings them back to the product', () => {
         cy.subjectProduct('product.inStock').then((product) => {
             const productPath = `/en/products/${product.id}`;
 
@@ -55,18 +54,21 @@ describe('FR10 · I wanted to add it to my cart as a guest', () => {
             cy.goToCart();
             cy.contains('[data-test=cart-item]', product.title).should('exist');
 
-            cy.step('logged out again, "Sign up" from the product page carries no way back');
-            cy.visit(productPath);
+            cy.step('logged out again, "Sign up" in the app bar remembers the product too');
+            // Logging out lands on Home, so the guest walks back to the product first.
             cy.logout();
+            cy.visit(productPath);
             cy.get('[data-test=nav-login-link]').should('exist');
-            cy.get('header a[href="/en/signup"]').click();
+            cy.get('header a[href^="/en/signup"]').click();
             cy.get('#signup-page').should('exist');
-            cy.location('search').should('not.include', 'continue');
+            cy.location('search').then((search) => {
+                expect(decodeURIComponent(search)).to.include(`continue=${productPath}`);
+            });
 
-            cy.step('the new account starts on the home page, not on the product');
+            cy.step('the new account lands back on the product, not on the home page');
             fillSignupForm(NEWCOMER, NEWCOMER_PASSWORD);
-            cy.get('#home-page').should('exist');
-            cy.location('pathname').should('equal', '/en');
+            cy.location('pathname').should('equal', productPath);
+            cy.get('#product-target').should('exist');
         });
     });
 });

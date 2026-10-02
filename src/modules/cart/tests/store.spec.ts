@@ -20,6 +20,7 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useCartStore } from '@/modules/cart/store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { nextTick } from 'vue';
 import {
     getCart,
@@ -496,6 +497,70 @@ describe('useCartStore', () => {
                 expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result).toEqual(CART);
             });
+        });
+    });
+
+    /**
+     * The shopper's own writes move what the product pages say (a reservation at checkout above
+     * all), so each one ends the products cache's five-minute window early.
+     */
+    describe('the products cache', () => {
+        it.each([
+            ['addCartItem', (store: ReturnType<typeof useCartStore>) => store.addCartItem('p1', 1)],
+            [
+                'updateCartItem',
+                (store: ReturnType<typeof useCartStore>) => store.updateCartItem('p1', 2)
+            ],
+            [
+                'removeCartItem',
+                (store: ReturnType<typeof useCartStore>) => store.removeCartItem('p1')
+            ],
+            ['clearCart', (store: ReturnType<typeof useCartStore>) => store.clearCart()],
+            ['reorder', (store: ReturnType<typeof useCartStore>) => store.reorder('o1')],
+            ['checkout', (store: ReturnType<typeof useCartStore>) => store.checkout()]
+        ])('is invalidated by %s', (_name, write) => {
+            const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+
+            return write(useCartStore()).then(() => {
+                expect(spy).toHaveBeenCalledWith({ queryKey: ['products'] });
+            });
+        });
+
+        it('is invalidated by a checkout the server refused for good', () => {
+            const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+            vi.mocked(apiCheckout).mockRejectedValueOnce({
+                status: 409,
+                errors: [{ code: 'OUT_OF_STOCK' }]
+            });
+
+            return useCartStore()
+                .checkout()
+                .catch(() => undefined)
+                .then(() => {
+                    expect(spy).toHaveBeenCalledWith({ queryKey: ['products'] });
+                });
+        });
+
+        it('is left alone by a checkout that failed in a way a retry may fix', () => {
+            const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+            vi.mocked(apiCheckout).mockRejectedValueOnce({ status: 503, errors: [] });
+
+            return useCartStore()
+                .checkout()
+                .catch(() => undefined)
+                .then(() => {
+                    expect(spy).not.toHaveBeenCalled();
+                });
+        });
+
+        it('is left alone by a plain read of the cart', () => {
+            const spy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+
+            return useCartStore()
+                .fetchCart()
+                .then(() => {
+                    expect(spy).not.toHaveBeenCalled();
+                });
         });
     });
 

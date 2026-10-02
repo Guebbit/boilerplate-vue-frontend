@@ -11,7 +11,13 @@
  * other reasons — and the error-page side was never one of them.
  */
 import { describe, expect, it } from 'vitest';
-import { loginContinueTo, SIGN_IN_ROUTE_NAME, signInLocation } from '@/app/router/navigation';
+import {
+    loginContinueTo,
+    returnPathOf,
+    SIGN_IN_ROUTE_NAME,
+    signInLocation,
+    signUpContinueTo
+} from '@/app/router/navigation';
 
 describe('loginContinueTo', () => {
     it('remembers an ordinary target as a continue query', () => {
@@ -51,6 +57,71 @@ describe('loginContinueTo', () => {
             name: 'Login',
             params: { locale: 'en' }
         });
+    });
+});
+
+/**
+ * `signUpContinueTo` — "Sign up" carries the same `?continue=` as "Log in", so a visitor who
+ * creates an account lands back on the page they were reading instead of on Home.
+ */
+describe('signUpContinueTo', () => {
+    it('remembers an ordinary target exactly as login does', () => {
+        expect(signUpContinueTo('/en/products/p1', 'en')).toEqual({
+            name: 'Signup',
+            params: { locale: 'en' },
+            query: { continue: '/en/products/p1' }
+        });
+    });
+
+    it('omits the continue query for an error page, like login', () => {
+        expect(signUpContinueTo('/en/error/403', 'en')).toEqual({
+            name: 'Signup',
+            params: { locale: 'en' }
+        });
+    });
+
+    it('omits the continue query when there is nothing to remember', () => {
+        expect(signUpContinueTo(undefined)).toEqual({ name: 'Signup', params: undefined });
+        expect(loginContinueTo(undefined)).toEqual({ name: 'Login', params: undefined });
+    });
+});
+
+/**
+ * `returnPathOf` — which path the app bar's auth links remember. On an ordinary page that is the
+ * page; on an auth page the other auth link must not remember its sibling, which would land an
+ * authenticated visitor on a guests-only route.
+ */
+describe('returnPathOf', () => {
+    it('is the page itself on an ordinary route', () => {
+        expect(
+            returnPathOf({ name: 'ProductTarget', fullPath: '/en/products/p1', query: {} })
+        ).toBe('/en/products/p1');
+    });
+
+    it.each(['Login', 'Signup'])('is the continue the %s page arrived with', (name) => {
+        expect(
+            returnPathOf({
+                name,
+                fullPath: `/en/${name.toLowerCase()}?continue=/en/cart`,
+                query: { continue: '/en/cart' }
+            })
+        ).toBe('/en/cart');
+    });
+
+    it.each(['Login', 'Signup'])('is nothing on a bare %s page', (name) => {
+        expect(returnPathOf({ name, fullPath: `/en/${name.toLowerCase()}`, query: {} })).toBe(
+            undefined
+        );
+    });
+
+    it('is nothing when the auth page carries a repeated continue (an array)', () => {
+        expect(
+            returnPathOf({
+                name: 'Login',
+                fullPath: '/en/login',
+                query: { continue: ['/a', '/b'] }
+            })
+        ).toBe(undefined);
     });
 });
 

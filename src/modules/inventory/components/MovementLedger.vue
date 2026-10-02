@@ -23,7 +23,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
-import { useProductsStore } from '@/modules/products';
+import { useProductLines } from '@/modules/products';
 import {
     useProductPicker,
     useProductPickerPin
@@ -75,14 +75,10 @@ const { movements, movementsTotal, loading } = storeToRefs(inventoryStore);
 
 /**
  * Source of product titles for the ledger's product COLUMN — the filter above uses its own
- * search-backed picker instead (see `productSearchOptions` below).
+ * search-backed picker instead (see `productSearchOptions` below). `loadProducts` is the cart's
+ * batched `POST /products/search` read; `productOf` reads the shared products dictionary.
  */
-const productsStore = useProductsStore();
-
-/**
- * The catalogue, used to resolve a movement's `productId` to a title.
- */
-const { productsList } = storeToRefs(productsStore);
+const { loadProducts, productOf } = useProductLines();
 
 /**
  * Small on purpose — this is an admin table to read, not a feed to scroll.
@@ -195,10 +191,31 @@ const deltaClass = (delta: number) =>
     delta === 0 ? 'opacity-50' : delta < 0 ? 'text-error' : 'text-success';
 
 /**
- * Title lookup for the ledger — it stores ids, the page can still say names.
+ * Title lookup for the ledger — it stores ids, the page can still say names. A product the search
+ * will not return (deleted, inactive) keeps showing its id, which is still what the history is about.
  */
-const productTitle = (productId: string) =>
-    productsList.value.find(({ id }) => id === productId)?.title ?? productId;
+const productTitle = (productId: string) => productOf(productId)?.title ?? productId;
+
+/**
+ * Fetches the titles a ledger page names that the dictionary does not hold yet, in one batched
+ * read. Only the missing ids go: `loadProducts` is forced, so passing known ones would refetch them.
+ *
+ * @param rows - The movements now on screen.
+ * @returns A promise settling once the titles are in (or the read failed).
+ */
+const loadMissingTitles = (rows: StockMovement[]) => {
+    const missing = [...new Set(rows.map(({ productId }) => productId))].filter(
+        (productId) => !productOf(productId)
+    );
+    if (missing.length === 0) return Promise.resolve();
+    // A failed title read only leaves ids showing; the ledger's own read has its own failure path.
+    return loadProducts(missing).then(
+        () => undefined,
+        () => undefined
+    );
+};
+
+watch(movements, (rows) => void loadMissingTitles(rows), { immediate: true });
 
 /**
  * Loads the ledger page matching the current filters.

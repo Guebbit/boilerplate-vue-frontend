@@ -91,8 +91,12 @@ const onMissingRecord = useMissingRecord();
  * does: the products store scopes its cache by locale (`dependsOn`), and the toolkit re-runs an
  * active watcher under the new scope, since the API resolves `title` and `description` against
  * the caller's language.
+ *
+ * `staleTime: 0` makes every open a refetch (the lists keep the store's five minutes): the cached
+ * copy renders at once and the fresh one is swapped in — stale-while-revalidate — because this
+ * page is where a stock number is read.
  */
-watchProduct(() => id, { onError: onMissingRecord });
+watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
 
 /**
  * Whether a visitor is signed in — a guest is told to sign in instead of being offered the

@@ -31,6 +31,8 @@ import { brandLogoSource } from '@/app/utils/branding.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import {
     loginContinueTo,
+    signUpContinueTo,
+    returnPathOf,
     SIGN_IN_ROUTE_NAME,
     SIGN_UP_ROUTE_NAME
 } from '@/app/router/navigation.ts';
@@ -304,7 +306,7 @@ const toggleTheme = () => {
                     v-if="hasSignIn && !isAuth && route.name !== SIGN_IN_ROUTE_NAME"
                     variant="text"
                     data-test="nav-login-link"
-                    :to="routerLinkI18n(loginContinueTo(route.fullPath))"
+                    :to="routerLinkI18n(loginContinueTo(returnPathOf(route)))"
                 >
                     {{ t('navigation.label-login') }}
                 </v-btn>
@@ -312,7 +314,7 @@ const toggleTheme = () => {
                     v-if="hasSignUp && !isAuth && route.name !== SIGN_UP_ROUTE_NAME"
                     color="primary"
                     class="hidden sm:inline-flex"
-                    :to="routerLinkI18n({ name: SIGN_UP_ROUTE_NAME })"
+                    :to="routerLinkI18n(signUpContinueTo(returnPathOf(route)))"
                 >
                     {{ t('navigation.label-signup') }}
                 </v-btn>
@@ -453,14 +455,14 @@ const toggleTheme = () => {
                 v-if="!isAuth && hasSignIn"
                 color="primary"
                 data-test="nav-login-link-mobile"
-                :to="routerLinkI18n(loginContinueTo(route.fullPath))"
+                :to="routerLinkI18n(loginContinueTo(returnPathOf(route)))"
             >
                 <v-list-item-title>{{ t('navigation.label-login') }}</v-list-item-title>
             </v-list-item>
             <v-list-item
                 v-if="!isAuth && hasSignUp"
                 color="primary"
-                :to="routerLinkI18n({ name: SIGN_UP_ROUTE_NAME })"
+                :to="routerLinkI18n(signUpContinueTo(returnPathOf(route)))"
             >
                 <v-list-item-title>{{ t('navigation.label-signup') }}</v-list-item-title>
             </v-list-item>
