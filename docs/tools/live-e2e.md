@@ -65,7 +65,7 @@ What carries the weight for the infrastructure the demo profile lacks:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["Mongo replica set, Redis, RabbitMQ,\nMailpit, webhook-tester\nnpm run host -- db:bootstrap\nnpm run host -- e2e:serve\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
+    Boot["Mongo replica set, Redis, RabbitMQ,\nMailpit, webhook-tester + TLS proxy\nnpm run host -- db:bootstrap\nnpm run host -- e2e:serve\n(backend repo)"] --> Vite["vite build --outDir dist-e2e\nVITE_VALIDATE_RESPONSES=true\nvite preview :8085"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_liveProfile=true"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -86,7 +86,7 @@ flowchart TB
 ## The recipe
 
 One recipe, for CI and for a person. The backend needs five things around it, and a live run is
-one lane at a time: every run binds the same ports (27017, 6379, 5672, 1025/8025, 3070, 3000).
+one lane at a time: every run binds the same ports (27017, 6379, 5672, 1025/8025, 3070, 3071, 3000).
 
 ### 1. Services
 
@@ -106,9 +106,19 @@ docker run -d --name e2e-mailpit -p 1025:1025 -p 8025:8025 \
   -e MP_SMTP_AUTH_ACCEPT_ANY=true -e MP_SMTP_AUTH_ALLOW_INSECURE=true axllent/mailpit
 
 # Webhooks land here; the specs read it to check the delivery and its signature.
-docker run -d --name e2e-webhooks -p 3070:8080 \
+# Plain HTTP on 3071, and never used directly: a webhook URL must be https, so 3070 is the TLS door below.
+docker run -d --name e2e-webhooks -p 3071:8080 \
   -e AUTO_CREATE_SESSIONS=true -e STORAGE_DRIVER=memory \
   ghcr.io/tarampampam/webhook-tester:2.3.0
+
+# The TLS door: Caddy serving the backend's committed demo leaf (a test CA the backend trusts through
+# NODE_EXTRA_CA_CERTS, which its `e2e:serve` script sets) on 3070, forwarding to the tester. Run it
+# from the frontend repo, with the backend checked out at $BACKEND (its Caddyfile and certificates).
+docker run -d --name e2e-webhooks-tls --network host \
+  -e WEBHOOK_TLS_PORT=3070 -e WEBHOOK_UPSTREAM=127.0.0.1:3071 \
+  -v "$BACKEND/docker/webhook-tester-tls.Caddyfile:/etc/caddy/Caddyfile:ro" \
+  -v "$BACKEND/scenarios/support/tls:/certs:ro" \
+  caddy:2.10.2-alpine caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
 
 `analytics.cy.ts` also needs Umami and its Postgres (see [below](#point-the-backend-at-umami-or-the-analytics-spec-fails-with-umami-running)). Without them that one spec fails; the rest do not need it.
@@ -127,7 +137,7 @@ export NODE_PSEUDONYM_KEY=any-throwaway-value
 export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
 export NODE_RABBITMQ_URL=amqp://guest:guest@127.0.0.1:5672   # the backend's .env may carry `amqp://rabbitmq:5672`, which shadows HOST/PORT: no broker, no webhook sends, no error
 export NODE_FRONTEND_URL=http://localhost:8085
-export NODE_WEBHOOK_DEMO_SINK_URL=http://127.0.0.1:3070   # the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
+export NODE_WEBHOOK_DEMO_SINK_URL=https://127.0.0.1:3070   # the TLS door; the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
 export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
 
 # The shop's identity, printed on invoices and in every order mail's withdrawal notice. Boot refuses without it.
@@ -244,6 +254,7 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 | `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`, `cy.emailTo()` |
 | `scripts/e2e/mail-message.ts`                    | A Mailpit message read back into the outbox's shape                 |
 | `scripts/e2e/webhook-tester.ts`                  | A `webhook-tester` session, read in the demo sink's shape           |
+| `scripts/e2e/webhook-tls.ts`, `scripts/e2e/tls/` | The demo webhook sink's test CA and leaf (backend-owned copies)     |
 | `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file  |
 | `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                  |
 

@@ -17,6 +17,7 @@ import { signatureVerifies, webhooksReceived, type ReceivedWebhook } from './har
 export interface SubscriptionRow {
     id: string;
     url: string;
+    description?: string;
     enabled: boolean;
     eventTypes: string[];
     secretIds: string[];
@@ -35,14 +36,14 @@ export interface DeliveryRow {
     responseCode?: number;
 }
 
+/** The description the backend's seed gives the receiver subscription (`scenarios/webhooks.ts`). */
+const SEEDED_RECEIVER_DESCRIPTION = 'Demo sink (webhook-tester)';
+
 /**
  * The shop's demo receiver (`webhook-tester` on live, the Cypress-hosted sink on demo), whose
- * signing secret the backend publishes as a fixed demo value. Found by its address: it is the one
- * subscription whose URL is plain `http://`, because the contract refuses `http://` to everyone
- * else, so only the backend's own seed can name the receiver. Refused if there is not exactly one.
- *
- * Its form cannot be saved either — the edit form insists on `https://` — so a journey that wants
- * it switched off or on does so through the API ({@link setEnabled}).
+ * signing secret the backend publishes as a fixed demo value. Found by the description the seed
+ * gives it, because it is an ordinary `https://` subscription like any a journey makes. Refused if
+ * there is not exactly one.
  *
  * @returns a chain yielding the subscription
  */
@@ -50,24 +51,35 @@ export const seededSubscription = (): Cypress.Chainable<SubscriptionRow> =>
     cy
         .apiAs<{ items: SubscriptionRow[] }>('admin', 'GET', '/webhooks/subscriptions')
         .then((page) => {
-            const receivers = (page?.items ?? []).filter((subscription) =>
-                subscription.url.startsWith('http://')
+            const receivers = (page?.items ?? []).filter(
+                (subscription) => subscription.description === SEEDED_RECEIVER_DESCRIPTION
             );
             expect(
                 receivers,
-                'one plain-http subscription: the demo receiver (is NODE_WEBHOOK_DEMO_SINK_URL set on the backend?)'
+                'one subscription described as the demo receiver (is NODE_WEBHOOK_DEMO_SINK_URL set on the backend?)'
             ).to.have.length(1);
             return receivers[0];
         });
 
 /**
- * Switches a subscription on or off through the API.
+ * Switches a subscription on or off in its edit form, and waits for the saved notice.
  *
  * @param subscriptionId - which subscription
+ * @param url - the address the form must show, so the right record is open
  * @param enabled - the state to leave it in
  */
-export const setEnabled = (subscriptionId: string, enabled: boolean): Cypress.Chainable<unknown> =>
-    cy.apiAs('admin', 'PATCH', `/webhooks/subscriptions/${subscriptionId}`, { enabled });
+export const setEnabledInTheForm = (
+    subscriptionId: string,
+    url: string,
+    enabled: boolean
+): void => {
+    cy.visit(`/en/webhooks/subscriptions/${subscriptionId}/edit`);
+    cy.get('[data-test=webhook-url] input').should('have.value', url);
+    if (enabled) cy.get('[data-test=webhook-enabled] input').check({ force: true });
+    else cy.get('[data-test=webhook-enabled] input').uncheck({ force: true });
+    cy.get('form').submit();
+    cy.contains('Subscription updated').should('exist');
+};
 
 /**
  * Puts one order in the shop as the customer, through the API: a pickup order paid by card, which
