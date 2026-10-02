@@ -5,11 +5,12 @@
  * customer checks out first, which holds it; the second shopper is refused, naming the shortfall.
  * When the customer cancels, the hold is released and the second shopper's next attempt goes through.
  *
- * The second shopper is the editor, who holds the checkout key like any buyer. Both shoppers also
+ * The second shopper is the editor, who holds the checkout key like any buyer and whose seeded address
+ * book carries the billing address the invoice needs. Both shoppers also
  * read the product page's count along the way: it follows the hold and the release, because every
  * stock write clears the server cache and the browser revalidates the page.
  */
-import { addToCartFromStorefront, giveAnAddress, idFromLocation } from '../../../support/e2e/steps';
+import { addToCartFromStorefront, idFromLocation } from '../../../support/e2e/steps';
 
 /** The slice of a product this story reads: the units a shopper could still buy. */
 interface ProductLike {
@@ -44,8 +45,6 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 addToCartFromStorefront('product.lowStock');
                 // Adding never looks at stock, so the editor's cart can hold it too.
                 cy.apiAs('editor', 'POST', '/cart', { productId, quantity: 1 });
-                // Pickup ships to no address, but the invoice needs one: the editor keeps no book.
-                giveAnAddress('editor');
 
                 cy.step('the customer checks out the last unit: it is held');
                 cy.goToCart();
