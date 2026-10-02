@@ -133,6 +133,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
 | `POST /account/password`                     | `ChangePasswordResponse`           |
 | `DELETE /account/pending-email`              | `CancelPendingEmailChangeResponse` |
+| `POST /account/pending-email/resend`         | `ResendPendingEmailResponse`       |
 | `GET /account/reauth`                        | `GetReauthMethodsResponse`         |
 | `POST /account/reauth`                       | `ReauthResponse`                   |
 | `POST /account/reauth/methods/{method}/send` | `SendReauthCodeResponse`           |

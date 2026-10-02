@@ -59,7 +59,8 @@ const { addMessage } = useNotificationsStore();
 /**
  * Profile logic
  */
-const { updateProfile, cancelPendingEmailChange, fetchProfile } = useProfileStore();
+const { updateProfile, cancelPendingEmailChange, resendPendingEmail, fetchProfile } =
+    useProfileStore();
 
 /**
  * The signed-in visitor's profile record.
@@ -284,25 +285,19 @@ const {
 const pendingEmailActionInFlight = ref(false);
 
 /**
- * Re-sends the pending-email confirmation link: cancels the change, then asks for the same
- * address again.
+ * Asks for the pending-email confirmation link again — `POST /account/pending-email/resend`.
  *
- * Why two calls: the backend treats a PATCH carrying the address already parked in
- * `pendingEmail` as a no-op (a double-submitted save must not mail twice), and has no resend
- * endpoint for an email change. A fresh request is the only door that mints a new link, and the
- * cancel revokes the link already delivered so exactly one stays live. The old address hears of
- * it again, which is what a new request owes it.
+ * The backend mails the NEW address only and revokes the link already delivered, so exactly one
+ * stays live. The old address is not told again: it heard of the request once.
  *
- * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
- *  place ({@link pendingEmailError}).
+ * @returns A promise resolving once the request settles; success is toasted, a failure (a 429
+ *  inside the server's cooldown included) blocks in place ({@link pendingEmailError}).
  */
-const resendPendingEmail = () => {
-    const pendingEmail = profile.value?.pendingEmail;
-    if (!pendingEmail || pendingEmailActionInFlight.value) return;
+const resendPendingEmailLink = () => {
+    if (!profile.value?.pendingEmail || pendingEmailActionInFlight.value) return;
     clearPendingEmailError();
     pendingEmailActionInFlight.value = true;
-    return cancelPendingEmailChange()
-        .then(() => updateProfile({ email: pendingEmail }))
+    return resendPendingEmail()
         .then(() => addMessage(t('profile-page.pending-email-resent')))
         .catch((error) => reportPendingEmailError(error))
         .finally(() => {
@@ -369,7 +364,7 @@ const cancelPendingEmail = () => {
                         size="small"
                         :disabled="pendingEmailActionInFlight"
                         data-test="pending-email-resend"
-                        @click="resendPendingEmail"
+                        @click="resendPendingEmailLink"
                     >
                         {{ t('profile-page.pending-email-resend') }}
                     </v-btn>

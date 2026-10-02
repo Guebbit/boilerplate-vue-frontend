@@ -21,6 +21,7 @@ import {
     updateAccount as apiUpdateAccount,
     updateAccountWithMultipart as apiUpdateAccountWithMultipart,
     cancelPendingEmailChange as apiCancelPendingEmailChange,
+    resendPendingEmail as apiResendPendingEmail,
     changePassword as apiChangePassword,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
@@ -319,6 +320,17 @@ export const useProfileStore = defineStore('accountProfile', () => {
         );
 
     /**
+     * Asks for the pending email change's confirmation link to be mailed again, through `POST
+     * /account/pending-email/resend`. The backend mails the NEW address only and revokes the link
+     * already delivered, so exactly one stays live. Nothing about the profile changes, so there is
+     * nothing to refetch.
+     *
+     * @returns A promise resolving once the mail is queued. A 429 rejects, inside the server's
+     *  cooldown, with the sentence the caller shows.
+     */
+    const resendPendingEmail = () => fetchAny(() => apiResendPendingEmail().then(() => undefined));
+
+    /**
      * Changes the visitor's OWN role, through the endpoint that owns roles.
      *
      * Deliberately not folded into {@link updateProfile}. `PUT/PATCH /account` is the self-service
@@ -488,6 +500,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         fetchProfile,
         updateProfile,
         cancelPendingEmailChange,
+        resendPendingEmail,
         updateOwnRole,
         changePassword,
         confirmEmailVerification,

@@ -39,6 +39,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/account\/oauth\/providers$/, schemaName: "ListOAuthProvidersResponse", bodySchemaName: undefined, module: "account" },
     { method: "POST", pattern: /^\/account\/password\/check$/, schemaName: "CheckPasswordBreachedResponse", bodySchemaName: "CheckPasswordBreachedBody", module: "account" },
     { method: "POST", pattern: /^\/account\/password$/, schemaName: "ChangePasswordResponse", bodySchemaName: "ChangePasswordBody", module: "account" },
+    { method: "POST", pattern: /^\/account\/pending-email\/resend$/, schemaName: "ResendPendingEmailResponse", bodySchemaName: undefined, module: "account" },
     { method: "DELETE", pattern: /^\/account\/pending-email$/, schemaName: "CancelPendingEmailChangeResponse", bodySchemaName: undefined, module: "account" },
     { method: "GET", pattern: /^\/account\/reauth$/, schemaName: "GetReauthMethodsResponse", bodySchemaName: undefined, module: "account" },
     { method: "POST", pattern: /^\/account\/reauth$/, schemaName: "ReauthResponse", bodySchemaName: "ReauthBody", module: "account" },

@@ -9,14 +9,43 @@
  * Starts from the `pendingEmail` persona, so the pending state is seeded rather than typed: the
  * notice names the new address before anything is done.
  *
- * Resend is cancel-then-ask-again (JB15). The backend ignores a PATCH carrying the address
- * already parked, so a resend that sent only that mailed nothing.
+ * Resend is its own call (JB15): the backend ignores a PATCH carrying the address already parked,
+ * so `POST /account/pending-email/resend` is what mails the link again. It mails the NEW address
+ * only, one send a minute; the old address heard of the request once and is not told again.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 import { carriesAnotherLink } from '../../../support/e2e/steps';
 
 /** The pending-email notice's text carries the address; this finds it without copying it here. */
 const ADDRESS_PATTERN = /\S+@\S+\.[^\s—]+/;
+
+/** The resend's cooldown on the server, plus a second to be safely past it. */
+const PAST_THE_COOLDOWN_MS = 61_000;
+
+/** The subject of the notice the OLD address gets when a change is requested (the `en` copy). */
+const NOTICE_SUBJECT = 'Your email address is changing';
+
+/**
+ * Lets the resend's cooldown run out: the demo backend's clock is moved, a live one is waited on.
+ */
+const pastTheCooldown = (): void => {
+    cy.env(['liveProfile']).then(({ liveProfile }) => {
+        if (liveProfile !== true) {
+            cy.travel(PAST_THE_COOLDOWN_MS);
+            return;
+        }
+        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the live backend has no movable clock, and the cooldown is the server's own wall time
+        cy.wait(PAST_THE_COOLDOWN_MS);
+    });
+};
+
+/**
+ * How many change notices the mailbox holds, whoever they went to.
+ */
+const noticesSent = (): Cypress.Chainable<number> =>
+    cy
+        .sentSubjects()
+        .then((subjects) => subjects.filter((subject) => subject.includes(NOTICE_SUBJECT)).length);
 
 /**
  * Presses "resend" on the pending notice.
@@ -57,7 +86,8 @@ describe('AC5 · I changed my mind about my new email', () => {
             });
         cy.accountOf('pendingEmail').then(({ email }) => cy.wrap(email).as('current'));
 
-        cy.step('resend mails the new address a link, and the old one hears of the request');
+        cy.step('resend mails the new address a link, and the old address is not told again');
+        noticesSent().as('noticesBefore');
         pressResend();
         cy.get<string>('@pending').then((pending) => {
             cy.emailTo(pending).then((email) => {
@@ -65,14 +95,21 @@ describe('AC5 · I changed my mind about my new email', () => {
                 cy.wrap(mailedLinkUrl(email)).as('firstLink');
             });
         });
-        cy.get<string>('@current').then((current) => {
-            cy.emailTo(current).then((email) => {
-                expectMailTemplate(email, 'account.email-change-notice');
-            });
+        // The link to the new address has arrived, so a notice to the old one would have too.
+        cy.get<number>('@noticesBefore').then((before) => {
+            noticesSent().should('equal', before);
         });
         cy.get('[data-test=pending-email-notice]').should('exist');
 
-        cy.step('a second resend replaces the link: the first no longer confirms');
+        cy.step('a second press inside the cooldown is refused in words, and mails nothing');
+        pressResend();
+        cy.get('[data-test=pending-email-error]')
+            .should('not.be.empty')
+            .and('not.contain.text', 'Too Many');
+        cy.get('[data-test=pending-email-notice]').should('exist');
+
+        cy.step('past the cooldown, resend replaces the link: the first no longer confirms');
+        pastTheCooldown();
         pressResend();
         cy.get<string>('@pending').then((pending) =>
             cy.get<string>('@firstLink').then((firstLink) => {
