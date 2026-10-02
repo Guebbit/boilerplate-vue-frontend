@@ -9,7 +9,6 @@
  * The clock, the sink and the job lever are demo-only (the backend's `/__test/*` and a listener
  * this process hosts), so those cases open with `cy.skipUnlessDemo()`; the rest run on both profiles.
  */
-import { seedAccount } from '../../support/e2e/scenario';
 import {
     loginDevice,
     postPaymentWebhook,
@@ -65,15 +64,12 @@ describe('The journey harness', () => {
     describe('the persona accounts', () => {
         it('are all described by the backend, the two-factor one with its backup codes', () => {
             for (const role of ['unverified', 'twoFactor', 'pendingEmail', 'banned'] as const)
-                expect(seedAccount(role).email, role).to.contain('@');
+                cy.accountOf(role).should((account) => {
+                    expect(account.email, role).to.contain('@');
+                });
 
-            expect(seedAccount('twoFactor').backupCodes, 'backup codes').to.have.length(5);
-        });
-
-        it('are also asked for as a command, which reads the login when it runs', () => {
             cy.accountOf('twoFactor').should((account) => {
-                expect(account.email).to.equal(seedAccount('twoFactor').email);
-                expect(account.backupCodes).to.have.length(5);
+                expect(account.backupCodes, 'backup codes').to.have.length(5);
             });
         });
 
@@ -88,8 +84,10 @@ describe('The journey harness', () => {
 
         it('stops the two-factor account at the challenge', () => {
             cy.visit('/en/login');
-            cy.get('[type=email]').type(seedAccount('twoFactor').email);
-            cy.get('[type=password]').type(seedAccount('twoFactor').password);
+            cy.accountOf('twoFactor').then((account) => {
+                cy.get('[type=email]').type(account.email);
+                cy.get('[type=password]').type(account.password);
+            });
             cy.get('form').submit();
 
             cy.get('#two-factor-challenge-page').should('exist');
@@ -97,8 +95,10 @@ describe('The journey harness', () => {
 
         it('refuses the banned account a session', () => {
             cy.visit('/en/login');
-            cy.get('[type=email]').type(seedAccount('banned').email);
-            cy.get('[type=password]').type(seedAccount('banned').password);
+            cy.accountOf('banned').then((account) => {
+                cy.get('[type=email]').type(account.email);
+                cy.get('[type=password]').type(account.password);
+            });
             cy.get('form').submit();
 
             cy.url().should('include', '/login');
@@ -109,7 +109,9 @@ describe('The journey harness', () => {
     describe('the staff accounts', () => {
         it('are all described by the backend', () => {
             for (const role of ['manager', 'warehouse', 'support', 'operator'] as const)
-                expect(seedAccount(role).email, role).to.equal(`${role}@example.com`);
+                cy.accountOf(role).should((account) => {
+                    expect(account.email, role).to.equal(`${role}@example.com`);
+                });
         });
 
         it('each sign in through the real form', () => {
