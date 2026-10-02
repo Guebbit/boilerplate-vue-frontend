@@ -5236,7 +5236,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -5255,7 +5255,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
@@ -5291,7 +5291,7 @@ export const replaceAccountWithMultipart = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccount = (
@@ -5310,7 +5310,7 @@ export const updateAccount = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMergePatchJson = (
@@ -5329,7 +5329,7 @@ export const updateAccountWithMergePatchJson = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address is a no-op — it neither starts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
@@ -5394,6 +5394,14 @@ export const cancelPendingEmailChange = (
         { url: `/account/pending-email`, method: 'DELETE' },
         options
     );
+};
+
+/**
+ * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. A no-op, answering 204 all the same, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/verify-request`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
+ * @summary Resend the pending email confirmation
+ */
+export const resendPendingEmail = (options?: SecondParameter<typeof orvalMutator<void>>) => {
+    return orvalMutator<void>({ url: `/account/pending-email/resend`, method: 'POST' }, options);
 };
 
 /**
@@ -8190,6 +8198,7 @@ export type RequestAccountDeleteResult = NonNullable<
 export type CancelPendingEmailChangeResult = NonNullable<
     Awaited<ReturnType<typeof cancelPendingEmailChange>>
 >;
+export type ResendPendingEmailResult = NonNullable<Awaited<ReturnType<typeof resendPendingEmail>>>;
 export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
 export type CheckPasswordBreachedResult = NonNullable<

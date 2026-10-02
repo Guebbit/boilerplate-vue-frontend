@@ -147,6 +147,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     requestAccountDelete: 'account',
     requestEmailVerification: 'account',
     requestPasswordReset: 'account',
+    resendPendingEmail: 'account',
     restoreOrderById: 'orders',
     restoreProductById: 'products',
     restoreUserById: 'users',
