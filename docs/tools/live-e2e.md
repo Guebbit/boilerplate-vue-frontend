@@ -46,8 +46,9 @@ Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/deve
 
 A backend with a human-challenge provider asks every signup and login to solve it, so the plain specs could not get in. The specs that need the provider are named `<name>.antibot.cy.ts`, are kept out of the functional run (`ANTIBOT_SPEC_GLOBS`), and run against their own backend:
 
-- **Demo:** `npm run test:e2e` adds one more shard, booted with `NODE_ANTIBOT_PROVIDER=altcha`, a fixed secret and a low cost (`scripts/e2e/antibot-backend.ts`). `npm run test:e2e:antibot` runs the same specs by hand.
-- **Live, nightly:** the matrix gets an `antibot` entry. Its backend boots with the same three variables, and `print-live-shard.ts antibot` prints its specs. A unit test holds the workflow's values equal to the constant.
+- **Demo:** `npm run test:e2e` adds one more shard, booted with `NODE_ANTIBOT_PROVIDER=altcha`, a fixed secret, a low cost and a small per-account login budget (`NODE_AUTH_RATE_LIMIT_MAX=6`, so the login check is three wrong passwords away) (`scripts/e2e/antibot-backend.ts`). `npm run test:e2e:antibot` runs the same specs by hand.
+- **Live, nightly:** the matrix gets an `antibot` entry. Its backend boots with the same four variables (the other entries keep the job's `NODE_AUTH_RATE_LIMIT_MAX`), and `print-live-shard.ts antibot` prints its specs. A unit test holds the workflow's values equal to the constant.
+- **By hand, live:** the recipe below with `NODE_ANTIBOT_PROVIDER=altcha NODE_ANTIBOT_ALTCHA_SECRET=e2e-not-a-secret-altcha-key NODE_ANTIBOT_ALTCHA_COST=1000 NODE_AUTH_RATE_LIMIT_MAX=6` exported in step 2, then `E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts antibot)" npm run test:e2e:live:spec`.
 
 `tests/e2e/specs/harness.antibot.cy.ts` proves the provider really is on, so a mis-wired run cannot pass by testing the provider-off branch.
 

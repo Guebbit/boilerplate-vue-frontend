@@ -269,3 +269,19 @@ export const resetSearch = (): void => {
     cy.get('[data-test=search-reset]').click();
     cy.settleNetwork();
 };
+
+/**
+ * Solves the human check the page is showing, the way a visitor does: ticks the box and waits for
+ * the proof-of-work to finish. Only the antibot run has one to solve (`*.antibot.cy.ts`).
+ *
+ * The widget is the `altcha` package's custom element, which renders into the light DOM: its box is
+ * a plain checkbox, and the element flags itself `data-state="verified"` once the token is ready.
+ * The hosting form reads that token on its next submit, so the caller presses its own button after.
+ *
+ * `force`: the widget draws its own tick (an svg) over the real input, which Cypress reads as the
+ * input being covered.
+ */
+export const solveHumanCheck = (): void => {
+    cy.get('[data-test=human-check-altcha] input[type=checkbox]').check({ force: true });
+    cy.get('[data-test=human-check-altcha] [data-state=verified]').should('exist');
+};

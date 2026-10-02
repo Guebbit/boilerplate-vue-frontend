@@ -381,6 +381,8 @@ jobs:
                   NODE_ANTIBOT_PROVIDER: ${{ matrix.shard == 'antibot' && 'altcha' || '' }}
                   NODE_ANTIBOT_ALTCHA_SECRET: ${{ matrix.shard == 'antibot' && 'e2e-not-a-secret-altcha-key' || '' }}
                   NODE_ANTIBOT_ALTCHA_COST: ${{ matrix.shard == 'antibot' && '1000' || '' }}
+                  # The login check engages at half this budget; every other entry keeps the job's own.
+                  NODE_AUTH_RATE_LIMIT_MAX: ${{ matrix.shard == 'antibot' && '6' || '1000' }}
               # `e2e:serve` is `start` plus the mark that makes boot refuse a real SMTP host, so a
               # live run cannot send mail. `host` is a prefix runner (see the seed step).
               run: |
