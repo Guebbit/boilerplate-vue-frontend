@@ -34,7 +34,7 @@ const LINES = [
  */
 const mountForm = () => {
     const store = useReturnsStore();
-    vi.spyOn(store, 'openReturn').mockResolvedValue({ kind: 'return', created: aReturn() });
+    vi.spyOn(store, 'openReturn').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnRequestForm, {
         props: { orderId: 'o1', lines: LINES },
         global: { plugins: [vuetify, i18n] },

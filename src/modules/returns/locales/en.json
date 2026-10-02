@@ -35,6 +35,7 @@
         "label-deduction": "Kept back for handling",
         "label-decline-reason": "Why it was declined",
         "label-lines": "What comes back",
+        "no-lines": "No goods are expected back: the order was cancelled before dispatch.",
         "button-order": "Go to the order",
         "button-list": "Back to returns"
     },

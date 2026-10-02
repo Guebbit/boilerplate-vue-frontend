@@ -1,7 +1,7 @@
 /**
  * @module
  * The returns store against a mocked transport (`orvalMutator`): what each call sends, which
- * outcome opening a return reports, and that a move REPLACES the cached record with the server's
+ * return opening one reports, and that a move REPLACES the cached record with the server's
  * answer. The bodies are proven against the contract's own request schemas, so a drift in what the
  * store sends fails here rather than as a 422 in production.
  */
@@ -10,7 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { useReturnsStore } from '@/modules/returns/store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn, anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
     orvalEnvelope,
@@ -56,12 +56,12 @@ beforeEach(() => {
 });
 
 describe('openReturn', () => {
-    it('reports a return and caches it when the server answers 201', () => {
+    it('reports the return and caches it', () => {
         responses['POST /returns'] = orvalEnvelope(aReturn(), 201);
         const store = useReturnsStore();
 
-        return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((outcome) => {
-            expect(outcome.kind).toBe('return');
+        return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
+            expect(created?.id).toBe('r1');
             expect(store.returns.r1?.reason).toBe('withdrawal');
             expect(contractRequest(schemas.CreateReturnBody, sent[0].data)).toEqual({
                 orderId: 'o1',
@@ -70,14 +70,16 @@ describe('openReturn', () => {
         });
     });
 
-    it('reports the cancelled order when a withdrawal came before dispatch (200)', () => {
-        responses['POST /returns'] = orvalEnvelope(anOrder({ status: 'cancelled' }), 200);
+    it('reports a withdrawal before dispatch as the return it is: closed at birth, no lines', () => {
+        responses['POST /returns'] = orvalEnvelope(
+            aReturn({ status: 'closed', lines: [], refundAmount: 40 }),
+            201
+        );
         const store = useReturnsStore();
 
-        return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((outcome) => {
-            expect(outcome.kind).toBe('cancelled');
-            expect(outcome.kind === 'cancelled' && outcome.order.status).toBe('cancelled');
-            expect(store.returns.r1).toBeUndefined();
+        return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
+            expect(created).toMatchObject({ orderId: 'o1', status: 'closed', lines: [] });
+            expect(store.returns.r1?.status).toBe('closed');
         });
     });
 

@@ -16,26 +16,13 @@ import {
     listReturns,
     receiveReturn
 } from '@api';
-import type {
-    CreateReturnRequest,
-    ListReturnsParams,
-    Order,
-    Return,
-    ReceiveReturnRequest
-} from '@types';
+import type { CreateReturnRequest, ListReturnsParams, Return, ReceiveReturnRequest } from '@types';
 
 /**
  * Search criteria for the list, i.e. everything but pagination (owned by the toolkit's search
  * state).
  */
 type ReturnsFilters = Omit<ListReturnsParams, 'page' | 'pageSize'>;
-
-/**
- * What opening a return produced: a `Return` once the goods had shipped, or the cancelled `Order`
- * when a withdrawal came before dispatch and there was nothing to send back.
- */
-export type OpenReturnOutcome =
-    { kind: 'return'; created: Return } | { kind: 'cancelled'; order: Order };
 
 /**
  * Returns and the withdrawal button.
@@ -46,8 +33,8 @@ export type OpenReturnOutcome =
 export const useReturnsStore = defineStore('returns', () => {
     /**
      * Record cache, list/pagination state and the read actions, from the toolkit's structured-CRUD
-     * primitive. No `create`/`update`/`remove`: opening is not a record insert (it may cancel an
-     * order instead), and the moves go through `updateTarget` below.
+     * primitive. No `create`/`update`/`remove`: opening is not a plain record insert (a withdrawal
+     * before dispatch also cancels the order), and the moves go through `updateTarget` below.
      */
     const {
         itemDictionary: returns,
@@ -99,16 +86,15 @@ export const useReturnsStore = defineStore('returns', () => {
     const receiveIdempotencyKey = useIdempotencyKey();
 
     /**
-     * Opens a return, or withdraws from the contract — one call behind `POST /returns`.
-     *
-     * The status is what tells the two outcomes apart: 201 wrote a `Return` (cached here), 200 is
-     * the order a pre-dispatch withdrawal cancelled, which this store does not own and only hands
-     * back.
+     * Opens a return, or withdraws from the contract — one call behind `POST /returns`, which always
+     * answers 201 and a `Return`. A withdrawal before dispatch also cancels the order server-side
+     * and comes back already `closed`; `orderId` on the result is where to re-read the order from.
      *
      * @param request - The order, the reason, and optionally the lines coming back.
-     * @returns A promise resolving with what the server did.
+     * @returns A promise resolving with the return that was written (cached here); `undefined` only
+     *   when the toolkit's read wrapper handed back no response.
      */
-    const openReturn = (request: CreateReturnRequest): Promise<OpenReturnOutcome> =>
+    const openReturn = (request: CreateReturnRequest): Promise<Return | undefined> =>
         fetchAny(() =>
             createReturn(request, openIdempotencyKey.withKey())
                 .then((response) => {
@@ -119,13 +105,10 @@ export const useReturnsStore = defineStore('returns', () => {
                     openIdempotencyKey.settle(error);
                     throw error;
                 })
-        ).then((response): OpenReturnOutcome => {
-            if (response?.status === 201) {
-                const created = response.data as Return;
-                addReturn(created);
-                return { kind: 'return', created };
-            }
-            return { kind: 'cancelled', order: response?.data as Order };
+        ).then((response) => {
+            const created = response?.data;
+            if (created) addReturn(created);
+            return created;
         });
 
     /**
