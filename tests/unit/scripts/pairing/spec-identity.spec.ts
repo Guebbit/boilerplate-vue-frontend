@@ -120,10 +120,13 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
         expect(frontendPaths).toContain('contracts/authorization-keys.yaml');
-        // And nothing else. Three files, all produced in the backend, which is what makes a fork
+        expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-ca.pem');
+        expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-cert.pem');
+        expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-key.pem');
+        // And nothing else. Six files, all produced in the backend, which is what makes a fork
         // answerable at all — `spectral.yaml` and the three shared scripts are gone, along with
         // the Node backend's own copy of them.
-        expect(frontendPaths.size).toBe(3);
+        expect(frontendPaths.size).toBe(6);
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {

@@ -1,29 +1,34 @@
 /**
  * `scripts/e2e/webhook-tester.ts` — the tester's captured requests, read back in the sink's shape.
  *
- * A real listener answering the tester's API: the reader's job is to speak HTTP to it.
+ * A real TLS listener answering the tester's API, on the committed test leaf: the reader's job is to
+ * speak HTTPS to it, trusting only the test CA.
  */
-import { createServer, type Server } from 'node:http';
+import { createServer, type Server } from 'node:https';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import { readWebhookTester } from '../../../../scripts/e2e/webhook-tester';
+import { WEBHOOK_SINK_TLS } from '../../../../scripts/e2e/webhook-tls';
 
 let server: Server | undefined;
 
 /** Starts a fake tester answering `status` and `body` to every request; yields its origin. */
 const fakeTester = (status: number, body: unknown): Promise<string> =>
     new Promise((resolve) => {
-        server = createServer((request, response) => {
-            // The path the reader asked for rides back in a header, so a test can pin the API address.
-            response
-                .writeHead(status, {
-                    'Content-Type': 'application/json',
-                    'X-Asked': request.url ?? ''
-                })
-                .end(JSON.stringify(body));
-        });
+        server = createServer(
+            { cert: WEBHOOK_SINK_TLS.cert, key: WEBHOOK_SINK_TLS.key },
+            (request, response) => {
+                // The path the reader asked for rides back in a header, so a test can pin the API address.
+                response
+                    .writeHead(status, {
+                        'Content-Type': 'application/json',
+                        'X-Asked': request.url ?? ''
+                    })
+                    .end(JSON.stringify(body));
+            }
+        );
         server.listen(0, '127.0.0.1', () =>
-            resolve(`http://127.0.0.1:${String((server!.address() as AddressInfo).port)}`)
+            resolve(`https://127.0.0.1:${String((server!.address() as AddressInfo).port)}`)
         );
     });
 

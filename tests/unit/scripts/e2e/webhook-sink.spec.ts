@@ -6,6 +6,7 @@
  * only that the stub works.
  */
 import { createHmac } from 'node:crypto';
+import { request as httpsRequest } from 'node:https';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
     DEMO_WEBHOOK_SECRET,
@@ -16,6 +17,7 @@ import {
     verifiesStandardWebhook,
     type WebhookSink
 } from '../../../../scripts/e2e/webhook-sink';
+import { WEBHOOK_SINK_TLS } from '../../../../scripts/e2e/webhook-tls';
 
 /** Signs `body` the way the backend does, under {@link DEMO_WEBHOOK_SECRET}. */
 const sign = (id: string, timestamp: string, body: string): string =>
@@ -85,20 +87,37 @@ describe('the ports', () => {
     });
 
     it('names the loopback literal, never a hostname', () => {
-        expect(sinkUrlForPort(3201)).toBe('http://127.0.0.1:3201');
+        expect(sinkUrlForPort(3201)).toBe('https://127.0.0.1:3201');
     });
 });
 
-/** POST `body` to the sink with the three signing headers. */
-const deliver = (port: number, body: string, signature: string) =>
-    fetch(`${sinkUrlForPort(port)}/session-id`, {
-        method: 'POST',
-        headers: {
-            'webhook-id': 'msg_9',
-            'webhook-timestamp': '1700000000',
-            'webhook-signature': signature
-        },
-        body
+/**
+ * POST `body` to the sink with the three signing headers, trusting only the test CA, the way the
+ * demo backend does: a handshake that completes proves the sink serves the leaf that CA signed.
+ *
+ * @returns the response status
+ */
+const deliver = (port: number, body: string, signature: string): Promise<number> =>
+    new Promise((resolve, reject) => {
+        // node:https request: `ca` replaces the default roots, so only the demo CA is trusted.
+        const outgoing = httpsRequest(
+            `${sinkUrlForPort(port)}/session-id`,
+            {
+                method: 'POST',
+                ca: WEBHOOK_SINK_TLS.ca,
+                headers: {
+                    'webhook-id': 'msg_9',
+                    'webhook-timestamp': '1700000000',
+                    'webhook-signature': signature
+                }
+            },
+            (response) => {
+                response.resume();
+                resolve(response.statusCode ?? 0);
+            }
+        );
+        outgoing.on('error', reject);
+        outgoing.end(body);
     });
 
 describe('startWebhookSink', () => {
@@ -117,7 +136,7 @@ describe('startWebhookSink', () => {
         const good = await deliver(port, body, sign('msg_9', '1700000000', body));
         await deliver(port, body, 'v1,forged');
 
-        expect(good.status).toBe(200);
+        expect(good).toBe(200);
         const seen = sink.requests();
         expect(seen.map((request) => request.signatureValid)).toEqual([true, false]);
         expect(seen[0]).toMatchObject({ path: '/session-id', body });

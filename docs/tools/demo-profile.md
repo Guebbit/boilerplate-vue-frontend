@@ -38,12 +38,12 @@ What each concern maps to now:
 
 Four more doors, for the journeys (see [Tests — Journeys](../reference/tests.md#journeys--stories-that-cross-modules)):
 
-| Need                    | How                                                                                                                                                |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run a background job    | `POST /__test/jobs/reap-orders` (the backend's job lever), after `cy.travel(ms)` moved the clock                                                   |
-| See a webhook arrive    | The Cypress process hosts a receiver; each demo backend boots with `NODE_WEBHOOK_DEMO_SINK_URL` pointing at it, so a replayed delivery lands there |
-| Sign a provider webhook | The backend's demo secret is known, so a `cy.task` signs `POST /payments/webhook` itself                                                           |
-| Test the challenge      | A shard booted with the altcha provider on — see [Live E2E — the antibot run](./live-e2e.md#the-antibot-run)                                       |
+| Need                    | How                                                                                                                                                                                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run a background job    | `POST /__test/jobs/reap-orders` (the backend's job lever), after `cy.travel(ms)` moved the clock                                                                                                                                                                       |
+| See a webhook arrive    | The Cypress process hosts a receiver over TLS (the backend's test certificate, `scripts/e2e/tls/`); each demo backend boots with `NODE_WEBHOOK_DEMO_SINK_URL` pointing at its `https://` address and trusts the certificate itself, so a replayed delivery lands there |
+| Sign a provider webhook | The backend's demo secret is known, so a `cy.task` signs `POST /payments/webhook` itself                                                                                                                                                                               |
+| Test the challenge      | A shard booted with the altcha provider on — see [Live E2E — the antibot run](./live-e2e.md#the-antibot-run)                                                                                                                                                           |
 
 ## Working without any backend
 
