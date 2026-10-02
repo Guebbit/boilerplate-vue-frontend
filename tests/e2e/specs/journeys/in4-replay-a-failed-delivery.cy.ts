@@ -6,8 +6,8 @@
  *
  * An endpoint that is down: each Replay is one more attempt, counted and explained on the row.
  * An endpoint the shop switched off: the replay is refused on the row, and once it is switched
- * back on, the same Replay delivers it to the receiver. (Switched through the API: the form
- * cannot save the receiver's plain-http address, and IN6 walks the switch in the form.)
+ * back on, the same Replay delivers it to the receiver. The receiver is the backend's seeded
+ * `https://` subscription, so the switch is made in its own edit form.
  *
  * Replay is synchronous and re-sends against the subscription as it stands now, so it needs no
  * broker. The dead endpoint is `https://127.0.0.1:1`: the SSRF guard exempts the demo receiver's
@@ -21,7 +21,7 @@ import {
     newDelivery,
     placeOrderAsCustomer,
     seededSubscription,
-    setEnabled
+    setEnabledInTheForm
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
@@ -127,7 +127,7 @@ describe('IN4 · Replay a failed delivery', () => {
                             (row) => row.status === 'succeeded'
                         );
                     });
-                    setEnabled(seeded.id, false);
+                    setEnabledInTheForm(seeded.id, seeded.url, false);
 
                     cy.step('a Replay is refused on the row, while it is off');
                     openTheLogOf(seeded.id);
@@ -150,7 +150,7 @@ describe('IN4 · Replay a failed delivery', () => {
                     replayButtonOf(delivery.id).should('not.exist');
 
                     cy.step('back on, the same Replay delivers it to the receiver');
-                    setEnabled(seeded.id, true);
+                    setEnabledInTheForm(seeded.id, seeded.url, true);
                     openTheLogOf(seeded.id);
                     const arrivals = () =>
                         webhooksReceived(seeded.url).then((received) =>

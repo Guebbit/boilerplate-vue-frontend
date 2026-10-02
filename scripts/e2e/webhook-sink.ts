@@ -4,8 +4,11 @@
  * The demo backend has no message broker, so nothing delivers a webhook by itself — but an admin
  * can REPLAY a delivery, and that POSTs synchronously to the subscription's URL. The seeded
  * subscription points at `NODE_WEBHOOK_DEMO_SINK_URL` (the backend's `scenarios/webhooks.ts`), and
- * the SSRF guard exempts exactly that host in development. This is the listener behind the URL, so
- * a spec can read what arrived and check its signature.
+ * the SSRF guard exempts exactly that host from its private-address check in development. This is
+ * the listener behind the URL, so a spec can read what arrived and check its signature.
+ *
+ * It speaks TLS, like every webhook URL must: it serves the test leaf from `./webhook-tls.ts`,
+ * which the demo backend trusts through `NODE_EXTRA_CA_CERTS`.
  *
  * Why not a real `webhook-tester`: the live profile has one (`e2e-live.yml`), but the demo profile
  * runs with no Docker. One listener per Cypress process, on a port its backend was told about.
@@ -14,9 +17,11 @@
  * wiring is in `cypress.config.ts`.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
+import type { IncomingHttpHeaders } from 'node:http';
+import { createServer, type Server } from 'node:https';
 import type { AddressInfo } from 'node:net';
 import { DEMO_WEBHOOK_SECRET } from './webhook-demo-secret';
+import { WEBHOOK_SINK_TLS } from './webhook-tls';
 
 /** The port a single-process demo run (`npm run test:e2e:serial` and friends) hosts the sink on. */
 export const SINGLE_PROCESS_SINK_PORT = 3200;
@@ -31,7 +36,7 @@ export const SHARD_SINK_PORT_BASE = 3201;
  *
  * @param port - the sink's port
  */
-export const sinkUrlForPort = (port: number): string => `http://127.0.0.1:${String(port)}`;
+export const sinkUrlForPort = (port: number): string => `https://127.0.0.1:${String(port)}`;
 
 /** The seeded subscription's signing secret, still reachable from here for the sink's own readers. */
 export { DEMO_WEBHOOK_SECRET } from './webhook-demo-secret';
@@ -127,29 +132,34 @@ export const startWebhookSink = (port: number): Promise<WebhookSink> =>
     new Promise((resolve, reject) => {
         let received: SinkRequest[] = [];
 
-        const server: Server = createServer((request, response) => {
-            const chunks: Buffer[] = [];
-            request.on('data', (chunk: Buffer) => chunks.push(chunk));
-            request.on('end', () => {
-                const body = Buffer.concat(chunks).toString('utf8');
-                const headers = flattenHeaders(request.headers);
-                received.push({
-                    path: request.url ?? '/',
-                    headers,
-                    body,
-                    signatureValid: verifiesStandardWebhook(
-                        {
-                            id: headers['webhook-id'],
-                            timestamp: headers['webhook-timestamp'],
-                            signature: headers['webhook-signature']
-                        },
+        // node:https.createServer: https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener
+        // `cert` and `key` are the committed test leaf; the CA is the backend's to trust, not ours to serve.
+        const server: Server = createServer(
+            { cert: WEBHOOK_SINK_TLS.cert, key: WEBHOOK_SINK_TLS.key },
+            (request, response) => {
+                const chunks: Buffer[] = [];
+                request.on('data', (chunk: Buffer) => chunks.push(chunk));
+                request.on('end', () => {
+                    const body = Buffer.concat(chunks).toString('utf8');
+                    const headers = flattenHeaders(request.headers);
+                    received.push({
+                        path: request.url ?? '/',
+                        headers,
                         body,
-                        DEMO_WEBHOOK_SECRET
-                    )
+                        signatureValid: verifiesStandardWebhook(
+                            {
+                                id: headers['webhook-id'],
+                                timestamp: headers['webhook-timestamp'],
+                                signature: headers['webhook-signature']
+                            },
+                            body,
+                            DEMO_WEBHOOK_SECRET
+                        )
+                    });
+                    response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
                 });
-                response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
-            });
-        });
+            }
+        );
 
         server.once('error', reject);
         // Loopback only: the backend reaches it at 127.0.0.1, and nothing else should.

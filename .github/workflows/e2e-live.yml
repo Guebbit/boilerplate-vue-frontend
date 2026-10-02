@@ -90,9 +90,11 @@ env:
     NODE_CLUSTER_WORKERS: '1'
     # A required key for the personal-data pseudonyms; throwaway, like the ones above.
     NODE_PSEUDONYM_KEY: ci-not-a-secret-pseudonym-key
-    # Webhook deliveries go to the tester service; the literal IP is deliberate, as the
-    # SSRF guard's DNS lookup skips /etc/hosts.
-    NODE_WEBHOOK_DEMO_SINK_URL: http://127.0.0.1:3070
+    # Webhook deliveries go to the tester service through its TLS proxy (a webhook URL must be
+    # https); the literal IP is deliberate, as the SSRF guard's DNS lookup skips /etc/hosts. The
+    # backend trusts the proxy's certificate through the NODE_EXTRA_CA_CERTS its `e2e:serve`
+    # script sets.
+    NODE_WEBHOOK_DEMO_SINK_URL: https://127.0.0.1:3070
     # src/kernel/required-config.ts refuses to boot without these — throwaway
     # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
     # a real deployment's secrets have no place in a CI runner that dies with the job.
@@ -217,16 +219,16 @@ jobs:
                     --health-timeout 10s
                     --health-retries 10
             # Where outbound webhooks land, so a delivery is real and its signature is checkable
-            # from the tester's API. The backend's SSRF guard exempts exactly this URL
-            # (`NODE_WEBHOOK_DEMO_SINK_URL`, development only). Host port 3070 matches the backend's
-            # own compose service. No health check: the image is minimal, so "Wait for the
-            # backend" waits on the port instead.
+            # from the tester's API. Plain HTTP on 3071: a webhook URL must be https, so the host
+            # reaches it only through the TLS proxy on 3070 ("Start the webhook sink's TLS door"
+            # below), which is the address the backend and the specs use. No health check: the
+            # image is minimal, so "Wait for the backend" waits on the proxy's port instead.
             # https://github.com/tarampampam/webhook-tester
             webhook-tester:
                 # ghcr.io/tarampampam/webhook-tester:2.3.0
                 image: ghcr.io/tarampampam/webhook-tester@sha256:85818267b450d3d386cad6510c561e09b974183ed2832c373bc83b125fc1b221
                 ports:
-                    - 3070:8080
+                    - 3071:8080
                 env:
                     # A POST to any uuid creates that session, which a seeded subscription cannot
                     # do by clicking "new URL" first.
@@ -331,6 +333,23 @@ jobs:
                   # Wait for the election: a seed that starts before there is a primary fails on its
                   # first write.
                   until docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; do sleep 2; done
+
+            # The TLS door in front of `webhook-tester`: Caddy serving the backend's committed demo
+            # certificate (its `scenarios/support/tls/`, a test CA the backend trusts through
+            # `NODE_EXTRA_CA_CERTS`) on 3070 and forwarding to the tester on 3071. A step rather than
+            # a service container: services start before checkout, and this mounts files from the
+            # backend checkout. Host networking, so the upstream is the host's own 3071; the two
+            # variables are the Caddyfile's own knobs.
+            # https://caddyserver.com/docs/caddyfile/directives/reverse_proxy
+            - name: Start the webhook sink's TLS door
+              run: |
+                  # caddy:2.10.2-alpine
+                  docker run -d --name webhook-tls --network host \
+                      -e WEBHOOK_TLS_PORT=3070 -e WEBHOOK_UPSTREAM=127.0.0.1:3071 \
+                      -v "$GITHUB_WORKSPACE/$BACKEND_PATH/docker/webhook-tester-tls.Caddyfile:/etc/caddy/Caddyfile:ro" \
+                      -v "$GITHUB_WORKSPACE/$BACKEND_PATH/scenarios/support/tls:/certs:ro" \
+                      caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d \
+                      caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 
             # The specs are written against the seed dataset, so the database has to hold it
             # before anything starts — and `cy.restore()` re-runs the seed between specs, which

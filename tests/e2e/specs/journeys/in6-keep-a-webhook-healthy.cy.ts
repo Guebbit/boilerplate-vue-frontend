@@ -13,7 +13,8 @@
 import {
     deliveriesOf,
     placeOrderAsCustomer,
-    seededSubscription
+    seededSubscription,
+    setEnabledInTheForm
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
@@ -50,21 +51,6 @@ const readAndDismissTheSecret = (): Cypress.Chainable<string> =>
             cy.get('[data-test=secret-reveal-continue]').click();
             return cy.wrap(secret, { log: false });
         });
-
-/**
- * Switches the subscription on or off in its edit form.
- *
- * @param subscriptionId - which subscription
- * @param enabled - the state to leave it in
- */
-const setEnabledInTheForm = (subscriptionId: string, enabled: boolean): void => {
-    cy.visit(`/en/webhooks/subscriptions/${subscriptionId}/edit`);
-    cy.get('[data-test=webhook-url] input').should('have.value', ENDPOINT);
-    if (enabled) cy.get('[data-test=webhook-enabled] input').check({ force: true });
-    else cy.get('[data-test=webhook-enabled] input').uncheck({ force: true });
-    cy.get('form').submit();
-    cy.contains('Subscription updated').should('exist');
-};
 
 describe('IN6 · Keep a webhook healthy from the UI', () => {
     beforeEach(() => {
@@ -123,7 +109,7 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             if (!mine) throw new Error('IN6: the admin cannot see the manager’s subscription');
 
             cy.step('the manager switches it off, and the list filter finds it under Disabled');
-            setEnabledInTheForm(mine.id, false);
+            setEnabledInTheForm(mine.id, ENDPOINT, false);
             cy.visit('/en/webhooks/subscriptions');
             cy.pickOption('[data-test=filter-enabled]', 'Disabled');
             cy.contains('[data-test=list-row]', ENDPOINT).should('exist');
@@ -145,7 +131,7 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             });
 
             cy.step('switched back on, the next order gets a delivery row, filtered in the log');
-            setEnabledInTheForm(mine.id, true);
+            setEnabledInTheForm(mine.id, ENDPOINT, true);
             placeOrderAsCustomer();
             eventually(
                 () => deliveriesOf(mine.id),

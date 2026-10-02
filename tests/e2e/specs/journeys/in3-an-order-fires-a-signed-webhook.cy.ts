@@ -11,8 +11,8 @@
  * Replay is what sends it, to a listener Cypress hosts. A replay signs with the ring as it stands
  * NOW, which is also what makes the rotation steps cheap: no second order is needed.
  *
- * The receiver is the backend's own seeded subscription, because a subscription made through the
- * form or the API must be `https://` and the receiver speaks plain HTTP.
+ * The receiver is the backend's own seeded subscription: an ordinary `https://` one, whose fixed
+ * demo secret is the first the signature is checked under.
  */
 import { DEMO_WEBHOOK_SECRET } from '../../../../scripts/e2e/webhook-demo-secret';
 import { forgetWebhooks, webhooksReceived } from '../../../support/e2e/harness';
