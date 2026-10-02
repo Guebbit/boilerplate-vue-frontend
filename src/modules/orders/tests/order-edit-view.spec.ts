@@ -65,10 +65,11 @@ const router = createRouter({
  * A signed-in operator — `OrderEdit`'s route is `access: 'admin'` in the real router, though this
  * spec's bespoke router carries no guard to enforce it.
  */
-const signInAsAdmin = () => {
+const signInAsAdmin = (abilities: [string, string][] = [['create', 'Payment']]) => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'operator@example.com', role: 'admin' };
+    session.setAbilities({ tenant: abilities, platform: [] });
 };
 
 /**
@@ -448,6 +449,25 @@ describe('recording a payment by hand', () => {
             .then(() => nextTick())
             .then(() => {
                 expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(true);
+            });
+    });
+
+    it('withholds the form from a viewer who may not record payments, even while the order can reach paid', () => {
+        // The manager edits orders and holds no `payments.any.create`: the form would only 403.
+        signInAsAdmin([]);
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+        });
+
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(
+                    false
+                );
             });
     });
 

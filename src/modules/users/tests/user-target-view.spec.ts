@@ -16,6 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { orvalMutator } from '@/infrastructure/http';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
@@ -88,13 +89,40 @@ const mountPage = () =>
         }
     });
 
+/**
+ * Signs in holding exactly these rules — the buttons under test are `users.any.update`'s.
+ *
+ * @param tenant - the packed tenant rules the viewer holds
+ */
+const signInHolding = (tenant: [string, string][]) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'operator1', email: 'operator@example.com', role: 'admin' };
+    session.setAbilities({ tenant, platform: [] });
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    signInHolding([['update', 'User']]);
     return loadLocale('en').then(() => router.push('/en/users/u1').then(() => router.isReady()));
 });
 
 describe('User (detail page)', () => {
+    // A reader of users (the manager) holds no `users.any.update`: Edit, Manage access and the
+    // 2FA strip would each answer 403.
+    it('offers no Edit, access or two-factor button to a viewer who may not update users', () => {
+        signInHolding([['read', 'User']]);
+        queueGetResponses(aUser({ id: 'u1', twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' }));
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=user-manage-access]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(false);
+            expect(wrapper.text()).not.toContain('Edit');
+        });
+    });
+
     // B9: this button used to show for every user regardless of whether they had a second factor
     // to strip, so clicking it for one who did not wrote a misleading "disabled 2FA" audit entry.
     it('hides "strip two-factor" for a user with no second factor enabled', () => {

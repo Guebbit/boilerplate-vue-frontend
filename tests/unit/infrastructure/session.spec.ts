@@ -353,6 +353,25 @@ describe('loadViewer', () => {
     });
 
     /**
+     * `can` answers yes for a `self` key and an `any` key alike; `canOnOthers` is the question that
+     * tells them apart, by whether the rule pins the row's owner.
+     */
+    it.each([
+        [
+            'a self key (pins the owner)',
+            [['read', 'Order', { userId: 'u1', tenantId: 't1' }]],
+            false
+        ],
+        ['an any key (leaves the owner open)', [['read', 'Order', { tenantId: 't1' }]], true],
+        ['no key at all', [], false]
+    ] as const)('canOnOthers: %s', (_name, rules, expected) => {
+        const store = signedIn();
+        store.setAbilities({ tenant: rules.map((rule) => [...rule]), platform: [] });
+
+        expect(store.canOnOthers('read', 'Order')).toBe(expected);
+    });
+
+    /**
      * `declaredSubjects` is what lets a typo in a route's `meta.can` be caught rather than just
      * quietly matching no rule — see `can`'s own docblock for why it warns instead of throwing.
      */

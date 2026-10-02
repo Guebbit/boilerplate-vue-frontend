@@ -16,6 +16,7 @@ import { ref } from 'vue';
 import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
 import StockBoard from '@/modules/inventory/components/StockBoard.vue';
 import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -32,11 +33,17 @@ import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
  * The ledger child instance, so its exposed `focusProduct` can be called from the board's emit.
  */
 const movementLedger = ref<InstanceType<typeof MovementLedger>>();
+
+/**
+ * The session, asked whether the two forms are this account's to use: recording a receipt or an
+ * adjustment is `inventory.any.create`, which the manager (a reader of stock) does not hold.
+ */
+const session = useSessionStore();
 </script>
 
 <template>
     <div id="inventory-page">
-        <div class="mb-6 grid gap-4 lg:grid-cols-2">
+        <div v-if="session.can('create', 'StockMovement')" class="mb-6 grid gap-4 lg:grid-cols-2">
             <StockMovementForm mode="receipt" />
             <StockMovementForm mode="adjust" />
         </div>

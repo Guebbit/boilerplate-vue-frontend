@@ -38,6 +38,7 @@ import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
@@ -73,6 +74,13 @@ const {
  */
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
+
+/**
+ * The session, for the row actions and the create button: each is a `users.any.*` key some staff
+ * roles lack (support may update and not delete; a read-only reader may do neither), and a button
+ * the backend answers with 403 is a button not to show.
+ */
+const session = useSessionStore();
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -351,7 +359,11 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('generic.reset') }}
                     </v-btn>
                     <v-spacer />
-                    <v-btn color="secondary" :to="routerLinkI18n({ name: 'UserCreate' })">
+                    <v-btn
+                        v-if="session.can('create', 'User')"
+                        color="secondary"
+                        :to="routerLinkI18n({ name: 'UserCreate' })"
+                    >
                         <UserPlus :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('users-list-page.button-create-user') }}
                     </v-btn>
@@ -427,6 +439,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-view') }}
                     </v-btn>
                     <v-btn
+                        v-if="session.can('update', 'User')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -439,6 +452,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
+                        v-if="session.can('update', 'User')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -452,7 +466,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-access') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.deletedAt"
+                        v-if="session.can('delete', 'User') && item.deletedAt"
                         :size="rowActionSize"
                         variant="tonal"
                         color="success"
@@ -466,7 +480,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-restore') }}
                     </v-btn>
                     <v-btn
-                        v-else
+                        v-else-if="session.can('delete', 'User')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
@@ -480,6 +494,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
+                        v-if="session.can('delete', 'User')"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

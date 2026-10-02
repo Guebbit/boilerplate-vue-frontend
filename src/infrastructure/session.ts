@@ -343,6 +343,28 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * May this visitor do `action` to OTHER people's `subject` rows — an `any` key, not a `self`
+     * one?
+     *
+     * {@link can} cannot tell the two apart: `orders.self.read` and `orders.any.read` both answer
+     * yes for `('read', 'Order')`. A `self` key packs to a rule that pins the row's owner
+     * (`userId`), an `any` key to one that does not, so this asks whether some rule for the pair
+     * leaves the owner open. For a screen whose controls only mean something to a person working
+     * other people's rows (a staff search by customer).
+     *
+     * @param action - a CASL action, as for {@link can}
+     * @param subject - the CASL subject type the key names
+     * @returns whether a rule exists that is not scoped to the visitor's own rows
+     */
+    const canOnOthers = (action: PermissionAction, subject: string): boolean =>
+        can(action, subject) &&
+        [tenantAbility.value, platformAbility.value].some((ability) =>
+            ability
+                .rulesFor(action, subject)
+                .some((rule) => !rule.inverted && !('userId' in (rule.conditions ?? {})))
+        );
+
+    /**
      * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
      * `rememberMe` marker, so a later silent refresh (which does not know the original choice)
      * can tell the two cases apart. See `useAuthStore.login`'s `remember` param.
@@ -665,6 +687,7 @@ export const useSessionStore = defineStore('session', () => {
         declaredSubjects,
         setAbilities,
         can,
+        canOnOthers,
         accessToken,
         viewer,
         isAuth,

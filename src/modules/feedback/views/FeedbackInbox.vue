@@ -17,6 +17,7 @@ import { Inbox, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -36,6 +37,22 @@ import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus }
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
  */
 const { t } = useI18n();
+
+/**
+ * The session, for what a reader of the inbox may do with a ticket: `feedback.any.read` alone
+ * (the manager) sees tickets and notes, `.update` moves and annotates them, `.delete` erases.
+ */
+const session = useSessionStore();
+
+/**
+ * Whether the viewer may change a ticket's status and notes.
+ */
+const canUpdate = computed(() => session.can('update', 'Feedback'));
+
+/**
+ * Whether the viewer may erase a ticket.
+ */
+const canDelete = computed(() => session.can('delete', 'Feedback'));
 
 /**
  * Toast dispatcher.
@@ -336,6 +353,7 @@ const handleDelete = (requestId: string, subject: string) => {
                             :model-value="request.status"
                             :items="statusOptions"
                             :loading="loading"
+                            :disabled="!canUpdate"
                             :aria-label="
                                 t('feedback-inbox-page.status-label', { subject: request.subject })
                             "
@@ -349,6 +367,7 @@ const handleDelete = (requestId: string, subject: string) => {
                             "
                         />
                         <v-btn
+                            v-if="canDelete"
                             size="small"
                             variant="tonal"
                             color="error"
@@ -375,6 +394,7 @@ const handleDelete = (requestId: string, subject: string) => {
                             t('feedback-inbox-page.label-notes-named', { subject: request.subject })
                         "
                         maxlength="5000"
+                        :readonly="!canUpdate"
                         rows="2"
                         auto-grow
                         density="compact"
@@ -384,6 +404,7 @@ const handleDelete = (requestId: string, subject: string) => {
                         @update:model-value="(value) => (noteDrafts[request.id] = value)"
                     />
                     <v-btn
+                        v-if="canUpdate"
                         size="small"
                         variant="tonal"
                         :disabled="loading"

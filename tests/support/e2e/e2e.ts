@@ -31,6 +31,15 @@ import './journey';
 
 registerCypressGrep();
 
+/*
+ * Chromium reports "ResizeObserver loop completed with undelivered notifications" through
+ * `window.onerror` when a layout settles over two frames, as a Vuetify menu does opening inside a
+ * dialog. The platform defines it as harmless (nothing broke), and Cypress would fail the test
+ * on it. Returning `false` lets that one message through; every other uncaught error still fails.
+ * https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
+ */
+Cypress.on('uncaught:exception', (error) => !error.message.includes('ResizeObserver loop'));
+
 beforeEach(() => {
     cy.clearCookies();
     // A build with Umami configured asks for analytics consent on every first visit, and the
