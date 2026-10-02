@@ -48,14 +48,17 @@ const trackerIsSilenced = (silenced: boolean): void => {
 };
 
 /**
- * The account record's consent as the API holds it, read through the second device.
+ * Whether the account record holds a yes, as the API says it, read through the second device. An
+ * account that never answered holds nothing, which reads as `false` here.
  *
  * @param device - the account's second device
  */
-const storedConsent = (device: Device): Cypress.Chainable<unknown> =>
+const storedConsent = (device: Device): Cypress.Chainable<boolean> =>
     requestAsDevice(device, 'GET', '/account').then(
+        // The body is `unknown`; this is the one field the story reads off it.
         (response) =>
-            (response.body as { data: { analyticsConsent?: boolean } }).data.analyticsConsent
+            (response.body as { data: { analyticsConsent?: boolean } }).data.analyticsConsent ===
+            true
     );
 
 /**
@@ -98,7 +101,7 @@ describe('AC12 · My privacy choices stick', () => {
         cy.step('a new visitor signs up and leaves analytics unticked');
         signUp(VISITOR.email, VISITOR.password);
         loginDeviceWith(VISITOR.email, VISITOR.password).then((device) => {
-            storedConsent(device).should('not.equal', true);
+            storedConsent(device).should('equal', false);
             cy.get(TRACKER).should('not.exist');
             trackerIsSilenced(true);
 
