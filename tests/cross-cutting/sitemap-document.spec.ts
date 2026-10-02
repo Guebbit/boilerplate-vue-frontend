@@ -13,7 +13,7 @@
  * Rows are compared as cell lists, not as text, so Prettier's column padding never matters.
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RouteRecordRaw } from 'vue-router';
@@ -38,12 +38,21 @@ const viewOf = (route: RouteRecordRaw): string => {
 };
 
 /**
+ * Where a module's cell links: its own page, or, for the one module that has none (`example`,
+ * which exists to be copied), the section of the theory page that explains it.
+ */
+const pageLinkOf = (moduleName: string): string =>
+    existsSync(path.resolve(PAGE, '../../modules', `${moduleName}.md`))
+        ? `../modules/${moduleName}.md`
+        : './modules.md#adding-and-deleting-a-domain';
+
+/**
  * One row's cells, in the table's column order.
  */
 const cellsOf = (moduleName: string, route: RouteRecordRaw): string[] => {
     const can = route.meta?.can as [string, string] | undefined;
     return [
-        `[\`${moduleName}\`](../modules/${moduleName}.md)`,
+        `[\`${moduleName}\`](${pageLinkOf(moduleName)})`,
         `\`${route.path}\``,
         `\`${String(route.name)}\``,
         `\`${route.meta?.access ?? 'public'}\``,

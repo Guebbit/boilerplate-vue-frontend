@@ -12,10 +12,10 @@
  *   1. Every enabled module has an entry. A new domain here cannot be merged without someone
  *      saying what answers it.
  *   2. An entry whose counterpart is not simply the same name must give a reason. Most modules
- *      pair one-to-one and need no prose; the interesting three are `account` (the address book
- *      and the account of record both live here, not in their own modules), `observability` (one
+ *      pair one-to-one and need no prose; the interesting two are `account` (the address book
+ *      and the account of record both live here, not in their own modules) and `observability` (one
  *      set of screens over three backend domains — the console, the shop's audit trail and the
- *      realtime playground, all reading the same stream) and `demo` (no backend domain at all).
+ *      realtime playground, all reading the same stream).
  *      Those are exactly the facts that are invisible from either repo alone.
  *   3. No entry names a module that is not enabled, so a deleted domain takes its row with it.
  *   4. Every backend module this repo can see has a home in some entry's counterparts, or a
@@ -57,10 +57,7 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     'api-keys': { counterparts: ['api-keys'] },
     cart: { counterparts: ['cart'] },
     delivery: { counterparts: ['delivery'] },
-    demo: {
-        counterparts: [],
-        why: 'A client-side showcase of the shared UI kit. It pairs with the demo profile and the seeded dataset rather than with any backend domain.'
-    },
+    example: { counterparts: ['example'] },
     feedback: { counterparts: ['feedback'] },
     inventory: { counterparts: ['inventory'] },
     locales: { counterparts: ['locales'] },

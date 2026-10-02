@@ -15,7 +15,7 @@ import account from '@/modules/account/module';
 import apiKeys from '@/modules/api-keys/module';
 import cart from '@/modules/cart/module';
 import delivery from '@/modules/delivery/module';
-import demo from '@/modules/demo/module';
+import example from '@/modules/example/module';
 import feedback from '@/modules/feedback/module';
 import inventory from '@/modules/inventory/module';
 import locales from '@/modules/locales/module';
@@ -36,7 +36,7 @@ export const enabledModules: AppModule[] = [
     apiKeys,
     cart,
     delivery,
-    demo,
+    example,
     feedback,
     inventory,
     locales,

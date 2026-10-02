@@ -1,0 +1,84 @@
+{
+    "navigation": {
+        "label-examples": "esempio | esempi"
+    },
+    "example-status": {
+        "draft": "Bozza",
+        "published": "Pubblicato",
+        "archived": "Archiviato"
+    },
+    "example-status-actions": {
+        "move-to-draft": "Torna a bozza",
+        "move-to-published": "Pubblica",
+        "move-to-archived": "Archivia"
+    },
+    "example-form": {
+        "title-required": "Inserisci un titolo",
+        "title-too-long": "Il titolo è troppo lungo",
+        "body-required": "Scrivi qualcosa nel testo",
+        "body-too-long": "Il testo è troppo lungo"
+    },
+    "examples-list-page": {
+        "page-title": "Esempi",
+        "button-create": "Nuovo esempio",
+        "column-title": "Titolo",
+        "column-status": "Stato",
+        "column-owner": "Proprietario",
+        "column-published-at": "Pubblicato",
+        "column-created-at": "Creato",
+        "column-actions": "Azioni",
+        "filter-text": "Cerca",
+        "filter-status": "Stato",
+        "filter-status-all": "Qualsiasi",
+        "table-caption": "Esempi",
+        "button-view": "Apri",
+        "button-view-named": "Apri l'esempio {title}",
+        "button-edit": "Modifica",
+        "button-edit-named": "Modifica l'esempio {title}",
+        "button-delete": "Elimina",
+        "button-delete-named": "Elimina l'esempio {title}",
+        "confirm-delete": "Eliminare l'esempio \"{title}\"? L'operazione non si può annullare.",
+        "success-delete": "Esempio eliminato"
+    },
+    "example-create-page": {
+        "page-title": "Nuovo esempio",
+        "label-title": "Titolo",
+        "label-body": "Testo",
+        "button-submit": "Crea esempio",
+        "button-go-to-list": "Torna agli esempi",
+        "success-create": "Esempio creato"
+    },
+    "example-target-page": {
+        "page-title": "Esempio",
+        "label-id": "ID",
+        "label-body": "Testo",
+        "label-owner": "Proprietario",
+        "label-status": "Stato",
+        "label-cover": "Copertina",
+        "cover-alt": "Immagine di copertina di {title}",
+        "label-published-at": "Pubblicato il",
+        "label-created-at": "Creato il",
+        "label-updated-at": "Aggiornato il",
+        "section-status": "Stato",
+        "button-go-to-edit": "Modifica",
+        "button-go-to-list": "Torna agli esempi",
+        "button-delete": "Elimina",
+        "confirm-delete": "Eliminare l'esempio \"{title}\"? L'operazione non si può annullare.",
+        "success-delete": "Esempio eliminato",
+        "success-status": "Stato cambiato"
+    },
+    "example-edit-page": {
+        "page-title": "Modifica esempio",
+        "label-title": "Titolo",
+        "label-body": "Testo",
+        "label-status": "Stato",
+        "label-cover": "Immagine di copertina",
+        "button-submit": "Salva le modifiche",
+        "reset-form": "Ripristina",
+        "success-update": "Esempio aggiornato"
+    },
+    "example-published-page": {
+        "page-title": "Esempio pubblicato",
+        "published-by": "Pubblicato da {owner} il {date}"
+    }
+}
