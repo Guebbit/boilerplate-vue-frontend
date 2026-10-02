@@ -170,6 +170,11 @@ flowchart LR
   about goes through `cy.apiAs('admin', …)`; what the story is about goes through the UI.
 - **`cy.step(name)`** starts a named phase. The name is prefixed onto a failure's message, since
   `cy.log` never reaches the terminal.
+- **One alias, one `cy.intercept`.** Registering the same alias again keeps the old routes under it,
+  and `cy.wait('@alias')` yields the first request that has COMPLETED among all of them, which can
+  be an earlier call's answer, not the one just sent. Register once before a loop, or give each call
+  its own alias (`addOpenProductToCart` does). A status assertion on a stale answer passes or fails
+  by timing.
 - **`cy.travel(ms)`** moves the demo backend's clock forward (`POST /__test/clock`); the browser's
   clock does not move. It runs no job: trigger the reaction through its own door (the reservation
   sweep is `POST /inventory/reservations/sweep`). Open a time journey with `cy.skipUnlessDemo()`.
