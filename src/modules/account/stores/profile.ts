@@ -331,10 +331,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
      */
     const resendPendingEmail = (): Promise<number> =>
         fetchAny(() =>
-            apiResendPendingEmail().then(
-                (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
+            apiResendPendingEmail().then((data) =>
+                getPayloadFromResponse<EmailVerificationRequested>(data)
             )
-        );
+        ).then((payload) => payload?.resendAfter ?? 0);
 
     /**
      * Changes the visitor's OWN role, through the endpoint that owns roles.
