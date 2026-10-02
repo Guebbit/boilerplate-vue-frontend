@@ -1,7 +1,6 @@
 /// <reference types="cypress" />
 
 import { cents } from '../../../scripts/e2e/cents';
-import type { E2ERole } from './scenario';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
 
 export { cents, sumCents } from '../../../scripts/e2e/cents';
@@ -99,23 +98,6 @@ export const fillAddressDialog = (address: {
     cy.get('.v-overlay-container .v-list-item').first().click();
     cy.get('[data-test=address-save]').click();
 };
-
-/**
- * Gives a seeded persona one saved address through the API. Every order carries a billing address
- * for its invoice, so a persona whose book is empty cannot check out; the seeded customer keeps
- * one already, the staff accounts do not.
- *
- * @param role - the persona whose book gets the entry
- */
-export const giveAnAddress = (role: E2ERole): Cypress.Chainable<unknown> =>
-    cy.apiAs(role, 'POST', '/account/addresses', {
-        label: 'Home',
-        fullName: 'Ada Lovelace',
-        street: 'Via Emilia 1',
-        zip: '41121',
-        city: 'Modena',
-        country: 'IT'
-    });
 
 /**
  * Fills the signup form already on screen and submits it — the half `signUp` shares with a story
