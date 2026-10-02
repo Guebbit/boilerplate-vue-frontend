@@ -130,6 +130,10 @@ export NODE_FRONTEND_URL=http://localhost:8085
 export NODE_WEBHOOK_DEMO_SINK_URL=http://127.0.0.1:3070   # the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
 export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
 
+# The shop's identity, printed on invoices and in every order mail's withdrawal notice. Boot refuses without it.
+export NODE_SHOP_LEGAL_NAME='Guebbit Demo Shop Srl' NODE_SHOP_STREET='Via Roma 1' NODE_SHOP_CITY=Milano \
+       NODE_SHOP_ZIP=20100 NODE_SHOP_EMAIL=shop@example.com NODE_SHOP_PHONE='+39 02 1234567'
+
 # Mail into Mailpit. `e2e:serve` refuses any SMTP host but localhost, 127.0.0.1, ::1 or mailpit,
 # so a live run cannot send real mail. NODE_MAIL_TRANSPORT=log sends nothing at all, but then
 # no mailed link or code can be read back.
