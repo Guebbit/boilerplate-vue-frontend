@@ -1,7 +1,7 @@
 # The demo profile
 
 ::: tip Mechanism here, domain on its module page
-The seeded backend, the profile and the commands are here. The `demo` **module** — the client-side showroom, and the only module in either repository with no backend counterpart — is on [its module page](../modules/demo.md).
+The seeded backend, the profile and the commands are here. The `example` **module** — the small domain written to be copied, which `npm run demo:remove` leaves in place — is explained in [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a-domain).
 :::
 
 Development and the fast e2e suite run against the paired backend's **demo profile** — the real API, booted self-contained and disposable:

@@ -105,8 +105,8 @@ of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modu
 Three near misses show where the line falls, because each survives perfectly well in an app with no
 modules and none is imported by the registry: `src/ui/molecules/FormCounterInput.vue` imports
 nothing at all, `src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and
-drives its locale-prefixed routes, and `src/modules/demo/store.ts` is Pinia demo scaffolding for
-the Playground rather than shared state. None of the three belongs to the module system; each
+drives its locale-prefixed routes, and `src/modules/example/store.ts` is one domain's own state
+rather than shared state. None of the three belongs to the module system; each
 belongs to the tier its dependencies name.
 
 Two files is the honest size of a module system in a frontend, and it is deliberate: the tier earns
@@ -211,6 +211,14 @@ may import, and a reach outside that list fails `npm run lint` at the offending 
 One folder and one line, in both directions. The procedure — the manifest fields and the commands —
 is [Adding & removing a module](./module-lifecycle.md). What belongs here is
 what the exercise taught.
+
+The template to copy is `src/modules/example`: a small note domain with a list, a detail, a create
+form, an edit form (with a cover upload) and one public screen, a store over the generated client,
+the Zod schemas, the response-schema rows, a teaching route guard, a provide/inject pair and both
+languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published
+only for what a sibling imports); `demo:remove` leaves it in place. Copy the folder, rename it,
+and delete the screens you do not need; delete the folder, and its line in `src/modules.ts`,
+once you have your own domain.
 
 Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
 in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`

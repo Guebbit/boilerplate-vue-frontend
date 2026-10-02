@@ -68,14 +68,15 @@ Four ideas carry the whole repository:
 
 ## Where things live
 
-|                      |                                             |
-| -------------------- | ------------------------------------------- |
-| `src/modules/*`      | the domains — each one deletable            |
-| `src/kernel`         | the module registry                         |
-| `src/infrastructure` | http, i18n, session, uploads, observability |
-| `src/app`            | shell, router, layouts, guards              |
-| `src/ui`             | shared presentational components            |
-| `contracts/`         | generated API client — never edited by hand |
+|                       |                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `src/modules/*`       | the domains — each one deletable                                                     |
+| `src/modules/example` | only an example: the module to copy for a new domain, deleted once you have your own |
+| `src/kernel`          | the module registry                                                                  |
+| `src/infrastructure`  | http, i18n, session, uploads, observability                                          |
+| `src/app`             | shell, router, layouts, guards                                                       |
+| `src/ui`              | shared presentational components                                                     |
+| `contracts/`          | generated API client — never edited by hand                                          |
 
 ---
 

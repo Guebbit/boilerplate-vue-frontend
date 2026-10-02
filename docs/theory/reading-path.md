@@ -78,7 +78,7 @@ everything a module can plug into.
 
 Module routes are children of a `/:locale` parent, which is why every URL carries a language
 segment. Then three guards run in order: `localeChoice`, `tryRestoreAuth`, `enforceRouteAccess`.
-(A route may add its own, as the `demo` module's Playground does.)
+(A route may add its own, as the `example` module's edit route does.)
 
 **Take away:** access control is declared on the route — `meta.access` for standing, `meta.can`
 for the permission — and enforced centrally by `enforceRouteAccess`, never inside a component.
@@ -149,7 +149,7 @@ generated code inherits all of the above without knowing it exists.
 | `src/infrastructure/observability/store.ts`                    | You are adding tracking. See [Observability](../tools/observability.md).                                       |
 | `src/modules/account/**`                                       | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
 | `src/modules/observability/**`                                 | It is a demonstration of a capability (an ops console, a live feed), not part of the core shape.               |
-| `src/modules/demo/**`                                          | It demonstrates the framework and nothing else. Delete it when you start a real project.                       |
+| `src/modules/example/**`                                       | It demonstrates the shape of a module and nothing else. Delete it once you have your own domain.               |
 | `eslint.config.ts`, `stryker.config.json`, `cypress.config.ts` | You are changing the gate itself.                                                                              |
 
 ---

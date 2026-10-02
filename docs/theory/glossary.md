@@ -67,12 +67,12 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Shipping method** | A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.                         |
 | **Shipment**        | The parcel panel on an order — read-only once shipped; staff records the handover and arrival through it before that. |
 
-## `demo`
+## `example`
 
-| Term           | What it means here                                                            |
-| -------------- | ----------------------------------------------------------------------------- |
-| **Counter**    | A number with no meaning, incremented to prove a store survives a navigation. |
-| **Playground** | The page where the shared building blocks are shown, not used.                |
+| Term        | What it means here                                                                      |
+| ----------- | --------------------------------------------------------------------------------------- |
+| **Example** | A small note with an owner and a draft, published, archived life. Written to be copied. |
+| **Cover**   | The optional image an example carries, uploaded through its own route.                  |
 
 ## `feedback`
 
