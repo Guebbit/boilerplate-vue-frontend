@@ -18,6 +18,11 @@ import {
     webhookSink
 } from '../../support/e2e/harness';
 
+/** The one slice of `GET /products/categories` the cache spec reads. */
+interface FacetsBody {
+    data: { categories: { name: string }[] };
+}
+
 /** One hour, in milliseconds. */
 const HOUR_MS = 3_600_000;
 
@@ -215,6 +220,40 @@ describe('The journey harness', () => {
             cy.window().then((win) => win.open('/en/about', '_blank'));
 
             cy.get('@windowOpen').should('be.calledOnceWith', '/en/about', '_blank');
+        });
+    });
+
+    describe('cy.restore and the browser cache', () => {
+        it('empties the HTTP cache, so a cached facets read is not replayed against new data', () => {
+            // Only a real response cache answers `Cache-Control: max-age`; the demo's is off.
+            cy.skipUnlessLive();
+
+            const category = `harnesscat${String(Date.now())}`;
+
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                /** Reads the facets through the page's own fetch, so the browser cache is in play. */
+                const facetNames = () =>
+                    cy.window().then((win) =>
+                        win
+                            .fetch(`${String(apiUrl)}/products/categories`)
+                            .then((response) => response.json() as Promise<FacetsBody>)
+                            .then((body) => body.data.categories.map(({ name }) => name))
+                    );
+
+                cy.step('a product in a new category lands, and a browser read caches the chips');
+                cy.apiAs('admin', 'POST', '/products', {
+                    price: 1,
+                    categories: [category],
+                    translations: { en: { title: category } }
+                });
+                facetNames().should('include', category);
+
+                cy.step(
+                    'a restore removes the product, and the next read must not replay the chips'
+                );
+                cy.restore();
+                facetNames().should('not.include', category);
+            });
         });
     });
 });
