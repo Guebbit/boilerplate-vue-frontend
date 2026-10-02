@@ -24,6 +24,7 @@
         "label-email": "Email",
         "pending-email-notice": "In attesa: {email} — controlla la posta per confermarlo.",
         "pending-email-resend": "Invia di nuovo",
+        "pending-email-resend-wait": "Reinvia tra {seconds}s",
         "pending-email-cancel": "Annulla",
         "pending-email-resent": "Email di conferma inviata di nuovo.",
         "pending-email-cancelled": "Cambio email annullato.",

@@ -126,8 +126,7 @@ beforeEach(() => {
         }),
         'PATCH /account': orvalEnvelope(USER),
         'DELETE /account/pending-email': orvalEnvelope(),
-        // A 204 has no body, which the contract models as `void`.
-        'POST /account/pending-email/resend': undefined
+        'POST /account/pending-email/resend': orvalEnvelope({ resendAfter: 60 })
     };
     return loadLocale('en').then(() => router.push('/en/profile').then(() => router.isReady()));
 });
@@ -242,6 +241,31 @@ describe('the email field, and a pending change', () => {
             });
     });
 
+    it('locks the resend button and counts down the server resendAfter, then re-enables it', () => {
+        vi.useFakeTimers();
+        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        const wrapper = mountProfile();
+        const resend = () => wrapper.get('[data-test=pending-email-resend]');
+
+        return flushPromises()
+            .then(() => resend().trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(resend().text()).toBe('Resend in 60s');
+                expect(resend().attributes('disabled')).toBeDefined();
+                return vi.advanceTimersByTimeAsync(10_000);
+            })
+            .then(() => {
+                expect(resend().text()).toBe('Resend in 50s');
+                return vi.advanceTimersByTimeAsync(50_000);
+            })
+            .then(() => {
+                expect(resend().text()).toBe('Resend');
+                expect(resend().attributes('disabled')).toBeUndefined();
+            })
+            .finally(() => vi.useRealTimers());
+    });
+
     it('says why in place when the resend is refused inside the cooldown', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
@@ -267,6 +291,14 @@ describe('the email field, and a pending change', () => {
                 expect(wrapper.get('[data-test=pending-email-error]').text()).toContain(
                     'just sent'
                 );
+                // The 429's own `retryAfter` is what the button counts down: the first press right
+                // after the change was requested lands inside the cooldown its mail started.
+                expect(wrapper.get('[data-test=pending-email-resend]').text()).toBe(
+                    'Resend in 42s'
+                );
+                expect(
+                    wrapper.get('[data-test=pending-email-resend]').attributes('disabled')
+                ).toBeDefined();
                 // The change is still pending: a refused resend touches nothing.
                 expect(wrapper.find('[data-test=pending-email-notice]').exists()).toBe(true);
             });

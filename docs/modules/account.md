@@ -293,7 +293,8 @@ Three rules fall out of that shape and are easy to break:
   visitor still holding a valid refresh cookie from an earlier session gets a silent
   refresh-and-replay instead of "wrong code".
 - **Every countdown comes from the server.** The challenge's `expiresAt`, a delivered code's own,
-  and the resend cooldown's `resendAfter` all tick through `composables/use-countdown.ts`. A
+  and the resend cooldown's `resendAfter` all tick through `composables/use-countdown.ts` — so does the
+  profile page's pending-email Resend button, which also counts down a 429's `retryAfter`. A
   client-invented duration can disagree with the rate limiter; a server-sent one cannot.
 
 Nothing in the UI branches on a method by name. `delivers` says which half of the enrollment

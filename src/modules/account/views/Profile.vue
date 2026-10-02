@@ -34,6 +34,8 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
+import { emailVerifyResendRetryAfter } from '@/infrastructure/session.ts';
+import { useCountdown } from '@/modules/account/composables/use-countdown.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -285,21 +287,49 @@ const {
 const pendingEmailActionInFlight = ref(false);
 
 /**
+ * When the Resend button may be pressed again, in epoch ms — always the server's number
+ * (`resendAfter`, or a 429's `retryAfter`) added to now, never a window chosen here.
+ */
+const resendAvailableAt = ref<number>();
+
+/**
+ * Whole seconds left before the Resend button re-enables; zero means it may be pressed.
+ */
+const { secondsLeft: resendCooldown } = useCountdown(resendAvailableAt);
+
+/**
+ * Starts the Resend countdown from the server's number.
+ *
+ * @param seconds - The cooldown to wait; zero or less clears it.
+ */
+const startResendCooldown = (seconds: number) => {
+    resendAvailableAt.value = seconds > 0 ? Date.now() + seconds * 1000 : undefined;
+};
+
+/**
  * Asks for the pending-email confirmation link again — `POST /account/pending-email/resend`.
  *
  * The backend mails the NEW address only and revokes the link already delivered, so exactly one
  * stays live. The old address is not told again: it heard of the request once.
  *
- * @returns A promise resolving once the request settles; success is toasted, a failure (a 429
- *  inside the server's cooldown included) blocks in place ({@link pendingEmailError}).
+ * @returns A promise resolving once the request settles; success is toasted and the button counts
+ *  down the server's `resendAfter`. A failure blocks in place ({@link pendingEmailError}); a 429
+ *  inside the cooldown (the first press right after the change was requested, whose own mail
+ *  started it) counts down ITS `retryAfter` instead.
  */
 const resendPendingEmailLink = () => {
     if (!profile.value?.pendingEmail || pendingEmailActionInFlight.value) return;
     clearPendingEmailError();
     pendingEmailActionInFlight.value = true;
     return resendPendingEmail()
-        .then(() => addMessage(t('profile-page.pending-email-resent')))
-        .catch((error) => reportPendingEmailError(error))
+        .then((resendAfter) => {
+            startResendCooldown(resendAfter);
+            addMessage(t('profile-page.pending-email-resent'));
+        })
+        .catch((error: unknown) => {
+            startResendCooldown(emailVerifyResendRetryAfter(error) ?? 0);
+            reportPendingEmailError(error);
+        })
         .finally(() => {
             pendingEmailActionInFlight.value = false;
         });
@@ -362,11 +392,17 @@ const cancelPendingEmail = () => {
                     <v-btn
                         variant="text"
                         size="small"
-                        :disabled="pendingEmailActionInFlight"
+                        :disabled="pendingEmailActionInFlight || resendCooldown > 0"
                         data-test="pending-email-resend"
                         @click="resendPendingEmailLink"
                     >
-                        {{ t('profile-page.pending-email-resend') }}
+                        {{
+                            resendCooldown > 0
+                                ? t('profile-page.pending-email-resend-wait', {
+                                      seconds: resendCooldown
+                                  })
+                                : t('profile-page.pending-email-resend')
+                        }}
                     </v-btn>
                     <v-btn
                         variant="text"

@@ -38,13 +38,7 @@ instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
  */
 const send = <T>(request: AxiosRequestConfig): Promise<T> =>
     instance.request<T>(request).then((response) => {
-        // A 204 has no content (RFC 9110 §15.3.5); axios hands back `''` for it, but the contract
-        // models it as `void`, so the validator is shown the absence itself.
-        if (shouldValidateResponses())
-            validateResponseAgainstContract(
-                request,
-                response.status === 204 ? undefined : response.data
-            );
+        if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
         return response.data;
     });
 

@@ -54,13 +54,24 @@ const armEmailFromPanel = (mintsBackupCodes: boolean): void => {
 };
 
 /**
+ * Starts watching the login challenge's guesses, once, before the first one.
+ *
+ * Registered here and not inside {@link guess}: each `cy.intercept().as('guess')` is a new route
+ * under the same alias, `cy.wait('@guess')` then picks the first COMPLETED request among all of
+ * them, and under load that is an earlier guess's answer, not the one just sent. The sixth guess
+ * then read the fifth's 422 instead of its own 429.
+ */
+const watchGuesses = (): void => {
+    cy.intercept('POST', '**/account/login/2fa').as('guess');
+};
+
+/**
  * Types one guess into the login challenge, submits it, and expects the API's answer.
  *
  * @param code - what to type
  * @param expectedStatus - the HTTP status the API should answer with
  */
 const guess = (code: string, expectedStatus: number): void => {
-    cy.intercept('POST', '**/account/login/2fa').as('guess');
     cy.get('[data-test=two-factor-challenge-code] input').clear();
     cy.get('[data-test=two-factor-challenge-code] input').type(code);
     cy.get('[data-test=two-factor-challenge-submit]').click();
@@ -145,6 +156,7 @@ describe('AC16 · Two-factor, the awkward edges', () => {
             .and('contain.text', 's');
 
         cy.step('five wrong guesses are answered as wrong, the sixth is refused outright');
+        watchGuesses();
         for (let attempt = 1; attempt <= GUESSES_ALLOWED; attempt += 1) guess('000000', 422);
         guess('000000', 429);
 

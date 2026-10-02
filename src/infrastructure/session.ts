@@ -192,11 +192,12 @@ const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
 const clearCookie = (name: string) => writeCookie(name, '', 0);
 
 /**
- * The server's own resend cooldown from a `requestEmailVerification` 429, or `undefined` when the
- * rejection was something else. The banner wires but does not call the API, so the one code it
- * needs to recognise (`EMAIL_VERIFY_RESEND_TOO_SOON`) lives here beside the call.
+ * The server's own resend cooldown from a verification-mail 429, or `undefined` when the rejection
+ * was something else. Both `POST /account/verify-request` (the banner) and `POST
+ * /account/pending-email/resend` (the profile page) answer it under the one code
+ * (`EMAIL_VERIFY_RESEND_TOO_SOON`), so it lives here beside the first call.
  *
- * @param error - The rejected value `requestEmailVerification()` threw.
+ * @param error - The rejected value a verification-mail send threw.
  * @returns Seconds to wait, or `undefined`.
  */
 export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>

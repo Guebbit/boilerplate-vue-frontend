@@ -61,13 +61,23 @@ export const searchAndOpenProduct = (name: string): Cypress.Chainable<JQuery> =>
     });
 
 /**
+ * How many times {@link addOpenProductToCart} has run, so each call names its own alias.
+ */
+let addToCartCalls = 0;
+
+/**
  * On a product page, adds it to the cart and waits for the API to have taken it — the request is
  * the signal, since the toast is copy and the cart's own count is a second read.
+ *
+ * Every call gets its own alias: a re-registered alias keeps its old routes, and `cy.wait` then
+ * yields the first COMPLETED request among all of them — an earlier add's answer, not this one's.
  */
 export const addOpenProductToCart = (): Cypress.Chainable<unknown> => {
-    cy.intercept('POST', '**/cart').as('addToCart');
+    addToCartCalls += 1;
+    const alias = `addToCart${String(addToCartCalls)}`;
+    cy.intercept('POST', '**/cart').as(alias);
     cy.get('[data-test=add-to-cart]').click();
-    return cy.wait('@addToCart').its('response.statusCode').should('be.within', 200, 299);
+    return cy.wait(`@${alias}`).its('response.statusCode').should('be.within', 200, 299);
 };
 
 /**

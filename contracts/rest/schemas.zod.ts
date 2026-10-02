@@ -1449,10 +1449,17 @@ export const CancelPendingEmailChangeResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. A no-op, answering 204 all the same, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/verify-request`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
+ * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/verify-request`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/verify-request`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
  * @summary Resend the pending email confirmation
  */
-export const ResendPendingEmailResponse = zod.void();
+export const ResendPendingEmailResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        resendAfter: zod.number()
+    })
+});
 /**
  * The rules the SERVER enforces, packed for a client to evaluate.
  *
