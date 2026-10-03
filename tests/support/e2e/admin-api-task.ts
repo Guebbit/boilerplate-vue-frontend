@@ -24,15 +24,23 @@ export interface AdminApiRequest {
 /** Headers every JSON request here sends. */
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
-/** The envelope both paired backends answer with; `data` is the payload the caller wants. */
+/**
+ * The envelope both paired backends answer with; `data` is the payload the caller wants.
+ *
+ * A refusal's `errors` ride along in the thrown message: a bare "Unprocessable Entity" does not say
+ * whether a URL, a cap or a field was refused, and a run that fails once cannot be asked again.
+ */
 const unwrap = <T>(response: Response, context: string): Promise<T> =>
-    response.json().then((payload: { success?: boolean; data?: T; message?: string }) => {
-        if (!response.ok)
-            throw new Error(
-                `adminApi: ${context} answered ${String(response.status)} — ${payload.message ?? 'no message'}`
-            );
-        return payload.data as T;
-    });
+    response
+        .json()
+        .then((payload: { success?: boolean; data?: T; message?: string; errors?: unknown }) => {
+            if (!response.ok)
+                throw new Error(
+                    `adminApi: ${context} answered ${String(response.status)} — ${payload.message ?? 'no message'}` +
+                        (payload.errors === undefined ? '' : ` ${JSON.stringify(payload.errors)}`)
+                );
+            return payload.data as T;
+        });
 
 /** Logs in as the given account and resolves its bearer token. */
 const login = (apiUrl: string, email: string, password: string): Promise<string> =>
