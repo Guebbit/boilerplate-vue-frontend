@@ -138,8 +138,7 @@ export interface SessionViewer {
      *
      * Optional rather than required: every real projection (`loadViewer`, `publishViewer`) always
      * sets it, but widening it to required would force `verified: true` onto every other module's
-     * `SessionViewer` test double, most of which are outside this lane's clusters and have nothing
-     * to do with verification. `!viewer.verified` reads a missing value as unverified, which is
+     * `SessionViewer` test double, most of which have nothing to do with verification. `!viewer.verified` reads a missing value as unverified, which is
      * the fail-safe direction for a fixture that never set it on purpose.
      */
     verified?: boolean;
