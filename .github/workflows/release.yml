@@ -7,10 +7,10 @@ name: Release
 # step; this is that.
 # https://github.com/googleapis/release-please
 
+# Manual only: the project is new and unused, so no release is cut or counted for now. Run it from
+# the Actions tab (workflow_dispatch) when a release is wanted.
 on:
-    push:
-        branches:
-            - main
+    workflow_dispatch:
 
 permissions:
     contents: read
