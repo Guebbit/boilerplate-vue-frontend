@@ -46,6 +46,16 @@ inputs:
         required: false
         default: 'false'
 
+    setup-mongod:
+        description: >-
+            'true' to install a system `mongod` and export MONGOMS_SYSTEM_BINARY, for a caller that
+            boots several demo backends at once. Left to itself each one downloads the binary into
+            the shared `~/.cache/mongodb-binaries` behind a lockfile, and concurrent first starts
+            corrupt it ("Cannot unlock file ... because it is not locked by this process"): every
+            backend died on boot. Same recipe as the backend repo's own `setup` action.
+        required: false
+        default: 'false'
+
 runs:
     using: composite
     steps:
@@ -76,3 +86,20 @@ runs:
           env:
               MONGOMS_DISABLE_POSTINSTALL: ${{ inputs.guarded-install == 'true' && '1' || '' }}
           run: npm ci
+
+        - name: Install mongod
+          if: inputs.setup-mongod == 'true'
+          shell: bash
+          run: |
+              if command -v mongod >/dev/null 2>&1; then
+                  echo "MONGOMS_SYSTEM_BINARY=$(command -v mongod)" >> "$GITHUB_ENV"
+                  exit 0
+              fi
+
+              sudo apt-get update
+              sudo apt-get install -y gnupg curl
+              curl -fsSL https://pgp.mongodb.com/server-8.0.asc | gpg --dearmor | sudo tee /usr/share/keyrings/mongodb-server-8.0.gpg >/dev/null
+              echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+              sudo apt-get update
+              sudo apt-get install -y mongodb-org-server
+              echo "MONGOMS_SYSTEM_BINARY=$(command -v mongod)" >> "$GITHUB_ENV"

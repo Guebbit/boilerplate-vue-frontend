@@ -516,6 +516,8 @@ jobs:
                   path: ${{ env.BACKEND_PATH }}
                   report-failure: 'true'
                   no-backend-mode: 'The e2e suite boots its demo profile, so there is no backend-less mode'
+                  # Five demo backends start at once; see the input's own description.
+                  setup-mongod: 'true'
 
             - name: Run e2e tests
               run: npm run test:e2e
