@@ -1,6 +1,6 @@
 /**
  * Every `import.meta.env.VITE_*` key this app actually reads, typed — so a read of one that is
- * NOT declared here is a compile error instead of `any` (FA95). `ViteTypeOptions`'s
+ * NOT declared here is a compile error instead of `any`. `ViteTypeOptions`'s
  * `strictImportMetaEnv` is what turns that off: without it, Vite's own `ImportMetaEnv` falls back
  * to `Record<string, any>` for any key nobody declared, which is silent, not strict.
  * https://vite.dev/guide/env-and-mode.html#intellisense-for-typescript
