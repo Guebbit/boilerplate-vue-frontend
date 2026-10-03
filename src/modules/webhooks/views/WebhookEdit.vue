@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'WebhookEditPage'
 };
@@ -52,6 +56,8 @@ const { id } = defineProps<{
  * Webhooks store actions and event catalogue for the `eventTypes` multiselect.
  */
 const { watchSubscription, updateSubscription, fetchEventCatalogue } = useWebhooksStore();
+
+/** Reactive current subscription, event catalogue and the two loading flags. */
 const { currentSubscription, eventCatalogue, loadingEventCatalogue, loadingSubscriptions } =
     storeToRefs(useWebhooksStore());
 

@@ -1,8 +1,8 @@
 /**
  * @module
  * Mounts the real subscription-edit page against a real, memory-history router: what it sends
- * when a `description` the visitor clears has to become `null` (D17c's own "empty string is
- * invalid, `null` clears" rule), and what it sends when the field is left untouched. Hydration
+ * when a `description` the visitor clears has to become `null` (the PATCH rule: an empty string is
+ * invalid, `null` clears), and what it sends when the field is left untouched. Hydration
  * comes from the store's own cache (there is no `GET .../subscriptions/{id}`), seeded by hand the
  * same way `store.spec.ts`'s `watchSubscription` cases are.
  */

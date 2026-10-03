@@ -66,7 +66,7 @@ const filters = reactive<WebhookDeliveryFilters>({
 
 /**
  * Options of the subscription select — every known subscription, by URL rather than by its
- * (meaningless to a reader) id. The "all" row's value is `null`, not `undefined` (FA51) —
+ * (meaningless to a reader) id. The "all" row's value is `null`, not `undefined` —
  * Vuetify reads an `undefined` item value as "use the title", which would post the translated
  * label instead of no filter at all.
  *

@@ -31,6 +31,7 @@ import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
+/** A subscription, the shape the mocked API returns. */
 const SUBSCRIPTION = {
     id: 'sub1',
     url: 'https://example.com/hook',

@@ -1,8 +1,8 @@
 /**
  * @module
  * Cypress end-to-end spec driving the real app: list, create, edit and delete for the admin-only
- * webhook subscriptions module. FA123: only an a11y sweep existed here before this — no
- * functional coverage of create/edit/delete/list behavior at all.
+ * webhook subscriptions module. The a11y sweep is its own spec (`a11y.cy.ts`); this one is the
+ * functional coverage of create, edit, delete and list.
  */
 
 /** A value unique enough per run that two specs racing the same backend cannot collide. */
