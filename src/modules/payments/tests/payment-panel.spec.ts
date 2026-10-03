@@ -18,6 +18,7 @@ import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
+/** Mounts the panel with a stubbed payment fetch; `props` override the defaults. */
 const mountPanel = (props: Record<string, unknown> = {}) => {
     const store = usePaymentsStore();
     vi.spyOn(store, 'fetchPaymentForOrder').mockResolvedValue(undefined);
@@ -56,11 +57,11 @@ describe('PaymentPanel', () => {
     });
 
     /**
-     * FA32c: every order that holds stock now freezes a real `payBy`, card orders included — the
+     * Every order that holds stock freezes a real `payBy`, card orders included — the
      * deadline has to show wherever the order is still payable, not only in
      * `TransferInstructionsPanel`, which a card order never mounts (no `transferInstructions`).
      */
-    describe('the payment deadline (FA32c)', () => {
+    describe('the payment deadline', () => {
         it('shows it while the order is payable and a payBy is given', () => {
             const { wrapper } = mountPanel({ payBy: '2026-01-10T12:00:00.000Z' });
             expect(wrapper.find('[data-test=payment-deadline]').exists()).toBe(true);
@@ -206,12 +207,12 @@ describe('PaymentPanel', () => {
     });
 
     /**
-     * FA24: the store's `payment` ref is shared across every order this panel instance is ever
+     * The store's `payment` ref is shared across every order this panel instance is ever
      * given — `Order.vue` reuses the same instance across orders (`watchOrder`, no remount on a
      * route param change alone) — so it must both re-fetch on a new `orderId` and refuse to render
      * a record left over from the order it just moved on from.
      */
-    describe('re-checking the record belongs to this order (FA24)', () => {
+    describe('re-checking the record belongs to this order', () => {
         it('re-fetches when orderId changes without a remount', () => {
             const { store, wrapper } = mountPanel();
             expect(store.fetchPaymentForOrder).toHaveBeenCalledWith('order-1');

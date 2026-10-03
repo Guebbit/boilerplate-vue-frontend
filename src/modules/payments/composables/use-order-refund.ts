@@ -36,6 +36,8 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
      */
     const { payment, loading: refundLoading } = storeToRefs(paymentsStore);
 
+    // Vue `watch(source, callback, { immediate })`: `immediate` fetches the payment for an order id
+    // that is already set when the composable is created.
     watch(
         orderId,
         (id) => {

@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'TransferInstructionsPanel'
 };
@@ -20,6 +24,9 @@ import { copyToClipboard } from '@guebbit/js-toolkit';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { OrderTransferInstructions } from '@types';
 
+/**
+ * Props: the bank-transfer details to show and the optional payment deadline.
+ */
 const { instructions } = defineProps<{
     /**
      * The beneficiary/IBAN/BIC/reference to transfer to.

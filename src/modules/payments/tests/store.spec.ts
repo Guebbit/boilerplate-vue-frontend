@@ -23,6 +23,7 @@ import {
 
 wireModulesIntoCore();
 
+/** A payment awaiting confirmation, the shape the mocked API returns. */
 const PAYMENT = {
     id: 'payment-1',
     orderId: 'order-1',
@@ -36,6 +37,7 @@ const PAYMENT = {
     refunds: []
 };
 
+/** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
 let responses: Record<string, unknown>;
 
 /**
@@ -55,6 +57,7 @@ interface Declined {
     message: string;
 }
 
+/** Whether a canned response is a `Declined` refusal. */
 const isDeclined = (value: unknown): value is Declined =>
     typeof value === 'object' && value !== null && 'code' in value && 'status' in value;
 
@@ -69,6 +72,7 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/** URLs of every request the mocked transport has seen, in call order. */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

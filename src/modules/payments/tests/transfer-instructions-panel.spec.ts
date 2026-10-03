@@ -13,6 +13,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { OrderTransferInstructions } from '@types';
 
+/** Bank-transfer details the panel renders and offers to copy. */
 const INSTRUCTIONS: OrderTransferInstructions = {
     beneficiary: 'Guebbit Shop',
     iban: 'IT60X0542811101000000123456',
@@ -20,10 +21,12 @@ const INSTRUCTIONS: OrderTransferInstructions = {
     reference: 'RF132EY8H44VJAVZKX80JRL'
 };
 
+/** Stub for the clipboard's `writeText`, installed on `navigator` below. */
 const writeText = vi.fn(() => Promise.resolve());
 
 Object.assign(navigator, { clipboard: { writeText } });
 
+/** Mounts the panel with the given instructions and optional deadline. */
 const mountPanel = (instructions: OrderTransferInstructions = INSTRUCTIONS, payBy?: string) =>
     mount(TransferInstructionsPanel, {
         props: { instructions, payBy },

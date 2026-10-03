@@ -17,7 +17,7 @@ describe('Order reference search', () => {
         cy.loginAs('user');
 
         // ── Buy something, paying by bank transfer — the one method that mints an RF ──
-        // A digital-only product needs no shipping method and refuses one outright (E16), so
+        // A digital-only product needs no shipping method and refuses one outright, so
         // `.first()` alone is no longer guaranteed to land on something this flow can actually
         // ship — the rich subject is a physical, shippable product.
         cy.navigateTo('/en/products');

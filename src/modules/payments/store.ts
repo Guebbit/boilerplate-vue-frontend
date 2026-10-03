@@ -48,7 +48,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const payment = ref<Payment | undefined>();
 
     /**
-     * `Idempotency-Key` for the intent/confirm pair `payForOrder` sends (B10) — the contract
+     * `Idempotency-Key` for the intent/confirm pair `payForOrder` sends — the contract
      * declares the header on both `POST /payments/intent` and `POST /payments/{id}/confirm`, so
      * both keys settle together: a retry after a network error or a 5xx at EITHER step resends
      * both unchanged, and any other outcome (success, or a decline the visitor answers with a

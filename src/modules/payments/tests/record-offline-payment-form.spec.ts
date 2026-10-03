@@ -30,6 +30,7 @@ const V_SELECT_STUB = {
         '<option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option></select>'
 };
 
+/** Mounts the offline-payment form, with the method select stubbed. */
 const mountForm = () =>
     mount(RecordOfflinePaymentForm, {
         props: { orderId: 'order-1' },

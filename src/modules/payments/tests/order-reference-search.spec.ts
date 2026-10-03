@@ -2,7 +2,7 @@
  * @module
  * Mounts the real search component and spies on the store's own read, the same pattern
  * `record-offline-payment-form.spec.ts` uses: the field state and this component's job stop at
- * EMITTING the found order — `payments` declares no `MODULE_EDGES` reach into `orders` (FA86), so
+ * EMITTING the found order — `payments` declares no `MODULE_EDGES` reach into `orders`, so
  * navigating to `OrderEdit` is the host's job, proven separately in `orders-list-view.spec.ts`.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -14,6 +14,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { Order } from '@types';
 
+/** Builds a minimal order with the given id. */
 const anOrder = (id: string): Order => ({
     id,
     userId: 'user-1',
@@ -33,6 +34,7 @@ const anOrder = (id: string): Order => ({
     returnStatus: 'none'
 });
 
+/** Mounts the reference search with the real i18n and Vuetify. */
 const mountSearch = () =>
     mount(OrderReferenceSearch, {
         global: { plugins: [vuetify, i18n] }

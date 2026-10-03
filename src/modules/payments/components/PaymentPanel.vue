@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'PaymentPanel'
 };
@@ -50,7 +54,7 @@ const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
      */
     orderStatus?: string;
     /**
-     * When the hold behind this order ends (FA32c) — every order that holds stock gets one now,
+     * When the hold behind this order ends — every order that holds stock gets one,
      * card included, not only bank transfer's own `transferInstructions`. Shown here, generically,
      * wherever {@link payable} is true; `TransferInstructionsPanel` still adds its own transfer-
      * specific wording alongside it.
@@ -93,7 +97,7 @@ const { payment: rawPayment, loading } = storeToRefs(paymentsStore);
  * This panel's own payment, discarding a stale or mismatched record. The store's `payment` is one
  * shared ref: this page component reuses the same panel instance across orders (no remount on a
  * route param change alone, per `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS
- * order landing after `orderId` has already moved on must not render as this order's chip (FA24).
+ * order landing after `orderId` has already moved on must not render as this order's chip.
  */
 const payment = computed(() =>
     rawPayment.value?.orderId === orderId ? rawPayment.value : undefined
@@ -243,7 +247,7 @@ const finishAtProvider = () => {
 
 /**
  * Fetches the payment on mount AND whenever `orderId` changes — `immediate: true` covers the
- * mount case, the watch covers navigating to a different order without a remount (FA24).
+ * mount case, the watch covers navigating to a different order without a remount.
  */
 watch(
     () => orderId,
@@ -257,7 +261,7 @@ watch(
         <h3 class="mb-2 text-base font-semibold">{{ t('payments-panel.title') }}</h3>
 
         <!--
-            FA32c: shown wherever the order is still payable, not only bank transfer's own
+            Shown wherever the order is still payable, not only bank transfer's own
             TransferInstructionsPanel — a card order holds stock exactly the same way.
         -->
         <p v-if="payable && payBy" class="mb-3 text-sm opacity-75" data-test="payment-deadline">

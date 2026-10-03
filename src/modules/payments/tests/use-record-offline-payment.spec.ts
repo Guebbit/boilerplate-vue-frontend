@@ -20,6 +20,7 @@ import {
 
 wireModulesIntoCore();
 
+/** A cash payment recorded by the till, the shape the mocked API returns. */
 const PAYMENT = {
     id: 'p1',
     orderId: 'o1',
@@ -32,6 +33,7 @@ const PAYMENT = {
     reference: 'till-1'
 };
 
+/** Canned response per `METHOD /url` key; a `Declined` entry makes the call reject. */
 let responses: Record<string, unknown>;
 
 /**
@@ -51,6 +53,7 @@ interface Declined {
     message: string;
 }
 
+/** Whether a canned response is a `Declined` refusal. */
 const isDeclined = (value: unknown): value is Declined =>
     typeof value === 'object' && value !== null && 'code' in value && 'status' in value;
 

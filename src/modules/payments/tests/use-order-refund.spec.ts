@@ -20,6 +20,7 @@ import {
 
 wireModulesIntoCore();
 
+/** Builds a payment whose refund action is allowed or not. */
 const payment = (refund: boolean) => ({
     id: 'p1',
     orderId: 'o1',
@@ -34,6 +35,7 @@ const payment = (refund: boolean) => ({
     actions: { pay: false, refund }
 });
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
