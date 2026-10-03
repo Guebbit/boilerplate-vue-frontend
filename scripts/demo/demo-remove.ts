@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * FE-D4 (paired with the backend's G-D2): `npm run demo:remove` — deletes every module
+ * `npm run demo:remove` — deletes every module
  * `src/demo-modules.ts` names, the one place that lists them, `src/modules.ts`, and their entries
  * in `scripts/module-edges.ts`. Everything else that reaches a domain module — `src/app/router/index.ts`,
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
@@ -58,11 +58,13 @@ const findResidueTests = (names: readonly string[]): string[] => {
     }
 };
 
+/** The demo modules to delete, read off `src/demo-modules.ts`. */
 const demoModuleNames = readDemoModuleNames(REPO_ROOT);
 console.info(
     `[demo-remove] removing ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
 );
 console.info('\n[demo-remove] module folders:');
+// Delete each demo module's folder.
 for (const folder of removeModuleFolders(REPO_ROOT, demoModuleNames))
     console.info(`  ${folder}/ — deleted`);
 
@@ -74,6 +76,7 @@ console.info('  scripts/module-edges.ts — dropped their entries');
 console.info(`  ${removeManifest(REPO_ROOT).join(', ')} — deleted`);
 
 console.info('\n[demo-remove] cross-module specs:');
+// Remove the cross-module specs that walk a deleted module, and say why for each.
 for (const note of removeResidueSpecs(REPO_ROOT, demoModuleNames))
     console.info(`  ${note.file} — ${note.detail}`);
 
@@ -81,7 +84,9 @@ console.info('\n[demo-remove] done. Next:');
 console.info('  1. npm run type-check-only   — the module-owned specs are already gone');
 console.info('  2. npm run lint              — catches an import eslint-plugin-boundaries refused');
 
+/** Files that still import a deleted module, found by grep. */
 const residue = findResidueTests(demoModuleNames);
+// Name each leftover importer; fixing it is a human's call, not this script's.
 if (residue.length > 0) {
     console.info('\n[demo-remove] still importing a deleted module, from a grep:');
     for (const file of residue) console.info(`  ${file}`);

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * FE-D4 step 1, the frontend twin of the backend's `measure:demo-strip` (G-D2): how far "the demo
+ * The frontend twin of the backend's `measure:demo-strip`: how far "the demo
  * shop is removable" actually is, measured rather than assumed. Copies the checkout to a SCRATCH
  * directory, deletes every module `src/demo-modules.ts` names, and runs `type-check-only`, `lint`
  * and `build-only` against what's left.
@@ -47,7 +47,7 @@ interface Check {
     args: readonly string[];
 }
 
-/** `type-check-only`, `lint` and `build-only` — the three FE-D4 asks for. */
+/** `type-check-only`, `lint` and `build-only` — the three checks a stripped copy must pass. */
 const CHECKS: readonly Check[] = [
     { label: 'type-check-only', command: 'npm', args: ['run', 'type-check-only'] },
     { label: 'lint', command: 'npm', args: ['run', 'lint'] },
@@ -89,10 +89,14 @@ const stripDemoModules = (names: readonly string[]): void => {
  */
 const run = (check: Check): boolean => {
     console.info(`\n[demo-strip] ${check.label}`);
+    // Node `spawnSync(command, args, options)`: `cwd` runs the check inside the scratch copy;
+    // `stdio: 'inherit'` streams its output live.
+    // https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options
     const result = spawnSync(check.command, check.args, { cwd: SCRATCH, stdio: 'inherit' });
     return result.status === 0;
 };
 
+/** The demo modules to strip from the scratch copy. */
 const demoModuleNames = readDemoModuleNames(REPO_ROOT);
 console.info(
     `[demo-strip] stripping ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
@@ -101,12 +105,15 @@ console.info(
 assembleScratchCopy();
 stripDemoModules(demoModuleNames);
 
+/** Each check run against the stripped copy, with whether it passed. */
 const results = CHECKS.map((check) => ({ check, passed: run(check) }));
 
 console.info('\n[demo-strip] summary — report-only, not a merge gate:');
+// One PASS or FAIL line per check.
 for (const { check, passed } of results)
     console.info(`  ${passed ? 'PASS' : 'FAIL'}  ${check.label}`);
 
+/** True only when every check passed. */
 const allPassed = results.every((result) => result.passed);
 console.info(
     allPassed

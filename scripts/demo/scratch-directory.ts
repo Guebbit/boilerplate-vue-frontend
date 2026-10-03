@@ -23,6 +23,7 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+/** Parent of every demo scratch directory; short on purpose (see the header). */
 const CACHE_ROOT = path.join(os.homedir(), '.cache', 'boilerplate-vue-frontend-demo');
 
 /**

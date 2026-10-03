@@ -10,7 +10,7 @@
  * demo profile through the same runner, and with the variable unset this boots nothing at all.
  * See `resolveBackendDemoCommand`.
  *
- * FA130: pinned to {@link SINGLE_PROCESS_DEMO_PORT}, never whatever `NODE_PORT` happened to be
+ * Pinned to {@link SINGLE_PROCESS_DEMO_PORT}, never whatever `NODE_PORT` happened to be
  * set to. `start-server-and-test`'s readiness probe is a bare `GET` — it cannot tell "the demo
  * backend I just spawned" from "someone's `npm run host -- start` already sitting on :3000", and
  * the wrong one answering first makes the whole suite run against a live, unseeded backend
@@ -47,6 +47,7 @@ try {
     /* no .env in this checkout */
 }
 
+/** Spawns the backend demo command, forwarding signals and mirroring its exit code. */
 const boot = (argv: readonly string[]) => {
     // The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
     // `backend-demo-scratch-directory.ts` for the tmpfs it was filling.
@@ -63,7 +64,7 @@ const boot = (argv: readonly string[]) => {
             // callback and any emailed link redirect the browser at a port nothing is listening
             // on here.
             NODE_FRONTEND_URL: 'http://localhost:8085',
-            // FA130: this repo's own port, not whatever NODE_PORT happened to inherit from the
+            // This repo's own port, not whatever NODE_PORT happened to inherit from the
             // shell or `.env` — see SINGLE_PROCESS_DEMO_PORT's docstring. NODE_PORT: the Node
             // twin's own `demo` script. SERVER_PORT: Laravel's `artisan serve`, the same pairing
             // `run-shards.ts` already forwards both of for the sharded case.
@@ -94,8 +95,10 @@ const boot = (argv: readonly string[]) => {
     });
 };
 
+/** The command that boots the paired backend's demo profile, if one is configured. */
 const demoCommand = resolveBackendDemoCommand();
 
+// Boot it when configured; otherwise idle so the readiness wait has something to wait on.
 if (demoCommand) boot(demoCommand);
 else {
     /*

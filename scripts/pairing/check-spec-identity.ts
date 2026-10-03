@@ -40,6 +40,7 @@ import {
 /** The backend checkout to compare against: the shell's `BACKEND_PATH`, `.env`'s, or the default. */
 const siblingRoot = resolveBackendPath();
 
+// No sibling checkout: skipped locally, fatal under CI.
 if (!existsSync(siblingRoot)) {
     const message =
         `\n[spec-identity] No checkout found at ${siblingRoot}.\n` +
@@ -58,9 +59,13 @@ if (!existsSync(siblingRoot)) {
     process.exit(0);
 }
 
+/** Each shared file compared against its sibling counterpart. */
 const comparisons = compareSharedFiles(siblingRoot);
+
+/** The failure report, or nothing when every file matches. */
 const problems = formatSharedFileProblems(comparisons, siblingRoot);
 
+// Any mismatch fails the check.
 if (problems) {
     console.error(`\n[spec-identity] ${problems}\n`);
     process.exit(1);

@@ -7,13 +7,13 @@
  *
  * `foundation` ships with every deployment, whatever the next project turns this boilerplate
  * into. `shop` is the removable pet-supply demo domain — exactly `src/demo-modules.ts`'s
- * `DEMO_MODULE_NAMES` list, FE-D4's manifest for `npm run demo:remove`. `example` is the one
+ * `DEMO_MODULE_NAMES` list, the manifest for `npm run demo:remove`. `example` is the one
  * module that exists only to be copied; it mirrors the backend's `example` group and is not on
  * that list, so `demo:remove` leaves it.
  *
  * Read by `eslint.config.ts`'s `foundation-may-not-import-shop` rule and by the spec above. No
- * folder move follows from this — see `DECISIONS_0926_7_FRONTEND_LAYOUT.md`, "Folder split —
- * Answer": a label locks in a direction the imports already respect, nothing more.
+ * folder move follows from this: a label locks in a direction the imports already respect,
+ * nothing more.
  */
 
 /** One module's place on the axis. */

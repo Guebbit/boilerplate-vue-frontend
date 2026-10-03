@@ -69,6 +69,8 @@ const PEER_DIRECTORY = path.basename(DEFAULT_BACKEND_PATH);
  * make a run pass.
  */
 const MIN_PAGES = 65;
+
+/** Floor for the number of references found, for the same reason as {@link MIN_PAGES}. */
 const MIN_REFERENCES = 200;
 
 /**
@@ -491,6 +493,7 @@ const factFindings = (pages: DocumentPage[]): FactFinding[] => {
     ];
 };
 
+/** Runs the whole check and returns the process exit code. */
 const run = (): number => {
     const aliases = readAliases();
     const own = trackedTargets(ROOT);

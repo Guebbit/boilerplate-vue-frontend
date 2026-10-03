@@ -109,8 +109,10 @@ export const SHARED_FILES: readonly SharedFile[] = [
     }
 ] as const;
 
+/** How one shared file compares: identical, different, or absent on one side. */
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';
 
+/** One shared file's comparison result. */
 export interface SpecComparison {
     /** This repo's path for the file — what a reader of the failure message has to go open. */
     file: string;
