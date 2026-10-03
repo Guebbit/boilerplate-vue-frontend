@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'AddressFormDialog'
 };
@@ -33,6 +37,9 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  */
 const open = defineModel<boolean>({ default: false });
 
+/**
+ * Props: the entry to edit (absent means add) and the optional ship-to country list.
+ */
 const { editing, shipToCountries } = defineProps<{
     /**
      * The entry to prefill the form with, or `undefined` to add a new one. Read only when the
@@ -41,7 +48,7 @@ const { editing, shipToCountries } = defineProps<{
      */
     editing?: Address;
     /**
-     * Narrows the country select to this list (E12) — `AddressPicker.vue` passes the deployment's
+     * Narrows the country select to this list — `AddressPicker.vue` passes the deployment's
      * own ship-to list at checkout. Absent or empty, every ISO 3166-1 country is offered instead:
      * the Geo-blocking Regulation lets a shop restrict DELIVERY, not the address book itself, so
      * `ProfileAddresses.vue` never passes this and always gets the full list.
@@ -49,9 +56,16 @@ const { editing, shipToCountries } = defineProps<{
     shipToCountries?: string[];
 }>();
 
+/** Translator, and the active locale the country list is localized and sorted in. */
 const { t, locale } = useI18n();
+
+/** Toast dispatcher for the save outcome. */
 const { addMessage } = useNotificationsStore();
+
+/** Store actions the dialog saves through. */
 const { addAddress, updateAddress } = useAddressesStore();
+
+/** Reactive address book and its in-flight flag. */
 const { addresses, loading } = storeToRefs(useAddressesStore());
 
 /**
@@ -126,7 +140,7 @@ const formFrom = (address: Address | undefined): AddressForm =>
 const dialogTitleId = useId();
 
 /**
- * The country select's own options (E12): {@link shipToCountries} when the caller named one,
+ * The country select's own options: {@link shipToCountries} when the caller named one,
  * every ISO 3166-1 country otherwise — localized in the active locale and sorted by that label,
  * so the list reads correctly whatever language the visitor is in rather than in raw code order.
  */
@@ -260,7 +274,7 @@ const handleSave = () =>
                         autocomplete="address-level2"
                     />
                 </div>
-                <!-- The field holds an ISO 3166-1 alpha-2 code (E12); `autocomplete="country"`
+                <!-- The field holds an ISO 3166-1 alpha-2 code; `autocomplete="country"`
                      is the token the browser's own address autofill expects for that shape,
                      unlike `country-name`'s free text. `v-autocomplete` rather than `v-select`:
                      ~249 options is unusable without typing to filter. -->

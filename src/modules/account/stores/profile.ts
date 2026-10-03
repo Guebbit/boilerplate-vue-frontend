@@ -111,7 +111,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         );
 
     /**
-     * FA-D5: whether this store instance has already tried syncing a guest's cookie-held consent
+     * Whether this store instance has already tried syncing a guest's cookie-held consent
      * choice onto a freshly-authenticated account (see {@link syncGuestAnalyticsConsent}). Set
      * BEFORE the sync's own `PATCH /account` call, not after it resolves — so a slow request, or
      * one that somehow answers with `analyticsConsent` still absent, can never be retried by a
@@ -284,7 +284,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
-     * FA-D5: the one place a guest's cookie-held consent choice crosses over into the account —
+     * The one place a guest's cookie-held consent choice crosses over into the account —
      * a no-op unless ALL of: Umami is configured (so consent is asked at all), this account
      * has never recorded a preference of its own (`analyticsConsent` absent — signup always sends
      * one, so this is an OAuth signup or an admin-created account), the browser holds an answered
@@ -366,7 +366,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const updateOwnRole = (role: string) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         const userId = selectedIdentifier.value;
-        // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ role }` alone, and a PUT's every
+        // PATCH, not PUT: this sends `{ role }` alone, and a PUT's every
         // omitted field is cleared (RFC 9110 §9.3.4) — the wrong verb for a single-field change.
         return fetchAny(() => apiUpdateUserById(userId, { role }).then(() => fetchProfile(true)));
     };

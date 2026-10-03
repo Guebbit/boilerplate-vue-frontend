@@ -1,6 +1,6 @@
 /**
  * @module
- * `TwoFactorChallenge.vue`'s own accessibility fix (FA82): the visible ticking countdown is no
+ * `TwoFactorChallenge.vue`'s own accessibility fix: the visible ticking countdown is no
  * longer itself a live region — `use-countdown.spec.ts` already proves the announcement logic in
  * isolation, this proves the VIEW is actually wired to it — plus the "back to login" link an
  * expired challenge used to leave nobody without, a disabled submit button its only way forward.
@@ -31,6 +31,9 @@ const challengeExpiring = (expiresAt: string) => ({
     defaultMethod: 'email'
 });
 
+/**
+ * Mounts the 2FA challenge view with the real i18n and Vuetify.
+ */
 const mountChallenge = () =>
     mount(TwoFactorChallenge, {
         global: {

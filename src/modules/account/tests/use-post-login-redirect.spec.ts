@@ -7,13 +7,18 @@
  * A saved language preference must be applied by ROUTING to it, never by activating the i18n
  * runtime directly here — `localeChoice` is the one place that loads a locale's dictionary
  * (bundle plus any edited overrides), and a caller that activates first makes every switch look
- * like no switch at all to that guard (FA26). Every case below asserts `changeLanguage` was never
+ * like no switch at all to that guard. Every case below asserts `changeLanguage` was never
  * called, not only that navigation happened.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+/** Stub for the router's `push`. */
 const push = vi.fn(() => Promise.resolve());
+
+/** The mocked current route; a test sets its query. */
 const currentRoute = { query: {} as Record<string, unknown> };
+
+/** Stub for `changeLanguage`, which the composable must never call. */
 const changeLanguageMock = vi.fn(() => Promise.resolve());
 /** Mutable so a single test can simulate a signed-in profile with a saved locale. */
 const profileState: { profile: { locale?: string } | undefined } = { profile: undefined };
@@ -40,6 +45,7 @@ vi.mock('@/modules/account/stores/profile.ts', () => ({
     useProfileStore: () => profileState
 }));
 
+/** The composable under test, imported after the mocks above are in place. */
 const { usePostLoginRedirect } =
     await import('@/modules/account/composables/use-post-login-redirect.ts');
 
@@ -72,7 +78,7 @@ describe('redirectAfterLogin', () => {
     });
 
     /**
-     * The regression FA26 fixes: activating the language here, before navigating, made the guard
+     * The regression guarded here: activating the language here, before navigating, made the guard
      * see no change (the param it compares against was already flipped) and it never fetched the
      * locale's overrides. Routing with an explicit `params.locale` instead lets `localeChoice` do
      * that — this only proves the routing half, since the guard itself is `locale-choice.spec.ts`.

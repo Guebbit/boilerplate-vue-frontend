@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'TwoFactorChallengePage'
 };
@@ -73,7 +77,7 @@ const { secondsLeft: secondsUntilChallengeExpires } = useExpiryCountdown(
 );
 
 /**
- * The challenge countdown's OWN screen-reader announcement (FA82) — 60/30/10s and expired only,
+ * The challenge countdown's OWN screen-reader announcement — 60/30/10s and expired only,
  * never every tick. The visible ticking number beside it is not itself a live region.
  */
 const { announcement: challengeExpiryAnnouncement } = useCountdownAnnouncement(
@@ -268,7 +272,7 @@ onUnmounted(twoFactor.clearChallenge);
 
                     <!-- The challenge's own ticking countdown, distinct from the resend cooldown
                      above — NOT a live region: re-rendering `role="status"` every second is what
-                     used to flood a screen reader with "299… 298… 297…" (FA82). The paired live
+                     used to flood a screen reader with "299… 298… 297…". The paired live
                      region right below speaks only at 60/30/10s and expired. -->
                     <p class="mb-1 text-sm opacity-70">
                         {{

@@ -1,6 +1,6 @@
 /**
  * @module
- * This module's response-schema rows (FA55) — every operation the generated table
+ * This module's response-schema rows — every operation the generated table
  * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to backend
  * `account` or `addresses`, the latter owning no frontend module of its own (address-book screens
  * live here). {@link ResponseSchemaRoute}'s own docblock states the two rules every row obeys.

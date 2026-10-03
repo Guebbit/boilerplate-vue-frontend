@@ -124,7 +124,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
         });
 
     /**
-     * `Idempotency-Key` for `signup` (B10) — a network error or a 5xx during the round trip
+     * `Idempotency-Key` for `signup` — a network error or a 5xx during the round trip
      * resends the SAME key on retry, so a lost response never creates two accounts; any other
      * outcome (success, or a 422 like "email taken") mints a fresh one for the next attempt.
      */

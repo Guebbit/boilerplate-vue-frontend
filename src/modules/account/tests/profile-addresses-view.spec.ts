@@ -2,8 +2,8 @@
  * @module
  * `ProfileAddresses.vue`'s own save logic — scoped to what the store test
  * (`addresses.spec.ts`) does not cover: the create/update payload the component itself builds
- * from the dialog's fields. B4 (AUDIT_0924 D17c follow-through): emptying label or phone on an
- * EDIT must send `null` so the PATCH actually clears the field, not `''` (a 422 under D17c) nor
+ * from the dialog's fields. Emptying label or phone on an
+ * EDIT must send `null` so the PATCH actually clears the field, not `''` (a 422: the PATCH rule is "empty string invalid, `null` clears") nor
  * an omitted key (a PATCH no-op that leaves the old value in place).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,7 @@ import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
+/** An existing office entry the edit cases open. */
 const OFFICE = {
     id: 'a1',
     label: 'office',
@@ -35,7 +36,7 @@ const OFFICE = {
  * Stands in for the country `v-autocomplete` as a plain text input — same reasoning as
  * `record-offline-payment-form.spec.ts`'s own `VSelect` stub, an `<input>` rather than a
  * `<select>` specifically so it stays inside `dialogInputs`' positional `findAll('input')` at the
- * SAME index the real field held before E12 turned it from a `v-text-field` into a select.
+ * SAME index the real field held before it became a select (it was a `v-text-field`).
  */
 const V_COUNTRY_SELECT_STUB = {
     props: ['modelValue'],

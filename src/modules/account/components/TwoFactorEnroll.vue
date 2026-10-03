@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'TwoFactorEnroll'
 };
@@ -122,6 +126,11 @@ onMounted(() => {
  */
 const qrCodeDataUrl = ref<string>();
 
+/**
+ * Re-renders the QR image whenever the setup URI changes. `immediate: true` also runs it once for
+ * a URI that is already there when the component mounts.
+ * https://vuejs.org/api/reactivity-core.html#watch
+ */
 watch(
     () => setup.value?.otpauthUri,
     (uri) => {
@@ -142,7 +151,7 @@ const { secondsLeft: secondsUntilSetupExpires } = useExpiryCountdown(
 );
 
 /**
- * The delivered code's OWN screen-reader announcement (FA82) — 60/30/10s and expired only, never
+ * The delivered code's OWN screen-reader announcement — 60/30/10s and expired only, never
  * every tick. The visible ticking number beside it is not itself a live region.
  */
 const { announcement: setupExpiryAnnouncement } = useCountdownAnnouncement(
@@ -219,7 +228,7 @@ const handleConfirm = () => {
                     {{ t('two-factor.setup-email-intro', { target: setup.sentTo }) }}
                 </p>
                 <!-- Ticking countdown, NOT a live region — re-rendering `role="status"` every
-                     second is what used to flood a screen reader with "59… 58… 57…" (FA82). The
+                     second is what used to flood a screen reader with "59… 58… 57…". The
                      paired live region right below speaks only at 60/30/10s and expired. -->
                 <p v-if="delivery" class="mb-1 text-sm opacity-70">
                     {{

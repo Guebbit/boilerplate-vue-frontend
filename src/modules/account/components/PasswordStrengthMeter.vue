@@ -20,6 +20,7 @@ const props = defineProps<{
     password: string;
 }>();
 
+/** Translator for the meter's labels. */
 const { t } = useI18n();
 
 /**

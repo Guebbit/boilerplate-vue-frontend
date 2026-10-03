@@ -1,6 +1,6 @@
 /**
  * @module
- * `AddressFormDialog.vue`'s country select (E12) — scoped to what neither `ProfileAddresses.vue`
+ * `AddressFormDialog.vue`'s country select — scoped to what neither `ProfileAddresses.vue`
  * nor `AddressPicker.vue`'s own suites cover: the options `v-autocomplete` actually renders,
  * narrowed or not. Reads `VAutocomplete`'s own `items` prop rather than driving its overlay open —
  * the same "assert what was passed down" idiom `stock-movement-form.spec.ts` documents for a
@@ -65,7 +65,7 @@ describe('AddressFormDialog — country select', () => {
         );
     });
 
-    it('narrows the select to the deployment ship-to list at checkout (E12)', () => {
+    it('narrows the select to the deployment ship-to list at checkout', () => {
         const options = countryOptions(mountDialog({ shipToCountries: ['IT', 'FR'] }));
 
         expect(options.map((option) => option.value).toSorted()).toEqual(['FR', 'IT']);

@@ -25,8 +25,10 @@ import {
 
 wireModulesIntoCore();
 
+/** Milliseconds the fake timers advance so the debounced breach check fires. */
 const DELAY = 500;
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [

@@ -72,6 +72,9 @@ const calls = () =>
  */
 const signupRequest = () => calls().findLast((call) => call.url === '/account/signup');
 
+/**
+ * Mounts the signup page with the real i18n and Vuetify; the human check is stubbed.
+ */
 const mountSignup = () =>
     mount(Signup, {
         global: {
@@ -83,12 +86,15 @@ const mountSignup = () =>
     });
 
 /**
+ * A password that satisfies the form's strength rules.
+ */
+const VALID_PASSWORD = 'Str0ng!Passw0rd';
+
+/**
  * Fills in a minimally valid signup form and submits it.
  *
  * @param wrapper - The mounted page.
  */
-const VALID_PASSWORD = 'Str0ng!Passw0rd';
-
 const fillAndSubmit = (wrapper: ReturnType<typeof mountSignup>) => {
     const passwordFields = wrapper.findAll('input[type=password]');
     return wrapper

@@ -14,6 +14,7 @@ import type { Session } from '@types';
 
 wireModulesIntoCore();
 
+/** A session that is not the current one. */
 const SESSION: Session = {
     id: 's1',
     current: false,
@@ -40,6 +41,7 @@ vi.mock('@/modules/account/stores/auth.ts', () => ({
     useAuthStore: () => ({ logoutEverywhere: vi.fn() })
 }));
 
+/** Memory-history router with no routes: the list only needs an instance. */
 const router = createRouter({ history: createMemoryHistory(), routes: [] });
 
 describe('the sessions list', () => {

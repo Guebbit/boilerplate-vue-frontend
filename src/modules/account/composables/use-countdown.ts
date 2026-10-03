@@ -85,7 +85,7 @@ export const useExpiryCountdown = (expiresAt: Ref<string | undefined>) =>
 
 /**
  * Whole-second marks {@link useCountdownAnnouncement} speaks at — not every tick, which is what
- * floods a screen reader (FA82). `0` doubles as "expired".
+ * floods a screen reader. `0` doubles as "expired".
  *
  * Ascending, not the 60/30/10/expired order a reader hears them in: the lookup below wants the
  * TIGHTEST mark still `>=` the current second count, which `Array#find`'s first-match semantics

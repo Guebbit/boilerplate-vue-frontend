@@ -17,6 +17,7 @@ import type { Address } from '@types';
 
 wireModulesIntoCore();
 
+/** Builds an address entry, with any field overridden. */
 const anAddress = (overrides: Partial<Address> = {}): Address => ({
     id: 'a1',
     fullName: 'Ada Lovelace',

@@ -1,6 +1,6 @@
 /**
  * @module
- * `TwoFactorEnroll.vue`'s own accessibility fix (FA82): the same live-region split as
+ * `TwoFactorEnroll.vue`'s own accessibility fix: the same live-region split as
  * `two-factor-challenge-view.spec.ts` proves for the login challenge, for a delivered method's
  * setup code — `use-countdown.spec.ts` already proves the shared announcement logic itself.
  */
@@ -18,6 +18,7 @@ import {
 
 wireModulesIntoCore();
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -27,6 +28,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/**
+ * Mounts the enroll step for the email method, with its setup answer already canned.
+ */
 const mountEnroll = () => {
     responses = {
         'POST /account/2fa/methods/email/setup': orvalEnvelope({

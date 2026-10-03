@@ -68,6 +68,7 @@ const requestLog = () =>
     });
 
 describe('useAddressesStore', () => {
+    /** The default entry the mocked address book starts with. */
     const HOME = {
         id: 'a1',
         label: 'home',
@@ -78,6 +79,8 @@ describe('useAddressesStore', () => {
         country: 'US',
         default: true
     };
+
+    /** A second, non-default entry. */
     const WORK = {
         id: 'a2',
         label: 'office',

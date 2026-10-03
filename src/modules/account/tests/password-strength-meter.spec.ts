@@ -13,12 +13,14 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 
 wireModulesIntoCore();
 
+/** The score the mocked composable reports; unset means not yet scored. */
 const score = ref<0 | 1 | 2 | 3 | 4>();
 
 vi.mock('@/modules/account/composables/use-password-strength.ts', () => ({
     usePasswordStrength: () => ({ score })
 }));
 
+/** Mounts the meter for one password. */
 const mountMeter = (password: string) =>
     mount(PasswordStrengthMeter, { props: { password }, global: { plugins: [i18n, vuetify] } });
 

@@ -88,7 +88,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAny(() => apiAddAddress(address).then(() => reloadBook()));
 
     /**
-     * Updates one entry through PATCH (AUDIT_0924 D17d), then reloads the book. The default is
+     * Updates one entry through PATCH, then reloads the book. The default is
      * not a field of one address: `setDefaultAddress` moves it.
      *
      * @param addressId - Which entry.

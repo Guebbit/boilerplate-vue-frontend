@@ -14,6 +14,7 @@ import type { PasswordCheckEnvelope } from '@types';
 
 vi.mock('@api', () => ({ checkPasswordBreached: vi.fn() }));
 
+/** Milliseconds the fake timers advance so the debounced check fires. */
 const DELAY = 500;
 
 /** The real success envelope `checkPasswordBreached` resolves with. */

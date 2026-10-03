@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ProfileExportData'
 };
@@ -52,6 +56,8 @@ const handleExport = () => {
     return exportAccountData()
         .then((data) => {
             if (!data) return;
+            // js-toolkit `downloadBlob(data, filename, type)`: wraps the string in a Blob of
+            // MIME `type` and saves it under `filename` through a throwaway link.
             downloadBlob(
                 JSON.stringify(data, null, 2),
                 `account-export-${data.exportedAt.slice(0, 10)}.json`,

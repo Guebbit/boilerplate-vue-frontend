@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ProfilePage'
 };
@@ -214,7 +218,7 @@ const {
 );
 
 /**
- * Whether a save is in flight — the submit button spins and refuses a second one (FA52): this
+ * Whether a save is in flight — the submit button spins and refuses a second one: this
  * form calls `validate`/`revealErrors` by hand instead of the toolkit's `handleSubmit`, which is
  * where {@link isSubmitting} would otherwise come from.
  */

@@ -192,7 +192,7 @@ describe('the email field, and a pending change', () => {
             .then(() => {
                 const patch = lastAccountPatch();
                 // Same "absent means untouched" proof as the consent switch above — this is the
-                // actual bug B5 fixes: a routine save silently cancelling a pending email change.
+                // actual bug being guarded: a routine save silently cancelling a pending email change.
                 expect(JSON.stringify(patch?.data)).not.toContain('"email"');
             });
     });

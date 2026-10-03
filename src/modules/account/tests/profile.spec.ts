@@ -75,10 +75,10 @@ beforeEach(() => {
         }),
         'DELETE /account': orvalEnvelope(),
         'DELETE /account/delete-confirm': orvalEnvelope(),
-        // PATCH, not PUT (AUDIT_0924 D17d) — `updateProfile` sends only the fields it was given.
+        // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
-        // PATCH, not PUT (AUDIT_0924 D17d) — this call sends `{ role }` alone.
+        // PATCH, not PUT — this call sends `{ role }` alone.
         'PATCH /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
@@ -235,7 +235,7 @@ describe('own role', () => {
             .fetchProfile(true)
             .then(() => store.updateOwnRole('admin'))
             .then(() => {
-                // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ role }` alone, and a PUT's
+                // PATCH, not PUT: this sends `{ role }` alone, and a PUT's
                 // every omitted field would be cleared instead (RFC 9110 §9.3.4).
                 const patch = vi
                     .mocked(orvalMutator)

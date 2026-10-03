@@ -14,7 +14,7 @@ import { expectMailTemplate, mailedLinkUrl } from '../../../../../tests/support/
 
 /**
  * Fills the address dialog's six required inputs and saves. The country field is a
- * `v-autocomplete` (E12, ISO 3166-1 codes, ~249 of them) — typed into to filter down to "Italy"
+ * `v-autocomplete` (ISO 3166-1 codes, ~249 of them) — typed into to filter down to "Italy"
  * rather than scrolled, since the full list is not all rendered at once.
  */
 const fillAddress = (label: string, street: string) => {

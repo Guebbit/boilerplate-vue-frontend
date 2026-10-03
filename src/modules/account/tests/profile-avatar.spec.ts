@@ -4,7 +4,7 @@
  * `imageUpload` switches to, progress forwarded through to the transport, and the plain-JSON
  * `imageUrl: null` remove path, and the per-path loading keys the two buttons spin on.
  * `profile.spec.ts` covers every other field of the same action; this file is only about the
- * picture, which is why it is split out — same split the plan's testing table draws.
+ * picture, which is why it is split out.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -22,8 +22,10 @@ import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
+/** The signed-in user the profile store starts from. */
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -81,7 +83,7 @@ beforeEach(() => {
             version: 36,
             subjects: ['Order', 'Product']
         }),
-        // PATCH, not PUT (AUDIT_0924 D17d) — `updateProfile` sends only the fields it was given.
+        // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': orvalEnvelope({ ...USER, imageUrl: undefined })
     };
 });

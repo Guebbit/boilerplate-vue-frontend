@@ -17,6 +17,8 @@ import type { ZxcvbnFactory } from '@zxcvbn-ts/core';
  * https://github.com/zxcvbn-ts/zxcvbn#setup
  */
 let zxcvbnPromise: Promise<ZxcvbnFactory> | undefined;
+
+/** Resolves the shared zxcvbn instance, building it on the first call. */
 const loadZxcvbn = (): Promise<ZxcvbnFactory> => {
     zxcvbnPromise ??= Promise.all([
         import('@zxcvbn-ts/core'),
@@ -25,6 +27,10 @@ const loadZxcvbn = (): Promise<ZxcvbnFactory> => {
     ])
         .then(
             ([{ ZxcvbnFactory }, commonPackage, enPackage]) =>
+                // zxcvbn-ts `new ZxcvbnFactory(options)`: `dictionary` = word lists to match
+                // against, `graphs` = keyboard adjacency for pattern detection,
+                // `translations` = the feedback wording.
+                // https://zxcvbn-ts.github.io/zxcvbn/guide/getting-started/
                 new ZxcvbnFactory({
                     dictionary: {
                         ...commonPackage.dictionary,

@@ -1,6 +1,6 @@
 /**
  * @module
- * Mounts the real `ProfileTwoFactor.vue`/`TwoFactorEnroll.vue` pair: FA14's "never park a secret
+ * Mounts the real `ProfileTwoFactor.vue`/`TwoFactorEnroll.vue` pair: the "never park a secret
  * in a store" fix. The TOTP secret and the one-time backup codes must render from a component-
  * local ref fed by the setup/confirm call's own response — never from `useTwoFactorStore()`, which
  * `two-factor-store.spec.ts` already pins as holding neither field. Every assertion reads off
@@ -29,6 +29,7 @@ vi.mock('@/ui/dialog.ts', () => ({
     useDialogStore: () => ({ confirm: () => Promise.resolve(true) })
 }));
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({

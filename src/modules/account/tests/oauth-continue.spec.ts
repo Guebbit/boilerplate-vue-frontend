@@ -1,6 +1,6 @@
 /**
  * @module
- * FA15's OAuth half: `Login.vue`/`Signup.vue` must forward the page's own `?continue=` onto every
+ * The OAuth half of the post-login redirect: `Login.vue`/`Signup.vue` must forward the page's own `?continue=` onto every
  * OAuth button's `href`, through the real `oauthStartUrl` (`oauth.spec.ts` already pins that
  * function's own `?continue=` encoding). The provider list is real too, off a mocked
  * `GET /account/oauth/providers` — same as `oauth.spec.ts`'s own transport mock — so the button
@@ -24,6 +24,7 @@ import {
 
 wireModulesIntoCore();
 
+/** Canned responses per `METHOD /url` key: one OAuth provider, `google`. */
 const RESPONSES: Record<string, unknown> = {
     'GET /account/oauth/providers': orvalEnvelope({ providers: ['google'] })
 };
@@ -35,6 +36,7 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/** The mocked route's query string, set per test. */
 let currentQuery: Record<string, unknown> = {};
 
 vi.mock('vue-router', () => ({

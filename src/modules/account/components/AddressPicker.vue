@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'AddressPicker'
 };
@@ -33,6 +37,9 @@ const SAME_AS_SHIPPING = 'same-as-shipping';
  */
 const addressId = defineModel<string | undefined>();
 
+/**
+ * Props: which address this picks, the same-as-shipping option and the ship-to country list.
+ */
 const {
     purpose = 'shipping',
     sameAsShipping,
@@ -49,14 +56,17 @@ const {
      */
     sameAsShipping?: boolean;
     /**
-     * Narrows the add-address dialog's country select to this list (E12) — `Cart.vue` reads it
+     * Narrows the add-address dialog's country select to this list — `Cart.vue` reads it
      * off `ShippingSelector` and forwards it here, so checkout never offers a country the shop
      * cannot deliver to. Forwarded to `AddressFormDialog.vue` as-is.
      */
     shipToCountries?: string[];
 }>();
 
+/** Translator for the picker's copy. */
 const { t } = useI18n();
+
+/** Unique id that ties the title to the radio group (`aria-labelledby`). */
 const titleId = useId();
 
 /**

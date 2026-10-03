@@ -2,7 +2,7 @@
  * @module
  * `use-countdown.ts` — `useCountdown`'s own ticking is already exercised through the store
  * (`two-factor-store.spec.ts`'s "the resend countdown"); this covers `useCountdownAnnouncement`
- * (FA82) directly: a screen reader must hear 60/30/10s and "expired", never every one of 300
+ * directly: a screen reader must hear 60/30/10s and "expired", never every one of 300
  * individual ticks a five-minute challenge counts through.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -12,8 +12,11 @@ import { useCountdownAnnouncement } from '@/modules/account/composables/use-coun
 
 /** Renders a threshold into the same shape a caller's own i18n `message` callback would. */
 const message = (seconds: number) => `expires in ${seconds}s`;
+
+/** Stand-in for the translated "expired" text. */
 const expiredMessage = () => 'expired';
 
+/** Effect scope each test runs the composable in, stopped after it. */
 let scope: EffectScope;
 
 beforeEach(() => {

@@ -10,7 +10,10 @@ import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordC
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the store's `changePassword` action; resolves on success. */
 const changePassword = vi.fn(() => Promise.resolve());
+
+/** Stub for the sessions refetch the form triggers after a password change. */
 const fetchSessions = vi.fn();
 
 vi.mock('@/modules/account/stores/profile.ts', () => ({
@@ -21,8 +24,10 @@ vi.mock('@/modules/account/stores/sessions.ts', () => ({
     useAccountSessionsStore: () => ({ fetchSessions })
 }));
 
+/** A password that satisfies the form's rules. */
 const NEW_PASSWORD = 'Passw0rd!';
 
+/** Mounts the password-change form with a real Pinia and the app's i18n and Vuetify. */
 const mountForm = () =>
     mount(ProfilePasswordChange, { global: { plugins: [createPinia(), vuetify, i18n] } });
 

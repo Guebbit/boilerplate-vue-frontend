@@ -1,6 +1,6 @@
 /**
  * @module
- * Unit tests for the "set as default" checkbox in the add-address dialog (FE_PARITY_0924 A3):
+ * Unit tests for the "set as default" checkbox in the add-address dialog:
  * hidden on an empty book (the first address is always the default server-side already), hidden
  * again while editing an existing entry, and — when it IS shown and checked — the only field it
  * adds is `default: true`, never `false`. `addresses.spec.ts` covers the store's own PATCH/POST
@@ -36,6 +36,7 @@ const HOME = {
     default: true
 };
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({

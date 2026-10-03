@@ -30,9 +30,11 @@ interface RejectWith {
     __reject: unknown;
 }
 
+/** Whether a canned response should reject instead of resolve. */
 const isRejectWith = (value: unknown): value is RejectWith =>
     typeof value === 'object' && value !== null && '__reject' in value;
 
+/** Canned response per `METHOD /url` key; a `{ __reject }` entry makes the call reject. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -46,9 +48,11 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/** URLs of every request the mocked transport has seen, in call order. */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 
+/** The status answer for an account with two-factor off. */
 const STATUS_OFF = orvalEnvelope({
     enabled: false,
     methods: [],

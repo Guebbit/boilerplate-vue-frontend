@@ -1,6 +1,6 @@
 /**
  * @module
- * FA-D5's login-time sync: a guest who answered the consent banner and then authenticates into an
+ * The login-time consent sync: a guest who answered the consent banner and then authenticates into an
  * account that has never recorded a preference of its own (`analyticsConsent` absent) gets that
  * choice saved via `PATCH /account`, exactly once. Mocks only the transport, same pattern as
  * `profile.spec.ts`; the guest choice itself goes through the real `useAnalyticsConsentStore`.
@@ -25,6 +25,7 @@ wireModulesIntoCore();
  */
 const NEVER_ASKED_USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({

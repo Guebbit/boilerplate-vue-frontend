@@ -169,7 +169,7 @@ describe('Authentication', () => {
         });
 
         /**
-         * FA123: `cy.switchUser` — logout then login as someone else, in the SAME tab. A page
+         * `cy.switchUser` — logout then login as someone else, in the SAME tab. A page
          * reload (`cy.visit`, `cy.reload`) hands the app iframe a fresh `window`, so a marker
          * planted before the switch surviving it IS the proof there was none — the same
          * technique `resilience.cy.ts` uses to catch console noise across a page's lifetime.
