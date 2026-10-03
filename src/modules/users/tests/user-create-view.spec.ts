@@ -38,8 +38,7 @@ const mountPage = () => {
     const create = vi.spyOn(useUsersStore(), 'createUser');
     const wrapper = mount(UserCreate, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     return { wrapper, create };

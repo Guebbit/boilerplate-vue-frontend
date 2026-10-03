@@ -113,8 +113,7 @@ describe('ProductEdit — the translations link, with the route gone', () => {
             mount(ProductEdit, {
                 props: { id: 'p1' },
                 global: {
-                    plugins: [routerWithoutTranslations, vuetify, i18n],
-                    stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                    plugins: [routerWithoutTranslations, vuetify, i18n]
                 }
             });
 
@@ -135,8 +134,7 @@ describe('ProductEdit — the translations link, with the route and the permissi
         const wrapper = mount(ProductEdit, {
             props: { id: 'p1' },
             global: {
-                plugins: [routerWithTranslations, vuetify, i18n],
-                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                plugins: [routerWithTranslations, vuetify, i18n]
             }
         });
         await flushPromises();

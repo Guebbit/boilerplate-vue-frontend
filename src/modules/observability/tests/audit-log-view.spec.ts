@@ -30,7 +30,6 @@ const mountAuditLog = () =>
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 AdminAuditTab: true
             }
         }

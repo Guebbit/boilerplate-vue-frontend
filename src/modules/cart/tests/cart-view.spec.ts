@@ -167,7 +167,6 @@ const mountCart = () => {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 ShippingSelector: ShippingSelectorStub,
                 AddressPicker: AddressPickerStub,
                 PaymentMethodSelector: { template: '<div />' }
@@ -357,7 +356,6 @@ describe('the checkout refusals', () => {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
-                    LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: {
                         props: ['modelValue'],
                         emits: ['update:modelValue'],
@@ -425,7 +423,6 @@ describe('the checkout payload', () => {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
-                    LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: ShippingSelectorStub,
                     AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }
@@ -551,7 +548,6 @@ describe('the checkout payload — billing', () => {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
-                    LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: CourierStub,
                     AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }
@@ -598,7 +594,6 @@ describe('the checkout payload — billing', () => {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
-                    LayoutDefault: { template: '<div><slot /></div>' },
                     // An empty book: the picker has nothing to pre-choose.
                     AddressPicker: { template: '<div data-test="billing-address-picker" />' },
                     PaymentMethodSelector: { template: '<div />' }
@@ -678,7 +673,6 @@ describe('a cart with nothing to ship', () => {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
-                    LayoutDefault: { template: '<div><slot /></div>' },
                     ShippingSelector: { template: '<div data-test="shipping-selector" />' },
                     AddressPicker: AddressPickerStub,
                     PaymentMethodSelector: { template: '<div />' }

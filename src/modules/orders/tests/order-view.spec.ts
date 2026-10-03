@@ -81,7 +81,6 @@ const mountOrder = (order: OrderType) => {
             // available — decoration on this page, not what is under test, and there is no
             // mocked transport here for either to talk to.
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 PaymentPanel: true,
                 ShipmentPanel: true,
                 WithdrawalPanel: true

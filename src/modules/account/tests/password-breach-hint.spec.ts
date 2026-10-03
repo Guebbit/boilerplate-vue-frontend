@@ -61,8 +61,7 @@ const mountPasswordChangeForm = () =>
 const mountPasswordResetPage = () =>
     mount(PasswordResetConfirm, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
 
@@ -72,7 +71,6 @@ const mountSignupPage = () =>
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 // `RouterLink` targets app-level static-page routes this test's module-only
                 // router never registers — irrelevant to the breach hint under test.
                 RouterLink: true,

@@ -59,8 +59,7 @@ const mountWithRows = async () => {
     );
     const wrapper = mount(UsersList, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     await flushPromises();

@@ -108,8 +108,7 @@ const mountRefused = () => {
     const wrapper = mount(ProductEdit, {
         props: { id: 'p1' },
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     return flushPromises().then(() => wrapper);

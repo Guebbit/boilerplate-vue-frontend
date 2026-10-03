@@ -66,8 +66,7 @@ const mountProduct = (product: ProductType, contributions: Component[] = []) => 
         global: {
             plugins: [router, vuetify, i18n],
             // An `InjectionKey` is a typed symbol; the mount options want the plain one.
-            provide: { [SLOTS_KEY as symbol]: { 'product-actions': contributions } },
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            provide: { [SLOTS_KEY as symbol]: { 'product-actions': contributions } }
         }
     });
 };

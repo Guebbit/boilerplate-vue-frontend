@@ -95,7 +95,7 @@ const mountPage = () =>
         props: { id: 'u1' },
         global: {
             plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' }, UserAccessDialog: true }
+            stubs: { UserAccessDialog: true }
         }
     });
 

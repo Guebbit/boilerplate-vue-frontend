@@ -65,8 +65,7 @@ const mountWishlist = (productIds: string[]) => {
 
     return mount(Wishlist, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
 };

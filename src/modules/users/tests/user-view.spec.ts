@@ -75,8 +75,7 @@ const mountUser = (user: UserType) => {
     return mount(User, {
         props: { id: user.id },
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
 };
@@ -132,8 +131,7 @@ describe('the "History" link', () => {
                 const wrapper = mount(User, {
                     props: { id: A_USER.id },
                     global: {
-                        plugins: [noAdminRouter, vuetify, i18n],
-                        stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                        plugins: [noAdminRouter, vuetify, i18n]
                     }
                 });
 

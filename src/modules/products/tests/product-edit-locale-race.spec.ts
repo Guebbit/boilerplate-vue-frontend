@@ -111,7 +111,6 @@ describe('the edit form under a locales-before-admin-record race', () => {
             props: { id: 'p1' },
             global: {
                 plugins: [router, vuetify, i18n],
-                stubs: { LayoutDefault: { template: '<div><slot /></div>' } },
                 // Without this, a render error thrown from Vue's own reactivity flush (exactly
                 // what the bug produces) never reaches this spec as a rejection — it is only
                 // observable through the handler.

@@ -73,7 +73,7 @@ const mountPage = () => {
         attachTo: document.body,
         global: {
             plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' }, VSelect: V_SELECT_STUB }
+            stubs: { VSelect: V_SELECT_STUB }
         }
     });
     return { wrapper, update };

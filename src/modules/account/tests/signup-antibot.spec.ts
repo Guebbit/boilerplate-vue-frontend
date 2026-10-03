@@ -77,7 +77,6 @@ const mountSignup = () =>
         global: {
             plugins: [vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 HumanCheck: HumanCheckStub
             }
         }
