@@ -1,6 +1,6 @@
 /**
  * @module
- * Guest analytics consent (FA-D5): unknown / granted / denied, persisted in a first-party cookie
+ * Guest analytics consent: unknown / granted / denied, persisted in a first-party cookie
  * the same way `session.ts` persists `isAuth`/`rememberMe` — through `@guebbit/js-toolkit`'s
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
  * Gated by Umami being configured (`isAnalyticsConsentEnabled`): the banner, the footer link and
@@ -56,6 +56,8 @@ const readStoredChoice = (): AnalyticsConsentChoice => {
  * @param choice - The value to persist.
  */
 const writeStoredChoice = (choice: Exclude<AnalyticsConsentChoice, 'unknown'>) => {
+    // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
+    // `sameSite: 'Lax'` = sent on top-level navigations only. `secure` follows the page's protocol.
     setCookie(COOKIE_NAME, choice, {
         days: COOKIE_DAYS,
         path: '/',

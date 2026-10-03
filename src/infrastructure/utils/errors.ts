@@ -90,7 +90,7 @@ export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
  *
  * Nothing conclusive happened server-side either way: a transport failure never reached the
  * server at all, and a 5xx means the server itself failed before it could act — in both cases the
- * caller's next attempt is still the SAME attempt, not a new one (B19). A 4xx is different: the
+ * caller's next attempt is still the SAME attempt, not a new one. A 4xx is different: the
  * server read the request and refused it for a reason that will not go away on its own, so the
  * next click is a genuinely new attempt and needs a fresh key.
  *

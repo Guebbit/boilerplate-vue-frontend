@@ -43,6 +43,8 @@ export const readThemePreference = (): ThemePreference | undefined => {
  * @param theme - The value to persist.
  */
 export const writeThemePreference = (theme: ThemePreference): void => {
+    // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
+    // `sameSite: 'Lax'` = sent on top-level navigations only. `secure` follows the page's protocol.
     setCookie(COOKIE_NAME, theme, {
         days: COOKIE_DAYS,
         path: '/',

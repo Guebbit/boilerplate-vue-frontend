@@ -3,7 +3,7 @@
  * Route table mapping method+URL patterns to Zod response schemas, checked by exact regex match
  * against the request's pathname. Core rows and module rows both arrive through
  * {@link loadResponseSchemas} — never a static import of `@api/schemas` — so the ~350 KB Zod
- * contract (FA94) lands in its own lazy chunk instead of every entry bundle. See `main.ts` for
+ * contract lands in its own lazy chunk instead of every entry bundle. See `main.ts` for
  * where that load is kicked off.
  */
 
@@ -17,7 +17,7 @@ import { ROUTES } from '@api/routes';
  *
  * A row names a URL, so it is domain knowledge: each module declares its own in
  * `src/modules/<name>/response-schemas.ts` and contributes them through its manifest, by filtering
- * {@link routesForModules} down to the backend `x-module` name(s) it owns (FA55) — `orders` also
+ * {@link routesForModules} down to the backend `x-module` name(s) it owns — `orders` also
  * claims backend `invoicing`, `account` also claims backend `addresses`, since neither owns an FE
  * module of its own; see each module's own file for its exact list. This file owns the mechanism
  * and the few rows no domain claims — so drift is structural, not clerical.
@@ -63,7 +63,7 @@ export interface ResponseSchemaRoute {
 }
 
 /**
- * Backend `x-module` names with no owning frontend module at all (FA55) — `antibot`'s public
+ * Backend `x-module` names with no owning frontend module at all — `antibot`'s public
  * config/challenge (rendered by whichever form is being guarded, not a module of its own) and
  * `audit-logs`' shop-scoped trail (`GET /audit`: `observability`'s `use-audit-trail` reads it, but
  * no module's own `response-schemas.ts` claims it, so it stays on this shelf). A row here moves
@@ -117,7 +117,7 @@ const resolveGeneratedSchema = (
 /**
  * A module's own rows: every generated row whose backend `x-module` is in `ownedBackendModules`,
  * resolved against the real schemas namespace. The one call every `src/modules/<name>/
- * response-schemas.ts` makes (FA55) — see this file's own header for which modules own more than
+ * response-schemas.ts` makes — see this file's own header for which modules own more than
  * their own name, and {@link SESSION_AND_BOOT_SCHEMA_NAMES} for the handful excluded even so.
  *
  * @param schemas - the generated `@api/schemas` namespace, already resolved
@@ -194,7 +194,7 @@ export const isResponseSchemaTableLoading = (): boolean => !schemasReady;
  * Resolves every response-schema row this app validates against — the core rows above plus each
  * enabled module's own — and installs them.
  *
- * The one place `@api/schemas` (and the zod it pulls in, ~350 KB together — FA94/FA-D2) is
+ * The one place `@api/schemas` (and the zod it pulls in, ~350 KB together) is
  * imported: a single dynamic `import()`, shared by every module's own `response-schemas.ts`
  * loader through Vite's normal chunk deduplication, so the contract is fetched once no matter how
  * many rows need it. Callers gate this behind `shouldValidateResponses()` — there is no point

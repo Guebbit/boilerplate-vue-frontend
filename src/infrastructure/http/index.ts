@@ -20,6 +20,9 @@ import {
 } from './validate.ts';
 import type { AxiosRequestConfig } from 'axios';
 
+// axios `interceptors.<side>.use(onFulfilled, onRejected)`: a handler is skipped by passing
+// `undefined`. Request interceptors run last-registered first; response ones in registration order.
+// https://axios-http.com/docs/interceptors
 instance.interceptors.request.use(onRequest, onRequestReject);
 // After `onRequest`: only reads and adds a header, so the order with auth is not load-bearing —
 // kept beside it so both request-side wirings are found together.

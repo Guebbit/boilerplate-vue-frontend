@@ -75,7 +75,7 @@ export const formatDate = (value?: string | null) =>
  * No default: the shop's currency is configurable (`NODE_DEFAULT_CURRENCY`), and every money
  * resource (`Product`, `Order`, `ShippingMethod`, the cart's `summary`, `Payment`) now carries its
  * own `currency` — a call site that forgot to read it is a bug, not a case to paper over with a
- * silent EUR (FA37).
+ * silent EUR.
  *
  * @param value - Amount to format; non-numbers yield the fallback glyph.
  * @param currency - ISO 4217 currency code, from the same resource `value` was read off.

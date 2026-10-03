@@ -58,7 +58,7 @@ export const shouldValidateRequests = (): boolean => {
 /**
  * Whether a mismatch reports (production) rather than rejects (dev, unit, every e2e profile).
  *
- * Decided (FA-D2 = C): one added optional field on the backend must not turn into an outage for
+ * One added optional field on the backend must not turn into an outage for
  * every deployed frontend before it redeploys — production still catches drift, it just never
  * blocks a call on it. Unknown keys are stripped rather than rejected for the same reason; a
  * missing or mistyped field is still a real defect, so it is still reported, just not thrown.
@@ -92,7 +92,7 @@ export const validateResponseAgainstContract = (
 ): void => {
     const mappedSchema = resolveResponseSchema(config.method, config.url);
     if (!mappedSchema) {
-        // The lazy schema chunk (FA94/FA-D2) is still loading: every route reads as unmapped
+        // The lazy schema chunk is still loading: every route reads as unmapped
         // during this window, not just the ones that genuinely have no row — stay quiet rather
         // than warn about a gap that closes itself in a moment.
         if (!isResponseSchemaTableLoading()) {

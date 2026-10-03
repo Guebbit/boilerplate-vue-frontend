@@ -216,6 +216,9 @@ export const useObservabilityStore = defineStore('observability', () => {
             import('@grafana/faro-web-tracing')
         ])
             .then(([{ initializeFaro, getWebInstrumentations }, { TracingInstrumentation }]) => {
+                // Faro Web SDK `initializeFaro`: `url` = the Alloy Faro receiver, `app` tags every
+                // signal, `instrumentations` = web defaults + tracing.
+                // https://github.com/grafana/faro-web-sdk
                 faro = initializeFaro({
                     url: config.url,
                     app: {

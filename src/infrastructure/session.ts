@@ -181,6 +181,8 @@ const secureAttribute = () => (location.protocol === 'https:' ? '; Secure' : '')
  */
 const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
     const maxAge = maxAgeSeconds === undefined ? '' : `; max-age=${maxAgeSeconds}`;
+    // js-toolkit `setCookie(rawCookieString)`: one raw `name=value; attribute…` string, written
+    // as given. `path=/` = site-wide; `SameSite=Lax` = no cross-site sub-requests carry it.
     setCookie(`${name}=${value}; path=/${maxAge}; SameSite=Lax${secureAttribute()}`);
 };
 
@@ -527,7 +529,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const persistLocalePreference = (locale: string): Promise<void> =>
         isAuth.value
-            ? // PATCH, not PUT (AUDIT_0924 D17d): this sends `{ locale }` alone, and a PUT's
+            ? // PATCH, not PUT: this sends `{ locale }` alone, and a PUT's
               // every omitted field would be cleared instead (RFC 9110 §9.3.4).
               apiUpdateAccount({ locale })
                   .then(() => undefined)
@@ -557,6 +559,10 @@ export const useSessionStore = defineStore('session', () => {
         sessionEpoch.value += 1;
     };
 
+    /**
+     * Reacts to another tab's broadcast: a `logout` message clears this tab's session locally
+     * without echoing the message back, so two tabs cannot ping-pong it.
+     */
     const onBroadcast = (event: MessageEvent<unknown>) => {
         // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
         // running an older or newer build with a different message shape.

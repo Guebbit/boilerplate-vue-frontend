@@ -1,11 +1,11 @@
 /**
  * @module
- * One reusable `Idempotency-Key` per user intent (B10/FA53): mint a UUID, keep it across a
+ * One reusable `Idempotency-Key` per user intent: mint a UUID, keep it across a
  * retryable failure (a transport error or a 5xx — nothing conclusive happened server-side), and
  * mint a fresh one after any definitive answer (success, or a 4xx that means the next attempt is
- * genuinely new). Mirrors the cart store's own `checkoutIdempotencyKey` (B19) — kept as a
- * separate copy there rather than adopted onto this helper, to stay out of the `checkout` lane's
- * files — and `withAntibotToken` (`infrastructure/http/antibot.ts`) for the header-merge shape.
+ * genuinely new). Mirrors the cart store's own `checkoutIdempotencyKey` (a separate copy, not built
+ * on this helper) and `withAntibotToken` (`infrastructure/http/antibot.ts`) for the header-merge
+ * shape.
  */
 import { ref } from 'vue';
 import type { AxiosRequestConfig } from 'axios';

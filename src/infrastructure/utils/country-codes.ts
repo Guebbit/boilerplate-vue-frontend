@@ -1,10 +1,9 @@
 /**
  * @module
- * The full ISO 3166-1 alpha-2 country list (E12) — static reference data, not logic, so it is a
+ * The full ISO 3166-1 alpha-2 country list — static reference data, not logic, so it is a
  * plain constant rather than a dependency. `i18n-iso-countries` was considered and rejected: its
- * last release predates this repo's 12-month maintenance rule (see
- * `DECISIONS_0925_2_SHOP_SCOPE.md`'s E12). Every code here matches `CountryCode`'s own
- * `^[A-Z]{2}$` shape in the contract.
+ * last release is older than the 12-month maintenance window this repo asks of a dependency.
+ * Every code here matches `CountryCode`'s own `^[A-Z]{2}$` shape in the contract.
  */
 
 /**

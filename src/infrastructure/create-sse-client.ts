@@ -119,6 +119,9 @@ export const createSseClient = (
     eventNames: readonly SseEventName[],
     callbacks: SseClientCallbacks = {}
 ): SseClient => {
+    // Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
+    // cross-origin) stream request, which the backend's SSE routes authenticate by.
+    // https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource
     const eventSource = new EventSource(url, { withCredentials: true });
 
     eventSource.addEventListener('open', () => callbacks.onOpen?.());

@@ -63,7 +63,7 @@ const getTransportErrorCode = (error: AxiosError): 'TIMEOUT' | 'CANCELED' | 'NET
 
 /**
  * Request interceptor: injects the bearer token (when authenticated), the active language, and —
- * for an anonymous request only — the guest's own analytics-consent choice (FA-D5).
+ * for an anonymous request only — the guest's own analytics-consent choice.
  *
  * Guest-only on purpose: a signed-in caller's consent is the backend's own stored `analyticsConsent`
  * field (`callerContextOf` ORs the header into it), so forwarding a stale guest cookie here could
