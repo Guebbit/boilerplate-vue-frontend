@@ -287,7 +287,7 @@ dead links most of all. The procedure is
 
 ## Related pages
 
-- [Modules overview](../modules/) — the sixteen domains, one page each
+- [Modules overview](../modules/) — every domain, one page each
 
 - [Adding & removing a module](./module-lifecycle.md) — the procedure, with the commands
 - [Layers](./layers.md) — the folder map
