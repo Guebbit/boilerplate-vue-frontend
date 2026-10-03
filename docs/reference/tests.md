@@ -99,7 +99,7 @@ reconciled against a manifest field here. See
 | `tests/unit/infrastructure/utils/logger.spec.ts`                 | The one module allowed to touch `console` behaves as the rest of the app assumes.                                                          | [Observability](../tools/observability.md)       |
 | `tests/unit/infrastructure/utils/uploads.spec.ts`                | The client-side limits, so a rejection happens before the request.                                                                         | [Security](../tools/security.md)                 |
 
-### `tests/unit/i18n/` — the extractable runtime (FE-D5)
+### `tests/unit/i18n/` — the extractable runtime
 
 | File                                     | What it guarantees                                                            | Read next                           |
 | ---------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------- |

@@ -55,7 +55,7 @@ never build a request themselves.
 | `src/infrastructure/http/types.ts`               | The transport's own types — the request payload shape the generated clients hand over.                                                                                                                      | [App, Kernel & Types](./src-app.md)                                          |
 
 The i18n runtime itself — the vue-i18n instance, locale loading, the locale-aware link helper —
-does not live here. It is `src/i18n/`, a separate, extractable tier below this one (FE-D5): see
+does not live here. It is `src/i18n/`, a separate, extractable tier below this one: see
 [Layers](../theory/layers.md#tiers). Only `locale-overrides.ts`, below, stays in `infrastructure`,
 because it is the one piece that calls the generated `@api` client.
 

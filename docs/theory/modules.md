@@ -46,9 +46,9 @@ flowchart TD
 
 **Every arrow points down and none points back.** `eslint.config.ts`'s `eslint-plugin-boundaries`
 config enforces each edge in both directions — deny by default, an explicit policy per allowed
-edge, an unclassified file refused outright (FE-D2/FA96). `src/i18n` sits below this table's
+edge, an unclassified file refused outright. `src/i18n` sits below this table's
 `infrastructure`, its own tier again: nothing above it, not even infrastructure, may skip it — see
-the "extractable i18n runtime" note under [Layers](./layers.md) and FE-D5.
+the "extractable i18n runtime" note under [Layers](./layers.md).
 
 | Tier               | Folder               | Knows about                                                      | May import                 |
 | ------------------ | -------------------- | ---------------------------------------------------------------- | -------------------------- |

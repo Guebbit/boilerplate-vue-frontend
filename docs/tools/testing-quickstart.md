@@ -33,7 +33,7 @@ know _which domain_, the third line is the one.
 `test:unit:ci` is what the `test-unit` CI job actually runs — `test:unit:coverage` and
 `test:unit:report` in one vitest invocation (two reporters, one `--coverage`), not two full suite
 runs. Reach for the individual commands above locally; this one exists so the job doesn't pay for
-the suite twice (FA99).
+the suite twice.
 
 ## Running one thing
 
