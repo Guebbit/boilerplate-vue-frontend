@@ -597,8 +597,7 @@ describe('useProductsStore', () => {
                             id: ['p1'],
                             minPrice: 5,
                             maxPrice: 50,
-                            // FE_PARITY_0924 P4 — the admin-only "Active" filter, previously
-                            // dropped before the request went out.
+                            // The admin-only "Active" filter must reach the request.
                             active: false,
                             deleted: true
                         });

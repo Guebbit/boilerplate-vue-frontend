@@ -15,7 +15,7 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
 import type { LocaleCapability } from '@types';
 
 /**
- * `GET /locales` is 404 once `locales` is uninstalled (LOCALES_OPTIONAL_0925) — the same
+ * `GET /locales` is 404 once `locales` is uninstalled — the same
  * fallback-locale-only resolution `@/i18n`'s own `i18n` instance falls back to,
  * so the one tab this offers names the language the UI is actually rendered in.
  */
@@ -66,7 +66,7 @@ export const useActiveLocales = () => {
      * A failed fetch (`locales` uninstalled, or genuinely unreachable) still leaves a WORKING
      * form: one tab, for the deployment's configured fallback language, rather than an empty
      * `locales`/`fallbackLocale` that leaves the caller's skeleton showing forever
-     * (LOCALES_OPTIONAL_0925 step 6b).
+     * (the `locales` module is optional).
      *
      * @returns A promise resolving once `locales`/`fallbackLocale` are populated. Never rejects.
      */

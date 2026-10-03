@@ -1,6 +1,6 @@
 /**
  * The catalogue's own stake in the locale layer — moved out of the central
- * `tests/e2e/specs/locale.cy.ts` (FA122): both cases below are product-specific at the DATA
+ * `tests/e2e/specs/locale.cy.ts`: both cases below are product-specific at the DATA
  * level, not just the page choice, so they go with this module rather than a foundation page that
  * cannot stand in for them.
  *

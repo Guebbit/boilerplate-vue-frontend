@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ProductTargetPage'
 };
@@ -99,10 +103,14 @@ const onMissingRecord = useMissingRecord();
 watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
 
 /**
+ * Session store, read for whether the visitor is signed in.
+ */
+const session = useSessionStore();
+
+/**
  * Whether a visitor is signed in — a guest is told to sign in instead of being offered the
  * storefront actions.
  */
-const session = useSessionStore();
 const { isAuth } = storeToRefs(session);
 
 /**

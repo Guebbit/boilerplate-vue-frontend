@@ -1,6 +1,6 @@
 /**
  * @module
- * LOCALES_OPTIONAL_0925 step 6a: `ProductEdit.vue`'s link to the generic translations screen must
+ * `ProductEdit.vue`'s link to the generic translations screen must
  * not assume the route exists. A build with no `locales` module (the paired backend's own module
  * is optional; the frontend router mirrors whichever modules `src/modules.ts` enables) used to
  * throw resolving `:to="{ name: 'EntityTranslations' }"` against an unknown route name — this
@@ -29,9 +29,10 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
-/** Every module but `locales` — what a LOCALES_OPTIONAL build's own router would carry. */
+/** Every module but `locales` — what a build without that module would carry. */
 const modulesWithoutLocales = enabledModules.filter((appModule) => appModule.name !== 'locales');
 
+/** Router that carries every enabled module, `locales` included. */
 const routerWithTranslations = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -39,6 +40,7 @@ const routerWithTranslations = createRouter({
     ]
 });
 
+/** Router built without the `locales` module, so `EntityTranslations` does not exist. */
 const routerWithoutTranslations = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -50,6 +52,7 @@ const routerWithoutTranslations = createRouter({
     ]
 });
 
+/** The admin record the edit page hydrates from. */
 const ADMIN_PRODUCT = {
     id: 'p1',
     title: 'Widget',

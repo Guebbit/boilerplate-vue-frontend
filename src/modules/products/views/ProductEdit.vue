@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ProductEditPage'
 };
@@ -74,6 +78,16 @@ const { id } = defineProps<{
 const { fetchProductAdmin, updateProduct } = useProductsStore();
 
 /**
+ * Router, asked whether the optional `EntityTranslations` route exists in this build.
+ */
+const router = useRouter();
+
+/**
+ * Session store, asked for the visitor's abilities.
+ */
+const session = useSessionStore();
+
+/**
  * Whether the visitor may reach the generic translations screen — the same `translations.read`
  * the screen itself is gated on, asked of the server's own rules. A translations-only role would
  * hold it without ever being handed `products.manage`, and an unrestricted role holds it like
@@ -81,11 +95,9 @@ const { fetchProductAdmin, updateProduct } = useProductsStore();
  * `products.manage`, so it never exercises that distinction.
  *
  * `router.hasRoute` first, same pattern `AboutPage.vue` uses for its own module-optional links:
- * a build with no `EntityTranslations` route (LOCALES_OPTIONAL_0925 — the paired backend's
+ * a build with no `EntityTranslations` route (the paired backend's
  * `locales` module is optional) must not throw trying to resolve a link to it.
  */
-const router = useRouter();
-const session = useSessionStore();
 const mayViewTranslations = computed(
     () => router.hasRoute('EntityTranslations') && session.can('read', 'Translation')
 );

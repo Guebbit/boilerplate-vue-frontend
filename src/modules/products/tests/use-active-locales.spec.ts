@@ -1,6 +1,6 @@
 /**
  * @module
- * `useActiveLocales` — LOCALES_OPTIONAL_0925 step 6b. `GET /locales` 404s once the paired
+ * `useActiveLocales`: `GET /locales` 404s once the paired
  * backend's `locales` module is uninstalled; this proves the composable still leaves a product
  * form with something to render (one fallback-language tab) instead of an empty manifest that
  * keeps the caller's skeleton up forever.

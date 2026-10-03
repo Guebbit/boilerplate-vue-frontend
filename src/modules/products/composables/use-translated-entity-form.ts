@@ -107,6 +107,8 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
+
+    /** Form state and the server-error helper, taken off the toolkit's validation handle. */
     const { form, showFormErrors, applyServerErrors } = validation;
 
     /**
@@ -184,6 +186,9 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
      */
     const tabErrorCounts = ref<TranslationTabErrorCounts>({});
 
+    // Vue `watch` over a source array: recounts the tab badges when errors are shown or the form
+    // changes. `deep: true` because an edit to a nested translation mutates `form.value` in place.
+    // https://vuejs.org/api/reactivity-core.html#watch
     watch(
         [showFormErrors, () => form.value],
         ([showing]) => {

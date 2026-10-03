@@ -15,7 +15,7 @@ import { translate } from '@/i18n';
 import { createProductBodyPriceMin } from '@api/schemas';
 
 /**
- * The create form's opening-stock minimum (FE_PARITY_0924 P3), re-exported under this module's own
+ * The create form's opening-stock minimum, re-exported under this module's own
  * name so `ProductCreate.vue` can bind to it without importing `@api/schemas` itself, which
  * components may not do (see `eslint.config.ts`'s component-discipline rule).
  */

@@ -1,6 +1,6 @@
 /**
  * The catalogue's own keyboard case — moved out of the central `tests/e2e/specs/keyboard.cy.ts`
- * (FA122): a facet chip is a products-list control, so it goes with the module rather than
+ * because a facet chip is a products-list control, so it goes with the module rather than
  * staying in a shell-level spec that should not depend on this module being present.
  */
 describe('keyboard', () => {

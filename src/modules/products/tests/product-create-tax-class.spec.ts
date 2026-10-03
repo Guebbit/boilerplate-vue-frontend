@@ -1,6 +1,6 @@
 /**
  * @module
- * PL-72: a create form has nothing to clear yet, so leaving `taxClass` untouched must OMIT the
+ * A create form has nothing to clear yet, so leaving `taxClass` untouched must OMIT the
  * key entirely (unlike the edit form's explicit `null`) — and the field itself must be on screen.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -23,6 +23,7 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -30,6 +31,7 @@ const router = createRouter({
     ]
 });
 
+/** The `GET /locales` answer: one active language, `en`, also the fallback. */
 const LOCALES_RESPONSE = {
     locales: [
         {
@@ -82,6 +84,7 @@ beforeEach(() => {
     );
 });
 
+/** Mounts the create form with the real router, i18n and Vuetify. */
 const mountCreate = () =>
     mount(ProductCreate, {
         global: {

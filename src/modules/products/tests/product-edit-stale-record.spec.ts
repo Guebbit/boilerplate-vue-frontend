@@ -25,6 +25,7 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -32,6 +33,7 @@ const router = createRouter({
     ]
 });
 
+/** The `GET /locales` answer: one active language, `en`, also the fallback. */
 const LOCALES_RESPONSE = {
     locales: [
         {

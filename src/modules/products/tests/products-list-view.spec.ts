@@ -75,10 +75,13 @@ const signInWith = (tenant: [string, string][]) => {
 };
 
 /**
- * Mounts the page and lets its first search land.
+ * Every wrapper mounted so far, so teardown can unmount them all.
  */
 const mounted: { unmount: () => void }[] = [];
 
+/**
+ * Mounts the page and lets its first search land.
+ */
 const mountList = async () => {
     const wrapper = mount(ProductsList, {
         global: {

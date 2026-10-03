@@ -1,6 +1,6 @@
 /**
  * @module
- * PL-72: the edit form must round-trip `taxClass` like every other editable field — hydrate it
+ * The edit form must round-trip `taxClass` like every other editable field — hydrate it
  * from the admin record, keep the "shop default" case explicit (`null` on the wire, not an
  * omitted key, since only `translations` gets this PATCH's merge exception), and let it change to
  * a rate. Mounting and the locales-then-admin resolution order both mirror
@@ -26,6 +26,7 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -33,6 +34,7 @@ const router = createRouter({
     ]
 });
 
+/** The `GET /locales` answer: one active language, `en`, also the fallback. */
 const LOCALES_RESPONSE = {
     locales: [
         {

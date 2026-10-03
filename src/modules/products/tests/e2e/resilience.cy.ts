@@ -1,6 +1,6 @@
 /**
  * The catalogue's own share of the shell's resilience sweep — moved out of the central
- * `tests/e2e/specs/resilience.cy.ts` (FA122): route health for a shop-only page, plus every
+ * `tests/e2e/specs/resilience.cy.ts`: route health for a shop-only page, plus every
  * dataset-shaped assertion that only means something with a catalogue behind it (an empty
  * search, pagination agreeing with the rows on screen, the sparse `barebones` record).
  *

@@ -173,7 +173,7 @@ export const useProductsStore = defineStore('products', () => {
                     maxPrice: filters.maxPrice,
                     category: filters.category,
                     tag: filters.tag,
-                    // Admin-only (FE_PARITY_0924 P4): the public storefront's own search always
+                    // Admin-only: the public storefront's own search always
                     // forces `active: true` at the API regardless of what this sends — see
                     // `SearchProductsRequest.active`'s own doc in the contract.
                     active: filters.active,

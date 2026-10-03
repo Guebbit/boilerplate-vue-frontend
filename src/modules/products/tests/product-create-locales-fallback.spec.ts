@@ -1,6 +1,6 @@
 /**
  * @module
- * LOCALES_OPTIONAL_0925 step 6b, over the real form: with `GET /locales` failing (the paired
+ * The locales fallback over the real form: with `GET /locales` failing (the paired
  * backend's `locales` module uninstalled, or genuinely unreachable), the create form must still
  * render — one fallback-language tab — instead of the skeleton `openTags.length === 0` shows
  * while nothing has resolved.
@@ -21,6 +21,7 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -40,6 +41,7 @@ beforeEach(() => {
     );
 });
 
+/** Mounts the create form with the real router, i18n and Vuetify. */
 const mountCreate = () =>
     mount(ProductCreate, {
         global: {
