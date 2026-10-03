@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'HumanCheck'
 };
@@ -53,7 +57,7 @@ let turnstileWidgetId: string | undefined;
  * Cloudflare Turnstile: the subset of its global this component calls. Read through a narrowing
  * cast rather than a `declare global` augmentation — `<script setup>` is function-scoped once
  * compiled, and vue-tsc rejects an ambient declaration there as not top-level. No npm wrapper for
- * one script and one `render()` call, per the decided plan.
+ * one script and one `render()` call.
  * https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/
  */
 interface TurnstileGlobal {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * @module
- * FA-D5's guest analytics-consent banner, pinned to the bottom edge: shown while the choice is
+ * The guest analytics-consent banner, pinned to the bottom edge: shown while the choice is
  * `unknown`, or after the footer's "privacy choices" link reopens it, and only when Umami is
  * configured. Accept/Decline both persist
  * through `useAnalyticsConsentStore`, which the http layer's `onRequest` interceptor reads to

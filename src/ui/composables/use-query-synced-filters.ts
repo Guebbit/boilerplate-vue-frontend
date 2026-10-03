@@ -1,6 +1,6 @@
 /**
  * @module
- * The URL-query-string mechanism `webhooks/views/WebhookDeliveries.vue` had to itself (FA84):
+ * The URL-query-string mechanism `webhooks/views/WebhookDeliveries.vue` had to itself:
  * hydrate a filter bar's initial state from the route's query on load, then keep the query in
  * sync with every later search — so a filtered view (a status, a date range, a page beyond the
  * first) can be bookmarked or handed to support instead of described over chat.

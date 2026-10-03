@@ -7,6 +7,9 @@
  */
 import { computed } from 'vue';
 
+/**
+ * Props of the picker: the translated label, the default order's name and the sort options.
+ */
 const { label, defaultLabel, options } = defineProps<{
     /**
      * Already-translated label for the select.
@@ -23,7 +26,7 @@ const { label, defaultLabel, options } = defineProps<{
 }>();
 
 /**
- * The chosen token, or `null` for the default order. `null` rather than `undefined` (FA51):
+ * The chosen token, or `null` for the default order. `null` rather than `undefined`:
  * Vuetify reads an `undefined` item value as "use the title".
  */
 const modelValue = defineModel<string | null>({ default: null });

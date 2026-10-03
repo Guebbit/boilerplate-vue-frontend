@@ -1,6 +1,6 @@
 /**
  * @module
- * The `v-select` ⇄ store mapping every "All / Any" admin filter needs (FA51).
+ * The `v-select` ⇄ store mapping every "All / Any" admin filter needs.
  *
  * Vuetify falls back to an item's TITLE as its VALUE whenever `item-value` resolves to
  * `undefined` (`getObjectValueByPath`, `node_modules/vuetify/lib/util/helpers.js:20`), so an

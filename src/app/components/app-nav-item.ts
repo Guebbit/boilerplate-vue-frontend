@@ -1,6 +1,6 @@
 /**
  * @module
- * `AppNavItem`, pulled out of `AppNavMenu.vue` into its own plain `.ts` file (FA95): a type
+ * `AppNavItem`, pulled out of `AppNavMenu.vue` into its own plain `.ts` file: a type
  * exported from a `.vue` SFC is a shape TypeScript-ESLint's type-aware rules cannot always
  * resolve, which surfaced as `no-unsafe-*` noise everywhere `AppNavigation.vue` used the type once
  * `allowComponentTypeUnsafety` stopped papering over it. The shape itself is plain data — nothing

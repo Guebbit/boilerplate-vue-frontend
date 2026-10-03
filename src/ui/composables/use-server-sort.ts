@@ -51,10 +51,14 @@ export const useServerSort = <TFilters extends { sort?: string }>({
     };
 
     return {
+        // Vue writable `computed({ get, set })`: reads derive from `filters.sort`, writes go through
+        // `write`, so setting it re-searches.
+        // https://vuejs.org/guide/essentials/computed#writable-computed
         sortBy: computed({
             get: () => sortByFromCsv(filters.value.sort),
             set: (value) => write(csvFromSortBy(value))
         }),
+        // Same writable shape for a select: the raw CSV (or `null`) in, `write` on change.
         choice: computed({
             get: () => filters.value.sort ?? null,
             set: (value) => write(value ?? undefined)

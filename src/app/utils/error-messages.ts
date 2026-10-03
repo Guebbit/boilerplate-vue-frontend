@@ -3,7 +3,7 @@
  * Which error-page messages are safe to show as themselves rather than folded into one generic
  * key. A router error's message can be free-form text — a stale chunk's URL, a caught
  * `Error.message` — and showing that verbatim leaks an implementation detail into the page, the
- * URL and Umami's pageview (FA74). `Error.vue` and `router/index.ts`'s `onError` both check this
+ * URL and Umami's pageview. `Error.vue` and `router/index.ts`'s `onError` both check this
  * through the one predicate, so the two places never disagree about what counts as "known".
  */
 

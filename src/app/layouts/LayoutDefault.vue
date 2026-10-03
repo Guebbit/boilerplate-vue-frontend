@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * @module
- * The one page shell the router mounts once, for every route under `/:locale` (FA70) — skip link,
+ * The one page shell the router mounts once, for every route under `/:locale` — skip link,
  * health banner, nav, page hero, footer, confirmation dialog host, toast stack and loading
  * indicators, with `<RouterView />` in the middle for whichever page actually matched. Preloads
  * nothing domain-specific — see the note near the end of this block.
@@ -247,7 +247,7 @@ watch(expiredSignal, () => {
             `tabindex="-1"` makes the main region focusable by script and the skip link without
             adding it to the tab order; the router moves focus here after every page change.
             An id here, not `data-main-content` fed by `$attrs`: this element no longer changes
-            per view (FA70), so the CURRENT page's own id lives on ITS OWN root instead.
+            per view, so the CURRENT page's own id lives on ITS OWN root instead.
         -->
         <v-main tabindex="-1" data-main-content>
             <!--

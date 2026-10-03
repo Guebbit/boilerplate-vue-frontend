@@ -29,6 +29,10 @@ const route = useRoute();
  * reference.
  */
 const i18n = useI18n();
+
+/**
+ * Translator and the active-locale ref, read off {@link i18n}.
+ */
 const { t, locale } = i18n;
 
 /**

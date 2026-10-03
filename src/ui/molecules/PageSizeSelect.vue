@@ -1,12 +1,15 @@
 <script setup lang="ts">
 /**
  * @module
- * The page-size picker every paginated list repeated verbatim (FA84): a `v-select` over a small
+ * The page-size picker every paginated list repeated verbatim: a `v-select` over a small
  * set of row counts, bound straight to the toolkit's own `pageSize` ref. Does no i18n of its
  * own — `label` arrives already translated, same as `ListPagination`'s `ariaLabel`.
  */
 import { DEFAULT_PAGE_SIZES } from './page-size-options.ts';
 
+/**
+ * Props of the picker: the translated label and the offered row counts.
+ */
 const { label, sizes = DEFAULT_PAGE_SIZES } = defineProps<{
     /**
      * Already-translated label for the select.

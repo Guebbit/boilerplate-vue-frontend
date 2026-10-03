@@ -5,7 +5,7 @@
  * Vuetify's headers, forwards `header.*`/`item.*` slots the caller actually provided, swaps in
  * the accessible `TableLoadingBar`, and adds two OPT-IN behaviours through a `v-model`, each
  * detected from whether its own `update:*` listener is actually bound rather than from the
- * model's value: single-row selection (`v-model`) and sorting (`v-model:sort-by`, FA75). Sorting
+ * model's value: single-row selection (`v-model`) and sorting (`v-model:sort-by`). Sorting
  * is client-side by default; `serverSortKeys` makes it a server sort (only those columns, no local
  * reorder). Pagination is server-side for every real caller, so a header is sortable only for the
  * caller that opts in, and the footer stays hidden either way.
@@ -40,7 +40,7 @@ const {
     loading?: boolean;
     /**
      * Overrides Vuetify's own localised "Loading items..." — most callers pass this app's own
-     * `generic.loading` key instead (FA75); left unset, Vuetify's bundled locale answers rather
+     * `generic.loading` key instead; left unset, Vuetify's bundled locale answers rather
      * than a component-level English default that would out-rank it.
      */
     loadingText?: string;
@@ -112,7 +112,7 @@ const isSelectable = computed(
  *
  * Pagination here is server-side for every real caller today (stores own `pageSize`/
  * `pageCurrent`), so a header sortable with nothing bound would only reorder the one PAGE this
- * table holds, not the catalogue behind it (FA75) — hence the default of `false` below.
+ * table holds, not the catalogue behind it — hence the default of `false` below.
  */
 const isSortable = computed(
     () => vnodeProps !== null && vnodeProps !== undefined && 'onUpdate:sortBy' in vnodeProps

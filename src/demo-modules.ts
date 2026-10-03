@@ -1,6 +1,6 @@
 /**
  * @module
- * The demo manifest (FE-D4): every module this build ships for the DEMO pet-supply e-commerce
+ * The demo manifest: every module this build ships for the DEMO pet-supply e-commerce
  * domain, not for every project this boilerplate is forked into — the frontend twin of the
  * backend's `module.yaml#group: shop` axis
  * (`docs/theory/strategic-ddd.md#4a-foundation-and-shop` in that repo). Kept as a plain list here

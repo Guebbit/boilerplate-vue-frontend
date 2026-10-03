@@ -4,7 +4,7 @@
  * soft-deleted (products, users, orders). The value is the API's own `deleted` search filter:
  * absent lists both, `false` only live records, `true` only soft-deleted ones.
  *
- * The "any" option's value is `null`, not `undefined` (FA51) — pair it with
+ * The "any" option's value is `null`, not `undefined` — pair it with
  * {@link useAnyFilterChoice} at the call site, which maps it back to `undefined` for the store.
  */
 import { computed, type ComputedRef } from 'vue';

@@ -30,6 +30,9 @@ export interface TranslationTabLocale {
     direction: 'ltr' | 'rtl';
 }
 
+/**
+ * Props, destructured reactively so each name stays live. `errorCounts` defaults to none.
+ */
 const {
     locales,
     openTags,
@@ -72,6 +75,9 @@ const activeTab = defineModel<string | undefined>({ required: true });
  */
 const emit = defineEmits<{ add: [tag: string]; remove: [tag: string] }>();
 
+/**
+ * Translator for the tabs' own labels.
+ */
 const { t } = useI18n();
 
 /**

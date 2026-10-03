@@ -63,7 +63,7 @@ declare module 'vue-router' {
         /**
          * Dictionary key of the page's title, resolved into `document.title` after every
          * navigation (WCAG 2.4.2), read out by the route announcer, and translated by
-         * `LayoutDefault` (the route's own layout, FA70) as the default page hero. Absent on the
+         * `LayoutDefault` (the route's own layout) as the default page hero. Absent on the
          * redirect shells that never render a page.
          */
         title?: string;

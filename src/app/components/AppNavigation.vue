@@ -63,6 +63,10 @@ const { t } = useI18n();
  * Session flags and the signed-in visitor, used to filter nav entries and render the account menu.
  */
 const session = useSessionStore();
+
+/**
+ * Reactive views of the session's `isAuth` flag and signed-in `viewer`.
+ */
 const { isAuth, viewer } = storeToRefs(session);
 
 /**

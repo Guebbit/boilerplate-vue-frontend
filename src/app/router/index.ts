@@ -31,7 +31,7 @@ import { brandName } from '@/app/utils/branding.ts';
  *
  * A module reaching a sibling it has no coupling rule for is checked by `eslint.config.ts`'s
  * generated `moduleCouplingRules`, so a misconfigured coupling fails on `npm run lint` rather than
- * here. `collectModuleRoutes` itself refuses two modules sharing a name or path (FA72); the check
+ * here. `collectModuleRoutes` itself refuses two modules sharing a name or path; the check
  * below widens that to the shell's own routes, right before the router is built from both.
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
@@ -179,12 +179,12 @@ const router = createRouter({
                 {
                     // Empty path: matches `/:locale` exactly, adding nothing of its own — the
                     // nested-layout pattern vue-router itself documents. `LayoutDefault` becomes
-                    // the actual rendered component for every real page (FA70), mounted once
+                    // the actual rendered component for every real page, mounted once
                     // rather than by each view individually, with its OWN `<RouterView />` for
                     // whichever child below actually matched. Lazy, same as every route below it:
                     // it pulls in the nav, both banners and the dialog hosts, and an eager import
                     // here would put all of that in the entry chunk instead of a route chunk
-                    // (FA94's own budget, `entry-chunk-budget.spec.ts`).
+                    // (the entry-chunk budget, `entry-chunk-budget.spec.ts`).
                     path: '',
                     component: () => import('@/app/layouts/LayoutDefault.vue'),
                     children: [
@@ -283,7 +283,7 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
 
     // Only a message THIS app's own dictionary owns reaches the page, the URL and Umami's
     // pageview — anything else (a caught fetch failure's text, a stale chunk's own URL) folds
-    // into the generic key instead of leaking verbatim (FA74).
+    // into the generic key instead of leaking verbatim.
     const message =
         status === 403
             ? 'navigation.error-forbidden'
@@ -357,7 +357,7 @@ router.afterEach((to, from, failure) => {
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
     if (!isPageChange) return;
 
-    // `LayoutDefault` mounts once for the whole session (FA70), not per view, so its own
+    // `LayoutDefault` mounts once for the whole session, not per view, so its own
     // `onMounted` can no longer consume this — this is the SOLE place that does, on every page
     // change. The tick waits for the new page's own content to actually be in the DOM first.
     requestMainFocus();

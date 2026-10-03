@@ -2,7 +2,7 @@
 /**
  * @module
  * The page hero every view used to get for free from `LayoutDefault`'s own `#header` slot — moved
- * here once the layout became a route (FA70) and stopped having a slot a view could fill. A view
+ * here once the layout became a route and stopped having a slot a view could fill. A view
  * whose title is not simply `route.meta.title` translated (a dynamic one, or richer markup
  * entirely) renders this itself, at the top of its own body, instead of `LayoutDefault` rendering
  * anything in that spot for it (`meta.customHero: true` on its route is what tells the layout to

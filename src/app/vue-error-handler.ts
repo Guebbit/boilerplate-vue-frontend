@@ -3,7 +3,7 @@
  * The Vue app's last resort for an error a component's own render/setup/watcher throws with
  * nothing downstream to catch it — `app.config.errorHandler`, wired in `main.ts`. Reports to Faro
  * and tells the visitor something broke, rather than leaving a blank page with nothing to show for
- * it but a stack trace only a developer will ever see (FA74).
+ * it but a stack trace only a developer will ever see.
  */
 import type { ComponentPublicInstance } from 'vue';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';

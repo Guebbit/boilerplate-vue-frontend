@@ -1,6 +1,6 @@
 /**
  * @module
- * This app's one Axios wiring for `@guebbit/vue-toolkit`'s upload-progress tracker (FA84) —
+ * This app's one Axios wiring for `@guebbit/vue-toolkit`'s upload-progress tracker —
  * repeated identically across every form that submits a picked file (avatar, product image),
  * until this composable was the one place it lived.
  */
