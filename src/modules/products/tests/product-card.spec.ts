@@ -68,15 +68,15 @@ describe('ProductCard — what a shopper reads', () => {
     });
 
     it('marks a product with nothing left as out of stock', () => {
-        const wrapper = mountCard(aProduct({ available: 0 }));
+        const wrapper = mountCard(aProduct({ inStock: false }));
 
         expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('Out of stock');
     });
 
     it.each([[3], [undefined]])(
-        'marks a product with %j available as in stock — an absent count is unconstrained',
+        'marks an in-stock product with %j available as in stock — the flag decides, not the count',
         (available) => {
-            const wrapper = mountCard(aProduct({ available }));
+            const wrapper = mountCard(aProduct({ inStock: true, available }));
 
             expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('In stock');
         }

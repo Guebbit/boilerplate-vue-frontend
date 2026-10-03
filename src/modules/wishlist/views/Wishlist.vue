@@ -24,6 +24,7 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { useProductLines } from '@/modules/products';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -59,6 +60,12 @@ const productTargetTo = (productId: string) =>
  * Toast dispatcher, used to report every outcome to the visitor.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The session, asked whether this role may use a cart at all — staff may keep a wishlist but have
+ * no basket to move a line into.
+ */
+const session = useSessionStore();
 
 /**
  * The wishlist's three actions: load it, drop a line, and move a line into the cart.
@@ -157,6 +164,7 @@ onMounted(() =>
                 </h2>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn
+                        v-if="session.can('update', 'Cart')"
                         color="primary"
                         variant="tonal"
                         size="small"

@@ -51,6 +51,8 @@ const serverHolds = (available: number) =>
                 title: 'Widget',
                 price: 9.99,
                 currency: 'EUR',
+                inStock: available > 0,
+                lowStock: false,
                 onHand: available,
                 reserved: 0,
                 available

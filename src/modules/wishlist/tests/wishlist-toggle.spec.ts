@@ -19,7 +19,14 @@ wireModulesIntoCore();
 /**
  * The product the heart belongs to.
  */
-const PRODUCT: Product = { id: 'p1', title: 'Widget', price: 1, currency: 'EUR' };
+const PRODUCT: Product = {
+    id: 'p1',
+    title: 'Widget',
+    price: 1,
+    currency: 'EUR',
+    inStock: true,
+    lowStock: false
+};
 
 /**
  * Signs a visitor in, since the heart only exists for one.

@@ -69,6 +69,8 @@
         "label-created-at": "Creato il",
         "label-updated-at": "Aggiornato il",
         "label-stock": "Disponibilità",
+        "in-stock": "Disponibile",
+        "low-stock": "Scorte in esaurimento",
         "out-of-stock": "Esaurito",
         "login-to-buy": "Accedi per acquistare o salvare questo prodotto.",
         "image-alt": "Foto di {name}"

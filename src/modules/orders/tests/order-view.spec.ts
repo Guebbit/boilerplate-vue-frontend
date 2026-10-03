@@ -129,8 +129,17 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     }
 };
 
+/** Signs in a shopper: the only role that holds the key a cart needs. */
+const signInAsShopper = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
+    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
+    signInAsShopper();
     return loadLocale('en').then(() => router.push('/en/orders/o1').then(() => router.isReady()));
 });
 
@@ -588,6 +597,17 @@ describe('the shipping method', () => {
         });
 
         expect(wrapper.get('[data-test=order-shipping]').text()).toContain('drone');
+
+        wrapper.unmount();
+    });
+});
+
+describe('the reorder button and the cart key', () => {
+    it('is not offered to a role that holds no shopping key', () => {
+        useSessionStore().setAbilities({ tenant: [['read', 'Order']], platform: [] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-reorder]').exists()).toBe(false);
 
         wrapper.unmount();
     });

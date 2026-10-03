@@ -44,10 +44,24 @@ const respondWith = (items: Product[]) =>
     );
 
 /** Two distinct products, standing in for "the current search page" and "something pinned". */
-const WIDGET: Product = { id: 'p1', title: 'Widget', price: 9.99, currency: 'EUR' };
+const WIDGET: Product = {
+    id: 'p1',
+    title: 'Widget',
+    price: 9.99,
+    currency: 'EUR',
+    inStock: true,
+    lowStock: false
+};
 
 /** A second product, used as the pinned one. */
-const GADGET: Product = { id: 'p2', title: 'Gadget', price: 4.5, currency: 'EUR' };
+const GADGET: Product = {
+    id: 'p2',
+    title: 'Gadget',
+    price: 4.5,
+    currency: 'EUR',
+    inStock: true,
+    lowStock: false
+};
 
 beforeEach(() => {
     vi.useFakeTimers();

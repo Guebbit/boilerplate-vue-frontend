@@ -120,12 +120,25 @@ const { isAuth } = storeToRefs(session);
 const productActions = useSlot('product-actions');
 
 /**
- * Whether the shelf still holds anything. An absent `stock` reads as unconstrained — rows that
- * predate the column must not all render as sold out, mirroring the checkout rule.
+ * Whether the shelf holds nothing — the `inStock` flag every reader gets.
  *
  * @returns `true` when the product cannot currently be bought.
  */
-const outOfStock = computed(() => currentProduct.value?.available === 0);
+const outOfStock = computed(() => currentProduct.value?.inStock === false);
+
+/**
+ * What the stock stat reads. A stock reader sees the exact `available` count; everyone else only
+ * the two flags the server publishes, so a competitor cannot read the shelf.
+ *
+ * @returns the stat's value.
+ */
+const stockLabel = computed(() => {
+    if (outOfStock.value) return t('product-target-page.out-of-stock');
+    if (currentProduct.value?.lowStock) return t('product-target-page.low-stock');
+    return currentProduct.value?.available === undefined
+        ? t('product-target-page.in-stock')
+        : formatText(currentProduct.value.available.toString());
+});
 </script>
 
 <template>
@@ -151,11 +164,7 @@ const outOfStock = computed(() => currentProduct.value?.available === 0);
                 <CardMaterialStat
                     data-test="product-stock"
                     :title="t('product-target-page.label-stock')"
-                    :value="
-                        outOfStock
-                            ? t('product-target-page.out-of-stock')
-                            : formatText(currentProduct?.available?.toString())
-                    "
+                    :value="stockLabel"
                     accent="secondary"
                 />
                 <CardMaterialStat

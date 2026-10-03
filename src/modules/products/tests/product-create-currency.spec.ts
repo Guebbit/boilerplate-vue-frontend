@@ -80,7 +80,13 @@ beforeEach(() => {
                 parseOrvalFixture(
                     'POST',
                     '/products',
-                    orvalEnvelope({ id: 'p2', title: 'New', price: 1 })
+                    orvalEnvelope({
+                        id: 'p2',
+                        title: 'New',
+                        price: 1,
+                        inStock: true,
+                        lowStock: false
+                    })
                 )
             );
         return Promise.resolve(orvalEnvelope());

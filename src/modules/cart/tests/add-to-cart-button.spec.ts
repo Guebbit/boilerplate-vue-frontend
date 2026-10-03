@@ -55,6 +55,8 @@ const IN_STOCK: Product = {
     title: 'Available widget',
     price: 9.99,
     currency: 'EUR',
+    inStock: true,
+    lowStock: false,
     onHand: 5,
     reserved: 1,
     available: 4
@@ -67,6 +69,7 @@ const signIn = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
+    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
 };
 
 /**
@@ -85,7 +88,13 @@ beforeEach(() => {
 describe('the shelf', () => {
     it('blocks buying what is out of stock', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, onHand: 3, reserved: 3, available: 0 });
+        const wrapper = mountButton({
+            ...IN_STOCK,
+            inStock: false,
+            onHand: 3,
+            reserved: 3,
+            available: 0
+        });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Out of stock');
@@ -97,6 +106,13 @@ describe('the shelf', () => {
         expect(
             mountButton(IN_STOCK).get('[data-test=add-to-cart]').attributes('disabled')
         ).toBeUndefined();
+    });
+
+    it('is not offered to a signed-in role that holds no shopping key', () => {
+        signIn();
+        useSessionStore().setAbilities({ tenant: [], platform: [] });
+
+        expect(mountButton(IN_STOCK).find('[data-test=add-to-cart]').exists()).toBe(false);
     });
 
     it('stays disabled for a guest, who has no cart to write to', () => {

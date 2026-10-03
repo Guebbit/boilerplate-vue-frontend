@@ -28,6 +28,11 @@ describe('cart route access', () => {
         expect(byName(name)?.meta?.access).toBe(access);
     });
 
+    // Staff and administrators hold no shopping key: the route is theirs to be refused at.
+    it('needs the key that lets a role shop', () => {
+        expect(byName('Cart')?.meta?.can).toEqual(['update', 'Cart']);
+    });
+
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it.
         expect(routes.map(({ name }) => name).toSorted()).toEqual(['Cart'].toSorted());

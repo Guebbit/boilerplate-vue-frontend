@@ -49,7 +49,14 @@ const V_AUTOCOMPLETE_STUB = {
  */
 const mountForm = (mode: 'receipt' | 'adjust') => {
     const products = useProductsStore();
-    products.addProduct({ id: 'p1', title: 'Widget', price: 9.99, currency: 'EUR' });
+    products.addProduct({
+        id: 'p1',
+        title: 'Widget',
+        price: 9.99,
+        currency: 'EUR',
+        inStock: true,
+        lowStock: false
+    });
 
     return mount(StockMovementForm, {
         props: { mode },

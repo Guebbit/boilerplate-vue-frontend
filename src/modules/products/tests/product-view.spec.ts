@@ -85,6 +85,8 @@ describe('the shelf', () => {
             title: 'Sold out widget',
             price: 9.99,
             currency: 'EUR',
+            inStock: false,
+            lowStock: false,
             onHand: 3,
             reserved: 3,
             available: 0
@@ -99,19 +101,56 @@ describe('the shelf', () => {
             title: 'Available widget',
             price: 9.99,
             currency: 'EUR',
+            inStock: true,
+            lowStock: false,
             onHand: 5,
             reserved: 1,
             available: 4
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).not.toContain('Out of stock');
+        expect(wrapper.get('[data-test=product-stock]').text()).toContain('4');
+    });
+
+    // A shopper's product carries the flags only — no counters to print.
+    it('shows only "In stock" to a reader without the counters', () => {
+        const wrapper = mountProduct({
+            id: 'p-flags-only',
+            title: 'Widget',
+            price: 9.99,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
+        });
+
+        expect(wrapper.get('[data-test=product-stock]').text()).toContain('In stock');
+    });
+
+    it('warns "Low stock" when the server raises the flag, with no number', () => {
+        const wrapper = mountProduct({
+            id: 'p-low',
+            title: 'Widget',
+            price: 9.99,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: true
+        });
+
+        expect(wrapper.get('[data-test=product-stock]').text()).toContain('Low stock');
     });
 });
 
 describe('the product-actions slot', () => {
     it('renders every contributed component, handing each the product', () => {
         const wrapper = mountProduct(
-            { id: 'p-slot', title: 'Slotted widget', price: 1, currency: 'EUR' },
+            {
+                id: 'p-slot',
+                title: 'Slotted widget',
+                price: 1,
+                currency: 'EUR',
+                inStock: true,
+                lowStock: false
+            },
             [SlotProbe]
         );
 
@@ -123,7 +162,9 @@ describe('the product-actions slot', () => {
             id: 'p-bare',
             title: 'Bare widget',
             price: 1,
-            currency: 'EUR'
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
         });
 
         expect(wrapper.find('[data-test=slot-probe]').exists()).toBe(false);
@@ -142,7 +183,9 @@ describe('a barebones product', () => {
             id: 'p-minimal',
             title: 'Bare widget',
             price: 1,
-            currency: 'EUR'
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
         });
 
         expect(wrapper.text()).toContain('—');
@@ -154,6 +197,8 @@ describe('a barebones product', () => {
             title: 'Full widget',
             price: 1,
             currency: 'EUR',
+            inStock: true,
+            lowStock: false,
             description: 'Everything a widget could want',
             categories: ['tools']
         });
@@ -171,7 +216,14 @@ const signInWith = (tenant: [string, string][]) => {
 };
 
 describe('the edit button', () => {
-    const widget: ProductType = { id: 'p-edit', title: 'Widget', price: 1, currency: 'EUR' };
+    const widget: ProductType = {
+        id: 'p-edit',
+        title: 'Widget',
+        price: 1,
+        currency: 'EUR',
+        inStock: true,
+        lowStock: false
+    };
 
     it('is hidden from a shopper, who would only meet a guard refusal', () => {
         signInWith([['read', 'Product']]);

@@ -27,7 +27,16 @@ vi.mock('@api', async (importOriginal) => ({
     searchProducts: vi.fn(() =>
         Promise.resolve(
             contractResponse(schemas.SearchProductsResponse, {
-                items: [{ id: 'p1', title: 'Widget', price: 9.99, currency: 'GBP' }],
+                items: [
+                    {
+                        id: 'p1',
+                        title: 'Widget',
+                        price: 9.99,
+                        currency: 'GBP',
+                        inStock: true,
+                        lowStock: false
+                    }
+                ],
                 meta: { totalItems: 1, page: 1, pageSize: 1, totalPages: 1 }
             })
         )

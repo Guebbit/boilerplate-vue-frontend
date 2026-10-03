@@ -16,6 +16,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Wishlist from '@/modules/wishlist/views/Wishlist.vue';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useWishlistStore } from '../store';
 import { useProductsStore } from '@/modules/products';
 import { i18n, loadLocale } from '@/i18n';
@@ -59,7 +60,14 @@ const mountWishlist = (productIds: string[]) => {
     const products = useProductsStore();
 
     wishlist.items = productIds.map((productId) => ({ productId }));
-    products.addProduct({ id: PRODUCT_ID, title: PRODUCT_TITLE, price: 1, currency: 'EUR' });
+    products.addProduct({
+        id: PRODUCT_ID,
+        title: PRODUCT_TITLE,
+        price: 1,
+        currency: 'EUR',
+        inStock: true,
+        lowStock: false
+    });
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are
     // answered from state rather than from a transport this spec does not exercise.
     vi.spyOn(wishlist, 'fetchWishlist').mockResolvedValue(wishlist.items);
@@ -72,8 +80,17 @@ const mountWishlist = (productIds: string[]) => {
     });
 };
 
+/** Signs in a shopper: the only role that holds the key a cart needs. */
+const signInAsShopper = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
+    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
+    signInAsShopper();
     // Without the dictionaries every `t()` renders its own key, and the label cases below would
     // compare one key against another and pass.
     return loadLocale('en').then(() => router.push('/en/wishlist').then(() => router.isReady()));
@@ -131,5 +148,15 @@ describe('the item list', () => {
 
         expect(wrapper.findAll('[data-test=wishlist-item]')).toHaveLength(0);
         expect(wrapper.find('.v-empty-state').exists()).toBe(true);
+    });
+});
+
+describe('the move-to-cart button and the cart key', () => {
+    it('is not offered to a role that holds no shopping key', () => {
+        useSessionStore().setAbilities({ tenant: [], platform: [] });
+        const wrapper = mountWishlist([PRODUCT_ID]);
+
+        expect(wrapper.find('[data-test=wishlist-move-to-cart]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=wishlist-item]').exists()).toBe(true);
     });
 });

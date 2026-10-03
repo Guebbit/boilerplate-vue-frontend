@@ -1,6 +1,6 @@
 /**
  * @module
- * Cart route table. One authenticated route, mounted by the app router under the
+ * Cart route table. One authenticated route, for the roles that may shop, mounted by the app router under the
  * module's registered path.
  */
 import type { RouteRecordRaw } from 'vue-router';
@@ -12,7 +12,7 @@ export default [
     {
         path: 'cart',
         name: 'Cart',
-        meta: { access: 'auth', title: 'cart-page.page-title' },
+        meta: { access: 'auth', can: ['update', 'Cart'], title: 'cart-page.page-title' },
         component: () => import('@/modules/cart/views/Cart.vue')
     }
 ] satisfies RouteRecordRaw[];

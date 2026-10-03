@@ -26,7 +26,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`account`](../modules/account.md)                     | `logout`                               | `Logout`               | `public` | —                            | `—`                              |
 | [`api-keys`](../modules/api-keys.md)                   | `api-keys`                             | `ApiKeysList`          | `auth`   | `read ApiKey`                | `views/ApiKeysList.vue`          |
 | [`api-keys`](../modules/api-keys.md)                   | `api-keys/create`                      | `ApiKeyCreate`         | `auth`   | `create ApiKey`              | `views/ApiKeyCreate.vue`         |
-| [`cart`](../modules/cart.md)                           | `cart`                                 | `Cart`                 | `auth`   | —                            | `views/Cart.vue`                 |
+| [`cart`](../modules/cart.md)                           | `cart`                                 | `Cart`                 | `auth`   | `update Cart`                | `views/Cart.vue`                 |
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples`                             | `ExamplesList`         | `auth`   | `read Example`               | `views/ExamplesList.vue`         |
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/create`                      | `ExampleCreate`        | `auth`   | `create Example`             | `views/ExampleCreate.vue`        |
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/published/:id`               | `ExamplePublished`     | `public` | —                            | `views/ExamplePublished.vue`     |

@@ -104,7 +104,14 @@ describe('MovementLedger product titles', () => {
     });
 
     it('asks only for titles the products dictionary does not hold yet', () => {
-        useProductsStore().addProduct({ id: 'p1', title: 'Known', price: 1, currency: 'EUR' });
+        useProductsStore().addProduct({
+            id: 'p1',
+            title: 'Known',
+            price: 1,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
+        });
         const wrapper = mountLedger([movement('m1', 'p1'), movement('m2', 'p2')]);
 
         return flushPromises().then(() => {
@@ -114,7 +121,14 @@ describe('MovementLedger product titles', () => {
     });
 
     it('sends no batched search when every title is already known', () => {
-        useProductsStore().addProduct({ id: 'p1', title: 'Known', price: 1, currency: 'EUR' });
+        useProductsStore().addProduct({
+            id: 'p1',
+            title: 'Known',
+            price: 1,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
+        });
         mountLedger([movement('m1', 'p1')]);
 
         return flushPromises().then(() => {

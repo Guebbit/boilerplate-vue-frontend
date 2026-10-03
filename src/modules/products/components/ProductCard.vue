@@ -40,10 +40,9 @@ const { isAuth } = storeToRefs(useSessionStore());
 const productActions = useSlot('product-actions');
 
 /**
- * Whether the shelf holds nothing. An absent `available` reads as unconstrained, mirroring the
- * checkout rule.
+ * Whether the shelf holds nothing — the `inStock` flag every reader gets.
  */
-const outOfStock = computed(() => product.available === 0);
+const outOfStock = computed(() => !product.inStock);
 </script>
 
 <template>

@@ -782,7 +782,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 
             <template #actions>
                 <v-btn
-                    v-if="currentOrder"
+                    v-if="currentOrder && session.can('update', 'Cart')"
                     color="primary"
                     variant="tonal"
                     data-test="order-reorder"

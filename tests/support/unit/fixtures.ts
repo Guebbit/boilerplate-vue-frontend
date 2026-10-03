@@ -77,6 +77,8 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => ({
     title: 'Walnut desk',
     price: 120,
     currency: 'EUR',
+    inStock: true,
+    lowStock: false,
     active: true,
     ...overrides
 });

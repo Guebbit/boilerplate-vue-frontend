@@ -36,7 +36,17 @@ const { addMessage } = useNotificationsStore();
 /**
  * Whether a visitor is signed in — a guest has no cart to write to.
  */
-const { isAuth } = storeToRefs(useSessionStore());
+const session = useSessionStore();
+
+/** The visitor's standing, reactive. */
+const { isAuth } = storeToRefs(session);
+
+/**
+ * Whether the session's keys let it shop at all. Staff and administrators hold none, so for
+ * them the button is not offered rather than offered and refused. A guest is not asked: they
+ * keep the disabled button and its sign-in hint.
+ */
+const mayShop = computed(() => !isAuth.value || session.can('update', 'Cart'));
 
 /**
  * The cart store, and its in-flight flag: the button's own double-click guard. Read off
@@ -48,10 +58,10 @@ const cartStore = useCartStore();
 const { loading } = storeToRefs(cartStore);
 
 /**
- * Whether the shelf holds nothing. An absent `available` reads as unconstrained — rows that
- * predate the column must not all render as sold out, mirroring the checkout rule.
+ * Whether the shelf holds nothing — the server's `inStock` flag, which every reader gets (the
+ * exact counters are for stock readers only).
  */
-const outOfStock = computed(() => product.available === 0);
+const outOfStock = computed(() => !product.inStock);
 
 /**
  * The button's own blocked state — see docs/theory/request-flow.md.
@@ -75,7 +85,7 @@ const handleAddToCart = () => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-2">
+    <div v-if="mayShop" class="flex flex-col gap-2">
         <v-btn
             color="primary"
             data-test="add-to-cart"
