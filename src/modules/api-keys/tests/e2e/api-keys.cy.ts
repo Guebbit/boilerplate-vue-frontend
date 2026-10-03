@@ -1,8 +1,8 @@
 /**
  * @module
  * Cypress end-to-end spec driving the real app: list and mint/revoke for the admin-only api-keys
- * module. FA123: only an a11y sweep existed here before this — no functional coverage of the
- * mint/revoke flow at all.
+ * module. The a11y sweep is its own spec; this one is the
+ * functional coverage of the mint/revoke flow.
  */
 
 /** A value unique enough per run that two specs racing the same backend cannot collide. */

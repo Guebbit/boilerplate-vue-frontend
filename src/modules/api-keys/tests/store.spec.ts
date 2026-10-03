@@ -29,6 +29,7 @@ import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
+/** An API key record (public prefix only), the shape the mocked API returns. */
 const API_KEY = {
     id: 'key1',
     name: 'CI integration',
