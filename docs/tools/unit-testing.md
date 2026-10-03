@@ -147,7 +147,7 @@ tooling rather than its modules, and live in `tests/unit/scripts/` for that reas
 
 ## Where a spec lives
 
-Two homes, and the rule is ownership rather than kind (decision D4):
+Two homes, and the rule is ownership rather than kind:
 
 | Spec is about…                                 | Lives in                                              |
 | ---------------------------------------------- | ----------------------------------------------------- |

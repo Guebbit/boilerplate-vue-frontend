@@ -109,7 +109,7 @@ Vue I18n externalises all user-facing strings into locale message files. Switchi
 ### Message files
 
 Shared copy lives centrally; every domain ships its own and they are deep-merged into the active
-locale at boot (decision D6 — merged at boot, not at build, so each dictionary stays a lazy chunk).
+locale at boot (merged at boot, not at build, so each dictionary stays a lazy chunk).
 
 ```
 src/locales/                      ← shared: generic, navigation shell, error and home pages
