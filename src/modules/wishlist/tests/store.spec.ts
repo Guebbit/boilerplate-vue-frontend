@@ -21,6 +21,7 @@ import {
 
 wireModulesIntoCore();
 
+/** Canned response per `METHOD /url` key, set by each test before it acts. */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -30,6 +31,7 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/** URLs of every request the mocked transport has seen, in call order. */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

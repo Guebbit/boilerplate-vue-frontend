@@ -37,6 +37,8 @@ const { isAuth } = storeToRefs(useSessionStore());
  * failure is {@link error}'s job instead.
  */
 const wishlist = useWishlistStore();
+
+/** The in-flight flag, reactive. */
 const { loading } = storeToRefs(wishlist);
 
 /**

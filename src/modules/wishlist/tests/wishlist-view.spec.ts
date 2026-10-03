@@ -30,6 +30,8 @@ wireModulesIntoCore();
  * The saved product, and the title the products store holds for it — deliberately not the id.
  */
 const PRODUCT_ID = '01J8ZQ7X4M0000000000000001';
+
+/** The saved product's title, as the products store holds it. */
 const PRODUCT_TITLE = 'Wireless Headphones';
 
 /*
