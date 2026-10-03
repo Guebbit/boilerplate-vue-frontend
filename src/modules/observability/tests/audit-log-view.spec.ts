@@ -18,6 +18,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 
 wireModulesIntoCore();
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -25,6 +26,7 @@ const router = createRouter({
     ]
 });
 
+/** Mounts the shop audit-log page with the real router, i18n and Vuetify. */
 const mountAuditLog = () =>
     mount(AuditLog, {
         global: {

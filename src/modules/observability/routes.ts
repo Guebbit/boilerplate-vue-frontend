@@ -8,6 +8,9 @@
  */
 import type { RouteRecordRaw } from 'vue-router';
 
+/**
+ * Route records for the observability module, mounted under the app's module registry.
+ */
 export default [
     {
         path: 'admin',

@@ -16,6 +16,7 @@ import { contractResponse } from '../../../../tests/unit/infrastructure/http/orv
 
 wireModulesIntoCore();
 
+/** An empty audit page, the answer both audit endpoints give by default. */
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 50, totalItems: 0, totalPages: 0 } };
 
 vi.mock('@api', () => ({
@@ -27,6 +28,7 @@ vi.mock('@api', () => ({
     )
 }));
 
+/** Mounts the audit tab for the platform or the shop trail, optionally filtered to one target. */
 const mountTab = (props: { endpoint: 'platform' | 'shop'; target?: string }) =>
     mount(AdminAuditTab, { props, global: { plugins: [vuetify, i18n] } });
 

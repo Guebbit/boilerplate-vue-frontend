@@ -65,7 +65,7 @@ const filters = reactive<AdminAuditFilters>({
 });
 
 /**
- * Options of the outcome select. The "all" row's value is `null`, not `undefined` (FA51) —
+ * Options of the outcome select. The "all" row's value is `null`, not `undefined` —
  * Vuetify reads an `undefined` item value as "use the title", which would post the translated
  * label instead of no filter at all.
  *

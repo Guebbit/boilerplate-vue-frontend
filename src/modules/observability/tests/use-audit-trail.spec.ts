@@ -62,6 +62,7 @@ vi.mock('@api', () => ({
     )
 }));
 
+/** Builds the reject envelope the API sends for a failed call. */
 const apiFailure = (status: number, message: string) => ({
     success: false,
     status,

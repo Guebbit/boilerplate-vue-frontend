@@ -1,7 +1,7 @@
 /**
  * @module
- * `AdminOverviewTab.vue` — scoped to the one section this file's own CLEANUP_0917 work added
- * (`queues`, the parked-jobs card): every other KPI/section on this tab is a pure function of
+ * `AdminOverviewTab.vue` — scoped to one section (`queues`, the parked-jobs card):
+ * every other KPI/section on this tab is a pure function of
  * props this suite does not otherwise exercise.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
@@ -31,6 +31,7 @@ const aHealth = (queues: ObservabilityHealth['queues']): ObservabilityHealth => 
     timestamp: '2026-09-19T00:00:00.000Z'
 });
 
+/** Mounts the overview tab with the given health snapshot. */
 const mountTab = (health?: ObservabilityHealth) =>
     mount(AdminOverviewTab, {
         props: { health, loading: false },
