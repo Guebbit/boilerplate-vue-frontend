@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'OrdersListPage'
 };
@@ -55,7 +59,7 @@ const { t } = useI18n();
 const router = useRouter();
 
 /**
- * `OrderReferenceSearch`'s own `@found` handler — that component names no route at all (FA86),
+ * `OrderReferenceSearch`'s own `@found` handler — that component names no route at all,
  * so this page, which owns `OrderEdit` directly, is what turns a found order into a navigation.
  *
  * @param order - The order the reference search landed on.
@@ -176,7 +180,7 @@ const statusColor = (status?: OrderStatus) => (status ? STATUS_COLORS[status] : 
 
 /**
  * The status select's options: every `OrderStatus`, plus "any", re-translated on locale change.
- * The "any" row's value is `null`, not `undefined` (FA51) — Vuetify reads an `undefined` item
+ * The "any" row's value is `null`, not `undefined` — Vuetify reads an `undefined` item
  * value as "use the title", which would post the translated label instead of no filter at all.
  */
 const statusOptions = computed(() => [

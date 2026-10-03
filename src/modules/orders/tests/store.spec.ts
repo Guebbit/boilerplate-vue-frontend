@@ -153,8 +153,8 @@ describe('useOrdersStore', () => {
     });
 
     describe('updateOrder', () => {
-        // `status` left `UpdateOrderByIdRequest` with SH1 — `email` is the only field this body
-        // still carries.
+        // `status` is no longer a field of `UpdateOrderByIdRequest` — `email` is the only field this
+        // body still carries.
         it('sends the id in the path and the changes in the body', () =>
             useOrdersStore()
                 .updateOrder('o1', { email: 'new@example.com' })

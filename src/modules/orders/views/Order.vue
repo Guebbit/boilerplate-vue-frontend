@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'OrderTargetPage'
 };
@@ -107,7 +111,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
 const { reorder } = useCartStore();
 
 /**
- * Whether a reorder is in flight (FA39). `reorder` runs under the CART store's `fetchAny`, a
+ * Whether a reorder is in flight. `reorder` runs under the CART store's `fetchAny`, a
  * different loading flag from {@link loading} above (the orders store's own) — the reorder
  * button has to disable on this one, or a double-click fires the request twice.
  */
@@ -121,7 +125,7 @@ const router = useRouter();
 /**
  * The audit-log link the history button offers, for the order currently shown — `undefined`,
  * hiding the button entirely, on a build with no `admin` module: `admin` is not a coupling this
- * module's `MODULE_EDGES` entry declares, so it is guarded rather than assumed (FA86). The
+ * module's `MODULE_EDGES` entry declares, so it is guarded rather than assumed. The
  * button's own `session.can('read', 'AuditLog')` check stays alongside it — one answers "does
  * this build even have an audit log", the other "may THIS visitor see it".
  */
@@ -154,7 +158,7 @@ const cancellable = computed(() => currentOrder.value?.actions?.cancel === true)
 const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice === true);
 
 /**
- * The order's own frozen currency (FA37) — every price on this page is `currentOrder`'s own money,
+ * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
  * never the shop's current default. The shop's currency only stands in for an order that predates
  * this field, per the API's own note on `Order.currency`.
  */
@@ -679,7 +683,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             </p>
                                             <strong>{{ item.product.id }}</strong>
                                         </div>
-                                        <!-- FA32b: the response already carries the frozen unit
+                                        <!-- The response already carries the frozen unit
                                              price and this order's own currency — line total is
                                              derived here, not re-fetched or re-priced. -->
                                         <div

@@ -105,7 +105,7 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         expect(wrapper.findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(true);
     });
 
-    it('jumps to OrderEdit when the lookup emits a found order — FA86: the lookup itself does not', () => {
+    it('jumps to OrderEdit when the lookup emits a found order (the lookup itself does not)', () => {
         // `payments` declares no MODULE_EDGES reach into `orders`, so `OrderReferenceSearch`
         // emits rather than navigating; this page owns `OrderEdit` directly and is the one that
         // turns a found order into a push.
@@ -197,7 +197,7 @@ const signInReadingOrders = (pinnedToOwner: boolean) => {
 
 /**
  * A customer's list is already only their own orders, so the search-by-id/user/product/email boxes
- * and the transfer queue are staff tools, not theirs (FA38).
+ * and the transfer queue are staff tools, not theirs.
  */
 describe('OrdersList — which filters a viewer sees', () => {
     it('shows a customer only the filters that narrow their own list', () => {
@@ -249,6 +249,7 @@ const mountWithRows = async () => {
     return wrapper;
 };
 
+/** Finds the header cell whose text contains `title`. */
 const headOf = (wrapper: Awaited<ReturnType<typeof mountWithRows>>, title: string) =>
     wrapper.findAll('th').find((head) => head.text().includes(title));
 

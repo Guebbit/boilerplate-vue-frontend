@@ -99,6 +99,7 @@ const lineWith = (current: OrderType['items'][number]['current']): OrderType['it
     netAmount: 9.99
 });
 
+/** An order with no lines; each test adds the lines it needs. */
 const BASE_ORDER: Omit<OrderType, 'items'> = {
     id: 'o1',
     email: 'buyer@example.com',
@@ -278,7 +279,7 @@ describe('the order number', () => {
     });
 });
 
-describe('the payment deadline (FA32c)', () => {
+describe('the payment deadline', () => {
     it("passes the order's own payBy into PaymentPanel, not only TransferInstructionsPanel", () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
@@ -351,7 +352,7 @@ describe('the "History" link', () => {
     });
 });
 
-describe('an order line’s price (FA32b)', () => {
+describe('an order line’s price', () => {
     it("shows the frozen unit price and price × quantity, in the order's own currency", () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
@@ -389,7 +390,7 @@ describe('an order line’s picture', () => {
     });
 });
 
-describe('the reorder button (FA39)', () => {
+describe('the reorder button', () => {
     it("disables on the CART store's own loading, not the orders store's", () => {
         // `reorder` runs under the cart store's `fetchAny` — a double-click firing it twice is
         // exactly the bug this guard removes, and the orders store's own `loading` (already

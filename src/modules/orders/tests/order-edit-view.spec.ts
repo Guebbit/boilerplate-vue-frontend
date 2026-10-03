@@ -33,9 +33,16 @@ import type { Order, OrderActions } from '@types';
 
 wireModulesIntoCore();
 
+/** Stub for the payments module's `refreshPayment`. */
 const refreshPayment = vi.fn(() => Promise.resolve());
+
+/** Stub for the payments module's `refund`; takes an optional partial amount. */
 const refund = vi.fn((_amount?: number) => Promise.resolve());
+
+/** Whether the mocked refund action is currently allowed. */
 const mockCanRefund = ref(false);
+
+/** Whether the mocked refund is in flight. */
 const mockRefundLoading = ref(false);
 
 vi.mock('@/modules/payments', () => ({
@@ -160,7 +167,7 @@ beforeEach(() => {
 
 describe('a list-cache arrival gains actions', () => {
     it('enables Cancel once the forced re-fetch lands', () => {
-        // `status` is not a form field any more (SH1) — the moves this page renders from
+        // `status` is not a form field any more — the moves this page renders from
         // `actions` are the cancel/refund/override controls, not a status select, so proving the
         // re-fetch landed means proving THOSE gain their real state.
         signInAsAdmin();
@@ -391,7 +398,7 @@ describe('the correct-status door', () => {
     });
 });
 
-describe('the edit form (FA31)', () => {
+describe('the edit form', () => {
     it('sends no fields when the form is submitted unchanged', () => {
         signInAsAdmin();
         const detail = anOrder();
@@ -506,7 +513,7 @@ describe('recording a payment by hand', () => {
             .then(() => nextTick())
             .then(() => {
                 // The mount-time forced re-fetch from `useOrderActionsRefetch` is the first call;
-                // this is the second, PL-60's own.
+                // this is the second, from the explicit refresh once the payment is recorded.
                 expect(fetchOrder).toHaveBeenLastCalledWith(detail.id, { forced: true });
             });
     });

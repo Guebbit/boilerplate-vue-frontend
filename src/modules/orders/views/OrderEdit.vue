@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'OrderEditPage'
 };
@@ -68,6 +72,8 @@ const { watchOrder, fetchOrder, updateOrder, cancelOrder, overrideStatus } = use
  * Correct-status form state, cleared after every submit.
  */
 const overrideTo = ref<OrderStatus>();
+
+/** Free-text reason for the status correction. */
 const overrideReason = ref('');
 
 /**
@@ -350,8 +356,8 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
  * Sends `email` only when it actually differs from the loaded record — an unconditional resend
  * is a no-op on the server (`orders/services/crud.ts`'s `update` merges it either way), but it
  * still writes the document and audits `ORDER_UPDATED` every time staff opens and saves the form
- * without touching anything, the same "diff against the hydrated record" rule D17d adopted for
- * the account form.
+ * without touching anything, the same "diff against the hydrated record" rule the account form
+ * follows.
  * @returns A promise resolving once the flow settles: a success toast, or the
  *  revealed validation errors when the input is invalid. An API failure blocks the form in
  *  place ({@link formError}). A missing route id is a no-op.
