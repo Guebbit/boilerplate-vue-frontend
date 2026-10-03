@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ReturnsListPage'
 };
@@ -50,7 +54,7 @@ const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
 
 /**
  * The status filter's choices, with a leading "any status" entry whose value is `null`, not
- * `undefined` (FA51) — Vuetify reads an `undefined` item value as "use the title".
+ * `undefined` — Vuetify reads an `undefined` item value as "use the title".
  */
 const statusOptions = computed(() => [
     { value: null, title: t('returns-list-page.filter-status-any') },
