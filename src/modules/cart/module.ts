@@ -64,17 +64,25 @@ export default {
              */
             badge: () => {
                 const cartStore = useCartStore();
-                const { isAuth } = storeToRefs(useSessionStore());
+                const session = useSessionStore();
+                const { isAuth } = storeToRefs(session);
+                /*
+                 * Staff and administrators hold no cart key, so for them the summary read would be
+                 * a 403. The abilities arrive a moment after the session does, so this watches the
+                 * answer to "may this session shop", not the session alone.
+                 */
                 watch(
-                    isAuth,
-                    (auth, wasAuth) => {
-                        if (auth) void cartStore.fetchSummary();
-                        // Only the real end of a session: a reload starts signed out and is restored a
-                        // moment later, and must keep its checkout draft.
-                        if (wasAuth && !auth) clearCheckoutDrafts();
+                    () => isAuth.value && session.can('update', 'Cart'),
+                    (mayShop) => {
+                        if (mayShop) void cartStore.fetchSummary();
                     },
                     { immediate: true }
                 );
+                watch(isAuth, (auth, wasAuth) => {
+                    // Only the real end of a session: a reload starts signed out and is restored a
+                    // moment later, and must keep its checkout draft.
+                    if (wasAuth && !auth) clearCheckoutDrafts();
+                });
                 return storeToRefs(cartStore).badgeQuantity;
             },
             /*

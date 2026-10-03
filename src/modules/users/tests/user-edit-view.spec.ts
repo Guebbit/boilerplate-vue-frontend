@@ -315,16 +315,16 @@ describe('UserEdit — a save answered 412', () => {
         }));
 });
 
+/** Whether the Vuetify field behind a `data-test` id is disabled. */
+const isDisabled = (wrapper: ReturnType<typeof mountPage>, test: string) =>
+    wrapper.get(`[data-test=${test}]`).classes().includes('v-input--disabled');
+
 /**
  * Every control follows the row's `actions`: with no `update` the profile fields and the role are
  * disabled, with no `ban` the active switch is, and one's own role is never offered. A credential
  * is the owner's alone, so there is no email field and no password field at all.
  */
 describe('UserEdit — what each row allows', () => {
-    /** Whether the Vuetify field behind a `data-test` id is disabled. */
-    const isDisabled = (wrapper: ReturnType<typeof mountPage>, test: string) =>
-        wrapper.get(`[data-test=${test}]`).classes().includes('v-input--disabled');
-
     it('has no email field and no password field', () => {
         const wrapper = mountPage();
 

@@ -159,13 +159,13 @@ const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 const session = useSessionStore();
 
 /**
- * Whether the order can still reach `paid` — the same gate the customer's own card form uses,
- * asked here for the operator's "record it by hand" form instead — and the viewer may record a
- * payment at all. An in-flight card charge is a narrower case this flag does not see; the API's
+ * Whether the operator may record a payment by hand on this order — the server's
+ * `actions.recordPayment` (still awaiting payment, key held, rank reaching the buyer) — and the
+ * viewer may record a payment at all. An in-flight card charge is a narrower case this flag does not see; the API's
  * own 409 for it surfaces as that form's toast.
  */
 const canRecordOffline = computed(
-    () => currentOrder.value?.actions?.pay === true && session.can('create', 'Payment')
+    () => currentOrder.value?.actions?.recordPayment === true && session.can('create', 'Payment')
 );
 
 /**

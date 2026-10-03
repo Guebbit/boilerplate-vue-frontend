@@ -147,14 +147,15 @@ describe('UserAccessDialog', () => {
         ));
 });
 
+/** Whether the Vuetify field behind a `data-test` id is disabled. */
+const disabledOf = (wrapper: Awaited<ReturnType<typeof mountDialog>>, test: string) =>
+    wrapper.find(`[data-test=${test}]`).classes().includes('v-input--disabled');
+
 /**
  * What the picker offers follows the row's `actions`: the role select is the edit key's and never
  * one's own (the server refuses it), the active switch is the ban key's, a different key.
  */
 describe('UserAccessDialog — what the picker offers', () => {
-    const disabledOf = (wrapper: Awaited<ReturnType<typeof mountDialog>>, test: string) =>
-        wrapper.find(`[data-test=${test}]`).classes().includes('v-input--disabled');
-
     it('offers both the role and the active switch when the row allows update and ban', () =>
         mountDialog({
             target: {

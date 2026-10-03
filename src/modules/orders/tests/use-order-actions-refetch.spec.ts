@@ -20,6 +20,7 @@ const NO_MOVES: OrderActions = {
     transitions: [],
     cancel: false,
     pay: false,
+    recordPayment: false,
     start: false,
     ship: false,
     deliver: false,

@@ -88,6 +88,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     transitions: [],
     cancel: false,
     pay: false,
+    recordPayment: false,
     start: false,
     ship: false,
     deliver: false,
@@ -446,7 +447,11 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+            actions: anAction({
+                transitions: [OrderStatus.cancelled],
+                cancel: true,
+                recordPayment: true
+            })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -463,7 +468,30 @@ describe('recording a payment by hand', () => {
         signInAsAdmin([]);
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+            actions: anAction({
+                transitions: [OrderStatus.cancelled],
+                cancel: true,
+                recordPayment: true
+            })
+        });
+
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(
+                    false
+                );
+            });
+    });
+
+    // The card step is the buyer's: `pay` alone, without `recordPayment`, is not the operator's door.
+    it('withholds the form from an operator the server did not offer it, whatever the buyer is offered', () => {
+        signInAsAdmin();
+        const detail = anOrder({
+            status: OrderStatus.pending,
+            actions: anAction({ transitions: [], cancel: false, pay: true, recordPayment: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -478,8 +506,7 @@ describe('recording a payment by hand', () => {
     });
 
     it('withdraws the form once the order can no longer reach paid', () => {
-        // The same gate the customer's own card form uses — a paid, shipped or cancelled order has
-        // nothing left for either form to record.
+        // A paid, shipped or cancelled order has nothing left to record.
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.paid,
@@ -501,7 +528,11 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+            actions: anAction({
+                transitions: [OrderStatus.cancelled],
+                cancel: true,
+                recordPayment: true
+            })
         });
         const { wrapper, fetchOrder } = mountFromListCache(detail);
 
@@ -522,7 +553,11 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: true })
+            actions: anAction({
+                transitions: [OrderStatus.cancelled],
+                cancel: true,
+                recordPayment: true
+            })
         });
         const orders = useOrdersStore();
         vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());

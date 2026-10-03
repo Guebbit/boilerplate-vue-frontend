@@ -32,6 +32,7 @@ const signIn = () => {
     const session = useSessionStore();
     session.viewer = asStub<SessionViewer>({ id: 'u1', email: 'u1@example.com' });
     session.accessToken = 'tok';
+    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
 };
 
 beforeEach(() => {
@@ -62,6 +63,29 @@ describe('the cart badge watching the session', () => {
 
         return nextTick().then(() => {
             expect(readCheckoutDraft('u1')).toEqual({ notes: 'Ring twice' });
+        });
+    });
+});
+
+describe('the cart badge reading the summary', () => {
+    it('reads it for a session that may shop', () => {
+        const summary = vi.spyOn(useCartStore(), 'fetchSummary').mockResolvedValue(undefined);
+        signIn();
+        wireBadge();
+
+        return nextTick().then(() => {
+            expect(summary).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('never asks for it from a session that holds no cart key, which would only be refused', () => {
+        const summary = vi.spyOn(useCartStore(), 'fetchSummary').mockResolvedValue(undefined);
+        signIn();
+        useSessionStore().setAbilities({ tenant: [], platform: [] });
+        wireBadge();
+
+        return nextTick().then(() => {
+            expect(summary).not.toHaveBeenCalled();
         });
     });
 });
