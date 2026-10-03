@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'StockMovementForm'
 };
@@ -71,7 +75,7 @@ const { loading } = storeToRefs(inventoryStore);
 
 /**
  * The product select's search box and options — `POST /products/search`, not the products store's
- * unpaged `listProducts()`, which only ever holds the first page (FE_PARITY_0924 B2).
+ * unpaged `listProducts()`, which only ever holds the first page.
  */
 const { query: productQuery, options: productOptions, pin: pinProduct } = useProductPicker();
 

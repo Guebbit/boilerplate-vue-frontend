@@ -17,7 +17,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /**
- * The product field is now a search-as-you-type `v-autocomplete` (FE_PARITY_0924 B2), stubbed away
+ * The product field is now a search-as-you-type `v-autocomplete`, stubbed away
  * below like `v-select` used to be — but the composable behind it still calls `searchProducts` on
  * mount, debounced, for real. Mocked here so that call resolves immediately with nothing rather
  * than leaving a pending network request (and its timer) once the test has already finished.

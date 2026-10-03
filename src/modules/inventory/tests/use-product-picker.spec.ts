@@ -2,7 +2,7 @@
  * @module
  * Unit coverage of the product picker's search-as-you-type list and its `pin()` — the two
  * behaviours `StockMovementForm`/`MovementLedger` now share instead of each holding an unpaged
- * product cache (FE_PARITY_0924 B2). `@api` stays real; only `orvalMutator` is mocked, so the
+ * product cache. `@api` stays real; only `orvalMutator` is mocked, so the
  * request shape `searchProducts` itself builds is what a regression here would actually break.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -45,6 +45,8 @@ const respondWith = (items: Product[]) =>
 
 /** Two distinct products, standing in for "the current search page" and "something pinned". */
 const WIDGET: Product = { id: 'p1', title: 'Widget', price: 9.99, currency: 'EUR' };
+
+/** A second product, used as the pinned one. */
 const GADGET: Product = { id: 'p2', title: 'Gadget', price: 4.5, currency: 'EUR' };
 
 beforeEach(() => {

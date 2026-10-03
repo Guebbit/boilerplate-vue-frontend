@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'MovementLedger'
 };
@@ -45,8 +49,7 @@ const { t } = useI18n();
 
 /**
  * Router instance, for the `hasRoute` check below — `orders` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so the reference column's link is guarded rather than assumed
- * (FA86).
+ * `MODULE_EDGES` entry declares, so the reference column's link is guarded rather than assumed.
  */
 const router = useRouter();
 
@@ -127,7 +130,7 @@ const movementsReason = ref<TStockMovementReason | undefined>();
 
 /**
  * The product filter's search box and options — `POST /products/search`, not the products store's
- * unpaged `listProducts()`, which only ever holds the first page (FE_PARITY_0924 B2).
+ * unpaged `listProducts()`, which only ever holds the first page.
  */
 const { query: productQuery, options: productSearchOptions, pin: pinProduct } = useProductPicker();
 
@@ -139,7 +142,7 @@ useProductPickerPin(() => movementsProductId.value, pinProduct);
 
 /**
  * The product filter, with an "everything" row on top. Its value is `null`, not `undefined`
- * (FA51) — Vuetify reads an `undefined` item value as "use the title", which would post the
+ * — Vuetify reads an `undefined` item value as "use the title", which would post the
  * translated label instead of no filter at all.
  */
 const productFilterOptions = computed(() => [
@@ -222,6 +225,8 @@ const loadMissingTitles = (rows: StockMovement[]) => {
     );
 };
 
+// Vue `watch(source, callback, { immediate })`: `immediate` also loads the titles of rows
+// already present when the component mounts.
 watch(movements, (rows) => void loadMissingTitles(rows), { immediate: true });
 
 /**

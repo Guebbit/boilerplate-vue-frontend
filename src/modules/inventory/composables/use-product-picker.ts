@@ -3,8 +3,7 @@
  * Search-as-you-type product options for an inventory picker (`StockMovementForm`,
  * `MovementLedger`). Backed by `POST /products/search` rather than the products store's own
  * unpaged `listProducts()` cache, which only ever holds the first page — past roughly ten
- * products, anything later was simply unreachable from a `v-select` built off it
- * (FE_PARITY_0924 B2).
+ * products, anything later was simply unreachable from a `v-select` built off it.
  */
 import { ref, computed, watch } from 'vue';
 import { debounce } from 'lodash-es';
@@ -58,6 +57,8 @@ export const useProductPicker = () => {
             .catch(() => undefined);
     }, DEBOUNCE_MS);
 
+    // Vue `watch(source, callback, { immediate })`: `immediate` runs the first search as soon
+    // as the picker is created, with the initial query.
     watch(query, (text) => runSearch(text), { immediate: true });
 
     /**
