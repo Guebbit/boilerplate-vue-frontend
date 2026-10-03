@@ -7,10 +7,11 @@
  * one, and the screens show it neither button. The admin finds every one of those actions in
  * the audit trail, under the support role.
  *
- * What is not here: clearing a customer's two-factor and banning an account are decided
- * differently once the privilege work lands, so neither is pinned yet.
+ * What support is not given: a customer's credentials (no two-factor reset: the owner alone
+ * manages their own), a ban or a lift of one (the moderator's key), and the Audit page itself.
  */
 import { eventually } from '../../../support/e2e/steps';
+import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** The visitor, and the subject of the ticket they write. */
 const VISITOR = { email: 'op18.visitor@example.com', subject: 'OP18 where is my parcel' };
@@ -118,10 +119,14 @@ describe('OP18 · The support desk', () => {
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/users');
             expect(links).to.include('/en/feedback');
-            for (const page of ['/inventory', '/locales', '/admin', '/api-keys']) {
+            // No Audit entry: the trail is the moderator's and the admin's, not the desk's.
+            for (const page of ['/inventory', '/locales', '/admin', '/api-keys', '/audit']) {
                 expect(links, page).to.not.include(`/en${page}`);
             }
         });
+        cy.visit('/en/audit');
+        cy.get('#home-page').should('exist');
+        cy.get('.v-alert').should('exist');
 
         cy.step('the inbox filters by text and by status, and a note sticks');
         cy.trackNetwork();
@@ -162,8 +167,22 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=row-hard-delete]').should('not.exist');
             cy.get('a[href$="/users/create"]').should('not.exist');
 
+            cy.step(
+                'the page offers no history, no two-factor reset and no ban, and the server agrees'
+            );
+            cy.visit(`/en/users/${customerId}`);
+            cy.get('[data-test=user-go-to-edit]').should('exist');
+            cy.get('[data-test=user-history]').should('not.exist');
+            cy.get('[data-test=user-disable-two-factor]').should('not.exist');
+            loginDevice('support').then((device) => {
+                requestAsDevice(device, 'PATCH', `/users/${customerId}`, { active: false })
+                    .its('status')
+                    .should('equal', 403);
+            });
+
             cy.visit(`/en/users/${customerId}/edit`);
             cy.get('[data-test=user-edit-username] input').should('not.have.value', '');
+            cy.get('[data-test=user-edit-active] input').should('be.disabled');
             cy.get('[data-test=user-edit-phone] input').clear();
             cy.get('[data-test=user-edit-phone] input').type(NEW_PHONE);
             cy.get('#user-edit-page form').submit();

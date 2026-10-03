@@ -9,8 +9,12 @@
  *
  * The person acted on is the seeded `unverified` account: a customer, so the people acting are all
  * above it. The grant is on record in the audit trail.
+ *
+ * The second story is the other half of the rule: nobody changes their own role, and nobody ranks
+ * low enough to change an administrator's, so a moderator is shown no way to demote one.
  */
 import { eventually } from '../../../support/e2e/steps';
+import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** The slice of a user this story reads. */
 interface UserLike {
@@ -136,6 +140,39 @@ describe('OP19 · Nobody hands out more than they hold', () => {
                         (row) => row.action === 'access.role.assigned' && row.actor_role === 'admin'
                     )
             );
+        });
+    });
+
+    it('nobody changes their own role, and a moderator cannot demote an administrator', () => {
+        cy.accountInRole('admin').then(({ id: adminId }) => {
+            cy.step('the administrator’s own access dialog offers no role to pick');
+            cy.loginAs('admin');
+            cy.visit(`/en/users/${adminId}`);
+            cy.get('[data-test=user-manage-access]').click();
+            cy.get('[data-test=user-access-role]').should('have.class', 'v-input--disabled');
+            cy.get('[data-test=user-access-cancel]').click();
+
+            cy.step('and the server refuses it however the request is made');
+            loginDevice('admin').then((device) => {
+                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: 'customer' })
+                    .its('status')
+                    .should('equal', 403);
+            });
+            roleIs(adminId, 'admin');
+
+            cy.step('a moderator opening that administrator’s page is offered no way to change it');
+            cy.switchUser('moderator');
+            cy.visit(`/en/users/${adminId}`);
+            cy.get('[data-test=user-go-to-edit]').should('not.exist');
+            cy.get('[data-test=user-manage-access]').should('not.exist');
+
+            cy.step('and the server refuses the demotion, the role staying as it was');
+            loginDevice('moderator').then((device) => {
+                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: 'customer' })
+                    .its('status')
+                    .should('equal', 403);
+            });
+            roleIs(adminId, 'admin');
         });
     });
 });

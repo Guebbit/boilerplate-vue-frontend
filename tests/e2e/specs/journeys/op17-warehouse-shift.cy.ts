@@ -11,6 +11,7 @@
  * customer and paid by the admin, and the return request is approved by support first.
  */
 import { centsOf } from '../../../support/e2e/steps';
+import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /** The tracking code the warehouse types to ship the express order. */
@@ -140,6 +141,15 @@ describe('OP17 · A warehouse shift', () => {
         cy.subjectId('order.paidExpress').then((orderId) => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=go-to-edit]').should('not.exist');
+            // Reading every order is not cancelling one: the cancel is the buyer's, so the paid
+            // order shows the warehouse its parcel doors and no cancel, and the server agrees.
+            cy.get('[data-test=mark-started]').should('exist');
+            cy.get('[data-test=order-cancel]').should('not.exist');
+            loginDevice('warehouse').then((device) => {
+                requestAsDevice(device, 'POST', `/orders/${orderId}/cancel`, {})
+                    .its('status')
+                    .should('be.oneOf', [403, 404]);
+            });
             cy.get('[data-test=mark-started]').click();
             cy.get('[data-test=mark-shipped]').should('be.disabled');
             cy.get('[data-test=tracking-code-input] input').type(TRACKING_CODE);

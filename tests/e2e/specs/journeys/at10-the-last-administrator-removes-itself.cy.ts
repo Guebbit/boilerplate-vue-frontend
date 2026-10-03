@@ -6,7 +6,9 @@
  * no repair command, by decision (a locked-out shop is fixed in the database by a technician).
  * This story pins the lock-out and only that. The session ends at once, the login is refused, the
  * admin-only pages are shut to everyone who is left, and no remaining staff role may hand the
- * administrator role out again (a role may only grant what it holds).
+ * administrator role out again (a role may only grant what it holds). Nor may it switch the
+ * account back on: a moderator ranks below an administrator, so there is no repair through the
+ * app, and none is offered.
  */
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
@@ -76,6 +78,21 @@ describe('AT10 · The last administrator removes itself', () => {
                     }
                 );
             });
+
+            cy.step('nor can it switch the administrator back on: there is no repair in the app');
+            cy.visit(`/en/users/${adminId}`);
+            cy.get('[data-test=user-go-to-edit]').should('not.exist');
+            cy.get('[data-test=user-manage-access]').should('not.exist');
+            loginDevice('moderator').then((device) => {
+                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { active: true })
+                    .its('status')
+                    .should('equal', 403);
+            });
+            cy.apiAs<{ active: boolean }>('moderator', 'GET', `/users/${adminId}`).then(
+                (administrator) => {
+                    expect(administrator?.active).to.equal(false);
+                }
+            );
         });
     });
 });

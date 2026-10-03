@@ -8,7 +8,8 @@
  * that a guest then sees at once. Stock and the inbox are theirs to read, not to write, and the
  * screens show no control the backend would refuse.
  *
- * Money is not the manager's: refund buttons stay shut and there is no offline-payment form.
+ * Money is not the manager's: refund buttons stay shut and there is no offline-payment form. Nor
+ * are the accounts (no Users page) or a basket (staff do not shop).
  */
 
 /**
@@ -63,12 +64,24 @@ describe('OP16 · The shop manager’s morning', () => {
             ]) {
                 expect(links, page).to.include(`/en${page}`);
             }
-            for (const page of ['/api-keys', '/admin', '/playground/realtime']) {
+            // No Users entry: running the shop does not need the accounts, so the manager holds no
+            // `users.any.read` (the role-by-role pass), and the page turns them back.
+            for (const page of ['/users', '/api-keys', '/admin', '/playground/realtime']) {
                 expect(links, page).to.not.include(`/en${page}`);
             }
         });
+        isTurnedBack('/en/users');
         isTurnedBack('/en/api-keys');
         isTurnedBack('/en/admin');
+
+        cy.step('staff do not shop: no basket in the bar, no add-to-cart on a product');
+        cy.get('[data-test=pinned-Cart]').should('not.exist');
+        cy.subjectId('product.rich').then((productId) => {
+            cy.visit(`/en/products/${productId}`);
+            cy.get('[data-test=go-to-edit]').should('exist');
+            cy.get('[data-test=add-to-cart]').should('not.exist');
+        });
+        isTurnedBack('/en/cart');
 
         cy.step('a paid order: the manager starts work on it, and has no ship button');
         cy.subjectId('order.paid').then((orderId) => {
