@@ -3,8 +3,7 @@
  * Pinia store built on `useStructureCrudApi` for users CRUD and paginated
  * search, with a multipart branch for create/update when an avatar is
  * attached, plus two hand-written actions: `hardDeleteUser` for the
- * irreversible delete, and `adminDisableTwoFactor` for the audited,
- * no-proof-required 2FA recovery.
+ * irreversible delete and `restoreUser` for undoing a soft one.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -22,7 +21,6 @@ import {
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
-    adminDisableUserTwoFactor as apiAdminDisableUserTwoFactor,
     UserSortItem
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
@@ -128,9 +126,9 @@ export const useUsersStore = defineStore('users', () => {
                     : apiCreateUser(userData, options)
                 ).then((response) => response.data),
 
-            // PATCH, not PUT: `UserEdit.vue` sends only the fields its form
-            // actually holds (`email`, `password`, an upload) — a PUT's every omitted field would
-            // be cleared instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
+            // PATCH, not PUT: `UserEdit.vue` sends only the fields its form actually holds
+            // (the profile fields, an upload) — a PUT's every omitted field would be cleared
+            // instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
             //
             // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
             // part cannot carry `null`, so the clears follow as a JSON PATCH.
@@ -207,31 +205,6 @@ export const useUsersStore = defineStore('users', () => {
             })
         );
 
-    /**
-     * Strips a user's second factor with no code required — the admin-assisted recovery path for
-     * an admin who lost both their authenticator and their backup codes. Unlike every self-service
-     * 2FA mutation, no proof of the factor is asked for; every call is audited server-side, which
-     * is what makes skipping that proof safe to expose here at all.
-     *
-     * `fetchAny` rather than `deleteTarget`: nothing about the USER record is deleted, only a
-     * factor on it — `deleteTarget` would evict the record from this store's cache as if the whole
-     * user had been removed.
-     *
-     * `fetchUser(userId, { forced: true })`, not a plain `fetchUser(userId)`: the toolkit's target
-     * cache holds a record fresh for an hour (`staleTime`), so a plain re-fetch right after this
-     * call would hand back the same cached, still-enabled record `User.vue` just loaded — `forced`
-     * treats it as stale and re-asks the server, which is what makes `currentUser.twoFactorEnabledAt`
-     * actually flip and the button gated on it (`User.vue`) disappear without a full page reload.
-     *
-     * @param userId - Identifier of the user whose 2FA is being stripped.
-     * @returns A promise resolving once the factor is gone and the record has been force-refetched,
-     *  so a cached `currentUser` never lags what the admin just did.
-     */
-    const adminDisableTwoFactor = (userId: string) =>
-        fetchAny(() =>
-            apiAdminDisableUserTwoFactor(userId).then(() => fetchUser(userId, { forced: true }))
-        );
-
     return {
         users,
         usersList,
@@ -255,7 +228,6 @@ export const useUsersStore = defineStore('users', () => {
         updateUser,
         deleteUser,
         hardDeleteUser,
-        restoreUser,
-        adminDisableTwoFactor
+        restoreUser
     };
 });

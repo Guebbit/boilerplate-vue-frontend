@@ -12,10 +12,10 @@ export default {
 /**
  * @module
  * User detail (read-only) page. Loads one user by route id and renders its
- * fields, role and status, plus the audited, no-proof-required 2FA recovery
- * button for an admin who lost both their authenticator and their backup
- * codes, and the `UserAccessDialog` shortcut for changing role/active status
- * without opening the full edit form.
+ * fields, role and status, plus the `UserAccessDialog` shortcut for changing role/active status
+ * without opening the full edit form. Every control reads the row's own `actions`: the server's
+ * answer, key and rank together, for THIS caller on THIS account. A credential is its owner's
+ * alone, so there is no staff control for a password or a second factor.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed } from 'vue';
@@ -28,7 +28,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -59,9 +58,9 @@ const { id } = defineProps<{
 const { watchUser } = useUsersStore();
 
 /**
- * The session, for the `meta.can` rules that gate the buttons: "History" needs `audit.any.read`,
- * Edit and the access buttons need `users.any.update`. A button the backend answers with 403 is
- * a button not to show.
+ * The session, for the `meta.can` rule that gates "History" (`audit.any.read`). Edit and the
+ * access buttons are gated by the row's `actions` instead — a button the backend answers with 403
+ * is a button not to show.
  */
 const session = useSessionStore();
 
@@ -140,10 +139,9 @@ watchUser(() => id, { onError: onMissingRecord });
 const { addMessage } = useNotificationsStore();
 
 /**
- * Turns a user's second factor off, as an administrator — the recovery path when they have
- * lost every method — plus the role/active-status writes `UserAccessDialog` confirms below.
+ * The role/active-status writes `UserAccessDialog` confirms below.
  */
-const { adminDisableTwoFactor, updateUser } = useUsersStore();
+const { updateUser } = useUsersStore();
 
 /**
  * `UserAccessDialog`'s open state, target and picker options, plus the promise-returning
@@ -182,7 +180,8 @@ const handleManageAccess = () => {
         id: target.id,
         name: target.username,
         role: target.role,
-        active: target.active
+        active: target.active,
+        actions: target.actions
     }).then((result) => {
         if (!result) return;
         clearAccessError();
@@ -190,43 +189,6 @@ const handleManageAccess = () => {
             .then(() => addMessage(t('user-target-page.success-access-update')))
             .catch((error: unknown) => reportAccessError(error));
     });
-};
-
-/**
- * This button's own blocked state — the only write action on this page, so a failure renders
- * through {@link InlineErrorAlert} next to it rather than a toast — see
- * docs/theory/request-flow.md.
- */
-const {
-    message: disableTwoFactorError,
-    report: reportDisableTwoFactorError,
-    clear: clearDisableTwoFactorError
-} = useBlockingError();
-
-/**
- * Strips this user's second factor after an explicit confirmation — the one deliberate exception
- * to "prove the factor to remove it", for an owner who has lost both their authenticator and
- * their backup codes. No code is asked for, which is exactly why the confirmation has to say so:
- * every call is audited server-side, but nothing here re-proves it is really them.
- *
- * @returns Nothing; a failure blocks the button in place ({@link disableTwoFactorError}).
- */
-const handleDisableTwoFactor = () => {
-    if (!id) return;
-    return useDialogStore()
-        .confirm({
-            message: t('user-target-page.confirm-disable-two-factor', {
-                name: currentUser.value?.username ?? id
-            }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearDisableTwoFactorError();
-            return adminDisableTwoFactor(id)
-                .then(() => addMessage(t('user-target-page.success-disable-two-factor')))
-                .catch((error) => reportDisableTwoFactorError(error));
-        });
 };
 </script>
 
@@ -321,8 +283,9 @@ const handleDisableTwoFactor = () => {
 
             <template #actions>
                 <v-btn
-                    v-if="currentUser && session.can('update', 'User')"
+                    v-if="currentUser?.actions?.update"
                     color="secondary"
+                    data-test="user-go-to-edit"
                     :to="routerLinkI18n({ name: 'UserEdit', params: { id: currentUser.id } })"
                 >
                     {{ t('user-target-page.button-go-to-edit') }}
@@ -339,7 +302,7 @@ const handleDisableTwoFactor = () => {
                     {{ t('user-target-page.button-history') }}
                 </v-btn>
                 <div
-                    v-if="currentUser && session.can('update', 'User')"
+                    v-if="currentUser?.actions?.update || currentUser?.actions?.ban"
                     class="flex flex-col gap-2"
                 >
                     <v-btn
@@ -351,25 +314,6 @@ const handleDisableTwoFactor = () => {
                         {{ t('user-target-page.button-manage-access') }}
                     </v-btn>
                     <InlineErrorAlert :message="accessError" data-test="user-manage-access-error" />
-
-                    <!--
-                        A user with no second factor has nothing to strip — showing this
-                        unconditionally let an admin write a misleading "disabled 2FA" entry to an
-                        audit trail for someone who never had it enabled.
-                    -->
-                    <v-btn
-                        v-if="currentUser.twoFactorEnabledAt"
-                        variant="text"
-                        color="error"
-                        data-test="user-disable-two-factor"
-                        @click="handleDisableTwoFactor"
-                    >
-                        {{ t('user-target-page.button-disable-two-factor') }}
-                    </v-btn>
-                    <InlineErrorAlert
-                        :message="disableTwoFactorError"
-                        data-test="user-disable-two-factor-error"
-                    />
                 </div>
             </template>
         </ItemDetailLayout>

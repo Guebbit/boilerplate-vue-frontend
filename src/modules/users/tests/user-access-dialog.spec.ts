@@ -146,3 +146,72 @@ describe('UserAccessDialog', () => {
                 })
         ));
 });
+
+/**
+ * What the picker offers follows the row's `actions`: the role select is the edit key's and never
+ * one's own (the server refuses it), the active switch is the ban key's, a different key.
+ */
+describe('UserAccessDialog — what the picker offers', () => {
+    const disabledOf = (wrapper: Awaited<ReturnType<typeof mountDialog>>, test: string) =>
+        wrapper.find(`[data-test=${test}]`).classes().includes('v-input--disabled');
+
+    it('offers both the role and the active switch when the row allows update and ban', () =>
+        mountDialog({
+            target: {
+                id: 'u1',
+                name: 'ada',
+                role: 'customer',
+                active: true,
+                actions: { update: true, ban: true, delete: false }
+            }
+        }).then((wrapper) => {
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(false);
+            expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
+        }));
+
+    // Support: holds the edit key, not the ban key.
+    it('disables the active switch when the row allows no ban', () =>
+        mountDialog({
+            target: {
+                id: 'u1',
+                name: 'ada',
+                role: 'customer',
+                active: true,
+                actions: { update: true, ban: false, delete: false }
+            }
+        }).then((wrapper) => {
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(false);
+            expect(disabledOf(wrapper, 'user-access-active')).toBe(true);
+        }));
+
+    it('disables the role select when the row allows no update', () =>
+        mountDialog({
+            target: {
+                id: 'u1',
+                name: 'ada',
+                role: 'customer',
+                active: true,
+                actions: { update: false, ban: true, delete: false }
+            }
+        }).then((wrapper) => {
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
+            expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
+        }));
+
+    it('never offers the role of the signed-in admin themselves, even with every action allowed', () => {
+        useSessionStore().viewer = { id: 'u1', email: 'me@example.com', role: 'admin' };
+
+        return mountDialog({
+            target: {
+                id: 'u1',
+                name: 'me',
+                role: 'admin',
+                active: true,
+                actions: { update: true, ban: true, delete: true }
+            }
+        }).then((wrapper) => {
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
+            expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
+        });
+    });
+});

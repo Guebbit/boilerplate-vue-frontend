@@ -1,9 +1,10 @@
 /**
  * @module
- * Mounts the real admin user-detail page against a real, memory-history router: B9's gate on the
- * "strip 2FA" button (and the forced refetch that makes it disappear without a reload), plus the
- * "Manage access" shortcut's confirm flow, driven through a stubbed `UserAccessDialog` — its own
- * picker/confirm behaviour is `user-access-dialog.spec.ts`'s job.
+ * Mounts the real admin user-detail page against a real, memory-history router: every control is
+ * gated by the row's own `actions` (the server's answer, key and rank together), there is no staff
+ * control for a second factor, and the "Manage access" shortcut's confirm flow is driven through
+ * a stubbed `UserAccessDialog` — its own picker/confirm behaviour is `user-access-dialog.spec.ts`'s
+ * job.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -32,13 +33,6 @@ wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn()
-}));
-
-// The 2FA-strip confirm goes through the global dialog queue, which needs `DialogHost.vue`
-// mounted to answer for real — this suite is not about that plumbing, so the confirm is stubbed
-// to always accept, same as `use-dictionary-cell-editor.spec.ts` does for its own delete confirm.
-vi.mock('@/ui/dialog.ts', () => ({
-    useDialogStore: () => ({ confirm: () => Promise.resolve(true) })
 }));
 
 /**
@@ -108,25 +102,54 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/users/u1').then(() => router.isReady()));
 });
 
+/** What the signed-in admin may do to the account — the shape the server answers a row with. */
+const ALL = { update: true, ban: true, delete: true };
+
 describe('User (detail page)', () => {
-    // A reader of users (the manager) holds no `users.any.update`: Edit, Manage access and the
-    // 2FA strip would each answer 403.
-    it('offers no Edit, access or two-factor button to a viewer who may not update users', () => {
-        signInHolding([['read', 'User']]);
-        queueGetResponses(aUser({ id: 'u1', twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' }));
+    // The row's `actions` is the whole answer: the manager reads users and may change none, a
+    // support agent may edit a customer and may not ban, and nobody may touch an account at their
+    // own level or above.
+    it('offers no Edit and no access button when the row allows neither update nor ban', () => {
+        queueGetResponses(
+            aUser({ id: 'u1', actions: { update: false, ban: false, delete: false } })
+        );
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
             expect(wrapper.find('[data-test=user-manage-access]').exists()).toBe(false);
-            expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(false);
-            expect(wrapper.text()).not.toContain('Edit');
+            expect(wrapper.find('[data-test=user-go-to-edit]').exists()).toBe(false);
         });
     });
 
-    // Clicking it for a user with no second factor to strip would write a misleading "disabled
-    // 2FA" audit entry, so the button must not show for one.
-    it('hides "strip two-factor" for a user with no second factor enabled', () => {
-        queueGetResponses(aUser({ id: 'u1' }));
+    it('offers Edit and the access button when the row allows them', () => {
+        queueGetResponses(aUser({ id: 'u1', actions: ALL }));
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=user-manage-access]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=user-go-to-edit]').exists()).toBe(true);
+        });
+    });
+
+    // Support holds `users.any.update` and not `users.any.ban`: the edit is offered, and the dialog
+    // opens for a role change with its active switch disabled.
+    it('offers Edit and the access dialog when only update is allowed, as for a support agent', () => {
+        queueGetResponses(
+            aUser({ id: 'u1', actions: { update: true, ban: false, delete: false } })
+        );
+        const editOnly = mountPage();
+
+        return flushPromises().then(() => {
+            expect(editOnly.find('[data-test=user-go-to-edit]').exists()).toBe(true);
+            expect(editOnly.find('[data-test=user-manage-access]').exists()).toBe(true);
+        });
+    });
+
+    // A credential is its owner's alone: the strip button is gone for good, whatever the row says.
+    it('has no control for a second factor, even on an account that has one', () => {
+        queueGetResponses(
+            aUser({ id: 'u1', actions: ALL, twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' })
+        );
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
@@ -134,27 +157,10 @@ describe('User (detail page)', () => {
         });
     });
 
-    it('shows "strip two-factor" for a user with one enabled, and hides it again once stripped', () => {
-        queueGetResponses(
-            aUser({ id: 'u1', twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' }),
-            // The forced re-fetch `adminDisableTwoFactor` runs after the DELETE succeeds.
-            aUser({ id: 'u1' })
-        );
-        const wrapper = mountPage();
-
-        return flushPromises()
-            .then(() => {
-                expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(true);
-                return wrapper.get('[data-test=user-disable-two-factor]').trigger('click');
-            })
-            .then(flushPromises)
-            .then(() => {
-                expect(wrapper.find('[data-test=user-disable-two-factor]').exists()).toBe(false);
-            });
-    });
-
     it('opens the access dialog for the loaded user, and sends only what it confirms', () => {
-        queueGetResponses(aUser({ id: 'u1', username: 'ada', role: 'customer', active: true }));
+        queueGetResponses(
+            aUser({ id: 'u1', username: 'ada', role: 'customer', active: true, actions: ALL })
+        );
         const wrapper = mountPage();
 
         return flushPromises()
@@ -166,7 +172,8 @@ describe('User (detail page)', () => {
                     id: 'u1',
                     name: 'ada',
                     role: 'customer',
-                    active: true
+                    active: true,
+                    actions: ALL
                 });
                 // Only `active` "changed" here — `UserAccessDialog` itself is what decides which
                 // fields to include; this stub simulates it having decided `active: false`.
@@ -185,7 +192,9 @@ describe('User (detail page)', () => {
     });
 
     it('does nothing when the access dialog is cancelled', () => {
-        queueGetResponses(aUser({ id: 'u1', username: 'ada', role: 'customer', active: true }));
+        queueGetResponses(
+            aUser({ id: 'u1', username: 'ada', role: 'customer', active: true, actions: ALL })
+        );
         const wrapper = mountPage();
 
         return flushPromises()

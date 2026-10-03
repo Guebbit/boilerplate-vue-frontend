@@ -11,9 +11,14 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * User-edit page: the complete admin form — email, username, password, role, active, locale,
- * phone, website and avatar — built on `useStructureFormValidation` (an empty password or avatar
- * field means "leave as is"), submitting multipart only when a new avatar is attached.
+ * User-edit page: the admin form — username, role, active, locale, phone, website and avatar —
+ * built on `useStructureFormValidation` (an empty avatar field means "leave as is"), submitting
+ * multipart only when a new avatar is attached. There is no email and no password field: a
+ * credential is its owner's alone, changed through their own account, never by staff.
+ *
+ * Each control follows the row's `actions` — the server's answer, key and rank together: with no
+ * `update` the profile fields and the role are disabled, with no `ban` the active switch is, and
+ * one's own role is never offered (the server refuses it).
  *
  * Role and active status get one more gate than the rest: `UserAccessDialog`'s confirm step,
  * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
@@ -28,9 +33,10 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
-import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
+import { usersSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
 import { supportedLanguages } from '@/i18n';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { z } from 'zod';
 import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -86,9 +92,7 @@ const { currentUser, loading } = storeToRefs(useUsersStore());
  * `UserAccessDialog` shortcuts are conveniences on top of this form, never a replacement for it.
  */
 interface UserEditForm {
-    email?: string;
     username?: string;
-    password?: string;
     role?: string;
     active?: boolean;
     locale?: string;
@@ -98,8 +102,8 @@ interface UserEditForm {
 }
 
 /**
- * Validation schema of the edit form, where the password is an optional replacement (an empty
- * field means "leave it as it is") and so is the avatar. `username`/`phone`/`website` are picked
+ * Validation schema of the edit form, where the avatar is an optional replacement (an empty
+ * field means "leave it as it is"). `username`/`phone`/`website` are picked
  * from `usersSchema` rather than re-declared, so this form's rules cannot drift from the create
  * form's; `role`/`active` are re-declared plain (`usersSchema`'s own are `nullish`, one shade
  * looser than this form's `string | undefined` needs) and `locale` has no field rule to share (a
@@ -108,15 +112,12 @@ interface UserEditForm {
  * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
  * without being rebuilt — see `@/modules/users/schemas.ts`.
  */
-const editSchema = usersSchema
-    .pick({ email: true, username: true, phone: true, website: true })
-    .extend({
-        password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional()),
-        role: z.string().optional(),
-        active: z.boolean().optional(),
-        locale: z.string().optional(),
-        imageUpload: imageUploadSchema
-    });
+const editSchema = usersSchema.pick({ username: true, phone: true, website: true }).extend({
+    role: z.string().optional(),
+    active: z.boolean().optional(),
+    locale: z.string().optional(),
+    imageUpload: imageUploadSchema
+});
 
 /**
  * Toolkit form bindings.
@@ -157,9 +158,7 @@ activateAutoHydrate(
     computed(() =>
         currentUser.value
             ? {
-                  email: currentUser.value.email,
                   username: currentUser.value.username,
-                  password: '',
                   role: currentUser.value.role ?? '',
                   active: currentUser.value.active ?? true,
                   locale: currentUser.value.locale ?? undefined,
@@ -168,6 +167,25 @@ activateAutoHydrate(
               }
             : undefined
     )
+);
+
+/**
+ * What the signed-in admin may do to THIS account — the row's `actions`. Absent (still loading)
+ * reads as nothing allowed, so no control flickers on before the answer is in.
+ */
+const rowActions = computed(() => currentUser.value?.actions);
+
+/**
+ * The signed-in admin's own session, to tell their own account from someone else's.
+ */
+const session = useSessionStore();
+
+/**
+ * Whether the role select is offered: the account may be edited, and it is not the admin's own —
+ * nobody changes their own role, the server refuses it.
+ */
+const canEditRole = computed(
+    () => !!rowActions.value?.update && currentUser.value?.id !== session.viewer?.id
 );
 
 /**
@@ -275,8 +293,7 @@ const submitForm = () => {
     return handleSubmit(() => {
         const target = currentUser.value;
         if (!id || !target) return;
-        const { email, username, password, role, active, locale, phone, website, imageUpload } =
-            form.value;
+        const { username, role, active, locale, phone, website, imageUpload } = form.value;
 
         const roleChanged = role !== (target.role ?? '');
         const activeChanged = active !== (target.active ?? true);
@@ -285,7 +302,13 @@ const submitForm = () => {
             !roleChanged && !activeChanged
                 ? Promise.resolve(true)
                 : requestAccessConfirmation(
-                      { id, name: target.username, role: target.role, active: target.active },
+                      {
+                          id,
+                          name: target.username,
+                          role: target.role,
+                          active: target.active,
+                          actions: target.actions
+                      },
                       { skipPicker: true, chosenRole: role, chosenActive: active }
                   ).then((result) => !!result);
 
@@ -293,10 +316,9 @@ const submitForm = () => {
             if (!wasAccepted) return;
             // The loaded record is the baseline: only what the admin changed is sent, and an
             // emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
-            // `password` has no empty spelling (a create-only rule), so an untouched one is omitted.
             return toRequestBody(
                 'UpdateUserByIdBody',
-                { email, username, password, role, active, locale, phone, website },
+                { username, role, active, locale, phone, website },
                 target
             )
                 .then((body) =>
@@ -368,26 +390,12 @@ watchUser(() => id, { onError: onMissingRecord });
                     @submit.prevent="submitForm"
                 >
                     <v-text-field
-                        v-model="form.email"
-                        type="email"
-                        data-test="user-edit-email"
-                        :label="t('user-edit-page.label-email')"
-                        :error-messages="showFormErrors ? formErrors.email : []"
-                    />
-                    <v-text-field
                         v-model="form.username"
                         type="text"
                         data-test="user-edit-username"
                         :label="t('user-edit-page.label-username')"
+                        :disabled="!rowActions?.update"
                         :error-messages="showFormErrors ? formErrors.username : []"
-                    />
-                    <v-text-field
-                        v-model="form.password"
-                        type="password"
-                        autocomplete="new-password"
-                        data-test="user-edit-password"
-                        :label="t('user-edit-page.label-password')"
-                        :error-messages="showFormErrors ? formErrors.password : []"
                     />
                     <v-text-field
                         v-model="form.phone"
@@ -395,6 +403,7 @@ watchUser(() => id, { onError: onMissingRecord });
                         autocomplete="tel"
                         data-test="user-edit-phone"
                         :label="t('user-edit-page.label-phone')"
+                        :disabled="!rowActions?.update"
                         :error-messages="showFormErrors ? formErrors.phone : []"
                     />
                     <v-text-field
@@ -403,6 +412,7 @@ watchUser(() => id, { onError: onMissingRecord });
                         autocomplete="url"
                         data-test="user-edit-website"
                         :label="t('user-edit-page.label-website')"
+                        :disabled="!rowActions?.update"
                         :error-messages="showFormErrors ? formErrors.website : []"
                     />
                     <v-select
@@ -410,6 +420,7 @@ watchUser(() => id, { onError: onMissingRecord });
                         :items="localeOptions"
                         data-test="user-edit-locale"
                         :label="t('user-edit-page.label-locale')"
+                        :disabled="!rowActions?.update"
                     />
                     <div class="flex flex-wrap gap-x-8">
                         <!-- One list, not a free-text field: `domain/roles.ts` is the single place every
@@ -419,11 +430,13 @@ watchUser(() => id, { onError: onMissingRecord });
                             :items="userRoleOptions"
                             data-test="user-edit-role"
                             :label="t('user-edit-page.label-role')"
+                            :disabled="!canEditRole"
                         />
                         <v-switch
                             v-model="form.active"
                             data-test="user-edit-active"
                             :label="t('user-edit-page.label-active')"
+                            :disabled="!rowActions?.ban"
                         />
                     </div>
                     <FormImageUpload
@@ -432,7 +445,7 @@ watchUser(() => id, { onError: onMissingRecord });
                         :current-image-url="currentUser?.imageUrl"
                         :error-messages="showFormErrors ? formErrors.imageUpload : []"
                         :progress="uploadProgress"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || !rowActions?.update"
                     />
 
                     <InlineErrorAlert
@@ -452,7 +465,14 @@ watchUser(() => id, { onError: onMissingRecord });
                     </v-btn>
 
                     <div class="flex flex-wrap gap-2">
-                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                        <v-btn
+                            type="submit"
+                            color="primary"
+                            data-test="user-edit-submit"
+                            :disabled="
+                                isSubmitting || loading || !(rowActions?.update || rowActions?.ban)
+                            "
+                        >
                             {{ t('user-edit-page.button-submit') }}
                         </v-btn>
                         <v-btn variant="tonal" @click="resetForm">

@@ -8,6 +8,7 @@
  * reimplement.
  */
 import { ref } from 'vue';
+import type { UserActions } from '@types';
 
 /**
  * The user the dialog is acting on, and its current, server-loaded role/active state — the
@@ -18,6 +19,12 @@ export interface UserAccessDialogTarget {
     name: string;
     role?: string;
     active?: boolean;
+    /**
+     * What the signed-in admin may do to this account, as the server answered for the row. The
+     * dialog offers the role picker only with `update` and the active toggle only with `ban`.
+     * Absent reads as "everything", the shape of a caller that never loaded the row's actions.
+     */
+    actions?: UserActions;
 }
 
 /**

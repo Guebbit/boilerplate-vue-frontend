@@ -92,18 +92,17 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                      | Response envelope                   |
-| ------------------------- | ----------------------------------- |
-| `DELETE /users`           | `DeleteUserResponse`                |
-| `GET /users`              | `ListUsersResponse`                 |
-| `POST /users`             | `CreateUserResponse`                |
-| `DELETE /users/{id}`      | `DeleteUserByIdResponse`            |
-| `GET /users/{id}`         | `GetUserByIdResponse`               |
-| `PATCH /users/{id}`       | `UpdateUserByIdResponse`            |
-| `PUT /users/{id}`         | `ReplaceUserByIdResponse`           |
-| `DELETE /users/{id}/2fa`  | `AdminDisableUserTwoFactorResponse` |
-| `DELETE /users/{id}/hard` | `HardDeleteUserByIdResponse`        |
-| `POST /users/search`      | `SearchUsersResponse`               |
+| Call                      | Response envelope            |
+| ------------------------- | ---------------------------- |
+| `DELETE /users`           | `DeleteUserResponse`         |
+| `GET /users`              | `ListUsersResponse`          |
+| `POST /users`             | `CreateUserResponse`         |
+| `DELETE /users/{id}`      | `DeleteUserByIdResponse`     |
+| `GET /users/{id}`         | `GetUserByIdResponse`        |
+| `PATCH /users/{id}`       | `UpdateUserByIdResponse`     |
+| `PUT /users/{id}`         | `ReplaceUserByIdResponse`    |
+| `DELETE /users/{id}/hard` | `HardDeleteUserByIdResponse` |
+| `POST /users/search`      | `SearchUsersResponse`        |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

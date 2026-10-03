@@ -90,14 +90,6 @@ const respondWithItems = (items: unknown[]) =>
  */
 const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
 
-/**
- * Number of GET requests sent so far — used to prove `adminDisableTwoFactor` bypasses the
- * toolkit's target cache (`staleTime`, one hour) instead of handing back a stale, still-enabled
- * record.
- */
-const getRequestCount = () =>
-    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.method === 'GET').length;
-
 describe('useUsersStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -109,8 +101,7 @@ describe('useUsersStore', () => {
             useUsersStore()
                 .createUser({
                     email: 'ada@example.com',
-                    username: 'ada',
-                    password: 'Password123!'
+                    username: 'ada'
                 })
                 .then(() => {
                     const request = lastRequest();
@@ -127,7 +118,6 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'Password123!',
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -142,7 +132,6 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'Password123!',
                     imageUpload: new Blob(['x'])
                 })
                 .then(() => {
@@ -154,7 +143,6 @@ describe('useUsersStore', () => {
                 .createUser({
                     email: 'ada@example.com',
                     username: 'ada',
-                    password: 'Password123!',
                     role: undefined,
                     imageUpload: new Blob(['x'])
                 })
@@ -220,17 +208,6 @@ describe('useUsersStore', () => {
                 .then(() => {
                     expect(vi.mocked(orvalMutator)).toHaveBeenCalledTimes(1);
                 }));
-
-        it('never parks the submitted password in store state', () => {
-            const store = useUsersStore();
-            store.addUser({ id: 'u1', username: 'ada', email: 'ada@example.com' });
-
-            return store
-                .updateUser('u1', { username: 'ada2', password: 'hunter2hunter2' })
-                .then(() => {
-                    expect(JSON.stringify(store.users)).not.toContain('hunter2hunter2');
-                });
-        });
 
         it('never parks the uploaded Blob in store state', () => {
             const store = useUsersStore();
@@ -366,35 +343,6 @@ describe('useUsersStore', () => {
                         .then(() => {
                             expect(lastRequest()?.url).not.toBe(soft);
                         });
-                }));
-    });
-
-    describe('adminDisableTwoFactor', () => {
-        it('force-refetches the user instead of reusing the page-load cache entry', () => {
-            const store = useUsersStore();
-
-            // Primes the cache the same way `User.vue`'s `watchUser` does on mount.
-            return store.fetchUser('u1').then(() => {
-                const before = getRequestCount();
-                return store.adminDisableTwoFactor('u1').then(() => {
-                    expect(getRequestCount()).toBeGreaterThan(before);
-                });
-            });
-        });
-
-        it('calls the 2fa endpoint with the user id', () =>
-            useUsersStore()
-                .adminDisableTwoFactor('u1')
-                .then(() => {
-                    // Two requests happen (the DELETE, then the forced re-fetch); the DELETE is
-                    // the one this test cares about naming the right resource.
-                    const deleteCall = vi
-                        .mocked(orvalMutator)
-                        .mock.calls.find(([config]) => config.method === 'DELETE');
-                    expect(deleteCall?.[0]).toMatchObject({
-                        url: '/users/u1/2fa',
-                        method: 'DELETE'
-                    });
                 }));
     });
 

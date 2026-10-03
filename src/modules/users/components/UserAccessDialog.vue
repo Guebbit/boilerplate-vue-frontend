@@ -92,6 +92,18 @@ watch(isOpen, (open) => {
 });
 
 /**
+ * Whether the role may be changed here: the row's `update` action, and never one's own — nobody
+ * changes their own role, the server refuses it, so the picker does not offer it.
+ */
+const canPickRole = computed(() => (props.target?.actions?.update ?? true) && !isSelf.value);
+
+/**
+ * Whether the account may be deactivated or reactivated here: the row's `ban` action, which is a
+ * different key from the edit.
+ */
+const canPickActive = computed(() => props.target?.actions?.ban ?? true);
+
+/**
  * Whether the role on screen differs from the target's loaded value.
  */
 const roleChanged = computed(() => selectedRole.value !== (props.target?.role ?? ''));
@@ -187,6 +199,7 @@ const handleCancel = () => {
                         v-model="selectedRole"
                         :items="userRoleOptions"
                         :label="t('user-access-dialog.label-role')"
+                        :disabled="!canPickRole"
                         data-test="user-access-role"
                         hide-details
                     />
@@ -196,6 +209,7 @@ const handleCancel = () => {
                         :hint="t('user-access-dialog.hint-active')"
                         color="primary"
                         persistent-hint
+                        :disabled="!canPickActive"
                         data-test="user-access-active"
                     />
                 </div>

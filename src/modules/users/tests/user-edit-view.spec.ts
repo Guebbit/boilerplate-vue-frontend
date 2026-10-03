@@ -19,6 +19,7 @@ import { enabledModules } from '@/modules';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
@@ -49,7 +50,9 @@ const LOADED_USER = aUser({
     username: 'ada',
     email: 'ada@example.com',
     role: 'customer',
-    active: true
+    active: true,
+    // The server's answer for the signed-in admin on this account.
+    actions: { update: true, ban: true, delete: true }
 });
 
 /** The record the clearing cases load: all three optional fields set. */
@@ -310,4 +313,92 @@ describe('UserEdit — a save answered 412', () => {
                     );
                 });
         }));
+});
+
+/**
+ * Every control follows the row's `actions`: with no `update` the profile fields and the role are
+ * disabled, with no `ban` the active switch is, and one's own role is never offered. A credential
+ * is the owner's alone, so there is no email field and no password field at all.
+ */
+describe('UserEdit — what each row allows', () => {
+    /** Whether the Vuetify field behind a `data-test` id is disabled. */
+    const isDisabled = (wrapper: ReturnType<typeof mountPage>, test: string) =>
+        wrapper.get(`[data-test=${test}]`).classes().includes('v-input--disabled');
+
+    it('has no email field and no password field', () => {
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=user-edit-email]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=user-edit-password]').exists()).toBe(false);
+        });
+    });
+
+    it('enables every control, the role included, when the row allows update and ban', () => {
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            for (const test of [
+                'user-edit-username',
+                'user-edit-phone',
+                'user-edit-role',
+                'user-edit-active'
+            ])
+                expect(isDisabled(wrapper, test)).toBe(false);
+        });
+    });
+
+    it('disables the profile fields and the role when the row allows no update', () => {
+        loadedUser = aUser({
+            ...LOADED_USER,
+            actions: { update: false, ban: true, delete: false }
+        });
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(isDisabled(wrapper, 'user-edit-username')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-active')).toBe(false);
+        });
+    });
+
+    // Support: may correct a profile and may not lock someone out.
+    it('disables the active switch when the row allows no ban', () => {
+        loadedUser = aUser({
+            ...LOADED_USER,
+            actions: { update: true, ban: false, delete: false }
+        });
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(isDisabled(wrapper, 'user-edit-active')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
+        });
+    });
+
+    it('disables the whole form on an account that allows nothing', () => {
+        loadedUser = aUser({
+            ...LOADED_USER,
+            actions: { update: false, ban: false, delete: false }
+        });
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(isDisabled(wrapper, 'user-edit-username')).toBe(true);
+            expect(
+                wrapper.get('[data-test=user-edit-submit]').attributes('disabled')
+            ).toBeDefined();
+        });
+    });
+
+    it('never offers the signed-in admin their own role', () => {
+        const session = useSessionStore();
+        session.viewer = { id: 'u1', email: 'ada@example.com', role: 'admin' };
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
+        });
+    });
 });

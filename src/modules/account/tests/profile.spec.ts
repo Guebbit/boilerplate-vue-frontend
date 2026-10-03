@@ -77,9 +77,6 @@ beforeEach(() => {
         'DELETE /account/delete-confirm': orvalEnvelope(),
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
-        // `updateOwnRole` routes through the admin users endpoint, not `/account` — see below.
-        // PATCH, not PUT — this call sends `{ role }` alone.
-        'PATCH /users/u1': orvalEnvelope({ ...USER, role: 'admin' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/verify-confirm': orvalEnvelope(),
@@ -219,88 +216,6 @@ describe('locale preference', () => {
                 expect(patch?.data?.locale).toBe('it');
             });
     });
-});
-
-/**
- * The role change is the one profile edit that does NOT go to `PATCH /account`, and that is the
- * whole point of it: the self-service payload carries no role, so a role change has to be made
- * where the API can authorise it. These pin the endpoint and the projection, because getting
- * either wrong is silent — the form would look like it worked.
- */
-describe('own role', () => {
-    it('goes to the admin users endpoint, never to the self-service one', () => {
-        const store = useProfileStore();
-
-        return store
-            .fetchProfile(true)
-            .then(() => store.updateOwnRole('admin'))
-            .then(() => {
-                // PATCH, not PUT: this sends `{ role }` alone, and a PUT's
-                // every omitted field would be cleared instead (RFC 9110 §9.3.4).
-                const patch = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.map(
-                        (call) =>
-                            call[0] as {
-                                method?: string;
-                                url: string;
-                                data?: { admin?: boolean };
-                            }
-                    )
-                    .find((call) => call.method?.toUpperCase() === 'PATCH');
-
-                // `PATCH /account` is deliberately roleless; `/users/{id}` is behind the admin
-                // guard, so the API decides whether this visitor may promote anyone.
-                expect(patch?.url).toBe('/users/u1');
-                expect(contractRequest(schemas.UpdateUserByIdBody, patch?.data)).toEqual({
-                    role: 'admin'
-                });
-            });
-    });
-
-    it('refetches the record, so the shell learns the role from the server', () => {
-        const profile = useProfileStore();
-
-        return useAuthStore()
-            .login('ada@example.com', 'hunter2hunter2')
-            .then(() => {
-                expect(useSessionStore().can('delete', 'Product')).toBe(false);
-                // What the server holds AFTER the write. The projection must follow this, not the
-                // value the form happened to send.
-                responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
-                // And the rules that go with the new role: a screen asks what the server said
-                // this person may do, not what they are called.
-                responses['GET /account/abilities'] = orvalEnvelope({
-                    platform: [],
-                    tenant: [
-                        ['read', 'Product'],
-                        ['create', 'Product'],
-                        ['update', 'Product'],
-                        ['delete', 'Product']
-                    ],
-                    version: 36,
-                    subjects: ['Product']
-                });
-                return profile.updateOwnRole('admin');
-            })
-            .then(() => {
-                // The record, then the rules that go with it — a role change is only real once
-                // the shell has both.
-                // Sorted: the rules are fetched without being awaited — a shell that blocked on
-                // learning what to hide would be worse than one that hides too much for a moment
-                // — so which of the two lands first is not a fact worth pinning.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities'
-                ]);
-                // Every gate reads the RULES, so the mock has to answer with an admin's — a role
-                // name decides nothing on this side.
-                expect(useSessionStore().can('delete', 'Product')).toBe(true);
-            });
-    });
-
-    it('refuses when no profile is loaded, rather than writing to `/users/undefined`', () =>
-        expect(useProfileStore().updateOwnRole('admin')).rejects.toThrow('invalid user'));
 });
 
 describe('the account deletion flow', () => {

@@ -13,9 +13,8 @@ export default {
  * @module
  * User-create page. Builds a form on `useStructureFormValidation`, submitting multipart when
  * an avatar is attached and JSON otherwise (the branch itself lives in the
- * users store). A password is only conditionally required: checking "send setup email" trades it
- * for a reset-style email instead, so the schema's `superRefine` enforces "one or the other"
- * itself rather than trusting the server's own 422 for it.
+ * users store). There is no password field: a credential is its owner's alone, so the new owner
+ * is emailed a link to choose theirs, and the form says so.
  */
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -23,9 +22,9 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
-import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
+import { usersSchema } from '@/modules/users/schemas.ts';
 import { userRoleOptions } from '@/modules/users/domain';
-import { supportedLanguages, translate } from '@/i18n';
+import { supportedLanguages } from '@/i18n';
 import { z } from 'zod';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -61,8 +60,6 @@ const { createUser } = useUsersStore();
 interface UserCreateForm {
     email?: string;
     username?: string;
-    password?: string;
-    sendSetupEmail?: boolean;
     role?: string;
     active?: boolean;
     locale?: string;
@@ -71,40 +68,13 @@ interface UserCreateForm {
 
 /**
  * Built once: the messages inside are thunks, resolved in the active language at parse time.
- *
- * `password` is a plain optional string here rather than `usersPasswordSchema` directly, because
- * that schema treats an empty value as a failure — wrong once `sendSetupEmail` makes a password
- * optional. The `superRefine` below enforces "one or the other" and, only when a password was
- * typed, re-runs `usersPasswordSchema`'s own strength rules against it — so those rules stay
- * declared in one place instead of being copied here.
  */
-const createSchema = usersSchema
-    .pick({ email: true, username: true })
-    .extend({
-        password: z.string().optional(),
-        sendSetupEmail: z.boolean().optional(),
-        role: z.string().optional(),
-        active: z.boolean().optional(),
-        locale: z.string().optional(),
-        imageUpload: imageUploadSchema
-    })
-    .superRefine((data, ctx) => {
-        if (data.sendSetupEmail) return;
-        if (!data.password) {
-            ctx.addIssue({
-                code: 'custom',
-                path: ['password'],
-                message: translate('user-create-page.password-or-setup-email-required')
-            });
-            return;
-        }
-        const strength = usersPasswordSchema.safeParse(data.password);
-        if (!strength.success) {
-            for (const issue of strength.error.issues) {
-                ctx.addIssue({ ...issue, path: ['password'] });
-            }
-        }
-    });
+const createSchema = usersSchema.pick({ email: true, username: true }).extend({
+    role: z.string().optional(),
+    active: z.boolean().optional(),
+    locale: z.string().optional(),
+    imageUpload: imageUploadSchema
+});
 
 /**
  * Reference to the mounted `FormCard`, read for its `<form>` element.
@@ -175,11 +145,6 @@ const submitForm = () => {
                 {
                     email: form.value.email!,
                     username: form.value.username!,
-                    // Never both: `sendSetupEmail` is exactly what makes a password optional, so
-                    // sending an empty one alongside it would ask the API to validate a field the
-                    // schema above never required.
-                    password: form.value.sendSetupEmail ? undefined : form.value.password,
-                    sendSetupEmail: form.value.sendSetupEmail,
                     role: form.value.role,
                     active: form.value.active,
                     locale: form.value.locale,
@@ -225,24 +190,9 @@ const submitForm = () => {
                 :error-messages="showErrors ? formErrors.username : []"
                 class="mb-2"
             />
-            <v-text-field
-                v-model="form.password"
-                type="password"
-                data-test="user-password"
-                autocomplete="new-password"
-                :disabled="form.sendSetupEmail"
-                :label="t('user-create-page.label-password')"
-                :error-messages="showErrors ? formErrors.password : []"
-                class="mb-2"
-            />
-            <v-checkbox
-                v-model="form.sendSetupEmail"
-                :label="t('user-create-page.label-send-setup-email')"
-                :hint="t('user-create-page.hint-send-setup-email')"
-                persistent-hint
-                data-test="user-send-setup-email"
-                class="mb-2"
-            />
+            <p class="mb-2 opacity-75" data-test="user-setup-email-note">
+                {{ t('user-create-page.note-setup-email') }}
+            </p>
             <FormImageUpload
                 v-model="form.imageUpload"
                 :error-messages="showErrors ? formErrors.imageUpload : []"

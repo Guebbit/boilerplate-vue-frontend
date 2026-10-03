@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
+import { signupBodyUsernameMin, signupBodyPasswordMin } from '@api/schemas';
 
 /**
  * Validation schema for an email address.
@@ -25,7 +25,7 @@ const usersUsernameSchema = z
  */
 export const usersPasswordSchema = z
     .string()
-    .min(createUserBodyPasswordMin, { error: () => translate('users-form.password-min') })
+    .min(signupBodyPasswordMin, { error: () => translate('users-form.password-min') })
     .refine((password) => password && /[a-z]/.test(password), {
         error: () => translate('users-form.password-minus-required')
     })

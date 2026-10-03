@@ -9,14 +9,14 @@
  * rules.
  */
 import { describe, expect, it } from 'vitest';
-import { createUserBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
+import { signupBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
 import { usersPasswordSchema, usersSchema } from '@/modules/users/schemas';
 
 /**
  * A password long enough to clear the contract minimum, built from one repeated character so a
  * test can add exactly the character class it wants to check.
  */
-const longEnough = (fill: string) => fill.repeat(Math.max(createUserBodyPasswordMin, fill.length));
+const longEnough = (fill: string) => fill.repeat(Math.max(signupBodyPasswordMin, fill.length));
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validUser = {
@@ -35,7 +35,7 @@ describe('usersPasswordSchema', () => {
      */
     it('enforces the contract minimum length at its exact boundary', () => {
         const classes = 'aA1!';
-        const atMinimum = classes.padEnd(createUserBodyPasswordMin, 'a');
+        const atMinimum = classes.padEnd(signupBodyPasswordMin, 'a');
         const belowMinimum = atMinimum.slice(1);
 
         expect(usersPasswordSchema.safeParse(atMinimum).success).toBe(true);

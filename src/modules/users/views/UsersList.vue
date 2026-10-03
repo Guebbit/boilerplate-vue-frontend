@@ -80,9 +80,10 @@ const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal,
     storeToRefs(useUsersStore());
 
 /**
- * The session, for the row actions and the create button: each is a `users.any.*` key some staff
- * roles lack (support may update and not delete; a read-only reader may do neither), and a button
- * the backend answers with 403 is a button not to show.
+ * The session, for the create button: `users.any.create` is a key some staff roles lack. The row
+ * actions are not the session's call: each row carries its own `actions` — the server's answer for
+ * THIS admin on THIS account, key and rank together — and a button the backend would answer with
+ * 403 is a button not to show.
  */
 const session = useSessionStore();
 
@@ -271,7 +272,8 @@ const handleManageAccess = (item: User) =>
         id: item.id,
         name: item.username,
         role: item.role,
-        active: item.active
+        active: item.active,
+        actions: item.actions
     }).then((result) => {
         if (!result) return;
         clearRowActionError();
@@ -443,7 +445,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('update', 'User')"
+                        v-if="item.actions?.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -456,7 +458,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('update', 'User')"
+                        v-if="item.actions?.update || item.actions?.ban"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -470,7 +472,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-access') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'User') && item.deletedAt"
+                        v-if="item.actions?.delete && item.deletedAt"
                         :size="rowActionSize"
                         variant="tonal"
                         color="success"
@@ -484,7 +486,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-restore') }}
                     </v-btn>
                     <v-btn
-                        v-else-if="session.can('delete', 'User')"
+                        v-else-if="item.actions?.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
@@ -498,7 +500,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'User')"
+                        v-if="item.actions?.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

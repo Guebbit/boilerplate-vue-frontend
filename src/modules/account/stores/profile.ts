@@ -25,7 +25,6 @@ import {
     changePassword as apiChangePassword,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
-    updateUserById as apiUpdateUserById,
     exportAccountData as apiExportAccountData
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
@@ -337,41 +336,6 @@ export const useProfileStore = defineStore('accountProfile', () => {
         ).then((payload) => payload?.resendAfter ?? 0);
 
     /**
-     * Changes the visitor's OWN role, through the endpoint that owns roles.
-     *
-     * Deliberately not folded into {@link updateProfile}. `PUT/PATCH /account` is the self-service
-     * payload and carries no role by design — routing a role change through it would hand every
-     * visitor the one field they must never set for themselves, which is the bug that endpoint
-     * exists to prevent. This goes to `PATCH /users/{id}` instead: the admin route, behind the admin
-     * guard, so the API authorises the change rather than a hidden form field doing it. A
-     * non-admin calling this gets the 403 it deserves.
-     *
-     * There is no self-service "change my own role" endpoint on the backend today — checked
-     * `openapi.yaml`, only the admin users routes touch `admin`. Reusing the admin one here is the
-     * chosen trade-off, not an oversight: adding a dedicated endpoint is a backend contract change,
-     * left for its own pass.
-     *
-     * `updateUserById` is reached through `@api` rather than through the users module: `@api` is
-     * infrastructure, not a sibling, so this is a contract call and not an `account → users` edge
-     * — the same reasoning that lets the cart resolve product titles without depending on
-     * products. The users barrel publishes vocabulary, and it stays that way.
-     *
-     * The profile is refetched rather than patched: demoting yourself is a real outcome here, and
-     * the rules the shell renders from must be re-fetched for the role the server now holds —
-     * which is what {@link publishViewer} does on the way through.
-     *
-     * @param role - The role name to hold, one of the presets the server declares.
-     * @returns A promise resolving with the refreshed profile once the change has settled.
-     */
-    const updateOwnRole = (role: string) => {
-        if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
-        const userId = selectedIdentifier.value;
-        // PATCH, not PUT: this sends `{ role }` alone, and a PUT's every
-        // omitted field is cleared (RFC 9110 §9.3.4) — the wrong verb for a single-field change.
-        return fetchAny(() => apiUpdateUserById(userId, { role }).then(() => fetchProfile(true)));
-    };
-
-    /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
      * unlike the reset flow.
      *
@@ -507,7 +471,6 @@ export const useProfileStore = defineStore('accountProfile', () => {
         updateProfile,
         cancelPendingEmailChange,
         resendPendingEmail,
-        updateOwnRole,
         changePassword,
         confirmEmailVerification,
         confirmEmailChange,

@@ -45,29 +45,24 @@ const mountPage = () => {
 };
 
 /**
- * Types the three required fields and submits. `data-test` lands on Vuetify's wrapper, so the
+ * Types the two required fields and submits. `data-test` lands on Vuetify's wrapper, so the
  * value goes to the `input` inside it.
  *
  * @param wrapper - The mounted page.
  * @param fields - What to type.
  * @param fields.email - The address.
  * @param fields.username - The username.
- * @param fields.password - The password.
  */
 const fillAndSubmit = (
     wrapper: ReturnType<typeof mountPage>['wrapper'],
-    fields: { email: string; username: string; password: string }
+    fields: { email: string; username: string }
 ) =>
     wrapper
         .get('[data-test=user-email] input')
         .setValue(fields.email)
         .then(() => wrapper.get('[data-test=user-username] input').setValue(fields.username))
-        .then(() => wrapper.get('[data-test=user-password] input').setValue(fields.password))
         .then(() => wrapper.get('form').trigger('submit'))
         .then(flushPromises);
-
-/** A password the shared composition rule accepts. */
-const GOOD_PASSWORD = 'Str0ng-Enough-Pass!';
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -95,8 +90,7 @@ describe('UserCreate', () => {
             .then(() =>
                 fillAndSubmit(wrapper, {
                     email: 'ada@example.com',
-                    username: 'ada',
-                    password: GOOD_PASSWORD
+                    username: 'ada'
                 })
             )
             .then(() => {
@@ -112,8 +106,7 @@ describe('UserCreate', () => {
 
         return fillAndSubmit(wrapper, {
             email: 'not-an-email',
-            username: 'ada',
-            password: GOOD_PASSWORD
+            username: 'ada'
         }).then(() => {
             expect(create).not.toHaveBeenCalled();
             expect(wrapper.find('[data-test=user-email] .v-messages').text()).not.toBe('');
@@ -126,16 +119,13 @@ describe('UserCreate', () => {
 
         return fillAndSubmit(wrapper, {
             email: 'ada@example.com',
-            username: 'ada',
-            password: GOOD_PASSWORD
+            username: 'ada'
         })
             .then(() => {
                 expect(create).toHaveBeenCalledWith(
                     {
                         email: 'ada@example.com',
                         username: 'ada',
-                        password: GOOD_PASSWORD,
-                        sendSetupEmail: undefined,
                         role: undefined,
                         active: true,
                         locale: undefined,
@@ -153,43 +143,25 @@ describe('UserCreate', () => {
             });
     });
 
-    // U2: the backend 422s a create with neither a password nor `sendSetupEmail: true` — the form
-    // must refuse it before that round trip, not only report the server's own rejection.
-    it('refuses a create with no password and no setup email, and sends nothing', () => {
-        const { wrapper, create } = mountPage();
+    // A credential is its owner's alone: the form has no password and no setup switch, and says the
+    // new owner is emailed a link to choose their own.
+    it('has no password field and no setup-email switch, and says the owner chooses their own', () => {
+        const { wrapper } = mountPage();
 
-        return wrapper
-            .get('[data-test=user-email] input')
-            .setValue('ada@example.com')
-            .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
-            .then(() => wrapper.get('form').trigger('submit'))
-            .then(flushPromises)
-            .then(() => {
-                expect(create).not.toHaveBeenCalled();
-                expect(wrapper.find('[data-test=user-password] .v-messages').text()).not.toBe('');
-            });
+        expect(wrapper.find('[data-test=user-password]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=user-send-setup-email]').exists()).toBe(false);
+        expect(wrapper.get('[data-test=user-setup-email-note]').text()).toContain('emailed a link');
     });
 
-    it('accepts a blank password once "send setup email" is checked, and sends no password', () => {
+    it('sends neither a password nor a setup flag', () => {
         const { wrapper, create } = mountPage();
         create.mockResolvedValue(aUser({ id: 'u-new', email: 'ada@example.com' }));
 
-        return wrapper
-            .get('[data-test=user-email] input')
-            .setValue('ada@example.com')
-            .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
-            .then(() => wrapper.get('[data-test=user-send-setup-email] input').setValue(true))
-            .then(() => wrapper.get('form').trigger('submit'))
-            .then(flushPromises)
-            .then(() => {
-                expect(create).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        password: undefined,
-                        sendSetupEmail: true
-                    }),
-                    { requestOptions: undefined }
-                );
-            });
+        return fillAndSubmit(wrapper, { email: 'ada@example.com', username: 'ada' }).then(() => {
+            const sentKeys = Object.keys(create.mock.calls[0][0]);
+            expect(sentKeys).not.toContain('password');
+            expect(sentKeys).not.toContain('sendSetupEmail');
+        });
     });
 
     it('blocks the form in place when the API refuses the create', () => {
@@ -203,8 +175,7 @@ describe('UserCreate', () => {
 
         return fillAndSubmit(wrapper, {
             email: 'ada@example.com',
-            username: 'ada',
-            password: GOOD_PASSWORD
+            username: 'ada'
         }).then(() => {
             expect(wrapper.find('[data-test=user-create-submit-error]').exists()).toBe(true);
             expect(router.currentRoute.value.fullPath).toBe('/en/users/create');
@@ -223,7 +194,6 @@ describe('UserCreate', () => {
             .get('[data-test=user-email] input')
             .setValue('ada@example.com')
             .then(() => wrapper.get('[data-test=user-username] input').setValue('ada'))
-            .then(() => wrapper.get('[data-test=user-password] input').setValue(GOOD_PASSWORD))
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
@@ -253,8 +223,7 @@ describe('UserCreate', () => {
 
         return fillAndSubmit(wrapper, {
             email: 'ada@example.com',
-            username: 'ada',
-            password: GOOD_PASSWORD
+            username: 'ada'
         }).then(() => {
             expect(wrapper.find('[data-test=user-email] .v-messages').text()).toContain(
                 'Address already in use'
