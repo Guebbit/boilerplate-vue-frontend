@@ -35,6 +35,9 @@ export type PageSize = number;
 
 /**
  * Resource identifier
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[0-9A-Za-z_-]+$
  */
 export type Id = string;
 
@@ -4479,10 +4482,16 @@ export type ListOrdersParams = {
     id?: IdParamParameter;
     /**
      * Resource identifier
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[0-9A-Za-z_-]+$
      */
     userId?: UserIdParamParameter;
     /**
      * Resource identifier
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[0-9A-Za-z_-]+$
      */
     productId?: ProductIdParamParameter;
     email?: Email;
@@ -4613,7 +4622,7 @@ export type ListWebhookDeliveriesParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
-    subscriptionId?: string;
+    subscriptionId?: Id;
     status?: WebhookDeliveryStatus;
 };
 

@@ -6713,7 +6713,7 @@ paths:
           in: query
           required: false
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: status
           in: query
           required: false
@@ -7601,6 +7601,9 @@ components:
       description: Optional override; server may clamp to a max
     Id:
       type: string
+      minLength: 1
+      maxLength: 64
+      pattern: ^[0-9A-Za-z_-]+$
       description: Resource identifier
     Text:
       type: string
@@ -14369,8 +14372,8 @@ x-error-codes:
     status: 500
     description: An unexpected server-side failure. Never carries library or stack detail.
   INVALID_REQUEST:
-    status: 400
-    description: A driver-level failure that is really about the request — a malformed id, a duplicate key — with no dedicated code of its own.
+    status: 422
+    description: "A 4xx nobody handled on the way, answered by the global error handler with no copy of its own: a driver failure that is really about the request (a refused write is a 422, a duplicate key a 409, a stale `If-Match` a 412) or a library declaring its own 4xx. A route that catches the failure answers with the status-derived code instead."
   INVENTORY_BELOW_RESERVED:
     status: 409
     description: The requested on-hand count is below what is already reserved by open orders.
@@ -14471,8 +14474,8 @@ x-error-codes:
     status: 409
     description: The past order named for reorder no longer has any purchasable lines.
   REQUEST_ERROR:
-    status: 400
-    description: A 4xx with no more specific code of its own.
+    status: 422
+    description: A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name.
   RETURN_DEDUCTION_INVALID:
     status: 422
     description: The handling deduction is more than the refund is worth.
