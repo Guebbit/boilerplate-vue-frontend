@@ -13,6 +13,7 @@ import vuetify from '@/ui/vuetify';
 import { i18n, loadLocale } from '@/i18n';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 
+/** Two languages, both left-to-right. */
 const LOCALES = [
     { tag: 'en', nativeName: 'English', direction: 'ltr' as const },
     { tag: 'it', nativeName: 'Italiano', direction: 'ltr' as const }
@@ -37,6 +38,7 @@ const mountTabs = (activeTab = 'en') =>
         attachTo: document.body
     });
 
+/** The mounted wrapper, unmounted after each case. */
 let wrapper: VueWrapper | undefined;
 
 afterEach(() => {

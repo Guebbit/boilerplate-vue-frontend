@@ -1,6 +1,6 @@
 /**
  * The assertions that hold whatever a FOUNDATION page happens to render — the shell-generic half
- * of what used to be one file (FA122). Every other spec asserts exact counts, titles and prices.
+ * of what used to be one file. Every other spec asserts exact counts, titles and prices.
  * Those are the right assertions for a fixed dataset, and they share a blind spot: they only look
  * at the values they name. A page can render a broken image, log a TypeError on every load, or
  * push a 300px-wide table off the viewport, and every one of them stays green.
@@ -37,7 +37,7 @@ describe('Resilience', () => {
      * `products/:id/edit` and `error/:status/:message` too, which need parameters and a fixture to
      * be meaningful — this is the reachable-by-clicking set, and it is short enough to read.
      *
-     * FA122: every route below is FOUNDATION — a module every deployment of this boilerplate
+     * Every route below is FOUNDATION — a module every deployment of this boilerplate
      * ships. `cart`, `orders` and `products` carry their own equivalent case in their own
      * `tests/e2e/resilience.cy.ts`, so this file no longer depends on the shop being present.
      * `inventory` and `feedback` are absent deliberately: both belong to a feature still in

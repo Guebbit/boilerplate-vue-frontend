@@ -9,6 +9,7 @@ import { mount } from '@vue/test-utils';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Mounts the alert; `props` override the defaults. */
 const mountAlert = (props: Record<string, unknown> = {}) =>
     mount(InlineErrorAlert, {
         props,

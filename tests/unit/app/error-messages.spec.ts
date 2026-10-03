@@ -1,5 +1,5 @@
 /**
- * `error-messages.ts` (FA74) — the one predicate `Error.vue` and `router/index.ts`'s `onError`
+ * `error-messages.ts` — the one predicate `Error.vue` and `router/index.ts`'s `onError`
  * both check, so a message this app's own dictionary does not own never reaches the page, the URL
  * or Umami's pageview verbatim.
  */

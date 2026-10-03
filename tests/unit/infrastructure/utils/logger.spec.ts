@@ -23,6 +23,7 @@ const loadLogger = (environment: Record<string, unknown>) => {
     return import('@/infrastructure/utils/logger');
 };
 
+/** Spies on each console level the logger writes to. */
 let spies: Record<'debug' | 'info' | 'warn' | 'error', Mock<(...arguments_: unknown[]) => void>>;
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 /**
- * `AppVerificationBanner` — B10: it keys on `viewer.verified`, not on a shop permission. A
+ * `AppVerificationBanner` — it keys on `viewer.verified`, not on a shop permission. A
  * platform-only operator holding no `Cart` subject at all must still see it while unverified, and
  * a verified customer must not see it just because they also hold `cart.self.checkout`.
  */
@@ -10,8 +10,10 @@ import { createPinia } from 'pinia';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the session store's `requestEmailVerification`. */
 const requestEmailVerification = vi.fn();
 
+/** The mocked session store: a viewer (or none) and the resend action. */
 const session = {
     viewer: ref<{ email: string; verified: boolean } | undefined>(undefined),
     requestEmailVerification
@@ -33,6 +35,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
     };
 });
 
+/** Mounts the banner with a real Pinia and Vuetify. */
 const mountBanner = () =>
     mount(AppVerificationBanner, { global: { plugins: [createPinia(), vuetify] } });
 

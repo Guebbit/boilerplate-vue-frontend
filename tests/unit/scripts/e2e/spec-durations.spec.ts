@@ -1,5 +1,5 @@
 /**
- * `scripts/e2e/spec-durations.ts` — the real per-file weights FA126 needs the shard balancer to
+ * `scripts/e2e/spec-durations.ts` — the real per-file weights the shard balancer needs to
  * use instead of one shared-by-basename number. Driven against a temp path, never the real
  * `reports/` directory.
  */

@@ -31,6 +31,7 @@ const stubFetch = (...responses: Response[]) => {
     return calls;
 };
 
+/** A device with an access token and a refresh cookie. */
 const device: Device = { apiUrl: 'http://api.test', token: 'access-1', cookie: 'jwt=refresh-1' };
 
 afterEach(() => {

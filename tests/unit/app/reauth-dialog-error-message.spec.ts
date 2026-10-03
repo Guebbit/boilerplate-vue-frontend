@@ -17,6 +17,7 @@ import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the session store's `reauth`. */
 const reauthMock = vi.fn();
 
 vi.mock('@/infrastructure/session.ts', () => ({

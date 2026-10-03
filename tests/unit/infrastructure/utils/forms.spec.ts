@@ -8,6 +8,7 @@ import {
 } from '@/infrastructure/utils/forms.ts';
 
 describe('shapeBody', () => {
+    /** The PATCH body schema the cases clear fields on. */
     const patch = schemas.UpdateUserByIdBody;
 
     it('spells a cleared nullable field as null', () => {

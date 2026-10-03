@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 import { liveShardFiles } from '../../../../scripts/e2e/live-shard';
 
+/** Five spec files to slice. */
 const FILES = ['a.cy.ts', 'b.cy.ts', 'c.cy.ts', 'd.cy.ts', 'e.cy.ts'];
+
+/** Their measured durations, heaviest first. */
 const DURATIONS = { 'a.cy.ts': 100, 'b.cy.ts': 60, 'c.cy.ts': 50, 'd.cy.ts': 10, 'e.cy.ts': 5 };
 
 describe('liveShardFiles', () => {

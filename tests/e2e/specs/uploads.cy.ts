@@ -2,8 +2,8 @@
  * Image upload, end to end — the shell-generic half.
  *
  * "Product edit"/"Product create"/"Live backend" exercised the same shared mechanism
- * (`FormImageUpload.vue`, multer, the digest/thumbnail worker) through a product form; FA122
- * moved them to `src/modules/products/tests/e2e/uploads.cy.ts` since a build with no catalogue has
+ * (`FormImageUpload.vue`, multer, the digest/thumbnail worker) through a product form, and now
+ * live in `src/modules/products/tests/e2e/uploads.cy.ts`, since a build with no catalogue has
  * nothing left to open there. What stays here — "User create" and "Signup" — is foundation: both
  * modules ship with every deployment, so this file no longer depends on the shop being present.
  *

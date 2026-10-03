@@ -1,5 +1,5 @@
 /**
- * `AppLanguageSwitcher` (FA131) — a dedicated mount, rather than only the indirect one
+ * `AppLanguageSwitcher` — a dedicated mount, rather than only the indirect one
  * `app-navigation.spec.ts` gets by mounting it as a child of `AppNavigation`. What is this
  * component's own job: one menu item per `supportedLanguages`, the active one marked, and picking
  * one re-enters the CURRENT route under the new locale (preserving params/query) rather than
@@ -11,9 +11,16 @@ import { ref } from 'vue';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the router's `replace`. */
 const replace = vi.fn().mockResolvedValue(undefined);
+
+/** Stub for the router's `push`. */
 const push = vi.fn().mockResolvedValue(undefined);
+
+/** The mocked current route, with a param and a query the switch must keep. */
 const currentRoute = { params: { id: '42' }, query: { tab: 'details' } };
+
+/** Stub for the session store's `persistLocalePreference`. */
 const persistLocalePreference = vi.fn();
 
 vi.mock('vue-router', () => ({

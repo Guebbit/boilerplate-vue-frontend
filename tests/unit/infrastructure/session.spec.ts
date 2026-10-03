@@ -18,14 +18,32 @@ import { aUser } from '../../support/unit/fixtures.ts';
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
 const updateAccountMock = vi.fn();
+
+/** Stub for the account API's `getAccount`. */
 const getAccountMock = vi.fn();
+
+/** Stub for `getMyAbilities`. */
 const getMyAbilitiesMock = vi.fn();
+
+/** Stub for the token refresh call. */
 const refreshTokenMock = vi.fn();
+
+/** Stub for logout. */
 const logoutMock = vi.fn();
+
+/** Stub for logout-everywhere. */
 const logoutAllMock = vi.fn();
+
+/** Stub for re-authentication. */
 const reauthMock = vi.fn();
+
+/** Stub for the list of re-authentication methods. */
 const getReauthMethodsMock = vi.fn();
+
+/** Stub for sending a re-authentication code. */
 const sendReauthCodeMock = vi.fn();
+
+/** Stub for requesting an email verification. */
 const requestEmailVerificationMock = vi.fn();
 
 // Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
@@ -54,6 +72,7 @@ vi.mock('@api', () => ({
     updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
+/** The store under test, imported after the mocks are in place. */
 const { useSessionStore } = await import('@/infrastructure/session.ts');
 
 /** A store with a token AND a viewer, which is what `isAuth` actually requires. */
@@ -271,7 +290,7 @@ describe('loadViewer', () => {
     });
 
     /**
-     * B10: the verification banner keys on this, not on a shop permission — a platform-only
+     * The verification banner keys on this, not on a shop permission — a platform-only
      * operator with no `Cart` subject at all must still be told their address is unproven.
      */
     it('projects verified true once verifiedAt is set', () => {

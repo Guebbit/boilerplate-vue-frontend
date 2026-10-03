@@ -11,7 +11,10 @@ import type { AppModule } from '@/kernel/registry';
 import { SLOTS_KEY, useSlot } from '@/kernel/slots';
 import type { Slots } from '@/kernel/slots';
 
+/** A slot component that renders "alpha". */
 const Alpha: Component = { template: '<i>alpha</i>' };
+
+/** A slot component that renders "beta". */
 const Beta: Component = { template: '<i>beta</i>' };
 
 /**

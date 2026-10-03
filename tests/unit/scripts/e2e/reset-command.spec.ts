@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { withScenario } from '../../../../scripts/e2e/reset-command';
 
+/** A reset command with a `{scenario}` placeholder. */
 const COMMAND = 'npm run host -- scenario:apply:reset -- {scenario} --describe-to=/tmp/s.json';
 
 describe('withScenario', () => {

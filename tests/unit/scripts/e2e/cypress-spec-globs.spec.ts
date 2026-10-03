@@ -26,6 +26,7 @@ import {
     VISUAL_SPEC_GLOBS
 } from '../../../../scripts/e2e/cypress-spec-globs';
 
+/** The repo root, four levels above this file. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 /** The files a comma-separated `--spec` argument, or a glob list, actually resolves to. */
@@ -34,6 +35,7 @@ const resolve = (globs: string[]): string[] =>
         .map((entry) => entry.split(path.sep).join('/'))
         .toSorted();
 
+/** The npm scripts from `package.json`. */
 const scripts = (): Record<string, string> => {
     // `JSON.parse` returns `any` unconditionally — cast to the one shape this file reads off it.
     const packageJson = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {

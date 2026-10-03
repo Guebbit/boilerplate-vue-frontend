@@ -13,6 +13,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { createPinia, setActivePinia } from 'pinia';
 import { signInLocation } from '@/app/router/navigation.ts';
 
+/** Stub for the session restore the router's guard awaits. */
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
 // Returns nothing, i.e. "let the navigation through". Left untyped against the real
 // `enforceRouteAccess`: this suite calls it with only the one argument it cares about
@@ -359,7 +360,7 @@ describe('onError redirects', () => {
             expect(router.currentRoute.value.params.message).toBe('navigation.error-forbidden');
         }));
 
-    it('folds an error message this app does not own into the generic key (FA74)', () =>
+    it('folds an error message this app does not own into the generic key', () =>
         // 'teapot' is free-form text a caught error happened to carry, not one of THIS app's own
         // `error-page.*`/`navigation.*` dictionary keys — showing it verbatim would leak
         // implementation detail into the page, the URL and Umami's pageview.
@@ -396,7 +397,7 @@ describe('onError redirects', () => {
         }));
 });
 
-describe('stale-deploy recovery (FA74)', () => {
+describe('stale-deploy recovery', () => {
     it('arms Vite’s own preload-error signal as soon as the router module loads', () => {
         // `stale-deploy.spec.ts` proves the recovery logic itself (exactly one reload, to the
         // failed navigation's own target) against injected fakes — jsdom's `location` cannot be

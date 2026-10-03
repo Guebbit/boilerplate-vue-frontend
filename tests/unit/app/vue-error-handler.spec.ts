@@ -1,5 +1,5 @@
 /**
- * `vue-error-handler.ts` (FA74) — `app.config.errorHandler`'s own implementation: an error a
+ * `vue-error-handler.ts` — `app.config.errorHandler`'s own implementation: an error a
  * component's render/setup/watcher throws with nothing downstream to catch it must still reach
  * Faro and tell the visitor something broke, and must never itself throw a second error that
  * replaces the one it is trying to report.
@@ -8,7 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleUncaughtVueError } from '@/app/vue-error-handler';
 import { GENERIC_ERROR_KEY } from '@/app/utils/error-messages';
 
+/** Stub for the observability store's `captureException`. */
 const captureException = vi.fn();
+
+/** Stub for the toast dispatcher. */
 const addMessage = vi.fn();
 
 vi.mock('@/infrastructure/observability/store.ts', () => ({

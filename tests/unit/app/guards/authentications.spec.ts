@@ -6,6 +6,7 @@ import type { RouteAccess, RoutePermission } from '@/app/guards/authentications'
 import type { PermissionAction } from '@/infrastructure/session';
 import type { RouteLocationNormalized } from 'vue-router';
 
+/** Stub for the toast dispatcher. */
 const addMessageMock = vi.fn();
 
 /**
@@ -14,6 +15,7 @@ const addMessageMock = vi.fn();
  */
 const held = new Set<string>();
 
+/** The sign-in flag the mocked store answers with. */
 const visitorStanding = { isAuth: ref(false) };
 
 vi.mock('@/infrastructure/session', () => ({
@@ -58,9 +60,16 @@ const routerWithLogin = { hasRoute: (name: string) => name === 'Login' };
 /** A build with no `account` module: `Login` does not resolve. */
 const routerWithoutLogin = { hasRoute: () => false };
 
+/** A signed-out visitor. */
 const guest = visitor(false);
+
+/** A signed-in visitor with no rules. */
 const customer = visitor(true);
+
+/** A signed-in visitor who may update products and read translations. */
 const editor = visitor(true, 'update Product', 'read Translation');
+
+/** A signed-in visitor who may also read users. */
 const owner = visitor(true, 'update Product', 'read Translation', 'read User');
 
 describe('canAccess', () => {
@@ -128,7 +137,7 @@ describe('enforceRouteAccess', () => {
     });
 
     it('sends a guest to Home when this build has no Login route to resolve', () => {
-        // A product shipping no `account` module still must not throw here — see FA71.
+        // A product shipping no `account` module still must not throw here.
         const result = enforceRouteAccess(route('auth'), routerWithoutLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');

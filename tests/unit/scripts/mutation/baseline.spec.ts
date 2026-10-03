@@ -39,6 +39,7 @@ const report = (...files: [string, string[]][]) => ({
 /** Per-file scores from `[file, score]` pairs. */
 const scores = (...files: [string, number][]): Record<string, number> => Object.fromEntries(files);
 
+/** Builds a baseline from `[file, score]` pairs. */
 const baselineOf = (...files: [string, number][]): MutationBaseline => ({
     generatedAt: '2026-08-09T00:00:00.000Z',
     files: Object.fromEntries(files)
@@ -46,8 +47,14 @@ const baselineOf = (...files: [string, number][]): MutationBaseline => ({
 
 /** The one path used throughout, named so the tuples stay readable. */
 const FILE = 'src/a.ts';
+
+/** A second file in the fixtures. */
 const OTHER = 'src/b.ts';
+
+/** A file the run measures that the baseline does not know. */
 const NEWCOMER = 'src/new.ts';
+
+/** A file the baseline knows that the run no longer measures. */
 const GONE = 'src/gone.ts';
 
 describe('scoresFromReport', () => {
@@ -80,7 +87,7 @@ describe('scoresFromReport', () => {
     });
 
     it('scores an all-survived file as 0 rather than omitting it', () => {
-        // An honest zero on the record is the point — see §5.3 of the plan.
+        // An honest zero on the record is the point: an untested file must show in a diff.
         expect(scoresFromReport(report([FILE, ['Survived', 'Survived']]))).toEqual(
             scores([FILE, 0])
         );
@@ -212,7 +219,7 @@ describe('formatRegressions', () => {
     });
 });
 
-describe('formatUnrecorded — FA125, a missing entry is not a pass', () => {
+describe('formatUnrecorded — a missing entry is not a pass', () => {
     it('says nothing when every file has a baseline entry', () => {
         expect(
             formatUnrecorded(compareToBaseline(scores([FILE, 95]), baselineOf([FILE, 90])))

@@ -8,11 +8,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+/** The entrypoint script under test. */
 const script = path.resolve(
     __dirname,
     '../../../docker/docker-entrypoint.d/41-generate-security-txt.sh'
 );
 
+/** The throwaway web root each case writes into. */
 let root = '';
 
 /**
@@ -25,6 +27,7 @@ const run = (environment: Record<string, string>): void => {
     expect(status).toBe(0);
 };
 
+/** Where the script writes `security.txt`, under the current web root. */
 const target = (): string => path.join(root, '.well-known', 'security.txt');
 
 beforeEach(() => {

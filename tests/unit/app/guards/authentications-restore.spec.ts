@@ -14,6 +14,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { getCookie } from '@guebbit/js-toolkit';
 
+/** The mocked session store: token, viewer and the two actions the guard calls. */
 const sessionStore = {
     accessToken: undefined as string | undefined,
     viewer: undefined as { id: string } | undefined,

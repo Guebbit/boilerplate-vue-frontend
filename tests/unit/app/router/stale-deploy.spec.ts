@@ -1,5 +1,5 @@
 /**
- * `stale-deploy.ts` (FA74) — an open tab whose lazily-imported route chunk 404s after a newer
+ * `stale-deploy.ts` — an open tab whose lazily-imported route chunk 404s after a newer
  * deploy replaced the asset manifest recovers with exactly one reload, to the target it was
  * actually headed for, and never a second time in the same session.
  */
@@ -28,7 +28,10 @@ const makeStorage = () => {
 };
 
 describe('recoverFromStaleDeploy', () => {
+    /** The fake storage the helper reads and writes. */
     let storage: ReturnType<typeof makeStorage>;
+
+    /** Stub for the navigation the helper triggers. */
     let navigate: ReturnType<typeof vi.fn<(url: string) => void>>;
 
     beforeEach(() => {

@@ -25,6 +25,7 @@ import {
 import enMessages from '@/locales/en.json';
 import itMessages from '@/locales/it.json';
 
+/** Switches the active locale and waits for the render tick. */
 const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 
 /**
@@ -34,6 +35,7 @@ const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 const fileOfSize = (bytes: number, type = 'image/png') =>
     new File([new Uint8Array(bytes)], 'photo.png', { type });
 
+/** The validation messages a value fails the image schema with. */
 const messagesOf = (value: unknown) =>
     imageUploadSchema.safeParse(value).error?.issues.map(({ message }) => message) ?? [];
 

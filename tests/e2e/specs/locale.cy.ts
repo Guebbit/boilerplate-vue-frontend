@@ -148,7 +148,7 @@ describe('the saved preference', () => {
  * A language the API has and this app does not — the shell-generic half. `es` is in no `.env`
  * list and has no `src/locales/es.json`; it reaches the switcher because the manifest announces
  * it at boot. Whether it ACTIVATES and falls back per key is product-specific at the seeded-data
- * level (`src/modules/products/tests/e2e/locale.cy.ts`, FA122): the backend's demo data seeds a
+ * level (`src/modules/products/tests/e2e/locale.cy.ts`): the backend's demo data seeds a
  * Spanish override only for the products list page, so that half moved with the module rather
  * than staying here pointed at a page with no override to render.
  */

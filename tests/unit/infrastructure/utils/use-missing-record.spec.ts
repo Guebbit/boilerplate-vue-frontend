@@ -6,8 +6,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 
+/** Stub for the router's `replace`. */
 const replaceMock = vi.fn(() => Promise.resolve());
+
+/** Stub for the toast dispatcher. */
 const addMessageMock = vi.fn();
+
+/** Stub for the observability store's `captureException`. */
 const captureExceptionMock = vi.fn();
 
 vi.mock('vue-router', () => ({

@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { instance } from '@/infrastructure/http/client';
 import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images';
 
+/** The axios default base URL, restored after each case. */
 const originalBaseUrl = instance.defaults.baseURL;
 
 beforeEach(() => {

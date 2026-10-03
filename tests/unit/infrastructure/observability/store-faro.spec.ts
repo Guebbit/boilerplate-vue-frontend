@@ -26,6 +26,7 @@ const faroApi = {
 /** What `initializeFaro` returns — only the `api` handle is ever read. */
 const fakeFaro = { api: faroApi };
 
+/** Stub for Faro's `initializeFaro`, returning the fake instance. */
 const initializeFaro = vi.fn(() => fakeFaro);
 
 /**

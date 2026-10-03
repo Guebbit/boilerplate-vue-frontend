@@ -1,5 +1,5 @@
 /**
- * `useAxiosUploadProgress` (FA84) — the one Axios wiring six forms (avatar, product image, user
+ * `useAxiosUploadProgress` — the one Axios wiring six forms (avatar, product image, user
  * image) used to repeat by hand. What is worth pinning here is not the toolkit's own tracking
  * logic, already its business, but this wrapper's two decisions: `trackUpload` only tracks when a
  * file is actually attached, and a raw `AxiosProgressEvent` becomes the 0–1 fraction the toolkit

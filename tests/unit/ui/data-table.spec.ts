@@ -5,7 +5,7 @@
  * itself: that the table has a NAME (a page with two tables announces two nameless ones
  * otherwise), that a header is not a focusable sort control unless the caller actually bound one
  * — sorting a header that only reorders the one PAGE this table holds, not the catalogue behind
- * it, is FA75 — and that a selectable row is reachable by keyboard — `@click:row` is mouse-only,
+ * it, is wrong — and that a selectable row is reachable by keyboard — `@click:row` is mouse-only,
  * and the products/orders/users pages select through it.
  */
 import { describe, it, expect } from 'vitest';
@@ -16,16 +16,19 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import vuetify from '@/ui/vuetify';
 import { i18n } from '@/i18n';
 
+/** One table row. */
 interface Row {
     id: string;
     name: string;
 }
 
+/** The table's headers: one data column and one synthetic actions column. */
 const headers: CoreDataTableHeader<Row>[] = [
     { title: 'Name', key: 'name' },
     { title: 'Actions', key: 'actions', synthetic: true }
 ];
 
+/** The table's rows. */
 const items: Row[] = [
     { id: 'a', name: 'Alpha' },
     { id: 'b', name: 'Beta' }
@@ -74,7 +77,7 @@ describe('DataTable — the name and the busy flag', () => {
 });
 
 describe('DataTable — the headers', () => {
-    it('leaves every header inert when no caller bound a sort model (FA75)', () => {
+    it('leaves every header inert when no caller bound a sort model', () => {
         const heads = mountTable().findAll('th');
 
         expect(heads[0].classes()).not.toContain('v-data-table__th--sortable');

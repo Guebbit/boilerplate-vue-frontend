@@ -99,6 +99,7 @@ const unauthorized = (message: string) =>
         { status: 401 }
     );
 
+/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer(
     /**
      * `GET /account/refresh` — succeeds while the budget lasts, then answers 401 like an expired

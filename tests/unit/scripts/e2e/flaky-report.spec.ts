@@ -32,6 +32,7 @@ afterEach(() => {
     for (const directory of scratch.splice(0)) rmSync(directory, { recursive: true, force: true });
 });
 
+/** One flaky test: its spec, title and attempt count. */
 const ENTRY: FlakyTest = { spec: 'tests/e2e/specs/a.cy.ts', title: 'cart › adds', attempts: 2 };
 
 describe('flakyTestsIn', () => {

@@ -2,7 +2,7 @@
  * The request interceptor of `src/infrastructure/http/index.ts`.
  *
  * `onRequest` attaches the bearer token and the active language to every outgoing request, plus
- * FA-D5's guest `X-Analytics-Consent` header when it applies. Failing to attach the token logs the
+ * the guest `X-Analytics-Consent` header when it applies. Failing to attach the token logs the
  * user out from the API's point of view while the UI still believes they are signed in; failing to
  * attach the language silently serves every response in the fallback locale.
  *
@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
+/** The access token the mocked session store holds. */
 const accessToken = ref<string | undefined>(undefined);
 
 vi.mock('@/infrastructure/session', () => ({
@@ -48,6 +49,7 @@ vi.mock('@/i18n', () => ({
     i18n: { global: { t: (key: string) => key } }
 }));
 
+/** The interceptors under test, imported after the mocks are in place. */
 const { onRequest, onRequestReject } = await import('@/infrastructure/http');
 
 /** Minimal outgoing config — `onRequest` only writes to `headers`. */

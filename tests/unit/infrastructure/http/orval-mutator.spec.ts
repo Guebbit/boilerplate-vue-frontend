@@ -1,6 +1,6 @@
 /**
  * `orvalMutator`'s own header merge — `src/infrastructure/http/index.ts`'s
- * `{ ...options?.headers, ...config.headers }`. FA123: never directly exercised before this;
+ * `{ ...options?.headers, ...config.headers }`. Nothing else exercises it directly:
  * every other spec either mocks `orvalMutator` outright or drives it through MSW without ever
  * handing it BOTH a generated `config` and a caller `options` with overlapping header keys, so
  * nothing proves the merge picks `config` over `options` — the precedence antibot's antibot token

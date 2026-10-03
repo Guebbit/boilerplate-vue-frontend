@@ -17,6 +17,8 @@ const VISITOR = { email: 'op18.visitor@example.com', subject: 'OP18 where is my 
 
 /** The note support keeps on the ticket, and the phone they fix on the customer. */
 const NOTE = 'Rang the courier, parcel is at the depot.';
+
+/** The phone number support types into the edit form. */
 const NEW_PHONE = '+39 055 7654321';
 
 /** The reason support gives for declining, which the customer must be able to read. */

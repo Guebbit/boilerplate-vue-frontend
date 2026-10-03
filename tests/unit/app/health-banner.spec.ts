@@ -1,5 +1,5 @@
 /**
- * `AppHealthBanner` (FA131) — the one banner this suite never mounted at all: hidden while the API
+ * `AppHealthBanner` — the one banner this suite never mounted at all: hidden while the API
  * answers, shown the moment `useLivenessProbe` reports it down, and gone again once it recovers.
  *
  * `useLivenessProbe` (`@guebbit/vue-toolkit`) is mocked rather than driven through a real
@@ -24,6 +24,7 @@ const AppHealthBannerInLayout = defineComponent({
     template: '<v-app><app-health-banner /></v-app>'
 });
 
+/** Whether the mocked liveness probe reports the API down. */
 const down = ref(false);
 
 vi.mock('@guebbit/vue-toolkit', () => ({
@@ -35,6 +36,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
     return { ...actual, useI18n: () => ({ t: (key: string) => key }) };
 });
 
+/** Mounts the banner with Vuetify. */
 const mountBanner = () => mount(AppHealthBannerInLayout, { global: { plugins: [vuetify] } });
 
 describe('AppHealthBanner', () => {

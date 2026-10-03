@@ -1,5 +1,5 @@
 /**
- * `PageSizeSelect.vue` (FA84) — the `v-select` over row counts every paginated list repeated by
+ * `PageSizeSelect.vue` — the `v-select` over row counts every paginated list repeated by
  * hand. Its only real logic: the default 10/25/50 set a caller can override, mapped into
  * `{ value, label }` items, and a plain `v-model` forwarded onto Vuetify's own.
  *
@@ -15,6 +15,7 @@ import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { DEFAULT_PAGE_SIZES } from '@/ui/molecules/page-size-options.ts';
 import vuetify from '@/ui/vuetify';
 
+/** Mounts the select; `props` override the defaults. */
 const mountSelect = (props: Record<string, unknown> = {}) =>
     mount(PageSizeSelect, {
         props: { label: 'Page size', modelValue: 10, ...props },

@@ -12,6 +12,7 @@ import {
     type Spec
 } from '../../../../scripts/e2e/shard-balancer';
 
+/** Builds a spec entry; its key defaults to its file. */
 const spec = (file: string, key = file): Spec => ({ file, key });
 
 describe('weighSpecs', () => {

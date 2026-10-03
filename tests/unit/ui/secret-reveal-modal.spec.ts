@@ -39,6 +39,7 @@ beforeEach(() => {
     copyToClipboardMock.mockReset();
 });
 
+/** Mounts the modal with a secret to reveal. */
 const mountModal = () =>
     mount(SecretRevealModal, {
         props: { secret: 'top-secret-value' },

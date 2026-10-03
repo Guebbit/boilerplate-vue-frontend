@@ -1,5 +1,5 @@
 /**
- * `FormImageUpload.vue` — the component the plan ranks first by risk.
+ * `FormImageUpload.vue` — the riskiest component here, since it owns a resource, not validation.
  *
  * `utils/uploads.ts` (the limits and the predicates) is well tested and now carries property
  * tests too. The component WRAPPING it was not tested at all, and the thing it owns is not
@@ -47,6 +47,8 @@ const served = (path: string) => `${String(instance.defaults.baseURL)}${path}`;
 
 /** Object-URL bookkeeping, so a missing revoke is observable. */
 const created: string[] = [];
+
+/** Object URLs the component revoked, in order. */
 const revoked: string[] = [];
 
 beforeEach(() => {
@@ -68,9 +70,11 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+/** Builds a small image `File`. */
 const makeFile = (name = 'photo.png', type = 'image/png') =>
     new File([new Uint8Array([1, 2, 3])], name, { type });
 
+/** Mounts the upload field; `props` override the defaults. */
 const mountUpload = (props: Record<string, unknown> = {}) =>
     mount(FormImageUpload, {
         props,

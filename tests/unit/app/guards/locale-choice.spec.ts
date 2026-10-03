@@ -33,6 +33,8 @@ const i18nState = {
 // Parameters are declared even though the bodies ignore them: `vi.fn(() => ...)` infers a
 // zero-arity signature, so the call sites below (and `toHaveBeenCalledWith`) would not type-check.
 const changeLanguageMock = vi.fn((_locale: string) => Promise.resolve());
+
+/** Stub for the i18n runtime's `updateLocale`. */
 const updateLocaleMock = vi.fn((_locale: string, _messages: unknown) => Promise.resolve());
 
 vi.mock('@/i18n', async (importOriginal) => ({
@@ -59,6 +61,8 @@ const getLocalesMock = vi.fn(() =>
         contractResponse(schemas.GetLocalesResponse, { locales: [], default: 'en', fallback: 'en' })
     )
 );
+
+/** Stub for the locale-messages API call; answers a valid contract response. */
 const getLocaleMessagesMock = vi.fn((_locale: string) =>
     Promise.resolve(
         contractResponse(schemas.GetLocaleMessagesResponse, {
@@ -75,6 +79,7 @@ vi.mock('@api', async (importOriginal) => ({
     getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
 }));
 
+/** The guard under test, imported after the mocks above are in place. */
 const { fetchLanguageApi, localeChoice } = await import('@/app/guards/locale-choice');
 
 /** Minimal route stub — the guard only reads name, params and query. */
@@ -237,7 +242,7 @@ describe('localeChoice', () => {
     });
 
     /**
-     * The regression FA26 fixes: a switch to `it` was still in flight (fetching its dictionary)
+     * The regression guarded here: a switch to `it` was still in flight (fetching its dictionary)
      * when the visitor navigated again to `es`. `es` has nothing slowing it down and activates
      * first; `it` finishing afterwards must not un-switch the page back to a language the visitor
      * already left. Only the LATEST requested locale may ever activate.

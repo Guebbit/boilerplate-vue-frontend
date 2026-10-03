@@ -20,6 +20,8 @@ const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
 
 /** What the warehouse keeps back from the withdrawal's refund, in major units and in cents. */
 const DEDUCTION = 3;
+
+/** The handling deduction in cents, the unit the page's money cells read in. */
 const DEDUCTION_CENTS = DEDUCTION * 100;
 
 /** The slice of a return this story reads. */

@@ -1,6 +1,6 @@
 /**
  * @module
- * `LayoutDefault.vue` (FA70) — the shell the router now mounts once, as the layout for every
+ * `LayoutDefault.vue` — the shell the router now mounts once, as the layout for every
  * route, reading the hero's title/opt-out/centering straight off the matched route's own `meta`
  * instead of props a view used to pass it. The chrome components (`AppNavigation`, both banners,
  * the dialog hosts) are stubbed: none of that is this file's own behaviour, already proven by
@@ -21,6 +21,7 @@ import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 /** A trivial leaf component, so `<RouterView />` has something real to render. */
 const leaf = (text: string) => ({ template: `<p>${text}</p>` });
 
+/** Memory-history router the layout mounts under. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -51,6 +52,7 @@ const router = createRouter({
     ]
 });
 
+/** The layout's chrome components, stubbed so only the shell itself is under test. */
 const CHROME_STUBS = {
     AppNavigation: true,
     AppHealthBanner: true,
@@ -60,6 +62,7 @@ const CHROME_STUBS = {
     ReauthDialog: true
 };
 
+/** Mounts the layout with the real i18n, Vuetify and router. */
 const mountLayout = () =>
     mount(LayoutDefault, {
         global: { plugins: [vuetify, i18n, router], stubs: CHROME_STUBS }

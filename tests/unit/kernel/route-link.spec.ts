@@ -1,10 +1,11 @@
 /**
  * `linkIfRouted` — `src/kernel/route-link.ts` — the general form of `signInLocation`'s own
- * guard, for FA86's route names with no `MODULE_EDGES` coupling to back them.
+ * guard, for route names with no `MODULE_EDGES` coupling to back them.
  */
 import { describe, expect, it } from 'vitest';
 import { linkIfRouted } from '@/kernel/route-link';
 
+/** A router stub that resolves only the given route names. */
 const routerWith = (names: string[]) => ({ hasRoute: (name: string) => names.includes(name) });
 
 describe('linkIfRouted', () => {

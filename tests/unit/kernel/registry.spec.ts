@@ -28,11 +28,13 @@ const makeRoute = (name: string): RouteRecordRaw => ({
 /** A placeholder for `AppNavigationEntry.icon`, required and otherwise irrelevant here. */
 const STUB_ICON = { template: '<svg />' };
 
+/** Builds a module with one route named after it. */
 const makeModule = (name: string): AppModule => ({
     name,
     routes: [makeRoute(name)]
 });
 
+/** Builds a module with one route and the given navigation entries. */
 const withNav = (name: string, navigation: AppNavigationEntry[]): AppModule => ({
     name,
     routes: [makeRoute(name)],

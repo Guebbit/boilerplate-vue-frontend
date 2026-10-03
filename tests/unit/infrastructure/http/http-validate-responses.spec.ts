@@ -9,8 +9,10 @@ import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
+/** Origin of the stub API. */
 const API = 'http://api.test';
 
+/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer();
 
 /**
@@ -38,7 +40,7 @@ const loadHttp = () => {
             { collectModuleResponseSchemas },
             { enabledModules }
         ]) =>
-            // Awaited: the rows load lazily now (FA94/FA-D2), so every test below must wait for
+            // Awaited: the rows load lazily now, so every test below must wait for
             // them to be in place before it fires a request, exactly like `wireModulesIntoCore`
             // waits when a spec actually stubs `VITE_VALIDATE_RESPONSES`.
             loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).then(() => httpModule)
@@ -266,7 +268,7 @@ describe('orvalMutator contract validation', () => {
 
     /**
      * The regression `resilience.cy.ts` caught: a request that lands before the lazy schema
-     * chunk (FA94/FA-D2) resolves reads as "unmapped" too, for a route that DOES have a row —
+     * chunk resolves reads as "unmapped" too, for a route that DOES have a row —
      * the table is just still empty. Unlike a genuinely unmapped route, that must stay quiet.
      */
     it('stays quiet for a mapped route while the lazy schema chunk is still loading', () => {

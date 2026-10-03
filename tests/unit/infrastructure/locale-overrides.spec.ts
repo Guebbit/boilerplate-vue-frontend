@@ -19,6 +19,8 @@ import { contractResponse } from './http/orval-fixture-schema.ts';
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
 const getLocalesMock = vi.fn();
+
+/** Stub for the locale-messages API call. */
 const getLocaleMessagesMock = vi.fn();
 
 vi.mock('@api', async (importOriginal) => ({
@@ -32,6 +34,7 @@ vi.mock('@api', async (importOriginal) => ({
         getLocaleMessagesMock(locale, parameters)
 }));
 
+/** The fetch helpers under test, imported after the mocks are in place. */
 const {
     fetchRemoteLocales,
     fetchLocaleOverrides,
@@ -39,6 +42,8 @@ const {
     withLocaleOverrides,
     refreshRunningLocale
 } = await import('@/infrastructure/locale-overrides.ts');
+
+/** The shared i18n instance and its language list. */
 const { i18n, supportedLanguages } = await import('@/i18n');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */
@@ -271,7 +276,7 @@ describe('withLocaleOverrides', () => {
 });
 
 /**
- * The translation admin's live-refresh pipeline — the fix FA25 calls for. Re-derives from this
+ * The translation admin's live-refresh pipeline. Re-derives from this
  * build's own bundle (the real `src/locales/it.json`, not a fixture) each time, rather than
  * layering fresh overrides onto whatever the running instance already has — the difference
  * between an edit showing correctly and a REVERTED edit getting stuck.

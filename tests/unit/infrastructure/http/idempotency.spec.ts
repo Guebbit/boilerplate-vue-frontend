@@ -1,6 +1,6 @@
 /**
  * @module
- * Unit tests for `useIdempotencyKey` (B10/FA53): the header it attaches, and when a key is kept
+ * Unit tests for `useIdempotencyKey`: the header it attaches, and when a key is kept
  * across a retry versus minted fresh — the whole point of the helper, since a wrong answer here
  * means either a duplicate charge/signup/send (kept too long) or a retry the server rejects as a
  * reused key on a different body (minted too eagerly).

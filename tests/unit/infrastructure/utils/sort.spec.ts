@@ -12,6 +12,7 @@ import {
     sortTokensOf
 } from '@/infrastructure/utils/sort.ts';
 
+/** A sort-token table: each key maps to a wire value. */
 const allowed = { a: 'price', b: '-price', c: 'title', d: '-title' } as const;
 
 describe('firstSortOf', () => {

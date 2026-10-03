@@ -29,6 +29,7 @@ let patchIfMatch: (string | undefined)[] = [];
  */
 const tag = (version: number) => `"${version.toString()}"`;
 
+/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer(
     /** The editor's read: answers the current tag. */
     http.get(`${API}/products/p1/admin`, () =>

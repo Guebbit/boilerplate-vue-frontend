@@ -1,5 +1,5 @@
 /**
- * `AppAnalyticsConsentBanner` — FA-D5's three states: hidden while Umami is unconfigured, shown while
+ * `AppAnalyticsConsentBanner` — its three states: hidden while Umami is unconfigured, shown
  * while the guest's choice is `unknown`, and gone again the moment either button is pressed.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,10 +8,19 @@ import { createPinia } from 'pinia';
 import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanner.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the consent store's `grant`. */
 const grant = vi.fn();
+
+/** Stub for the consent store's `deny`. */
 const deny = vi.fn();
+
+/** Whether the prompt is open, as the mocked store reports it. */
 const promptOpen = { value: true };
+
+/** The guest's stored choice, as the mocked store reports it. */
 const consentChoice = { value: 'unknown' as 'unknown' | 'granted' | 'denied' };
+
+/** Whether the mocked build flag turns the feature on. */
 let flagEnabled = true;
 
 vi.mock('@/infrastructure/analytics-consent.ts', () => ({
@@ -33,6 +42,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
     return { ...actual, useI18n: () => ({ t: (key: string) => key }) };
 });
 
+/** Mounts the banner with a real Pinia and Vuetify. */
 const mountBanner = () =>
     mount(AppAnalyticsConsentBanner, { global: { plugins: [createPinia(), vuetify] } });
 

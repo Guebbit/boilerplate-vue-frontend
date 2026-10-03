@@ -3,7 +3,7 @@ import { DEMO_MODULE_NAMES } from '@/demo-modules';
 import { enabledModules } from '@/modules';
 
 /**
- * `DEMO_MODULE_NAMES` (FE-D4) has to stay equal to `enabledModules` in both directions — a name
+ * `DEMO_MODULE_NAMES` has to stay equal to `enabledModules` in both directions — a name
  * here `src/modules.ts` does not mount is a manifest lying about what `npm run demo:remove`
  * deletes, and a shop module `src/modules.ts` mounts but this list forgot would survive a strip
  * silently, the exact drift `docs/theory/module-lifecycle.md`'s sweep canaries exist to catch on

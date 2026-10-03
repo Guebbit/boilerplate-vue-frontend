@@ -15,7 +15,11 @@
 
 /** Units on the shelf at the start, taken by the first order, and by the second. */
 const SHELF = 5;
+
+/** Units the first order buys. */
 const FIRST_ORDER = 2;
+
+/** Units the second order buys. */
 const SECOND_ORDER = 1;
 
 /** What the board shows for the product: on hand, reserved, available. */

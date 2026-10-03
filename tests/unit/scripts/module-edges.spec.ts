@@ -1,7 +1,7 @@
 /**
  * `MODULE_EDGES`'s own per-module lint block only ever checks a module against its OWN entry —
  * nothing walked the graph as a whole before `assertAcyclicModuleEdges`, so `cart: ['orders']`
- * beside `orders: ['cart']` passed lint forever (FA73). This proves the walk itself: the real
+ * beside `orders: ['cart']` passed lint forever. This proves the walk itself: the real
  * `MODULE_EDGES` against the real module folders is asserted acyclic in `eslint.config.ts` at
  * lint time, which this suite does not load — a fixture graph is what a unit test can drive.
  */

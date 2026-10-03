@@ -13,6 +13,7 @@ import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-view
 const viewerOf = (id: string) => ({ id, email: `${id}@x.test`, role: 'customer', verified: true });
 
 describe('useResetOnViewerChange', () => {
+    /** Stub for the reset callback the composable calls. */
     let reset: () => void;
 
     beforeEach(() => {

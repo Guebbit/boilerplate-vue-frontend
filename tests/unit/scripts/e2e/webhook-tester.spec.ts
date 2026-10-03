@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readWebhookTester } from '../../../../scripts/e2e/webhook-tester';
 import { WEBHOOK_SINK_TLS } from '../../../../scripts/e2e/webhook-tls';
 
+/** The fake tester server, closed after each case. */
 let server: Server | undefined;
 
 /** Starts a fake tester answering `status` and `body` to every request; yields its origin. */

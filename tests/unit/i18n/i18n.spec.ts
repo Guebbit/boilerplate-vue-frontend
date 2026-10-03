@@ -161,7 +161,7 @@ describe('_updateLocale', () => {
     });
 
     /**
-     * The regression FA25 fixes. Modules used to be merged in AFTER the caller's own dictionary,
+     * The regression guarded here. Modules used to be merged in AFTER the caller's own dictionary,
      * so a module contributing the SAME key the caller just registered — an edited override, or
      * the shared file over a module's bundled default — silently lost to the module's text. 972 of
      * this app's 1,119 keys live in module dictionaries, so this was most translation edits.
@@ -305,7 +305,7 @@ describe('getDefaultLocale', () => {
     });
 
     /**
-     * The regression FA28 fixes: the instance's `fallbackLocale` is never empty (it is `'en'` by
+     * The regression guarded here: the instance's `fallbackLocale` is never empty (it is `'en'` by
      * default too), so checking it BEFORE the configured default made `VITE_APP_DEFAULT_LOCALE`
      * dead code — a deployment setting it had no effect on an unsupported browser language.
      */

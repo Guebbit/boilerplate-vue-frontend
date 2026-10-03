@@ -1,5 +1,5 @@
 /**
- * `ReauthDialog` (FA123/FA131) — never mounted anywhere before this: `step-up.spec.ts` says so
+ * `ReauthDialog` — never mounted anywhere before this: `step-up.spec.ts` says so
  * explicitly, driving `useReauthPromptStore()` directly to cover the INTERCEPTOR's park/replay
  * mechanics instead. This is the other half — the dialog's own job once the store is open: submit
  * calls `useSessionStore().reauth()`, success resolves the prompt, a wrong password shows inline and
@@ -10,7 +10,7 @@
  * own `reauth()` call is `session.spec.ts`'s job, not this dialog's.
  *
  * The 422-vs-anything-else branch this dialog's error message takes is a separate, narrower
- * concern covered by `reauth-dialog-error-message.spec.ts` (FA80) — kept in its own file since it
+ * concern covered by `reauth-dialog-error-message.spec.ts` — kept in its own file since it
  * needs a real (unstubbed) `VDialog` and an identity `t`, neither of which this file uses.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,9 +23,16 @@ import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
+/** Stub for the session store's `reauth`. */
 const reauth = vi.fn();
+
+/** Stub for the session store's `reauthMethods`. */
 const reauthMethods = vi.fn();
+
+/** Stub for the session store's `sendReauthCode`. */
 const sendReauthCode = vi.fn();
+
+/** Whether the mocked store reports a re-authentication in flight. */
 const reauthing = ref(false);
 
 vi.mock('@/infrastructure/session.ts', () => ({
@@ -33,6 +40,7 @@ vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => ({ reauth, reauthMethods, sendReauthCode, reauthing })
 }));
 
+/** Mounts the dialog with the plugins it needs. */
 const mountDialog = () =>
     mount(ReauthDialog, {
         global: {
@@ -97,7 +105,7 @@ describe('ReauthDialog', () => {
 
     it('shows an inline error and stays open when reauth() rejects', () => {
         // A 422-shaped reject, exactly as `onResponseReject` produces it — the dialog's own
-        // 422-vs-anything-else branch (FA80) is what picks this fixed wording over the failure's
+        // 422-vs-anything-else branch is what picks this fixed wording over the failure's
         // raw message, covered in full by `reauth-dialog-error-message.spec.ts`.
         reauth.mockRejectedValue({ status: 422 });
         const wrapper = mountDialog();

@@ -15,6 +15,7 @@ import {
     wantsAntibotBackend
 } from '../../../../scripts/e2e/antibot-backend';
 
+/** The repo root, four levels above this file. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 describe('ANTIBOT_BACKEND_ENV', () => {

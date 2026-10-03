@@ -8,7 +8,7 @@
  *
  * What the page shows is the ACTION, the actor's role and the outcome — `AdminAuditTab` has no
  * column for the reason. The reason lives in the row's `metadata`, so it is read off
- * `GET /audit?target=` beside the page, where the plan wanted it on screen (it is not).
+ * `GET /audit?target=` beside the page (the page itself does not show it).
  *
  * Forced ship is offered only on an order with no parcel that cannot be started the ordinary
  * way, so the admin's own unpaid `order.ownerPending` is the subject. The status-only override

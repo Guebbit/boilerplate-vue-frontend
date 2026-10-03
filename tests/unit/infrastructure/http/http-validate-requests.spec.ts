@@ -10,8 +10,10 @@ import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
+/** Origin of the stub API. */
 const API = 'http://api.test';
 
+/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer();
 
 /** What the stub endpoint received, so a test can prove the body went out untouched. */

@@ -55,7 +55,7 @@ export default mergeConfig(
             // under v8 coverage on a 4-vCPU runner, where mounting a full page spec takes 3-5x
             // longer and the last tests of a heavy file timed out on a green codebase.
             testTimeout: 15_000,
-            // Two homes, deliberately (decision D4). A module's own specs live inside it, so
+            // Two homes, deliberately. A module's own specs live inside it, so
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
             // single domain — app, kernel, ui, infrastructure, cross-cutting sweeps — stays
             // central under `tests/unit/` and `tests/cross-cutting/`.

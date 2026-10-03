@@ -1,6 +1,6 @@
 /**
  * @module
- * FA-D5's guest consent store: the three states, the cookie round-trip (`@guebbit/js-toolkit`'s
+ * The guest consent store: the three states, the cookie round-trip (`@guebbit/js-toolkit`'s
  * `setCookie`/`getCookie`, already a dependency — see the module's own doc for why no new one was
  * added), and the build-time flag that gates the whole feature.
  */
@@ -17,6 +17,7 @@ const cookieJar = () =>
             .map((pair) => pair.split('=') as [string, string])
     );
 
+/** The store and flag under test, imported after the mocks are in place. */
 const { useAnalyticsConsentStore, isAnalyticsConsentEnabled } =
     await import('@/infrastructure/analytics-consent.ts');
 

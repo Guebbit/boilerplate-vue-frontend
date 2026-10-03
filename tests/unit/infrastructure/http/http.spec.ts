@@ -25,6 +25,7 @@ vi.mock('@/i18n', async (importOriginal) => ({
 
 beforeAll(() => import('@/i18n').then(({ loadLocale }) => loadLocale('en')));
 
+/** Builds the object shape an axios rejection has: a response with status, data and headers. */
 const makeAxiosError = (status: number, data: unknown, headers: Record<string, string> = {}) => ({
     response: { status, statusText: 'Error', data, headers },
     message: 'Request failed',

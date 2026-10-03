@@ -1,5 +1,5 @@
 /**
- * `useQuerySyncedFilters` (FA84) — the URL-query mechanism `WebhookDeliveries.vue` had to itself,
+ * `useQuerySyncedFilters` — the URL-query mechanism `WebhookDeliveries.vue` had to itself,
  * extracted so a bookmarkable filtered view is not one page's own trick.
  *
  * Driven through a real `vue-router` instance (`createMemoryHistory`), the same way
@@ -19,11 +19,13 @@ interface TestFilters {
     page: number;
 }
 
+/** Reads filters off a route query. */
 const fromQuery = (query: LocationQuery): TestFilters => ({
     status: typeof query.status === 'string' ? query.status : undefined,
     page: Number(query.page) > 0 ? Number(query.page) : 1
 });
 
+/** Writes filters back as a route query, leaving defaults out. */
 const toQuery = (filters: TestFilters): Record<string, string | number> => ({
     ...(filters.status && { status: filters.status }),
     ...(filters.page > 1 && { page: filters.page })

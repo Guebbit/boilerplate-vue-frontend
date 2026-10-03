@@ -14,8 +14,10 @@ import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 
+/** Origin of the stub API. */
 const API = 'http://api.test';
 
+/** One request the stub server saw: its route and the authorization it carried. */
 interface LoggedRequest {
     route: string;
     authorization?: string;
@@ -27,7 +29,10 @@ interface Scenario {
     requiresReauth: boolean;
 }
 
+/** Every request the stub server has seen, in order. */
 let requestLog: LoggedRequest[] = [];
+
+/** How the stub server answers the next requests. */
 let scenario: Scenario = { requiresReauth: true };
 
 /** A `REAUTH_REQUIRED` 401, matching what `requireFreshAuth` actually answers. */
@@ -42,6 +47,7 @@ const reauthRequired = () =>
         { status: 401 }
     );
 
+/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer(
     http.post(`${API}/checkout`, ({ request }) => {
         const authorization = request.headers.get('authorization') ?? undefined;
@@ -52,13 +58,17 @@ const server = setupServer(
     })
 );
 
+/** Loads a fresh copy of the http module, pointed at the stub API. */
 const loadHttp = () => {
     vi.resetModules();
     vi.stubEnv('VITE_API_URL', API);
     return import('@/infrastructure/http');
 };
 
+/** The routes requested so far, in order. */
 const routes = () => requestLog.map(({ route }) => route);
+
+/** How many times one route was requested. */
 const timesRequested = (route: string) => requestLog.filter((r) => r.route === route).length;
 
 /**

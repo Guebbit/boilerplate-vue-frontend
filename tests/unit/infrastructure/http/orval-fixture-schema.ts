@@ -87,7 +87,7 @@ export const contractResponse = (schema: ZodType, data?: unknown): Record<string
 };
 
 /**
- * FA123: the request-body half of the same proof — a spec asserting on what `orvalMutator` was
+ * The request-body half of the same proof — a spec asserting on what `orvalMutator` was
  * CALLED WITH (`lastPatchBody()`-style helpers reading `config.data` off a mock's call list)
  * proves the app built the shape the test author expected, never that the shape is one the real
  * endpoint accepts. A spec that quietly drifts from the contract's own request schema — a

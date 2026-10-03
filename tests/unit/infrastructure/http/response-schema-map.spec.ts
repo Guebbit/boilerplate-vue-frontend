@@ -11,7 +11,7 @@
  *
  *   **Order.** `find()` returns the first match, so a literal sibling (`/products/categories`)
  *   must be listed before a same-depth `{param}` one (`/products/{id}`) that would otherwise
- *   absorb it. Generated now (`scripts/contracts/generate-route-table.ts`, FA55), sorted by
+ *   absorb it. Generated (`scripts/contracts/generate-route-table.ts`), sorted by
  *   ascending param count — this file no longer has to re-prove that ordering by hand, only that
  *   `resolveResponseSchema` still respects whatever order it is given.
  *
@@ -45,7 +45,7 @@ import * as schemas from '@api/schemas';
  * check below now proves something stronger than it used to: that the enabled modules between them
  * still cover every documented operation.
  *
- * Awaited: the rows load lazily now (FA94/FA-D2), same as the real app does after first paint —
+ * Awaited: the rows load lazily now, same as the real app does after first paint —
  * `beforeAll` returning the promise is what makes every test below see them already installed.
  */
 beforeAll(() => loadResponseSchemas(collectModuleResponseSchemas(enabledModules)));
@@ -62,7 +62,7 @@ const ID = '65dc8a99604c307b702b5ccc';
 
 /**
  * `contracts/rest/index.ts`'s own function name for one response schema's operation
- * (FA55) — the inverse of `generate-route-table.ts`'s `schemaNameFor`. Not exact for the seven
+ * — the inverse of `generate-route-table.ts`'s `schemaNameFor`. Not exact for the seven
  * operations orval splits on content type (`generate-operation-modules.ts`'s
  * `contentTypeOperationNames`): {@link isImportedByApp} checks both spellings for those.
  */
@@ -103,6 +103,7 @@ const importedApiFunctionNames = (): Set<string> => {
     return names;
 };
 
+/** Every `@api` function the app's source imports. */
 const IMPORTED_API_FUNCTION_NAMES = importedApiFunctionNames();
 
 /**
@@ -117,13 +118,13 @@ const isImportedByApp = (schemaName: string): boolean => {
     );
 };
 
-/** Every `method`+`pattern` this generated table declares, without its two duplicates (FA55). */
+/** Every `method`+`pattern` this generated table declares, without its two duplicates. */
 const ROUTE_KEYS = GENERATED_ROUTES.map((route) => `${route.method} ${route.pattern.source}`);
 
 /**
  * Every operation `openapi.yaml` declares, as `[method, path, schemaName]` with the spec's
  * `{param}` placeholders substituted for the same representative `ID` — generated from the spec
- * (FA55), not hand-copied, so it cannot drift from the table under test the way a hand-typed
+ * not hand-copied, so it cannot drift from the table under test the way a hand-typed
  * mirror already had.
  *
  * No "not called by this client" exclusion list any more: {@link routesForModules} claims a row
@@ -186,7 +187,7 @@ describe('routeSchemas table', () => {
     });
 
     it('has no two generated rows for the same method and pattern', () => {
-        // The regression this generator exists to prevent (FA55): the 7 webhooks rows used to be
+        // The regression this generator exists to prevent: the 7 webhooks rows used to be
         // registered TWICE, once on the core shelf and once in `webhooks/response-schemas.ts` —
         // `find()` silently returned whichever was listed first, and nothing caught the other
         // becoming dead weight.
@@ -233,7 +234,7 @@ describe('routeSchemas table', () => {
 });
 
 /**
- * FA55's own narrower parity claim: not "every declared operation has a row" (true unconditionally
+ * The narrower parity claim: not "every declared operation has a row" (true unconditionally
  * above, by construction) but "every operation the app actually CALLS resolves correctly" — a
  * second, independent signal computed straight from `src/`'s own imports, so a real call site
  * missing its validation fails here even in the (today, hypothetical) case a module's ownership

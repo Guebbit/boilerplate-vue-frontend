@@ -14,7 +14,7 @@
  *     one — a search that narrowed to a handful of rows.
  *   - **2 pages** must render. This is the case `> 2` gets wrong.
  *
- * The plan lists this component under "pagination boundaries, empty, single page, overflow", and
+ * This component is worth a spec for its pagination boundaries (empty, single page, overflow), and
  * the boundaries are the entire reason it is on the list rather than its size.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -23,6 +23,7 @@ import { nextRenderTick } from '../../support/unit/mounted-vm';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Mounts the pager; `props` override the defaults. */
 const mountPager = (props: Record<string, unknown> = {}) =>
     mount(ListPagination, {
         props,

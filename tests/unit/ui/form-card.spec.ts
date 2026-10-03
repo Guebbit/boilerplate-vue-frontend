@@ -18,6 +18,7 @@ import type { Ref } from 'vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Memory-history router the card mounts under. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -25,6 +26,7 @@ const router = createRouter({
     ]
 });
 
+/** Mounts the card with the plugins it needs. */
 const mountCard = () =>
     mount(FormCard, {
         props: {

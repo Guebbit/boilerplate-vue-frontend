@@ -3,7 +3,7 @@ import { localeNativeNames } from '@/i18n';
 import { languageLabel } from '@/i18n/language-label.ts';
 
 /**
- * `languageLabel` — FA27: a language the API added at runtime, which this build has no
+ * `languageLabel`: a language the API added at runtime, which this build has no
  * `generic.<code>` translation for, used to render as that raw dictionary key in the switcher.
  */
 describe('languageLabel', () => {

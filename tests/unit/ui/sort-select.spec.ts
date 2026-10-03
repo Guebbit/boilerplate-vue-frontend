@@ -1,5 +1,5 @@
 /**
- * `SortSelect.vue` — the default order first (value `null`, not `undefined`: FA51), then the
+ * `SortSelect.vue` — the default order first (value `null`, not `undefined`), then the
  * caller's options, and a plain `v-model` onto Vuetify's own select.
  */
 import { describe, it, expect } from 'vitest';
@@ -8,6 +8,7 @@ import { VSelect } from 'vuetify/components';
 import SortSelect from '@/ui/molecules/SortSelect.vue';
 import vuetify from '@/ui/vuetify';
 
+/** Mounts the select with the given model value. */
 const mountSelect = (modelValue: string | null = null) =>
     mount(SortSelect, {
         props: {

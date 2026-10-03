@@ -6,6 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 
+/** Sets up the composable over filters with an optional starting sort. */
 const setup = (sort?: string) => {
     const filters = ref<{ sort?: string; text?: string }>({ text: 'oak', ...(sort && { sort }) });
     const apply = vi.fn();

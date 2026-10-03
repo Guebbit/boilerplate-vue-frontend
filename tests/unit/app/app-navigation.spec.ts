@@ -38,6 +38,7 @@ import type { RouteAccess, RoutePermission } from '@/app/guards/authentications'
  */
 const held = ref<string[]>([]);
 
+/** The mocked session store: sign-in state, viewer and a `can` that reads {@link held}. */
 const session = {
     isAuth: ref(false),
     viewer: ref<{ email: string } | undefined>(undefined),
@@ -494,7 +495,7 @@ describe('Navigation', () => {
         expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'Logout' }));
     });
 
-    it('sends the signed-in visitor Home instead, on a build with no Logout route (FA71)', () => {
+    it('sends the signed-in visitor Home instead, on a build with no Logout route', () => {
         // Same reasoning as the sign-in/sign-up links above: a route name is a string nothing
         // type-checks, so a build missing the account module must not throw on logout either.
         session.isAuth.value = true;

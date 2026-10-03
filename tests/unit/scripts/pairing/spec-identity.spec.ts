@@ -73,6 +73,8 @@ const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
  * reason — they are the only two shapes a fixture needs.
  */
 const OPENAPI = 'openapi.yaml';
+
+/** The async contract's file name on the frontend side. */
 const ASYNCAPI = 'asyncapi.yaml';
 
 /** `sharedFiles(role)` with one entry replaced. */
@@ -89,13 +91,19 @@ const withoutFile = (role: RepoRole, file: string): Record<string, string> => {
     return files;
 };
 
+/** The role of the repo under test. */
 const HERE: RepoRole = 'frontend';
+
+/** The role of its sibling. */
 const THERE: RepoRole = 'backend';
 
 /** A pair whose paths differ between the repos — the case a same-path check could not express. */
 const CROSS_PATH = SHARED_FILES.find(({ backend, frontend }) => backend !== frontend)!;
 
+/** Every temporary root created, removed after each case. */
 const roots: string[] = [];
+
+/** Creates a temporary root holding these files and registers it for cleanup. */
 const root = (files: Record<string, string>) => {
     const created = makeRoot(files);
     roots.push(created);

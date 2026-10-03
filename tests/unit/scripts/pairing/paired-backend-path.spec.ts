@@ -33,9 +33,16 @@ import {
     LIVE_SCENARIO_FILE
 } from '../../../../scripts/pairing/paired-backend-path';
 
+/** The `BACKEND_PATH` the shell had, restored after each case. */
 const previous = process.env.BACKEND_PATH;
+
+/** The `BACKEND_DEMO_COMMAND` the shell had, restored after each case. */
 const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
+
+/** The `LIVE_RESET_COMMAND` the shell had, restored after each case. */
 const previousResetCommand = process.env.LIVE_RESET_COMMAND;
+
+/** The `BACKEND_DEMO_SHARD_LIMIT` the shell had, restored after each case. */
 const previousShardLimit = process.env.BACKEND_DEMO_SHARD_LIMIT;
 
 /** The throwaway working directory of the current case. */

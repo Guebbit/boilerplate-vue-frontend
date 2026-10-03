@@ -9,6 +9,7 @@ import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
+/** Stub for `fetch`, answering 200 to every ping. */
 const fetchMock = vi.fn((_url: string, _init: RequestInit) =>
     Promise.resolve(new Response(null, { status: 200 }))
 );
