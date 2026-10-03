@@ -73,7 +73,7 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * What this basket needs from shipping, and what it may choose from — the server's own
-     * answer (FA-D6/B3), replacing a client-computed basket weight and free-above math.
+     * answer, replacing a client-computed basket weight and free-above math.
      */
     const cartShipping = computed<CartShipping | undefined>(() => cart.value?.shipping);
 
@@ -107,7 +107,7 @@ export const useCartStore = defineStore('cart', () => {
     );
 
     /**
-     * `POST /cart/checkout`'s `Idempotency-Key` for the checkout attempt under way (B19). Minted
+     * `POST /cart/checkout`'s `Idempotency-Key` for the checkout attempt under way. Minted
      * once here and again by {@link mintCheckoutIdempotencyKey} — never read directly outside
      * {@link checkout}, which is the only caller that sends it.
      */
@@ -180,7 +180,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             addCartItem({ productId, quantity }).then((response) => {
                 cart.value = response.data;
-                // The basket just changed — any checkout attempt still pending is now stale (B19).
+                // The basket just changed — any checkout attempt still pending is now stale.
                 mintCheckoutIdempotencyKey();
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 invalidateProductsCache();
@@ -199,7 +199,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             updateCartItemById(productId, { quantity }).then((response) => {
                 cart.value = response.data;
-                // See addCartItemAction — a changed line means a new checkout attempt (B19).
+                // See addCartItemAction — a changed line means a new checkout attempt.
                 mintCheckoutIdempotencyKey();
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 invalidateProductsCache();
@@ -221,7 +221,7 @@ export const useCartStore = defineStore('cart', () => {
             setCartShippingMethod({ shippingMethodId }).then((response) => {
                 cart.value = response.data;
                 // The cart's own choice, part of what checkout charges — a change here is a new
-                // checkout attempt too (B19).
+                // checkout attempt too.
                 mintCheckoutIdempotencyKey();
                 return response.data;
             })
@@ -237,7 +237,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
                 cart.value = response.data;
-                // See addCartItemAction — a changed basket means a new checkout attempt (B19).
+                // See addCartItemAction — a changed basket means a new checkout attempt.
                 mintCheckoutIdempotencyKey();
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 invalidateProductsCache();
@@ -255,7 +255,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             clearCart().then((response) => {
                 cart.value = response.data;
-                // See addCartItemAction — an emptied basket means a new checkout attempt (B19).
+                // See addCartItemAction — an emptied basket means a new checkout attempt.
                 mintCheckoutIdempotencyKey();
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 invalidateProductsCache();
@@ -264,10 +264,10 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * What the local cart becomes once checkout empties it server-side (FA33) — a known state,
+     * What the local cart becomes once checkout empties it server-side — a known state,
      * not a guess, since the server always empties the cart on a successful checkout. Takes the
      * currency as an argument rather than hardcoding one: the shop's currency does not change
-     * just because the basket emptied (FA37).
+     * just because the basket emptied.
      *
      * @param currency - ISO-4217 code the emptied cart's zeroed summary should still carry.
      * @returns The known-empty cart shape.
@@ -291,7 +291,7 @@ export const useCartStore = defineStore('cart', () => {
      * Emits nothing: every checkout outcome the API saw is reported by the backend from the
      * handler that decided it, and a request that never arrived is already a failed span in Faro.
      *
-     * Sends {@link checkoutIdempotencyKey} on every attempt (B19): a retry after a network error
+     * Sends {@link checkoutIdempotencyKey} on every attempt: a retry after a network error
      * or a 5xx reuses it, since neither answer is conclusive; any other outcome mints a fresh one
      * for whatever the caller tries next.
      *
@@ -304,7 +304,7 @@ export const useCartStore = defineStore('cart', () => {
                 headers: { [IDEMPOTENCY_KEY_HEADER]: checkoutIdempotencyKey.value }
             })
                 .then((response) => {
-                    // The server empties the cart on success (FA33): setting it to the known-empty
+                    // The server empties the cart on success: setting it to the known-empty
                     // shape, rather than dropping it to `undefined`, is what keeps the header badge
                     // from falling back to `summarySeed`'s stale count from before checkout ran.
                     // The currency itself survives the empty — the order was just frozen from the
@@ -345,7 +345,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             apiReorder(orderId).then((response) => {
                 cart.value = response.data;
-                // See addCartItemAction — a refilled basket means a new checkout attempt (B19).
+                // See addCartItemAction — a refilled basket means a new checkout attempt.
                 mintCheckoutIdempotencyKey();
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 invalidateProductsCache();

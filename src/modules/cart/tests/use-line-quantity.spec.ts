@@ -15,6 +15,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity';
 
+/** Milliseconds the fake timers advance past the debounce window. */
 const DELAY = 400;
 
 /**
@@ -180,7 +181,7 @@ describe('useLineQuantity — the ways a debounce loses data', () => {
     });
 });
 
-describe('useLineQuantity — FA34: checkout and clear must not race a pending step', () => {
+describe('useLineQuantity — checkout and clear must not race a pending step', () => {
     it('settle flushes the pending step immediately, then waits for it to land', async () => {
         const { update, calls, settleAll } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);

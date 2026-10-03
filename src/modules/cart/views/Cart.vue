@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'CartPage'
 };
@@ -77,7 +81,7 @@ const {
 const { loadProducts, productOf, titleOf } = useProductLines();
 
 /**
- * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear (FA39): both
+ * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear: both
  * write endpoints, so a double-click before the first request answers must not fire a second one.
  */
 const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useCartStore());
@@ -131,7 +135,7 @@ watch(shippingMethodId, (chosen, previous) => {
 const shippingMethodRequiresAddress = ref<boolean>();
 
 /**
- * The deployment's ship-to list (E12), mirrored out of `ShippingSelector` the same way — narrows
+ * The deployment's ship-to list, mirrored out of `ShippingSelector` the same way — narrows
  * `AddressPicker`'s add-address dialog so checkout never offers a country the shop cannot deliver
  * to.
  */
@@ -197,7 +201,7 @@ watch([notes, paymentMethodId, addressId], () => {
 
 /**
  * Whether checkout may run yet: a physical basket needs a method, and — only when that method
- * demands it — an address. Reads the cart's own `shipping.required` flag (FA-D6/B3) rather than
+ * demands it — an address. Reads the cart's own `shipping.required` flag rather than
  * re-deriving it from the lines: the server already decided.
  */
 const canCheckout = computed(() => {
@@ -271,7 +275,7 @@ const runCheckout = () =>
             if (!result?.id) return;
             clearCheckoutDrafts();
             addMessage(t('cart-page.success-checkout'));
-            // `orders` is not one of cart's declared MODULE_EDGES reaches (FA86) — a build
+            // `orders` is not one of cart's declared MODULE_EDGES reaches — a build
             // shipping no orders module still completes the checkout, just with nowhere to SHOW
             // the order it just placed, so it lands Home instead of throwing.
             const target = linkIfRouted(router, 'OrderTarget', { id: result.id }) ?? {
@@ -308,7 +312,7 @@ const runCheckout = () =>
                 return;
             }
             if (verdict.kind === 'ship-to-country-not-supported') {
-                // E12: the resolved address's country fell outside the ship-to list — the select
+                // The resolved address's country fell outside the ship-to list — the select
                 // above already narrows a NEW address to it, so the fix is picking (or adding)
                 // one, not a field this page can correct on the shopper's behalf.
                 addMessage(t('cart-page.error-ship-to-country-not-supported'));
@@ -325,7 +329,7 @@ const runCheckout = () =>
 /**
  * Places an order from the current cart.
  *
- * Awaits {@link settle} first (FA34): a line-quantity step still in the debounce window when
+ * Awaits {@link settle} first: a line-quantity step still in the debounce window when
  * checkout reads the cart could otherwise land after the server already emptied it, either
  * re-creating a line in an already-completed order's aftermath or racing the read itself.
  *
@@ -388,7 +392,7 @@ const removeLine = (productId: string) => {
  * Empties the whole cart after an explicit confirmation — the same dialog cancelling an order
  * uses, since a clear is destructive and cannot be undone.
  *
- * Forgets every line's pending step once the shopper accepts (FA34): a queued step for a line this
+ * Forgets every line's pending step once the shopper accepts: a queued step for a line this
  * is about to wipe would otherwise fire afterward and put that line back. A declined dialog
  * touches nothing, pending steps included.
  *
@@ -518,7 +522,7 @@ onMounted(() =>
                     <p class="mt-1 opacity-80" role="status">
                         {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
                     </p>
-                    <!-- FA32b: absent until the product read has answered for this line — no price
+                    <!-- Absent until the product read has answered for this line — no price
                          guessed ahead of the server's own answer. -->
                     <p
                         v-if="productOf(item.productId)"

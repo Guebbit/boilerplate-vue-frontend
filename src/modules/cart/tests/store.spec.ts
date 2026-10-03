@@ -127,7 +127,7 @@ const apiFailure = (status: number) =>
     }) as never;
 
 /**
- * The `Idempotency-Key` header `checkout` sent, off the most recent `apiCheckout` call (B19).
+ * The `Idempotency-Key` header `checkout` sent, off the most recent `apiCheckout` call.
  *
  * @returns The header value, or `undefined` if `apiCheckout` was never called.
  */
@@ -323,7 +323,7 @@ describe('useCartStore', () => {
                     expect(result).toEqual(ORDER);
                 }));
 
-        it('empties the local cart to a known-zero state, not to undefined (FA33)', () => {
+        it('empties the local cart to a known-zero state, not to undefined', () => {
             const store = useCartStore();
 
             return store
@@ -342,7 +342,7 @@ describe('useCartStore', () => {
                         itemsTotal: 0,
                         shippingCost: 0,
                         totalPrice: 0,
-                        // Carried over from the basket just checked out, not hardcoded (FA37).
+                        // Carried over from the basket just checked out, not hardcoded.
                         currency: 'EUR'
                     });
                     expect(store.badgeQuantity).toBe(0);
@@ -394,7 +394,7 @@ describe('useCartStore', () => {
         });
 
         /**
-         * B19: `POST /cart/checkout`'s `Idempotency-Key`, minted per attempt and reused or
+         * `POST /cart/checkout`'s `Idempotency-Key`, minted per attempt and reused or
          * rotated depending on how the previous attempt ended.
          */
         describe('the Idempotency-Key header', () => {

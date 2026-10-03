@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import routes from '../routes';
 
+/** Finds a route record by its name. */
 const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 

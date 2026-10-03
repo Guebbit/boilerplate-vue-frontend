@@ -109,7 +109,7 @@ describe('the shelf', () => {
 // `POST /cart` is "add": the server grows a line the shopper already has, so the click sends
 // the ONE unit it means and never reads the cart to compute a total.
 describe('adding', () => {
-    it('adds one unit and leaves the arithmetic to the server (FA30)', async () => {
+    it('adds one unit and leaves the arithmetic to the server', async () => {
         signIn();
         const cart = useCartStore();
         const fetchCartSpy = vi.spyOn(cart, 'fetchCart');
@@ -139,7 +139,7 @@ describe('adding', () => {
         expect(addSpy).toHaveBeenCalledWith(IN_STOCK.id, 1);
     });
 
-    it('disables itself while a cart write is already in flight (FA39)', async () => {
+    it('disables itself while a cart write is already in flight', async () => {
         signIn();
         const wrapper = mountButton(IN_STOCK);
 

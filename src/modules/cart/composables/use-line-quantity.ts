@@ -51,7 +51,7 @@ export const useLineQuantity = (
     const senders = new Map<string, ReturnType<typeof debounce<() => void>>>();
 
     /**
-     * The request a line's debounced sender currently has in flight, if any (FA34) — what
+     * The request a line's debounced sender currently has in flight, if any — what
      * {@link settle} awaits after flushing. `flushPending` alone fires the requests but does not
      * wait for them, which is what let a late step land after checkout had already read the cart
      * as empty and cleared it.
@@ -171,7 +171,7 @@ export const useLineQuantity = (
     };
 
     /**
-     * Forgets every line's pending step: cancels every timer and drops the whole map (FA34).
+     * Forgets every line's pending step: cancels every timer and drops the whole map.
      *
      * For "Clear cart" — a queued step for a line the clear is about to wipe would otherwise fire
      * afterward and put that line back into a cart the visitor just emptied.
@@ -182,7 +182,7 @@ export const useLineQuantity = (
     };
 
     /**
-     * Flushes every outstanding step and waits for each one's request to actually land (FA34) —
+     * Flushes every outstanding step and waits for each one's request to actually land —
      * unlike {@link flushPending}, which fires them but does not wait.
      *
      * For checkout: reading the cart, then emptying it, then navigating away all have to happen

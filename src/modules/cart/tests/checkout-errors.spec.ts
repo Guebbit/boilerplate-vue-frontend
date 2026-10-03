@@ -43,7 +43,7 @@ describe('classifyCheckoutError', () => {
         ).toEqual({ kind: 'shipping-method-weight' });
     });
 
-    it('names CART_SHIP_TO_COUNTRY_NOT_SUPPORTED (E12)', () => {
+    it('names CART_SHIP_TO_COUNTRY_NOT_SUPPORTED', () => {
         expect(
             classifyCheckoutError({
                 status: 422,

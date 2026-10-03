@@ -43,6 +43,8 @@ const { isAuth } = storeToRefs(useSessionStore());
  * `storeToRefs`, not destructured off the store, so it stays reactive.
  */
 const cartStore = useCartStore();
+
+/** The in-flight flag, reactive. */
 const { loading } = storeToRefs(cartStore);
 
 /**

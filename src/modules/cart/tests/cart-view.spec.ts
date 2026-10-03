@@ -312,7 +312,7 @@ describe('the checkout refusals', () => {
         }));
 
     /**
-     * E12: the resolved address's country fell outside the deployment's ship-to list. Same shape
+     * The resolved address's country fell outside the deployment's ship-to list. Same shape
      * as `CART_ADDRESS_NOT_FOUND` above — a message, no banner — since the fix is picking a
      * different address, not a field this page can correct on the shopper's behalf.
      */
@@ -607,7 +607,7 @@ describe('the checkout payload — billing', () => {
     });
 });
 
-describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
+describe("the checkout/clear buttons' in-flight guard", () => {
     it('disables both while a cart write is in flight', () =>
         mountCart().then(({ wrapper }) => {
             expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
@@ -617,7 +617,7 @@ describe("the checkout/clear buttons' in-flight guard (FA39)", () => {
             // so nothing short of an actual in-flight request moves it. Both buttons share the
             // cart store's own `loading`, the same flag `checkout` and `clearCart` run under, so
             // either write in flight has to block the other one too.
-            // Rejected, not resolved, once released: a resolved checkout empties the cart (FA33)
+            // Rejected, not resolved, once released: a resolved checkout empties the cart
             // and the buttons this test reads unmount along with it — a rejection settles the
             // mutation without disturbing the cart this test asserts against afterwards.
             let release: ((error: Error) => void) | undefined;

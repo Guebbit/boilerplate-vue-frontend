@@ -1,6 +1,6 @@
 /**
  * @module
- * FA32b: the cart's own line prices — unit price × quantity, in the resolved product's currency.
+ * The cart's own line prices — unit price × quantity, in the resolved product's currency.
  * Unlike `cart-view.spec.ts`, the products read runs for REAL here (only `@api`'s
  * `searchProducts` is mocked), since the price is exactly what that lookup resolves.
  */
@@ -34,6 +34,7 @@ vi.mock('@api', async (importOriginal) => ({
     )
 }));
 
+/** Memory-history router carrying the real module routes. */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -55,6 +56,7 @@ const CART: CartResponse = {
     shipping: { required: false, selected: null, options: [] }
 };
 
+/** Mounts the cart page over a preloaded cart, with the cart fetch stubbed. */
 const mountCart = () => {
     const cart = useCartStore();
     cart.cart = CART;
@@ -79,7 +81,7 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/cart').then(() => router.isReady()));
 });
 
-describe('a cart line price (FA32b)', () => {
+describe('a cart line price', () => {
     it('shows the unit price and the line total once the product resolves', () =>
         mountCart().then((wrapper) => {
             // One batched read for every line, sized to the batch (the endpoint's default page is 10).
