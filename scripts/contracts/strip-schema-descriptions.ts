@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /*
- * Strips every generated `.describe(...)` call out of the Zod schemas — FA94/FA-D2.
+ * Strips every generated `.describe(...)` call out of the Zod schemas.
  *
  * orval has no config flag to suppress OpenAPI `description` text from the Zod output; the only
  * hook (`override.zod.params`) APPENDS a validator per call, it cannot filter one already emitted
@@ -44,11 +44,13 @@ const resolveTargetPath = (): string => {
     return path.resolve(ROOT, value);
 };
 
+/** The generated Zod file to strip, from `--target`. */
 const TARGET = resolveTargetPath();
 
 /** `--check` compares and reports; without it the file is rewritten in place. */
 const checkOnly = process.argv.includes('--check');
 
+// Refuse to run before orval has produced the file.
 if (!existsSync(TARGET)) {
     console.error(`${TARGET} does not exist — run 'npm run gen:api' first.`);
     process.exit(1);
@@ -80,7 +82,14 @@ const stripDescribeVisitor = (context: ts.TransformationContext) => {
     return (root: ts.Node): ts.Node => ts.visitNode(root, visit) ?? root;
 };
 
+/** The generated file's current text. */
 const source = readFileSync(TARGET, 'utf8');
+
+/**
+ * TypeScript compiler API: parse the text into a syntax tree. `true` sets parent pointers on
+ * the nodes; `ScriptKind.TS` parses it as plain TypeScript.
+ * https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API
+ */
 const sourceFile = ts.createSourceFile(
     TARGET,
     source,
@@ -88,13 +97,17 @@ const sourceFile = ts.createSourceFile(
     /* setParentNodes */ true,
     ts.ScriptKind.TS
 );
+// `ts.transform(sourceFile, [transformerFactory])`: runs the strip visitor over the whole tree.
 const result = ts.transform(sourceFile, [stripDescribeVisitor]);
 // `removeComments: false` (the default) keeps every JSDoc block on the statements this pass
 // leaves untouched — only the `.describe()` calls themselves, and the strings they carried, go.
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+
+/** The stripped file's text. */
 const output = printer.printFile(result.transformed[0] as ts.SourceFile);
 result.dispose();
 
+// Under `--check` report whether stripping would change anything; otherwise rewrite in place.
 if (checkOnly) {
     if (source === output) {
         console.log(`✓ ${TARGET} has no generated .describe() calls left to strip`);

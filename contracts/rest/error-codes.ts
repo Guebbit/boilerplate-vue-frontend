@@ -4,7 +4,7 @@
  * Source: openapi.yaml  |  Regenerate: npm run gen:api
  */
 
-/** Every error code the contract declares — CT-D5. Open-ended: a new one is additive, never a breaking change. */
+/** Every error code the contract declares. Open-ended: a new one is additive, never a breaking change. */
 export const ERROR_CODES = {
     /** 404 — No challenge is currently active for this session. */
     ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',

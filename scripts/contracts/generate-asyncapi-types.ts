@@ -33,6 +33,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
+/** The slice of an AsyncAPI 3.0 channel this generator reads. */
 interface AsyncApiChannel {
     /** 3.0: a channel declares its message(s) once, direction lives on the operations that bind to it. */
     messages?: Record<string, { $ref?: string }>;
@@ -45,10 +46,12 @@ interface AsyncApiChannel {
     'x-transport'?: string;
 }
 
+/** The slice of an AsyncAPI message this generator reads: only its payload schema. */
 interface AsyncApiMessage {
     payload?: JsonSchema;
 }
 
+/** The JSON Schema keywords the contract's payloads use; anything else is ignored. */
 interface JsonSchema {
     $ref?: string;
     type?: string;
@@ -62,6 +65,7 @@ interface JsonSchema {
     additionalProperties?: boolean | JsonSchema;
 }
 
+/** The slice of the bundled AsyncAPI document this generator reads. */
 interface AsyncApiDocument {
     channels?: Record<string, AsyncApiChannel>;
     components?: {
@@ -70,7 +74,10 @@ interface AsyncApiDocument {
     };
 }
 
+/** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/** The bundled root contract this generator reads — never a module fragment. */
 const INPUT = path.resolve(ROOT, 'asyncapi.yaml');
 
 /*
@@ -88,6 +95,7 @@ const resolveOutputPath = (): string => {
     return path.resolve(ROOT, value);
 };
 
+/** Absolute path of the file to generate, from `--out`. */
 const OUTPUT = resolveOutputPath();
 
 /** `--check` compares and reports; without it the file is written. */
@@ -315,10 +323,21 @@ const groupChannelsByNamespace = (channelNames: string[]): Map<string, string[]>
     return groups;
 };
 
+/**
+ * Modelina's default TypeScript model-name rules (reserved words, illegal characters), with this
+ * repo's `PascalCase` formatter swapped in as the naming step.
+ * https://github.com/asyncapi/modelina/blob/master/docs/constraints.md
+ */
 const modelNameConstraints = typeScriptDefaultModelNameConstraints({
     NAMING_FORMATTER: (value: string) => toPascalCase(value)
 });
 
+/**
+ * Modelina's TypeScript generator. `modelType: 'interface'` emits interfaces, not classes;
+ * `enumType: 'union'` emits string-literal unions, not `enum`; `rawPropertyNames` keeps property
+ * names exactly as the contract spells them.
+ * https://github.com/asyncapi/modelina/blob/master/docs/languages/TypeScript.md
+ */
 const generator = new TypeScriptGenerator({
     modelType: 'interface',
     enumType: 'union',
@@ -328,16 +347,26 @@ const generator = new TypeScriptGenerator({
     }
 });
 
+/** The bundled contract's raw text, handed to Modelina as-is. */
 const specText = readFileSync(INPUT, 'utf8');
+
+/**
+ * The same text parsed. `parse` is the `yaml` package's YAML 1.2 loader; the `as` narrows its
+ * `any` to the slice this file reads. https://eemeli.org/yaml/#yaml-parse
+ */
 const document = parse(specText) as AsyncApiDocument;
 
+/** Every channel; none declared reads as empty. */
 const channels = document.channels ?? {};
+
+/** Every named message. */
 const messages = document.components?.messages ?? {};
 
 /** A channel is SSE because it declares so, never because its name happens to start a certain way. */
 const isSseChannel = (_channelName: string, channel: AsyncApiChannel): boolean =>
     channel['x-transport'] === 'sse';
 
+/** The messages carried by channels tagged `x-transport: sse`, for the SSE catalogue. */
 const sseEntries = collectChannelMessageEntries(channels, messages, isSseChannel);
 
 /*
@@ -355,10 +384,12 @@ const sseMessageNames = Object.entries(channels)
     }))
     .toSorted((a, b) => a.channelName.localeCompare(b.channelName));
 
+/** One generated `namespace` block per channel family (the dotted prefix of a channel name). */
 const channelNamespaceBlocks = [...groupChannelsByNamespace(Object.keys(channels))].map(
     ([namespace, channelNames]) => renderChannelNamespace(namespace, channelNames)
 );
 
+/** One `export type Alias = Payload;` line per message whose name differs from its payload type. */
 const messageTypeBlocks = Object.entries(messages)
     .map(([messageName]) => {
         const aliasName = toPascalCase(messageName);

@@ -5,7 +5,7 @@
  */
 
 /**
- * One operation's response-validation row (FA55) — the shape
+ * One operation's response-validation row — the shape
  * `src/infrastructure/http/response-schema-map.ts`'s `ResponseSchemaRoute` is resolved into,
  * once `schemaName` is looked up against the real `@api/schemas` namespace. `module` is the
  * backend's `x-module` stamp — `undefined` for the handful of system endpoints no module owns.
