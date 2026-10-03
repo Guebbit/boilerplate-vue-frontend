@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
  * FE-D4 (paired with the backend's G-D2): `npm run demo:remove` — deletes every module
- * `src/demo-modules.ts` names, and the one place that lists them, `src/modules.ts`. Everything
- * else that reaches a domain module — `src/app/router/index.ts`,
+ * `src/demo-modules.ts` names, the one place that lists them, `src/modules.ts`, and their entries
+ * in `scripts/module-edges.ts`. Everything else that reaches a domain module — `src/app/router/index.ts`,
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
  * so a module's own folder is the only place its name is written down.
  *
@@ -21,55 +21,19 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readDemoModuleNames } from './demo-module-names';
+import {
+    pruneModuleEdges,
+    removeManifest,
+    removeModuleFolders,
+    stripModuleRegistry
+} from './demo-remove-registry';
 import { removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-/** Delete every demo module's own folder under `src/modules/`. */
-const removeModuleFolders = (names: readonly string[]): void => {
-    for (const name of names) {
-        const folder = path.join(REPO_ROOT, 'src', 'modules', name);
-        rmSync(folder, { recursive: true, force: true });
-        console.info(`  src/modules/${name}/ — deleted`);
-    }
-};
-
-/**
- * Edit `src/modules.ts`: drop each demo module's import and its `enabledModules` array entry.
- * Every demo module name is a single word, so an import (`import cart from …`) and an array
- * element (`    cart,`) both spell it the same bare way — one filter catches both shapes.
- */
-const stripModuleRegistry = (names: readonly string[]): void => {
-    const file = path.join(REPO_ROOT, 'src', 'modules.ts');
-    const before = readFileSync(file, 'utf8');
-    const importPattern = new RegExp(`from '@/modules/(?:${names.join('|')})/module'`);
-    const entryPattern = new RegExp(String.raw`^\s*(?:${names.join('|')}),?\s*$`);
-
-    const after = before
-        .split('\n')
-        .filter((line) => !importPattern.test(line))
-        .filter((line) => !entryPattern.test(line))
-        .join('\n');
-
-    writeFileSync(file, after);
-    console.info(`  src/modules.ts — removed ${names.join(', ')}`);
-};
-
-/**
- * Delete `src/demo-modules.ts` and its reader — their whole job was naming modules that no longer
- * exist. `scripts/demo/demo-module-names.ts` stays: `measure-demo-strip.ts` still needs it for
- * whatever this build's module set becomes next.
- */
-const removeManifest = (): void => {
-    rmSync(path.join(REPO_ROOT, 'src', 'demo-modules.ts'), { force: true });
-    rmSync(path.join(REPO_ROOT, 'tests', 'unit', 'demo-modules.spec.ts'), { force: true });
-    console.info('  src/demo-modules.ts, tests/unit/demo-modules.spec.ts — deleted');
-};
 
 /**
  * Every file under `tests/` or a module's own `tests/` directory that still imports a deleted
@@ -99,11 +63,15 @@ console.info(
     `[demo-remove] removing ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
 );
 console.info('\n[demo-remove] module folders:');
-removeModuleFolders(demoModuleNames);
+for (const folder of removeModuleFolders(REPO_ROOT, demoModuleNames))
+    console.info(`  ${folder}/ — deleted`);
 
 console.info('\n[demo-remove] the module registry:');
-stripModuleRegistry(demoModuleNames);
-removeManifest();
+stripModuleRegistry(REPO_ROOT, demoModuleNames);
+console.info(`  src/modules.ts — removed ${demoModuleNames.join(', ')}`);
+pruneModuleEdges(REPO_ROOT, demoModuleNames);
+console.info('  scripts/module-edges.ts — dropped their entries');
+console.info(`  ${removeManifest(REPO_ROOT).join(', ')} — deleted`);
 
 console.info('\n[demo-remove] cross-module specs:');
 for (const note of removeResidueSpecs(REPO_ROOT, demoModuleNames))

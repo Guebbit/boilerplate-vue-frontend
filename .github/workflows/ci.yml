@@ -263,15 +263,14 @@ jobs:
               run: npm audit --omit=dev --audit-level=high
 
     demo-strip-measure:
-        # FE-D4 step 1 (the backend's G-D2 twin): how far "the demo shop is removable" actually
-        # is, measured rather than assumed. Deletes every module src/demo-modules.ts names from a
-        # scratch copy and runs type-check-only, lint and build-only against what's left.
+        # FE-D4 step 1 (the backend's G-D2 twin): how far "the demo shop is removable" actually is,
+        # measured rather than assumed. Applies `demo:remove`'s own edits (module folders, the
+        # registry, the coupling graph, the cross-module specs) to a scratch copy and runs
+        # type-check-only, lint and build-only against what's left.
         #
-        # Deliberately NOT in the `ci` gate's `needs:` below: this
-        # is not expected to be green on its own — it does not edit src/modules.ts, so the
-        # dangling imports it leaves behind ARE the measurement, the same punch list `npm run
-        # demo:remove` (which DOES edit it) clears. A red square here is a signal to look, not a
-        # blocked PR.
+        # Deliberately NOT in the `ci` gate's `needs:` below: it is an adoption signal, not a
+        # merge condition. It is expected to be GREEN; a red square means a new coupling from the
+        # foundation into a demo module, which is worth a look but not a blocked PR.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:

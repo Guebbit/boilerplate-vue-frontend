@@ -5,7 +5,8 @@
  * directory, deletes every module `src/demo-modules.ts` names, and runs `type-check-only`, `lint`
  * and `build-only` against what's left.
  *
- * NOT `demo:remove` — that script edits THIS checkout for real. Report-only, on purpose, the same
+ * NOT `demo:remove` — that script edits THIS checkout for real; this one applies the same edits
+ * (`./demo-remove-registry`, `./demo-remove-tests`) to the copy. Report-only, on purpose, the same
  * reasoning as the backend's own copy: a red square here is a punch list, not a merge blocker.
  *
  * Runs against a SCRATCH COPY, never this checkout — `node_modules` is symlinked rather than
@@ -22,6 +23,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readDemoModuleNames } from './demo-module-names';
+import {
+    pruneModuleEdges,
+    removeManifest,
+    removeModuleFolders,
+    stripModuleRegistry
+} from './demo-remove-registry';
+import { removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -61,10 +69,17 @@ const assembleScratchCopy = (): void => {
     symlinkSync(path.join(REPO_ROOT, 'node_modules'), path.join(SCRATCH, 'node_modules'), 'dir');
 };
 
-/** Delete every demo module's own folder from the scratch copy. */
+/**
+ * Apply `demo:remove`'s own edits to the scratch copy: the module folders, the registry, the
+ * coupling graph, the manifest and the cross-module specs. The checks below then ask whether what
+ * is left stands up, which is the question `demo:remove` has to answer for a real checkout.
+ */
 const stripDemoModules = (names: readonly string[]): void => {
-    for (const name of names)
-        rmSync(path.join(SCRATCH, 'src', 'modules', name), { recursive: true, force: true });
+    removeModuleFolders(SCRATCH, names);
+    stripModuleRegistry(SCRATCH, names);
+    pruneModuleEdges(SCRATCH, names);
+    removeManifest(SCRATCH);
+    removeResidueSpecs(SCRATCH, names);
 };
 
 /**
