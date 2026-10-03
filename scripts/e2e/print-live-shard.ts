@@ -16,6 +16,7 @@ import { readSpecDurations } from './spec-durations';
 // Two levels up from this file is the repo root, where the globs are relative to.
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+/** The two CLI arguments: a shard index and a shard count, or the word `antibot`. */
 const [first, second] = process.argv.slice(2);
 
 // The antibot entry runs every antibot spec in one job: there is no slicing to do.
@@ -32,8 +33,10 @@ if (first === 'antibot') {
     process.exit(0);
 }
 
+/** This slice's index and the slice count, as numbers. */
 const [index, total] = [Number(first), Number(second)];
 
+/** Every functional spec file, as posix paths. */
 const files = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT }).map((entry) =>
     entry.split(path.sep).join('/')
 );
@@ -41,6 +44,8 @@ const files = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT }).map((entry) =>
 // A measured duration if this checkout has one (CI has none), else the table's guess by basename;
 // a spec in neither is weighed at the mean.
 const recorded = readSpecDurations();
+
+/** Seconds per spec: recorded where known, the table's guess otherwise, absent for neither. */
 const durations = Object.fromEntries(
     files.flatMap((file): [string, number][] => {
         const basename = path.basename(file, '.cy.ts');
@@ -51,6 +56,7 @@ const durations = Object.fromEntries(
 
 // An empty slice would make `cypress run --spec ""` run the WHOLE suite, in every job.
 const slice = liveShardFiles(files, durations, index, total);
+// Refuse an empty slice, which would make Cypress run everything.
 if (slice.length === 0) {
     console.error(`live shard ${String(index)}/${String(total)} has no specs`);
     process.exit(2);

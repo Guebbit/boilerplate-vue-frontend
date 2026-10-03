@@ -70,14 +70,18 @@ const OS_RESERVE_MB = 2048;
  * ten minutes is not a heavy suite, it is a run that will not converge.
  */
 const OOM_LIMIT = 6;
+
+/** Restarts inside this window count toward {@link OOM_LIMIT}. */
 const OOM_WINDOW_MS = 10 * 60 * 1000;
 
+// Load `.env` into `process.env` (Node's own loader); CI has none, which is fine.
 try {
     process.loadEnvFile();
 } catch {
     /* no .env in this checkout — CI is the normal case */
 }
 
+/** Every CLI argument after the script name, forwarded to Stryker. */
 const passthrough = process.argv.slice(2);
 
 /** A positive integer from the environment, or undefined when unset, empty or nonsense. */
@@ -108,9 +112,13 @@ const resolveConcurrency = (): number => {
     return Math.max(1, Math.min(cpuCap, ramCap));
 };
 
+/** Workers to run, resolved once. */
 const concurrency = resolveConcurrency();
+
+/** Per-worker heap ceiling in MB, from `STRYKER_WORKER_HEAP_MB`; unset leaves Node's default. */
 const heapMb = positiveInteger(process.env.STRYKER_WORKER_HEAP_MB);
 
+/** The Stryker command line: a computed `--concurrency` unless given, then the caller's flags. */
 const strykerArguments = [
     'run',
     ...(passthrough.some((argument) => argument.startsWith('--concurrency'))
@@ -135,6 +143,7 @@ const childEnvironment = {
         : {})
 };
 
+/** Runs Stryker, watches its output for the OOM restart loop and mirrors its exit code. */
 const main = async () => {
     await rm(SANDBOX_ROOT, { recursive: true, force: true });
 

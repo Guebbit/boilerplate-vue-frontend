@@ -66,6 +66,8 @@ if (!existsSync(TARGET)) {
  */
 const stripDescribeVisitor = (context: ts.TransformationContext) => {
     const visit: ts.Visitor = (node) => {
+        // `ts.visitEachChild(node, visitor, context)`: visits every child first, so deeper
+        // `.describe()` calls are already gone by the time this node is checked.
         const visited = ts.visitEachChild(node, visit, context);
         if (
             ts.isCallExpression(visited) &&

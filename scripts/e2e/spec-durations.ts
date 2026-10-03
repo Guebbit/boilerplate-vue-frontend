@@ -1,5 +1,6 @@
 /**
- * Per-file measured durations for the e2e shard balancer — the other half of the fix for FA126.
+ * Per-file measured durations for the e2e shard balancer, so a spec is weighed by what
+ * it actually costs.
  *
  * `shard-balancer.ts`'s `SECONDS` table is keyed by a spec's basename, so all 15 `a11y.cy.ts`
  * files (one per module) shared a single measured weight even though their real costs differ.

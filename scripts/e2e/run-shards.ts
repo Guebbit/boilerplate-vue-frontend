@@ -58,12 +58,14 @@ import { readSpecDurations } from './spec-durations';
  */
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
+// Load `.env` into `process.env` (Node's own loader); CI has none, which is fine.
 try {
     process.loadEnvFile();
 } catch {
     /* no .env in this checkout — CI is the normal case */
 }
 
+// Sharding the live profile would reset one shared database under every shard: refuse.
 if (process.env.CYPRESS_liveProfile === 'true') {
     console.error(
         '\n[e2e-shard] Refusing to shard the LIVE profile.\n\n' +
@@ -81,12 +83,13 @@ const positiveInteger = (value: string | undefined): number | undefined => {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 };
 
+/** How many shards to run, from `E2E_SHARDS`; four when unset. */
 const shardCount = positiveInteger(process.env.E2E_SHARDS) ?? 4;
 
 // Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
 // one stops being scheduled without anyone editing this file.
 //
-// Keyed by the full relative path, not the basename (FA126): every module ships its own
+// Keyed by the full relative path, not the basename: every module ships its own
 // `a11y.cy.ts`, and a basename key would look up the SAME measured duration for all of them
 // regardless of how much that module's sweep actually costs.
 const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
@@ -100,11 +103,13 @@ const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
  * One real number per spec, preferring what was actually measured over the hand-written table.
  * `cypress.config.ts`'s `after:spec` hook appends to `spec-durations.ts`'s report every run, so
  * these numbers improve on their own; a spec with no recording yet falls back to `SECONDS`' entry
- * for its basename (the pre-FA126 table, still a reasonable first guess), and a spec in neither —
+ * for its basename (the hand-written table, a reasonable first guess), and a spec in neither —
  * new file, no runs recorded — is left out entirely so `weighSpecs` schedules it at the mean
  * instead of at a false zero.
  */
 const recordedDurations = readSpecDurations();
+
+/** Seconds per spec, measured where known and guessed by basename otherwise. */
 const durations: Record<string, number> = Object.fromEntries(
     specs
         .map(({ file }): [string, number | undefined] => [
@@ -130,9 +135,13 @@ if (specs.length === 0) {
     process.exit(2);
 }
 
+/** Each spec with its weight, mean-filled where no duration is known. */
 const weighted = weighSpecs(specs, durations);
+
+/** The specs split into `shardCount` groups of roughly equal predicted load. */
 const shards = balanceShards(weighted, shardCount);
 
+/** Shards that actually hold a spec. */
 const functionalShards = shards.filter((shard) => shard.files.length > 0);
 
 /*
@@ -144,6 +153,7 @@ const antibotSpecs = globSync(ANTIBOT_SPEC_GLOBS, { cwd: REPO_ROOT })
     .map((entry) => entry.split(path.sep).join('/'))
     .toSorted();
 
+/** Every shard to run: the functional ones, then the antibot run when it has specs. */
 const active = [
     ...functionalShards.map((shard) => ({ ...shard, antibot: false })),
     ...(antibotSpecs.length > 0 ? [{ files: antibotSpecs, load: 0, antibot: true }] : [])
@@ -370,6 +380,7 @@ const runShard = (files: string[], index: number) =>
         }, index * SHARD_STAGGER_MS);
     });
 
+/** Boots the backends, runs every shard in parallel, reports each and exits 1 if any failed. */
 const main = async () => {
     const startedAt = Date.now();
     resetFlakyReport();

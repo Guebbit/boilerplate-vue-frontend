@@ -25,9 +25,12 @@ import {
     MUTATION_BASELINE_PATH
 } from './baseline';
 
+/** `--update` records improvements and new files instead of only checking. */
 const update = process.argv.includes('--update');
 
+/** This run's per-file scores. */
 let current: Record<string, number>;
+// A missing report is a usage error: say how to produce one and exit 2.
 try {
     current = readReport();
 } catch (error) {
@@ -35,9 +38,13 @@ try {
     process.exit(2);
 }
 
+/** The committed baseline, if any. */
 const baseline = readBaseline();
+
+/** Every file's verdict against the baseline. */
 const comparisons = compareToBaseline(current, baseline);
 
+// No baseline yet: the first run records one and succeeds.
 if (!baseline) {
     console.log(
         `[mutation-baseline] No ${MUTATION_BASELINE_PATH} yet — recording ${
@@ -53,6 +60,7 @@ if (!baseline) {
  * `missingFromReport`: recording one would quietly erase every file the run did not measure.
  */
 const missing = missingFromReport(current, baseline);
+// Refuse to record a partial run over the baseline.
 if (update && missing.length > 0) {
     console.error(
         `\n[mutation-baseline] Refusing to update: this report covers ${
@@ -71,6 +79,7 @@ if (update && missing.length > 0) {
     process.exit(1);
 }
 
+/** How many files fell into each verdict, for the summary line. */
 const counts = {
     held: comparisons.filter(({ verdict }) => verdict === 'held').length,
     improved: comparisons.filter(({ verdict }) => verdict === 'improved').length,
@@ -89,18 +98,23 @@ for (const { file, baseline: before, current: after } of comparisons.filter(
         `[mutation-baseline] improved: ${file} ${before!.toFixed(2)}% -> ${after!.toFixed(2)}%`
     );
 
+// Name every file the run no longer mutates.
 for (const { file } of comparisons.filter(({ verdict }) => verdict === 'removed'))
     console.log(`[mutation-baseline] no longer mutated: ${file}`);
 
 // A `new` file is only ever "recorded" by `--update` — see `formatUnrecorded` for why a plain
-// check refuses to let one pass silently instead (FA125).
+// check refuses to let one pass silently instead.
 if (update)
     for (const { file, current: score } of comparisons.filter(({ verdict }) => verdict === 'new'))
         console.log(`[mutation-baseline] new file recorded: ${file} at ${score!.toFixed(2)}%`);
 
+/** The failure text for files that fell below their baseline, empty when none did. */
 const regressions = formatRegressions(comparisons);
+
+/** The failure text for files with no baseline entry, skipped under `--update`. */
 const unrecorded = update ? '' : formatUnrecorded(comparisons);
 
+// Either problem fails the run; `--update` still keeps the higher score.
 if (regressions || unrecorded) {
     if (regressions) console.error(`\n[mutation-baseline] ${regressions}\n`);
     if (unrecorded) console.error(`\n[mutation-baseline] ${unrecorded}\n`);
@@ -110,6 +124,7 @@ if (regressions || unrecorded) {
     process.exit(1);
 }
 
+// Record improvements and new files.
 if (update) {
     writeBaseline(nextBaseline(current, baseline));
     console.log(`[mutation-baseline] ${MUTATION_BASELINE_PATH} updated.`);

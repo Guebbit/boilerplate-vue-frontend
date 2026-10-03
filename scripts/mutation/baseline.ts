@@ -45,6 +45,8 @@ import path from 'node:path';
 
 /** Where `stryker.config.json`'s `jsonReporter` writes, and where the baseline is committed. */
 const MUTATION_REPORT_PATH = 'reports/mutation/mutation.json';
+
+/** Where the committed baseline lives, relative to the repo root. */
 export const MUTATION_BASELINE_PATH = 'mutation-baseline.json';
 
 /**
@@ -59,6 +61,7 @@ interface MutationReport {
     files: Record<string, { mutants: { status: string }[] }>;
 }
 
+/** The committed record of each file's mutation score. */
 export interface MutationBaseline {
     /** When the baseline was last written, so a stale one is visible. */
     generatedAt: string;
@@ -66,8 +69,10 @@ export interface MutationBaseline {
     files: Record<string, number>;
 }
 
+/** How one file compares with its baseline. */
 export type FileVerdict = 'held' | 'improved' | 'regressed' | 'new' | 'removed';
 
+/** One file's comparison: its baseline and current score (when it has them) and the verdict. */
 export interface FileComparison {
     file: string;
     baseline?: number;
@@ -84,6 +89,8 @@ export interface FileComparison {
  * the same thing `mutationScore` does.
  */
 const KILLED = new Set(['Killed', 'Timeout']);
+
+/** Statuses that mean the mutant was never viable, so it is left out of the score. */
 const NOT_VIABLE = new Set(['RuntimeError', 'CompileError', 'Ignored']);
 
 /** Per-file score from a Stryker JSON report, as a percentage with two decimals. */
@@ -106,6 +113,7 @@ export const scoresFromReport = (report: MutationReport): Record<string, number>
     return scores;
 };
 
+/** Reads this run's per-file scores from the Stryker JSON report; throws when there is none. */
 export const readReport = (root = process.cwd()): Record<string, number> => {
     const reportPath = path.join(root, MUTATION_REPORT_PATH);
     if (!existsSync(reportPath))
@@ -117,12 +125,14 @@ export const readReport = (root = process.cwd()): Record<string, number> => {
     return scoresFromReport(JSON.parse(readFileSync(reportPath, 'utf8')) as MutationReport);
 };
 
+/** Reads the committed baseline, or `undefined` when none exists yet. */
 export const readBaseline = (root = process.cwd()): MutationBaseline | undefined => {
     const baselinePath = path.join(root, MUTATION_BASELINE_PATH);
     if (!existsSync(baselinePath)) return undefined;
     return JSON.parse(readFileSync(baselinePath, 'utf8')) as MutationBaseline;
 };
 
+/** Writes the baseline as JSON with a trailing newline. */
 export const writeBaseline = (baseline: MutationBaseline, root = process.cwd()): void => {
     writeFileSync(
         path.join(root, MUTATION_BASELINE_PATH),
@@ -205,8 +215,8 @@ export const nextBaseline = (
  *
  * A `new` verdict is silence, not success: nothing has ever measured whether this file's tests
  * catch anything. `--update` is the only way to accept that silence into the record — a plain
- * check refuses to let it pass unremarked, which is the fix for FA125 (a file could otherwise sit
- * at zero mutation coverage forever, because nothing ever asked).
+ * check refuses to let it pass unremarked (a file could otherwise sit at zero mutation
+ * coverage forever, because nothing ever asked).
  */
 export const formatUnrecorded = (comparisons: FileComparison[]): string => {
     const unrecorded = comparisons.filter(({ verdict }) => verdict === 'new');
