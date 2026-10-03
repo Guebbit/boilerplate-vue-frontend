@@ -110,7 +110,13 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
                 `nothing meaningful to diff pixel by pixel.`
         };
 
+    // pngjs `new PNG({ width, height })`: an empty image buffer the diff is drawn into.
+    // https://github.com/pngjs/pngjs
     const diff = new PNG({ width: baseline.width, height: baseline.height });
+    // pixelmatch `(img1, img2, output, width, height, options)`: compares two RGBA buffers,
+    // writes the differing pixels into `output` and returns how many differ. `threshold` is
+    // the per-pixel colour tolerance (0-1).
+    // https://github.com/mapbox/pixelmatch
     const differingPixels = pixelmatch(
         baseline.data,
         actual.data,
