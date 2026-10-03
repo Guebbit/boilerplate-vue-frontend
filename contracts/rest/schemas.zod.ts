@@ -2459,6 +2459,21 @@ export const ExportAccountDataResponse = zod.strictObject({
                 ),
                 createdAt: zod.iso.datetime({ offset: true }).optional()
             })
+        ),
+        examples: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                title: zod.string(),
+                body: zod.string(),
+                status: zod.enum(['draft', 'published', 'archived']),
+                userId: zod.string(),
+                ownerName: zod.string(),
+                imageUrl: zod.string().min(1).optional(),
+                thumbnailUrl: zod.string().optional(),
+                publishedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         )
     })
 });
@@ -8763,5 +8778,333 @@ export const SendReauthCodeResponse = zod.strictObject({
         sentTo: zod.string(),
         resendAfter: zod.number(),
         expiresAt: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
+ * @summary Read a published example
+ */
+export const GetPublishedExampleParams = zod.strictObject({
+    id: zod.string()
+});
+export const GetPublishedExampleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Returns the caller's own examples, newest first by default. A caller holding `examples.any.read` sees everyone's.
+ * @summary List examples
+ */
+export const listExamplesQueryPageDefault = 1;
+export const listExamplesQueryPageMax = 10000;
+export const listExamplesQueryPageSizeDefault = 10;
+export const listExamplesQueryPageSizeMax = 100;
+export const listExamplesQuerySortMax = 3;
+export const listExamplesQueryTextMax = 200;
+export const ListExamplesQueryParams = zod.strictObject({
+    page: zod.number().min(1).max(listExamplesQueryPageMax).default(listExamplesQueryPageDefault),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listExamplesQueryPageSizeMax)
+        .default(listExamplesQueryPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'title', '-title', 'status', '-status']))
+        .min(1)
+        .max(listExamplesQuerySortMax)
+        .optional(),
+    text: zod.string().min(1).max(listExamplesQueryTextMax).optional(),
+    status: zod.enum(['draft', 'published', 'archived']).optional()
+});
+export const listExamplesResponseDataMetaPageDefault = 1;
+export const listExamplesResponseDataMetaPageMax = 10000;
+export const listExamplesResponseDataMetaPageSizeDefault = 10;
+export const listExamplesResponseDataMetaPageSizeMax = 100;
+export const listExamplesResponseDataMetaTotalItemsMin = 0;
+export const listExamplesResponseDataMetaTotalPagesMin = 0;
+export const ListExamplesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                title: zod.string(),
+                body: zod.string(),
+                status: zod.enum(['draft', 'published', 'archived']),
+                userId: zod.string(),
+                ownerName: zod.string(),
+                imageUrl: zod.string().min(1).optional(),
+                thumbnailUrl: zod.string().optional(),
+                publishedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(listExamplesResponseDataMetaPageMax)
+                .default(listExamplesResponseDataMetaPageDefault),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listExamplesResponseDataMetaPageSizeMax)
+                .default(listExamplesResponseDataMetaPageSizeDefault),
+            totalItems: zod.number().min(listExamplesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listExamplesResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+/**
+ * Creates a draft example owned by the caller.
+ * @summary Create an example
+ */
+export const createExampleBodyTitleMax = 200;
+export const createExampleBodyBodyMax = 20000;
+export const CreateExampleBody = zod.strictObject({
+    title: zod.string().min(1).max(createExampleBodyTitleMax),
+    body: zod.string().min(1).max(createExampleBodyBodyMax)
+});
+export const CreateExampleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Searches and filters examples via a JSON request body. Functionally equivalent to `GET /examples` with query parameters.
+ * @summary Search examples (DTO-friendly)
+ */
+export const searchExamplesBodyPageDefault = 1;
+export const searchExamplesBodyPageMax = 10000;
+export const searchExamplesBodyPageSizeDefault = 10;
+export const searchExamplesBodyPageSizeMax = 100;
+export const searchExamplesBodySortMax = 3;
+export const searchExamplesBodyTextMax = 200;
+export const SearchExamplesBody = zod.strictObject({
+    page: zod.number().min(1).max(searchExamplesBodyPageMax).default(searchExamplesBodyPageDefault),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(searchExamplesBodyPageSizeMax)
+        .default(searchExamplesBodyPageSizeDefault),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'title', '-title', 'status', '-status']))
+        .min(1)
+        .max(searchExamplesBodySortMax)
+        .optional(),
+    text: zod.string().min(1).max(searchExamplesBodyTextMax).optional(),
+    status: zod.enum(['draft', 'published', 'archived']).optional()
+});
+export const searchExamplesResponseDataMetaPageDefault = 1;
+export const searchExamplesResponseDataMetaPageMax = 10000;
+export const searchExamplesResponseDataMetaPageSizeDefault = 10;
+export const searchExamplesResponseDataMetaPageSizeMax = 100;
+export const searchExamplesResponseDataMetaTotalItemsMin = 0;
+export const searchExamplesResponseDataMetaTotalPagesMin = 0;
+export const SearchExamplesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                title: zod.string(),
+                body: zod.string(),
+                status: zod.enum(['draft', 'published', 'archived']),
+                userId: zod.string(),
+                ownerName: zod.string(),
+                imageUrl: zod.string().min(1).optional(),
+                thumbnailUrl: zod.string().optional(),
+                publishedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .max(searchExamplesResponseDataMetaPageMax)
+                .default(searchExamplesResponseDataMetaPageDefault),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(searchExamplesResponseDataMetaPageSizeMax)
+                .default(searchExamplesResponseDataMetaPageSizeDefault),
+            totalItems: zod.number().min(searchExamplesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(searchExamplesResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+/**
+ * Returns one example the caller may read — their own, or any when they hold `examples.any.read`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+ * @summary Read an example
+ */
+export const GetExampleByIdParams = zod.strictObject({
+    id: zod.string()
+});
+export const GetExampleByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+ * @summary Replace an example
+ */
+export const ReplaceExampleByIdParams = zod.strictObject({
+    id: zod.string()
+});
+export const replaceExampleByIdHeaderIfMatchMax = 200;
+export const ReplaceExampleByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceExampleByIdHeaderIfMatchMax).optional()
+});
+export const replaceExampleByIdBodyTitleMax = 200;
+export const replaceExampleByIdBodyBodyMax = 20000;
+export const ReplaceExampleByIdBody = zod.strictObject({
+    title: zod.string().min(1).max(replaceExampleByIdBodyTitleMax),
+    body: zod.string().min(1).max(replaceExampleByIdBodyBodyMax),
+    status: zod.enum(['draft', 'published', 'archived'])
+});
+export const ReplaceExampleByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
+ * @summary Update an example
+ */
+export const UpdateExampleByIdParams = zod.strictObject({
+    id: zod.string()
+});
+export const updateExampleByIdHeaderIfMatchMax = 200;
+export const UpdateExampleByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateExampleByIdHeaderIfMatchMax).optional()
+});
+export const updateExampleByIdBodyTitleMax = 200;
+export const updateExampleByIdBodyBodyMax = 20000;
+export const UpdateExampleByIdBody = zod.strictObject({
+    title: zod.string().min(1).max(updateExampleByIdBodyTitleMax).optional(),
+    body: zod.string().min(1).max(updateExampleByIdBodyBodyMax).optional(),
+    status: zod.enum(['draft', 'published', 'archived']).optional()
+});
+export const UpdateExampleByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Permanently removes the example identified by `{id}`, and its cover image with it.
+ * @summary Delete an example
+ */
+export const DeleteExampleByIdParams = zod.strictObject({
+    id: zod.string()
+});
+export const deleteExampleByIdHeaderIfMatchMax = 200;
+export const DeleteExampleByIdHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteExampleByIdHeaderIfMatchMax).optional()
+});
+export const DeleteExampleByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+/**
+ * Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
+ * @summary Set an example's cover image
+ */
+export const ReplaceExampleCoverParams = zod.strictObject({
+    id: zod.string()
+});
+export const ReplaceExampleCoverBody = zod.strictObject({
+    imageUpload: zod.instanceof(File)
+});
+export const ReplaceExampleCoverResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod.string(),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod.string(),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });

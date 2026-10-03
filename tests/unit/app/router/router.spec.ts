@@ -71,7 +71,7 @@ afterEach(() => {
  * `afterEach` from the route's `meta.title`.
  *
  * `Home` is the platform's own route and its key is in the shared dictionary, so the assertion
- * is on a TRANSLATED title. `Playground` is a module route whose dictionary is not registered
+ * is on a TRANSLATED title. `ExamplePublished` is a module route whose dictionary is not registered
  * here, so its key comes back as itself — which still proves the record carries one.
  */
 describe('document title and announcer', () => {
@@ -89,16 +89,16 @@ describe('document title and announcer', () => {
 
     it('follows the route', () =>
         loadRouter().then((router) =>
-            router.push('/en/playground').then(() => {
-                expect(document.title).toBe('playground-page.page-title — Guebbit');
+            router.push('/en/examples/published/an-example').then(() => {
+                expect(document.title).toBe('example-published-page.page-title — Guebbit');
             })
         ));
 
     it('tells the announcer the same title', () =>
         loadRouter().then((router) =>
             import('@/app/router/announcer.ts').then(({ routeAnnouncement }) =>
-                router.push('/en/playground').then(() => {
-                    expect(routeAnnouncement.value).toBe('playground-page.page-title');
+                router.push('/en/examples/published/an-example').then(() => {
+                    expect(routeAnnouncement.value).toBe('example-published-page.page-title');
                 })
             )
         ));
@@ -126,15 +126,15 @@ describe('document title and announcer', () => {
             const titleBefore = document.title;
             // A guard that blocks only the target route, so the block is scoped to this test.
             const unregister = router.beforeEach((to) =>
-                to.name === 'Playground' ? false : undefined
+                to.name === 'ExamplePublished' ? false : undefined
             );
 
-            return router.push('/en/playground').then((failure) =>
+            return router.push('/en/examples/published/an-example').then((failure) =>
                 import('@/app/router/announcer.ts').then(({ routeAnnouncement }) => {
                     unregister();
                     expect(failure).toBeTruthy();
                     expect(document.title).toBe(titleBefore);
-                    expect(routeAnnouncement.value).not.toBe('playground-page.page-title');
+                    expect(routeAnnouncement.value).not.toBe('example-published-page.page-title');
                 })
             );
         }));
@@ -253,7 +253,7 @@ describe('global auth restore', () => {
         loadRouter().then((router) => {
             const callsAfterBoot = tryRestoreAuth.mock.calls.length;
 
-            return router.push('/en/playground').then(() => {
+            return router.push('/en/examples/published/an-example').then(() => {
                 expect(tryRestoreAuth.mock.calls.length).toBeGreaterThan(callsAfterBoot);
             });
         }));
@@ -262,7 +262,7 @@ describe('global auth restore', () => {
 describe('access enforcement', () => {
     it('runs on every navigation, public routes included', () =>
         loadRouter().then((router) =>
-            router.push('/en/playground').then(() => {
+            router.push('/en/examples/published/an-example').then(() => {
                 // Enforcement is global, so it is reached even where it has nothing to enforce.
                 // That is the point: a route cannot opt out of being checked by omission.
                 expect(enforceRouteAccess).toHaveBeenCalled();
@@ -282,7 +282,7 @@ describe('access enforcement', () => {
             });
 
             // Reversed, an authenticated visitor who reloads is bounced to login on every hit.
-            return router.push('/en/playground').then(() => {
+            return router.push('/en/examples/published/an-example').then(() => {
                 expect(order).toEqual(['restore', 'enforce']);
             });
         }));
@@ -313,7 +313,7 @@ const failNavigationWith = (error: Error) =>
          * correct redirect indistinguishable from no redirect at all, and the helper reported
          * `still on /en` for behaviour that was right.
          */
-        router.push('/en/playground').then(() => {
+        router.push('/en/examples/published/an-example').then(() => {
             const before = router.currentRoute.value.fullPath;
             enforceRouteAccess.mockImplementationOnce(() => {
                 throw error;
@@ -343,7 +343,7 @@ describe('onError redirects', () => {
              * `navigation.spec.ts` covers both of the helper's own branches directly.
              */
             expect(router.currentRoute.value.name).toBe(
-                signInLocation(router, '/en/playground', 'en').name
+                signInLocation(router, '/en/examples/published/an-example', 'en').name
             );
             // The point of the 401 branch: a recoverable status must not dead-end on the error
             // page, which is where every other status goes.
@@ -446,7 +446,7 @@ describe('router navigation tracing', () => {
         const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
         return loadRouterWithDebug(true)
-            .then((router) => router.push('/en/playground'))
+            .then((router) => router.push('/en/examples/published/an-example'))
             .then(() => {
                 // The logger prefixes its own scope, so the assertion is on the whole line rather
                 // than on the first argument.
@@ -460,7 +460,7 @@ describe('router navigation tracing', () => {
         const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
         return loadRouterWithDebug(false)
-            .then((router) => router.push('/en/playground'))
+            .then((router) => router.push('/en/examples/published/an-example'))
             .then(() => {
                 // Scoped to the navigation line rather than asserting console silence outright:
                 // other modules may log on boot, and a blanket assertion would fail for reasons
@@ -478,7 +478,7 @@ describe('router navigation tracing', () => {
                 enforceRouteAccess.mockImplementationOnce(() => {
                     throw new Error('boom');
                 });
-                return router.push('/en/playground').catch(() => router);
+                return router.push('/en/examples/published/an-example').catch(() => router);
             })
             .then(() =>
                 vi.waitFor(() => {

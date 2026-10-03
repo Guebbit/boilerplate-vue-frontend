@@ -848,6 +848,31 @@ export interface ExportReturn {
     createdAt?: string;
 }
 
+export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
+
+export const ExampleStatus = {
+    draft: 'draft',
+    published: 'published',
+    archived: 'archived'
+} as const;
+
+export interface Example {
+    id: Id;
+    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
+    title: string;
+    body: string;
+    status: ExampleStatus;
+    userId: Id;
+    /** The owner's display name. */
+    ownerName: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    /** Stamped the first time the example is published, never moved again. */
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
 export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
@@ -865,6 +890,7 @@ export interface AccountExportResponse {
     feedback?: ExportFeedbackTicket[];
     invoicing: AccountExportResponseInvoicing;
     returns: ExportReturn[];
+    examples: Example[];
 }
 
 export interface AccountExportEnvelope {
@@ -3936,6 +3962,95 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
+export interface ExampleEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Example;
+}
+
+export type ExampleSortItem = (typeof ExampleSortItem)[keyof typeof ExampleSortItem];
+
+export const ExampleSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    title: 'title',
+    '-title': '-title',
+    status: 'status',
+    '-status': '-status'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type ExampleSort = ExampleSortItem[];
+
+export interface ExamplesResponse {
+    items: Example[];
+    meta: PaginationMeta;
+}
+
+export interface ExamplesResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ExamplesResponse;
+}
+
+export interface CreateExampleRequest {
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
+    title: string;
+    /**
+     * @minLength 1
+     * @maxLength 20000
+     */
+    body: string;
+}
+
+export interface SearchExamplesRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    sort?: ExampleSort;
+    text?: Text;
+    status?: ExampleStatus;
+}
+
+export interface ReplaceExampleRequest {
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
+    title: string;
+    /**
+     * @minLength 1
+     * @maxLength 20000
+     */
+    body: string;
+    status: ExampleStatus;
+}
+
+export interface UpdateExampleRequest {
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
+    title?: string;
+    /**
+     * @minLength 1
+     * @maxLength 20000
+     */
+    body?: string;
+    status?: ExampleStatus;
+}
+
+export interface ReplaceExampleCoverRequestMultipart {
+    imageUpload: Blob;
+}
+
 /**
  * Success
  */
@@ -4515,6 +4630,29 @@ export type ListApiKeysParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+};
+
+export type ListExamplesParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    sort?: ExampleSort;
+    /**
+     * Free-text search string
+     * @minLength 1
+     * @maxLength 200
+     */
+    text?: TextParamParameter;
+    status?: ExampleStatus;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -8123,6 +8261,177 @@ export const sendReauthCode = (
     );
 };
 
+/**
+ * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
+ * @summary Read a published example
+ */
+export const getPublishedExample = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        { url: `/examples/published/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Returns the caller's own examples, newest first by default. A caller holding `examples.any.read` sees everyone's.
+ * @summary List examples
+ */
+export const listExamples = (
+    params?: ListExamplesParams,
+    options?: SecondParameter<typeof orvalMutator<ExamplesResponseEnvelope>>
+) => {
+    return orvalMutator<ExamplesResponseEnvelope>(
+        { url: `/examples`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Creates a draft example owned by the caller.
+ * @summary Create an example
+ */
+export const createExample = (
+    createExampleRequest: CreateExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createExampleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Searches and filters examples via a JSON request body. Functionally equivalent to `GET /examples` with query parameters.
+ * @summary Search examples (DTO-friendly)
+ */
+export const searchExamples = (
+    searchExamplesRequest: SearchExamplesRequest,
+    options?: SecondParameter<typeof orvalMutator<ExamplesResponseEnvelope>>
+) => {
+    return orvalMutator<ExamplesResponseEnvelope>(
+        {
+            url: `/examples/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchExamplesRequest
+        },
+        options
+    );
+};
+
+/**
+ * Returns one example the caller may read — their own, or any when they hold `examples.any.read`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+ * @summary Read an example
+ */
+export const getExampleById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>({ url: `/examples/${id}`, method: 'GET' }, options);
+};
+
+/**
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+ * @summary Replace an example
+ */
+export const replaceExampleById = (
+    id: string,
+    replaceExampleRequest: ReplaceExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceExampleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
+ * @summary Update an example
+ */
+export const updateExampleById = (
+    id: string,
+    updateExampleRequest: UpdateExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateExampleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
+ * @summary Update an example
+ */
+export const updateExampleByIdWithMergePatchJson = (
+    id: string,
+    updateExampleRequest: UpdateExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateExampleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the example identified by `{id}`, and its cover image with it.
+ * @summary Delete an example
+ */
+export const deleteExampleById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
+};
+
+/**
+ * Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
+ * @summary Set an example's cover image
+ */
+export const replaceExampleCover = (
+    id: string,
+    replaceExampleCoverRequestMultipart: ReplaceExampleCoverRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`imageUpload`, replaceExampleCoverRequestMultipart.imageUpload);
+
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}/cover`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
+
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
@@ -8462,3 +8771,19 @@ export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKey
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
+export type GetPublishedExampleResult = NonNullable<
+    Awaited<ReturnType<typeof getPublishedExample>>
+>;
+export type ListExamplesResult = NonNullable<Awaited<ReturnType<typeof listExamples>>>;
+export type CreateExampleResult = NonNullable<Awaited<ReturnType<typeof createExample>>>;
+export type SearchExamplesResult = NonNullable<Awaited<ReturnType<typeof searchExamples>>>;
+export type GetExampleByIdResult = NonNullable<Awaited<ReturnType<typeof getExampleById>>>;
+export type ReplaceExampleByIdResult = NonNullable<Awaited<ReturnType<typeof replaceExampleById>>>;
+export type UpdateExampleByIdResult = NonNullable<Awaited<ReturnType<typeof updateExampleById>>>;
+export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>
+>;
+export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
+export type ReplaceExampleCoverResult = NonNullable<
+    Awaited<ReturnType<typeof replaceExampleCover>>
+>;

@@ -45,15 +45,15 @@ only after the fact. `cart` and `products` once needed each other; the product p
 now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge
 points one way.
 
-The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `demo`, `feedback`,
+The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `feedback`,
 `inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `users`,
 `webhooks` and `wishlist`.
 
-`demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
-store and the teaching route guard — everything that exists to demonstrate the boilerplate rather
-than to run a shop. A module rather than part of the app shell precisely because that makes it
-deletable in one `rm -rf` plus one line, which is the first thing anyone starting a real project
-from this repo should do.
+`example` is the odd one: it serves no business at all. It is a small note domain with its own
+screens, store, form, teaching route guard and provide/inject pair: everything that exists to show
+the shape of a module rather than to run a shop. A module rather than part of the app shell
+precisely because that makes it deletable in one `rm -rf` plus one line, which is the first thing
+anyone starting a real project from this repo should do once they have their own domain.
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%

@@ -278,7 +278,7 @@ export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] =
 /**
  * Collect every enabled module's navigation entries, in `order`.
  *
- * Callers concatenate their own entries — the app shell owns Home and Playground, which belong to
+ * Callers concatenate their own entries — the app shell owns Home, which belongs to
  * no domain — and sort the whole list once, so a platform entry and a module entry can interleave.
  * That is why this returns entries rather than rendered items, and why it does not sort on its own.
  *

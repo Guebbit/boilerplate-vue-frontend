@@ -103,13 +103,13 @@ const FILE_SHAPES: readonly FileShape[] = [
     },
     {
         match: /^guards\.ts$/,
-        what: '`demo` only. The route guards that keep the showcase out of a production build.',
-        onlyIn: 'demo'
+        what: '`example` only. The teaching route guard: what a `beforeEnter` can and cannot reach.',
+        onlyIn: 'example'
     },
     {
         match: /^provided\.ts$/,
-        what: '`demo` only. The sample data the showcase renders, so no screen invents its own.',
-        onlyIn: 'demo'
+        what: '`example` only. The typed provide/inject pair a screen hands to a descendant.',
+        onlyIn: 'example'
     },
     {
         match: /^dictionaries\.ts$/,

@@ -56,10 +56,9 @@ const registeredRoutes = ref<string[]>(['Login', 'Signup']);
 /** The route the visitor is currently on, as `useRoute()` reports it. */
 const currentRoute = ref<{ name?: string; fullPath: string }>({ fullPath: '/' });
 
-/** Access declared by the routes the invented modules link to, plus the shell's own two. */
+/** Access declared by the routes the invented modules link to, plus the shell's own. */
 const routeAccess: Record<string, RouteAccess | undefined> = {
     Home: undefined,
-    Playground: undefined,
     PublicThing: undefined,
     LateThing: undefined,
     MemberThing: 'auth',

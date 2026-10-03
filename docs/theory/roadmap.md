@@ -14,7 +14,7 @@ The largest item, and the one that depends on a decision made outside this repos
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 55}}}%%
 flowchart TD
-    D["This repo<br/>full ecommerce demo"] --> S["Skeleton<br/>kernel + 2 demo modules"]
+    D["This repo<br/>full ecommerce demo"] --> S["Skeleton<br/>kernel + the example module"]
     S --> V1["css-ui variant"]
     S --> V2["Vuetify variant"]
     S --> V3["Quasar variant"]
@@ -32,7 +32,7 @@ flowchart TD
 repository instead would mean maintaining the same domains four times over. Genuinely undecided:
 how the extraction itself happens is not written down anywhere durable yet.
 
-- **Skeleton** — the kernel, the infrastructure layer, the tooling and two demo modules. Blocked
+- **Skeleton** — the kernel, the infrastructure layer, the tooling and the example module. Blocked
   on the current polishing pass finishing.
 - **css-ui variant** — from the skeleton. When doing it, recover the old `_root.scss` and <!-- doc-paths:ignore -->
   `_cards.scss` (for `simple-card`) from earlier commits rather than rewriting them. <!-- doc-paths:ignore -->
@@ -42,20 +42,21 @@ how the extraction itself happens is not written down anywhere durable yet.
 
 ## A home for teaching code
 
-Everything that exists only to demonstrate the framework now lives in one module, `src/modules/demo`:
-the counter store, the teaching route guard and the Playground sandbox. Deleting it is `rm -rf
-src/modules/demo` plus its line in `src/modules.ts`, and nothing else in the app refers to it.
+Everything that exists only to teach the framework lives in one module, `src/modules/example`: a
+small note domain (list, detail, create, edit and a public read) whose store, form, route guard and
+provide/inject pair are the shape to copy. Deleting it is `rm -rf src/modules/example` plus its line
+in `src/modules.ts`, and nothing else in the app refers to it.
 
-| File                                    | What it is                                           |
-| --------------------------------------- | ---------------------------------------------------- |
-| `src/modules/demo/store.ts`             | the Pinia counter from the Vue scaffold              |
-| `src/modules/demo/guards.ts`            | a guard that shows what a guard can and cannot reach |
-| `src/modules/demo/views/Playground.vue` | the component sandbox                                |
+| File                                        | What it teaches                                      |
+| ------------------------------------------- | ---------------------------------------------------- |
+| `src/modules/example/store.ts`              | a Pinia store over the generated client              |
+| `src/modules/example/guards.ts`             | a guard that shows what a guard can and cannot reach |
+| `src/modules/example/provided.ts`           | a typed provide/inject pair                          |
+| `src/modules/example/views/ExampleEdit.vue` | a validated form, a save that sends what changed     |
 
-They are genuinely useful in a boilerplate and genuinely noise in an application, so the decision to
-make is **not "delete or keep"** — it is _where does teaching code live_. A `demo` module the
-registry can drop in one line would answer it, and would put these three under the same deletion
-rule as every other domain instead of leaving them permanent residents of `app/`.
+Teaching code is genuinely useful in a boilerplate and genuinely noise in an application, so the
+question is not "delete or keep" but _where does it live_: in a module the registry drops in one
+line, under the same deletion rule as every other domain, instead of in `app/`.
 
 Related and cheap: one live `TODO`, at `src/modules/account/views/Profile.vue:232`.
 

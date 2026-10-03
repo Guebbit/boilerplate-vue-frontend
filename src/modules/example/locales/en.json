@@ -1,0 +1,84 @@
+{
+    "navigation": {
+        "label-examples": "example | examples"
+    },
+    "example-status": {
+        "draft": "Draft",
+        "published": "Published",
+        "archived": "Archived"
+    },
+    "example-status-actions": {
+        "move-to-draft": "Back to draft",
+        "move-to-published": "Publish",
+        "move-to-archived": "Archive"
+    },
+    "example-form": {
+        "title-required": "Enter a title",
+        "title-too-long": "The title is too long",
+        "body-required": "Write something in the body",
+        "body-too-long": "The body is too long"
+    },
+    "examples-list-page": {
+        "page-title": "Examples",
+        "button-create": "New example",
+        "column-title": "Title",
+        "column-status": "Status",
+        "column-owner": "Owner",
+        "column-published-at": "Published",
+        "column-created-at": "Created",
+        "column-actions": "Actions",
+        "filter-text": "Search",
+        "filter-status": "Status",
+        "filter-status-all": "Any",
+        "table-caption": "Examples",
+        "button-view": "View",
+        "button-view-named": "View example {title}",
+        "button-edit": "Edit",
+        "button-edit-named": "Edit example {title}",
+        "button-delete": "Delete",
+        "button-delete-named": "Delete example {title}",
+        "confirm-delete": "Delete the example \"{title}\"? This cannot be undone.",
+        "success-delete": "Example deleted"
+    },
+    "example-create-page": {
+        "page-title": "New example",
+        "label-title": "Title",
+        "label-body": "Body",
+        "button-submit": "Create example",
+        "button-go-to-list": "Back to examples",
+        "success-create": "Example created"
+    },
+    "example-target-page": {
+        "page-title": "Example",
+        "label-id": "ID",
+        "label-body": "Body",
+        "label-owner": "Owner",
+        "label-status": "Status",
+        "label-cover": "Cover",
+        "cover-alt": "Cover image of {title}",
+        "label-published-at": "Published at",
+        "label-created-at": "Created at",
+        "label-updated-at": "Updated at",
+        "section-status": "Status",
+        "button-go-to-edit": "Edit",
+        "button-go-to-list": "Back to examples",
+        "button-delete": "Delete",
+        "confirm-delete": "Delete the example \"{title}\"? This cannot be undone.",
+        "success-delete": "Example deleted",
+        "success-status": "Status changed"
+    },
+    "example-edit-page": {
+        "page-title": "Edit example",
+        "label-title": "Title",
+        "label-body": "Body",
+        "label-status": "Status",
+        "label-cover": "Cover image",
+        "button-submit": "Save changes",
+        "reset-form": "Reset",
+        "success-update": "Example updated"
+    },
+    "example-published-page": {
+        "page-title": "Published example",
+        "published-by": "Published by {owner} on {date}"
+    }
+}

@@ -44,9 +44,13 @@ describe('Resilience', () => {
      * progress at the time of writing. Add them here when it lands.
      */
     describe('every route renders, quietly, inside the viewport', () => {
-        it('public routes: home, playground', () => {
+        it('public routes: home, a published example', () => {
             assertRouteIsHealthy('/en', '#home-page');
-            assertRouteIsHealthy('/en/playground', '#playground-page');
+            // Seeded by the backend's demo scenario (`scenarios/examples.ts`, `adminPublished`).
+            assertRouteIsHealthy(
+                '/en/examples/published/65e1a0000000000000000e04',
+                '#example-published-page'
+            );
         });
 
         it('guest-only routes: login, signup', () => {
@@ -54,9 +58,10 @@ describe('Resilience', () => {
             assertRouteIsHealthy('/en/signup', '#signup-page');
         });
 
-        it('authenticated routes: profile', () => {
+        it('authenticated routes: profile, examples', () => {
             cy.loginAs('user');
             assertRouteIsHealthy('/en/profile', '#profile-page');
+            assertRouteIsHealthy('/en/examples', '#examples-list-page');
         });
 
         it('admin-only routes: admin, users', () => {

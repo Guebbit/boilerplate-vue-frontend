@@ -128,10 +128,10 @@ together.
 
 ## Logging
 
-| Variable              | Purpose                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_LOG_LEVEL`  | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production |
-| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `demo`   |
+| Variable              | Purpose                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `VITE_APP_LOG_LEVEL`  | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production  |
+| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `example` |
 
 ## Telemetry
 

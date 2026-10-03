@@ -118,9 +118,10 @@ const legalLinks = STATIC_PAGES.map((page) => ({
 
 /**
  * Loading keys the full-page overlay answers to — the one thing allowed to block the whole
- * screen. Only `demo/views/Playground.vue` sets `core` today: app bootstrap has its own,
- * necessarily earlier, cover — `index.html`'s static splash, shown before Vue (and this layout)
- * exists at all to render an overlay.
+ * screen. No module sets `core` by default; one that must block the whole screen sets it by hand
+ * with `setLoading('core', …)`. App bootstrap has its own, necessarily earlier, cover —
+ * `index.html`'s static splash, shown before Vue (and this layout) exists at all to render an
+ * overlay.
  */
 const MAIN_LOADING_KEYS = ['core'];
 
@@ -132,8 +133,8 @@ const MAIN_LOADING_KEYS = ['core'];
 const SIDE_LOADING_KEYS = collectModuleLoadingKeys(enabledModules);
 
 /**
- * Reads `core`'s own manual flag — only `Playground.vue` still sets one by hand, so this stays
- * on `useCoreStore` rather than the shared `QueryClient` below.
+ * Reads `core`'s own manual flag — a hand-set one, so this stays on `useCoreStore` rather than
+ * the shared `QueryClient` below.
  */
 const { isLoading } = useCoreStore();
 
