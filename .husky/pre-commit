@@ -1,14 +1,11 @@
-# TEMPORARY (2026-09-28, until the backend's HANDOFF.md queue is done): the LIGHT gate,
-# `complete:light`. It keeps every static check (lint, format, both spec lints, generated-types
-# freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
+# The LIGHT gate, `complete:light`. It keeps every static check (lint, format, both spec lints,
+# generated-types freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
 #
 # Left out, so run the full `npm run complete` by hand before merging a lane and once on main after
 # each merge (CI still runs all of it):
 #
 # - the Vite build and Cypress e2e against the demo dataset — most of the full gate's minutes;
 # - unit coverage and its floors.
-#
-# Restoring the full gate: revert the commit that introduced this block.
 #
 # `test:e2e:live` is NOT here, and it is the gate that actually proves behaviour — it needs the
 # paired backend, a Mongo and a Redis, so it runs in CI as a required job instead. A green commit
@@ -23,29 +20,27 @@
 # `test:e2e:live` (needs the paired backend up). Pixel diffs answer to the machine that took them,
 # so they run only in the pinned image of `visual.yml`.
 #
-# FA124 — lint and format check the STAGED SNAPSHOT, not the working tree. `lint-staged`
-# (`.lintstagedrc.json`) runs `eslint` and `prettier --check` on staged files only. Before this,
-# both ran over the whole tree here: a peer's unrelated dirty file — or a scratch note sitting in
-# the same checkout — could fail a commit that never touched it, and the `prettier --write` this
-# hook used to run as part of `regenerate` rewrote every unformatted file in the tree, not only the
-# ones being committed. `type-check-only` and `test:unit` below stay whole-project on purpose:
+# Lint and format check the STAGED SNAPSHOT, not the working tree. `lint-staged`
+# (`.lintstagedrc.json`) runs `eslint` and `prettier --check` on staged files only. Over the whole
+# tree, a peer's unrelated dirty file — or a scratch note sitting in the same checkout — could fail
+# a commit that never touched it, and a `prettier --write` would rewrite every unformatted file in
+# the tree, not only the ones being committed. `type-check-only` and `test:unit` below stay
+# whole-project on purpose:
 # `vue-tsc` needs the whole project graph regardless of what changed, and neither one can be tricked
 # into failing by an unrelated dirty file the way a tree-wide format check can.
 npx lint-staged
 
 # `contracts/` is generated FROM `openapi.yaml` and `asyncapi.yaml`, so regenerating it is only
-# ever needed when one of those two is staged — skipping otherwise is FA124's other half: this
-# used to run `regenerate` and `git add contracts` on EVERY commit regardless of relevance,
-# sweeping whatever a peer's unrelated, unstaged edit under `contracts/` happened to be sitting
-# there into this commit.
+# ever needed when one of those two is staged. Running `regenerate` and `git add contracts` on
+# EVERY commit would sweep whatever a peer's unrelated, unstaged edit under `contracts/` happened to
+# be sitting there into the commit.
 if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(openapi|asyncapi)\.yaml$'; then
     npm run regenerate
 
     # A regenerated `contracts/` that still differs from the working tree means the staged
     # contract and the generated client disagree. Fail and say so, rather than silently
-    # `git add`-ing whatever `regenerate` produced — the previous behaviour FA124 flagged as
-    # "surprising and risky for anyone with unrelated uncommitted work sitting in the same
-    # checkout."
+    # `git add`-ing whatever `regenerate` produced, which is surprising and risky for anyone with
+    # unrelated uncommitted work sitting in the same checkout.
     if ! git diff --quiet -- contracts; then
         echo ""
         echo "[pre-commit] contracts/ changed after \`npm run regenerate\` but isn't staged."

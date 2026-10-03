@@ -7,7 +7,7 @@ name: E2E (live backend)
 # The recipe here is the one in docs/tools/live-e2e.md, service for service and variable for
 # variable. Change one, change the other.
 #
-# TWO TIERS, one workflow (E2E-D8; docs/tools/live-e2e.md#tiers):
+# TWO TIERS, one workflow (docs/tools/live-e2e.md#tiers):
 #
 #   per push   `ci.yml` calls it with `grep: '@smoke'` — one job, only the tests tagged `@smoke`,
 #              a 15-minute budget. The push-time question is "does the real infrastructure work",

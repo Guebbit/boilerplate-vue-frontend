@@ -56,7 +56,9 @@ describe('originToRegExp', () => {
         // This literal is the plain ORIGIN argument, not a regex — originToRegExp escapes the
         // dot (and every other metacharacter) before building the RegExp, which is exactly
         // what this test and the it.each below it assert.
-        // codeql[js/incomplete-hostname-regexp]: false positive, escaped before regex construction — see above
+        // CodeQL may flag this literal (`js/incomplete-hostname-regexp`); that is a false positive,
+        // since it is escaped before any regex is built. GitHub ignores inline suppression
+        // comments, so such an alert is dismissed in the repository's code-scanning tab instead.
         const pattern = originToRegExp('https://api.example.com');
 
         expect(pattern.test('https://api.example.com/v1')).toBe(true);

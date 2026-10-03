@@ -66,4 +66,5 @@ const mutationConfig = mergeConfig(
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- `mergeConfig`'s own declared return type does not resolve `.test` narrowly enough to type-check this optional chain
 delete mutationConfig.test?.root;
 
+/** The config Stryker's Vitest runner reads. */
 export default mutationConfig;

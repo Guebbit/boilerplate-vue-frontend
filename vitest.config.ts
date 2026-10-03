@@ -43,6 +43,11 @@ const COVERAGE_FLOOR = {
     lines: 70
 };
 
+/**
+ * The Vitest config: the app's resolved Vite config with the test settings merged over it.
+ * `mergeConfig` deep-merges its second argument into the first.
+ * https://vitest.dev/config/
+ */
 export default mergeConfig(
     resolvedViteConfig,
     defineConfig({
@@ -136,18 +141,15 @@ export default mergeConfig(
                     'src/modules/*/store.ts': COVERAGE_FLOOR,
                     'src/modules/*/stores/*.ts': COVERAGE_FLOOR,
                     // Every file under guards, `authentications.ts` included: `canAccess` gates
-                    // on `meta.can`, not on a hand-kept role flag, and both branches are exercised
-                    // (FA125 — the `isAdmin`-era exemption this glob used to carve out for it is
-                    // gone along with `isAdmin` itself).
+                    // on `meta.can`, not on a hand-kept role flag, and both branches are exercised.
                     'src/app/guards/*.ts': COVERAGE_FLOOR,
                     'src/infrastructure/http/**': COVERAGE_FLOOR,
 
-                    // FA131: the rest of `src/infrastructure/` had no floor at all — `session.ts`,
-                    // i18n and observability could regress to nothing and nothing here would say
-                    // so. `utils/**` folds in the two files that used to be listed on their own
-                    // (`errors.ts`, `formatters.ts`); both already clear 70, so nothing narrows.
+                    // The rest of `src/infrastructure/` needs a floor too — `session.ts`, i18n and
+                    // observability could regress to nothing and nothing here would say so.
+                    // `utils/**` covers `errors.ts` and `formatters.ts` as well; both clear 70.
                     'src/infrastructure/*.ts': COVERAGE_FLOOR,
-                    // The i18n runtime (FE-D5): extractable, so it lives at `src/i18n/`, not
+                    // The i18n runtime: extractable, so it lives at `src/i18n/`, not
                     // under `src/infrastructure/`. `locale-overrides.ts` stays behind — it's the
                     // contract-specific consumer of `@api` — and is covered by the glob above.
                     'src/i18n/!(country-label).ts': COVERAGE_FLOOR,
@@ -163,13 +165,13 @@ export default mergeConfig(
                         lines: 75
                     },
 
-                    // FA131: the kernel — the module registry every domain wires itself into —
-                    // had no floor either. One file today; the glob still covers whatever joins it.
+                    // The kernel — the module registry every domain wires itself into — needs a
+                    // floor too. One file today; the glob still covers whatever joins it.
                     'src/kernel/**': COVERAGE_FLOOR,
 
-                    // FA131: pure client-side rules (`domain/`) and the store-to-component tier
-                    // (`composables/`) — the two shapes `module-file-shapes.spec.ts` already
-                    // reserves for exactly this kind of logic — carried no floor of their own.
+                    // Pure client-side rules (`domain/`) and the store-to-component tier
+                    // (`composables/`) — the two shapes `module-file-shapes.spec.ts` reserves for
+                    // exactly this kind of logic — get a floor of their own.
                     // No `domain/` file sits below 70 today, so one blanket glob covers all of them.
                     'src/modules/*/domain/**': COVERAGE_FLOOR,
                     // Three modules' composables sit below 70 on at least one metric; each is

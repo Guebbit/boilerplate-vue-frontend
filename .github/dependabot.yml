@@ -4,7 +4,7 @@ updates:
       directory: /
       schedule:
           interval: weekly
-      # FA97: one weekly PR for every minor/patch bump together, so a routine dependency update
+      # One weekly PR for every minor/patch bump together, so a routine dependency update
       # doesn't turn into a dozen review requests. A major stays OUT of the group on purpose —
       # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/grouping-pull-requests
       # a breaking bump gets its own PR, reviewed on its own, never silently folded into a

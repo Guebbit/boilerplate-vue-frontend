@@ -47,8 +47,8 @@ jobs:
     commitlint:
         # Lint commit messages against the conventional-commit rules in .commitlintrc.cjs, over
         # the PR's own base..head range on a pull request, or the pushed range on a direct push to
-        # main. FA129: linting only on push let a badly-worded commit sit on a PR unnoticed until
-        # AFTER it merged into main — this job now runs where a PR author can still see it fail.
+        # main. It runs on the PR itself, where an author can still see it fail, not only after
+        # the commit has merged into main.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         permissions:
@@ -263,7 +263,7 @@ jobs:
               run: npm audit --omit=dev --audit-level=high
 
     demo-strip-measure:
-        # FE-D4 step 1 (the backend's G-D2 twin): how far "the demo shop is removable" actually is,
+        # The backend has a twin of this job: how far "the demo shop is removable" actually is,
         # measured rather than assumed. Applies `demo:remove`'s own edits (module folders, the
         # registry, the coupling graph, the cross-module specs) to a scratch copy and runs
         # type-check-only, lint and build-only against what's left.
@@ -373,9 +373,8 @@ jobs:
 
             - name: Run unit tests with coverage and a JSON report
               # One vitest invocation, two reporters (`default` for the log, `json` for the
-              # rollup below) plus coverage — FA99: this used to be two full suite runs, one via
-              # `test:unit:coverage` and a second via `test:unit:report`, ~doubling the job's
-              # actual test time for a report the first run could already produce.
+              # rollup below) plus coverage — one suite run, not two: the report comes from the
+              # same invocation as the coverage.
               run: npm run test:unit:ci
 
             - name: Per-module test report
@@ -585,7 +584,7 @@ jobs:
             - test-unit
         uses: ./.github/workflows/e2e-live.yml
         with:
-            # Only the `@smoke` tests gate a push (E2E-D8); the full live run is the nightly's.
+            # Only the `@smoke` tests gate a push; the full live run is the nightly's.
             grep: '@smoke'
         # SPEC_SIBLING_TOKEN, for checking out the paired backend.
         secrets: inherit

@@ -60,6 +60,7 @@ try {
     /* no .env in this checkout */
 }
 
+/** Every variable of the local `.env` (`loadEnv` with an empty prefix loads all keys). */
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
 /**
@@ -81,8 +82,14 @@ const hostedWebhookSink = (): Promise<WebhookSink> => {
 
 /** Name shared with `cy.checkPageA11y()` in `tests/support/e2e/commands.ts`. */
 const A11Y_REPORT_TASK = 'recordA11yViolations';
+
+/** Where the a11y task writes its per-spec reports. */
 const A11Y_REPORT_DIRECTORY = path.resolve('reports/a11y');
 
+/**
+ * The Cypress config; `defineConfig` only adds typing and editor completion.
+ * https://docs.cypress.io/app/references/configuration
+ */
 export default defineConfig({
     screenshotsFolder: 'tests/e2e/screenshots',
     videosFolder: 'tests/e2e/videos',
@@ -143,7 +150,7 @@ export default defineConfig({
                 // `results` is undefined when the spec never ran — nothing to record then.
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Cypress types it as always present, but documents it as absent for a skipped spec
                 if (results) recordFlakyTests(flakyTestsIn(spec.relative, results.tests));
-                // FA126: the shard balancer's real per-file weight, refreshed on every run instead
+                // The shard balancer's real per-file weight, refreshed on every run instead
                 // of frozen at whatever was measured once by hand — see `spec-durations.ts`.
                 // `stats.duration` is typed optional even though `after:spec` always provides it
                 // for a spec that ran; the fallback is unreachable in practice, not a real 0s spec.

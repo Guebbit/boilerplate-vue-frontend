@@ -37,7 +37,7 @@ jobs:
         timeout-minutes: 60
         permissions:
             # write: this job commits `mutation-baseline.json` back to main — see "Record this
-            # run's baseline" below (FA125).
+            # run's baseline" below.
             contents: write
         steps:
             - name: Checkout
@@ -76,16 +76,16 @@ jobs:
             - name: Check the per-file baseline
               # The real gate. Stryker's thresholds are global — a strong file carries a weak one
               # — so this compares every file against `mutation-baseline.json` and fails naming
-              # the ones that dropped, and now also fails naming any file the baseline has never
-              # seen at all (FA125 — a missing entry used to print "recorded" and exit 0, so a
-              # file could sit at zero mutation coverage forever without anything failing).
+              # the ones that dropped, and also fails naming any file the baseline has never
+              # seen at all (otherwise a file could sit at zero mutation coverage forever
+              # without anything failing).
               id: baseline
               continue-on-error: true
               run: npm run test:mutation:check
 
             - name: Record this run's baseline
-              # FA125's other half: the check above never had anywhere to WRITE a new or improved
-              # score, because this job had no push permission and no commit step. `--update`
+              # The check above only reads; this step WRITES a new or improved score, which is why
+              # the job holds push permission and commits the file. `--update`
               # never lowers a regressed file (see scripts/mutation/baseline.ts's `nextBaseline`),
               # so running it regardless of the check's outcome is safe — a regression stays
               # failing above, it just also gets an honest, committed record of tonight's number.

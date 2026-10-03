@@ -2,9 +2,8 @@ name: Release
 
 # release-please: reads Conventional Commits (already enforced by commitlint) since the last
 # release, keeps a PR open proposing the next version bump + CHANGELOG.md entry, and — once that
-# PR is merged — tags the commit and publishes a GitHub Release. FA97: this repo's version
-# (`package.json`) and its only git tag had already drifted apart with nothing keeping them in
-# step; this is that.
+# PR is merged — tags the commit and publishes a GitHub Release. It keeps this repo's version
+# (`package.json`) and its git tags in step.
 # https://github.com/googleapis/release-please
 
 # Manual only: the project is new and unused, so no release is cut or counted for now. Run it from

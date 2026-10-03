@@ -6,11 +6,11 @@ name: Image scan (SBOM + vulnerabilities)
 # image scan does not need to.
 #
 # Syft (SBOM) piped into Grype (vulnerabilities) — the same pairing the paired backend's
-# `docs/tools/deployment-hardening.md` names for this. Not Trivy: ruled out in the backend's
-# DECISIONS_0926_2_SECURITY_SCANNING.md (S5) after the March 2026 `trivy-action` supply-chain
-# compromise (CVE-2026-33634, every tag force-pushed to a credential stealer).
+# `docs/tools/deployment-hardening.md` names for this. Not Trivy: ruled out after the March 2026
+# `trivy-action` supply-chain compromise (CVE-2026-33634, every tag force-pushed to a credential
+# stealer).
 #
-# A REPORT, not a gate (same doc, S5): `fail-build: false` below, so a new CVE in a base-image
+# A REPORT, not a gate: `fail-build: false` below, so a new CVE in a base-image
 # package cannot block an unrelated merge. Read the uploaded `grype-report` artifact.
 
 on:

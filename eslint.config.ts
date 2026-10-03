@@ -52,14 +52,14 @@ const moduleFolderNames = readdirSync(fileURLToPath(new URL('src/modules', impor
     .filter((entry) => entry.isDirectory())
     .map(({ name }) => name);
 
-// A cycle, or a key naming a module already deleted, must fail every `npm run lint` — see FA73.
+// A cycle, or a key naming a module already deleted, must fail every `npm run lint`.
 // `moduleDependencyPolicies` below only ever checks a module against its OWN `MODULE_EDGES`
 // entry, so this is the one place the graph is walked as a whole.
 assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames);
 
 /**
  * The "one door" and `MODULE_EDGES` coupling, as `eslint-plugin-boundaries` policies — one array
- * per module, generated the same way the old `no-restricted-imports` blocks were (FE-D2).
+ * per module, generated the same way the old `no-restricted-imports` blocks were.
  *
  * Two things per module: it may reach a listed sibling's `index.ts` and nothing else of it
  * (reaching `@/modules/<name>/store` directly is what makes a module stop being deletable), and if
@@ -159,11 +159,11 @@ const boundariesFiles = [
  * The ladder, bottom to top: `i18n → infrastructure → ui → kernel → modules(+domain) → app`. A
  * tier may import the ones below it and never the ones above — see `docs/theory/layers.md`. `app`
  * is the one exception worth naming: nothing may reach it, including a module, which is exactly
- * the gap FA-D2/FA96 closes — `src/kernel/route-link.ts` exists because of it (see its own
+ * the gap the ladder closes — `src/kernel/route-link.ts` exists because of it (see its own
  * docblock). `types` is erased at compile time, so every tier may reach it; a resolved import
  * outside `src/` (`@api`, `contracts/`, `tests/support/`) matches no element or file here and is
  * invisible to this rule the same way it is to the old `no-restricted-imports` patterns — narrower
- * than that is a separate concern from FE-D2/FA96, not this change's job.
+ * than that is a separate concern from the tier ladder.
  */
 const layerDependencyPolicies = [
     // npm. The graph being described is this repository's; a package belongs to no tier of it.
@@ -280,7 +280,7 @@ const layerDependencyPolicies = [
             ]
         }
     },
-    // …and never the other way. This is the specific gap FA-D2/FA96 closes: nothing below `app`
+    // …and never the other way. This is the specific gap the ladder closes: nothing below `app`
     // may reach it, a module included — see `src/kernel/route-link.ts` for where that logic moved.
     {
         from: {
@@ -315,7 +315,7 @@ const layerDependencyPolicies = [
 
     // A module's own spec reaches `@/modules` (the registry) the way `app` does, to mount the
     // real app in a component test — everything else it needs (its own module, kernel, ui,
-    // infra, i18n) is already open via the `module` element it also carries (FA96).
+    // infra, i18n) is already open via the `module` element it also carries.
     {
         from: { file: { categories: ['spec'] } },
         allow: { to: { file: { categories: ['registry'] } } }
@@ -640,7 +640,7 @@ const namingConventionRule = {
 };
 
 /**
- * FA95: the preset's own default (`allowComponentTypeUnsafety: true`) turns off
+ * The preset's own default (`allowComponentTypeUnsafety: true`) turns off
  * `no-unsafe-argument`/`-assignment`/`-return`/`-call`/`-member-access` for every `.ts` AND `.vue`
  * file, to paper over Vue component operations TypeScript-ESLint cannot fully type. This repo
  * bans `any` outright (CLAUDE.md), so those five rules stay on; the rare genuine case (Vue's own
@@ -650,6 +650,11 @@ const namingConventionRule = {
  */
 configureVueProject({ allowComponentTypeUnsafety: false });
 
+/**
+ * The flat config. `defineConfigWithVueTs` (from `@vue/eslint-config-typescript`) composes the Vue
+ * and typescript-eslint presets with the entries below, in order; later entries win.
+ * https://github.com/vuejs/eslint-config-typescript
+ */
 export default defineConfigWithVueTs(
     {
         files: ['**/*.{ts,mts,tsx,vue}']
@@ -783,16 +788,16 @@ export default defineConfigWithVueTs(
     },
 
     /**
-     * The tier ladder and the module system, as `eslint-plugin-boundaries` (FE-D2/FA96): deny by
+     * The tier ladder and the module system, as `eslint-plugin-boundaries`: deny by
      * default, an explicit `boundaries/dependencies` policy per allowed edge, and
      * `boundaries/no-unknown-files` refuses a FILE under `src/` that no descriptor above claims —
-     * the same fail-closed shape the paired backend uses (`eslint.config.ts:665-800` there).
+     * the same fail-closed shape the paired backend's own `eslint.config.ts` uses.
      *
      * Checked against the RESOLVED file via `eslint-import-resolver-typescript`, not the import
      * STRING — a `.vue` file's `<script>` block, a relative `../../` path, a re-export and a
-     * dynamic `import()` are all covered the same way a `@/modules/x` specifier is (FA96 #1–2);
-     * `eslint-plugin-vue`'s `<script>` parsing plus this resolver's `alwaysTryTypes` is what a
-     * half-day spike confirmed before this landed on option A over the fallback (FE-D2).
+     * dynamic `import()` are all covered the same way a `@/modules/x` specifier is;
+     * `eslint-plugin-vue`'s `<script>` parsing plus this resolver's `alwaysTryTypes` is
+     * what makes that resolved-file check work for `.vue` files.
      */
     {
         files: ['src/**/*.{ts,vue}'],

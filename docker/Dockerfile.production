@@ -52,7 +52,7 @@ ENV VITE_APP_BASE_URL=$VITE_APP_BASE_URL
 # evidence that this compiles.
 RUN npm run build
 
-# `vite.config.ts` sets `build.sourcemap: 'hidden'` (FA97): a map is written next to every chunk,
+# `vite.config.ts` sets `build.sourcemap: 'hidden'`: a map is written next to every chunk,
 # but no chunk carries the `//# sourceMappingURL` comment pointing a browser at it. `hidden` means
 # "for a crash reporter to fetch privately", never "safe to serve" — nginx has no rule blocking
 # `.map` requests below, so a map left in `dist/` is one guessed URL away from handing out
