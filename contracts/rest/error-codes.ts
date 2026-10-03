@@ -62,7 +62,7 @@ export const ERROR_CODES = {
     IDEMPOTENCY_KEY_MISMATCH: 'IDEMPOTENCY_KEY_MISMATCH',
     /** 500 — An unexpected server-side failure. Never carries library or stack detail. */
     INTERNAL_ERROR: 'INTERNAL_ERROR',
-    /** 400 — A driver-level failure that is really about the request — a malformed id, a duplicate key — with no dedicated code of its own. */
+    /** 422 — A 4xx nobody handled on the way, answered by the global error handler with no copy of its own: a driver failure that is really about the request (a refused write is a 422, a duplicate key a 409, a stale `If-Match` a 412) or a library declaring its own 4xx. A route that catches the failure answers with the status-derived code instead. */
     INVALID_REQUEST: 'INVALID_REQUEST',
     /** 409 — The requested on-hand count is below what is already reserved by open orders. */
     INVENTORY_BELOW_RESERVED: 'INVENTORY_BELOW_RESERVED',
@@ -130,7 +130,7 @@ export const ERROR_CODES = {
     REAUTH_REQUIRED: 'REAUTH_REQUIRED',
     /** 409 — The past order named for reorder no longer has any purchasable lines. */
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
-    /** 400 — A 4xx with no more specific code of its own. */
+    /** 422 — A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name. */
     REQUEST_ERROR: 'REQUEST_ERROR',
     /** 422 — The handling deduction is more than the refund is worth. */
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
