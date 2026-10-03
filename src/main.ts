@@ -4,7 +4,7 @@
  * enabled modules' contributed data (response schemas, locale dictionaries), then boots the app
  * as one promise chain — remote-locale merge, mount, observability init, readiness signal — so
  * no step can race the one after it. The response-schema contract loads lazily, after mount,
- * instead of joining that chain (FA94/FA-D2).
+ * instead of joining that chain.
  */
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -54,7 +54,7 @@ import { enabledModules } from '@/modules.ts';
  * would otherwise run before the wiring was installed.
  *
  * The response-schema rows are handed down the same way, but NOT here — see the lazy load after
- * mount below (FA94/FA-D2).
+ * mount below.
  */
 registerLocaleContributors(collectModuleLocales(enabledModules));
 
@@ -111,7 +111,7 @@ const bootstrapApplication = () =>
                 .use(VueQueryPlugin, { queryClient });
 
             // Anything a component's render/setup/watcher throws with nothing downstream to
-            // catch it lands here instead of a blank page — see vue-error-handler.ts (FA74).
+            // catch it lands here instead of a blank page — see vue-error-handler.ts.
             app.config.errorHandler = handleUncaughtVueError;
 
             // Extension points: what every enabled module contributes to another module's slots.
@@ -120,7 +120,7 @@ const bootstrapApplication = () =>
             app.mount('#app');
 
             /*
-             * FA94/FA-D2: `@api/schemas` (Zod + ~1,700 generated schemas, ~350 KB) is the
+             * `@api/schemas` (Zod + ~1,700 generated schemas, ~350 KB) is the
              * biggest single piece of the old entry chunk, and only response VALIDATION needs
              * it — the generated client's request/response TYPES cost nothing at runtime. Kick
              * off its chunk here, after the first paint above, not before: this call is

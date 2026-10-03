@@ -173,7 +173,7 @@ export interface AppModule {
      * domain's contract validation arrives and leaves with its folder.
      *
      * A loader, not the rows themselves: each one imports its `response-schemas.ts`, which pulls
-     * in `@api/schemas` — invoking it is what triggers that ~350 KB chunk to download (FA94), so
+     * in `@api/schemas` — invoking it is what triggers that ~350 KB chunk to download, so
      * it stays unopened until `loadResponseSchemas` decides validation is actually running.
      */
     responseSchemas?: () => Promise<ResponseSchemaRoute[]>;

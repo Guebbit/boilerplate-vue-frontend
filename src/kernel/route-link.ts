@@ -1,11 +1,11 @@
 /**
  * @module
  * A route location bound only when the module system actually resolves the name — the module-
- * system-generic guard a module uses to reach a SIBLING's route by name (FA86): that reach is a
+ * system-generic guard a module uses to reach a SIBLING's route by name: that reach is a
  * dependency `MODULE_EDGES` cannot see, so `router.hasRoute` is what stands between it and
  * `vue-router`'s own throw on an unresolved name. Lives in `kernel`, not `src/app`, because it
  * knows nothing about THIS app's own routes — only the module system's `hasRoute` contract — and a
- * module may reach kernel but never `src/app` (see FE-D2/FA96, `eslint.config.ts`).
+ * module may reach kernel but never `src/app` (the module-boundary rules in `eslint.config.ts`).
  */
 import type { LocationQueryRaw, RouteParamsRawGeneric } from 'vue-router';
 

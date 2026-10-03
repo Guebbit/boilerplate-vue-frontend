@@ -3,7 +3,7 @@
  * Core i18n runtime: which languages exist, which are loaded, and the load/activate/merge
  * pipeline every locale switch funnels through. Bundled dictionaries are code-split per locale.
  *
- * Self-contained by design (FE-D5): everything under `src/i18n/` is meant to be lifted out into
+ * Self-contained by design: everything under `src/i18n/` is meant to be lifted out into
  * its own package with minimal further work, so it knows nothing about this app — no module, no
  * Pinia, no generated API client. `src/infrastructure/locale-overrides.ts` layers the
  * contract-specific, API-stored overrides on top at the edges (main.ts, the router guard); that

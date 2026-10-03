@@ -1,6 +1,6 @@
 /**
  * @module
- * A language's own display name for a picker option — FA27's fix, factored out of
+ * A language's own display name for a picker option, factored out of
  * `AppLanguageSwitcher.vue` so it is a plain function, not a component to mount.
  */
 import { localeNativeNames } from './index.ts';

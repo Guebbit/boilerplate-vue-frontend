@@ -1,13 +1,13 @@
 /**
  * @module
- * A country's own localized display name for a picker option (E12) — the same idea as
+ * A country's own localized display name for a picker option — the same idea as
  * `language-label.ts`'s `languageLabel`, for `AddressFormDialog.vue`'s country select.
  */
 
 /**
  * A country's display name, localized in the CURRENT viewing language via the browser's own
  * `Intl.DisplayNames` — no dependency needed (`i18n-iso-countries` was rejected for failing the
- * 12-month maintenance rule; see `DECISIONS_0925_2_SHOP_SCOPE.md`'s E12).
+ * 12-month maintenance window this repo asks of a dependency).
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames
  *
  * @param code - ISO 3166-1 alpha-2 code to label, e.g. `IT`.
