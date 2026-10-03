@@ -468,11 +468,16 @@ jobs:
         # The sibling checkout is what `scripts/e2e/run-shards.ts` boots, so this job needs it as much
         # as `spec-identity` above does — with its dependencies installed, since the demo profile
         # runs through tsx.
+        #
+        # Three shards, not the default four: each is a Chrome plus a demo backend plus a mongod,
+        # and four on this 4-vCPU runner starved each other (the paired backend's own e2e job saw
+        # eight specs miss a 15-second wait). 75 minutes covers the longer wall-clock.
         runs-on: ubuntu-latest
-        timeout-minutes: 30
+        timeout-minutes: 75
         permissions:
             contents: read
         env:
+            E2E_SHARDS: 3
             # Where the backend checkout lands, and what scripts/pairing/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
             BACKEND_PATH: .backend
