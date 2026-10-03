@@ -16,6 +16,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import type { RouteLocationNormalized } from 'vue-router';
 import { asStub } from '../../../../tests/support/stub';
 
+/** Stub for the store's `fetchExample`, which the guard calls. */
 const fetchExample = vi.fn<(id: string) => Promise<unknown>>();
 
 vi.mock('@/modules/example/store.ts', () => ({
@@ -26,6 +27,7 @@ vi.mock('@/infrastructure/utils/logger.ts', () => ({
     logger: { debug: vi.fn() }
 }));
 
+/** The guard under test, imported after the mocks above are in place. */
 const { exampleEditGuard } = await import('@/modules/example/guards.ts');
 
 /**

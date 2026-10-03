@@ -25,6 +25,7 @@ import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
 
+/** An example record, the shape the mocked API returns. */
 const EXAMPLE = {
     id: 'a'.repeat(24),
     title: 'A title',
