@@ -78,7 +78,6 @@ const mountList = () => {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 OrderReferenceSearch: { name: 'OrderReferenceSearch', template: '<div />' }
             }
         }
@@ -166,8 +165,7 @@ describe('OrdersList — a soft-deleted row', () => {
 
         const wrapper = mount(OrdersList, {
             global: {
-                plugins: [router, vuetify, i18n],
-                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                plugins: [router, vuetify, i18n]
             }
         });
         await flushPromises();
@@ -244,8 +242,7 @@ const mountWithRows = async () => {
     );
     const wrapper = mount(OrdersList, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     await flushPromises();
@@ -293,8 +290,7 @@ describe('OrdersList — the order column', () => {
 
         const wrapper = mount(OrdersList, {
             global: {
-                plugins: [router, vuetify, i18n],
-                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                plugins: [router, vuetify, i18n]
             }
         });
         await flushPromises();

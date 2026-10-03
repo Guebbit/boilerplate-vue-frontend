@@ -101,7 +101,6 @@ const mountProfile = () =>
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 ProfileAvatar: true,
                 ProfilePasswordChange: true,
                 ProfileTwoFactor: true,

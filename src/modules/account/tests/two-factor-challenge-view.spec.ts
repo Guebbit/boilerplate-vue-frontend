@@ -34,8 +34,7 @@ const challengeExpiring = (expiresAt: string) => ({
 const mountChallenge = () =>
     mount(TwoFactorChallenge, {
         global: {
-            plugins: [vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /><slot name="header" /></div>' } }
+            plugins: [vuetify, i18n]
         }
     });
 

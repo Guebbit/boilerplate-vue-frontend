@@ -134,6 +134,36 @@ npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 
 [Test timings](./tools/testing-and-docs.md#test-timings) has what each of these costs.
 
+## After you clone: the GitHub settings
+
+A clone or a template copy brings the files and **none of the repository settings**. These live in
+GitHub, outside git, so a fresh copy starts with all of them off. Switch them on once, in the new
+repository's Settings:
+
+```mermaid
+flowchart LR
+    Clone["clone or<br/>use as template"] --> Files["files arrive:<br/>workflows, dependabot.yml,<br/>SECURITY.md"]
+    Clone --> Settings["settings do NOT arrive:<br/>every toggle below is off"]
+    Settings --> Tick["tick the checklist<br/>once per repository"]
+    Files --> Tick
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef off fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class Files,Tick ok;
+    class Settings off;
+```
+
+| Setting                                                  | What it gives you                                                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Secret scanning **and push protection**                  | A pushed key or token is flagged, and a push carrying one is refused before it lands                            |
+| Dependabot alerts and **security updates**               | A vulnerable dependency raises an alert and a fix PR. `.github/dependabot.yml` only schedules _version_ updates |
+| Private vulnerability reporting                          | The "Report a vulnerability" form that `SECURITY.md` tells finders to use                                       |
+| Require actions to be pinned to a full-length commit SHA | A workflow naming an action by tag fails. Every `uses:` here is already pinned to a SHA                         |
+| A branch rule on `main` requiring the `ci` check         | The single `ci` job in `.github/workflows/ci.yml` becomes a real merge gate                                     |
+
+Nothing here calls GitHub for you. The backend repository has the same checklist, with the reasoning
+for each row, in its "Start a New Project" page.
+
 ## Where to go next
 
 | You want to                              | Read                                                         |

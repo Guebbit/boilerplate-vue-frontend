@@ -156,7 +156,7 @@ backend's own per-module `group` field. `scripts/module-groups.ts` holds the sam
 
 ## The two repositories
 
-Thirteen of sixteen domains exist on both sides under the same name. **The other three are the
+Most domains exist on both sides under the same name. **The three that do not are the
 interesting ones**, and until this table the asymmetry was written down nowhere in either repository:
 [`account`](./account.md) folds the address book and the account of record into one module,
 [`observability`](./observability.md) renders three backend domains over one console and playground,

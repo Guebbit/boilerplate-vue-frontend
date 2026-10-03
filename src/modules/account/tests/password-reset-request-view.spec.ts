@@ -39,7 +39,6 @@ const mountPage = () => {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 // Unrelated to this file: HumanCheck's own branching is
                 // tests/unit/ui/human-check.spec.ts's job, and mounting the real thing here would
                 // fire a real GET /antibot/config.

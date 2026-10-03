@@ -5,32 +5,89 @@ Copy it to `.env` before the first run — see [Getting Started](../getting-star
 
 ## The one rule that explains most surprises
 
+A value reaches the browser by one of two routes. Which one it takes decides whether a container
+can change it.
+
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 50}}}%%
 flowchart LR
     ENV[".env<br/>VITE_API_URL=..."] --> VITE["vite build<br/>/ vite dev"]
-    VITE --> BUNDLE["bundle.js<br/>literal string baked in"]
-    BUNDLE --> BROWSER["Browser"]
-    RUNTIME["Container env var<br/>set at run time"] -.->|"changes nothing"| BROWSER
+    VITE --> BUNDLE["bundle.js<br/>the default, baked in as a literal"]
+    CONTAINER["Container env var<br/>set when it starts"] --> ENTRY["entrypoint script<br/>writes config.js"]
+    ENTRY --> CONFIG["config.js<br/>window.__APP_CONFIG"]
+    CONFIG --> READ{"runtimeValue(name)<br/>set?"}
+    BUNDLE --> READ
+    READ --> BROWSER["Browser"]
 
     classDef src fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef build fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef out fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef dead fill:#fee2e2,stroke:#dc2626,color:#111827;
-    class ENV src;
-    class VITE build;
-    class BUNDLE,BROWSER out;
-    class RUNTIME dead;
+    class ENV,CONTAINER src;
+    class VITE,ENTRY build;
+    class BUNDLE,CONFIG,READ,BROWSER out;
 ```
 
-**`import.meta.env.VITE_*` is replaced with a string literal at build time.** It is not read when
-the app runs. Setting an environment variable on a running container changes nothing; the value
-was decided when the bundle was produced. A production image is therefore specific to the
-environment it was built for — see the build args in `docker/Dockerfile.production`.
+**`import.meta.env.VITE_*` is replaced with a string literal at build time.** That is the default,
+and the only route for a handful of values (see [What stays build-time](#what-stays-build-time)).
+Everything on the whitelist below can also be overridden when a container **starts**, so one image
+serves every environment: a config change is a restart, not a rebuild.
 
 The second half of the same rule: **the browser resolves these URLs, not the container.** So
 `VITE_API_URL` must always be a host address (`http://localhost:3000`), never a compose service
 name like `http://app:3000`, even when both stacks run in containers.
+
+## Runtime configuration (`config.js`)
+
+How a running container changes a value, with no rebuild:
+
+1. At start, `docker/docker-entrypoint.d/40-generate-runtime-config.sh` reads the container's own
+   environment and writes `/config.js`: `window.__APP_CONFIG = { "API_URL": "...", ... }`.
+   A variable that is unset or blank is left out of the file.
+2. `index.html` loads `config.js` **before** the app bundle. nginx serves it with
+   `Cache-Control: no-store`, so a restart shows up on the next page load.
+3. Each read goes through `runtimeValue(name)` (`src/infrastructure/runtime-config.ts`):
+   the `config.js` value, trimmed, or `undefined` when unset or blank. The call site then falls
+   back to its own default: `runtimeValue('API_URL') || import.meta.env.VITE_API_URL`.
+4. In dev, in unit tests and under `vite preview` there is no `config.js` (the request 404s
+   harmlessly), so every read lands on its `import.meta.env` default. The same code path runs
+   everywhere; there is no central config object.
+
+```sh
+docker run -e VITE_API_URL=https://api.example.com -p 8080:80 boilerplate-frontend:production
+```
+
+**Never put a secret here.** Every value ships to every browser, with or without `config.js`.
+
+### The whitelist
+
+Only the keys of `RuntimeConfig` are written, and only these. Adding one means a key in that
+interface, a `config_entry` line in the entrypoint script, and the call site's `runtimeValue()`.
+
+| `config.js` key                                                     | Container variable                                                          |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `API_URL`, `API_SSE`                                                | `VITE_API_URL`, `VITE_API_SSE`                                              |
+| `APP_NAME`, `APP_LOGO`, `APP_EMPTY_VALUE`                           | `VITE_APP_NAME`, `_LOGO`, `_EMPTY_VALUE`                                    |
+| `LOCALE_TENANT`, `APP_DEFAULT_LOCALE`, `APP_FALLBACK_LOCALE`        | `VITE_LOCALE_TENANT`, `VITE_APP_DEFAULT_LOCALE`, `VITE_APP_FALLBACK_LOCALE` |
+| `APP_LOG_LEVEL`, `APP_LOG_SCOPES`                                   | `VITE_APP_LOG_LEVEL`, `VITE_APP_LOG_SCOPES`                                 |
+| `AXIOS_TIMEOUT`, `MAX_UPLOAD_BYTES`                                 | `VITE_AXIOS_TIMEOUT`, `VITE_MAX_UPLOAD_BYTES`                               |
+| `FARO_URL`, `FARO_APP_NAME`, `FARO_APP_VERSION`, `FARO_ENVIRONMENT` | `VITE_FARO_*`                                                               |
+| `UMAMI_SRC`, `UMAMI_WEBSITE_ID`, `UMAMI_REQUIRE_CONSENT`            | `VITE_UMAMI_*`                                                              |
+
+The container variable keeps its `VITE_` name, so the same `.env` line works for a dev server and
+for `docker run -e`.
+
+### What stays build-time
+
+| Value                                               | Why a container cannot change it                                                                |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `VITE_APP_BASE_URL`                                 | Vite bakes it into every emitted asset URL; it is a build arg of `docker/Dockerfile.production` |
+| `MODE`, `DEV`                                       | Vite decides them while bundling, and dead code is removed on them                              |
+| `VITE_VALIDATE_REQUESTS`, `VITE_VALIDATE_RESPONSES` | Not on the whitelist: read from `import.meta.env` only                                          |
+| `VITE_APP_PORT`                                     | The dev server's port, read in `vite.config.ts`; a production container serves on 80            |
+
+`VITE_SECURITY_*` is a third case: `docker/docker-entrypoint.d/41-generate-security-txt.sh` reads
+them from the container at start, but it writes a file for nginx, not `config.js`
+(see [`security.txt`](#security-txt)).
 
 ## Application
 
@@ -85,7 +142,7 @@ nothing. See [Observability](./observability.md).
 | ---------------------------- | ------------------------------------------------------------------------------------------------ |
 | `VITE_FARO_URL`              | Grafana Faro receiver URL — Alloy `/collect` (empty = off)                                       |
 | `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                   |
-| `VITE_FARO_APP_VERSION`      | App version reported to Faro                                                                     |
+| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default: `package.json`'s version; leave unset)                    |
 | `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                   |
 | `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                     |
 | `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                         |

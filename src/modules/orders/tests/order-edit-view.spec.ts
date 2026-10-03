@@ -141,8 +141,7 @@ const mountFromListCache = (detailOrder: Order) => {
     const wrapper = mount(OrderEdit, {
         props: { id: detailOrder.id },
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     return { wrapper, fetchOrder };
@@ -527,8 +526,7 @@ describe('recording a payment by hand', () => {
         const wrapper = mount(OrderEdit, {
             props: { id: detail.id },
             global: {
-                plugins: [router, vuetify, i18n],
-                stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+                plugins: [router, vuetify, i18n]
             }
         });
 

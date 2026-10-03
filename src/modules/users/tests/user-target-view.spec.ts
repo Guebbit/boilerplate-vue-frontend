@@ -85,7 +85,7 @@ const mountPage = () =>
             // `UserAccessDialog`'s own picker/confirm behaviour is `user-access-dialog.spec.ts`'s
             // job; stubbing it here lets this suite drive its `confirm`/`cancel` events directly,
             // rather than fighting `v-dialog`'s teleport and lazy rendering in jsdom.
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' }, UserAccessDialog: true }
+            stubs: { UserAccessDialog: true }
         }
     });
 

@@ -79,7 +79,7 @@ Big picture: architecture, layers, request flow, and sitemap.
 
 One page per domain, top to bottom: what it owns, who depends on it, its store surface, its screens,
 and every endpoint it calls.
-Start at [the whole map](./modules/) — sixteen domains grouped by subdomain, every node clickable.
+Start at [the whole map](./modules/) — every domain grouped by subdomain, every node clickable.
 
 ### [Tools](./tools/)
 

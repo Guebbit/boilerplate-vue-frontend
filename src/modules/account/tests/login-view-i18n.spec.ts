@@ -66,10 +66,7 @@ vi.mock('vue-router', () => ({
 const mountLogin = () =>
     mount(Login, {
         global: {
-            plugins: [createPinia(), vuetify, i18n],
-            stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' }
-            }
+            plugins: [createPinia(), vuetify, i18n]
         }
     });
 

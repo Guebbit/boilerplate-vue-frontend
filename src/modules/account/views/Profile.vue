@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The profile page: composes the record-edit form with the avatar/role/password/2FA/sessions/
+ * The profile page: composes the record-edit form with the avatar/password/2FA/sessions/
  * addresses/delete panels as siblings, each owning its own store slice. `applyLanguagePreference`
  * re-enters the route under the saved language after a save, mirroring the header's language
  * switcher — routing only, so the locale guard is what actually loads and activates it.

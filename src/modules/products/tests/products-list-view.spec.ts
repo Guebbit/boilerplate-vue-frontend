@@ -82,8 +82,7 @@ const mounted: { unmount: () => void }[] = [];
 const mountList = async () => {
     const wrapper = mount(ProductsList, {
         global: {
-            plugins: [router, vuetify, i18n],
-            stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
+            plugins: [router, vuetify, i18n]
         }
     });
     mounted.push(wrapper);

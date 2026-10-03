@@ -68,7 +68,6 @@ const signUp = () => {
         global: {
             plugins: [vuetify, i18n],
             stubs: {
-                LayoutDefault: { template: '<div><slot /></div>' },
                 HumanCheck: { template: '<div />' }
             }
         }

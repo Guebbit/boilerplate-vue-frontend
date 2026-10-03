@@ -63,7 +63,7 @@ Manual exceptions go through `captureException()` — called from `src/infrastru
 | ----------------------- | ------------------------------------------------------ |
 | `VITE_FARO_URL`         | Alloy Faro receiver URL — empty disables Faro entirely |
 | `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)         |
-| `VITE_FARO_APP_VERSION` | App version (default `1.0.0`)                          |
+| `VITE_FARO_APP_VERSION` | App version (default: `package.json`'s version)        |
 | `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                 |
 
 The trace-propagation origin is derived from `VITE_API_URL`.

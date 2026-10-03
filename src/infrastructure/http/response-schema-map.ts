@@ -65,9 +65,9 @@ export interface ResponseSchemaRoute {
 /**
  * Backend `x-module` names with no owning frontend module at all (FA55) — `antibot`'s public
  * config/challenge (rendered by whichever form is being guarded, not a module of its own) and
- * `audit-logs`' shop-scoped trail (`GET /audit`; no frontend screen reads it yet — deferred, see
- * the backend's own DECISIONS.md, "Frontend admin screen for webhooks" — audit-logs shares that
- * same deferred slot). A row here moves out the day some module's own file starts claiming it.
+ * `audit-logs`' shop-scoped trail (`GET /audit`: `observability`'s `use-audit-trail` reads it, but
+ * no module's own `response-schemas.ts` claims it, so it stays on this shelf). A row here moves
+ * out the day some module's own file starts claiming it.
  */
 const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set(['antibot', 'audit-logs']);
 
