@@ -95,7 +95,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
     );
 
     /**
-     * `Idempotency-Key` for `submitContact` (B10) — a network error or a 5xx resends the SAME
+     * `Idempotency-Key` for `submitContact` — a network error or a 5xx resends the SAME
      * key, so a lost response never sends the message twice; any other outcome mints a fresh one.
      */
     const contactIdempotencyKey = useIdempotencyKey();

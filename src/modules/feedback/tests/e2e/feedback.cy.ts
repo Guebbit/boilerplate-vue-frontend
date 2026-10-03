@@ -105,7 +105,7 @@ describe('Feedback', () => {
         cy.textareaIn('feedback-notes').should('have.value', 'Called back, waiting on legal.');
     });
 
-    it("clearing a ticket's notes sends null, not the empty string D17c now refuses", () => {
+    it("clearing a ticket's notes sends null, not the empty string the PATCH rule refuses", () => {
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');

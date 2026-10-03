@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'FeedbackInboxPage'
 };
@@ -85,7 +89,7 @@ const statusOptions = computed(() =>
 /**
  * The search form's own status choices — {@link statusOptions} plus a leading "any status" entry,
  * since not filtering is a real choice here that a per-row status select never offers. The "any"
- * row's value is `null`, not `undefined` (FA51) — Vuetify reads an `undefined` item value as "use
+ * row's value is `null`, not `undefined` — Vuetify reads an `undefined` item value as "use
  * the title", which would post the translated label instead of no filter at all.
  *
  * @returns The filter's select items, re-translated on locale change.
