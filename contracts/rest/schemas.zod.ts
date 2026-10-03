@@ -1288,12 +1288,17 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
     })
 });
 /**
- * Returns the most recent audit events, newest first, from the persisted audit trail.
- * Events include auth flows, admin CRUD actions, and security blocks.
+ * Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
+ * security refusals (`security.*`), failed sign-ins, a failed second factor or OAuth
+ * sign-in, a replayed refresh token, worker failures, and a webhook subscription
+ * disabled for failing. Never what a shop's customers did (orders, payments, accounts,
+ * successful sign-ins): that is a shop admin's `GET /audit`.
+ * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
+ * but not readable.
  * Entries are retained for a deployment-configured period (90 days by default) and expire after.
- * `meta.totalItems` counts every event matching the filters, not just the returned page.
- * Requires admin role.
- * @summary Recent audit events
+ * `meta.totalItems` counts every incident matching the filters, not just the returned page.
+ * Requires the platform operator's observability key.
+ * @summary Recent incidents from the audit trail
  */
 export const getObservabilityAuditLogsQueryPageDefault = 1;
 export const getObservabilityAuditLogsQueryPageMax = 10000;
@@ -1511,7 +1516,14 @@ export const GetAccountResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -1562,7 +1574,14 @@ export const ReplaceAccountResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -1613,7 +1632,14 @@ export const UpdateAccountResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -2211,7 +2237,14 @@ export const SignupResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -2416,7 +2449,14 @@ export const ExportAccountDataResponse = zod.strictObject({
             twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            actions: zod
+                .strictObject({
+                    update: zod.boolean(),
+                    ban: zod.boolean(),
+                    delete: zod.boolean()
+                })
+                .optional()
         }),
         roles: zod.array(
             zod.strictObject({
@@ -3190,7 +3230,14 @@ export const ListUsersResponse = zod.strictObject({
                 twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
+                deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod
+                    .strictObject({
+                        update: zod.boolean(),
+                        ban: zod.boolean(),
+                        delete: zod.boolean()
+                    })
+                    .optional()
             })
         ),
         meta: zod.strictObject({
@@ -3210,26 +3257,15 @@ export const ListUsersResponse = zod.strictObject({
     })
 });
 /**
- * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUserBodyUsernameMin = 3;
-export const createUserBodyPasswordMin = 8;
-export const createUserBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
-export const createUserBodySendSetupEmailDefault = false;
 export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const CreateUserBody = zod.strictObject({
     email: zod.email(),
     username: zod.string().min(createUserBodyUsernameMin),
-    password: zod
-        .string()
-        .min(createUserBodyPasswordMin)
-        .regex(createUserBodyPasswordRegExp)
-        .optional(),
-    sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
     role: zod.string().min(1).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
     imageUrl: zod.literal(null).nullish(),
@@ -3264,7 +3300,14 @@ export const CreateUserResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -3324,11 +3367,18 @@ export const GetUserByIdResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const replaceUserByIdPathIdMax = 64;
@@ -3340,19 +3390,9 @@ export const replaceUserByIdHeaderIfMatchMax = 200;
 export const ReplaceUserByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(replaceUserByIdHeaderIfMatchMax).optional()
 });
-export const replaceUserByIdBodyPasswordMin = 8;
-export const replaceUserByIdBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
 export const replaceUserByIdBodyUsernameMin = 3;
 export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const ReplaceUserByIdBody = zod.strictObject({
-    email: zod.email(),
-    password: zod
-        .string()
-        .min(replaceUserByIdBodyPasswordMin)
-        .regex(replaceUserByIdBodyPasswordRegExp)
-        .optional(),
     username: zod.string().min(replaceUserByIdBodyUsernameMin),
     role: zod.string().min(1),
     active: zod.boolean(),
@@ -3390,7 +3430,14 @@ export const ReplaceUserByIdResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -3406,19 +3453,9 @@ export const updateUserByIdHeaderIfMatchMax = 200;
 export const UpdateUserByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(updateUserByIdHeaderIfMatchMax).optional()
 });
-export const updateUserByIdBodyPasswordMin = 8;
-export const updateUserByIdBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
 export const updateUserByIdBodyUsernameMin = 3;
 export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const UpdateUserByIdBody = zod.strictObject({
-    email: zod.email().optional(),
-    password: zod
-        .string()
-        .min(updateUserByIdBodyPasswordMin)
-        .regex(updateUserByIdBodyPasswordRegExp)
-        .optional(),
     username: zod.string().min(updateUserByIdBodyUsernameMin).optional(),
     role: zod.string().min(1).optional(),
     active: zod.boolean().optional(),
@@ -3456,7 +3493,14 @@ export const UpdateUserByIdResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -3522,7 +3566,14 @@ export const RestoreUserByIdResponse = zod.strictObject({
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -3539,24 +3590,6 @@ export const HardDeleteUserByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(hardDeleteUserByIdHeaderIfMatchMax).optional()
 });
 export const HardDeleteUserByIdResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string()
-});
-/**
- * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
- * @summary Admin-assisted 2FA recovery
- */
-export const adminDisableUserTwoFactorPathIdMax = 64;
-export const adminDisableUserTwoFactorPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AdminDisableUserTwoFactorParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(adminDisableUserTwoFactorPathIdMax)
-        .regex(adminDisableUserTwoFactorPathIdRegExp)
-});
-export const AdminDisableUserTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
@@ -3636,7 +3669,14 @@ export const SearchUsersResponse = zod.strictObject({
                 twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                deletedAt: zod.iso.datetime({ offset: true }).optional()
+                deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod
+                    .strictObject({
+                        update: zod.boolean(),
+                        ban: zod.boolean(),
+                        delete: zod.boolean()
+                    })
+                    .optional()
             })
         ),
         meta: zod.strictObject({
@@ -4034,6 +4074,8 @@ export const ListProductsResponse = zod.strictObject({
                 taxClass: zod.enum(['reduced', 'zero']).optional(),
                 rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
                 sku: zod.string().min(1).optional(),
+                inStock: zod.boolean(),
+                lowStock: zod.boolean(),
                 onHand: zod.number().min(listProductsResponseDataItemsItemOnHandMin).optional(),
                 reserved: zod.number().min(listProductsResponseDataItemsItemReservedMin).optional(),
                 available: zod
@@ -4133,6 +4175,8 @@ export const CreateProductResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(createProductResponseDataOnHandMin).optional(),
         reserved: zod.number().min(createProductResponseDataReservedMin).optional(),
         available: zod.number().min(createProductResponseDataAvailableMin).optional(),
@@ -4238,6 +4282,8 @@ export const GetProductByIdResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(getProductByIdResponseDataOnHandMin).optional(),
         reserved: zod.number().min(getProductByIdResponseDataReservedMin).optional(),
         available: zod.number().min(getProductByIdResponseDataAvailableMin).optional(),
@@ -4324,6 +4370,8 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(replaceProductByIdResponseDataOnHandMin).optional(),
         reserved: zod.number().min(replaceProductByIdResponseDataReservedMin).optional(),
         available: zod.number().min(replaceProductByIdResponseDataAvailableMin).optional(),
@@ -4423,6 +4471,8 @@ export const UpdateProductByIdResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(updateProductByIdResponseDataOnHandMin).optional(),
         reserved: zod.number().min(updateProductByIdResponseDataReservedMin).optional(),
         available: zod.number().min(updateProductByIdResponseDataAvailableMin).optional(),
@@ -4501,6 +4551,8 @@ export const GetProductAdminResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(getProductAdminResponseDataOnHandMin).optional(),
         reserved: zod.number().min(getProductAdminResponseDataReservedMin).optional(),
         available: zod.number().min(getProductAdminResponseDataAvailableMin).optional(),
@@ -4559,6 +4611,8 @@ export const RestoreProductByIdResponse = zod.strictObject({
         taxClass: zod.enum(['reduced', 'zero']).optional(),
         rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
         sku: zod.string().min(1).optional(),
+        inStock: zod.boolean(),
+        lowStock: zod.boolean(),
         onHand: zod.number().min(restoreProductByIdResponseDataOnHandMin).optional(),
         reserved: zod.number().min(restoreProductByIdResponseDataReservedMin).optional(),
         available: zod.number().min(restoreProductByIdResponseDataAvailableMin).optional(),
@@ -4680,6 +4734,8 @@ export const SearchProductsResponse = zod.strictObject({
                 taxClass: zod.enum(['reduced', 'zero']).optional(),
                 rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
                 sku: zod.string().min(1).optional(),
+                inStock: zod.boolean(),
+                lowStock: zod.boolean(),
                 onHand: zod.number().min(searchProductsResponseDataItemsItemOnHandMin).optional(),
                 reserved: zod
                     .number()

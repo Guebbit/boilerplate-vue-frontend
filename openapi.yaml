@@ -1117,13 +1117,18 @@ paths:
     get:
       tags:
         - Observability
-      summary: Recent audit events
+      summary: Recent incidents from the audit trail
       description: |
-        Returns the most recent audit events, newest first, from the persisted audit trail.
-        Events include auth flows, admin CRUD actions, and security blocks.
+        Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
+        security refusals (`security.*`), failed sign-ins, a failed second factor or OAuth
+        sign-in, a replayed refresh token, worker failures, and a webhook subscription
+        disabled for failing. Never what a shop's customers did (orders, payments, accounts,
+        successful sign-ins): that is a shop admin's `GET /audit`.
+        Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
+        but not readable.
         Entries are retained for a deployment-configured period (90 days by default) and expire after.
-        `meta.totalItems` counts every event matching the filters, not just the returned page.
-        Requires admin role.
+        `meta.totalItems` counts every incident matching the filters, not just the returned page.
+        Requires the platform operator's observability key.
       operationId: getObservabilityAuditLogs
       security:
         - bearerAuth: []
@@ -2853,7 +2858,7 @@ paths:
       tags:
         - Users
       summary: Create user
-      description: Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
+      description: Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
       operationId: createUser
       security:
         - bearerAuth: []
@@ -2983,7 +2988,7 @@ paths:
       tags:
         - Users
       summary: Replace user
-      description: Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
+      description: Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
       operationId: replaceUserById
       security:
         - bearerAuth: []
@@ -3197,35 +3202,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "412":
           $ref: "#/components/responses/PreconditionFailed"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: users
-  /users/{id}/2fa:
-    delete:
-      tags:
-        - Users
-      summary: Admin-assisted 2FA recovery
-      description: Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
-      operationId: adminDisableUserTwoFactor
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPathParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/Success"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -4119,6 +4095,8 @@ paths:
                 $ref: "#/components/schemas/CartResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4160,6 +4138,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -4201,6 +4181,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -4234,6 +4216,8 @@ paths:
                 $ref: "#/components/schemas/CartResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4278,6 +4262,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -4312,6 +4298,8 @@ paths:
                 $ref: "#/components/schemas/CartResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -4349,6 +4337,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -4384,6 +4374,8 @@ paths:
                 $ref: "#/components/schemas/CartSummaryResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4433,6 +4425,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -4475,6 +4469,8 @@ paths:
                 $ref: "#/components/schemas/CartResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -7621,7 +7617,7 @@ components:
       type: string
       minLength: 8
       pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
-      description: A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
+      description: A password being SET by its owner — signup, reset (or the setup link) and change. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
     Locale:
       type: string
       description: BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
@@ -7928,6 +7924,26 @@ components:
         deletedAt:
           type: string
           format: date-time
+        actions:
+          $ref: "#/components/schemas/UserActions"
+    UserActions:
+      type: object
+      additionalProperties: false
+      required:
+        - update
+        - ban
+        - delete
+      description: "What the requesting caller may do to this account. Each is the route's permission key AND the rank rule: an account at the caller's own level or above is `false` for all three, the caller's own account is judged by the keys alone."
+      properties:
+        update:
+          type: boolean
+          description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `users.any.update`, and the account ranks below the caller. Never covers a credential: no caller changes another person's email, password or second factor."
+        ban:
+          type: boolean
+          description: Whether the account may be deactivated or reactivated — `users.any.ban`, and the account ranks below the caller.
+        delete:
+          type: boolean
+          description: Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account ranks below the caller.
     TaxClass:
       type: string
       enum:
@@ -7953,6 +7969,8 @@ components:
         - title
         - price
         - currency
+        - inStock
+        - lowStock
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -7973,21 +7991,29 @@ components:
           $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
+        inStock:
+          type: boolean
+          readOnly: true
+          description: Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`).
+        lowStock:
+          type: boolean
+          readOnly: true
+          description: What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false.
         onHand:
           type: integer
           minimum: 0
           readOnly: true
-          description: Units physically present, whether or not they are spoken for.
+          description: Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
         reserved:
           type: integer
           minimum: 0
           readOnly: true
-          description: Units held by an open order — present, but not for sale.
+          description: Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
         available:
           type: integer
           minimum: 0
           readOnly: true
-          description: What a customer may actually buy. Derived from the two counters above.
+          description: Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
         description:
           type: string
         active:
@@ -8229,7 +8255,7 @@ components:
         - override
         - invoice
         - withdraw
-      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles."
       properties:
         transitions:
           type: array
@@ -11361,11 +11387,6 @@ components:
         username:
           type: string
           minLength: 3
-        password:
-          $ref: "#/components/schemas/PasswordNew"
-        sendSetupEmail:
-          type: boolean
-          default: false
         role:
           type: string
           minLength: 1
@@ -11388,11 +11409,6 @@ components:
         username:
           type: string
           minLength: 3
-        password:
-          $ref: "#/components/schemas/PasswordNew"
-        sendSetupEmail:
-          type: boolean
-          default: false
         role:
           type: string
           minLength: 1
@@ -11420,15 +11436,10 @@ components:
       type: object
       additionalProperties: false
       required:
-        - email
         - username
         - role
         - active
       properties:
-        email:
-          $ref: "#/components/schemas/Email"
-        password:
-          $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
           minLength: 3
@@ -11456,15 +11467,10 @@ components:
       type: object
       additionalProperties: false
       required:
-        - email
         - username
         - role
         - active
       properties:
-        email:
-          $ref: "#/components/schemas/Email"
-        password:
-          $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
           minLength: 3
@@ -11491,10 +11497,6 @@ components:
       type: object
       additionalProperties: false
       properties:
-        email:
-          $ref: "#/components/schemas/Email"
-        password:
-          $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
           minLength: 3
@@ -11522,10 +11524,6 @@ components:
       type: object
       additionalProperties: false
       properties:
-        email:
-          $ref: "#/components/schemas/Email"
-        password:
-          $ref: "#/components/schemas/PasswordNew"
         username:
           type: string
           minLength: 3
@@ -12259,6 +12257,8 @@ components:
         - title
         - price
         - currency
+        - inStock
+        - lowStock
         - translations
       description: A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source.
       properties:
@@ -12281,6 +12281,14 @@ components:
           $ref: "#/components/schemas/RateType"
         sku:
           $ref: "#/components/schemas/Sku"
+        inStock:
+          type: boolean
+          readOnly: true
+          description: See `Product.inStock`.
+        lowStock:
+          type: boolean
+          readOnly: true
+          description: See `Product.lowStock`.
         onHand:
           type: integer
           minimum: 0
@@ -12899,7 +12907,7 @@ components:
           description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.
         refund:
           type: boolean
-          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking.
+          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, and false when the order's buyer ranks at or above the caller (`OUTRANKED`).
     Payment:
       type: object
       additionalProperties: false
@@ -13296,7 +13304,7 @@ components:
         - approve
         - decline
         - receive
-      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle.
+      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. All three are false when the buyer of the return's order ranks at or above the caller (`OUTRANKED`).
       properties:
         approve:
           type: boolean
@@ -14440,6 +14448,9 @@ x-error-codes:
   ORDER_PRODUCT_UNAVAILABLE:
     status: 409
     description: A line on this order references a product that was deleted or deactivated since the intent was created.
+  OUTRANKED:
+    status: 403
+    description: "The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior."
   PAYLOAD_TOO_LARGE:
     status: 413
     description: The request body exceeds this deployment's size limit.

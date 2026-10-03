@@ -108,6 +108,8 @@ export const ERROR_CODES = {
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
     /** 409 — A line on this order references a product that was deleted or deactivated since the intent was created. */
     ORDER_PRODUCT_UNAVAILABLE: 'ORDER_PRODUCT_UNAVAILABLE',
+    /** 403 — The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior. */
+    OUTRANKED: 'OUTRANKED',
     /** 413 — The request body exceeds this deployment's size limit. */
     PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
     /** 409 — The card issuer or gateway declined the charge. */

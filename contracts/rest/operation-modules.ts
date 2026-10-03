@@ -10,7 +10,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     addCartItem: 'cart',
     addWishlistItem: 'wishlist',
     adjustStock: 'inventory',
-    adminDisableUserTwoFactor: 'users',
     approveReturn: 'returns',
     cancelOrderById: 'orders',
     cancelPendingEmailChange: 'account',

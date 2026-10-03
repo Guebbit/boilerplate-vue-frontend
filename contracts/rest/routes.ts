@@ -176,7 +176,6 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/returns\/[^/]+\/decline$/, schemaName: "DeclineReturnResponse", bodySchemaName: "DeclineReturnBody", module: "returns" },
     { method: "POST", pattern: /^\/returns\/[^/]+\/receive$/, schemaName: "ReceiveReturnResponse", bodySchemaName: "ReceiveReturnBody", module: "returns" },
     { method: "GET", pattern: /^\/returns\/[^/]+$/, schemaName: "GetReturnByIdResponse", bodySchemaName: undefined, module: "returns" },
-    { method: "DELETE", pattern: /^\/users\/[^/]+\/2fa$/, schemaName: "AdminDisableUserTwoFactorResponse", bodySchemaName: undefined, module: "users" },
     { method: "DELETE", pattern: /^\/users\/[^/]+\/hard$/, schemaName: "HardDeleteUserByIdResponse", bodySchemaName: undefined, module: "users" },
     { method: "POST", pattern: /^\/users\/[^/]+\/restore$/, schemaName: "RestoreUserByIdResponse", bodySchemaName: undefined, module: "users" },
     { method: "DELETE", pattern: /^\/users\/[^/]+$/, schemaName: "DeleteUserByIdResponse", bodySchemaName: "DeleteUserByIdBody", module: "users" },

@@ -14,7 +14,8 @@ export const PERMISSION_ACTIONS = [
     "sweep",
     "override",
     "start",
-    "receive"
+    "receive",
+    "ban"
 ] as const;
 
 /** One of {@link PERMISSION_ACTIONS}. */

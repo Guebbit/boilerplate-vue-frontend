@@ -57,7 +57,7 @@ export type Email = string;
 export type Password = string;
 
 /**
- * A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
+ * A password being SET by its owner — signup, reset (or the setup link) and change. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
  * @minLength 8
  * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
  */
@@ -225,6 +225,18 @@ export interface AbilitiesEnvelope {
     data: Abilities;
 }
 
+/**
+ * What the requesting caller may do to this account. Each is the route's permission key AND the rank rule: an account at the caller's own level or above is `false` for all three, the caller's own account is judged by the keys alone.
+ */
+export interface UserActions {
+    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `users.any.update`, and the account ranks below the caller. Never covers a credential: no caller changes another person's email, password or second factor. */
+    update: boolean;
+    /** Whether the account may be deactivated or reactivated — `users.any.ban`, and the account ranks below the caller. */
+    ban: boolean;
+    /** Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account ranks below the caller. */
+    delete: boolean;
+}
+
 export interface User {
     id: Id;
     email: Email;
@@ -245,6 +257,7 @@ export interface User {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
+    actions?: UserActions;
 }
 
 export interface UserEnvelope {
@@ -294,18 +307,22 @@ export interface Product {
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
+    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). */
+    readonly inStock: boolean;
+    /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
+    readonly lowStock: boolean;
     /**
-     * Units physically present, whether or not they are spoken for.
+     * Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
      * @minimum 0
      */
     readonly onHand?: number;
     /**
-     * Units held by an open order — present, but not for sale.
+     * Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
      * @minimum 0
      */
     readonly reserved?: number;
     /**
-     * What a customer may actually buy. Derived from the two counters above.
+     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
      * @minimum 0
      */
     readonly available?: number;
@@ -464,7 +481,7 @@ export const OrderReturnStatus = {
 } as const;
 
 /**
- * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree.
+ * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles.
  */
 export interface OrderActions {
     /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
@@ -2336,8 +2353,6 @@ export interface CreateUserRequest {
     email: Email;
     /** @minLength 3 */
     username: string;
-    password?: PasswordNew;
-    sendSetupEmail?: boolean;
     /** @minLength 1 */
     role?: string;
     active?: boolean;
@@ -2349,8 +2364,6 @@ export interface CreateUserRequestMultipart {
     email: Email;
     /** @minLength 3 */
     username: string;
-    password?: PasswordNew;
-    sendSetupEmail?: boolean;
     /** @minLength 1 */
     role?: string;
     active?: boolean;
@@ -2365,8 +2378,6 @@ export interface DeleteUserRequest {
 }
 
 export interface ReplaceUserByIdRequest {
-    email: Email;
-    password?: PasswordNew;
     /** @minLength 3 */
     username: string;
     /** @minLength 1 */
@@ -2388,8 +2399,6 @@ export interface ReplaceUserByIdRequest {
 }
 
 export interface ReplaceUserByIdRequestMultipart {
-    email: Email;
-    password?: PasswordNew;
     /** @minLength 3 */
     username: string;
     /** @minLength 1 */
@@ -2405,8 +2414,6 @@ export interface ReplaceUserByIdRequestMultipart {
 }
 
 export interface UpdateUserByIdRequest {
-    email?: Email;
-    password?: PasswordNew;
     /** @minLength 3 */
     username?: string;
     /** @minLength 1 */
@@ -2428,8 +2435,6 @@ export interface UpdateUserByIdRequest {
 }
 
 export interface UpdateUserByIdRequestMultipart {
-    email?: Email;
-    password?: PasswordNew;
     /** @minLength 3 */
     username?: string;
     /** @minLength 1 */
@@ -2860,6 +2865,10 @@ export interface ProductAdmin {
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
+    /** See `Product.inStock`. */
+    readonly inStock: boolean;
+    /** See `Product.lowStock`. */
+    readonly lowStock: boolean;
     /** @minimum 0 */
     readonly onHand?: number;
     /** @minimum 0 */
@@ -3207,7 +3216,7 @@ export interface CreatePaymentIntentRequest {
 export interface PaymentActions {
     /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, and false when the order's buyer ranks at or above the caller (`OUTRANKED`). */
     refund: boolean;
 }
 
@@ -3499,7 +3508,7 @@ export interface ReturnLine {
 }
 
 /**
- * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle.
+ * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. All three are false when the buyer of the return's order ranks at or above the caller (`OUTRANKED`).
  */
 export interface ReturnActions {
     /** Whether `POST /returns/{id}/approve` would be accepted. */
@@ -5316,12 +5325,17 @@ export const getObservabilityMetricsOverview = (
 };
 
 /**
- * Returns the most recent audit events, newest first, from the persisted audit trail.
- * Events include auth flows, admin CRUD actions, and security blocks.
+ * Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
+ * security refusals (`security.*`), failed sign-ins, a failed second factor or OAuth
+ * sign-in, a replayed refresh token, worker failures, and a webhook subscription
+ * disabled for failing. Never what a shop's customers did (orders, payments, accounts,
+ * successful sign-ins): that is a shop admin's `GET /audit`.
+ * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
+ * but not readable.
  * Entries are retained for a deployment-configured period (90 days by default) and expire after.
- * `meta.totalItems` counts every event matching the filters, not just the returned page.
- * Requires admin role.
- * @summary Recent audit events
+ * `meta.totalItems` counts every incident matching the filters, not just the returned page.
+ * Requires the platform operator's observability key.
+ * @summary Recent incidents from the audit trail
  */
 export const getObservabilityAuditLogs = (
     params?: GetObservabilityAuditLogsParams,
@@ -6198,7 +6212,7 @@ export const listUsers = (
 };
 
 /**
- * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUser = (
@@ -6217,7 +6231,7 @@ export const createUser = (
 };
 
 /**
- * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUserWithMultipart = (
@@ -6227,12 +6241,6 @@ export const createUserWithMultipart = (
     const formData = new FormData();
     formData.append(`email`, createUserRequestMultipart.email);
     formData.append(`username`, createUserRequestMultipart.username);
-    if (createUserRequestMultipart.password !== undefined) {
-        formData.append(`password`, createUserRequestMultipart.password);
-    }
-    if (createUserRequestMultipart.sendSetupEmail !== undefined) {
-        formData.append(`sendSetupEmail`, createUserRequestMultipart.sendSetupEmail.toString());
-    }
     if (createUserRequestMultipart.role !== undefined) {
         formData.append(`role`, createUserRequestMultipart.role);
     }
@@ -6290,7 +6298,7 @@ export const getUserById = (
 };
 
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const replaceUserById = (
@@ -6310,7 +6318,7 @@ export const replaceUserById = (
 };
 
 /**
- * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. `password` keeps its own flow and is never cleared this way; leave it out to keep it unchanged. The image is outside the representation too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
+ * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
  * @summary Replace user
  */
 export const replaceUserByIdWithMultipart = (
@@ -6319,10 +6327,6 @@ export const replaceUserByIdWithMultipart = (
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    formData.append(`email`, replaceUserByIdRequestMultipart.email);
-    if (replaceUserByIdRequestMultipart.password !== undefined) {
-        formData.append(`password`, replaceUserByIdRequestMultipart.password);
-    }
     formData.append(`username`, replaceUserByIdRequestMultipart.username);
     formData.append(`role`, replaceUserByIdRequestMultipart.role);
     formData.append(`active`, replaceUserByIdRequestMultipart.active.toString());
@@ -6400,12 +6404,6 @@ export const updateUserByIdWithMultipart = (
     options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
     const formData = new FormData();
-    if (updateUserByIdRequestMultipart.email !== undefined) {
-        formData.append(`email`, updateUserByIdRequestMultipart.email);
-    }
-    if (updateUserByIdRequestMultipart.password !== undefined) {
-        formData.append(`password`, updateUserByIdRequestMultipart.password);
-    }
     if (updateUserByIdRequestMultipart.username !== undefined) {
         formData.append(`username`, updateUserByIdRequestMultipart.username);
     }
@@ -6481,17 +6479,6 @@ export const hardDeleteUserById = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
-};
-
-/**
- * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
- * @summary Admin-assisted 2FA recovery
- */
-export const adminDisableUserTwoFactor = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
-) => {
-    return orvalMutator<SuccessResponse>({ url: `/users/${id}/2fa`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8609,9 +8596,6 @@ export type UpdateUserByIdWithMultipartResult = NonNullable<
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
-export type AdminDisableUserTwoFactorResult = NonNullable<
-    Awaited<ReturnType<typeof adminDisableUserTwoFactor>>
->;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
 export type CreateFeedbackRequestResult = NonNullable<
     Awaited<ReturnType<typeof createFeedbackRequest>>
