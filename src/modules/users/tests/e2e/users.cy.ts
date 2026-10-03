@@ -1,8 +1,8 @@
 /**
  * @module
  * Cypress end-to-end spec driving the real app: list, create, edit, soft-delete/restore and
- * hard-delete for the admin-only users module. FA123: only a11y and visual specs existed here
- * before this — no functional coverage of create/edit/delete/list behavior at all.
+ * hard-delete for the admin-only users module. The a11y and visual specs are separate;
+ * this one is the functional coverage of create, edit, delete and list.
  */
 
 /** A value unique enough per run that two specs racing the same backend cannot collide. */

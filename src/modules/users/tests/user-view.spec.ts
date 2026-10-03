@@ -2,7 +2,7 @@
  * @module
  * Mounts the real user detail page against a real, memory-history router — same template as
  * `orders/tests/order-view.spec.ts`. Scoped to one thing: the "History" link only renders for a
- * visitor who actually holds `audit.any.read` (CASL subject `AuditLog`) — see FE_PARITY_0924 G2.
+ * visitor who actually holds `audit.any.read` (CASL subject `AuditLog`).
  * `watchUser` is stubbed so the store's own fetch never runs; the user is seeded directly into
  * the dictionary instead.
  */
@@ -101,7 +101,7 @@ describe('the "History" link', () => {
         expect(link.attributes('href')).toBe('/en/audit?target=u1');
     });
 
-    it('stays absent on a build with no observability module, even for a visitor who holds the ability (FA86)', () => {
+    it('stays absent on a build with no observability module, even for a visitor who holds the ability', () => {
         // `observability` is not one of `users`' declared MODULE_EDGES reaches, so `AuditLog` is
         // guarded by `router.hasRoute` rather than assumed — a build missing the module must not
         // throw.

@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'UsersListPage'
 };
@@ -95,7 +99,7 @@ const deletedOptions = useDeletedFilterOptions();
 
 /**
  * Options of the "active" filter select. The "all" row's value is `null`, not `undefined`
- * (FA51) — Vuetify reads an `undefined` item value as "use the title", which would post the
+ * — Vuetify reads an `undefined` item value as "use the title", which would post the
  * translated label instead of no filter at all.
  *
  * @returns The localized options, re-translated on locale change.

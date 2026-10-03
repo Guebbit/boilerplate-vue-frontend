@@ -211,7 +211,7 @@ describe('UserCreate', () => {
         });
     });
 
-    // FA52: FormCard's submit button bound :loading only, and in Vuetify 4.1.5 loading does not
+    // FormCard's submit button bound :loading only, and in Vuetify 4.1.5 loading does not
     // disable the button — a real second click (or Enter) while the first create was still in
     // flight fired a second request. FormCard now also binds :disabled="loading", which a
     // browser (and jsdom) refuses to dispatch a click's default action through.

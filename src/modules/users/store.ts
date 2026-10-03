@@ -128,7 +128,7 @@ export const useUsersStore = defineStore('users', () => {
                     : apiCreateUser(userData, options)
                 ).then((response) => response.data),
 
-            // PATCH, not PUT (AUDIT_0924 D17d): `UserEdit.vue` sends only the fields its form
+            // PATCH, not PUT: `UserEdit.vue` sends only the fields its form
             // actually holds (`email`, `password`, an upload) — a PUT's every omitted field would
             // be cleared instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
             //
@@ -221,7 +221,7 @@ export const useUsersStore = defineStore('users', () => {
      * cache holds a record fresh for an hour (`staleTime`), so a plain re-fetch right after this
      * call would hand back the same cached, still-enabled record `User.vue` just loaded — `forced`
      * treats it as stale and re-asks the server, which is what makes `currentUser.twoFactorEnabledAt`
-     * actually flip and the button gated on it (B9, `User.vue`) disappear without a full page reload.
+     * actually flip and the button gated on it (`User.vue`) disappear without a full page reload.
      *
      * @param userId - Identifier of the user whose 2FA is being stripped.
      * @returns A promise resolving once the factor is gone and the record has been force-refetched,

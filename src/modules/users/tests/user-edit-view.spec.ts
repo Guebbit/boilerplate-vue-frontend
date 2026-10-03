@@ -120,7 +120,7 @@ describe('UserEdit', () => {
             .then(() => {
                 expect(wrapper.findComponent(UserAccessDialog).props('target')).toBeUndefined();
                 const body = lastPatchBody();
-                // FA123: proves the PATCH is a shape the real endpoint accepts, not just the
+                // Proves the PATCH is a shape the real endpoint accepts, not just the
                 // shape this test expected — `UpdateUserByIdBody` is a `strictObject`, so a stray
                 // key this assertion never thought to name would fail it too.
                 const sent = contractRequest(schemas.UpdateUserByIdBody, body);
@@ -130,11 +130,11 @@ describe('UserEdit', () => {
     });
 
     /**
-     * The bug e2e's users.cy.ts (FA123) caught: a record loaded with no phone/website/locale
+     * The bug e2e's users.cy.ts caught: a record loaded with no phone/website/locale
      * defaults those fields to `''` (see the form's own initial-value note), and sending `''`
      * back trips the contract's own `minLength`/pattern with a live 422 — every edit of a user
      * who has never set any of the three failed, unrelated to what was actually being changed.
-     * `contractRequest` (also FA123) is what actually caught it: the old `toMatchObject` here
+     * `contractRequest` is what actually caught it: the old `toMatchObject` here
      * only checked the fields it named, and `locale: ''` slipped past that unnoticed.
      */
     it('omits phone, website and locale from the PATCH when the record has none set', () => {

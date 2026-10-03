@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'UserTargetPage'
 };
@@ -63,8 +67,7 @@ const session = useSessionStore();
 
 /**
  * Router instance, for the `hasRoute` check below — `admin` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so the history button's link is guarded rather than assumed
- * (FA86).
+ * `MODULE_EDGES` entry declares, so the history button's link is guarded rather than assumed.
  */
 const router = useRouter();
 
@@ -350,7 +353,7 @@ const handleDisableTwoFactor = () => {
                     <InlineErrorAlert :message="accessError" data-test="user-manage-access-error" />
 
                     <!--
-                        B9: a user with no second factor has nothing to strip — showing this
+                        A user with no second factor has nothing to strip — showing this
                         unconditionally let an admin write a misleading "disabled 2FA" entry to an
                         audit trail for someone who never had it enabled.
                     -->

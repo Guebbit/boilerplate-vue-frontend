@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'UserEditPage'
 };
@@ -78,7 +82,7 @@ const { watchUser, updateUser, fetchUser } = useUsersStore();
 const { currentUser, loading } = storeToRefs(useUsersStore());
 
 /**
- * Edit form data model — every editable field the record has, per FE_PARITY_0924: the row/detail
+ * Edit form data model — every editable field the record has: the row/detail
  * `UserAccessDialog` shortcuts are conveniences on top of this form, never a replacement for it.
  */
 interface UserEditForm {

@@ -10,6 +10,10 @@
  * `UserEdit.vue` and `UserAccessDialog.vue` — the one place all three now read it from, so it
  * never drifts into three separately typed lists.
  */
+
+/**
+ * Roles the admin forms offer, in the order their select lists them.
+ */
 export const USER_ROLES = [
     'unverified',
     'customer',

@@ -123,8 +123,8 @@ describe('User (detail page)', () => {
         });
     });
 
-    // B9: this button used to show for every user regardless of whether they had a second factor
-    // to strip, so clicking it for one who did not wrote a misleading "disabled 2FA" audit entry.
+    // Clicking it for a user with no second factor to strip would write a misleading "disabled
+    // 2FA" audit entry, so the button must not show for one.
     it('hides "strip two-factor" for a user with no second factor enabled', () => {
         queueGetResponses(aUser({ id: 'u1' }));
         const wrapper = mountPage();

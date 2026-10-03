@@ -166,7 +166,7 @@ describe('useUsersStore', () => {
     });
 
     describe('updateUser', () => {
-        // AUDIT_0924 D17d: PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
+        // PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
         // and a PUT would clear every field it omits (RFC 9110 §9.3.4).
         it('patches JSON when no new avatar is attached', () =>
             useUsersStore()

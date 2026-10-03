@@ -70,6 +70,8 @@ const session = useSessionStore();
  * The role/active values on screen — seeded on open, below.
  */
 const selectedRole = ref('');
+
+/** The active flag on screen, seeded on open. */
 const selectedActive = ref(true);
 
 /**
