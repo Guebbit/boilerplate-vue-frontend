@@ -30,7 +30,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** The `src` folder, two levels above this file. */
 const SOURCE_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../src');
+
+/** Where every module lives. */
 const MODULES_ROOT = path.join(SOURCE_ROOT, 'modules');
 
 /** Every `.ts` and `.vue` file below `directory`, recursively. */
@@ -48,6 +51,7 @@ const clauseNames = (clause: string): string[] =>
         .map((name) => name.trim().replace(/^type\s+/, ''))
         .filter(Boolean);
 
+/** Every module's folder name. */
 const moduleNames = (): string[] =>
     readdirSync(MODULES_ROOT).filter((entry) =>
         statSync(path.join(MODULES_ROOT, entry)).isDirectory()

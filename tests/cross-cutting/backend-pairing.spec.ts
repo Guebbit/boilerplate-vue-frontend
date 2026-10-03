@@ -49,6 +49,7 @@ interface Pairing {
     why?: string;
 }
 
+/** Each frontend module's backend counterpart(s), with a reason when the names differ. */
 const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     account: {
         counterparts: ['account', 'addresses', 'users'],
@@ -92,7 +93,7 @@ const isSameName = (name: string, pairing: Pairing): boolean =>
     pairing.counterparts.length === 1 && pairing.counterparts[0] === name;
 
 /**
- * FA128: every name `BACKEND_PAIRING` claims as a counterpart, checked against the backend's OWN
+ * Every name `BACKEND_PAIRING` claims as a counterpart, checked against the backend's OWN
  * module list — closing the gap the rest of this file always had: everything above only checks
  * this table against ITSELF, so a counterpart renamed or removed on the other side never made a
  * red test here, only a person noticing by hand.
@@ -123,6 +124,7 @@ const readBackendModuleNames = (file = BACKEND_MODULES_FILE): string[] | undefin
     return [...union[1].matchAll(/'([\w-]+)'/g)].map(([, name]) => name);
 };
 
+/** The backend's module names, or `undefined` when they cannot be read (no sibling checkout). */
 const backendModuleNames = readBackendModuleNames();
 
 describe('the cross-repository pairing', () => {
@@ -171,7 +173,7 @@ describe('the cross-repository pairing', () => {
     });
 
     /**
-     * FA128 — the check the rest of this file never made: does the backend actually have what
+     * The check the rest of this file never made: does the backend actually have what
      * `BACKEND_PAIRING` says it does. Skipped, not failed, when there is no sibling checkout to
      * read (see {@link readBackendModuleNames}); real names only, so `demo`'s empty list and
      * nothing else passes it vacuously.
@@ -205,7 +207,7 @@ describe('the cross-repository pairing', () => {
      * Rule 4 — the reverse direction. Everything above only ever checks `BACKEND_PAIRING`
      * against itself or against the sibling's names; none of it notices a real backend module
      * that no entry's `counterparts` names at all. Skipped, not failed, for the same reason as
-     * FA128: no sibling checkout, nothing to compare against.
+     * the check above: no sibling checkout, nothing to compare against.
      */
     it.skipIf(backendModuleNames === undefined)(
         'gives a reason for every backend module this client has no home for',

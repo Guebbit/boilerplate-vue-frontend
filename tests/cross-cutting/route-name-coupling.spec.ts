@@ -1,5 +1,5 @@
 /**
- * A route name is a dependency channel `MODULE_EDGES` cannot see (FA86).
+ * A route name is a dependency channel `MODULE_EDGES` cannot see.
  *
  * `eslint.config.ts`'s boundary rules stop a module `import`-ing a sibling it has no coupling
  * for — but `router.push({ name: 'OrderTarget' })` is a plain string, invisible to that check.

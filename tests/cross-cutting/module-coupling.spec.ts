@@ -1,5 +1,5 @@
 /**
- * A module's `@api` calls stay inside its declared coupling (FA59, `MODULE_EDGES`).
+ * A module's `@api` calls stay inside its declared coupling (`MODULE_EDGES`).
  *
  * `MODULE_EDGES` already stops a module reaching a sibling's SOURCE (`@/modules/<x>`) —
  * `eslint.config.ts`'s boundary rules. It said nothing about a module calling another module's
@@ -20,7 +20,10 @@ import { fileURLToPath } from 'node:url';
 import { OPERATION_MODULES } from '../../contracts/rest/operation-modules';
 import { MODULE_EDGES } from '../../scripts/module-edges';
 
+/** The `src` folder, two levels above this file. */
 const SOURCE_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../src');
+
+/** Where every module lives. */
 const MODULES_ROOT = path.join(SOURCE_ROOT, 'modules');
 
 /** Every `.ts` and `.vue` file below `directory`, recursively, specs excluded. */
@@ -40,6 +43,7 @@ const clauseNames = (clause: string): string[] =>
         .filter(Boolean)
         .map((name) => name.split(/\s+as\s+/)[0].trim());
 
+/** Every module's folder name. */
 const moduleNames = (): string[] =>
     readdirSync(MODULES_ROOT).filter((entry) =>
         statSync(path.join(MODULES_ROOT, entry)).isDirectory()

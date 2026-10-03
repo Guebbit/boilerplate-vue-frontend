@@ -1,5 +1,5 @@
 /**
- * The entry chunk stays small enough that a first load does not pay for the whole app — FA94.
+ * The entry chunk stays small enough that a first load does not pay for the whole app.
  *
  * Runs a real production build (`vite build`, into a scratch output directory so it never
  * collides with a developer's own `dist/`) and inspects what actually ships: `index.html`'s
@@ -7,12 +7,12 @@
  * lazy route or module chunk that only loads when visited.
  *
  * ── Why a budget, and why this number ────────────────────────────────────────────────────────
- * Before FA94, `@api/schemas` (the generated Zod contract, ~1,700 schemas) was imported at module
- * scope from every domain's `response-schemas.ts`, so it rode into the entry chunk whether or not
- * a build ever validated a response with it. Measured on this branch before the fix: 767 KB raw /
- * 171 KB gzip. After moving the schemas behind a lazy `import()` (`main.ts`, gated on
- * `shouldValidateResponses()`) and stripping their generated `.describe()` calls
- * (`scripts/contracts/strip-schema-descriptions.ts`): 407 KB raw / 132 KB gzip.
+ * Before the schemas loaded lazily, `@api/schemas` (the generated Zod contract, ~1,700 schemas)
+ * was imported at module scope from every domain's `response-schemas.ts`, so it rode into the
+ * entry chunk whether or not a build ever validated a response with it. Measured on this branch
+ * before the fix: 767 KB raw / 171 KB gzip. After moving the schemas behind a lazy `import()`
+ * (`main.ts`, gated on `shouldValidateResponses()`) and stripping their generated `.describe()`
+ * calls (`scripts/contracts/strip-schema-descriptions.ts`): 407 KB raw / 132 KB gzip.
  *
  * The budget below is 460 KB raw — headroom over the current, measured size for ordinary feature
  * growth, but far under the pre-fix number, so a schema import (or an equally large dependency)

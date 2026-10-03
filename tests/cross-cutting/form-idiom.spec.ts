@@ -30,7 +30,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
+/** The repo root, two levels above this file. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+/** Where every module lives. */
 const MODULES_ROOT = path.join(REPO_ROOT, 'src/modules');
 
 /** Every `.vue` file a module ships, excluding its own specs. */
@@ -40,6 +43,7 @@ const componentFiles = (): string[] =>
         .map((entry) => path.relative(REPO_ROOT, path.join(entry.parentPath, entry.name)))
         .filter((file) => !file.split(path.sep).includes('tests'));
 
+/** A repo-relative file's text. */
 const sourceOf = (file: string): string => readFileSync(path.join(REPO_ROOT, file), 'utf8');
 
 /** The files that build form state at all — the population every rule applies to. */
@@ -94,7 +98,7 @@ const propertyNamesOf = (objectLiteral: ts.ObjectLiteralExpression): string[] =>
         .map((name) => name.text);
 
 /**
- * FA127: the real property names of a `useStructureFormValidation(...)` call's OPTIONS argument
+ * The real property names of a `useStructureFormValidation(...)` call's OPTIONS argument
  * — the composable's own last positional argument, per `IStructureFormValidationOptions` — parsed
  * as an AST rather than matched as a substring of the call's source text.
  *
@@ -174,7 +178,7 @@ describe('one form idiom', () => {
     });
 });
 
-describe('optionKeysOf — FA127: real keys, not a substring match', () => {
+describe('optionKeysOf — real keys, not a substring match', () => {
     it('reads every key style the options object can use', () => {
         const call = `useStructureFormValidation(data, schema, {
             revalidateOn: locale,
@@ -187,7 +191,7 @@ describe('optionKeysOf — FA127: real keys, not a substring match', () => {
     });
 
     it('is not fooled by the word sitting in a comment or an unrelated string', () => {
-        // The pre-FA127 substring check (`call.includes('revalidateOn')`) would have read this
+        // A plain substring check (`call.includes('revalidateOn')`) would have read this
         // as complete; nothing here actually supplies it.
         const call = `useStructureFormValidation(data, schema, {
             // revalidateOn: locale, — deliberately left out for now

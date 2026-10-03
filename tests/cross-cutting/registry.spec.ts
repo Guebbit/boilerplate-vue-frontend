@@ -28,6 +28,7 @@ const routeNamesOf = (routes: RouteRecordRaw[]): string[] =>
         ...routeNamesOf(route.children ?? [])
     ]);
 
+/** One `[name, module]` pair per enabled module, for `describe.each`. */
 const moduleCases = enabledModules.map((appModule) => [appModule.name, appModule] as const);
 
 describe('the enabled registry', () => {
@@ -162,7 +163,7 @@ describe.each(localeCodes)('locale dictionaries — %s', (locale) => {
  * Unused keys.
  *
  * A key nobody reads is either a dead leftover (a refactor stopped translating something and
- * left the dictionary behind — FA78's `generic.administrator`/`generic.standard-user`, orphaned
+ * left the dictionary behind — the old `generic.administrator`/`generic.standard-user`, orphaned
  * when role labels switched to plain data) or a misplaced one, moved here as a temporary home and
  * never actually wired to a component. Either way it is drift nothing else catches: a locale file
  * has no compiler, so a stale entry sits there forever unless something reads the source back.

@@ -30,9 +30,16 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { supportedLanguages } from '@/i18n';
 
+/** The repo root (tests run from it). */
 const ROOT = process.cwd();
+
+/** Where every module lives. */
 const MODULES_ROOT = path.resolve(ROOT, 'src/modules');
+
+/** The shell's own router, the one routing file outside a module. */
 const SHELL_ROUTER = path.resolve(ROOT, 'src/app/router/index.ts');
+
+/** The shell's own a11y sweep. */
 const SHELL_SWEEP = path.resolve(ROOT, 'tests/e2e/specs/a11y.cy.ts');
 
 /**
@@ -75,7 +82,7 @@ const routePathsIn = (source: string): string[] => {
 
 /**
  * The locale segment a sweep's own visited paths open with — built from `supportedLanguages`
- * (FA127) rather than a hardcoded `en|it`, so a bundled language added or removed changes what
+ * rather than a hardcoded `en|it`, so a bundled language added or removed changes what
  * this scans for without anyone remembering to edit this file too.
  */
 const LOCALE_PREFIX = supportedLanguages
@@ -118,6 +125,7 @@ const routeMatcher = (route: string): RegExp => {
     return new RegExp(`^${pattern || '/'}$`);
 };
 
+/** A file's text, or an empty string when it does not exist. */
 const readSource = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : '');
 
 /** One place that declares routes, and the sweep that should cover them. */
@@ -133,6 +141,7 @@ const modules = readdirSync(MODULES_ROOT).filter((name) =>
     existsSync(path.join(MODULES_ROOT, name, 'module.ts'))
 );
 
+/** One module as a routed unit: its routes, the paths its sweep visits, whether it has one. */
 const moduleUnit = (name: string): RoutedUnit => {
     const sweepFile = path.join(MODULES_ROOT, name, 'tests/e2e/a11y.cy.ts');
     return {
@@ -148,6 +157,7 @@ const routedModules = modules
     .filter((name) => existsSync(path.join(MODULES_ROOT, name, 'routes.ts')))
     .map((name) => moduleUnit(name));
 
+/** The shell as a routed unit, from its router and its sweep. */
 const shell: RoutedUnit = {
     name: 'shell (src/app/router/index.ts)',
     routes: routePathsIn(readSource(SHELL_ROUTER)),

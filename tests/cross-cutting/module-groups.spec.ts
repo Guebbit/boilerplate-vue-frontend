@@ -2,11 +2,11 @@
  * Every enabled module sits on the `foundation | shop` axis — `MODULE_GROUPS` in
  * `scripts/module-groups.ts`, the FE mirror of the backend's own `module.yaml#group` field.
  *
- * The map is hand-maintained on purpose (`DECISIONS_0926_7_FRONTEND_LAYOUT.md`, "Folder split —
- * Answer": a label, no folder move): a module with no entry fails here rather than defaulting
- * silently, which is what makes adding one a deliberate choice instead of an omission nobody
- * notices. `eslint.config.ts`'s `foundation-may-not-import-shop` rule reads the same map to lock
- * the direction in at import time; this spec is the completeness half of that guarantee.
+ * The map is hand-maintained on purpose (a label, no folder move): a module with no entry fails
+ * here rather than defaulting silently, which is what makes adding one a deliberate choice
+ * instead of an omission nobody notices. `eslint.config.ts`'s `foundation-may-not-import-shop`
+ * rule reads the same map to lock the direction in at import time; this spec is the
+ * completeness half of that guarantee.
  */
 
 import { describe, expect, it } from 'vitest';

@@ -27,6 +27,8 @@ import { i18n, loadLocale, registerLocaleContributors, translate } from '@/i18n'
  */
 
 const EN = 'Not an email';
+
+/** The same message in Italian. */
 const IT = 'Non è un indirizzo email';
 
 /*
@@ -43,6 +45,7 @@ const madeUpSchema = z.object({
     email: z.email({ error: () => translate('madeUpForm.emailInvalid') })
 });
 
+/** Switches the active locale and waits for the render tick. */
 const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 
 /**

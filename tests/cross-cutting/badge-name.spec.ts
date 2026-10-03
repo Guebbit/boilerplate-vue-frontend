@@ -27,7 +27,10 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+/** The repo root (tests run from it). */
 const ROOT = process.cwd();
+
+/** Where the app's source lives. */
 const SOURCE_ROOT = path.resolve(ROOT, 'src');
 
 /** Every `.vue` file the app ships, excluding anything under a `tests` folder. */
@@ -69,6 +72,7 @@ const badgeTagsOf = (source: string): string[] => {
 /** Whether one badge tag carries something a screen reader can announce. */
 const isNamed = (tag: string): boolean => /(^|\s)(:?label|:?aria-label|aria-hidden)[\s=]/.test(tag);
 
+/** Every badge tag in the shipped components, with its file. */
 const badgesInSource = (): { file: string; tag: string }[] =>
     componentFiles(SOURCE_ROOT).flatMap((file) =>
         badgeTagsOf(readFileSync(file, 'utf8')).map((tag) => ({

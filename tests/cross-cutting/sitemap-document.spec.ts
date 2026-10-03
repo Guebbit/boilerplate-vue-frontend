@@ -19,11 +19,16 @@ import { fileURLToPath } from 'node:url';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
 
+/** The generated sitemap page. */
 const PAGE = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../../docs/theory/sitemap.md'
 );
+
+/** Marks where the generated table starts in the page. */
 const START = '<!-- sitemap:start -->';
+
+/** Marks where the generated table ends in the page. */
 const END = '<!-- sitemap:end -->';
 
 /**

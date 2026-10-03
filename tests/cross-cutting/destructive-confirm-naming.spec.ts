@@ -6,7 +6,8 @@
  * wording ("delete this item?"); they do not share an identity, and a bare "this" answers a
  * question the visitor did not ask. `feedback-inbox-page.confirm-delete` got this right from the
  * start (`t(key, { subject })`); users, api-keys, webhooks, products, orders and one address
- * confirm did not, until FA83 — this sweep is what stops the next one from drifting back.
+ * confirm did not, until they were fixed — this sweep is what stops the next one from drifting
+ * back.
  *
  * ── What counts as named ─────────────────────────────────────────────────────────────────────
  * The `message` passed to a `color: 'error'` confirm is a `t(key, { ... })` call with interpolation
@@ -24,7 +25,10 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+/** The repo root (tests run from it). */
 const ROOT = process.cwd();
+
+/** Where every module lives. */
 const SOURCE_ROOT = path.resolve(ROOT, 'src/modules');
 
 /**

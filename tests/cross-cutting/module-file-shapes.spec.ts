@@ -29,6 +29,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enabledModules } from '@/modules';
 
+/** Where every module lives. */
 const MODULES_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../src/modules');
 
 /** One entry: the pattern a module-relative path matches, and what that file is. */
@@ -40,7 +41,7 @@ interface FileShape {
     what: string;
 
     /**
-     * FA127: the one module this shape is allowed to appear in, when `what` says "`X` only" —
+     * The one module this shape is allowed to appear in, when `what` says "`X` only" —
      * enforced for real below, rather than left as prose nobody checks. Omitted for a shape any
      * module may use.
      */
@@ -117,7 +118,7 @@ const FILE_SHAPES: readonly FileShape[] = [
         onlyIn: 'locales'
     },
     {
-        // FA127: enforcing `onlyIn` for real (below) caught this label being wrong — `webhooks`
+        // Enforcing `onlyIn` for real (below) caught this label being wrong — `webhooks`
         // has carried its own view-only `types.ts` all along, so "admin only" was never true.
         match: /^types\.ts$/,
         what: 'View-only shapes a domain assembles for its own components that no endpoint answers with directly and the store does not otherwise own.'
@@ -184,7 +185,7 @@ describe('the module file vocabulary', () => {
     });
 
     /**
-     * FA127: a shape's `onlyIn` is enforced for real, not left as prose in `what` that nothing
+     * A shape's `onlyIn` is enforced for real, not left as prose in `what` that nothing
      * checks. Matches on the FIRST shape a file satisfies, same as the vocabulary rule above —
      * `FILE_SHAPES` is ordered most-specific first for exactly this reason.
      */

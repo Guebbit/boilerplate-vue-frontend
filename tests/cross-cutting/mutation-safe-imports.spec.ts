@@ -88,6 +88,7 @@ const UNSAFE_SPECIFIERS = [
     }
 ] as const;
 
+/** One import specifier found in a file, and whether a `Stryker disable` directive guards it. */
 interface Specifier {
     file: string;
     line: number;
@@ -106,6 +107,7 @@ const isGuarded = (lines: string[], line: number): boolean => {
     return false;
 };
 
+/** Every import specifier in one file, each with its line, kind and guard state. */
 const findSpecifiers = (file: string): Specifier[] => {
     const source = readFileSync(path.join(PROJECT_ROOT, file), 'utf8');
     const lines = source.split('\n');
@@ -119,7 +121,10 @@ const findSpecifiers = (file: string): Specifier[] => {
     );
 };
 
+/** The files inside `stryker.config.json`'s `mutate` scope. */
 const mutateScope = readMutateScope();
+
+/** Every specifier across that scope. */
 const specifiers = mutateScope.flatMap((file) => findSpecifiers(file));
 
 describe('import specifiers inside the mutate scope', () => {
