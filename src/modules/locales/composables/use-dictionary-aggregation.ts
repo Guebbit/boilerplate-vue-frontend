@@ -25,8 +25,13 @@ import type { LocaleEntry } from '@types';
  *  (resetting the current page, drafts) beyond what this aggregation is responsible for.
  */
 export function useDictionaryAggregation(tenant: Ref<string>) {
+    /** Toast dispatcher for load failures. */
     const { addMessage } = useNotificationsStore();
+
+    /** Locales store: the language manifest and tenant registry the board reads. */
     const localesStore = useLocalesStore();
+
+    /** Reactive capabilities, tenants and loading flag taken off {@link localesStore}. */
     const { capabilities, tenants, loading } = storeToRefs(localesStore);
 
     /**

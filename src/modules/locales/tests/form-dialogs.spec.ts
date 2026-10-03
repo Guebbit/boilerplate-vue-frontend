@@ -36,6 +36,7 @@ const DUPLICATE_KEY = {
     ]
 };
 
+/** Mount options shared by every dialog: real i18n and Vuetify, `VDialog` rendered inline. */
 const GLOBAL = {
     plugins: [vuetify, i18n],
     stubs: { VDialog: { template: '<div><slot /></div>' } }

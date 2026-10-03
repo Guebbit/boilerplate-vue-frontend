@@ -20,12 +20,14 @@ import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
+/** The tenant the dialog imports into. */
 const TENANT: LocaleTenantDescriptor = {
     id: 'demo-be',
     label: 'Demo backend',
     kind: LocaleTenantKind.backend
 };
 
+/** A well-formed import payload. */
 const VALID_JSON = JSON.stringify({ generic: { 'error-internal': 'Oops' } });
 
 /**

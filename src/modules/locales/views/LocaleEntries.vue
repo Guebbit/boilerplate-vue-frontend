@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'LocaleEntriesPage'
 };
@@ -192,6 +196,7 @@ watch(tag, (nextTag) => {
 // The header needs the manifest and the selects the registry; harmless when the list page
 // already loaded them.
 if (capabilities.value.length === 0) void localesStore.fetchLanguages();
+// Likewise for the tenant registry.
 if (tenants.value.length === 0) void localesStore.fetchTenants();
 
 /**

@@ -2,7 +2,7 @@
  * @module
  * Deletes something that must be deactivated first — the API's guard rail against deleting an
  * active language — restoring it if the delete itself fails, so a failed delete never leaves a
- * silent deactivation behind (FA29).
+ * silent deactivation behind.
  */
 
 /**

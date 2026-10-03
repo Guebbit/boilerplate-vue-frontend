@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'EntityTranslationsPage'
 };
@@ -71,6 +75,8 @@ const session = useSessionStore();
  * The entity this screen edits, from the route.
  */
 const entityType = computed(() => String(route.params.entityType));
+
+/** The entity's id, from the route. */
 const entityId = computed(() => String(route.params.id));
 
 /**
@@ -119,6 +125,8 @@ const activeTab = ref<string>();
  * Whether a fetch or save is in flight.
  */
 const loading = ref(false);
+
+/** Whether a save is in flight. */
 const saving = ref(false);
 
 /**
@@ -147,6 +155,8 @@ const load = () => {
         });
 };
 
+// Vue `watch` over two sources: re-load when either the entity type or id changes.
+// `immediate: true` also loads on mount. https://vuejs.org/api/reactivity-core.html#watch
 watch([entityType, entityId], () => void load(), { immediate: true });
 
 /**

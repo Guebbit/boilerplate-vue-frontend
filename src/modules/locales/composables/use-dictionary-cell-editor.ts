@@ -41,9 +41,16 @@ export function useDictionaryCellEditor(
     baselineAt: (tag: string, key: string) => string | undefined,
     afterWrite: (tag: string) => Promise<unknown>
 ) {
+    /** Translator for the cell messages. */
     const { t } = useI18n();
+
+    /** Toast dispatcher for write outcomes. */
     const { addMessage } = useNotificationsStore();
+
+    /** Confirmation dialog host, asked before a destructive write. */
     const dialogStore = useDialogStore();
+
+    /** Locales store whose entry writes this editor calls. */
     const localesStore = useLocalesStore();
 
     /**

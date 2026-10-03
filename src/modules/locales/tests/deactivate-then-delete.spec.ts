@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { deactivateThenDelete } from '@/modules/locales/domain/deactivate-then-delete.ts';
 
 /**
- * `deactivateThenDelete` — FA29: an active row used to deactivate first (the API's guard rail
- * against deleting one), and a delete failure AFTER that left the row silently deactivated —
- * nothing the visitor asked for, and nothing else undid it.
+ * `deactivateThenDelete`: an active row deactivates first (the API's guard rail against deleting
+ * one), and a delete failure AFTER that must not leave the row silently deactivated — nothing
+ * the visitor asked for, and nothing else would undo it.
  */
 describe('deactivateThenDelete', () => {
     it('deletes an already-inactive row without touching activation at all', () => {

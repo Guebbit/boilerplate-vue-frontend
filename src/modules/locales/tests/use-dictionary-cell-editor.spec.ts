@@ -21,7 +21,11 @@ const OWN_TENANT = 'demo-fe';
 
 /** The store's three writes, re-created per test so call counts start at zero. */
 const addEntry = vi.fn(() => Promise.resolve());
+
+/** Stub for the store's `editEntry`. */
 const editEntry = vi.fn(() => Promise.resolve());
+
+/** Stub for the store's `removeEntry`. */
 const removeEntry = vi.fn(() => Promise.resolve());
 
 /** What `dialogStore.confirm()` resolves with; flipped per test. */

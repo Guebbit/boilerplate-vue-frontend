@@ -214,7 +214,7 @@ describe('useDictionaryAggregation', () => {
     /**
      * `afterWrite` is every write's own courtesy refresh: the column (so the board reflects the
      * save), the manifest's counts, and the RUNNING app's copy of the language — so an edit shows
-     * without a full reload. This only proves the composable asks for that refresh; FA25's actual
+     * without a full reload. This only proves the composable asks for that refresh; the actual
      * fix (bundle plus overrides, merged, re-derived rather than layered onto whatever happens to
      * be loaded) is `locale-overrides.spec.ts`'s job.
      */
