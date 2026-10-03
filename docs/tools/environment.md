@@ -142,7 +142,7 @@ nothing. See [Observability](./observability.md).
 | ---------------------------- | ------------------------------------------------------------------------------------------------ |
 | `VITE_FARO_URL`              | Grafana Faro receiver URL — Alloy `/collect` (empty = off)                                       |
 | `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                   |
-| `VITE_FARO_APP_VERSION`      | App version reported to Faro                                                                     |
+| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default: `package.json`'s version; leave unset)                    |
 | `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                   |
 | `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                     |
 | `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                         |

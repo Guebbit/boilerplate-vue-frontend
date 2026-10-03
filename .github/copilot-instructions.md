@@ -5,7 +5,7 @@ This repo = `boilerplate-vue-frontend`.
 Single package. SPA. Vue 3 + Pinia + Vue Router + OpenAPI-generated client.
 Observability: Grafana Faro (errors + frontend tracing + web-vitals) + Umami (product analytics). Self-hosted local stack — no SaaS.
 
-Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
+Human-facing docs: [README.md](../README.md) · [Getting Started](../docs/getting-started.md) (the paired backend, modes and ports).
 
 ## Mandatory pre-work checklist
 
@@ -71,7 +71,7 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 
 ## Observability brain
 
-All observability code lives in the Pinia store `src/infrastructure/observability.ts`, accessed via `useObservabilityStore()` (or the `useObservability()` composable in components). Never import the Faro SDK or touch `window.umami` directly from a module or a component.
+All observability code lives in the Pinia store `src/infrastructure/observability/store.ts`, accessed via `useObservabilityStore()` (or the `useObservability()` composable in components). Never import the Faro SDK or touch `window.umami` directly from a module or a component.
 
 Two separate jobs — do not conflate them:
 
@@ -105,7 +105,7 @@ closing tab cannot lose it and a console cannot forge it. The names live in the 
 
 - **No PII** in event properties — never send email, name, or personal data.
 - **Check the backend first** — before adding any client-side event, confirm the API cannot report the same fact. A name emitted from both sides writes two rows nothing downstream can tell apart.
-- **Fire-and-forget** — analytics calls must be async-safe; no `await` on `track()`.
+- **Fire-and-forget** — `captureException` and `identifyUser` return nothing; never `await` them.
 - **Two jobs, one store** — Faro handles errors/traces/web-vitals; Umami handles product analytics. No feature-flag provider exists (`isFeatureEnabled()` always returns `false`).
 - **Disabled locally** — Faro is a no-op without `VITE_FARO_URL`; Umami is a no-op without `VITE_UMAMI_WEBSITE_ID`.
 
@@ -115,7 +115,7 @@ closing tab cannot lose it and a console cannot forge it. The names live in the 
 | ----------------------- | -------------------------------------------------------------------- |
 | `VITE_FARO_URL`         | Grafana Alloy Faro receiver URL (empty = Faro disabled)              |
 | `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)                       |
-| `VITE_FARO_APP_VERSION` | App version reported to Faro (default `1.0.0`)                       |
+| `VITE_FARO_APP_VERSION` | App version reported to Faro (default: `package.json`'s version)     |
 | `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                               |
 | `VITE_UMAMI_WEBSITE_ID` | Umami website id (empty = Umami disabled)                            |
 | `VITE_UMAMI_SRC`        | Umami tracker script URL (default `http://localhost:3080/script.js`) |
