@@ -15,6 +15,7 @@ import { signInLocation } from '@/app/router/navigation.ts';
 
 /** Stub for the session restore the router's guard awaits. */
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
+
 // Returns nothing, i.e. "let the navigation through". Left untyped against the real
 // `enforceRouteAccess`: this suite calls it with only the one argument it cares about
 // (`mockImplementationOnce(() => order.push(...))`), which the real 2-argument signature refuses.

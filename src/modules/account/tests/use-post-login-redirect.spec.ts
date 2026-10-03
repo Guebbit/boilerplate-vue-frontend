@@ -20,6 +20,7 @@ const currentRoute = { query: {} as Record<string, unknown> };
 
 /** Stub for `changeLanguage`, which the composable must never call. */
 const changeLanguageMock = vi.fn(() => Promise.resolve());
+
 /** Mutable so a single test can simulate a signed-in profile with a saved locale. */
 const profileState: { profile: { locale?: string } | undefined } = { profile: undefined };
 

@@ -99,8 +99,10 @@ const sourceFile = ts.createSourceFile(
     /* setParentNodes */ true,
     ts.ScriptKind.TS
 );
+
 // `ts.transform(sourceFile, [transformerFactory])`: runs the strip visitor over the whole tree.
 const result = ts.transform(sourceFile, [stripDescribeVisitor]);
+
 // `removeComments: false` (the default) keeps every JSDoc block on the statements this pass
 // leaves untouched — only the `.describe()` calls themselves, and the strings they carried, go.
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });

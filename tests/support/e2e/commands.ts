@@ -15,6 +15,7 @@ const DEMO_RESET_TIMEOUT_MS = 30_000;
 
 /** Longest wait for the app shell to render after a visit. */
 const APP_READY_TIMEOUT_MS = 15_000;
+
 // A live reset shells out to the backend, which empties the database and then BUILDS the shop by
 // driving several hundred real requests through it — measured at ~5s locally, well up from the
 // row-inserting seeder it replaced. The budget keeps its headroom for a cold tsx start and a

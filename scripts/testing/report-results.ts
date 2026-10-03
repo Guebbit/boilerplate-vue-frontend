@@ -122,6 +122,7 @@ const readReport = (file: string): Report => {
 
 /** The report to read: the first CLI argument, else the default location. */
 const reportFile = process.argv[2] ? path.resolve(process.cwd(), process.argv[2]) : DEFAULT_REPORT;
+
 /** The parsed report. */
 const report = readReport(reportFile);
 
@@ -171,6 +172,7 @@ const total = report.numTotalTests ?? 0;
 
 /** How many tests failed. */
 const failed = report.numFailedTests ?? 0;
+
 /** Summed suite time: parallel workers make this larger than the real wall clock. */
 const wall = report.testResults.reduce(
     (sum, suite) => sum + ((suite.endTime ?? 0) - (suite.startTime ?? 0)),

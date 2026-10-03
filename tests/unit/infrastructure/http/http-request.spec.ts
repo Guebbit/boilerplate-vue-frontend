@@ -29,6 +29,7 @@ vi.mock('pinia', async (importOriginal) => ({
 
 /** Mutable per test — `useAnalyticsConsentStore().choice`'s current value. */
 const analyticsConsentChoice = { value: 'unknown' as 'unknown' | 'granted' | 'denied' };
+
 /** Mutable per test — whether Umami is configured (consent is asked). */
 let analyticsGuestConsentEnabled = false;
 
