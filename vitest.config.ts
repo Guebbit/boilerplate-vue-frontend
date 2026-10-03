@@ -51,6 +51,10 @@ export default mergeConfig(
             // See the file itself for why, and for how to go back to 'jsdom'.
             environment: './tests/support/unit/jsdom-quiet-css.environment.ts',
             setupFiles: ['tests/support/unit/setup.ts'],
+            // Vitest's 5 s default is tuned for a developer's machine. CI runs the whole suite
+            // under v8 coverage on a 4-vCPU runner, where mounting a full page spec takes 3-5x
+            // longer and the last tests of a heavy file timed out on a green codebase.
+            testTimeout: 15_000,
             // Two homes, deliberately (decision D4). A module's own specs live inside it, so
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
             // single domain — app, kernel, ui, infrastructure, cross-cutting sweeps — stays
