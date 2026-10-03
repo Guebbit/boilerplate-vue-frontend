@@ -188,7 +188,7 @@ same shape of finding as the backend's own supply-chain table, and the same cave
   both belong at the TLS-terminating proxy in front of it, exactly as on the backend.
 - **§21 Anti-automation beyond the honeypot** — the contact form's honeypot is the only
   human-detection this app ships. No CAPTCHA, no proof-of-work, deliberately — see the backend's
-  `ANTI_AUTOMATION_PLAN.md` for why a boilerplate should not pick a vendor on a project's behalf. <!-- doc-paths:ignore -->
+  `docs/theory/defences/automation-and-abuse.md`, which says why the vendor is a deployment's decision. <!-- doc-paths:ignore -->
 
 ### Found by this walk, not yet answered
 
