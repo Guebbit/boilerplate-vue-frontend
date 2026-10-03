@@ -16,8 +16,13 @@ import { VirtualConsole } from 'jsdom';
 // Type-only, so it is erased before it can hit the deprecated runtime export.
 import type { Environment } from 'vitest/environments';
 
+/** The `type` jsdom stamps on a CSS parse failure. */
 const CSS_PARSING_ERROR = 'css-parsing';
 
+/**
+ * A jsdom `VirtualConsole` that forwards everything to the real console except CSS parse errors.
+ * https://github.com/jsdom/jsdom#virtual-consoles
+ */
 const createFilteredConsole = () => {
     // jsdom swaps `globalThis.console` for its own on boot, and that one routes back
     // into this virtual console — resolve it lazily below and the message loops instead
@@ -46,6 +51,7 @@ const createFilteredConsole = () => {
     return virtualConsole;
 };
 
+/** Vitest's built-in jsdom environment, reused for everything but the console. */
 const jsdomEnvironment = builtinEnvironments.jsdom;
 
 // Built here rather than in vitest.config.ts: the config is serialized to the worker
@@ -59,6 +65,11 @@ const withFilteredConsole = (options: Record<string, unknown>) => ({
     }
 });
 
+/**
+ * Vitest custom environment: the built-in jsdom one with the filtered console injected.
+ * `viteEnvironment: 'client'` makes Vite transform modules for the browser, as jsdom expects.
+ * https://vitest.dev/guide/environment.html#custom-environment
+ */
 const environment: Environment = {
     name: 'jsdom-quiet-css',
     viteEnvironment: 'client',
@@ -66,4 +77,5 @@ const environment: Environment = {
     setupVM: (options) => jsdomEnvironment.setupVM!(withFilteredConsole(options))
 };
 
+/** The environment Vitest loads for the specs that name it. */
 export default environment;

@@ -10,7 +10,7 @@
  * which is precisely the silent-pass this helper exists to prevent.
  *
  * The dictionaries wire synchronously, same as `main.ts`. The response-schema chunk loads lazily
- * (FA94/FA-D2) and — same as `main.ts` — is only requested when `shouldValidateResponses()` says
+ * and — same as `main.ts` — is only requested when `shouldValidateResponses()` says
  * validation actually runs, which under Vitest's default `MODE: 'test'` it does not: this stays a
  * `(): void` on purpose so none of its ~90 call sites need to become async for a load most of them
  * never trigger. A spec that stubs `VITE_VALIDATE_RESPONSES=true` and asserts on validation timing
@@ -29,6 +29,7 @@ import { registerLocaleContributors } from '@/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
+/** Wires every enabled module's dictionaries (and response schemas, when validating) into the core. */
 export const wireModulesIntoCore = (): void => {
     registerLocaleContributors(collectModuleLocales(enabledModules));
     if (shouldValidateResponses()) {

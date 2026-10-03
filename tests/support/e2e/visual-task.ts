@@ -34,6 +34,7 @@ const PIXEL_THRESHOLD = 0.15;
 /** Fraction of the image allowed to differ before this counts as a regression. */
 const MAX_DIFFERING_RATIO = 0.002;
 
+/** What the compare task is asked to check. */
 export interface CompareOptions {
     /** Snapshot name, used for the baseline and diff filenames. */
     name: string;
@@ -52,6 +53,7 @@ export interface CompareOptions {
     update: boolean;
 }
 
+/** What the compare task reports back to the spec. */
 export interface CompareResult {
     /** `true` when the snapshot matches, or when a baseline was just created. */
     passed: boolean;

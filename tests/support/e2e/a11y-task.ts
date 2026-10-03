@@ -27,6 +27,7 @@ export interface A11yViolationRecord {
     nodes: { target: string[]; html: string }[];
 }
 
+/** One page's axe result, as `cy.checkPageA11y()` sends it to the record task. */
 export interface A11yRecordRequest {
     /** `Cypress.spec.relative` — what the file is named after. */
     spec: string;
@@ -37,12 +38,14 @@ export interface A11yRecordRequest {
     violations: A11yViolationRecord[];
 }
 
+/** One audited page inside a report: where it was, when, and what axe found. */
 interface A11yReportEntry {
     url: string;
     recordedAt: string;
     violations: A11yViolationRecord[];
 }
 
+/** One spec's report file: its entries keyed by the page's human name. */
 interface A11yReport {
     spec: string;
     entries: Record<string, A11yReportEntry>;
@@ -52,6 +55,7 @@ interface A11yReport {
 export const specSafeName = (spec: string): string =>
     spec.replace(/\.ts$/, '').replaceAll(/[^\dA-Za-z]+/g, '-');
 
+/** Reads a spec's report, or a fresh empty one when there is none or it is unreadable. */
 const readReport = (file: string, spec: string): A11yReport => {
     try {
         return JSON.parse(readFileSync(file, 'utf8')) as A11yReport;

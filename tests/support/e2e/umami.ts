@@ -33,6 +33,8 @@ export interface UmamiSession {
  * How long Umami is given to make a fire-and-forget write readable.
  */
 export const INGEST_TIMEOUT_MS = 20_000;
+
+/** Pause between polls of Umami's API. */
 export const POLL_INTERVAL_MS = 1000;
 
 /**

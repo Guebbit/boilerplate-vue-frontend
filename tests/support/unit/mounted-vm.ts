@@ -4,7 +4,7 @@
  * — typed through `ComponentPublicInstance` once, here, instead of at every call site.
  *
  * TypeScript-ESLint cannot fully resolve a `.vue` SFC's own instance type in a `VueWrapper`
- * (FA95: `allowComponentTypeUnsafety` is what used to paper over exactly this), so a raw
+ * (the `allowComponentTypeUnsafety` lint option would paper over exactly this), so a raw
  * `wrapper.vm.$nextTick()` or `.vm.$emit(...)` is unsafe everywhere it is spelled out directly.
  * The cast happens once, behind a name, the same reasoning as `asStub<T>()`.
  */

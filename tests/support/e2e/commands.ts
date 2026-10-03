@@ -12,6 +12,8 @@ import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail
  * load, since the FIRST restore of a process may still be building it.
  */
 const DEMO_RESET_TIMEOUT_MS = 30_000;
+
+/** Longest wait for the app shell to render after a visit. */
 const APP_READY_TIMEOUT_MS = 15_000;
 // A live reset shells out to the backend, which empties the database and then BUILDS the shop by
 // driving several hundred real requests through it — measured at ~5s locally, well up from the
@@ -19,6 +21,9 @@ const APP_READY_TIMEOUT_MS = 15_000;
 // slower CI disk.
 const LIVE_RESET_TIMEOUT_MS = 60_000;
 
+/**
+ * Adds this file's custom commands to Cypress's `Chainable` type.
+ */
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
     namespace Cypress {
@@ -55,7 +60,7 @@ declare global {
             loginAs(role?: E2ERole): Chainable<void>;
 
             /**
-             * FA123: logs the current visitor out and a different one in, in the SAME tab and
+             * Logs the current visitor out and a different one in, in the SAME tab and
              * without a `cy.visit()` reload — through the account menu's real logout, the nav
              * bar's own login link, and the login form, exactly as a visitor clicking through
              * would. `loginAs` always starts from `/en/login` via `cy.visit`, which is a fresh
@@ -750,6 +755,7 @@ Cypress.Commands.add('navigateTo', (path: string) => {
     cy.get(`header nav a[href="${path}"]`).filter(':visible').first().click();
 });
 
+/** The menu button each `navigateViaMenu` target opens first. */
 const MENU_ACTIVATOR = { account: '[data-test=user-menu]', admin: '[data-test=admin-menu]' };
 
 Cypress.Commands.add('navigateViaMenu', (menu: 'account' | 'admin', path: string) => {
@@ -1105,7 +1111,11 @@ let inFlight = 0;
 
 /** How long one settle poll waits, how many polls it may take, and how many quiet polls count. */
 const SETTLE_POLL_MS = 100;
+
+/** Most polls one settle may take before it gives up. */
 const SETTLE_MAX_POLLS = 100;
+
+/** Consecutive quiet polls that count as settled. */
 const SETTLE_QUIET_POLLS = 2;
 
 Cypress.Commands.add('trackNetwork', () => {
@@ -1121,6 +1131,10 @@ Cypress.Commands.add('trackNetwork', () => {
     });
 });
 
+/**
+ * Polls until no tracked request is in flight for `SETTLE_QUIET_POLLS` polls in a row, or throws
+ * after `SETTLE_MAX_POLLS` polls.
+ */
 const settle = (pollsLeft: number, quietPolls: number): void => {
     if (quietPolls >= SETTLE_QUIET_POLLS) return;
     if (pollsLeft <= 0)

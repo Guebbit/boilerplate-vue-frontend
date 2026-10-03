@@ -66,6 +66,7 @@ interface WebhookSubscriptionLike {
     eventTypes: string[];
 }
 
+/** The `ApiKey` fields the a11y sweep reads (structural, like {@link WebhookSubscriptionLike}). */
 interface ApiKeyLike {
     id: string;
     name: string;
@@ -83,6 +84,7 @@ interface ApiKeyLike {
  */
 const PUBLIC_PAGE_SIZE = 100;
 
+/** Adds this file's fixture commands to Cypress's `Chainable` type. */
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
     namespace Cypress {

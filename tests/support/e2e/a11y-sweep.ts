@@ -71,6 +71,7 @@ type A11ySweepEntry = readonly [name: string, route: A11ySweepRoute] | A11ySweep
 /** Selector of the app bar's theme toggle — `data-test`, so the `/it/` sweep finds it too. */
 const THEME_TOGGLE = '[data-test=theme-toggle]';
 
+/** Expands the terse `[name, route]` spelling into a full sweep case. */
 const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
     // `Array.isArray` narrows its argument to `any[]` in the standard lib typings — a stdlib
     // quirk, not a real `any` — so the tuple shape is restored by a cast rather than read

@@ -129,6 +129,7 @@ export const seedAccount = (role: E2ERole): ScenarioAccount => {
     );
 };
 
+/** Adds this file's scenario commands to Cypress's `Chainable` type. */
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
     namespace Cypress {

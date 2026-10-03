@@ -21,6 +21,7 @@ export interface AdminApiRequest {
     body?: Record<string, unknown>;
 }
 
+/** Headers every JSON request here sends. */
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 /** The envelope both paired backends answer with; `data` is the payload the caller wants. */
@@ -33,6 +34,7 @@ const unwrap = <T>(response: Response, context: string): Promise<T> =>
         return payload.data as T;
     });
 
+/** Logs in as the given account and resolves its bearer token. */
 const login = (apiUrl: string, email: string, password: string): Promise<string> =>
     fetch(`${apiUrl}/account/login`, {
         method: 'POST',
@@ -42,6 +44,10 @@ const login = (apiUrl: string, email: string, password: string): Promise<string>
         .then((response) => unwrap<{ token: string }>(response, 'POST /account/login'))
         .then(({ token }) => token);
 
+/**
+ * Cypress task: one authenticated call to the backend API as the given account, resolving the
+ * unwrapped `data` payload. Logs in first, so no session is shared with the spec's browser.
+ */
 export const adminApi = <T>({
     apiUrl,
     path,
