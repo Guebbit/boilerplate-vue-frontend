@@ -42,7 +42,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const methods = ref<ShippingMethod[]>([]);
 
     /**
-     * Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`, E12) —
+     * Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) —
      * checkout's own real enforcement; this is only what narrows the address form's country
      * choices so a shopper never picks one it would refuse.
      */

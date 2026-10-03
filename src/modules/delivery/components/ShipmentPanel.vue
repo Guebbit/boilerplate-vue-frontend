@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ShipmentPanel'
 };
@@ -10,7 +14,7 @@ export default {
  * Single-file component: `<script setup>` renders one of five states off the order's own
  * `actions` and shipment — not yet started, digital and awaiting fulfilment, not yet shippable,
  * ready to ship, or in transit/arrived. Every write control gates on the order's own `actions`
- * (FA36/B3), never a locally re-derived status or permission check — the tracking-code field is
+ * never a locally re-derived status or permission check — the tracking-code field is
  * the one exception, reading `tracked` live off `GET /delivery/methods` (a published fact, not a
  * lifecycle rule).
  */
@@ -105,7 +109,7 @@ const { shipment: rawShipment, methods, loading } = storeToRefs(deliveryStore);
  * This panel's own parcel, discarding a stale or mismatched record. The store's `shipment` is one
  * shared ref: this page component reuses the same panel instance across orders (no remount on a
  * route param change alone, per `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS
- * order landing after `orderId` has already moved on must not render as this order's parcel (FA24).
+ * order landing after `orderId` has already moved on must not render as this order's parcel.
  */
 const shipment = computed(() =>
     rawShipment.value?.orderId === orderId ? rawShipment.value : undefined
@@ -127,7 +131,7 @@ const trackingRequired = computed(
 
 /**
  * Whether an override holder may force this order to `shipped` right now — straight off the
- * order's own `actions.override` (FA36/B3), never a locally mirrored sequence: the server already
+ * order's own `actions.override`, never a locally mirrored sequence: the server already
  * excludes `cancelled` and any status the order has left behind.
  */
 const canOverrideShip = computed(() => (override ?? []).includes(OrderStatus.shipped));
@@ -239,7 +243,7 @@ void deliveryStore.fetchMethods();
 
 /**
  * Fetches the shipment on mount AND whenever `orderId` changes — `immediate: true` covers the
- * mount case, the watch covers navigating to a different order without a remount (FA24).
+ * mount case, the watch covers navigating to a different order without a remount.
  */
 watch(
     () => orderId,

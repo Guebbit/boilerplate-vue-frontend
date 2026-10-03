@@ -1,8 +1,8 @@
 /**
  * @module
  * `ShippingSelector.vue` — the cart's method picker. Scoped to what is this component's own
- * logic: that it renders one radio per `options` entry, already priced by the caller (FA-D6/B3,
- * never re-derived here), and that it still fetches the shared, unfiltered methods list once on
+ * logic: that it renders one radio per `options` entry, already priced by the caller
+ * (never re-derived here), and that it still fetches the shared, unfiltered methods list once on
  * mount — for the ship-to list and the free-above hint, not the fetch itself, already covered in
  * `delivery/tests/store.spec.ts`.
  */

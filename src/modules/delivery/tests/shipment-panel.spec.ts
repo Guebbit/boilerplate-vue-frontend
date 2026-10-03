@@ -4,7 +4,7 @@
  * delivery store's own fetches stubbed.
  *
  * Scoped to what is this component's own logic: which of the four template branches renders off
- * the `canShip`/`canDeliver`/`override` props (FA36/B3) — not `deliveryStore.start`/`.ship`/
+ * the `canShip`/`canDeliver`/`override` props — not `deliveryStore.start`/`.ship`/
  * `.deliver` themselves, which `delivery/tests/store.spec.ts` already covers, and not the server's
  * own eligibility rules behind those props, which `orders`' own suites cover.
  */
@@ -120,7 +120,7 @@ describe('the digital-fulfilment door', () => {
     });
 
     /**
-     * The same catch FA35 gave `markShipped`/`markDelivered`, covered for `markFulfilled` too.
+     * The same catch `markShipped`/`markDelivered` have, covered for `markFulfilled` too.
      */
     it('shows a 409 as the inline error, instead of silently doing nothing', () => {
         const wrapper = mountPanel({ orderId: 'o1', canFulfill: true });
@@ -165,8 +165,8 @@ describe('with no shipment yet', () => {
     });
 
     /**
-     * FA35: `ship`/`deliver` used to be `.then` chains with no `.catch` at all — a 422 (tracking
-     * required), a 409 (someone shipped it first) or a step-up failure showed nothing.
+     * `ship`/`deliver` must catch a failure: a 422 (tracking required), a 409 (someone shipped it
+     * first) or a step-up failure must show an inline error, never nothing.
      */
     it('shows a 409 on ship as the inline error, instead of silently doing nothing', () => {
         const wrapper = mountPanel({ orderId: 'o1', canShip: true });
@@ -257,12 +257,12 @@ describe('with a shipment already recorded', () => {
 });
 
 /**
- * FA24: the store's `shipment` ref is shared across every order this panel instance is ever
+ * The store's `shipment` ref is shared across every order this panel instance is ever
  * given — `Order.vue` reuses the same instance across orders (`watchOrder`, no remount on a route
  * param change alone) — so it must both re-fetch on a new `orderId` and refuse to render a parcel
  * left over from the order it just moved on from.
  */
-describe('re-checking the record belongs to this order (FA24)', () => {
+describe('re-checking the record belongs to this order', () => {
     it('re-fetches when orderId changes without a remount', () => {
         const store = useDeliveryStore();
         const wrapper = mountPanel({ orderId: 'o1' });

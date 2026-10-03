@@ -134,7 +134,7 @@ describe('fetchMethods', () => {
     });
 
     /**
-     * E12: the deployment's ship-to list, alongside the methods it was fetched with — narrows
+     * The deployment's ship-to list, alongside the methods it was fetched with — narrows
      * the address form's country choices at checkout without a separate round trip.
      */
     it('mirrors the ship-to countries list', () => {

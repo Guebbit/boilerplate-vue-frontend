@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'ShippingSelector'
 };
@@ -8,7 +12,7 @@ export default {
 /**
  * @module
  * Single-file component: `<script setup>` drives a radio group bound to `defineModel`, one radio
- * per fitting, already-priced `options` entry (FA-D6/B3) — the cart's own answer, not a client
+ * per fitting, already-priced `options` entry — the cart's own answer, not a client
  * computation. `shipToCountries` still comes from the delivery store's unfiltered catalogue, the
  * one fact `options` does not carry.
  */
@@ -49,7 +53,7 @@ const methodId = defineModel<string | undefined>();
 const requiresAddress = defineModel<boolean | undefined>('requiresAddress');
 
 /**
- * The deployment's ship-to list (E12) — mirrored out of the delivery store the same way
+ * The deployment's ship-to list — mirrored out of the delivery store the same way
  * {@link requiresAddress} is, so `Cart.vue` can narrow `AddressPicker`'s country select without
  * reaching past this component into a store `cart` may not import directly.
  */
@@ -110,7 +114,7 @@ watch(
 );
 
 /**
- * Mirrors the store's own ship-to list out to the caller (E12), the same pattern as
+ * Mirrors the store's own ship-to list out to the caller, the same pattern as
  * {@link requiresAddress} above.
  */
 watch(
