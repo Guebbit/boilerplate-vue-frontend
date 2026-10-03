@@ -7,11 +7,10 @@
  *
  * Then the other half of "shared device": a logout in another tab reaches this one over the
  * `session` BroadcastChannel. The spec posts that message itself, standing in for the other tab.
- * This tab must end up signed out, with the moderator's cart gone from the bar too.
+ * This tab must end up signed out, with the second person's cart gone from the bar too.
  *
- * The second person is the moderator: it holds `cart.self.checkout`, so it is a shopper too. Its
- * orders list is not a leak check (it reads every order, `orders.any.read`), so it is not used as
- * one.
+ * The second person is the pending-email customer, the seeded second shopper (staff hold no
+ * shopping key, so none of them could be one).
  */
 import {
     addOpenProductToCart,
@@ -34,13 +33,13 @@ describe('FR11 · One device, two people', () => {
         cy.get('[data-test=nav-badge]').should('exist');
         cy.get('[data-test=pinned-Cart]').invoke('text').should('match', /\d/);
 
-        cy.step('the moderator signs in on the same tab: the bar shows nothing of it');
-        cy.switchUser('moderator');
+        cy.step('the second person signs in on the same tab: the bar shows nothing of it');
+        cy.switchUser('pendingEmail');
         cy.get('[data-test=nav-badge]').should('not.exist');
         // An empty cart still writes its total: zero, not the customer's.
         cy.get('[data-test=pinned-Cart]').should('contain.text', '0.00');
 
-        cy.step('the moderator opens the same product while the wishlist is slow to answer');
+        cy.step('the second person opens the same product while the wishlist is slow to answer');
         // The heart refetches on mount, so a leak would only show while that answer is in flight.
         cy.intercept('GET', '**/wishlist', (request) => {
             request.on('response', (response) => {
@@ -53,7 +52,7 @@ describe('FR11 · One device, two people', () => {
         cy.wait('@wishlist');
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
 
-        cy.step("the moderator fills a cart of their own: one line, not the customer's");
+        cy.step("the second person fills a cart of their own: one line, not the customer's");
         addOpenProductToCart();
         cy.get('[data-test=nav-badge]').should('contain.text', '1');
 

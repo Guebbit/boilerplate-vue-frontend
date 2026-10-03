@@ -62,7 +62,7 @@ describe('CU13 · My order history', () => {
                     );
                 });
 
-                for (const foreign of ['order.softDeleted', 'order.ownerPending']) {
+                for (const foreign of ['order.softDeleted', 'order.otherPending']) {
                     cy.subjectId(foreign).then((orderId) => {
                         expect(
                             mine.map((order) => order.id),

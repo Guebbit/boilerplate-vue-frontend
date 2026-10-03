@@ -146,7 +146,7 @@ declare global {
              * change with `cy.restore('blank')` mid-spec, where the accounts do not. Named
              * `subjectId` rather than `subject`, which Cypress reserves for its own chain state.
              *
-             * @param name - a guarantee name, e.g. `order.ownerPending` or `product.rich`
+             * @param name - a guarantee name, e.g. `order.otherPending` or `product.rich`
              */
             subjectId(name: string): Chainable<string>;
 

@@ -1,8 +1,8 @@
 // requires-module: account, inventory, users
 /**
  * @module
- * AT7 · Staff accounts. The admin creates a warehouse account with a role and a language, asking
- * for a setup email instead of typing a password. The mail arrives in that language, its link
+ * AT7 · Staff accounts. The admin creates a warehouse account with a role and a language and
+ * no password: every new account is mailed a setup link. The mail arrives in that language, its link
  * sets the password, and the new staff member signs in to exactly the warehouse's menu. The admin
  * then edits phone, website and avatar, and meets the stale-record guard when someone else saved
  * first.
@@ -54,13 +54,12 @@ describe('AT7 · Staff accounts', () => {
         cy.skipUnlessMailbox();
         cy.loginAs('admin');
 
-        cy.step('create the account: role, language, setup email instead of a password');
+        cy.step('create the account: role and language, and no password to type');
         cy.visit('/en/users/create');
         cy.get('[data-test=user-email] input').type(STAFF.email);
         cy.get('[data-test=user-username] input').type(STAFF.username);
-        cy.get('[data-test=user-send-setup-email] input').check();
-        // A setup email is what makes a password optional: the field is shut.
-        cy.get('[data-test=user-password] input').should('be.disabled');
+        // The account sets its own password through the mailed link: the form has no field for it.
+        cy.get('[data-test=user-password]').should('not.exist');
         cy.pickOption('[data-test=user-role]', 'warehouse');
         cy.pickOption('[data-test=user-locale]', 'italian');
         cy.get('#user-create-page form').submit();

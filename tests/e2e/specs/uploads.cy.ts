@@ -39,7 +39,6 @@ describe('Image upload', () => {
                 .first()
                 .should('not.be.disabled')
                 .type('uploader');
-            cy.get('input[type=password]').should('not.be.disabled').type('Hunter2hunter2!');
             selectSampleImage();
             cy.get('form').submit();
 

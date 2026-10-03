@@ -4,7 +4,7 @@
  * AC20 · The link in my mail went stale. A mailed link is good for a while and once: a verify link
  * dies after a day, a reset link after an hour, a deletion link the moment it is used. Each dead
  * link answers on its own page, in words, and a fresh request works. The last half is the invite:
- * an admin creates a user with "send setup email", and the recipient sets a password from it.
+ * an admin creates a user (a setup mail always goes out), and the recipient sets a password from it.
  *
  * Time passes by moving the demo backend's clock (`cy.travel`), so this is a demo-only journey.
  * The windows are the backend's `NODE_EMAIL_VERIFY_TTL_MS` (24 h) and `NODE_PASSWORD_RESET_TTL_MS`
@@ -157,12 +157,11 @@ describe('AC20 · The link in my mail went stale', () => {
         });
         cy.logout();
 
-        cy.step('an admin invites a person with "send setup email"');
+        cy.step('an admin invites a person: no password is typed, a setup mail goes out');
         cy.loginAs('admin');
         cy.visit('/en/users/create');
         cy.get('[data-test=user-email] input').type(INVITEE_EMAIL);
         cy.get('[data-test=user-username] input').type('invited-person');
-        cy.get('[data-test=user-send-setup-email] input').check({ force: true });
         cy.get('form').submit();
         cy.url().should('not.include', '/create');
         cy.logout();

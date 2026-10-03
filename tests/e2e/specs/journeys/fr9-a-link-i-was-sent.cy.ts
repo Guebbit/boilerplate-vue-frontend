@@ -41,7 +41,7 @@ describe('FR9 · I was sent a link, but I am not logged in', () => {
         });
 
         cy.step("someone else's order is a not-found page, not a page stuck loading");
-        cy.subjectId('order.ownerPending').then((strangersOrder) => {
+        cy.subjectId('order.otherPending').then((strangersOrder) => {
             cy.visit(`/en/orders/${strangersOrder}`);
         });
         cy.get('#error-page').should('exist');

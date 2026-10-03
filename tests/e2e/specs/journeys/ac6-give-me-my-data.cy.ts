@@ -77,8 +77,8 @@ describe('AC6 · Give me my data', () => {
                 expect(JSON.stringify(data)).not.to.match(SIGNED_TOKEN);
 
                 cy.step('and nothing that belongs to somebody else');
-                cy.subjectId('order.ownerPending').then((adminOrder) => {
-                    expect(data.orders.map(({ id }) => id)).not.to.include(adminOrder);
+                cy.subjectId('order.otherPending').then((anotherShoppersOrder) => {
+                    expect(data.orders.map(({ id }) => id)).not.to.include(anotherShoppersOrder);
                 });
                 const everything = JSON.stringify(data);
                 for (const role of ['admin', 'editor', 'moderator'] as const) {

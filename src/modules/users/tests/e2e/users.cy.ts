@@ -69,7 +69,6 @@ describe('Users', () => {
             cy.visit('/en/users/create');
             cy.get('[data-test=user-email] input').type(email);
             cy.get('[data-test=user-username] input').type(username);
-            cy.get('[data-test=user-password] input').type('NewUser_Pass1!');
             cy.get('form').submit();
 
             cy.url().should('include', '/users/').and('not.include', '/create');
@@ -86,7 +85,6 @@ describe('Users', () => {
             cy.visit('/en/users/create');
             cy.get('[data-test=user-email] input').type(email);
             cy.get('[data-test=user-username] input').type(originalUsername);
-            cy.get('[data-test=user-password] input').type('NewUser_Pass1!');
             cy.get('form').submit();
             cy.url().should('include', '/users/').and('not.include', '/create');
 
@@ -119,7 +117,6 @@ describe('Users', () => {
             cy.visit('/en/users/create');
             cy.get('[data-test=user-email] input').type(email);
             cy.get('[data-test=user-username] input').type(username);
-            cy.get('[data-test=user-password] input').type('NewUser_Pass1!');
             cy.get('form').submit();
             cy.url().should('include', '/users/').and('not.include', '/create');
 

@@ -11,7 +11,7 @@
  * `GET /audit?target=` beside the page (the page itself does not show it).
  *
  * Forced ship is offered only on an order with no parcel that cannot be started the ordinary
- * way, so the admin's own unpaid `order.ownerPending` is the subject. The status-only override
+ * way, so another shopper's unpaid `order.otherPending` is the subject. The status-only override
  * (OrderEdit) and the forced delivery door both carry `stepUp: critical`: the admin signs in
  * seconds before, so no re-auth dialog is expected.
  */
@@ -69,7 +69,7 @@ describe('OP14 · The audit trail follows the action', () => {
 
     it('an order and a user each have a history, filtered to them, with the reasons on record', () => {
         cy.subjectId('order.awaitingTransfer').then((editedId) => {
-            cy.subjectId('order.ownerPending').then((forcedId) => {
+            cy.subjectId('order.otherPending').then((forcedId) => {
                 cy.subjectId('order.paid').then((correctedId) => {
                     cy.loginAs('admin');
 

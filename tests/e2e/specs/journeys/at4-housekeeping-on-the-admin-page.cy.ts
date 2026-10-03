@@ -4,11 +4,12 @@
  * AT4 · Housekeeping on the admin page. The administrator of a shop who is also the
  * installation's operator (the seeded `root` holds both memberships) refreshes the overview,
  * clears expired tokens behind a confirmation that can be cancelled, reads the platform audit
- * trail through its filters, and opens, reads and closes the realtime stream.
+ * trail (incidents only) through its filters, and opens, reads and closes the realtime stream.
  *
  * Needs the operator's platform key for all of it, plus `tokens.any.delete` for the clear button,
  * which a platform-only operator lacks (that refusal is the roles lane's, not this story's).
  */
+import { refuseALogin } from '../../../support/e2e/steps';
 
 /** The slice of `GET /observability/health` this story reads: each worker queue's parked depth. */
 interface HealthLike {
@@ -23,6 +24,8 @@ describe('AT4 · Housekeeping on the admin page', () => {
     });
 
     it('refreshes, clears tokens, filters the platform audit trail and drives the stream', () => {
+        // The operator's trail lists incidents only: the story makes one for the tab to show.
+        refuseALogin();
         cy.loginAs('admin');
 
         cy.step('the overview refresh asks the API again and answers');

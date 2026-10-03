@@ -81,6 +81,26 @@ export const addOpenProductToCart = (): Cypress.Chainable<unknown> => {
 };
 
 /**
+ * Makes one audit incident: a sign-in refused for a wrong password, as the demo customer.
+ *
+ * The operator's trail lists incidents only (a refused sign-in is one, a successful one is not),
+ * so a journey that reads that trail starts by making something for it to show. A plain request,
+ * not the login form: the story under test is not this sign-in.
+ */
+export const refuseALogin = (): void => {
+    cy.accountOf('user').then(({ email }) => {
+        cy.env(['apiUrl']).then(({ apiUrl }) => {
+            cy.request({
+                method: 'POST',
+                url: `${String(apiUrl)}/account/login`,
+                body: { email, password: 'Definitely_Wrong1!' },
+                failOnStatusCode: false
+            });
+        });
+    });
+};
+
+/**
  * Fills the address dialog's inputs and saves. The country is a `v-autocomplete` over ~249 codes:
  * typed into to filter, then the first option it offers is taken.
  *

@@ -37,14 +37,14 @@ describe('AT5 · Orders list filters', () => {
                         listedIds().should('deep.equal', [paidId]);
                         resetSearch();
 
-                        cy.step("email: only the orders that address, and not the customer's");
-                        cy.accountOf('admin').then(({ email }) => {
-                            cy.subjectId('order.ownerPending').then((ownedByAdmin) => {
-                                cy.get('[data-test=filter-email] input').type(email);
-                                submitSearch();
-                                listedIds().should('include', ownedByAdmin);
-                                listedIds().should('not.include', paidId);
-                            });
+                        cy.step("email: only the orders that address, and not another shopper's");
+                        cy.subjectOrder('order.otherPending').then((anotherShoppers) => {
+                            cy.get('[data-test=filter-email] input').type(
+                                String(anotherShoppers.email)
+                            );
+                            submitSearch();
+                            listedIds().should('include', anotherShoppers.id);
+                            listedIds().should('not.include', paidId);
                         });
                         resetSearch();
 

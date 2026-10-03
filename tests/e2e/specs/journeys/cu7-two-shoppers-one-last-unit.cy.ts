@@ -5,8 +5,8 @@
  * customer checks out first, which holds it; the second shopper is refused, naming the shortfall.
  * When the customer cancels, the hold is released and the second shopper's next attempt goes through.
  *
- * The second shopper is the editor, who holds the checkout key like any buyer and whose seeded address
- * book carries the billing address the invoice needs. Both shoppers also
+ * The second shopper is the pending-email customer, the seeded second buyer: staff hold no
+ * shopping key, and its address book carries the billing address the invoice needs. Both shoppers also
  * read the product page's count along the way: it follows the hold and the release, because every
  * stock write clears the server cache and the browser revalidates the page.
  */
@@ -43,8 +43,8 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 expectAvailable(productId, 1);
                 cy.loginAs('user');
                 addToCartFromStorefront('product.lowStock');
-                // Adding never looks at stock, so the editor's cart can hold it too.
-                cy.apiAs('editor', 'POST', '/cart', { productId, quantity: 1 });
+                // Adding never looks at stock, so the second shopper's cart can hold it too.
+                cy.apiAs('pendingEmail', 'POST', '/cart', { productId, quantity: 1 });
 
                 cy.step('the customer checks out the last unit: it is held');
                 cy.goToCart();
@@ -62,7 +62,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.step(
                         'the second shopper sees it gone, and checkout refuses with the shortfall'
                     );
-                    cy.switchUser('editor');
+                    cy.switchUser('pendingEmail');
                     cy.visit(`/en/products/${productId}`);
                     cy.get('[data-test=product-stock]').should('contain.text', 'Out of stock');
                     cy.goToCart();
@@ -89,7 +89,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.get('[data-test=product-stock]').should('not.contain.text', 'Out of stock');
 
                     cy.step('the second shopper tries again and gets it');
-                    cy.switchUser('editor');
+                    cy.switchUser('pendingEmail');
                     cy.visit(`/en/products/${productId}`);
                     cy.get('[data-test=product-stock]').should('not.contain.text', 'Out of stock');
                     cy.goToCart();

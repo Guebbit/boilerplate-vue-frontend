@@ -9,17 +9,14 @@
  *
  * Runs in the antibot shard only. That backend pins the per-account login budget at 6
  * (`scripts/e2e/antibot-backend.ts`), so the check is three wrong passwords away. The account is
- * made for the story, with an address of its own: its failures are counted per address, and a
- * shared seeded account would carry them into every other test in the run.
+ * the seeded pending-email customer, which no other antibot journey signs in as: its failures are
+ * counted per address, and a shared account would carry them into the other tests in the run. An
+ * admin can no longer create an account with a password, so there is no made-for-the-story one.
  */
 import { fillSignupForm, solveHumanCheck } from '../../../support/e2e/steps';
 
-/** The story's own account. */
-const OWNER = {
-    email: `ac18-owner-${String(Date.now())}@example.com`,
-    username: 'ac18-owner',
-    password: 'Owner-Passw0rd!x'
-};
+/** The story's account, read from the seed when the story starts. */
+const OWNER = { email: '', password: '' };
 
 /** A newcomer who signs up at the end, with an address of their own. */
 const NEWCOMER = {
@@ -49,7 +46,10 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
 
     it('asks for the check only once the misses pile up, and signup and reset ask from the start', () => {
         cy.step('an account exists for the story');
-        cy.apiAs('admin', 'POST', '/users', { ...OWNER, role: 'customer' });
+        cy.accountOf('pendingEmail').then(({ email, password }) => {
+            OWNER.email = email;
+            OWNER.password = password;
+        });
 
         cy.step('the first wrong passwords are answered as wrong passwords, with no check');
         cy.visit('/en/login');

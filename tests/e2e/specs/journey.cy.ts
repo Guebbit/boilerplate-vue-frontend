@@ -13,11 +13,12 @@ import { expectMailTemplate } from '../../support/e2e/commands';
 import { seedAccount } from '../../support/e2e/scenario';
 describe('The customer journey', () => {
     /**
-     * The shelf's count as the guest first saw it — the value the cancel has to restore.
+     * The shelf's count before anything was bought — the value the cancel has to restore.
      *
-     * Captured rather than written down: see where it is read, below.
+     * Read as the admin, through the API: a shopper sees only the in-stock flags, never the count.
+     * Captured rather than written down: the backend produces it by driving a seeded history.
      */
-    let stockBeforeBuying: string;
+    let stockBeforeBuying: number;
 
     beforeEach(() => {
         cy.visit('/en');
@@ -35,21 +36,18 @@ describe('The customer journey', () => {
         cy.get('[data-test=product-card-link]').first().click();
 
         cy.get('#product-target').should('exist');
-        // Read, never asserted as a literal: the shelf's count is the backend's own, and the
-        // paired backend produces it by driving a seeded order history rather than writing a
-        // number down. What this spec is actually about is that the count comes BACK — so it is
-        // captured here and compared with itself after the cancel.
-        // `#product-target` exists before the product has loaded, and the stat then shows a
-        // placeholder — capturing that would make the later comparisons fail on a fast first run
-        // and pass on the retry. A digit in the text is the proof the real count has arrived.
-        cy.get('[data-test=product-stock]').should(($stock) => {
-            expect($stock.text()).to.match(/\d/);
+        // A shopper sees the flag, never the count. `#product-target` exists before the product
+        // has loaded and the stat then shows a placeholder, so the flag's words are the proof the
+        // real record has arrived.
+        cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
+        cy.get('[data-test=product-stock]').invoke('text').should('not.match', /\d/);
+        cy.subjectId('product.rich').then((productId) => {
+            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).then(
+                (product) => {
+                    stockBeforeBuying = Number(product?.available);
+                }
+            );
         });
-        cy.get('[data-test=product-stock]')
-            .invoke('text')
-            .then((text) => {
-                stockBeforeBuying = text;
-            });
         // The wall: buying is offered, disabled, and explained; saving is not offered at all.
         cy.get('[data-test=add-to-cart]').should('be.disabled');
         cy.contains('Sign in to buy').should('exist');
@@ -65,14 +63,7 @@ describe('The customer journey', () => {
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
         cy.get('[data-test=product-card-link]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
-        // A callback, not a bare `stockBeforeBuying` argument: `.should('have.text', value)` reads
-        // `value` when this LINE runs — Cypress queues the whole test body synchronously before any
-        // command actually executes — which is before the `.then()` above has assigned it. A
-        // callback is invoked lazily, once Cypress actually runs this command, by which point the
-        // assignment has landed.
-        cy.get('[data-test=product-stock]').should(($stock) => {
-            expect($stock.text()).to.equal(stockBeforeBuying);
-        });
+        cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
@@ -119,9 +110,14 @@ describe('The customer journey', () => {
         // on whatever the unfiltered list re-rendered underneath it.
         cy.get('[data-test=product-card-link]').should('have.length', 1);
         cy.get('[data-test=product-card-link]').first().click();
-        // Same closure trap as above — deferred, not a bare argument captured at queue time.
-        cy.get('[data-test=product-stock]').should(($stock) => {
-            expect($stock.text()).to.equal(stockBeforeBuying);
+        cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
+        cy.subjectId('product.rich').then((productId) => {
+            // Read as the admin again, retried until the cancel's release has landed.
+            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
+                (product) => {
+                    expect(product?.available).to.equal(stockBeforeBuying);
+                }
+            );
         });
     });
 });

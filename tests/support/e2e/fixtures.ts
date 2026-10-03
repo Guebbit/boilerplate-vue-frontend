@@ -52,6 +52,7 @@ interface ProductLike {
  */
 interface OrderLike {
     id: string;
+    email?: string;
     status: string;
     items: { product: { title: string } }[];
 }

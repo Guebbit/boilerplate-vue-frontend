@@ -33,7 +33,7 @@ describe('Cart', () => {
 
     describe('Empty cart', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            cy.loginAs('user');
             cy.visit('/en/cart');
             cy.get('body').then((bodyElement) => {
                 if (bodyElement.find('[data-test=cart-clear]').length > 0) {
@@ -62,7 +62,15 @@ describe('Cart', () => {
 
     describe('Cart with items', () => {
         beforeEach(() => {
-            cy.loginAs('admin');
+            // The seed leaves the customer's basket empty: two lines, one of them plural, are put
+            // in through the API so every case below starts from the same cart.
+            cy.subjectId('product.inStock').then((productId) => {
+                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 2 });
+            });
+            cy.subjectId('product.rich').then((productId) => {
+                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            });
+            cy.loginAs('user');
             cy.visit('/en/cart');
             cy.get('[data-test=cart-item]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
@@ -134,7 +142,7 @@ describe('Cart', () => {
 
         it('checks out and redirects to the new order', () => {
             // `pickup` needs no address, so the checkout button enables on the method alone —
-            // the seeded cart holds physical goods, which now require one to check out at all.
+            // the cart holds physical goods, which now require one to check out at all.
             cy.get('[data-test=shipping-method-pickup]').click();
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
             cy.url().should('match', /\/orders\/[^/]+$/);

@@ -23,7 +23,7 @@ describe('the orders render whatever the ledger holds', () => {
     it("serves the admin's ledger and an order's edit page quietly and inside the viewport", () => {
         cy.loginAs('admin');
         assertRouteIsHealthy('/en/orders', '#orders-list-page');
-        cy.subjectId('order.ownerPending').then((id) => {
+        cy.subjectId('order.otherPending').then((id) => {
             assertRouteIsHealthy(`/en/orders/${id}/edit`, '#order-edit-page');
         });
     });

@@ -40,15 +40,16 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
         cy.loginAs('user');
         cy.navigateTo('/en/products');
         searchAndOpenProduct('product.barebones');
-        cy.get('[data-test=product-stock]').should(($stock) => {
-            expect($stock.text()).to.match(/\d/);
+        // A shopper sees the flag, never the count: the shelf is read as the admin.
+        cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
+        const shelf = { before: 0 };
+        cy.subjectId('product.barebones').then((productId) => {
+            cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).then(
+                (product) => {
+                    shelf.before = Number(product?.available);
+                }
+            );
         });
-        const shelf = { before: '' };
-        cy.get('[data-test=product-stock]')
-            .invoke('text')
-            .then((text) => {
-                shelf.before = text;
-            });
         addOpenProductToCart();
         cy.goToCart();
         cy.get('[data-test=shipping-method-standard]').click();
@@ -105,10 +106,13 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             });
 
             cy.step('the stock is back on the shelf');
-            cy.navigateTo('/en/products');
-            searchAndOpenProduct('product.barebones');
-            cy.get('[data-test=product-stock]').should(($stock) => {
-                expect($stock.text()).to.equal(shelf.before);
+            cy.subjectId('product.barebones').then((productId) => {
+                // Read as the admin, retried until the cancel's release has landed.
+                cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
+                    (product) => {
+                        expect(product?.available).to.equal(shelf.before);
+                    }
+                );
             });
 
             cy.step('the acknowledgement mail names the order');

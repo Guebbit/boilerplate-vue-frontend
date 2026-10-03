@@ -89,7 +89,9 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
         isTurnedBack('/en/users');
         isTurnedBack('/en/inventory');
 
-        cy.step('the moderator has users, audit and every order, and no product editing');
+        cy.step(
+            'the moderator has users, audit and every order, and no product editing or shopping'
+        );
         cy.switchUser('moderator');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/users');
@@ -105,7 +107,9 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
         cy.get('[data-test=create-product]').should('not.exist');
         cy.subjectId('product.rich').then((productId) => {
             cy.visit(`/en/products/${productId}`);
-            cy.get('[data-test=add-to-cart]').should('exist');
+            // Staff do not shop: no basket button on the page, no cart in the bar.
+            cy.get('[data-test=add-to-cart]').should('not.exist');
+            cy.get('[data-test=pinned-Cart]').should('not.exist');
             cy.get('[data-test=go-to-edit]').should('not.exist');
         });
         cy.subjectId('order.paid').then((orderId) => {

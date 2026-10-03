@@ -9,7 +9,7 @@
  * expiries do — `orders/services/cancel.ts`). The order is the seeded `order.paid`, so the story
  * spends no card budget; paying is N1's and CU1's business.
  */
-import { cents, eventually } from '../../../support/e2e/steps';
+import { eventually } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -30,17 +30,15 @@ interface CreditNoteLike {
 }
 
 /**
- * The units the product page says are available, read once the page has loaded them — the card
- * renders a dash until the product arrives.
+ * The units the shelf holds, read as the admin through the API. A shopper's product page shows
+ * only the in-stock flags, never the count, so the count is not read from it.
+ *
+ * @param productId - the product
  */
-const unitsShown = (): Cypress.Chainable<number> =>
+const unitsAvailable = (productId: string): Cypress.Chainable<number> =>
     cy
-        .get('[data-test=product-stock]')
-        .should(($stock) => {
-            expect($stock.text()).to.match(/\d/);
-        })
-        .invoke('text')
-        .then(cents);
+        .apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`)
+        .then((product) => Number(product?.available));
 
 describe('CU11 · I cancel a paid order and get my money back', () => {
     beforeEach(() => {
@@ -55,8 +53,9 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 cy.step('the customer reads the shelf and the paid order');
                 cy.loginAs('user');
                 cy.visit(`/en/products/${productId}`);
+                cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
                 const shelf = { before: 0, units: 0 };
-                unitsShown().then((units) => {
+                unitsAvailable(productId).then((units) => {
                     shelf.before = units;
                 });
                 cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).then((order) => {
@@ -98,10 +97,13 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 cy.get('[data-test=payment-status]').should('contain.text', 'Refunded');
 
                 cy.step('the units are back on the shelf');
+                cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(
+                    (product) => {
+                        expect(product?.available).to.equal(shelf.before + shelf.units);
+                    }
+                );
                 cy.visit(`/en/products/${productId}`);
-                cy.get('[data-test=product-stock]').should(($stock) => {
-                    expect(cents($stock.text())).to.equal(shelf.before + shelf.units);
-                });
+                cy.get('[data-test=product-stock]').should('contain.text', 'In stock');
 
                 cy.step('a credit note is issued, and the order page lists it');
                 // Written after the refund, off the request's path, so the page is read until it is there.

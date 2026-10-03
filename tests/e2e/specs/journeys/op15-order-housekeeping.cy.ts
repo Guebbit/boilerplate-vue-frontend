@@ -1,13 +1,13 @@
 // requires-module: account, inventory, orders, products
 /**
  * @module
- * OP15 · Order housekeeping. A moderator soft-deletes an order: it stays on the staff list,
+ * OP15 · Order housekeeping. A shop manager soft-deletes an order: it stays on the staff list,
  * marked deleted, and vanishes from its customer. Restoring brings it back. Hard-deleting an
  * unpaid order destroys it and returns its held units to the shelf; a PAID order refuses a hard
  * delete, because an invoice was frozen from its payment (BE `orders/services/crud.ts`, `remove`).
  *
- * The moderator holds `orders.any.delete` and nothing else this story needs, which is the point:
- * the destructive buttons belong to a role that cannot edit a product. Rows are found by their
+ * The manager holds `orders.any.delete`; the moderator does not, since removing a customer's
+ * order is a shop-running act and not a conduct one. Rows are found by their
  * own link — `?id=` on the list is a deep link — so no id is typed into a search box.
  */
 import { eventually } from '../../../support/e2e/steps';
@@ -54,7 +54,7 @@ describe('OP15 · Order housekeeping', () => {
             cy.subjectId('order.awaitingTransfer').then((unpaidId) => {
                 cy.subjectId('product.rich').then((productId) => {
                     const shelf = { before: 0 };
-                    cy.loginAs('moderator');
+                    cy.loginAs('manager');
                     cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then(
                         (product) => {
                             shelf.before = Number(product?.available);
