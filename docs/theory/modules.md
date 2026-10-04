@@ -193,8 +193,8 @@ only place that HAS to. The corner loading indicator follows the same rule: a mo
 stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.vue` collects them.
 A module that omits the field is invisible to the indicator, which is the right default for one
 whose requests are background noise. `slots` lets a module contribute components to a place another
-module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist buttons — so the owner
-never imports its contributors.
+module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist buttons, and the app
+bar's notifications bell — so the owner never imports its contributors.
 
 Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
 than a manifest field: `eslint.config.ts`'s `MODULE_EDGES` map names, per module, which siblings it

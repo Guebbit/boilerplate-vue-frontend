@@ -41,6 +41,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { writeThemePreference } from '@/infrastructure/theme-preference.ts';
 import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@/kernel/registry';
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
+import { useSlot } from '@/kernel/slots';
 import { enabledModules } from '@/modules';
 
 /**
@@ -79,6 +80,12 @@ const baseUrl = import.meta.env.BASE_URL;
  * The app bar's logo — configurable, see `brandLogoSource`.
  */
 const logoSource = brandLogoSource(baseUrl);
+
+/**
+ * The components modules contribute to the bar itself (the notifications bell). Each decides on
+ * its own whether anything shows, because it is mounted for guests too.
+ */
+const appBarSlot = useSlot('app-bar');
 
 /**
  * Mobile drawer open state
@@ -292,6 +299,13 @@ const toggleTheme = () => {
         <template #append>
             <div class="flex items-center gap-1">
                 <slot name="nav-right" />
+
+                <!-- What the enabled modules contribute to the bar: the notifications bell. -->
+                <component
+                    :is="contribution"
+                    v-for="(contribution, index) in appBarSlot"
+                    :key="index"
+                />
 
                 <AppNavMenu
                     v-if="menuItems.admin.length > 0"

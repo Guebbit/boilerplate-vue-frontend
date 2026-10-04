@@ -19,8 +19,10 @@ import type { Component, InjectionKey } from 'vue';
  * components receive.
  *
  * - `product-actions`: the storefront buttons on the product page; receives `{ product }`.
+ * - `app-bar`: the shell's app bar, beside the account menu; receives nothing. A contribution
+ *   owns its own visibility, because it is mounted for guests too.
  */
-export type SlotName = 'product-actions';
+export type SlotName = 'product-actions' | 'app-bar';
 
 /**
  * The collected contributions: slot name to the components every enabled module put there, in

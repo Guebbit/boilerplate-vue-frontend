@@ -29,6 +29,8 @@ import { ref } from 'vue';
 import { createPinia } from 'pinia';
 import { deleteCookie } from '@guebbit/js-toolkit';
 import AppNavigation from '@/app/components/AppNavigation.vue';
+import { SLOTS_KEY } from '@/kernel/slots';
+import type { Slots } from '@/kernel/slots';
 import vuetify from '@/ui/vuetify';
 import type { RouteAccess, RoutePermission } from '@/app/guards/authentications';
 
@@ -186,10 +188,16 @@ vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => session
 }));
 
-/** Mounts the nav and returns the labels of the entries it rendered. */
-const mountNav = () => {
+/**
+ * Mounts the nav and returns the labels of the entries it rendered.
+ *
+ * @param contributions - What the composition root would provide as the modules' slot
+ *  contributions; none by default.
+ */
+const mountNav = (contributions: Slots = {}) => {
     const wrapper = mount(AppNavigation, {
         global: {
+            provide: { [SLOTS_KEY as symbol]: contributions },
             plugins: [createPinia(), vuetify],
             stubs: {
                 // v-app-bar teleports into a v-app layout that does not exist here
@@ -571,6 +579,20 @@ describe('Navigation', () => {
         return hamburger.trigger('click').then(() => {
             expect(hamburger.attributes('aria-expanded')).toBe('true');
         });
+    });
+
+    it('renders what a module contributes to the `app-bar` slot, on the bar and for a guest too', () => {
+        const Contribution = { template: '<span data-test="contributed">bell</span>' };
+
+        const { wrapper } = mountNav({ 'app-bar': [Contribution] });
+
+        expect(wrapper.find('header [data-test=contributed]').exists()).toBe(true);
+    });
+
+    it('renders no contribution when no module fills the `app-bar` slot', () => {
+        const { wrapper } = mountNav();
+
+        expect(wrapper.find('[data-test=contributed]').exists()).toBe(false);
     });
 
     it('closes the drawer on Escape and returns focus to the hamburger', () => {
