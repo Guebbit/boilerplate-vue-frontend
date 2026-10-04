@@ -3045,7 +3045,7 @@ export interface CheckoutRequest {
     addressId?: Id;
     /** Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`. */
     billingAddressId?: Id;
-    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. */
+    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
     paymentMethod?: PaymentMethodId;
 }
 
@@ -3268,7 +3268,7 @@ export interface Payment {
     refunds: Refund[];
     /** The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
-    /** Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`), or a real PSP's name. */
+    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`). */
     provider: string;
     /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there. */
     method: PaymentMethod;
@@ -3341,7 +3341,7 @@ export interface RecordOfflinePaymentRequest {
 
 export interface ConfirmPaymentRequest {
     /**
-     * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. The fake provider recognises `pm_card_visa` (succeeds), `pm_card_declined`, `pm_card_authentication_required` and `pm_card_processing`; anything else succeeds.
+     * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is.
      * @minLength 3
      * @maxLength 255
      * @pattern ^[\w-]+$
@@ -7569,7 +7569,7 @@ export const getOrderCreditNote = (
 };
 
 /**
- * Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
  * @summary List payment methods
  */
 export const listPaymentMethods = (
@@ -7582,7 +7582,7 @@ export const listPaymentMethods = (
 };
 
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const createPaymentIntent = (
@@ -7701,7 +7701,7 @@ export const syncPayment = (
 
 /**
  * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
- * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder.
+ * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
 export const receivePaymentWebhook = (

@@ -5276,7 +5276,7 @@ paths:
       tags:
         - Payments
       summary: List payment methods
-      description: Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+      description: Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
       operationId: listPaymentMethods
       security: []
       responses:
@@ -5298,7 +5298,7 @@ paths:
       tags:
         - Payments
       summary: Create a payment intent
-      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
       operationId: createPaymentIntent
       security:
         - bearerAuth: []
@@ -5663,7 +5663,7 @@ paths:
       summary: Provider webhook
       description: |-
         Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
-        Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder.
+        Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
       operationId: receivePaymentWebhook
       security: []
       parameters:
@@ -5688,6 +5688,8 @@ paths:
                 $ref: "#/components/schemas/MessageResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -12602,7 +12604,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/PaymentMethodId"
           default: card
-          description: How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`.
+          description: "How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way."
     CheckoutResponseEnvelope:
       type: object
       additionalProperties: false
@@ -12972,7 +12974,7 @@ components:
           description: "The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
         provider:
           type: string
-          description: Which provider implementation handled it — `fake` in the demo, `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`), or a real PSP's name.
+          description: Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`).
         method:
           type: string
           enum:
@@ -13086,7 +13088,7 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[\w-]+$
-          description: The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. The fake provider recognises `pm_card_visa` (succeeds), `pm_card_declined`, `pm_card_authentication_required` and `pm_card_processing`; anything else succeeds.
+          description: The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is.
     PaymentWebhookEvent:
       type: object
       additionalProperties: false
@@ -14468,6 +14470,9 @@ x-error-codes:
   PAYLOAD_TOO_LARGE:
     status: 413
     description: The request body exceeds this deployment's size limit.
+  PAYMENT_CARD_NOT_AVAILABLE:
+    status: 409
+    description: This deployment has no card payment provider, so a card payment cannot be started.
   PAYMENT_DECLINED:
     status: 409
     description: The card issuer or gateway declined the charge.

@@ -112,6 +112,8 @@ export const ERROR_CODES = {
     OUTRANKED: 'OUTRANKED',
     /** 413 — The request body exceeds this deployment's size limit. */
     PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
+    /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */
+    PAYMENT_CARD_NOT_AVAILABLE: 'PAYMENT_CARD_NOT_AVAILABLE',
     /** 409 — The card issuer or gateway declined the charge. */
     PAYMENT_DECLINED: 'PAYMENT_DECLINED',
     /** 409 — Another payment attempt for this order is already being recorded. */

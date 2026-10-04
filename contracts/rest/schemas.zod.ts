@@ -7719,7 +7719,7 @@ export const GetOrderCreditNoteParams = zod.strictObject({
 });
 export const GetOrderCreditNoteResponse = zod.unknown();
 /**
- * Which methods this deployment offers, so the frontend hard-codes none. `card` is always present; `bank_transfer` only once its beneficiary and IBAN are configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
  * @summary List payment methods
  */
 export const listPaymentMethodsResponseDataMethodsItemHoldHoursMin = 0;
@@ -7740,7 +7740,7 @@ export const ListPaymentMethodsResponse = zod.strictObject({
     })
 });
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const createPaymentIntentHeaderIdempotencyKeyMax = 200;
@@ -8584,7 +8584,7 @@ export const SyncPaymentResponse = zod.strictObject({
 });
 /**
  * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
- * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder.
+ * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
 export const ReceivePaymentWebhookHeader = zod.strictObject({
