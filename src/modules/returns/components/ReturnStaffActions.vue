@@ -139,8 +139,8 @@ const {
  * @param move - The store call.
  * @param success - The toast key.
  * @param applyFieldErrors - The submitting form's own `applyServerErrors`, so a refusal that
- *  names one of its fields lands on it; absent for a move with no form. Its `false` answer (nothing
- *  was shown) makes the general error appear.
+ *  names one of its fields lands on it; absent for a move with no form. It calls `onUnmapped`
+ *  for whatever no field took, which is what makes the general error appear.
  * @returns A promise settling once the move finished.
  */
 const run = (
@@ -155,11 +155,12 @@ const run = (
             emit('changed');
         })
         .catch((error: unknown) => {
-            // `false` means the rejection carried no field or form message at all (a bare 409, a
-            // network failure): the blocking alert is then the only thing the staff member sees.
-            const shown =
-                applyFieldErrors?.(error, { onUnmapped: () => reportMoveError(error) }) ?? false;
-            if (!shown) reportMoveError(error);
+            // `onUnmapped` also runs, with `[]`, for a rejection that carried no field or form
+            // message at all (a bare 409, a network failure): the blocking alert is then the only
+            // thing the staff member sees. A move with no form has no field to land on.
+            if (applyFieldErrors)
+                applyFieldErrors(error, { onUnmapped: () => reportMoveError(error) });
+            else reportMoveError(error);
         });
 };
 
