@@ -8,9 +8,15 @@
 import { storeToRefs } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/observability/store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
+import { sseEventNamesOf } from '@/infrastructure/sse-event-names';
 import { instance } from '@/infrastructure/http/client';
 import { runtimeValue } from '@/infrastructure/runtime-config';
-import { REALTIME_SSE_EVENT_NAMES } from '@types';
+
+/**
+ * The events `GET /observability/events` sends: the contract's `observability.*` slice, because
+ * the generated list also carries every other stream's events.
+ */
+const OBSERVABILITY_EVENT_NAMES = sseEventNamesOf('observability');
 
 /**
  * Module-level singleton: only one SSE connection is active at a time regardless
@@ -67,7 +73,7 @@ export const useRealtimeObservability = () => {
         store.setStatus('connecting');
 
         // Wire each metric event type to its store action.
-        activeClient = createSseClient(sseEndpoint(), REALTIME_SSE_EVENT_NAMES, {
+        activeClient = createSseClient(sseEndpoint(), OBSERVABILITY_EVENT_NAMES, {
             onOpen: () => store.setStatus('open'),
             onError: () => {
                 store.setStatus('error');

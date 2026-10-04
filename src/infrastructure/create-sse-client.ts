@@ -13,8 +13,11 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 
 /**
  * Callbacks registered on an SSE connection.
+ *
+ * `TEventName` is the slice of the contract this connection subscribes to; it narrows what
+ * `onEvent` can be called with.
  */
-export interface SseClientCallbacks {
+export interface SseClientCallbacks<TEventName extends SseEventName = SseEventName> {
     /**
      * Called when the connection is successfully established.
      */
@@ -27,10 +30,7 @@ export interface SseClientCallbacks {
      * Called for each typed server-sent event.
      * The generic parameter `TEventName` narrows `payload` to the correct contract type.
      */
-    onEvent?: <TEventName extends SseEventName>(
-        eventName: TEventName,
-        payload: SseEventPayload<TEventName>
-    ) => void;
+    onEvent?: <TName extends TEventName>(eventName: TName, payload: SseEventPayload<TName>) => void;
 }
 
 /**
@@ -114,10 +114,10 @@ const passesContract = (eventName: SseEventName, payload: unknown): boolean => {
  * @returns An {@link SseClient} handle whose `close` method tears down the
  *  connection.
  */
-export const createSseClient = (
+export const createSseClient = <TEventName extends SseEventName>(
     url: string,
-    eventNames: readonly SseEventName[],
-    callbacks: SseClientCallbacks = {}
+    eventNames: readonly TEventName[],
+    callbacks: SseClientCallbacks<TEventName> = {}
 ): SseClient => {
     // Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
     // cross-origin) stream request, which the backend's SSE routes authenticate by.
