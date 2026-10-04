@@ -61,8 +61,15 @@ domain's state, exactly as everywhere else.
 
 A live provider tokenises the card inside an iframe **it** owns, and hands the browser an opaque
 reference (`pm_…`). A card number reaching this application — let alone its API — is the difference
-between the light PCI bracket and the heavy one, so the panel never collects one. The demo's method
-picker stands exactly where a provider's widget mounts, and produces the same kind of value.
+between the light PCI bracket and the heavy one, so the panel never collects one.
+
+**The panel shows a card form only when `GET /payments/methods` lists `card`**, which the backend does
+only once a card provider is configured — a production deployment with none shows a short note
+instead. Where a provider's widget mounts, a development or e2e build mounts `TestCardPicker`: the
+fake provider's four test references. That file is loaded through a dynamic import behind
+`import.meta.env.DEV || VITE_TEST_CARDS === 'true'`, which a production build folds to `false`, so
+the chunk — and every `pm_card_*` reference and label in it — is not in the bundle. `build:e2e` sets
+`VITE_TEST_CARDS=true`; nothing else does. A real provider brings its own widget in its place.
 
 ### The answer is not always immediate
 
@@ -112,6 +119,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | File                              | What it is                                                                                                                                                                          | Explained in                          |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `components/PaymentPanel.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
+| `components/TestCardPicker.vue`   | The fake provider's test cards, as a picker. Dev and e2e builds only; a production bundle does not contain it.                                                                      | [read](../theory/layers.md)           |
 | `composables/use-order-refund.ts` | Reusable reactive logic for this domain — the tier between a store and a component.                                                                                                 | [read](../theory/layers.md)           |
 | `index.ts`                        | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
 | `locales/en.json`                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |

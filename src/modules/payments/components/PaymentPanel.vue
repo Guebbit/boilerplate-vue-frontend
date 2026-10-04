@@ -14,7 +14,7 @@ export default {
  * Order-page panel component: renders the payment form or the payment's fate, delegating the
  * intent/confirm/sync sequence to the payments store.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -29,14 +29,16 @@ import type { UnavailableOrderLine } from '@/modules/payments/domain';
 import { OrderStatus } from '@/types/enums.ts';
 
 /**
- * The order page's payment corner: a method picker while the order is payable, the payment's fate
- * afterwards, and — between the two — the state a real bank challenge puts a customer in.
+ * The order page's payment corner: the card form while the order is payable and the deployment
+ * offers `card`, the payment's fate afterwards, and — between the two — the state a real bank
+ * challenge puts a customer in.
  *
  * **There is no card field, and that is the point.** A live provider tokenises the card inside an
  * iframe it owns and hands the browser an opaque reference; a card number reaching this
  * application, let alone its API, is the difference between the light PCI bracket and the heavy
- * one. The picker below stands exactly where that widget mounts, and produces the same kind of
- * value it would.
+ * one. The provider's widget mounts where `TestCardPicker` stands below — and in a production
+ * bundle that picker is not there at all, because its test cards belong to the fake provider that
+ * production does not have.
  */
 const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
     /**
@@ -104,22 +106,38 @@ const payment = computed(() =>
 );
 
 /**
- * The method references the demo's fake provider recognises — this panel's stand-in for a real
- * provider's widget, which would hand back one opaque reference of its own instead of a choice.
- * Labelled by what each one demonstrates, so the interesting paths are reachable by clicking
- * rather than by knowing a magic number.
+ * The methods this deployment offers, as `GET /payments/methods` last said. Empty until loaded.
  */
-const methods = [
-    'pm_card_visa',
-    'pm_card_declined',
-    'pm_card_authentication_required',
-    'pm_card_processing'
-] as const;
+const { methods } = storeToRefs(paymentsStore);
 
 /**
- * The chosen method reference, defaulting to the one that simply pays.
+ * Whether the deployment takes card payments at all: `card` is listed only once a card provider is
+ * configured, so a deployment with none (production, today) shows no card form.
  */
-const paymentMethodRef = ref<string>(methods[0]);
+const cardOffered = computed(() => methods.value.some((method) => method.id === 'card'));
+
+/**
+ * Whether this build carries the fake provider's test cards: a development server, or an e2e build
+ * (`VITE_TEST_CARDS=true`, set by `build:e2e`). Constant at build time — a production build folds
+ * it to `false`, which is what lets {@link TestCardPicker} below drop out of the bundle.
+ */
+const HAS_TEST_CARDS = import.meta.env.DEV || import.meta.env.VITE_TEST_CARDS === 'true';
+
+/**
+ * The test-card picker, loaded lazily and only in a build that has test cards. `undefined` in a
+ * production bundle: the dynamic import sits in a branch the build proves dead, so its chunk (and
+ * every `pm_card_*` reference in it) is never emitted.
+ */
+const TestCardPicker: Component | undefined = HAS_TEST_CARDS
+    ? defineAsyncComponent<Component>(() => import('./TestCardPicker.vue'))
+    : undefined;
+
+/**
+ * The chosen provider method reference. Whatever the card widget in use writes here: the test-card
+ * picker (which picks its own default) in a development or e2e build, a live provider's widget
+ * otherwise.
+ */
+const paymentMethodRef = ref<string>('');
 
 /**
  * The form shows only while paying is possible, and both halves of that are the server's answer.
@@ -246,6 +264,13 @@ const finishAtProvider = () => {
 };
 
 /**
+ * Loads the offered methods once, if nothing has yet — the cart's selector may already have.
+ */
+onMounted(() => {
+    if (methods.value.length === 0) void paymentsStore.fetchMethods();
+});
+
+/**
  * Fetches the payment on mount AND whenever `orderId` changes — `immediate: true` covers the
  * mount case, the watch covers navigating to a different order without a remount.
  */
@@ -297,22 +322,20 @@ watch(
                     </li>
                 </ul>
             </v-alert>
-            <v-select
-                v-model="paymentMethodRef"
-                :items="
-                    methods.map((value) => ({ value, title: t(`payments-panel.method-${value}`) }))
-                "
-                :label="t('payments-panel.label-method')"
-                :hint="t('payments-panel.hint-method')"
-                persistent-hint
-                data-test="payment-method-select"
-                :disabled="loading"
-                class="mb-3"
-            />
-            <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mb-3" />
-            <v-btn type="submit" color="primary" data-test="payment-submit" :disabled="loading">
-                {{ t('payments-panel.button-pay') }}
-            </v-btn>
+            <template v-if="cardOffered && TestCardPicker">
+                <TestCardPicker v-model="paymentMethodRef" :disabled="loading" />
+                <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mb-3" />
+                <v-btn type="submit" color="primary" data-test="payment-submit" :disabled="loading">
+                    {{ t('payments-panel.button-pay') }}
+                </v-btn>
+            </template>
+            <!--
+                No card on offer, or a build with no card widget: nothing here takes a card, so
+                nothing pretends to. The order stays payable by whatever else the shop offers.
+            -->
+            <p v-else class="m-0 text-sm opacity-75" data-test="payment-card-unavailable">
+                {{ t('payments-panel.card-unavailable') }}
+            </p>
         </form>
 
         <template v-else-if="inFlight && payment">

@@ -12,16 +12,24 @@ import PaymentPanel from '@/modules/payments/components/PaymentPanel.vue';
 import { usePaymentsStore } from '@/modules/payments/store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { Payment } from '@types';
+import type { Payment, PaymentMethodOption } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
-/** Mounts the panel with a stubbed payment fetch; `props` override the defaults. */
-const mountPanel = (props: Record<string, unknown> = {}) => {
+/**
+ * Mounts the panel with a stubbed payment fetch; `props` override the defaults. The deployment
+ * offers `card` unless `offered` says otherwise (`[]` is a deployment with no card provider).
+ */
+const mountPanel = (
+    props: Record<string, unknown> = {},
+    offered: PaymentMethodOption[] = [{ id: 'card' }]
+) => {
     const store = usePaymentsStore();
+    store.methods = offered;
     vi.spyOn(store, 'fetchPaymentForOrder').mockResolvedValue(undefined);
+    vi.spyOn(store, 'fetchMethods').mockResolvedValue(offered);
 
     return {
         store,
@@ -54,6 +62,47 @@ describe('PaymentPanel', () => {
     it('shows the form while the order is payable', () => {
         const { wrapper } = mountPanel();
         expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(true);
+    });
+
+    /**
+     * `card` is listed only once the backend has a card provider, so a deployment with none (a
+     * production one, today) must not show a card form — and no test cards either.
+     */
+    describe('when the deployment offers no card', () => {
+        it('shows no card form and says so', () => {
+            const { wrapper } = mountPanel({}, []);
+
+            expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=payment-card-unavailable]').exists()).toBe(true);
+        });
+
+        it('shows no card form when only bank transfer is offered either', () => {
+            const { wrapper } = mountPanel({}, [{ id: 'bank_transfer', holdHours: 168 }]);
+
+            expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(false);
+        });
+
+        it('asks the backend for the methods when none are known yet', () => {
+            const { store } = mountPanel({}, []);
+
+            expect(store.fetchMethods).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('does not ask again for methods the cart already loaded', () => {
+        const { store } = mountPanel();
+
+        expect(store.fetchMethods).not.toHaveBeenCalled();
+    });
+
+    it('offers the test cards in a development build, once the picker has loaded', () => {
+        const { wrapper } = mountPanel();
+
+        // The picker is a lazy chunk, so it arrives a few ticks after the panel renders.
+        return vi.waitFor(() => {
+            expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
+        });
     });
 
     /**

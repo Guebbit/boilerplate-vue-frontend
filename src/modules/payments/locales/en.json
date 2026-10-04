@@ -1,13 +1,8 @@
 {
     "payments-panel": {
         "title": "Payment",
-        "label-method": "Payment method",
-        "hint-method": "A live provider mounts its own widget here — this demo picks one of its test references instead.",
-        "method-pm_card_visa": "Card that pays",
-        "method-pm_card_declined": "Card the issuer declines",
-        "method-pm_card_authentication_required": "Card the bank challenges (3-D Secure)",
-        "method-pm_card_processing": "Method that settles later",
         "label-deadline": "Complete payment by {payBy}, or the hold on this order is released.",
+        "card-unavailable": "Card payment is not available in this shop right now.",
         "button-pay": "Pay now",
         "button-finish": "I have finished at my bank",
         "success": "Payment received — the order is paid.",
