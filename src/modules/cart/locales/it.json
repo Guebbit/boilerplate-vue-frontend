@@ -24,7 +24,7 @@
         "success-checkout": "Ordine effettuato con successo!",
         "error-cart-changed": "Il tuo carrello è cambiato sul server da quando hai caricato questa pagina — è stato aggiornato, controllalo e riprova.",
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",
-        "shortfall-line": "{title}: richiesti {requested}, disponibili solo {available}",
+        "shortfall-line": "{title}: ne hai chiesti {requested}, ma non ce ne sono abbastanza",
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",
         "error-billing-address-required": "Ogni ordine richiede un indirizzo di fatturazione per la fattura — scegline o aggiungine uno per continuare.",
         "error-shipping-method-weight": "Il tuo carrello è troppo pesante per il metodo di spedizione scelto — scegline un altro.",

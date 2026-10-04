@@ -11,13 +11,13 @@ import { ERROR_CODES } from '@api/error-codes';
 /** One line the checkout could not honour, as `CART_INSUFFICIENT_STOCK`'s `details.lines` carries it. */
 
 /**
- * One line of a checkout shortfall: what was wanted, and what the stock can actually cover.
+ * One line of a checkout shortfall: which product, and how much was asked for. The number left is
+ * not sent — exact stock is for stock readers, and a shopper is not one.
  */
 export interface CheckoutShortfallLine {
     productId: string;
     title: string;
     requested: number;
-    available: number;
 }
 
 /**
@@ -56,15 +56,10 @@ export type CheckoutErrorVerdict =
  */
 const asShortfallLine = (value: unknown): CheckoutShortfallLine | undefined => {
     if (typeof value !== 'object' || value === null) return undefined;
-    const { productId, title, requested, available } = value as Record<string, unknown>;
-    if (
-        typeof productId !== 'string' ||
-        typeof title !== 'string' ||
-        typeof requested !== 'number' ||
-        typeof available !== 'number'
-    )
+    const { productId, title, requested } = value as Record<string, unknown>;
+    if (typeof productId !== 'string' || typeof title !== 'string' || typeof requested !== 'number')
         return undefined;
-    return { productId, title, requested, available };
+    return { productId, title, requested };
 };
 
 /**

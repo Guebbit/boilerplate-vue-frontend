@@ -24,7 +24,7 @@
         "success-checkout": "Order placed successfully!",
         "error-cart-changed": "Your cart changed on the server since this page loaded — it has been refreshed, please review it and try again.",
         "error-insufficient-stock": "Some items in your cart are no longer available in the quantity you asked for.",
-        "shortfall-line": "{title}: requested {requested}, only {available} left",
+        "shortfall-line": "{title}: you asked for {requested}, and there is not enough in stock",
         "error-address-not-found": "We couldn't find the shipping address for this order — check your saved addresses and try again.",
         "error-billing-address-required": "Every order needs a billing address for its invoice — choose or add one to continue.",
         "error-shipping-method-weight": "Your basket is too heavy for the chosen shipping method — pick another one.",

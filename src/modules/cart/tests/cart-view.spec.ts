@@ -200,13 +200,13 @@ describe('the checkout refusals', () => {
                 });
         }));
 
-    it('names each short line, with its requested and available counts, on CART_INSUFFICIENT_STOCK', () =>
+    it('names each short line, with the quantity asked for, on CART_INSUFFICIENT_STOCK', () =>
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
                     lines: [
-                        { productId: 'p1', title: 'Widget', requested: 5, available: 2 },
-                        { productId: 'p2', title: 'Gadget', requested: 3, available: 0 }
+                        { productId: 'p1', title: 'Widget', requested: 5 },
+                        { productId: 'p2', title: 'Gadget', requested: 3 }
                     ]
                 })
             );
@@ -216,19 +216,17 @@ describe('the checkout refusals', () => {
                 .trigger('click')
                 .then(flushPromises)
                 .then(() => {
-                    // Rendered through the real message, so a swapped `requested`/`available` —
-                    // the mistake a bare "contains 5" cannot see — fails here.
+                    // Rendered through the real message, so a wrong title or quantity — the
+                    // mistake a bare "contains 5" cannot see — fails here.
                     const lines = wrapper.findAll('[data-test=checkout-shortfall-line]');
                     expect(lines.map((line) => line.text())).toEqual([
                         i18n.global.t('cart-page.shortfall-line', {
                             title: 'Widget',
-                            requested: 5,
-                            available: 2
+                            requested: 5
                         }),
                         i18n.global.t('cart-page.shortfall-line', {
                             title: 'Gadget',
-                            requested: 3,
-                            available: 0
+                            requested: 3
                         })
                     ]);
                 });
@@ -238,7 +236,7 @@ describe('the checkout refusals', () => {
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
-                    lines: [{ productId: 'p1', title: 'Widget', requested: 5, available: 2 }]
+                    lines: [{ productId: 'p1', title: 'Widget', requested: 5 }]
                 })
             );
 

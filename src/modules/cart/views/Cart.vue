@@ -471,8 +471,7 @@ onMounted(() =>
                         {{
                             t('cart-page.shortfall-line', {
                                 title: line.title,
-                                requested: line.requested,
-                                available: line.available
+                                requested: line.requested
                             })
                         }}
                     </li>

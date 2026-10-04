@@ -65,7 +65,7 @@ the boundary — two numbers this screen already owns for its own totals — not
 | Answer    | What happened                                                                                   | What the screen does                                                                                                                             |
 | --------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `409`     | Another checkout won the race — the cart's lines are on someone else's order                    | Refetch the cart and say it has changed. **Not a retry** — re-sending would find an empty cart.                                                  |
-| `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)                                | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass.     |
+| `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)                                | Name the short lines. The server sends one entry per line with what was requested, never the number left, so the basket is fixed in one pass.    |
 | `409`     | The chosen method cannot carry the basket's real weight (`CART_SHIPPING_METHOD_WEIGHT`)         | Clear the chosen method and say why — the client's own weight is advisory; this is the server's enforced check.                                  |
 | `404`     | One or more lines' products left the catalogue (`CART_PRODUCT_UNAVAILABLE`)                     | Name the lines — `title` absent for a hard-deleted product, since there is nothing left to read one off.                                         |
 | `404`     | The address or the shipping method named no longer exists                                       | Reopen that step rather than failing the whole flow.                                                                                             |
@@ -73,8 +73,8 @@ the boundary — two numbers this screen already owns for its own totals — not
 | transport | The request never reached the API                                                               | Show the generic checkout error. The `Idempotency-Key` is kept, so a retry is the same attempt.                                                  |
 
 ::: warning Two of these are lists, and rendering either as one message throws away the useful half
-`CART_INSUFFICIENT_STOCK`'s `errors[0].details.lines` carries `productId`, `title`, `requested` and
-`available` per short line. `CART_PRODUCT_UNAVAILABLE`'s carries `productId` and an optional
+`CART_INSUFFICIENT_STOCK`'s `errors[0].details.lines` carries `productId`, `title` and `requested` per
+short line (the number left is for stock readers only). `CART_PRODUCT_UNAVAILABLE`'s carries `productId` and an optional
 `title`. Collapsing either into "some items are unavailable" turns a one-pass fix into a guessing
 game.
 :::
