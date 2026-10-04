@@ -33,6 +33,7 @@ tags:
   - name: Products
   - name: Cart
   - name: Wishlist
+  - name: Notifications
   - name: Orders
   - name: Payments
   - name: Invoicing
@@ -6959,6 +6960,47 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
+  /cart/merge:
+    post:
+      tags:
+        - Cart
+      summary: Merge a guest cart into the cart
+      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers."
+      operationId: mergeCart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeCartRequest"
+      responses:
+        "200":
+          description: The updated cart, and the lines that could not be added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeCartResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: cart
   /examples/published/{id}:
     get:
       tags:
@@ -7337,6 +7379,131 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List notifications
+      description: "The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from."
+      operationId: listNotifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: The caller's notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
+  /notifications/stream:
+    get:
+      tags:
+        - Notifications
+      summary: Live notifications stream
+      description: "Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead."
+      operationId: getNotificationsStream
+      responses:
+        "200":
+          description: Server-Sent Events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
+  /notifications/read-all:
+    post:
+      tags:
+        - Notifications
+      summary: Mark every notification read
+      description: Sets `readAt` on every unread notification of the caller. The bell calls it when it opens, so the badge (unread count) goes to zero while the messages stay. Repeating it is a no-op.
+      operationId: readAllNotifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
+  /notifications/dismiss-all:
+    post:
+      tags:
+        - Notifications
+      summary: Delete every notification
+      description: Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`. Emptying an empty inbox is the state the caller asked for, so it answers 200.
+      operationId: dismissAllNotifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
+  /notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      description: "Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart."
+      operationId: deleteNotificationById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
 components:
   securitySchemes:
     bearerAuth:
@@ -8489,6 +8656,7 @@ components:
         - invoicing
         - returns
         - examples
+        - notifications
       properties:
         exportedAt:
           type: string
@@ -8581,6 +8749,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Example"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
     AccountExportEnvelope:
       type: object
       additionalProperties: false
@@ -11070,6 +11242,57 @@ components:
           type: string
           format: date-time
         updatedAt:
+          type: string
+          format: date-time
+    NotificationCode:
+      type: string
+      description: |-
+        What happened, as a translation key. `params` carries what the sentence needs; its shape is fixed per code.
+        - `notifications.cart-line-removed` — `{ productId, titles }`: a product left the
+          catalogue and left the caller's cart with it.
+        - `notifications.wishlist-item-removed` — `{ productId, titles }`: the same, for
+          the wishlist.
+        - `notifications.cart-merge-refused` — `{ lines: [{ productId, titles, reason }] }`:
+          guest-cart lines `POST /cart/merge` could not add.
+
+        `titles` maps a locale to the product's name in it, so a reader sees their own language; the notification outlives the product, which is why it is copied in.
+      enum:
+        - notifications.cart-line-removed
+        - notifications.wishlist-item-removed
+        - notifications.cart-merge-refused
+    NotificationSeverity:
+      type: string
+      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+      enum:
+        - info
+        - success
+        - warning
+        - error
+    Notification:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          $ref: "#/components/schemas/NotificationCode"
+        params:
+          type: object
+          additionalProperties: true
+          description: What the translated sentence interpolates; the shape depends on `code`.
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
           type: string
           format: date-time
     LoginTwoFactorRequest:
@@ -14179,6 +14402,70 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    MergeCartRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
+          items:
+            $ref: "#/components/schemas/AddCartItemRequest"
+    MergeRefusalReason:
+      type: string
+      description: "Why a guest line was not added. `unavailable`: the product is not publicly visible any more (the `404` of `POST /cart`). `quantity-limit`: adding it would pass the per-line cap (the `422 CART_QUANTITY_LIMIT` of `POST /cart`)."
+      enum:
+        - unavailable
+        - quantity-limit
+    RefusedCartLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+        - reason
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          $ref: "#/components/schemas/CartQuantity"
+        reason:
+          $ref: "#/components/schemas/MergeRefusalReason"
+    MergeCartResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - cart
+        - refused
+      properties:
+        cart:
+          $ref: "#/components/schemas/CartResponse"
+        refused:
+          type: array
+          description: The lines that were not added, in request order. Empty when everything landed.
+          items:
+            $ref: "#/components/schemas/RefusedCartLine"
+    MergeCartResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/MergeCartResponse"
     ExampleEnvelope:
       type: object
       additionalProperties: false
@@ -14310,6 +14597,34 @@ components:
         imageUpload:
           type: string
           format: binary
+    NotificationsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: Newest first.
+          items:
+            $ref: "#/components/schemas/Notification"
+    NotificationsResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/NotificationsResponse"
 x-error-codes:
   ANTIBOT_NO_CHALLENGE:
     status: 404

@@ -2421,6 +2421,10 @@ export const exportAccountDataResponseDataExamplesItemIdMax = 64;
 export const exportAccountDataResponseDataExamplesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const exportAccountDataResponseDataExamplesItemUserIdMax = 64;
 export const exportAccountDataResponseDataExamplesItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const exportAccountDataResponseDataNotificationsItemIdMax = 64;
+export const exportAccountDataResponseDataNotificationsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const ExportAccountDataResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -2938,6 +2942,24 @@ export const ExportAccountDataResponse = zod.strictObject({
                 publishedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        notifications: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(exportAccountDataResponseDataNotificationsItemIdMax)
+                    .regex(exportAccountDataResponseDataNotificationsItemIdRegExp),
+                code: zod.enum([
+                    'notifications.cart-line-removed',
+                    'notifications.wishlist-item-removed',
+                    'notifications.cart-merge-refused'
+                ]),
+                params: zod.record(zod.string(), zod.unknown()),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
             })
         )
     })
@@ -10557,6 +10579,92 @@ export const SendReauthCodeResponse = zod.strictObject({
     })
 });
 /**
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers.
+ * @summary Merge a guest cart into the cart
+ */
+export const mergeCartBodyLinesItemProductIdMax = 64;
+export const mergeCartBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const mergeCartBodyLinesItemQuantityMax = 999;
+export const mergeCartBodyLinesMax = 100;
+export const MergeCartBody = zod.strictObject({
+    lines: zod
+        .array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(mergeCartBodyLinesItemProductIdMax)
+                    .regex(mergeCartBodyLinesItemProductIdRegExp),
+                quantity: zod.number().min(1).max(mergeCartBodyLinesItemQuantityMax)
+            })
+        )
+        .min(1)
+        .max(mergeCartBodyLinesMax)
+});
+export const mergeCartResponseDataCartItemsItemProductIdMax = 64;
+export const mergeCartResponseDataCartItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const mergeCartResponseDataCartSummaryItemsCountMin = 0;
+export const mergeCartResponseDataCartSummaryTotalQuantityMin = 0;
+export const mergeCartResponseDataCartSummaryItemsTotalMin = 0;
+export const mergeCartResponseDataCartSummaryShippingCostMin = 0;
+export const mergeCartResponseDataCartSummaryTotalPriceMin = 0;
+export const mergeCartResponseDataCartShippingOptionsItemPriceMin = 0;
+export const mergeCartResponseDataRefusedItemProductIdMax = 64;
+export const mergeCartResponseDataRefusedItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const mergeCartResponseDataRefusedItemQuantityMax = 999;
+export const MergeCartResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        cart: zod.strictObject({
+            items: zod.array(
+                zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(mergeCartResponseDataCartItemsItemProductIdMax)
+                        .regex(mergeCartResponseDataCartItemsItemProductIdRegExp),
+                    quantity: zod.number().min(1)
+                })
+            ),
+            summary: zod.strictObject({
+                itemsCount: zod.number().min(mergeCartResponseDataCartSummaryItemsCountMin),
+                totalQuantity: zod.number().min(mergeCartResponseDataCartSummaryTotalQuantityMin),
+                itemsTotal: zod.number().min(mergeCartResponseDataCartSummaryItemsTotalMin),
+                shippingCost: zod.number().min(mergeCartResponseDataCartSummaryShippingCostMin),
+                totalPrice: zod.number().min(mergeCartResponseDataCartSummaryTotalPriceMin),
+                currency: zod.string()
+            }),
+            shipping: zod.strictObject({
+                required: zod.boolean(),
+                selected: zod.string().nullable(),
+                options: zod.array(
+                    zod.strictObject({
+                        id: zod.string(),
+                        price: zod
+                            .number()
+                            .min(mergeCartResponseDataCartShippingOptionsItemPriceMin),
+                        requiresAddress: zod.boolean(),
+                        tracked: zod.boolean()
+                    })
+                )
+            })
+        }),
+        refused: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(mergeCartResponseDataRefusedItemProductIdMax)
+                    .regex(mergeCartResponseDataRefusedItemProductIdRegExp),
+                quantity: zod.number().min(1).max(mergeCartResponseDataRefusedItemQuantityMax),
+                reason: zod.enum(['unavailable', 'quantity-limit'])
+            })
+        )
+    })
+});
+/**
  * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
  * @summary Read a published example
  */
@@ -10991,4 +11099,76 @@ export const ReplaceExampleCoverResponse = zod.strictObject({
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
+});
+/**
+ * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
+ * @summary List notifications
+ */
+export const listNotificationsResponseDataItemsItemIdMax = 64;
+export const listNotificationsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ListNotificationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseDataItemsItemIdMax)
+                    .regex(listNotificationsResponseDataItemsItemIdRegExp),
+                code: zod.enum([
+                    'notifications.cart-line-removed',
+                    'notifications.wishlist-item-removed',
+                    'notifications.cart-merge-refused'
+                ]),
+                params: zod.record(zod.string(), zod.unknown()),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
+});
+/**
+ * Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead.
+ * @summary Live notifications stream
+ */
+export const GetNotificationsStreamResponse = zod.unknown();
+/**
+ * Sets `readAt` on every unread notification of the caller. The bell calls it when it opens, so the badge (unread count) goes to zero while the messages stay. Repeating it is a no-op.
+ * @summary Mark every notification read
+ */
+export const ReadAllNotificationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+/**
+ * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`. Emptying an empty inbox is the state the caller asked for, so it answers 200.
+ * @summary Delete every notification
+ */
+export const DismissAllNotificationsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+/**
+ * Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart.
+ * @summary Delete a notification
+ */
+export const deleteNotificationByIdPathIdMax = 64;
+export const deleteNotificationByIdPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteNotificationByIdParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(deleteNotificationByIdPathIdMax)
+        .regex(deleteNotificationByIdPathIdRegExp)
+});
+export const DeleteNotificationByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
 });

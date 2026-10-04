@@ -128,6 +128,26 @@ export interface ExamplePublishedPayload {
   'exampleId': string;
   'title': string;
 }
+export interface NotificationCreatedPayload {
+  'notification': NotificationPayload;
+}
+export interface NotificationPayload {
+  'id': string;
+  'code': AnonymousSchema60;
+  'params': Record<string, unknown>;
+  'severity': AnonymousSchema62;
+  'readAt'?: string;
+  'createdAt': string;
+}
+export type AnonymousSchema60 = "notifications.cart-line-removed" | "notifications.wishlist-item-removed" | "notifications.cart-merge-refused";
+export type AnonymousSchema62 = "info" | "success" | "warning" | "error";
+export interface NotificationsDeletedPayload {
+  'all': boolean;
+  'ids': string[];
+}
+export interface NotificationsReadPayload {
+  'readAt': string;
+}
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
@@ -143,6 +163,9 @@ export type ReturnReceivedEvent = ReturnReceivedEnvelope;
 export type ReturnClosedEvent = ReturnClosedEnvelope;
 export type ExamplePublishedEvent = ExamplePublishedEnvelope;
 export type ReturnRequestedEvent = ReturnRequestedEnvelope;
+export type NotificationCreatedEvent = NotificationCreatedPayload;
+export type NotificationsDeletedEvent = NotificationsDeletedPayload;
+export type NotificationsReadEvent = NotificationsReadPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -195,19 +218,38 @@ export const EXAMPLE_CHANNELS = {
 /* Union of every "example." channel name */
 export type ExampleChannel = (typeof EXAMPLE_CHANNELS)[keyof typeof EXAMPLE_CHANNELS];
 
+/* Channel names in the "notifications." namespace */
+export const NOTIFICATIONS_CHANNELS = {
+    CREATED: 'notifications.created',
+    DELETED: 'notifications.deleted',
+    READ: 'notifications.read',
+} as const;
+
+/* Union of every "notifications." channel name */
+export type NotificationsChannel = (typeof NOTIFICATIONS_CHANNELS)[keyof typeof NOTIFICATIONS_CHANNELS];
+
 export const REALTIME_SSE_EVENT_NAMES = [
+    "notifications.created",
+    "notifications.deleted",
+    "notifications.read",
     "observability.heartbeat",
     "observability.metrics.snapshot",
     "observability.metrics.updated",
 ] as const;
 export type SseEventName = (typeof REALTIME_SSE_EVENT_NAMES)[number];
 export interface SseEventPayloadMap {
+    "notifications.created": NotificationCreatedPayload;
+    "notifications.deleted": NotificationsDeletedPayload;
+    "notifications.read": NotificationsReadPayload;
     "observability.heartbeat": ObservabilityMetricsPayload;
     "observability.metrics.snapshot": ObservabilityMetricsPayload;
     "observability.metrics.updated": ObservabilityMetricsPayload;
 }
 export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];
 export const SSE_EVENT_PAYLOAD_SCHEMAS: Record<SseEventName, Record<string, unknown>> = {
+    "notifications.created": {"title":"NotificationCreatedPayload","type":"object","required":["notification"],"properties":{"notification":{"title":"NotificationPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.cart-line-removed","notifications.wishlist-item-removed","notifications.cart-merge-refused"]},"params":{"type":"object","additionalProperties":true},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false}},"additionalProperties":false},
+    "notifications.deleted": {"title":"NotificationsDeletedPayload","type":"object","required":["all","ids"],"properties":{"all":{"description":"True when the whole inbox went (`dismiss-all`); `ids` is then empty.","type":"boolean"},"ids":{"description":"The deleted notifications' ids.","type":"array","items":{"type":"string"}}},"additionalProperties":false},
+    "notifications.read": {"title":"NotificationsReadPayload","type":"object","required":["readAt"],"properties":{"readAt":{"type":"string","format":"date-time"}},"additionalProperties":false},
     "observability.heartbeat": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
     "observability.metrics.snapshot": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
     "observability.metrics.updated": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},

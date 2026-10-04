@@ -895,6 +895,53 @@ export interface Example {
     updatedAt?: string;
 }
 
+/**
+ * What happened, as a translation key. `params` carries what the sentence needs; its shape is fixed per code.
+ * - `notifications.cart-line-removed` — `{ productId, titles }`: a product left the
+ *   catalogue and left the caller's cart with it.
+ * - `notifications.wishlist-item-removed` — `{ productId, titles }`: the same, for
+ *   the wishlist.
+ * - `notifications.cart-merge-refused` — `{ lines: [{ productId, titles, reason }] }`:
+ *   guest-cart lines `POST /cart/merge` could not add.
+ *
+ * `titles` maps a locale to the product's name in it, so a reader sees their own language; the notification outlives the product, which is why it is copied in.
+ */
+export type NotificationCode = (typeof NotificationCode)[keyof typeof NotificationCode];
+
+export const NotificationCode = {
+    'notificationscart-line-removed': 'notifications.cart-line-removed',
+    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed',
+    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
+} as const;
+
+/**
+ * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+ */
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
+
+export const NotificationSeverity = {
+    info: 'info',
+    success: 'success',
+    warning: 'warning',
+    error: 'error'
+} as const;
+
+/**
+ * What the translated sentence interpolates; the shape depends on `code`.
+ */
+export type NotificationParams = { [key: string]: unknown };
+
+export interface Notification {
+    id: Id;
+    code: NotificationCode;
+    /** What the translated sentence interpolates; the shape depends on `code`. */
+    params: NotificationParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
@@ -913,6 +960,7 @@ export interface AccountExportResponse {
     invoicing: AccountExportResponseInvoicing;
     returns: ExportReturn[];
     examples: Example[];
+    notifications: Notification[];
 }
 
 export interface AccountExportEnvelope {
@@ -3976,6 +4024,44 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
+export interface MergeCartRequest {
+    /**
+     * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
+     * @minItems 1
+     * @maxItems 100
+     */
+    lines: AddCartItemRequest[];
+}
+
+/**
+ * Why a guest line was not added. `unavailable`: the product is not publicly visible any more (the `404` of `POST /cart`). `quantity-limit`: adding it would pass the per-line cap (the `422 CART_QUANTITY_LIMIT` of `POST /cart`).
+ */
+export type MergeRefusalReason = (typeof MergeRefusalReason)[keyof typeof MergeRefusalReason];
+
+export const MergeRefusalReason = {
+    unavailable: 'unavailable',
+    'quantity-limit': 'quantity-limit'
+} as const;
+
+export interface RefusedCartLine {
+    productId: Id;
+    quantity: CartQuantity;
+    reason: MergeRefusalReason;
+}
+
+export interface MergeCartResponse {
+    cart: CartResponse;
+    /** The lines that were not added, in request order. Empty when everything landed. */
+    refused: RefusedCartLine[];
+}
+
+export interface MergeCartResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: MergeCartResponse;
+}
+
 export interface ExampleEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -4063,6 +4149,18 @@ export interface UpdateExampleRequest {
 
 export interface ReplaceExampleCoverRequestMultipart {
     imageUpload: Blob;
+}
+
+export interface NotificationsResponse {
+    /** Newest first. */
+    items: Notification[];
+}
+
+export interface NotificationsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: NotificationsResponse;
 }
 
 /**
@@ -8260,6 +8358,25 @@ export const sendReauthCode = (
 };
 
 /**
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers.
+ * @summary Merge a guest cart into the cart
+ */
+export const mergeCart = (
+    mergeCartRequest: MergeCartRequest,
+    options?: SecondParameter<typeof orvalMutator<MergeCartResponseEnvelope>>
+) => {
+    return orvalMutator<MergeCartResponseEnvelope>(
+        {
+            url: `/cart/merge`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: mergeCartRequest
+        },
+        options
+    );
+};
+
+/**
  * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
  * @summary Read a published example
  */
@@ -8426,6 +8543,67 @@ export const replaceExampleCover = (
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
         },
+        options
+    );
+};
+
+/**
+ * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
+ * @summary List notifications
+ */
+export const listNotifications = (
+    options?: SecondParameter<typeof orvalMutator<NotificationsResponseEnvelope>>
+) => {
+    return orvalMutator<NotificationsResponseEnvelope>(
+        { url: `/notifications`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead.
+ * @summary Live notifications stream
+ */
+export const getNotificationsStream = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/notifications/stream`, method: 'GET' }, options);
+};
+
+/**
+ * Sets `readAt` on every unread notification of the caller. The bell calls it when it opens, so the badge (unread count) goes to zero while the messages stay. Repeating it is a no-op.
+ * @summary Mark every notification read
+ */
+export const readAllNotifications = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/notifications/read-all`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`. Emptying an empty inbox is the state the caller asked for, so it answers 200.
+ * @summary Delete every notification
+ */
+export const dismissAllNotifications = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/notifications/dismiss-all`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart.
+ * @summary Delete a notification
+ */
+export const deleteNotificationById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/notifications/${id}`, method: 'DELETE' },
         options
     );
 };
@@ -8766,6 +8944,7 @@ export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKey
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
+export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;
@@ -8781,4 +8960,17 @@ export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
 export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
 export type ReplaceExampleCoverResult = NonNullable<
     Awaited<ReturnType<typeof replaceExampleCover>>
+>;
+export type ListNotificationsResult = NonNullable<Awaited<ReturnType<typeof listNotifications>>>;
+export type GetNotificationsStreamResult = NonNullable<
+    Awaited<ReturnType<typeof getNotificationsStream>>
+>;
+export type ReadAllNotificationsResult = NonNullable<
+    Awaited<ReturnType<typeof readAllNotifications>>
+>;
+export type DismissAllNotificationsResult = NonNullable<
+    Awaited<ReturnType<typeof dismissAllNotifications>>
+>;
+export type DeleteNotificationByIdResult = NonNullable<
+    Awaited<ReturnType<typeof deleteNotificationById>>
 >;
