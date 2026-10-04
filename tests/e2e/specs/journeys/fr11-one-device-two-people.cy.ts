@@ -66,6 +66,7 @@ describe('FR11 · One device, two people', () => {
         });
         cy.get('[data-test=nav-login-link]').should('exist');
         cy.get('[data-test=nav-badge]').should('not.exist');
-        cy.get('[data-test=add-to-cart]').should('be.disabled');
+        // The guest's own cart is theirs to fill, and the second person's lines are not in it.
+        cy.get('[data-test=add-to-cart]').should('not.be.disabled');
     });
 });

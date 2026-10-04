@@ -4,11 +4,12 @@
  * wholesale with the payload the API returned, rather than patching it locally — the
  * getters below are all derived from that one `cart` ref.
  */
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { EToastType, useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
+import { translate } from '@/i18n';
 import {
     getCart,
     getCartSummary,
@@ -16,6 +17,7 @@ import {
     updateCartItemById,
     removeCartItem,
     clearCart,
+    mergeCart,
     setCartShippingMethod,
     checkout as apiCheckout,
     reorder as apiReorder
@@ -25,11 +27,19 @@ import type {
     CartResponse,
     CartShipping,
     CartSummaryResponse,
-    CheckoutRequest
+    CheckoutRequest,
+    MergeCartResponse
 } from '@types';
 import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { invalidateProductsCache } from '@/modules/products';
+import { addGuestLine, guestCartQuantity, removeGuestLines, setGuestLineQuantity } from './domain';
+import type { GuestCartLine } from './domain';
+import {
+    GUEST_CART_STORAGE_KEY,
+    readGuestCart,
+    writeGuestCart
+} from './composables/guest-cart-storage';
 
 /**
  * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
@@ -38,8 +48,9 @@ import { invalidateProductsCache } from '@/modules/products';
 const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
 
 /**
- * Owns the authenticated user's shopping cart: every action replaces the local
- * cart with the authoritative payload returned by the API.
+ * Owns the shopping cart: the signed-in user's, where every action replaces the local cart with
+ * the authoritative payload returned by the API, and the signed-out visitor's guest cart, a plain
+ * list kept in this browser until sign-in merges it into the real one (`mergeGuestCart`).
  *
  * Checkout lives here and not in the orders store, even though it answers with an order: it is
  * `POST /cart/checkout`, the contract files it under `Cart`, and it is the one call that empties
@@ -90,10 +101,49 @@ export const useCartStore = defineStore('cart', () => {
     const liveSummary = computed(() => cart.value?.summary ?? summarySeed.value);
 
     /**
-     * What the header badge wears: every unit in the cart (`totalQuantity`, not the number of
-     * distinct lines) — three of one product is a badge saying 3.
+     * The signed-out visitor's cart: `{ productId, quantity }` lines, kept in this browser's
+     * `localStorage`. It only ever changes by being replaced, so a plain watch persists it.
      */
-    const badgeQuantity = computed(() => liveSummary.value?.totalQuantity);
+    const guestLines = ref<GuestCartLine[]>(readGuestCart());
+
+    /**
+     * How many units the guest cart holds.
+     */
+    const guestQuantity = computed(() => guestCartQuantity(guestLines.value));
+
+    /**
+     * Whether the guest cart holds anything.
+     */
+    const hasGuestLines = computed(() => guestLines.value.length > 0);
+
+    watch(guestLines, writeGuestCart);
+
+    /**
+     * Another tab changed the guest cart: this one takes its copy, so two tabs never save over
+     * each other. The event fires in every document but the one that wrote.
+     * https://developer.mozilla.org/en-US/docs/Web/API/Window/storage_event
+     *
+     * @param event - The storage event; a `null` key means the whole storage was cleared.
+     */
+    const onStorage = (event: StorageEvent) => {
+        if (event.key === GUEST_CART_STORAGE_KEY || event.key === null)
+            guestLines.value = readGuestCart();
+    };
+
+    globalThis.addEventListener('storage', onStorage);
+    onScopeDispose(() => globalThis.removeEventListener('storage', onStorage));
+
+    /**
+     * What the header badge wears: every unit in the cart (`totalQuantity`, not the number of
+     * distinct lines) — three of one product is a badge saying 3. The server's count wins once
+     * there is one; until then, and for a guest, it is the guest list's, and nothing when that is
+     * empty.
+     */
+    const badgeQuantity = computed(
+        () =>
+            liveSummary.value?.totalQuantity ??
+            (hasGuestLines.value ? guestQuantity.value : undefined)
+    );
 
     /**
      * What the header writes beside the badge: the cart's money total (before shipping) paired
@@ -155,16 +205,25 @@ export const useCartStore = defineStore('cart', () => {
             });
 
     /**
+     * The sign-in read in flight, if any: the guest cart's merge, or the badge's summary. The first
+     * full read waits for it, so it cannot be answered from before the merge and then overwrite the
+     * merged cart.
+     */
+    let signInRead: Promise<unknown> | undefined;
+
+    /**
      * Fetches the full cart (items + summary) and stores it.
      *
      * @returns A promise resolving with the cart response.
      */
     const fetchCart = () =>
-        fetchAny(() =>
-            getCart().then((response) => {
-                cart.value = response.data;
-                return response.data;
-            })
+        (signInRead ?? Promise.resolve()).then(() =>
+            fetchAny(() =>
+                getCart().then((response) => {
+                    cart.value = response.data;
+                    return response.data;
+                })
+            )
         );
 
     /**
@@ -353,6 +412,99 @@ export const useCartStore = defineStore('cart', () => {
             })
         );
 
+    /**
+     * Adds units to the guest cart; a product already there grows, as `POST /cart` would.
+     *
+     * @param productId - Product to add.
+     * @param quantity - How many to add.
+     * @returns `false` when the cart already holds the most distinct products it may and this is a
+     *  new one; the cart is then unchanged.
+     */
+    const addGuestItem = (productId: string, quantity: number): boolean => {
+        const next = addGuestLine(guestLines.value, productId, quantity);
+        if (next) guestLines.value = next;
+        return next !== undefined;
+    };
+
+    /**
+     * Sets the exact quantity of a guest line.
+     *
+     * @param productId - Product whose line is updated.
+     * @param quantity - New quantity; kept within the allowed range.
+     */
+    const updateGuestItem = (productId: string, quantity: number) => {
+        guestLines.value = setGuestLineQuantity(guestLines.value, productId, quantity);
+    };
+
+    /**
+     * Drops guest lines.
+     *
+     * @param productIds - The products whose lines go.
+     */
+    const removeGuestItems = (productIds: readonly string[]) => {
+        guestLines.value = removeGuestLines(guestLines.value, productIds);
+    };
+
+    /**
+     * Empties the guest cart.
+     */
+    const clearGuestCart = () => {
+        guestLines.value = [];
+    };
+
+    /**
+     * Sends the guest cart to the server in one call, which adds every line by the rule of
+     * `POST /cart` and answers with the merged cart. The guest cart is emptied once the server has
+     * answered; a failure leaves it exactly as it was, to be tried again at the next sign-in.
+     *
+     * A line the cart cannot take does not fail the call: it comes back in `refused`, and the
+     * server also writes one notification listing them, which the bell shows.
+     *
+     * @returns A promise resolving with the merged cart and the refused lines.
+     */
+    const mergeGuestCart = (): Promise<MergeCartResponse | undefined> =>
+        fetchAny(() =>
+            mergeCart({ lines: guestLines.value }).then((response) => {
+                cart.value = response.data.cart;
+                guestLines.value = [];
+                // The basket just changed — any checkout attempt still pending is now stale.
+                mintCheckoutIdempotencyKey();
+                return response.data;
+            })
+        );
+
+    /**
+     * What the shell does once a session that may shop appears: merge the guest cart in when there
+     * is one, otherwise read the lightweight summary for the badge.
+     *
+     * A merge that fails is not an error the visitor can fix by looking at it, so it becomes one
+     * toast saying the cart is kept; the badge's summary is still read, so the header is not blank.
+     * Only the first full read waits for this ({@link fetchCart}).
+     *
+     * @returns A promise settling once the header has what it needs.
+     */
+    const seedAfterSignIn = (): Promise<unknown> => {
+        const read = hasGuestLines.value
+            ? mergeGuestCart().catch(() => {
+                  useNotificationsStore().addMessage(
+                      translate('cart-page.error-guest-merge'),
+                      EToastType.WARNING
+                  );
+                  return fetchSummary();
+              })
+            : fetchSummary();
+        // What `fetchCart` waits for: the read settling either way, never its failure.
+        const settled = read.then(
+            () => undefined,
+            () => undefined
+        );
+        signInRead = settled;
+        void settled.then(() => {
+            if (signInRead === settled) signInRead = undefined;
+        });
+        return read;
+    };
+
     return {
         cart,
         cartItems,
@@ -361,6 +513,16 @@ export const useCartStore = defineStore('cart', () => {
         badgeQuantity,
         badgeMoney,
         fetchSummary,
+
+        guestLines,
+        hasGuestLines,
+        guestQuantity,
+        addGuestItem,
+        updateGuestItem,
+        removeGuestItems,
+        clearGuestCart,
+        mergeGuestCart,
+        seedAfterSignIn,
 
         loading,
         fetchCart,

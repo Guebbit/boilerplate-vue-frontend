@@ -48,9 +48,11 @@ describe('The customer journey', () => {
                 }
             );
         });
-        // The wall: buying is offered, disabled, and explained; saving is not offered at all.
-        cy.get('[data-test=add-to-cart]').should('be.disabled');
-        cy.contains('Sign in to buy').should('exist');
+        // No wall for the cart: a guest may add to a cart kept in the browser, and is told that
+        // checking out and saving need an account. (Nothing is added here, so the sign-in below
+        // has no guest cart to merge.)
+        cy.get('[data-test=add-to-cart]').should('not.be.disabled');
+        cy.contains('Sign in to check out').should('exist');
         cy.get('[data-test=wishlist-toggle]').should('not.exist');
 
         // ── Sign in (the journey's one reload; the guest wrote nothing) ─────────────

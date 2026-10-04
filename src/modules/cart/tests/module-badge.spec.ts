@@ -1,6 +1,6 @@
 /**
  * @module
- * The cart badge's session watch (`module.ts`): the header reads the cart summary when a session
+ * The cart badge's session watch (`module.ts`): the header seeds the cart (merging a guest cart, or reading the summary) when a session
  * appears, and a checkout draft must die with the session that typed it — but not with a reload,
  * which starts signed out and is restored a moment later.
  */
@@ -38,7 +38,7 @@ const signIn = () => {
 beforeEach(() => {
     sessionStorage.clear();
     setActivePinia(createPinia());
-    vi.spyOn(useCartStore(), 'fetchSummary').mockResolvedValue(undefined);
+    vi.spyOn(useCartStore(), 'seedAfterSignIn').mockResolvedValue(undefined);
 });
 
 describe('the cart badge watching the session', () => {
@@ -67,25 +67,25 @@ describe('the cart badge watching the session', () => {
     });
 });
 
-describe('the cart badge reading the summary', () => {
-    it('reads it for a session that may shop', () => {
-        const summary = vi.spyOn(useCartStore(), 'fetchSummary').mockResolvedValue(undefined);
+describe('the cart badge seeding itself for a session that may shop', () => {
+    it('seeds for a session that may shop', () => {
+        const seed = vi.spyOn(useCartStore(), 'seedAfterSignIn').mockResolvedValue(undefined);
         signIn();
         wireBadge();
 
         return nextTick().then(() => {
-            expect(summary).toHaveBeenCalledTimes(1);
+            expect(seed).toHaveBeenCalledTimes(1);
         });
     });
 
-    it('never asks for it from a session that holds no cart key, which would only be refused', () => {
-        const summary = vi.spyOn(useCartStore(), 'fetchSummary').mockResolvedValue(undefined);
+    it('never seeds for a session that holds no cart key: every read it makes would only be refused', () => {
+        const seed = vi.spyOn(useCartStore(), 'seedAfterSignIn').mockResolvedValue(undefined);
         signIn();
         useSessionStore().setAbilities({ tenant: [], platform: [] });
         wireBadge();
 
         return nextTick().then(() => {
-            expect(summary).not.toHaveBeenCalled();
+            expect(seed).not.toHaveBeenCalled();
         });
     });
 });

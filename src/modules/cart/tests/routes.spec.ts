@@ -23,12 +23,14 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('cart route access', () => {
-    it.each([['Cart', 'auth']])('%s declares access: %s', (name, access) => {
+    // `open`, not `auth`: a guest has a cart too, kept in their browser until sign-in merges it.
+    it.each([['Cart', 'open']])('%s declares access: %s', (name, access) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
     });
 
-    // Staff and administrators hold no shopping key: the route is theirs to be refused at.
+    // Staff and administrators hold no shopping key: the route is theirs to be refused at. Being
+    // `open`, the key is asked of signed-in visitors only, so a guest is not refused for lacking it.
     it('needs the key that lets a role shop', () => {
         expect(byName('Cart')?.meta?.can).toEqual(['update', 'Cart']);
     });

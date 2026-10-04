@@ -1,11 +1,10 @@
 // requires-module: account, cart, products
 /**
  * @module
- * FR10 · I wanted to add it to my cart as a guest. A guest on a product page finds the buy button
- * switched off, not a wall: nothing to click until there is an account behind it. "Log in" in the
- * app bar takes them away and, once they are in, brings them BACK to that product, where one click
- * adds it. "Sign up" carries the same return address, so a new account lands on that product too, not
- * on the home page.
+ * FR10 · I wanted to add it to my cart as a guest. A guest on a product page may add it to a cart
+ * kept in their browser, and is told that checking out needs an account. "Log in" in the app bar takes
+ * them away and, once they are in, brings them BACK to that product, where one click adds it. "Sign up"
+ * carries the same return address, so a new account lands on that product too, not on the home page.
  */
 import { addOpenProductToCart, fillSignupForm } from '../../../support/e2e/steps';
 
@@ -24,14 +23,17 @@ describe('FR10 · I wanted to add it to my cart as a guest', () => {
         cy.apiAs('user', 'DELETE', '/cart/all');
     });
 
-    it('a guest cannot buy, and logging in or signing up brings them back to the product', () => {
+    it('a guest may add to a cart but not check out, and logging in or signing up brings them back to the product', () => {
         cy.subjectProduct('product.inStock').then((product) => {
             const productPath = `/en/products/${product.id}`;
 
-            cy.step('a guest on the product page finds the buy button switched off');
+            cy.step(
+                'a guest on the product page may add it, and is told checkout needs an account'
+            );
             cy.visit(productPath);
             cy.get('#product-target').should('exist');
-            cy.get('[data-test=add-to-cart]').should('be.disabled');
+            cy.get('[data-test=add-to-cart]').should('not.be.disabled');
+            cy.contains('Sign in to check out').should('exist');
 
             cy.step('"Log in" in the app bar remembers the product');
             cy.get('[data-test=nav-login-link]').click();

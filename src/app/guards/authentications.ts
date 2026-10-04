@@ -18,13 +18,16 @@ import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
  * - `guest` — anonymous only (login, signup, password reset): an authenticated visitor has no
  *   business on them and is sent home.
  * - `auth` — any authenticated visitor.
+ * - `open` — anyone: a guest, or a signed-in visitor. `meta.can` is then asked of the signed-in
+ *   only, so a screen that serves guests (the cart) can still turn away an account whose role
+ *   has no use for it (staff hold no basket).
  *
  * Anything narrower is not a LEVEL. A screen that needs a permission declares the rule it needs
  * in `meta.can`, and the rule is evaluated against the server's own published rules — there is no
  * ladder of roles here, because the model behind it is not a ladder: a translator is not a lesser
  * admin, and a warehouse operator is not a greater customer.
  */
-export type RouteAccess = 'guest' | 'auth';
+export type RouteAccess = 'guest' | 'auth' | 'open';
 
 /**
  * The permission a screen needs, as the pair CASL is asked: `[action, subject]`.
@@ -93,7 +96,8 @@ declare module 'vue-router' {
  *
  * The two halves are ANDed, and `meta.can` implies a session: a rule is answered from rules the
  * server published for a caller it identified, so an anonymous visitor is refused before the
- * abilities are consulted at all.
+ * abilities are consulted at all. The one exception is `access: 'open'`, which lets the anonymous
+ * through and asks `meta.can` only of a signed-in visitor.
  *
  * @param meta - the route's requirement: `access` (standing) and `can` (permission). Both absent
  *  means public.
@@ -106,6 +110,7 @@ export const canAccess = (
 ): boolean => {
     if (meta.access === 'guest') return !visitor.isAuth;
     if (meta.access === 'auth' && !visitor.isAuth) return false;
+    if (meta.access === 'open' && !visitor.isAuth) return true;
     if (!meta.can) return true;
 
     return visitor.isAuth && visitor.can(meta.can[0], meta.can[1]);

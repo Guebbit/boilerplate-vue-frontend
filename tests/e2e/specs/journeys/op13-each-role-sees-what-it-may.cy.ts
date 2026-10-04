@@ -60,13 +60,18 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
 
     it('guest, editor, moderator and customer each get exactly their own doors', () => {
         cy.step('a guest is sent to sign in by every page that needs an account');
-        for (const path of ['/en/cart', '/en/profile', '/en/orders', '/en/wishlist']) {
+        for (const path of ['/en/profile', '/en/orders', '/en/wishlist']) {
             cy.visit(path);
             cy.get('#login-page').should('exist');
         }
+        cy.step('the cart is the one such page a guest may open: theirs is kept in the browser');
+        cy.visit('/en/cart');
+        cy.get('#cart-page').should('exist');
+        cy.get('[data-test=guest-cart]').should('exist');
+        cy.get('[data-test=cart-checkout]').should('not.exist');
         cy.subjectId('product.rich').then((productId) => {
             cy.visit(`/en/products/${productId}`);
-            cy.get('[data-test=add-to-cart]').should('be.disabled');
+            cy.get('[data-test=add-to-cart]').should('not.be.disabled');
             cy.get('[data-test=wishlist-toggle]').should('not.exist');
         });
 

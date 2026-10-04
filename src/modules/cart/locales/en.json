@@ -2,7 +2,8 @@
     "add-to-cart-button": {
         "label": "Add to cart",
         "out-of-stock": "Out of stock",
-        "success": "Product added to cart."
+        "success": "Product added to cart.",
+        "guest-full": "Your cart already holds as many different products as it can. Remove one, or sign in, to add another."
     },
     "cart-page": {
         "page-title": "My Cart",
@@ -35,7 +36,14 @@
         "button-increase": "Increase quantity",
         "button-decrease-named": "Decrease quantity of product {id}",
         "button-increase-named": "Increase quantity of product {id}",
-        "button-remove-named": "Remove product {id}"
+        "button-remove-named": "Remove product {id}",
+        "error-guest-merge": "We could not add the cart you built before signing in to your account. It stays on this device and will be tried again the next time you sign in."
+    },
+    "guest-cart-page": {
+        "intro": "This cart is saved on this device. Sign in to check out: what is in it is added to your account's cart.",
+        "button-sign-in": "Sign in to check out",
+        "vanished-toast": "A product in your cart is no longer available and was removed. | {count} products in your cart are no longer available and were removed.",
+        "vanished-note": "A product that is no longer available was removed from your cart. | {count} products that are no longer available were removed from your cart."
     },
     "navigation": {
         "label-cart": "Cart"

@@ -102,7 +102,14 @@ describe('canAccess', () => {
         ['user-read', { access: 'auth', can: ['read', 'User'] }, owner, true],
         // A rule with no `access`: still refused for a stranger, on the same reasoning.
         ['rule-only', { can: ['read', 'User'] }, guest, false],
-        ['rule-only', { can: ['read', 'User'] }, owner, true]
+        ['rule-only', { can: ['read', 'User'] }, owner, true],
+        // `open` is the one exception: a guest passes, and the rule is asked of the signed-in only.
+        // So the cart is a guest's, and a signed-in role with no basket is still turned away.
+        ['open', { access: 'open' }, guest, true],
+        ['open', { access: 'open' }, customer, true],
+        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, guest, true],
+        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, customer, false],
+        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, editor, true]
     ] as const)('%s route -> %s', (_label, meta, who, expected) => {
         expect(canAccess(meta, who)).toBe(expected);
     });
@@ -151,6 +158,22 @@ describe('enforceRouteAccess', () => {
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
         // Logging in again cannot grant a permission, so offering to continue would loop them.
+        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
+    });
+
+    it('lets a guest into an open route, with no redirect and no toast', () => {
+        const result = enforceRouteAccess(route('open', ['update', 'Cart']), routerWithLogin);
+
+        expect(result).toBeUndefined();
+        expect(addMessageMock).not.toHaveBeenCalled();
+    });
+
+    it('sends a signed-in visitor without the rule home from an open route', () => {
+        visitorStanding.isAuth.value = true;
+
+        const result = enforceRouteAccess(route('open', ['update', 'Cart']), routerWithLogin);
+
+        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
         expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
     });
 

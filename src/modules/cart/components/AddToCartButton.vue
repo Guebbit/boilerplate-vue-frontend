@@ -2,8 +2,9 @@
 /**
  * @module
  * The product page's "add to cart" button, contributed to the `product-actions` slot by this
- * module's manifest — the products module owns the page and never imports the cart. A failure
- * blocks this one action in place (`InlineErrorAlert`) rather than raising a toast.
+ * module's manifest — the products module owns the page and never imports the cart. Signed in it
+ * writes to the server's cart; as a guest, to the list in the browser. A failure blocks this one
+ * action in place (`InlineErrorAlert`) rather than raising a toast.
  */
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -34,7 +35,8 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether a visitor is signed in — a guest has no cart to write to.
+ * Whether a visitor is signed in: a signed-in visitor's cart is on the server, a guest's is a list
+ * in their own browser.
  */
 const session = useSessionStore();
 
@@ -44,7 +46,7 @@ const { isAuth } = storeToRefs(session);
 /**
  * Whether the session's keys let it shop at all. Staff and administrators hold none, so for
  * them the button is not offered rather than offered and refused. A guest is not asked: they
- * keep the disabled button and its sign-in hint.
+ * shop into the cart in their browser.
  */
 const mayShop = computed(() => !isAuth.value || session.can('update', 'Cart'));
 
@@ -69,14 +71,27 @@ const outOfStock = computed(() => !product.inStock);
 const { message: error, report: reportError, clear: clearError } = useBlockingError();
 
 /**
+ * Adds one unit to a guest's own list, kept in their browser. There is nothing to ask a server, so
+ * the only way it fails is a list already full of other products.
+ */
+const addToGuestCart = () => {
+    if (cartStore.addGuestItem(product.id, 1)) addMessage(t('add-to-cart-button.success'));
+    else reportError(new Error(t('add-to-cart-button.guest-full')));
+};
+
+/**
  * Adds one unit to the cart. `POST /cart` is "add": the server grows a line the shopper already
  * has, so no read-then-increment happens here: the quantity added is never computed from a local
- * copy of the cart.
+ * copy of the cart. A guest's list grows the same way, locally.
  *
  * @returns Nothing; a failure blocks the button in place ({@link error}).
  */
 const handleAddToCart = () => {
     clearError();
+    if (!isAuth.value) {
+        addToGuestCart();
+        return;
+    }
     cartStore
         .addCartItem(product.id, 1)
         .then(() => addMessage(t('add-to-cart-button.success')))
@@ -89,7 +104,7 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="!isAuth || outOfStock || loading"
+            :disabled="outOfStock || loading"
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />

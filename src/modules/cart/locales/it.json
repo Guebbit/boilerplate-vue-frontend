@@ -2,7 +2,8 @@
     "add-to-cart-button": {
         "label": "Aggiungi al carrello",
         "out-of-stock": "Esaurito",
-        "success": "Prodotto aggiunto al carrello."
+        "success": "Prodotto aggiunto al carrello.",
+        "guest-full": "Il tuo carrello contiene già il massimo di prodotti diversi. Rimuovine uno, o accedi, per aggiungerne un altro."
     },
     "cart-page": {
         "page-title": "Il mio carrello",
@@ -35,7 +36,14 @@
         "button-increase": "Aumenta quantità",
         "button-decrease-named": "Diminuisci quantità del prodotto {id}",
         "button-increase-named": "Aumenta quantità del prodotto {id}",
-        "button-remove-named": "Rimuovi il prodotto {id}"
+        "button-remove-named": "Rimuovi il prodotto {id}",
+        "error-guest-merge": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere. Resta su questo dispositivo e riproveremo al prossimo accesso."
+    },
+    "guest-cart-page": {
+        "intro": "Questo carrello è salvato su questo dispositivo. Accedi per completare l'acquisto: il suo contenuto viene aggiunto al carrello del tuo account.",
+        "button-sign-in": "Accedi per completare l'acquisto",
+        "vanished-toast": "Un prodotto nel tuo carrello non è più disponibile ed è stato rimosso. | {count} prodotti nel tuo carrello non sono più disponibili e sono stati rimossi.",
+        "vanished-note": "Un prodotto non più disponibile è stato rimosso dal carrello. | {count} prodotti non più disponibili sono stati rimossi dal carrello."
     },
     "navigation": {
         "label-cart": "Carrello"

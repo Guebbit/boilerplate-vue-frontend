@@ -72,6 +72,7 @@ The requirement has two halves, and they are ANDed:
 | `meta.access` absent          | No standing required.                                                                                                               |
 | `meta.access: 'auth'`         | Must be logged in. Redirects to `/login?continue=<current-path>` on failure.                                                        |
 | `meta.access: 'guest'`        | Must NOT be logged in. Redirects to Home if already authenticated.                                                                  |
+| `meta.access: 'open'`         | Anyone: a guest passes, and a signed-in visitor still has to hold `meta.can`. The cart's own (a guest has one, staff do not).       |
 | `meta.can: [action, subject]` | Must hold that rule. Redirects to Home on failure — logging in again cannot grant a permission, so no `continue` target is offered. |
 
 **There is no `admin` level, and that is the point.** A screen names the permission it needs —

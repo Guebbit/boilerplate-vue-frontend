@@ -58,9 +58,11 @@ export default {
             icon: ShoppingCart,
             /*
              * The Badge of the glossary above, finally worn. Runs inside the shell's setup, so
-             * stores are reachable; seeds from the lightweight `GET /cart/summary` whenever a
-             * session appears, because the whole point of that endpoint is a count that does not
-             * cost the cart. Every later mutation keeps the count fresh through the store.
+             * stores are reachable; whenever a session that may shop appears it merges the guest
+             * cart in, or seeds from the lightweight `GET /cart/summary` when there is none,
+             * because the whole point of that endpoint is a count that does not cost the cart.
+             * Every later mutation keeps the count fresh through the store. A guest's badge is
+             * their own list's total.
              */
             badge: () => {
                 const cartStore = useCartStore();
@@ -74,7 +76,7 @@ export default {
                 watch(
                     () => isAuth.value && session.can('update', 'Cart'),
                     (mayShop) => {
-                        if (mayShop) void cartStore.fetchSummary();
+                        if (mayShop) void cartStore.seedAfterSignIn();
                     },
                     { immediate: true }
                 );

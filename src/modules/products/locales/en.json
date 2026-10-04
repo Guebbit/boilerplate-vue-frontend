@@ -5,7 +5,7 @@
     "product-card": {
         "in-stock": "In stock",
         "out-of-stock": "Out of stock",
-        "login-to-buy": "Sign in to buy or save this product."
+        "login-to-buy": "Sign in to check out or save this product."
     },
     "products-list-page": {
         "sort-label": "Sort by",
@@ -72,7 +72,7 @@
         "in-stock": "In stock",
         "low-stock": "Low stock",
         "out-of-stock": "Out of stock",
-        "login-to-buy": "Sign in to buy or save this product.",
+        "login-to-buy": "Sign in to check out or save this product.",
         "image-alt": "Photo of {name}"
     },
     "product-create-page": {

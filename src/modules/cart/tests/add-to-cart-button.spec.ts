@@ -9,6 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AddToCartButton from '@/modules/cart/components/AddToCartButton.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
+import { MAX_GUEST_LINES } from '@/modules/cart/domain';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { addCartItem } from '@api';
 import { i18n, loadLocale } from '@/i18n';
@@ -81,6 +82,8 @@ const mountButton = (product: Product) =>
     mount(AddToCartButton, { props: { product }, global: { plugins: [vuetify, i18n] } });
 
 beforeEach(() => {
+    // The guest cart is saved in `localStorage`, which outlives a test's pinia.
+    localStorage.clear();
     setActivePinia(createPinia());
     return loadLocale('en');
 });
@@ -115,10 +118,48 @@ describe('the shelf', () => {
         expect(mountButton(IN_STOCK).find('[data-test=add-to-cart]').exists()).toBe(false);
     });
 
-    it('stays disabled for a guest, who has no cart to write to', () => {
+    it('is enabled for a guest too, whose cart is a list in their own browser', () => {
         expect(
             mountButton(IN_STOCK).get('[data-test=add-to-cart]').attributes('disabled')
-        ).toBeDefined();
+        ).toBeUndefined();
+    });
+});
+
+describe('a guest adding', () => {
+    it('writes to the guest list and asks the server for nothing', async () => {
+        const cart = useCartStore();
+        const serverAdd = vi.spyOn(cart, 'addCartItem');
+
+        await mountButton(IN_STOCK).get('[data-test=add-to-cart]').trigger('click');
+
+        expect(cart.guestLines).toEqual([{ productId: 'p-in-stock', quantity: 1 }]);
+        expect(serverAdd).not.toHaveBeenCalled();
+    });
+
+    it('grows a line the guest already has', async () => {
+        const cart = useCartStore();
+        const wrapper = mountButton(IN_STOCK);
+
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+
+        expect(cart.guestLines).toEqual([{ productId: 'p-in-stock', quantity: 2 }]);
+    });
+
+    it('says so, in place, when the list already holds as many products as it may', async () => {
+        const cart = useCartStore();
+        cart.guestLines = Array.from({ length: MAX_GUEST_LINES }, (_unused, index) => ({
+            productId: `other-${index}`,
+            quantity: 1
+        }));
+        const wrapper = mountButton(IN_STOCK);
+
+        await wrapper.get('[data-test=add-to-cart]').trigger('click');
+
+        expect(cart.guestLines).toHaveLength(MAX_GUEST_LINES);
+        expect(wrapper.get('[data-test=add-to-cart-error]').text()).toContain(
+            'as many different products'
+        );
     });
 });
 
