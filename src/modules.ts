@@ -19,6 +19,7 @@ import example from '@/modules/example/module';
 import feedback from '@/modules/feedback/module';
 import inventory from '@/modules/inventory/module';
 import locales from '@/modules/locales/module';
+import notifications from '@/modules/notifications/module';
 import observability from '@/modules/observability/module';
 import orders from '@/modules/orders/module';
 import payments from '@/modules/payments/module';
@@ -40,6 +41,7 @@ export const enabledModules: AppModule[] = [
     feedback,
     inventory,
     locales,
+    notifications,
     observability,
     orders,
     payments,

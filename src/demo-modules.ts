@@ -27,6 +27,7 @@ export const DEMO_MODULE_NAMES = [
     'cart',
     'delivery',
     'inventory',
+    'notifications',
     'orders',
     'payments',
     'products',

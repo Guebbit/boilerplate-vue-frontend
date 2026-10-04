@@ -44,6 +44,7 @@ flowchart LR
         direction TB
         delivery["delivery"]
         inventory["inventory"]
+        notifications["notifications"]
         payments["payments"]
         returns["returns"]
         webhooks["webhooks"]
@@ -74,7 +75,7 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,payments,returns,webhooks,wishlist supporting;
+    class delivery,inventory,notifications,payments,returns,webhooks,wishlist supporting;
     class account,apiKeys,demo,feedback,locales,observability,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
@@ -135,7 +136,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 16      | 3    | 6          | 7       | 44      | 16     | 10            |
+| 17      | 3    | 7          | 7       | 44      | 17     | 10            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -147,6 +148,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 1       | `inventory`              | 5         | 1          | 0              |
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
+| [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
 | [`orders`](./orders.md)                                        | `core`       | `shop`       | 3       | `orders`                 | 11        | 4          | 0              |
 | [`payments`](./payments.md)                                    | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
@@ -178,6 +180,7 @@ job, not a checked one.
 | [`feedback`](./feedback.md)                                    | `feedback`                                 | —                                                                                                                                                                                                                        |
 | [`inventory`](./inventory.md)                                  | `inventory`                                | —                                                                                                                                                                                                                        |
 | [`locales`](./locales.md)                                      | `locales`                                  | —                                                                                                                                                                                                                        |
+| [`notifications`](./notifications.md)                          | `notifications`                            | —                                                                                                                                                                                                                        |
 | [`observability`](./observability.md)                          | `observability` + `audit-logs` + `account` | One set of screens over three backend domains: `observability` serves health, the metrics overview and the SSE stream, `audit-logs` owns the trail behind the audit table, and the token-purge action reaches `account`. |
 | [`orders`](./orders.md)                                        | `orders`                                   | —                                                                                                                                                                                                                        |
 | [`payments`](./payments.md)                                    | `payments`                                 | —                                                                                                                                                                                                                        |

@@ -1,0 +1,21 @@
+{
+    "notifications": {
+        "cart-line-removed": "Removed from your cart because it is no longer available: {name}.",
+        "wishlist-item-removed": "Removed from your wishlist because it is no longer available: {name}.",
+        "cart-merge-refused": "Some items from your guest cart could not be added: {lines}.",
+        "cart-merge-refused-bare": "Some items from your guest cart could not be added.",
+        "refused-line": "{name} ({reason})",
+        "reason-unavailable": "no longer available",
+        "reason-quantity-limit": "too many in the cart",
+        "reason-unknown": "could not be added",
+        "unknown": "You have a new notification.",
+        "unknown-product": "a product",
+        "bell-label": "Notifications",
+        "bell-label-unread": "Notifications: {count} unread",
+        "panel-title": "Notifications",
+        "empty": "You have no notifications.",
+        "button-clear-all": "Clear all",
+        "button-delete-named": "Delete notification: {text}",
+        "unread": "New"
+    }
+}

@@ -129,6 +129,15 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Stream** | The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`. |
 | **Frame**  | One message off the stream, shown raw so the shape is visible rather than described.                |
 
+## `notifications`
+
+| Term             | What it means here                                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Notification** | A message the server keeps for one person until they delete it. Stored as a `code` and its facts, never as text.                   |
+| **Toast**        | A message that lives in the page's memory and goes away on its own. Not the same thing: a notification is also shown as one, once. |
+| **Bell**         | The app bar's button and panel: the badge counts the unread, opening it marks them read, each row has its own delete button.       |
+| **Unread**       | A notification with no `readAt`. The badge counts these.                                                                           |
+
 ## `users`
 
 | Term            | What it means here                                                                                                            |

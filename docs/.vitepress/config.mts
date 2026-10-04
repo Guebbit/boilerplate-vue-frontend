@@ -70,6 +70,7 @@ export default withMermaid(
                         items: [
                             { text: 'delivery', link: '/modules/delivery' },
                             { text: 'inventory', link: '/modules/inventory' },
+                            { text: 'notifications', link: '/modules/notifications' },
                             { text: 'payments', link: '/modules/payments' },
                             { text: 'returns', link: '/modules/returns' },
                             { text: 'webhooks', link: '/modules/webhooks' },

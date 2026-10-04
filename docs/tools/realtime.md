@@ -21,18 +21,26 @@ API side too — see
 
 ## Transport at a glance
 
-| Transport | URL env var    | Direction            | Use case                            |
-| --------- | -------------- | -------------------- | ----------------------------------- |
-| **SSE**   | `VITE_API_SSE` | server → client only | Live metrics / observability stream |
+| Transport | URL env var                      | Direction            | Use case                              |
+| --------- | -------------------------------- | -------------------- | ------------------------------------- |
+| **SSE**   | `VITE_API_SSE`                   | server → client only | Live metrics / observability stream   |
+| **SSE**   | none: derived from the REST base | server → client only | The signed-in visitor's notifications |
 
 SSE is the only realtime transport: nothing on the FE needs to push over a persistent
 connection, so everything client → server goes through the REST API instead.
+
+The contract lists every SSE event of every stream in one flat array
+(`REALTIME_SSE_EVENT_NAMES`). Each consumer subscribes to its own endpoint's slice with
+`sseEventNamesOf('<namespace>')` (`src/infrastructure/sse-event-names.ts`), which also narrows the
+payload types its handler sees. The notifications stream is documented in
+[`notifications`](../modules/notifications.md).
 
 ## Where the code lives
 
 | Concern                         | File                                                      |
 | ------------------------------- | --------------------------------------------------------- |
 | SSE client factory              | `src/infrastructure/create-sse-client.ts`                 |
+| SSE event names per stream      | `src/infrastructure/sse-event-names.ts`                   |
 | SSE composable                  | `src/modules/observability/use-realtime-observability.ts` |
 | Observability SSE store + state | `src/modules/observability/store.ts`                      |
 | Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)           |
