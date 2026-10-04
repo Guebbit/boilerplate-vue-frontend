@@ -9,7 +9,7 @@
  * `session` BroadcastChannel. The spec posts that message itself, standing in for the other tab.
  * This tab must end up signed out, with the second person's cart gone from the bar too.
  *
- * The second person is the pending-email customer, the seeded second shopper (staff hold no
+ * The second person is the seeded second-shopper customer (staff hold no
  * shopping key, so none of them could be one).
  */
 import {
@@ -34,7 +34,7 @@ describe('FR11 · One device, two people', () => {
         cy.get('[data-test=pinned-Cart]').invoke('text').should('match', /\d/);
 
         cy.step('the second person signs in on the same tab: the bar shows nothing of it');
-        cy.switchUser('pendingEmail');
+        cy.switchUser('secondShopper');
         cy.get('[data-test=nav-badge]').should('not.exist');
         // An empty cart still writes its total: zero, not the customer's.
         cy.get('[data-test=pinned-Cart]').should('contain.text', '0.00');

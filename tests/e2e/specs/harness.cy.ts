@@ -63,7 +63,13 @@ describe('The journey harness', () => {
 
     describe('the persona accounts', () => {
         it('are all described by the backend, the two-factor one with its backup codes', () => {
-            for (const role of ['unverified', 'twoFactor', 'pendingEmail', 'banned'] as const)
+            for (const role of [
+                'unverified',
+                'twoFactor',
+                'pendingEmail',
+                'banned',
+                'secondShopper'
+            ] as const)
                 cy.accountOf(role).should((account) => {
                     expect(account.email, role).to.contain('@');
                 });

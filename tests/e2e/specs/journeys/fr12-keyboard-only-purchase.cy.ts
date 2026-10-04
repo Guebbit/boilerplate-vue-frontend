@@ -6,7 +6,7 @@
  * control sits earlier in the page) and worked with Enter, Space, the arrow keys and Escape.
  *
  * What is proved is reachability and the two dialog contracts: a dialog takes focus in, keeps it
- * inside, and gives it back to the control that opened it on Escape. The shopper is the pending-email
+ * inside, and gives it back to the control that opened it on Escape. The shopper is the second-shopper
  * customer with its seeded book emptied through the API, so the checkout offers the address
  * dialog (a seeded book would hide it).
  *
@@ -102,13 +102,15 @@ describe('FR12 · A keyboard-only purchase', () => {
 
     it('buys, pays for and cancels an order without the mouse', () => {
         cy.step('the book is emptied, then the shopper signs in and reaches Products with Tab');
-        cy.apiAs<{ addresses: { id: string }[] }>('pendingEmail', 'GET', '/account/addresses').then(
-            (book) => {
-                for (const { id } of book?.addresses ?? [])
-                    cy.apiAs('pendingEmail', 'DELETE', `/account/addresses/${id}`);
-            }
-        );
-        cy.loginAs('pendingEmail');
+        cy.apiAs<{ addresses: { id: string }[] }>(
+            'secondShopper',
+            'GET',
+            '/account/addresses'
+        ).then((book) => {
+            for (const { id } of book?.addresses ?? [])
+                cy.apiAs('secondShopper', 'DELETE', `/account/addresses/${id}`);
+        });
+        cy.loginAs('secondShopper');
         enterOn('header nav a[href="/en/products"]');
         cy.location('pathname').should('equal', '/en/products');
 

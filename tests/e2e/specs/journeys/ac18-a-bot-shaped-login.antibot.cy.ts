@@ -9,7 +9,7 @@
  *
  * Runs in the antibot shard only. That backend pins the per-account login budget at 6
  * (`scripts/e2e/antibot-backend.ts`), so the check is three wrong passwords away. The account is
- * the seeded pending-email customer, which no other antibot journey signs in as: its failures are
+ * the seeded second-shopper customer, which no other antibot journey signs in as: its failures are
  * counted per address, and a shared account would carry them into the other tests in the run. An
  * admin can no longer create an account with a password, so there is no made-for-the-story one.
  */
@@ -46,7 +46,7 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
 
     it('asks for the check only once the misses pile up, and signup and reset ask from the start', () => {
         cy.step('an account exists for the story');
-        cy.accountOf('pendingEmail').then(({ email, password }) => {
+        cy.accountOf('secondShopper').then(({ email, password }) => {
             OWNER.email = email;
             OWNER.password = password;
         });

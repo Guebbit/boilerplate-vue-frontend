@@ -39,7 +39,7 @@ export interface ScenarioDescription {
 
 /**
  * Which seeded account a command means. Every backend that can pair with this repo seeds all
- * twelve: the four roles, the personas — a customer in one particular state each — and the staff.
+ * thirteen: the four roles, the personas — a customer in one particular state each — and the staff.
  *
  * | persona        | state                                                         |
  * | -------------- | ------------------------------------------------------------- |
@@ -47,6 +47,7 @@ export interface ScenarioDescription {
  * | `twoFactor`    | email 2FA armed, with known single-use `backupCodes`          |
  * | `pendingEmail` | asked to change address, has not confirmed                    |
  * | `banned`       | switched off — a login is refused                             |
+ * | `secondShopper`| a plain verified customer with an address book — the second buyer |
  *
  * | staff       | holds                                                          |
  * | ----------- | -------------------------------------------------------------- |
@@ -64,6 +65,7 @@ export type E2ERole =
     | 'twoFactor'
     | 'pendingEmail'
     | 'banned'
+    | 'secondShopper'
     | 'manager'
     | 'warehouse'
     | 'support'
