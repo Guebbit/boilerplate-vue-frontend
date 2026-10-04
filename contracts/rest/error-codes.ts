@@ -26,7 +26,7 @@ export const ERROR_CODES = {
     CART_CHANGED: 'CART_CHANGED',
     /** 409 — Checkout was attempted on a cart with no lines. */
     CART_EMPTY: 'CART_EMPTY',
-    /** 409 — One or more lines exceed the product's available stock — see `errors[].details.lines`. */
+    /** 409 — One or more lines exceed the product's available stock — see `errors[].details.lines`, one entry per short line with its `productId`, `title` and the `requested` quantity. The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',

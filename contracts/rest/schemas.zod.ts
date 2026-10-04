@@ -5552,7 +5552,7 @@ export const RemoveWishlistItemResponse = zod.strictObject({
     })
 });
 /**
- * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Returns the updated wishlist; read the cart for its own new state.
+ * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Needs a basket, so it is a shopper's step: staff and administrators are refused with `403`. Returns the updated wishlist; read the cart for its own new state.
  * @summary Move a saved product into the cart
  */
 export const moveWishlistItemToCartPathProductIdMax = 64;
@@ -7251,7 +7251,7 @@ export const HardDeleteOrderByIdResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator can cancel a customer's, never an equal's or a superior's (`OUTRANKED`). The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderByIdPathIdMax = 64;
