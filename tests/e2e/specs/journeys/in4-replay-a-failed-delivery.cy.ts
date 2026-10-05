@@ -10,8 +10,8 @@
  * `https://` subscription, so the switch is made in its own edit form.
  *
  * Replay is synchronous and re-sends against the subscription as it stands now, so it needs no
- * broker. The dead endpoint is `https://127.0.0.1:1`: the SSRF guard exempts the demo receiver's
- * host, so it can be subscribed to, and nothing listens on port 1.
+ * broker. The dead endpoint is a path on the receiver's own origin that contains `dead`: the SSRF
+ * guard exempts that origin, so it can be subscribed to, and both sinks answer such a path with 503.
  */
 import { webhooksReceived } from '../../../support/e2e/harness';
 import {
@@ -27,7 +27,9 @@ import { eventually } from '../../../support/e2e/steps';
 
 /**
  * The path of an endpoint that is down: on the demo receiver's own origin, the only address the SSRF
- * guard lets a private address through, and answered with a 5xx because it names `dead`.
+ * guard lets a private address through. Both sinks answer a path containing `dead` with 503: the
+ * demo one in `scripts/e2e/webhook-sink.ts`, the live one in the backend's
+ * `docker/webhook-tester-tls.Caddyfile`.
  */
 const DEAD_PATH = '/in4-dead';
 
