@@ -24,6 +24,7 @@ import { useRoute } from 'vue-router';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { absentIs } from '@/infrastructure/utils/errors.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -42,8 +43,9 @@ const route = useRoute();
 const { downloadAccountExport } = useProfileStore();
 
 /**
- * This page's own blocked state — an export that is gone (past its retention, replaced, not this
- * account's) answers 404 and lands here, next to the button that asked.
+ * This page's own blocked state — a failed download lands here, next to the button that asked.
+ * A 404 covers an export that is gone (past its retention, replaced), still `building`, `failed`
+ * or not this account's: the API does not tell them apart, by design.
  */
 const {
     message: downloadError,
@@ -55,6 +57,11 @@ const {
  * Whether the file has been saved, to say so.
  */
 const saved = ref(false);
+
+/**
+ * Whether the last failure was the API's 404, the only one the "kept for a few days" hint explains.
+ */
+const exportGone = ref(false);
 
 /**
  * Whether a download is in flight.
@@ -74,6 +81,7 @@ const exportId = typeof route.params.id === 'string' ? route.params.id : '';
  */
 const handleDownload = () => {
     clearDownloadError();
+    exportGone.value = false;
     saved.value = false;
     downloading.value = true;
     return downloadAccountExport(exportId)
@@ -89,7 +97,10 @@ const handleDownload = () => {
             );
             saved.value = true;
         })
-        .catch((error: unknown) => reportDownloadError(error))
+        .catch((error: unknown) => {
+            exportGone.value = absentIs(error, 404);
+            reportDownloadError(error);
+        })
         .finally(() => {
             downloading.value = false;
         });
@@ -123,7 +134,7 @@ const handleDownload = () => {
                 class="mt-4"
                 data-test="account-export-error"
             />
-            <p v-if="downloadError" class="mt-2 opacity-80">
+            <p v-if="downloadError && exportGone" class="mt-2 opacity-80">
                 {{ t('account-export-page.gone-hint') }}
             </p>
         </v-card>
