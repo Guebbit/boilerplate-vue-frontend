@@ -7,18 +7,18 @@ shop's own audit trail, and the realtime SSE playground over the same metrics st
 **Breaks if you change** — nothing outside this folder. It is designed to be deleted.
 :::
 
-| Fact                    | This module                                                                                                                                                                                                                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                                                                                 |
-| **Screens**             | 3 — `Admin`, `AuditLog`, `RealtimePlayground`                                                                                                                                                                                                                                                       |
-| **Store**               | `realtime-observability` — the playground's SSE state. The console and the audit trail hold none of their own.                                                                                                                                                                                      |
-| **Menu entries**        | `RealtimePlayground` · `Admin` · `AuditLog`                                                                                                                                                                                                                                                         |
-| **API calls**           | 5                                                                                                                                                                                                                                                                                                   |
-| **Depends on**          | _nothing_                                                                                                                                                                                                                                                                                           |
-| **Depended on by**      | _nothing_                                                                                                                                                                                                                                                                                           |
-| **Languages**           | `en` · `it`                                                                                                                                                                                                                                                                                         |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                                                                                                                                                                                                                  |
-| **Backend counterpart** | `observability` + `audit-logs` + `account` in `boilerplate-node-backend` — one set of screens over three backend domains: `observability` serves health, the metrics overview and the SSE stream, `audit-logs` owns the trail behind its audit table, and the token-purge action reaches `account`. |
+| Fact                    | This module                                                                                                                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                         |
+| **Screens**             | 3 — `Admin`, `AuditLog`, `RealtimePlayground`                                                                                                                                                                                               |
+| **Store**               | `realtime-observability` — the playground's SSE state. The console and the audit trail hold none of their own.                                                                                                                              |
+| **Menu entries**        | `RealtimePlayground` · `Admin` · `AuditLog`                                                                                                                                                                                                 |
+| **API calls**           | 5                                                                                                                                                                                                                                           |
+| **Depends on**          | _nothing_                                                                                                                                                                                                                                   |
+| **Depended on by**      | _nothing_                                                                                                                                                                                                                                   |
+| **Languages**           | `en` · `it`                                                                                                                                                                                                                                 |
+| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                                                                                                                                                          |
+| **Backend counterpart** | `observability` + `audit-logs` in `boilerplate-node-backend` — one set of screens over two backend domains: `observability` serves health, the metrics overview and the SSE stream, and `audit-logs` owns the trail behind its audit table. |
 
 ::: info Stands alone
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
@@ -30,10 +30,10 @@ No module depends on this one and it depends on none. Deleting the folder and it
 
 ## The story
 
-Three screens over **three backend modules**, which is the clearest asymmetry in the pairing
-table: `observability` serves health, the metrics overview and the SSE stream, `audit-logs` owns
-the trail behind the audit table, and the token-purge action reaches `account`. None of the three
-has a frontend module of its own beyond this one, and this one has no backend module of its own.
+Three screens over **two backend modules**, which is the clearest asymmetry in the pairing
+table: `observability` serves health, the metrics overview and the SSE stream, and `audit-logs`
+owns the trail behind the audit table. Neither has a frontend module of its own beyond this one,
+and this one has no backend module of its own.
 
 It depends on nothing, and reads the observability endpoints directly rather than through any
 other domain's store.

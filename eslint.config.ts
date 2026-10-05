@@ -845,8 +845,8 @@ export default defineConfigWithVueTs(
      *
      * - `AppLanguageSwitcher` PUT the visitor's locale onto their account, which dragged the
      *   session store into a shell component that otherwise only knows about routing.
-     * - `Admin.vue` DELETEd expired tokens next to a composable already holding its four other
-     *   calls, so the fifth was the only one nothing could test without a mount.
+     * - `Admin.vue` made a one-off admin call next to a composable already holding its other
+     *   calls, so that one was the only call nothing could test without a mount.
      *
      * Type imports stay legal (`allowTypeImports`). `import type { LoginRequest } from '@api'` is a
      * component naming the shape of a form it submits, which is vocabulary rather than behaviour —

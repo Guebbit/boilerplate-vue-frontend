@@ -44,7 +44,7 @@ flowchart LR
 ## The story
 
 Twelve screens, six stores, and the widest API surface of any module here — which makes it a
-misleadingly ordinary-looking domain. Four things about it are worth knowing before you edit it.
+misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
 **The session is not in here.** The token lives in `infrastructure/session`, because
 `infrastructure/http` has to read it on every request and the router guards read `isAuth` and the
