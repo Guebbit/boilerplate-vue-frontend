@@ -2332,6 +2332,8 @@ paths:
                 $ref: "#/components/schemas/AccountExportRequestEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
