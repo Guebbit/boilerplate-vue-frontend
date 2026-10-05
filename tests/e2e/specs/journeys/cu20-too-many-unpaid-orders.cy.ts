@@ -4,7 +4,7 @@
  * CU20 · Too many unpaid orders. An unpaid order holds its stock (a week for a bank transfer), so
  * the shop caps how many one account may have open at once, whatever the payment method (two by
  * default). The seeded customer already has one. A second order goes through; a third is refused
- * with a sentence about unpaid orders, not a generic error, and the cart survives, by transfer and
+ * with a sentence about unpaid orders and a link to each, not a generic error, and the cart survives, by transfer and
  * by card alike. Cancelling one of the open orders frees a slot, and the same basket then goes
  * through by card and is paid.
  *
@@ -80,7 +80,8 @@ describe('CU20 · Too many unpaid orders', () => {
             cy.get('[data-test=shipping-method-pickup]').click();
             cy.get('[data-test=payment-method-bank_transfer] label').click();
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-            cy.get('[data-test=cart-checkout-error]').should('contain.text', 'unpaid orders');
+            cy.get('[data-test=cart-open-orders]').should('contain.text', 'unpaid orders');
+            cy.get('[data-test=cart-open-order-link]').should('have.length', 2);
             cy.get('[data-test=cart-item]').should('have.length', 1);
             openOrders().should('equal', 2);
 
@@ -89,7 +90,8 @@ describe('CU20 · Too many unpaid orders', () => {
             cy.get('[data-test=payment-method-card] label').click();
             cy.get('[data-test=payment-method-card] input').should('be.checked');
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-            cy.get('[data-test=cart-checkout-error]').should('contain.text', 'unpaid orders');
+            cy.get('[data-test=cart-open-orders]').should('contain.text', 'unpaid orders');
+            cy.get('[data-test=cart-open-order-link]').should('have.length', 2);
             cy.get('[data-test=cart-item]').should('have.length', 1);
             openOrders().should('equal', 2);
 
