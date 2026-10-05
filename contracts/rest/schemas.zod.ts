@@ -11095,7 +11095,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .min(1)
                 .max(downloadAccountExportResponseShipmentsItemOrderIdMax)
                 .regex(downloadAccountExportResponseShipmentsItemOrderIdRegExp),
-            trackingCode: zod.string(),
+            trackingCode: zod.string().optional(),
             status: zod.enum(['shipped', 'delivered']),
             deliveredAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),

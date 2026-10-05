@@ -745,7 +745,8 @@ export const ExportShipmentStatus = {
 export interface ExportShipment {
     id: Id;
     orderId: Id;
-    trackingCode: string;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    trackingCode?: string;
     status: ExportShipmentStatus;
     deliveredAt?: string;
     createdAt?: string;

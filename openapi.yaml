@@ -14121,7 +14121,6 @@ components:
       required:
         - id
         - orderId
-        - trackingCode
         - status
       properties:
         id:
@@ -14130,6 +14129,7 @@ components:
           $ref: "#/components/schemas/Id"
         trackingCode:
           type: string
+          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false).
         status:
           type: string
           enum:
