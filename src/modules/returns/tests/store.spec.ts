@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
+import { orvalMutator } from '@/infrastructure/http';
 import { useReturnsStore } from '@/modules/returns/store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
@@ -91,6 +92,28 @@ describe('openReturn', () => {
             .then(() => {
                 expect(sent[0].headers?.['Idempotency-Key']).toEqual(expect.any(String));
             });
+    });
+});
+
+describe('when the read wrapper hands back no response', () => {
+    it('openReturn reports nothing and caches nothing', () => {
+        vi.mocked(orvalMutator).mockResolvedValueOnce(undefined);
+        const store = useReturnsStore();
+
+        return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
+            expect(created).toBeUndefined();
+            expect(store.returns).toEqual({});
+        });
+    });
+
+    it('fetchOrderReturns answers an empty list and caches nothing', () => {
+        vi.mocked(orvalMutator).mockResolvedValueOnce(undefined);
+        const store = useReturnsStore();
+
+        return store.fetchOrderReturns('o1').then((items) => {
+            expect(items).toEqual([]);
+            expect(store.returns).toEqual({});
+        });
     });
 });
 
