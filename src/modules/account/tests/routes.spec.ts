@@ -29,6 +29,7 @@ describe('account route access', () => {
         ['VerifyEmailConfirm', undefined],
         ['EmailChangeConfirm', undefined],
         ['OAuthCallback', undefined],
+        ['AccountExportDownload', 'auth'],
         ['Profile', 'auth'],
         ['Logout', undefined]
     ])('%s declares access: %s', (name, access) => {
@@ -49,6 +50,7 @@ describe('account route access', () => {
                 'VerifyEmailConfirm',
                 'EmailChangeConfirm',
                 'OAuthCallback',
+                'AccountExportDownload',
                 'Profile',
                 'Logout'
             ].toSorted()

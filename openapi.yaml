@@ -1137,11 +1137,13 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 64
           description: Filter by actor user ID
         - name: action
           in: query
           schema:
             type: string
+            maxLength: 100
           description: Filter by action name (e.g. order.created)
         - name: outcome
           in: query
@@ -1199,11 +1201,13 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 64
           description: Filter by actor user ID
         - name: action
           in: query
           schema:
             type: string
+            maxLength: 100
           description: Filter by action name (e.g. order.created)
         - name: outcome
           in: query
@@ -1217,6 +1221,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
           description: Filter by the id of the row the action was taken on (e.g. an order or a user)
         - name: since
           in: query
@@ -1800,6 +1805,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2304,45 +2311,25 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/tokens/expired:
-    delete:
-      tags:
-        - Auth
-      summary: Remove expired tokens
-      description: Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
-      operationId: deleteExpiredTokens
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          $ref: "#/components/responses/Success"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /account/export:
     post:
       tags:
         - Auth
-      summary: Export the caller's own data
-      description: One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
-      operationId: exportAccountData
+      summary: Request an export of the caller's own data
+      description: |-
+        Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
+
+        One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+      operationId: requestAccountExport
       security:
         - bearerAuth: []
       responses:
-        "200":
-          description: The caller's own data
+        "202":
+          description: The export is queued (or is the one already building)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountExportEnvelope"
+                $ref: "#/components/schemas/AccountExportRequestEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -2718,6 +2705,7 @@ paths:
           required: true
           schema:
             type: string
+            maxLength: 32
           description: One of the names `GET /account/oauth/providers` lists.
         - name: continue
           in: query
@@ -2725,6 +2713,7 @@ paths:
           description: Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
           schema:
             type: string
+            maxLength: 512
         - name: locale
           in: query
           required: false
@@ -2760,22 +2749,26 @@ paths:
           required: true
           schema:
             type: string
+            maxLength: 32
         - name: code
           in: query
           required: false
           schema:
             type: string
+            maxLength: 2048
         - name: state
           in: query
           required: false
           schema:
             type: string
+            maxLength: 512
         - name: error
           in: query
           required: false
           description: Set by the provider instead of `code` when the user declines consent.
           schema:
             type: string
+            maxLength: 256
       responses:
         "302":
           description: Redirect to the frontend, session cookies set on success
@@ -2825,6 +2818,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 50
         - name: active
           in: query
           schema:
@@ -3535,11 +3529,13 @@ paths:
           required: false
           schema:
             type: string
+            maxLength: 200
         - name: tag
           in: query
           required: false
           schema:
             type: string
+            maxLength: 200
         - name: minPrice
           in: query
           required: false
@@ -3558,6 +3554,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 200
         - name: active
           in: query
           schema:
@@ -4644,6 +4641,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 1000
         - name: deleted
           in: query
           description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
@@ -5672,6 +5670,7 @@ paths:
           required: true
           schema:
             type: string
+            maxLength: 200
           description: "`t=<unix seconds>,v1=<hex hmac-sha256 of \"<t>.<raw body>\">`. `t` must be within 300 seconds of the server's clock or the delivery is rejected as stale, replay protection against a captured signature being resent later."
       requestBody:
         required: true
@@ -6682,6 +6681,7 @@ paths:
           required: true
           schema:
             type: string
+            maxLength: 64
           description: A ring entry's id, from `secretIds`.
       responses:
         "200":
@@ -6952,6 +6952,40 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+  /account/export/{id}:
+    get:
+      tags:
+        - Auth
+      summary: Download an export of the caller's own data
+      description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design."
+      operationId: downloadAccountExport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The caller's own data
+          headers:
+            Content-Disposition:
+              description: "`attachment`, with the file name `account-export.json`."
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExportResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7373,6 +7407,7 @@ components:
       required: false
       schema:
         type: string
+        maxLength: 4096
       description: |
         The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
     IdempotencyKeyHeader:
@@ -7494,6 +7529,7 @@ components:
       required: true
       schema:
         type: string
+        maxLength: 32
       description: "Wire name of a second factor — a `method` from `GET /account/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel."
     ReauthMethodPath:
       name: method
@@ -7620,23 +7656,28 @@ components:
       description: Free-text search string
     Email:
       type: string
+      maxLength: 254
       format: email
     Password:
       type: string
+      maxLength: 128
       minLength: 8
       description: "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
     PasswordNew:
       type: string
+      maxLength: 128
       minLength: 8
       pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
       description: A password being SET by its owner — signup, reset (or the setup link) and change. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
     Locale:
       type: string
+      maxLength: 35
       description: BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
       pattern: ^[a-z]{2}(-[A-Za-z0-9]+)*$
       example: it
     CountryCode:
       type: string
+      maxLength: 2
       description: ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
       pattern: ^[A-Z]{2}$
       example: IT
@@ -7971,6 +8012,7 @@ components:
       description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
     Sku:
       type: string
+      maxLength: 64
       minLength: 1
       description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
     Product:
@@ -8581,23 +8623,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Example"
-    AccountExportEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AccountExportResponse"
     HardDeleteRequest:
       type: object
       additionalProperties: false
@@ -8754,9 +8779,11 @@ components:
           $ref: "#/components/schemas/Locale"
         name:
           type: string
+          maxLength: 100
           minLength: 1
         nativeName:
           type: string
+          maxLength: 100
           minLength: 1
         direction:
           $ref: "#/components/schemas/LocaleDirection"
@@ -8920,9 +8947,11 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
           minLength: 1
         nativeName:
           type: string
+          maxLength: 100
           minLength: 1
         direction:
           $ref: "#/components/schemas/LocaleDirection"
@@ -8935,9 +8964,11 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
           minLength: 1
         nativeName:
           type: string
+          maxLength: 100
           minLength: 1
         direction:
           $ref: "#/components/schemas/LocaleDirection"
@@ -9053,10 +9084,12 @@ components:
       properties:
         key:
           type: string
+          maxLength: 200
           minLength: 1
           example: products.list.title
         value:
           type: string
+          maxLength: 2000
           example: Catálogo
     ReplaceLocaleEntriesRequest:
       type: object
@@ -9119,10 +9152,12 @@ components:
       properties:
         key:
           type: string
+          maxLength: 200
           minLength: 1
           example: products.list.title
         value:
           type: string
+          maxLength: 2000
           example: Catálogo
     LocaleEntryEnvelope:
       type: object
@@ -9161,8 +9196,10 @@ components:
       properties:
         value:
           type: string
+          maxLength: 2000
     TranslatableEntityType:
       type: string
+      maxLength: 64
       minLength: 1
       description: "A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema."
       example: product
@@ -9270,6 +9307,7 @@ components:
           type: object
           additionalProperties:
             type: string
+            maxLength: 10000
             minLength: 1
           description: "The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale."
         origin:
@@ -9301,6 +9339,7 @@ components:
           type: object
           additionalProperties:
             type: string
+            maxLength: 10000
             minLength: 1
             nullable: true
           description: Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time.
@@ -9965,6 +10004,7 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         locale:
           type: string
           nullable: true
@@ -9974,10 +10014,12 @@ components:
           $ref: "#/components/schemas/ImageRemoval"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
         website:
           type: string
+          maxLength: 2048
           minLength: 1
           nullable: true
         analyticsConsent:
@@ -9995,6 +10037,7 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         locale:
           type: string
           allOf:
@@ -10005,9 +10048,11 @@ components:
           description: Optional user profile image
         phone:
           type: string
+          maxLength: 32
           minLength: 1
         website:
           type: string
+          maxLength: 2048
           minLength: 1
         analyticsConsent:
           type: boolean
@@ -10020,6 +10065,7 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         locale:
           type: string
           nullable: true
@@ -10029,10 +10075,12 @@ components:
           $ref: "#/components/schemas/ImageRemoval"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
         website:
           type: string
+          maxLength: 2048
           minLength: 1
           nullable: true
         analyticsConsent:
@@ -10046,6 +10094,7 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         locale:
           type: string
           allOf:
@@ -10056,9 +10105,11 @@ components:
           description: Optional user profile image
         phone:
           type: string
+          maxLength: 32
           minLength: 1
         website:
           type: string
+          maxLength: 2048
           minLength: 1
         analyticsConsent:
           type: boolean
@@ -10141,6 +10192,7 @@ components:
       properties:
         password:
           type: string
+          maxLength: 128
           minLength: 1
           description: A CANDIDATE password, not `PasswordNew` — this runs while someone is still typing, so it accepts anything non-empty rather than the contract's own composition rule.
     PasswordCheck:
@@ -10233,6 +10285,7 @@ components:
             - email
         code:
           type: string
+          maxLength: 64
           minLength: 1
           description: The code from `POST /account/reauth/methods/email/send`.
     ReauthRequest:
@@ -10378,23 +10431,29 @@ components:
       properties:
         label:
           type: string
+          maxLength: 50
           minLength: 1
         fullName:
           type: string
+          maxLength: 100
           minLength: 1
         street:
           type: string
+          maxLength: 200
           minLength: 1
         city:
           type: string
+          maxLength: 100
           minLength: 1
         zip:
           type: string
+          maxLength: 20
           minLength: 1
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
         default:
           type: boolean
@@ -10427,24 +10486,30 @@ components:
       properties:
         label:
           type: string
+          maxLength: 50
           minLength: 1
           nullable: true
         fullName:
           type: string
+          maxLength: 100
           minLength: 1
         street:
           type: string
+          maxLength: 200
           minLength: 1
         city:
           type: string
+          maxLength: 100
           minLength: 1
         zip:
           type: string
+          maxLength: 20
           minLength: 1
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
     UpdateAddressRequest:
@@ -10453,24 +10518,30 @@ components:
       properties:
         label:
           type: string
+          maxLength: 50
           minLength: 1
           nullable: true
         fullName:
           type: string
+          maxLength: 100
           minLength: 1
         street:
           type: string
+          maxLength: 200
           minLength: 1
         city:
           type: string
+          maxLength: 100
           minLength: 1
         zip:
           type: string
+          maxLength: 20
           minLength: 1
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
     VerifyEmailConfirmRequest:
@@ -10481,6 +10552,7 @@ components:
       properties:
         token:
           type: string
+          maxLength: 128
           minLength: 1
           description: One-time email verification token (NOT a JWT).
     AccountDeleteConfirmRequest:
@@ -10491,6 +10563,7 @@ components:
       properties:
         token:
           type: string
+          maxLength: 128
           minLength: 1
           description: One-time account deletion token (NOT a JWT).
     RememberTier:
@@ -10608,6 +10681,7 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         password:
           $ref: "#/components/schemas/PasswordNew"
         passwordConfirm:
@@ -10636,6 +10710,7 @@ components:
       properties:
         token:
           type: string
+          maxLength: 128
           minLength: 1
           description: One-time password reset token (NOT a JWT).
         password:
@@ -10674,404 +10749,39 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/RefreshTokenResponse"
-    ApiKey:
+    AccountExportRequest:
       type: object
       additionalProperties: false
       required:
         - id
-        - name
-        - publicPrefix
-        - permissions
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        publicPrefix:
-          type: string
-          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
-        permissions:
-          type: array
-          items:
-            type: string
-          minItems: 1
-          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-        lastUsedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    RefundReason:
-      type: string
-      enum:
-        - cancellation
-        - goodwill
-        - return
-      description: Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
-    Refund:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - amount
-        - currency
         - status
-        - reason
-        - createdAt
-      description: One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
       properties:
         id:
           $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-          description: The amount returned, in the payment's own `currency`.
-        currency:
-          type: string
-          description: ISO-4217 currency code, copied from the payment.
         status:
           type: string
           enum:
-            - pending
-            - succeeded
+            - building
+            - ready
             - failed
-          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
-        reason:
-          $ref: "#/components/schemas/RefundReason"
-        returnId:
-          $ref: "#/components/schemas/Id"
-        settledAt:
-          type: string
-          format: date-time
-          description: When the refund succeeded. Absent while it has not.
-        createdAt:
-          type: string
-          format: date-time
-    ExportPayment:
+          description: "`building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one."
+    AccountExportRequestEnvelope:
       type: object
       additionalProperties: false
       required:
-        - id
-        - orderId
-        - amount
-        - currency
+        - success
         - status
-        - provider
-        - amountRefunded
-        - refunds
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-        currency:
-          type: string
-        amountRefunded:
-          type: number
-          format: double
-          minimum: 0
-        refunds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Refund"
-        status:
-          type: string
-          enum:
-            - requires_confirmation
-            - requires_action
-            - processing
-            - succeeded
-            - declined
-            - refunded
-        provider:
-          type: string
-        cardLast4:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportShipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - trackingCode
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        trackingCode:
-          type: string
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-        deliveredAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportSession:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - type
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        type:
-          type: string
-          enum:
-            - refresh
-        expiration:
-          type: string
-          format: date-time
-        lastUsedAt:
-          type: string
-          format: date-time
-    ExportAuditEntry:
-      type: object
-      additionalProperties: false
-      required:
-        - actor_user_id
-        - actor_role
-        - action
-        - outcome
-        - timestamp
-        - level
-      properties:
-        actor_user_id:
-          type: string
-        actor_role:
-          type: string
-          enum:
-            - admin
-            - user
-            - anonymous
-            - system
-        actor_role_name:
-          type: string
-          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
-        actor_scope:
-          type: string
-          enum:
-            - tenant
-            - platform
-          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
-        action:
-          type: string
-          description: Dotted action name, e.g. `order.created`.
-        outcome:
-          type: string
-          enum:
-            - success
-            - failure
-        ip:
-          type: string
-        user_agent:
-          type: string
-        request_id:
-          type: string
-        trace_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-        timestamp:
-          type: string
-          format: date-time
-        level:
-          type: string
-          enum:
-            - info
-            - warn
-    ExportFeedbackTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
         - message
-        - status
+        - data
       properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
         message:
-          type: string
-        status:
-          type: string
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-    ExportInvoiceDocument:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - number
-        - issuedAt
-        - currency
-        - grandTotal
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: string
-        issuedAt:
-          type: string
-          format: date-time
-        currency:
-          type: string
-        grandTotal:
-          type: number
-          format: double
-          minimum: 0
-    ReturnStatus:
-      type: string
-      enum:
-        - requested
-        - approved
-        - declined
-        - received
-        - closed
-      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
-    ReturnReason:
-      type: string
-      enum:
-        - withdrawal
-        - defective
-        - wrong_item
-        - other
-      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
-    ExportReturn:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - status
-        - reason
-        - lines
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        status:
-          $ref: "#/components/schemas/ReturnStatus"
-        reason:
-          $ref: "#/components/schemas/ReturnReason"
-        note:
-          type: string
-        lines:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - quantity
-              - title
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              quantity:
-                type: integer
-                minimum: 1
-              title:
-                type: string
-        createdAt:
-          type: string
-          format: date-time
-    ExampleStatus:
-      type: string
-      enum:
-        - draft
-        - published
-        - archived
-    Example:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - body
-        - status
-        - userId
-        - ownerName
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
-        body:
-          type: string
-        status:
-          $ref: "#/components/schemas/ExampleStatus"
-        userId:
-          $ref: "#/components/schemas/Id"
-        ownerName:
-          type: string
-          description: The owner's display name.
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-        publishedAt:
-          type: string
-          format: date-time
-          description: Stamped the first time the example is published, never moved again.
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/AccountExportRequest"
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false
@@ -11080,10 +10790,12 @@ components:
       properties:
         challenge:
           type: string
+          maxLength: 128
           minLength: 1
           description: The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
         code:
           type: string
+          maxLength: 64
           description: A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's.
         remember:
           $ref: "#/components/schemas/RememberTier"
@@ -11095,10 +10807,12 @@ components:
       properties:
         challenge:
           type: string
+          maxLength: 128
           minLength: 1
           description: The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
         method:
           type: string
+          maxLength: 32
           description: Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true.
     TwoFactorDelivery:
       type: object
@@ -11189,6 +10903,7 @@ components:
       properties:
         code:
           type: string
+          maxLength: 64
           description: A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
     TwoFactorSetupRequest:
       type: object
@@ -11196,6 +10911,7 @@ components:
       properties:
         code:
           type: string
+          maxLength: 64
           description: A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor.
     TwoFactorSetup:
       type: object
@@ -11251,6 +10967,7 @@ components:
       properties:
         code:
           type: string
+          maxLength: 64
           description: "The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works."
     TwoFactorConfirmed:
       type: object
@@ -11403,8 +11120,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11425,8 +11144,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11459,8 +11180,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11473,10 +11196,12 @@ components:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
         website:
           type: string
+          maxLength: 2048
           minLength: 1
           nullable: true
     ReplaceUserByIdRequestMultipart:
@@ -11490,8 +11215,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11505,9 +11232,11 @@ components:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
         website:
           type: string
+          maxLength: 2048
           minLength: 1
     UpdateUserByIdRequest:
       type: object
@@ -11516,8 +11245,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11530,10 +11261,12 @@ components:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
           nullable: true
         website:
           type: string
+          maxLength: 2048
           minLength: 1
           nullable: true
     UpdateUserByIdRequestMultipart:
@@ -11543,8 +11276,10 @@ components:
         username:
           type: string
           minLength: 3
+          maxLength: 50
         role:
           type: string
+          maxLength: 64
           minLength: 1
         active:
           type: boolean
@@ -11558,9 +11293,11 @@ components:
             - $ref: "#/components/schemas/Locale"
         phone:
           type: string
+          maxLength: 32
           minLength: 1
         website:
           type: string
+          maxLength: 2048
           minLength: 1
     SearchUsersRequest:
       type: object
@@ -11584,6 +11321,7 @@ components:
           $ref: "#/components/schemas/Email"
         username:
           type: string
+          maxLength: 50
         active:
           type: boolean
         deleted:
@@ -11807,8 +11545,10 @@ components:
       properties:
         title:
           type: string
+          maxLength: 200
         description:
           type: string
+          maxLength: 10000
           minLength: 1
     ProductTranslationsWrite:
       type: object
@@ -11868,11 +11608,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     CreateProductRequestMultipart:
       type: object
@@ -11883,6 +11625,7 @@ components:
       properties:
         translations:
           type: string
+          maxLength: 100000
           description: JSON-encoded `ProductTranslationsWrite`.
         price:
           type: number
@@ -11920,11 +11663,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     ProductEnvelope:
       type: object
@@ -12074,11 +11819,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     ReplaceProductRequestMultipart:
       type: object
@@ -12093,6 +11840,7 @@ components:
       properties:
         translations:
           type: string
+          maxLength: 100000
           description: JSON-encoded `ProductTranslationsWrite`.
         price:
           type: number
@@ -12129,11 +11877,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     ProductTranslationFieldsPatch:
       type: object
@@ -12141,9 +11891,11 @@ components:
       properties:
         title:
           type: string
+          maxLength: 200
           description: A title is never cleared — an empty locale is deleted with the locale's own `null`.
         description:
           type: string
+          maxLength: 10000
           minLength: 1
           nullable: true
           description: A string sets the description, `null` clears it, absent keeps it. `""` is a 422.
@@ -12201,11 +11953,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     UpdateProductRequestMultipart:
       type: object
@@ -12213,6 +11967,7 @@ components:
       properties:
         translations:
           type: string
+          maxLength: 100000
           description: JSON-encoded `ProductTranslationsPatch`.
         price:
           type: number
@@ -12249,11 +12004,13 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
             minLength: 1
         tags:
           type: array
           items:
             type: string
+            maxLength: 50
             minLength: 1
     ProductTranslationFields:
       type: object
@@ -12401,10 +12158,13 @@ components:
           minimum: 0
         category:
           type: string
+          maxLength: 200
         tag:
           type: string
+          maxLength: 200
         title:
           type: string
+          maxLength: 200
         active:
           type: boolean
         deleted:
@@ -12564,6 +12324,7 @@ components:
       properties:
         shippingMethodId:
           type: string
+          maxLength: 64
           minLength: 1
           nullable: true
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
@@ -12590,6 +12351,7 @@ components:
       properties:
         notes:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Optional order notes. Left out when there are none; an empty string is a 422.
         addressId:
@@ -12775,6 +12537,7 @@ components:
           $ref: "#/components/schemas/PaymentMethodId"
         notes:
           type: string
+          maxLength: 1000
         deleted:
           type: boolean
     ReplaceOrderByIdRequest:
@@ -12813,6 +12576,7 @@ components:
           description: Must be `processing`, `shipped` or `delivered`, and forward of the order's current status — every other value is a 409.
         reason:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Why the normal door didn't apply. Recorded on the order's override history, never optional.
     CreditNoteSummary:
@@ -12910,6 +12674,53 @@ components:
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
+    RefundReason:
+      type: string
+      enum:
+        - cancellation
+        - goodwill
+        - return
+      description: Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+    Refund:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - amount
+        - currency
+        - status
+        - reason
+        - createdAt
+      description: One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: The amount returned, in the payment's own `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code, copied from the payment.
+        status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
+        reason:
+          $ref: "#/components/schemas/RefundReason"
+        returnId:
+          $ref: "#/components/schemas/Id"
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund succeeded. Absent while it has not.
+        createdAt:
+          type: string
+          format: date-time
     PaymentActions:
       type: object
       additionalProperties: false
@@ -12920,7 +12731,7 @@ components:
       properties:
         pay:
           type: boolean
-          description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`.
+          description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it).
         refund:
           type: boolean
           description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order).
@@ -13054,6 +12865,7 @@ components:
           description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
         currency:
           type: string
+          maxLength: 3
           description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     RecordOfflinePaymentRequest:
       type: object
@@ -13100,9 +12912,11 @@ components:
       properties:
         id:
           type: string
+          maxLength: 200
           description: The provider's event id. Deduplicated, so a retry settles nothing twice.
         providerRef:
           type: string
+          maxLength: 200
           description: Which intent the event is about. Absent for an event this API ignores.
         status:
           type: string
@@ -13114,6 +12928,7 @@ components:
           description: The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores.
         cardLast4:
           type: string
+          maxLength: 4
           description: The only card digits a payment system may remember, as the provider reports them.
     ShippingMethod:
       type: object
@@ -13270,6 +13085,7 @@ components:
       properties:
         trackingCode:
           type: string
+          maxLength: 100
           minLength: 1
           description: The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
         forced:
@@ -13277,6 +13093,7 @@ components:
           description: Skip the normal `processing`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still creates the parcel record and sends the shipped email; still refuses a tracked method with no `trackingCode`.
         reason:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
     DeliverOrderRequest:
@@ -13288,8 +13105,26 @@ components:
           description: Skip the normal `shipped`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still stamps the shipment delivered and reports the fact.
         reason:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true`.
+    ReturnStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - declined
+        - received
+        - closed
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+    ReturnReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
     ReturnLine:
       type: object
       additionalProperties: false
@@ -13653,6 +13488,7 @@ components:
           description: How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
         note:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Optional — the supplier, the delivery note number, whatever the operator wants on the row.
     InventoryLevelEnvelope:
@@ -13686,6 +13522,7 @@ components:
           description: Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.
         note:
           type: string
+          maxLength: 1000
           minLength: 1
           description: Why. An unexplained correction is the thing an audit is looking for.
     ReservationSweepResponse:
@@ -13801,17 +13638,20 @@ components:
       properties:
         url:
           type: string
+          maxLength: 2048
           format: uri
           pattern: (?:^https://)
           description: Must be `https://`. Validated again, against the resolved IP, on every delivery.
         description:
           type: string
+          maxLength: 500
           minLength: 1
         eventTypes:
           type: array
           items:
             type: string
             minLength: 1
+            maxLength: 100
           minItems: 1
     WebhookSubscriptionCreated:
       type: object
@@ -13890,11 +13730,13 @@ components:
       properties:
         url:
           type: string
+          maxLength: 2048
           format: uri
           pattern: (?:^https://)
           description: Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
         description:
           type: string
+          maxLength: 500
           minLength: 1
           nullable: true
         eventTypes:
@@ -13902,6 +13744,7 @@ components:
           items:
             type: string
             minLength: 1
+            maxLength: 100
           minItems: 1
         enabled:
           type: boolean
@@ -13929,11 +13772,13 @@ components:
       properties:
         url:
           type: string
+          maxLength: 2048
           format: uri
           pattern: (?:^https://)
           description: Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
         description:
           type: string
+          maxLength: 500
           minLength: 1
           nullable: true
         eventTypes:
@@ -13941,6 +13786,7 @@ components:
           items:
             type: string
             minLength: 1
+            maxLength: 100
           minItems: 1
         enabled:
           type: boolean
@@ -14069,6 +13915,45 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WebhookEventCatalogueEntry"
+    ApiKey:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - publicPrefix
+        - permissions
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        publicPrefix:
+          type: string
+          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
+        permissions:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     ApiKeysResponse:
       type: object
       additionalProperties: false
@@ -14115,6 +14000,7 @@ components:
           type: array
           items:
             type: string
+            maxLength: 100
           minItems: 1
           description: The permission keys to mint this credential with. Must be a subset of the caller's own current permissions, or the request is refused with 422.
         expiresAt:
@@ -14179,6 +14065,301 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    ExportPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - amount
+        - currency
+        - status
+        - provider
+        - amountRefunded
+        - refunds
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+        amountRefunded:
+          type: number
+          format: double
+          minimum: 0
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refund"
+        status:
+          type: string
+          enum:
+            - requires_confirmation
+            - requires_action
+            - processing
+            - succeeded
+            - declined
+            - refunded
+        provider:
+          type: string
+        cardLast4:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportShipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - trackingCode
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        trackingCode:
+          type: string
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+        deliveredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        type:
+          type: string
+          enum:
+            - refresh
+        expiration:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+    ExportAuditEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - actor_user_id
+        - actor_role
+        - action
+        - outcome
+        - timestamp
+        - level
+      properties:
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum:
+            - admin
+            - user
+            - anonymous
+            - system
+        actor_role_name:
+          type: string
+          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
+        actor_scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+        action:
+          type: string
+          description: Dotted action name, e.g. `order.created`.
+        outcome:
+          type: string
+          enum:
+            - success
+            - failure
+        ip:
+          type: string
+        user_agent:
+          type: string
+        request_id:
+          type: string
+        trace_id:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+            - info
+            - warn
+    ExportFeedbackTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ExportInvoiceDocument:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - number
+        - issuedAt
+        - currency
+        - grandTotal
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        grandTotal:
+          type: number
+          format: double
+          minimum: 0
+    ExportReturn:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - status
+        - reason
+        - lines
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+              - title
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+    ExampleStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - archived
+    Example:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - body
+        - status
+        - userId
+        - ownerName
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+        body:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+        userId:
+          $ref: "#/components/schemas/Id"
+        ownerName:
+          type: string
+          description: The owner's display name.
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        publishedAt:
+          type: string
+          format: date-time
+          description: Stamped the first time the example is published, never moved again.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     ExampleEnvelope:
       type: object
       additionalProperties: false
@@ -14311,6 +14492,9 @@ components:
           type: string
           format: binary
 x-error-codes:
+  ADDRESS_BOOK_FULL:
+    status: 409
+    description: The address book already holds `NODE_ADDRESS_BOOK_MAX` entries (20 by default) — remove one before adding another.
   ANTIBOT_NO_CHALLENGE:
     status: 404
     description: No challenge is currently active for this session.
@@ -14329,9 +14513,6 @@ x-error-codes:
   CART_ADDRESS_REQUIRED:
     status: 422
     description: A shipping address is required and none was supplied or found on file.
-  CART_BANK_TRANSFER_LIMIT:
-    status: 409
-    description: This order total exceeds the bank-transfer payment method's configured ceiling.
   CART_BILLING_ADDRESS_REQUIRED:
     status: 422
     description: No billing address could be resolved — none was named, nothing ships, and the address book has no default.
@@ -14344,6 +14525,9 @@ x-error-codes:
   CART_INSUFFICIENT_STOCK:
     status: 409
     description: "One or more lines exceed the product's available stock — see `errors[].details.lines`, one entry per short line with its `productId`, `title` and the `requested` quantity. The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`)."
+  CART_OPEN_ORDER_LIMIT:
+    status: 409
+    description: "The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again."
   CART_PAYMENT_METHOD_NOT_AVAILABLE:
     status: 409
     description: The chosen payment method is not enabled for this deployment or this cart.
@@ -14377,6 +14561,9 @@ x-error-codes:
   DELIVERY_TRACKING_CODE_REQUIRED:
     status: 422
     description: Marking a shipment shipped requires a tracking code and none was supplied.
+  EMAIL_CHANGE_TOO_SOON:
+    status: 429
+    description: An email change was already requested for this account in the last minute — carries `details.retryAfter`.
   EMAIL_NOT_VERIFIED:
     status: 403
     description: Checkout requires a verified email address — see `POST /account/verify-email`.
