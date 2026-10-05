@@ -845,8 +845,52 @@ components:
                 data:
                     $ref: '#/components/schemas/ExamplePublishedPayload'
             additionalProperties: false
-        NotificationPayload:
-            title: NotificationPayload
+        CartLineRemovedParamsPayload:
+            title: CartLineRemovedParamsPayload
+            type: object
+            required:
+                - productId
+                - titles
+            properties:
+                productId:
+                    type: string
+                titles:
+                    description: Locale → the product's name in it.
+                    type: object
+                    additionalProperties:
+                        type: string
+            additionalProperties: false
+        CartMergeRefusedLinePayload:
+            title: CartMergeRefusedLinePayload
+            type: object
+            required:
+                - productId
+                - requested
+                - titles
+            properties:
+                productId:
+                    type: string
+                requested:
+                    type: integer
+                titles:
+                    description: Locale → the product's name in it.
+                    type: object
+                    additionalProperties:
+                        type: string
+            additionalProperties: false
+        CartMergeRefusedParamsPayload:
+            title: CartMergeRefusedParamsPayload
+            type: object
+            required:
+                - lines
+            properties:
+                lines:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/CartMergeRefusedLinePayload'
+            additionalProperties: false
+        NotificationCartLineRemovedPayload:
+            title: NotificationCartLineRemovedPayload
             type: object
             required:
                 - id
@@ -861,11 +905,8 @@ components:
                     type: string
                     enum:
                         - notifications.cart-line-removed
-                        - notifications.wishlist-item-removed
-                        - notifications.cart-merge-refused
                 params:
-                    type: object
-                    additionalProperties: true
+                    $ref: '#/components/schemas/CartLineRemovedParamsPayload'
                 severity:
                     type: string
                     enum:
@@ -881,6 +922,80 @@ components:
                     type: string
                     format: date-time
             additionalProperties: false
+        NotificationWishlistItemRemovedPayload:
+            title: NotificationWishlistItemRemovedPayload
+            type: object
+            required:
+                - id
+                - code
+                - params
+                - severity
+                - createdAt
+            properties:
+                id:
+                    type: string
+                code:
+                    type: string
+                    enum:
+                        - notifications.wishlist-item-removed
+                params:
+                    $ref: '#/components/schemas/CartLineRemovedParamsPayload'
+                severity:
+                    type: string
+                    enum:
+                        - info
+                        - success
+                        - warning
+                        - error
+                readAt:
+                    description: When the owner read it; absent while unread.
+                    type: string
+                    format: date-time
+                createdAt:
+                    type: string
+                    format: date-time
+            additionalProperties: false
+        NotificationCartMergeRefusedPayload:
+            title: NotificationCartMergeRefusedPayload
+            type: object
+            required:
+                - id
+                - code
+                - params
+                - severity
+                - createdAt
+            properties:
+                id:
+                    type: string
+                code:
+                    type: string
+                    enum:
+                        - notifications.cart-merge-refused
+                params:
+                    $ref: '#/components/schemas/CartMergeRefusedParamsPayload'
+                severity:
+                    type: string
+                    enum:
+                        - info
+                        - success
+                        - warning
+                        - error
+                readAt:
+                    description: When the owner read it; absent while unread.
+                    type: string
+                    format: date-time
+                createdAt:
+                    type: string
+                    format: date-time
+            additionalProperties: false
+        NotificationPayload:
+            title: NotificationPayload
+            oneOf:
+                - $ref: '#/components/schemas/NotificationCartLineRemovedPayload'
+                - $ref: '#/components/schemas/NotificationWishlistItemRemovedPayload'
+                - $ref: '#/components/schemas/NotificationCartMergeRefusedPayload'
+            # A plain property name here, unlike OpenAPI's `{ propertyName }` object.
+            discriminator: code
         NotificationCreatedPayload:
             title: NotificationCreatedPayload
             type: object

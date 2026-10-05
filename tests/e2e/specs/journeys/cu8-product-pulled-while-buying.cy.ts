@@ -6,8 +6,8 @@
  *
  * - **Soft delete** (path 1): the product leaves the cart and the wishlist at once, and a later
  *   restore puts the product back on sale but not back in either.
- * - **Deactivation** (path 2): a pending order keeps its line, since it was placed while the
- *   product was sellable, but paying it is refused and the panel names the line.
+ * - **Deactivation** (path 2): a pending order keeps its line and can still be paid. The order was
+ *   placed while the product was on sale, and the order treats it as present from then on.
  *
  * The editor works through the API: it is the cause, and the customer's pages are the subject.
  */
@@ -66,40 +66,39 @@ describe('CU8 · The product is pulled while I am buying it', () => {
         });
     });
 
-    it('a deactivated product keeps its pending order but refuses the payment, naming the line', () => {
+    it('a deactivated product leaves its pending order as it was, and the payment goes through', () => {
         cy.step('the customer places an order and has not paid yet');
         cy.loginAs('user');
         cy.subjectId('product.barebones').then((productId) => {
-            cy.subjectProduct('product.barebones').then(({ title }) => {
-                // Found by title: this product has no category to narrow the list by.
-                cy.visit('/en/products');
-                searchAndOpenProduct('product.barebones');
-                addOpenProductToCart();
-                cy.goToCart();
-                // `pickup` needs no address, so choosing it alone enables the button.
-                cy.get('[data-test=shipping-method-pickup]').click();
-                cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-                cy.get('#order-target').should('exist');
-                cy.get('[data-test=payment-method-select]').should('exist');
+            // Found by title: this product has no category to narrow the list by.
+            cy.visit('/en/products');
+            searchAndOpenProduct('product.barebones');
+            addOpenProductToCart();
+            cy.goToCart();
+            // `pickup` needs no address, so choosing it alone enables the button.
+            cy.get('[data-test=shipping-method-pickup]').click();
+            cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+            cy.get('#order-target').should('exist');
+            cy.get('[data-test=payment-method-select]').should('exist');
 
-                cy.step('the editor deactivates the product');
-                cy.apiAs('editor', 'PATCH', `/products/${productId}`, { active: false });
+            cy.step('the editor deactivates the product');
+            cy.apiAs('editor', 'PATCH', `/products/${productId}`, { active: false });
 
-                cy.step('paying is refused, naming the product; the order itself stays pending');
-                cy.payWith('Card that pays');
-                cy.get('[data-test=payment-unavailable]').should('exist');
-                cy.get('[data-test=payment-unavailable-line]')
-                    .should('have.length', 1)
-                    .and('contain.text', title);
-                cy.get('[data-test=order-download-invoice]').should('not.exist');
-                idFromLocation().then((orderId) => {
-                    cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should(
-                        (order) => {
-                            expect(order?.status).to.equal('pending');
-                        }
-                    );
-                });
+            cy.step(
+                'the order is still pending and paying it works: the product counts as present'
+            );
+            idFromLocation().then((orderId) => {
+                cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should(
+                    (order) => {
+                        expect(order?.status).to.equal('pending');
+                    }
+                );
             });
+            cy.payWith('Card that pays');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+
+            // Leave the shop as found.
+            cy.apiAs('editor', 'PATCH', `/products/${productId}`, { active: true });
         });
     });
 });

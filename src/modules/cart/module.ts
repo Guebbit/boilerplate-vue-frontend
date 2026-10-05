@@ -71,14 +71,21 @@ export default {
                 /*
                  * Staff and administrators hold no cart key, so for them the summary read would be
                  * a 403. The abilities arrive a moment after the session does, so this watches the
-                 * answer to "may this session shop", not the session alone.
+                 * answer to "may this session shop", not the session alone. It watches WHO may
+                 * shop, not whether someone does: another account taking the tab over with no
+                 * sign-out between keeps the answer "yes", and still needs its own seed. `flush:
+                 * 'post'` runs it after the store's own per-person reset, so the seed lands on a
+                 * store already emptied of the previous person.
                  */
                 watch(
-                    () => isAuth.value && session.can('update', 'Cart'),
-                    (mayShop) => {
-                        if (mayShop) void cartStore.seedAfterSignIn();
+                    () =>
+                        isAuth.value && session.can('update', 'Cart')
+                            ? session.viewer?.id
+                            : undefined,
+                    (shopperId) => {
+                        if (shopperId !== undefined) void cartStore.seedAfterSignIn();
                     },
-                    { immediate: true }
+                    { immediate: true, flush: 'post' }
                 );
                 watch(isAuth, (auth, wasAuth) => {
                     // Only the real end of a session: a reload starts signed out and is restored a

@@ -6,16 +6,22 @@
 
 export { MIN_LINE_QUANTITY, steppedQuantity } from './quantity';
 export { classifyCheckoutError } from './checkout-errors';
+export { checkoutFingerprint } from './checkout-attempt';
 export {
     MAX_GUEST_LINES,
     MAX_GUEST_LINE_QUANTITY,
     addGuestLine,
     guestCartQuantity,
     parseGuestCart,
+    parseMergeAttempt,
     removeGuestLines,
-    setGuestLineQuantity
+    setGuestLineQuantity,
+    subtractGuestLines
 } from './guest-cart';
-export type { GuestCartLine } from './guest-cart';
+export { changedMergeLines, mergeReportKind } from './merge-report';
+export type { MergeReportKind, MergeReportLine } from './merge-report';
+export { stockPollIntervalMs } from './stock-poll';
+export type { GuestCartLine, MergeAttempt } from './guest-cart';
 
 /**
  * The checkout-error vocabulary, re-exported so callers import from the domain barrel.

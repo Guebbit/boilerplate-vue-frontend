@@ -24,8 +24,6 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { usePaymentsStore } from '../store.ts';
-import { classifyPaymentError } from '@/modules/payments/domain';
-import type { UnavailableOrderLine } from '@/modules/payments/domain';
 import { OrderStatus } from '@/types/enums.ts';
 
 /**
@@ -184,17 +182,9 @@ const announceIfSettled = () => {
 };
 
 /**
- * The lines an `ORDER_PRODUCT_UNAVAILABLE` refusal named — a product removed or deactivated
- * since the order was placed, caught fresh at payment start rather than trusting the order's own
- * frozen snapshot. Empty whenever the last attempt did not end in this refusal.
- */
-const unavailableLines = ref<UnavailableOrderLine[]>([]);
-
-/**
  * This panel's own blocked state — paying and finishing at the provider are two steps of the same
  * one workflow, never shown at once, so both share the one instance rendered next to whichever
- * step is current. `ORDER_PRODUCT_UNAVAILABLE` stays its own toast/list above, since it already has
- * a more specific answer than a generic blocking message.
+ * step is current.
  */
 const {
     message: paymentError,
@@ -222,7 +212,6 @@ const requiresHumanCheck = ref(false);
  * {@link humanCheck}, so the visitor solves it and presses "pay" again with the same method.
  */
 const submitPayment = () => {
-    unavailableLines.value = [];
     clearPaymentError();
     return (
         paymentsStore
@@ -236,12 +225,6 @@ const submitPayment = () => {
                 if (isAntibotVerificationFailed(error)) {
                     requiresHumanCheck.value = true;
                     reportPaymentError(error);
-                    return;
-                }
-                const verdict = classifyPaymentError(error);
-                if (verdict.kind === 'product-unavailable') {
-                    unavailableLines.value = verdict.lines;
-                    addMessage(t('payments-panel.error-product-unavailable'));
                     return;
                 }
                 reportPaymentError(error);
@@ -300,28 +283,6 @@ watch(
             rather than sitting beside it as a paragraph a reader never connects to the input.
         -->
         <form v-if="payable" novalidate @submit.prevent="submitPayment">
-            <!--
-                ORDER_PRODUCT_UNAVAILABLE names every line whose product left the catalogue since
-                the order was placed — the same one-pass-fix reasoning as the cart's own
-                CART_PRODUCT_UNAVAILABLE alert, not a generic toast.
-            -->
-            <v-alert
-                v-if="unavailableLines.length > 0"
-                type="warning"
-                variant="tonal"
-                class="mb-3"
-                data-test="payment-unavailable"
-            >
-                <ul class="flex flex-col gap-1">
-                    <li
-                        v-for="line in unavailableLines"
-                        :key="line.productId"
-                        data-test="payment-unavailable-line"
-                    >
-                        {{ line.title }}
-                    </li>
-                </ul>
-            </v-alert>
             <template v-if="cardOffered && TestCardPicker">
                 <TestCardPicker v-model="paymentMethodRef" :disabled="loading" />
                 <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mb-3" />

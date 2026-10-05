@@ -144,9 +144,61 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'product-unavailable', lines: [] });
     });
 
-    it('falls back to "other" for a refusal with no dedicated response — CART_EMPTY', () => {
+    it('names the unpaid orders CART_OPEN_ORDER_LIMIT lists, dropping anything that is not an id', () => {
+        const verdict = classifyCheckoutError({
+            status: 409,
+            errors: [
+                {
+                    code: 'CART_OPEN_ORDER_LIMIT',
+                    message: 'x',
+                    details: { orderIds: ['o1', 7, 'o2'] }
+                }
+            ]
+        });
+
+        expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: ['o1', 'o2'] });
+    });
+
+    it('reads CART_OPEN_ORDER_LIMIT with no details as a refusal naming no order', () => {
+        const verdict = classifyCheckoutError({
+            status: 409,
+            errors: [{ code: 'CART_OPEN_ORDER_LIMIT', message: 'x' }]
+        });
+
+        expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: [] });
+    });
+
+    it('reads CART_EMPTY as the sign a lost answer hid an order', () => {
         expect(
             classifyCheckoutError({ status: 409, errors: [{ code: 'CART_EMPTY', message: 'x' }] })
+        ).toEqual({ kind: 'cart-empty' });
+    });
+
+    it('reads IDEMPOTENCY_IN_FLIGHT as "the first attempt is still running"', () => {
+        expect(
+            classifyCheckoutError({
+                status: 409,
+                errors: [{ code: 'IDEMPOTENCY_IN_FLIGHT', message: 'x' }]
+            })
+        ).toEqual({ kind: 'in-flight' });
+    });
+
+    it('reads a bare 500 as a server error that may or may not have written the order', () => {
+        expect(classifyCheckoutError({ status: 500, errors: [] })).toEqual({
+            kind: 'server-error'
+        });
+    });
+
+    it('does not read a 503 as a bare 500: the server did not act', () => {
+        expect(classifyCheckoutError({ status: 503, errors: [] })).toEqual({ kind: 'other' });
+    });
+
+    it('falls back to "other" for a refusal with no dedicated response — a shipping method that is gone', () => {
+        expect(
+            classifyCheckoutError({
+                status: 404,
+                errors: [{ code: 'CART_SHIPPING_METHOD_NOT_FOUND', message: 'x' }]
+            })
         ).toEqual({ kind: 'other' });
     });
 

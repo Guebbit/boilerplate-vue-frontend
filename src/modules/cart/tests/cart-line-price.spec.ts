@@ -53,7 +53,7 @@ const router = createRouter({
 
 /** One line of three units — enough to tell the unit price and the line total apart. */
 const CART: CartResponse = {
-    items: [{ productId: 'p1', quantity: 3 }],
+    items: [{ productId: 'p1', quantity: 3, insufficientStock: false }],
     summary: {
         itemsCount: 1,
         totalQuantity: 3,

@@ -13,10 +13,12 @@ class EventSourceMock {
         for (const listener of this.listeners[eventName] ?? []) listener(event);
     }
 
+    readyState = 0;
+
     close = vi.fn();
 }
 
-// Shared source instance; recreated before each test
+// The latest source the client opened; each construction makes a new one
 let source: EventSourceMock;
 
 beforeEach(() => {
@@ -27,6 +29,8 @@ beforeEach(() => {
             // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- the class body IS the mock: EventSource is constructed, never called
             class {
                 constructor() {
+                    // A new connection each time, as the browser makes one: the latest is `source`.
+                    source = new EventSourceMock();
                     return source;
                 }
             }
@@ -35,6 +39,14 @@ beforeEach(() => {
     // Re-import the module so each test gets a fresh module evaluation
     vi.resetModules();
 });
+
+/**
+ * Fires an error on the current source, as the browser does when it closes it for good.
+ */
+const closeForGood = () => {
+    source.readyState = 2;
+    source.emit('error', new Event('error'));
+};
 
 describe('createSseClient', () => {
     it('routes named AsyncAPI SSE events to callbacks', () =>
@@ -199,6 +211,110 @@ describe('createSseClient', () => {
 
                 expect(onEvent).not.toHaveBeenCalled();
                 expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
+            }));
+
+        it('logs a frame that breaks it but forwards it in production, as REST does', () =>
+            Promise.all([
+                import('@/infrastructure/create-sse-client'),
+                import('@/infrastructure/utils/logger.ts')
+            ]).then(([{ createSseClient }, { logger }]) => {
+                vi.stubEnv('PROD', true);
+                const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+                const onEvent = vi.fn();
+                createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
+                const frame = { ...VALID_METRICS, uptimeSeconds: 'soon' };
+
+                source.emit('observability.heartbeat', {
+                    data: JSON.stringify(frame)
+                } as MessageEvent);
+
+                expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
+                expect(onEvent).toHaveBeenCalledWith('observability.heartbeat', frame);
+            }));
+    });
+
+    /**
+     * The browser retries a dropped connection by itself, but a source it has CLOSED (a refused
+     * reconnect) stays closed: the client opens a new one after a growing wait.
+     */
+    describe('when the browser gives up on the connection', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('opens a new source after 1 s, then 2 s, then 4 s', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                createSseClient('/notifications/stream', []);
+                expect(EventSource).toHaveBeenCalledTimes(1);
+
+                closeForGood();
+                vi.advanceTimersByTime(999);
+                expect(EventSource).toHaveBeenCalledTimes(1);
+                vi.advanceTimersByTime(1);
+                expect(EventSource).toHaveBeenCalledTimes(2);
+
+                closeForGood();
+                vi.advanceTimersByTime(1999);
+                expect(EventSource).toHaveBeenCalledTimes(2);
+                vi.advanceTimersByTime(1);
+                expect(EventSource).toHaveBeenCalledTimes(3);
+
+                closeForGood();
+                vi.advanceTimersByTime(4000);
+                expect(EventSource).toHaveBeenCalledTimes(4);
+            }));
+
+        it('starts the waits again once a connection opens', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                createSseClient('/notifications/stream', []);
+                closeForGood();
+                vi.advanceTimersByTime(1000);
+                closeForGood();
+                vi.advanceTimersByTime(2000);
+
+                source.emit('open', new Event('open'));
+                closeForGood();
+                vi.advanceTimersByTime(1000);
+
+                expect(EventSource).toHaveBeenCalledTimes(4);
+            }));
+
+        it('stays at the longest wait', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                createSseClient('/notifications/stream', []);
+                for (let attempt = 0; attempt < 8; attempt += 1) {
+                    closeForGood();
+                    vi.advanceTimersByTime(30_000);
+                }
+
+                expect(EventSource).toHaveBeenCalledTimes(9);
+            }));
+
+        it('does nothing for an error on a source the browser is still retrying', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                createSseClient('/notifications/stream', []);
+
+                source.readyState = 0;
+                source.emit('error', new Event('error'));
+                vi.advanceTimersByTime(60_000);
+
+                expect(EventSource).toHaveBeenCalledTimes(1);
+            }));
+
+        it('opens nothing once the caller has closed the client', () =>
+            import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
+                const client = createSseClient('/notifications/stream', []);
+                closeForGood();
+
+                client.close();
+                vi.advanceTimersByTime(60_000);
+
+                expect(EventSource).toHaveBeenCalledTimes(1);
+                expect(source.close).toHaveBeenCalled();
             }));
     });
 });

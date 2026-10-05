@@ -64,8 +64,8 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     locales: { counterparts: ['locales'] },
     notifications: { counterparts: ['notifications'] },
     observability: {
-        counterparts: ['observability', 'audit-logs', 'account'],
-        why: 'One set of screens over three backend domains: `observability` serves health, the metrics overview and the SSE stream, `audit-logs` owns the trail behind the audit table, and the token-purge action reaches `account`.'
+        counterparts: ['observability', 'audit-logs'],
+        why: 'One set of screens over two backend domains: `observability` serves health, the metrics overview and the SSE stream, and `audit-logs` owns the trail behind the audit table.'
     },
     orders: { counterparts: ['orders'] },
     payments: { counterparts: ['payments'] },

@@ -31,6 +31,8 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
+import { useCartStockPoll } from '@/modules/cart/composables/use-cart-stock-poll.ts';
+import { useCartFocusRefresh } from '@/modules/cart/composables/use-cart-focus-refresh.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import {
     clearCheckoutDrafts,
@@ -39,9 +41,10 @@ import {
 } from '@/modules/cart/composables/use-checkout-draft.ts';
 import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import type { CartItem, PaymentMethodId } from '@types';
+import type { CartResponseItem, PaymentMethodId } from '@types';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import MergeReportAlert from '@/modules/cart/components/MergeReportAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
 import { AddressPicker } from '@/modules/account';
@@ -94,17 +97,17 @@ const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useC
 const shippingMethodId = ref<string | undefined>();
 
 /**
- * Loads {@link shippingMethodId} from whatever the cart says once it resolves — a returning
- * shopper's earlier choice should pre-select the radio, not start every visit unchosen. `once`:
- * only the cart's FIRST resolution seeds the picker; every change after that is the shopper's own,
- * driven the other way by the `watch` below.
+ * Keeps {@link shippingMethodId} on what the cart says: a returning shopper's earlier choice
+ * pre-selects the radio, and a later answer that changes the choice (the server cleared a method
+ * the basket outgrew, or a slow read landed) moves it too. The shopper's own pick needs no special
+ * case: it reaches the cart through the `watch` below, and the cart then says the same thing.
  */
 watch(
-    cart,
-    (loaded) => {
-        if (loaded) shippingMethodId.value = loaded.shipping.selected ?? undefined;
+    () => cart.value?.shipping.selected,
+    (selected) => {
+        shippingMethodId.value = selected ?? undefined;
     },
-    { once: true }
+    { immediate: true }
 );
 
 /**
@@ -227,6 +230,23 @@ const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
 const unavailableLines = ref<UnavailableCartLine[]>([]);
 
 /**
+ * The unpaid orders `CART_OPEN_ORDER_LIMIT` named, as links the shopper can follow to pay or
+ * cancel one. Empty whenever the last checkout did not end in this refusal.
+ */
+const openOrderIds = ref<string[]>([]);
+
+/**
+ * Where each of {@link openOrderIds} lives. An order page is the orders module's: a build without
+ * it has nowhere to send the shopper, so those ids simply get no link.
+ */
+const openOrderTargets = computed(() =>
+    openOrderIds.value.flatMap((id) => {
+        const target = linkIfRouted(router, 'OrderTarget', { id });
+        return target ? [{ id, to: routerLinkI18n(target) }] : [];
+    })
+);
+
+/**
  * The checkout button's own blocked state — the one dedicated control this page cannot proceed
  * past until it succeeds. Every refusal `classifyCheckoutError` names more specifically keeps its
  * own toast/inline handling above; only the generic fallback renders here.
@@ -238,10 +258,17 @@ const {
 } = useBlockingError();
 
 /**
+ * Whether an order is being placed, from the first instant of the press. Set synchronously, which
+ * `loading` is not (it flips inside the store, a task later), so a second press in the same task
+ * and the steppers are both shut out for the whole call. See `docs/modules/cart-checkout.md`.
+ */
+const placing = ref(false);
+
+/**
  * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
  * in the debounce window.
  *
- * See `docs/modules/cart-checkout.md` §"The seven refusals, and why they are shaped differently"
+ * See `docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently"
  * for what each `classifyCheckoutError` branch below answers and why. A transport failure alone
  * has no more specific answer than the generic toast.
  *
@@ -273,6 +300,9 @@ const runCheckout = () =>
             // guard is what lets `result.id` below type-check, and it is cheap insurance
             // against a client-side navigation to `/orders/undefined` either way.
             if (!result?.id) return;
+            // The order consumed these lines: a step still in its debounce window must not fire
+            // afterwards, where its `PUT` would create the line again in the new, empty cart.
+            forgetAll();
             clearCheckoutDrafts();
             addMessage(t('cart-page.success-checkout'));
             // `orders` is not one of cart's declared MODULE_EDGES reaches — a build
@@ -323,6 +353,29 @@ const runCheckout = () =>
                 addMessage(t('cart-page.error-product-unavailable'));
                 return;
             }
+            if (verdict.kind === 'open-order-limit') {
+                openOrderIds.value = verdict.orderIds;
+                addMessage(t('cart-page.error-open-order-limit'));
+                return;
+            }
+            if (verdict.kind === 'cart-empty') {
+                // The server holds no basket: the order a lost answer hid exists. The page must
+                // stop offering lines that are not there.
+                addMessage(t('cart-page.error-cart-empty'));
+                return fetchCart().then(() => undefined);
+            }
+            if (verdict.kind === 'in-flight') {
+                // The store already waited for the first attempt; it is still running.
+                addMessage(t('cart-page.error-checkout-in-flight'));
+                return fetchCart().then(() => undefined);
+            }
+            if (verdict.kind === 'server-error' && cartItems.value.length === 0) {
+                // The store read the cart again after the 500: empty means the order was written.
+                addMessage(t('cart-page.order-placed-after-error'));
+                const orders = linkIfRouted(router, 'OrdersList') ?? { name: 'Home' };
+                void router.push(routerLinkI18n(orders));
+                return;
+            }
             reportCheckoutError(error);
         });
 
@@ -340,12 +393,18 @@ const runCheckout = () =>
  * @returns Same as {@link runCheckout}, or nothing when settling failed.
  */
 const checkout = () => {
+    if (placing.value) return Promise.resolve();
+    placing.value = true;
     insufficientStockLines.value = [];
     unavailableLines.value = [];
+    openOrderIds.value = [];
     clearCheckoutError();
     return settle()
         .then(runCheckout)
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+            placing.value = false;
+        });
 };
 
 /**
@@ -372,7 +431,7 @@ const { quantityOf, stepQuantity, forget, forgetAll, flushPending, sendPendingKe
  * @returns The quantity the line should show — the visitor's own pending step while one is
  *  outstanding, the store's number the rest of the time.
  */
-const lineQuantity = (item: CartItem) => quantityOf(item.productId, item.quantity);
+const lineQuantity = (item: CartResponseItem) => quantityOf(item.productId, item.quantity);
 
 /**
  * Removes a line, forgetting any step still queued for it first: a pending quantity for a line
@@ -429,6 +488,18 @@ onBeforeUnmount(() => {
 });
 
 /**
+ * Keeps each line's `insufficientStock` flag fresh while this page is open, when the deployment
+ * turned the poll on (`VITE_CART_STOCK_POLL_SECONDS`). Checkout is this same page.
+ */
+useCartStockPoll();
+
+/**
+ * Catches the page up when the shopper comes back to it: the server's cart may have changed behind
+ * the open screen, and "Place order" is about to act on what is shown.
+ */
+useCartFocusRefresh();
+
+/**
  * Load cart on mount
  */
 onMounted(() =>
@@ -438,6 +509,12 @@ onMounted(() =>
 
 <template>
     <div id="cart-page">
+        <!--
+            Above both states: a merge in which nothing could be added leaves an EMPTY cart, and
+            that is exactly when the shopper most needs to be told why.
+        -->
+        <MergeReportAlert class="mx-auto mb-4 w-full max-w-4xl" />
+
         <v-empty-state v-if="cartItems.length === 0" :title="t('cart-page.empty-cart')">
             <template #media>
                 <ShoppingCart :size="64" class="text-secondary" aria-hidden="true" />
@@ -501,6 +578,27 @@ onMounted(() =>
                 </ul>
             </v-alert>
 
+            <!--
+                CART_OPEN_ORDER_LIMIT names the unpaid orders in the way: the fix is paying or
+                cancelling one, so each is a link to its page rather than a sentence alone.
+            -->
+            <v-alert
+                v-if="openOrderTargets.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="cart-open-orders"
+                class="lg:col-span-2"
+            >
+                <p>{{ t('cart-page.error-open-order-limit') }}</p>
+                <ul class="mt-2 flex flex-col gap-1">
+                    <li v-for="(order, index) in openOrderTargets" :key="order.id">
+                        <router-link :to="order.to" data-test="cart-open-order-link">
+                            {{ t('cart-page.open-order-link', { n: index + 1 }) }}
+                        </router-link>
+                    </li>
+                </ul>
+            </v-alert>
+
             <InlineErrorAlert
                 :message="lineActionError"
                 class="lg:col-span-2"
@@ -517,9 +615,26 @@ onMounted(() =>
                     <h2 class="text-lg font-semibold">
                         <b>{{ titleOf(item.productId) }}</b>
                     </h2>
-                    <!-- A status: the steppers below change it, and a reader should hear the new number. -->
-                    <p class="mt-1 opacity-80" role="status">
-                        {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
+                    <!--
+                        A status: the steppers below change it, and a reader should hear the new number.
+                        The short marker lives inside it, so a line turning short is announced
+                        without a live region of its own per row. Text, not colour alone.
+                    -->
+                    <p class="mt-1" role="status">
+                        <span class="opacity-80">
+                            {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
+                        </span>
+                        <v-chip
+                            v-if="item.insufficientStock"
+                            size="small"
+                            color="warning"
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            data-test="cart-line-short"
+                        >
+                            {{ t('cart-page.stock-short-marker') }}
+                        </v-chip>
                     </p>
                     <!-- Absent until the product read has answered for this line — no price
                          guessed ahead of the server's own answer. -->
@@ -550,7 +665,7 @@ onMounted(() =>
                             size="small"
                             variant="tonal"
                             data-test="cart-decrease"
-                            :disabled="lineQuantity(item) <= MIN_LINE_QUANTITY"
+                            :disabled="placing || lineQuantity(item) <= MIN_LINE_QUANTITY"
                             :aria-label="
                                 t('cart-page.button-decrease-named', {
                                     id: titleOf(item.productId)
@@ -565,6 +680,7 @@ onMounted(() =>
                             size="small"
                             variant="tonal"
                             data-test="cart-increase"
+                            :disabled="placing"
                             :aria-label="
                                 t('cart-page.button-increase-named', {
                                     id: titleOf(item.productId)
@@ -682,7 +798,7 @@ onMounted(() =>
                         block
                         class="mt-4"
                         data-test="cart-checkout"
-                        :disabled="!canCheckout || loading"
+                        :disabled="!canCheckout || loading || placing"
                         @click="checkout"
                     >
                         {{ t('cart-page.button-checkout') }}

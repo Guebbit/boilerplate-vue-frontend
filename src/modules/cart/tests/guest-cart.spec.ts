@@ -11,7 +11,8 @@ import {
     guestCartQuantity,
     parseGuestCart,
     removeGuestLines,
-    setGuestLineQuantity
+    setGuestLineQuantity,
+    subtractGuestLines
 } from '@/modules/cart/domain';
 import type { GuestCartLine } from '@/modules/cart/domain';
 
@@ -115,6 +116,61 @@ describe('removeGuestLines', () => {
     });
 });
 
+describe('subtractGuestLines', () => {
+    it('drops a line that was sent in full', () => {
+        expect(
+            subtractGuestLines(
+                [
+                    { productId: 'p1', quantity: 2 },
+                    { productId: 'p2', quantity: 1 }
+                ],
+                [{ productId: 'p1', quantity: 2 }]
+            )
+        ).toEqual([{ productId: 'p2', quantity: 1 }]);
+    });
+
+    it('keeps only the units added after the call was sent', () => {
+        expect(
+            subtractGuestLines(
+                [{ productId: 'p1', quantity: 5 }],
+                [{ productId: 'p1', quantity: 2 }]
+            )
+        ).toEqual([{ productId: 'p1', quantity: 3 }]);
+    });
+
+    it('drops a line the guest lowered below what was sent: those units are already on the server', () => {
+        expect(
+            subtractGuestLines(
+                [{ productId: 'p1', quantity: 1 }],
+                [{ productId: 'p1', quantity: 2 }]
+            )
+        ).toEqual([]);
+    });
+
+    it('keeps a line that was not sent at all, as it was', () => {
+        expect(
+            subtractGuestLines(
+                [{ productId: 'p7', quantity: 4 }],
+                [{ productId: 'p1', quantity: 2 }]
+            )
+        ).toEqual([{ productId: 'p7', quantity: 4 }]);
+    });
+
+    it('does not touch the cart it was given', () => {
+        const lines = [{ productId: 'p1', quantity: 5 }];
+
+        subtractGuestLines(lines, [{ productId: 'p1', quantity: 2 }]);
+
+        expect(lines).toEqual([{ productId: 'p1', quantity: 5 }]);
+    });
+
+    it('sending nothing takes nothing away', () => {
+        expect(subtractGuestLines([{ productId: 'p1', quantity: 2 }], [])).toEqual([
+            { productId: 'p1', quantity: 2 }
+        ]);
+    });
+});
+
 describe('guestCartQuantity', () => {
     it('counts units, not lines', () => {
         expect(
@@ -164,6 +220,15 @@ describe('parseGuestCart', () => {
                 { productId: 'text-quantity', quantity: '2' }
             ])
         ).toEqual([{ productId: 'ok', quantity: 1 }]);
+    });
+
+    it('keeps a line holding exactly the most units the contract allows, and drops one above it', () => {
+        expect(parseGuestCart([{ productId: 'p1', quantity: MAX_GUEST_LINE_QUANTITY }])).toEqual([
+            { productId: 'p1', quantity: MAX_GUEST_LINE_QUANTITY }
+        ]);
+        expect(
+            parseGuestCart([{ productId: 'p1', quantity: MAX_GUEST_LINE_QUANTITY + 1 }])
+        ).toEqual([]);
     });
 
     it('keeps an id of exactly the longest length the contract allows', () => {

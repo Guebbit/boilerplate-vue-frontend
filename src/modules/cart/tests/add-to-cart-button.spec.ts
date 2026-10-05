@@ -186,7 +186,10 @@ describe('adding', () => {
         // A stale line left behind by whoever used this browser tab before — a different
         // account's cart, still in the store's memory because logout resets only the profile
         // store. A client that computed `existing + 1` from it would send 6.
-        cart.cart = { ...EMPTY_CART, items: [{ productId: IN_STOCK.id, quantity: 5 }] };
+        cart.cart = {
+            ...EMPTY_CART,
+            items: [{ productId: IN_STOCK.id, quantity: 5, insufficientStock: false }]
+        };
         const addSpy = vi.spyOn(cart, 'addCartItem').mockResolvedValue(EMPTY_CART);
 
         const wrapper = mountButton(IN_STOCK);

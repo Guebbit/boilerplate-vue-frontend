@@ -73,9 +73,13 @@ onMounted(() => {
                             reserves stock for that method, shown BEFORE the choice is made so it
                             informs it, distinct from the post-checkout `payBy` deadline.
                         -->
+                        <!--
+                            No `opacity-*` here: inside a radio label it failed axe's 4.5:1
+                            colour-contrast check on the cart.
+                        -->
                         <span
                             v-if="method.holdHours !== undefined"
-                            class="text-xs opacity-75"
+                            class="text-xs"
                             data-test="payment-method-hold-hours"
                         >
                             {{

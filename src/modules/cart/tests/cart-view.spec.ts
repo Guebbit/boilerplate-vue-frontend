@@ -6,13 +6,14 @@
  * router over `collectModuleRoutes(enabledModules)`, the store's own fetch stubbed, the cart
  * seeded directly into the store.
  */
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
+import axe from 'axe-core';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
+import type { MergeReportLine } from '@/modules/cart/domain';
 import { useProductsStore } from '@/modules/products';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout } from '@api';
@@ -25,8 +26,7 @@ import {
 import { asStub } from '../../../../tests/support/stub.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import { collectModuleRoutes } from '@/kernel/registry';
-import { enabledModules } from '@/modules';
+import { AddressPickerStub, router } from '../../../../tests/support/unit/mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Order } from '@types';
@@ -49,49 +49,10 @@ vi.mock('@api', async (importOriginal) => {
 });
 
 /**
- * The real app router, scoped to the modules this test suite enables.
- */
-const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
-    ]
-});
-
-/**
- * Stands in for both address pickers, choosing the way a shopper leaving them alone would: the
- * shipping picker takes `addr-1`; the billing picker is "same as shipping" (no choice) while that
- * is on offer, and takes the book's `billing-1` otherwise. Its `data-test` matches the real one's.
- */
-const AddressPickerStub = defineComponent({
-    props: {
-        modelValue: { type: String, default: undefined },
-        purpose: { type: String, default: 'shipping' },
-        sameAsShipping: { type: Boolean, default: false }
-    },
-    emits: ['update:modelValue'],
-    template:
-        "<div :data-test=\"purpose === 'billing' ? 'billing-address-picker' : 'address-picker'\" />",
-    watch: {
-        sameAsShipping: {
-            immediate: true,
-            handler(
-                this: { purpose: string; $emit: (event: 'update:modelValue', id?: string) => void },
-                same: boolean
-            ) {
-                if (this.purpose === 'billing')
-                    this.$emit('update:modelValue', same ? undefined : 'billing-1');
-                else this.$emit('update:modelValue', 'addr-1');
-            }
-        }
-    }
-});
-
-/**
  * One line, one summary — the shared non-empty cart every case starts from.
  */
 const A_CART: CartResponse = {
-    items: [{ productId: 'p1', quantity: 2 }],
+    items: [{ productId: 'p1', quantity: 2, insufficientStock: false }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
@@ -138,10 +99,22 @@ const checkoutRejection = (status: number, code: string, details?: Record<string
  *
  * @returns The mounted wrapper and the `checkout` spy each case configures.
  */
-const mountCart = () => {
+const mountCart = ({
+    report = [],
+    held = A_CART,
+    attach = false
+}: {
+    /** What the last guest-cart merge changed, as the store holds it. */
+    report?: MergeReportLine[];
+    /** The cart the store already holds. */
+    held?: CartResponse;
+    /** Whether to attach to the document, for the checks that need real layout (axe). */
+    attach?: boolean;
+} = {}) => {
     const cart = useCartStore();
-    cart.cart = A_CART;
-    vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
+    cart.cart = held;
+    cart.mergeReport = report;
+    vi.spyOn(cart, 'fetchCart').mockResolvedValue(held);
     vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
     // Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
     // `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
@@ -164,6 +137,7 @@ const mountCart = () => {
     });
 
     const wrapper = mount(Cart, {
+        attachTo: attach ? document.body : undefined,
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
@@ -175,6 +149,10 @@ const mountCart = () => {
     });
     return flushPromises().then(() => ({ wrapper, checkoutSpy, clearSpy, cart }));
 };
+
+// The order links point at lazily loaded routes; settle those imports before this file's
+// environment is torn down, or one resolves after it and fails the run.
+afterAll(() => vi.dynamicImportSettled());
 
 beforeEach(() => {
     sessionStorage.clear();
@@ -272,6 +250,29 @@ describe('the checkout refusals', () => {
                     expect(lines).toHaveLength(2);
                     expect(lines[0]?.text()).toBe('Widget');
                     expect(lines[1]?.text()).toBe('p2');
+                });
+        }));
+
+    it('links every unpaid order CART_OPEN_ORDER_LIMIT names, in plain words', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_OPEN_ORDER_LIMIT', { orderIds: ['o1', 'o2'] })
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    const alert = wrapper.get('[data-test=cart-open-orders]');
+                    expect(alert.text()).toContain(
+                        i18n.global.t('cart-page.error-open-order-limit')
+                    );
+                    const links = wrapper.findAll('[data-test=cart-open-order-link]');
+                    expect(links.map((link) => link.attributes('href'))).toEqual([
+                        '/en/orders/o1',
+                        '/en/orders/o2'
+                    ]);
                 });
         }));
 
@@ -776,4 +777,220 @@ describe('a reload in the middle of checkout', () => {
                 });
         });
     });
+});
+
+/**
+ * What a merge that changed two lines leaves in the store.
+ */
+const A_REPORT: MergeReportLine[] = [
+    { productId: 'p1', requested: 2, resulting: 5, reason: 'summed', insufficientStock: false },
+    {
+        productId: 'p2',
+        requested: 1,
+        resulting: 0,
+        reason: 'unavailable',
+        insufficientStock: false
+    }
+];
+
+/**
+ * `A_CART` with its one line flagged short by the server.
+ */
+const A_SHORT_CART: CartResponse = {
+    ...A_CART,
+    items: [{ productId: 'p1', quantity: 2, insufficientStock: true }]
+};
+
+describe('the merge alert', () => {
+    it('stands above the lines, and a page opened with no report has none', () =>
+        mountCart({ report: A_REPORT }).then(({ wrapper }) => {
+            const html = wrapper.html();
+
+            expect(wrapper.findAll('[data-test=cart-merge-report-line]')).toHaveLength(2);
+            expect(html.indexOf('data-test="cart-merge-report"')).toBeLessThan(
+                html.indexOf('data-test="cart-item"')
+            );
+
+            return mountCart().then(({ wrapper: quiet }) => {
+                expect(quiet.find('[data-test=cart-merge-report]').exists()).toBe(false);
+            });
+        }));
+
+    it('is shown over an empty cart too: a merge that added nothing is when it matters', () =>
+        mountCart({
+            report: [
+                {
+                    productId: 'p2',
+                    requested: 1,
+                    resulting: 0,
+                    reason: 'unavailable',
+                    insufficientStock: false
+                }
+            ],
+            held: { ...A_CART, items: [] }
+        }).then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-merge-report]').exists()).toBe(true);
+            expect(wrapper.text()).toContain('Your cart is empty');
+        }));
+
+    it('survives leaving the page and coming back, until it is dismissed', () =>
+        mountCart({ report: A_REPORT }).then(({ wrapper, cart }) => {
+            wrapper.unmount();
+
+            return mountCart({ report: cart.mergeReport }).then(({ wrapper: again }) => {
+                expect(again.find('[data-test=cart-merge-report]').exists()).toBe(true);
+
+                return again
+                    .get('button[aria-label="Dismiss"]')
+                    .trigger('click')
+                    .then(flushPromises)
+                    .then(() => {
+                        expect(again.find('[data-test=cart-merge-report]').exists()).toBe(false);
+                        expect(cart.mergeReport).toEqual([]);
+                    });
+            });
+        }));
+
+    it('does not disturb the quantity and total live regions the page already has', () =>
+        mountCart({ report: A_REPORT }).then(({ wrapper }) => {
+            const statuses = wrapper.findAll('[role=status]');
+            const alert = wrapper.get('[data-test=cart-merge-report]');
+
+            // The line's quantity, the total, and the alert's own single region.
+            expect(statuses).toHaveLength(3);
+            expect(alert.attributes('role')).toBe('status');
+            expect(alert.findAll('[role=status]')).toHaveLength(0);
+        }));
+
+    it('leaves the signed-in cart, lines and alert together, free of axe violations', () =>
+        mountCart({
+            report: [
+                ...A_REPORT,
+                {
+                    productId: 'p1',
+                    requested: 2,
+                    resulting: 2,
+                    insufficientStock: true
+                }
+            ],
+            held: A_SHORT_CART,
+            attach: true
+        }).then(({ wrapper }) =>
+            axe
+                // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
+                // `color-contrast` needs real layout and styles, which jsdom does not compute.
+                .run(document.body, {
+                    rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
+                })
+                .then((results) => {
+                    wrapper.unmount();
+                    expect(
+                        results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)
+                    ).toEqual([]);
+                })
+        ));
+});
+
+describe('the short marker on a line', () => {
+    it('shows on a line the server flags short, in words, and on no other', () =>
+        mountCart({
+            held: {
+                ...A_CART,
+                items: [
+                    { productId: 'p1', quantity: 2, insufficientStock: true },
+                    { productId: 'p2', quantity: 1, insufficientStock: false }
+                ]
+            }
+        }).then(({ wrapper }) => {
+            const [first, second] = wrapper.findAll('[data-test=cart-item]');
+
+            expect(first?.get('[data-test=cart-line-short]').text()).toBe('Not enough in stock');
+            expect(second?.find('[data-test=cart-line-short]').exists()).toBe(false);
+        }));
+
+    it('is absent when no line is short', () =>
+        mountCart().then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(false);
+        }));
+
+    it('follows the cart in the store: it appears when a later answer flags the line', () =>
+        mountCart().then(({ wrapper, cart }) => {
+            cart.cart = A_SHORT_CART;
+
+            return flushPromises().then(() => {
+                expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(true);
+
+                cart.cart = A_CART;
+                return flushPromises().then(() => {
+                    expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(false);
+                });
+            });
+        }));
+
+    it('adds no live region of its own: the quantity line that holds it is the one that speaks', () =>
+        mountCart({ held: A_SHORT_CART }).then(({ wrapper }) => {
+            const marker = wrapper.get('[data-test=cart-line-short]');
+
+            // The line's quantity and the total are the page's two statuses, short or not.
+            expect(wrapper.findAll('[role=status]')).toHaveLength(2);
+            expect(marker.attributes('role')).toBeUndefined();
+            expect(marker.element.closest('[role=status]')).not.toBeNull();
+        }));
+
+    it('keeps the quantity the shopper sees, and shows no number of what is for sale', () =>
+        mountCart({ held: A_SHORT_CART }).then(({ wrapper }) => {
+            const line = wrapper.get('[data-test=cart-item]').text();
+
+            expect(line).toContain('Quantity: 2');
+            expect(line.match(/\d+/g)).toEqual(['2']);
+        }));
+});
+
+describe('the stock poll on the page', () => {
+    beforeEach(() => {
+        // Only the interval is fake: `flushPromises` and the router need the real timers.
+        vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+        useSessionStore().accessToken = 'test-token';
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.useRealTimers();
+    });
+
+    it('re-reads the cart every N seconds while the page is open, when the knob is set', () => {
+        vi.stubEnv('VITE_CART_STOCK_POLL_SECONDS', '5');
+
+        return mountCart().then(({ cart }) => {
+            const poll = vi.spyOn(cart, 'pollCart').mockResolvedValue(undefined);
+
+            vi.advanceTimersByTime(5000);
+            expect(poll).toHaveBeenCalledTimes(1);
+            vi.advanceTimersByTime(10_000);
+            expect(poll).toHaveBeenCalledTimes(3);
+        });
+    });
+
+    it('stops when the page is left', () => {
+        vi.stubEnv('VITE_CART_STOCK_POLL_SECONDS', '5');
+
+        return mountCart().then(({ wrapper, cart }) => {
+            const poll = vi.spyOn(cart, 'pollCart').mockResolvedValue(undefined);
+
+            wrapper.unmount();
+            vi.advanceTimersByTime(60_000);
+
+            expect(poll).not.toHaveBeenCalled();
+        });
+    });
+
+    it('does nothing at all when the knob is not set', () =>
+        mountCart().then(({ cart }) => {
+            const poll = vi.spyOn(cart, 'pollCart').mockResolvedValue(undefined);
+
+            vi.advanceTimersByTime(3_600_000);
+
+            expect(vi.getTimerCount()).toBe(0);
+            expect(poll).not.toHaveBeenCalled();
+        }));
 });

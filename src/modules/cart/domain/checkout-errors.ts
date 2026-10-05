@@ -1,7 +1,7 @@
 /**
  * @module
- * Classifies a checkout rejection into one of the API's four documented shapes
- * (`docs/modules/cart-checkout.md` §"The four refusals, and why they are shaped differently").
+ * Classifies a checkout rejection into one of the API's documented shapes
+ * (`docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently").
  * Pure: reads the envelope's `errors[0]`, returns a verdict, produces no copy — the view decides
  * what each verdict says and does.
  */
@@ -33,9 +33,11 @@ export interface UnavailableCartLine {
 /**
  * What a checkout rejection means for the view, narrowed from the wire error code.
  *
- * `other` covers every refusal without a dedicated UI response (`CART_EMPTY`,
- * `CART_SHIPPING_METHOD_NOT_FOUND`, a transport failure) — the generic toast is already the
- * documented right answer for those.
+ * `cart-empty` and `in-flight` are what a LOST answer leads to: the order exists, or is being made,
+ * and the page still shows the basket. `server-error` is a bare 500: it may or may not have written
+ * an order, so only a fresh read of the cart can tell. `other` covers every refusal without a
+ * dedicated UI response (`CART_SHIPPING_METHOD_NOT_FOUND`, a transport failure) — the generic
+ * toast is already the documented right answer for those.
  */
 export type CheckoutErrorVerdict =
     | { kind: 'cart-changed' }
@@ -45,6 +47,10 @@ export type CheckoutErrorVerdict =
     | { kind: 'shipping-method-weight' }
     | { kind: 'ship-to-country-not-supported' }
     | { kind: 'product-unavailable'; lines: UnavailableCartLine[] }
+    | { kind: 'open-order-limit'; orderIds: string[] }
+    | { kind: 'cart-empty' }
+    | { kind: 'in-flight' }
+    | { kind: 'server-error' }
     | { kind: 'other' };
 
 /**
@@ -127,5 +133,16 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
             : [];
         return { kind: 'product-unavailable', lines };
     }
+    if (item?.code === ERROR_CODES.CART_OPEN_ORDER_LIMIT) {
+        const rawIds = (item.details as { orderIds?: unknown } | undefined)?.orderIds;
+        const orderIds = Array.isArray(rawIds)
+            ? rawIds.filter((id): id is string => typeof id === 'string')
+            : [];
+        return { kind: 'open-order-limit', orderIds };
+    }
+    if (item?.code === ERROR_CODES.CART_EMPTY) return { kind: 'cart-empty' };
+    if (item?.code === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT) return { kind: 'in-flight' };
+    if ((error as { status?: unknown } | null | undefined)?.status === 500)
+        return { kind: 'server-error' };
     return { kind: 'other' };
 };

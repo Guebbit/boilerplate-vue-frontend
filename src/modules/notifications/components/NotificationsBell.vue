@@ -64,7 +64,7 @@ const panel = ref<ComponentPublicInstance | null>(null);
  */
 const bellLabel = computed(() =>
     unreadCount.value > 0
-        ? t('notifications.bell-label-unread', { count: unreadCount.value })
+        ? t('notifications.bell-label-unread', { count: unreadCount.value }, unreadCount.value)
         : t('notifications.bell-label')
 );
 
@@ -84,12 +84,17 @@ const onToggle = (isOpen: boolean) => {
  * than on the bell they just pressed. Skipped when focus already moved in on its own.
  */
 const focusPanel = () => {
+    // `$el` is typed `any`; for a Vuetify card it is the card's root element, or absent before it mounts.
     const card = panel.value?.$el as HTMLElement | undefined;
     if (card && !card.contains(document.activeElement)) card.focus();
 };
 </script>
 
 <template>
+    <!--
+        `close-on-content-click` is off: the panel has buttons of its own (delete, clear all), and a
+        click on any of them must not close it under the reader.
+    -->
     <v-menu
         v-if="mayRead"
         v-model="open"
@@ -103,7 +108,7 @@ const focusPanel = () => {
             <v-badge
                 :model-value="unreadCount > 0"
                 :content="unreadCount"
-                :label="t('notifications.bell-label-unread', { count: unreadCount })"
+                :label="t('notifications.bell-label-unread', { count: unreadCount }, unreadCount)"
                 color="primary"
                 :data-test="unreadCount > 0 ? 'notifications-badge' : undefined"
             >

@@ -4612,7 +4612,8 @@ export const GetCartResponse = zod.strictObject({
                     .min(1)
                     .max(getCartResponseDataItemsItemProductIdMax)
                     .regex(getCartResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4672,7 +4673,8 @@ export const AddCartItemResponse = zod.strictObject({
                     .min(1)
                     .max(addCartItemResponseDataItemsItemProductIdMax)
                     .regex(addCartItemResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4732,7 +4734,8 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                     .min(1)
                     .max(removeCartItemByBodyResponseDataItemsItemProductIdMax)
                     .regex(removeCartItemByBodyResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4785,7 +4788,8 @@ export const ClearCartResponse = zod.strictObject({
                     .min(1)
                     .max(clearCartResponseDataItemsItemProductIdMax)
                     .regex(clearCartResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4849,7 +4853,8 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                     .min(1)
                     .max(updateCartItemByIdResponseDataItemsItemProductIdMax)
                     .regex(updateCartItemByIdResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4909,7 +4914,8 @@ export const RemoveCartItemResponse = zod.strictObject({
                     .min(1)
                     .max(removeCartItemResponseDataItemsItemProductIdMax)
                     .regex(removeCartItemResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -4968,7 +4974,8 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                     .min(1)
                     .max(setCartShippingMethodResponseDataItemsItemProductIdMax)
                     .regex(setCartShippingMethodResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5272,7 +5279,8 @@ export const ReorderResponse = zod.strictObject({
                     .min(1)
                     .max(reorderResponseDataItemsItemProductIdMax)
                     .regex(reorderResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                insufficientStock: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -8600,7 +8608,6 @@ export const ReceivePaymentWebhookResponse = zod.strictObject({
  */
 export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
-export const listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMinWeightMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMaxWeightMin = 0;
 export const listShippingMethodsResponseDataShipToCountriesItemMax = 2;
@@ -8623,10 +8630,6 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .optional(),
                 tracked: zod.boolean(),
                 requiresAddress: zod.boolean(),
-                maxInsuredValue: zod
-                    .number()
-                    .min(listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin)
-                    .optional(),
                 minWeight: zod
                     .number()
                     .min(listShippingMethodsResponseDataMethodsItemMinWeightMin)
@@ -10747,10 +10750,29 @@ export const downloadAccountExportResponseExamplesItemIdMax = 64;
 export const downloadAccountExportResponseExamplesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseExamplesItemUserIdMax = 64;
 export const downloadAccountExportResponseExamplesItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseNotificationsItemIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemOneIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOneIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseNotificationsItemOneParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOneParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemTwoIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemTwoIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemTwoParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemTwoParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemThreeIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemThreeIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemThreeParamsLinesItemProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemThreeParamsLinesItemProductIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
 export const DownloadAccountExportResponse = zod.strictObject({
     exportedAt: zod.iso.datetime({ offset: true }),
     profile: zod.strictObject({
@@ -11099,7 +11121,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .min(1)
                 .max(downloadAccountExportResponseShipmentsItemOrderIdMax)
                 .regex(downloadAccountExportResponseShipmentsItemOrderIdRegExp),
-            trackingCode: zod.string(),
+            trackingCode: zod.string().optional(),
             status: zod.enum(['shipped', 'delivered']),
             deliveredAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -11259,28 +11281,94 @@ export const DownloadAccountExportResponse = zod.strictObject({
         })
     ),
     notifications: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseNotificationsItemIdMax)
-                .regex(downloadAccountExportResponseNotificationsItemIdRegExp),
-            code: zod.enum([
-                'notifications.cart-line-removed',
-                'notifications.wishlist-item-removed',
-                'notifications.cart-merge-refused'
-            ]),
-            params: zod.record(zod.string(), zod.unknown()),
-            severity: zod.enum(['info', 'success', 'warning', 'error']),
-            readAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true })
-        })
+        zod.union([
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemOneIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOneIdRegExp),
+                code: zod.enum(['notifications.cart-line-removed']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOneParamsProductIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOneParamsProductIdRegExp
+                        ),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemTwoIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemTwoIdRegExp),
+                code: zod.enum(['notifications.wishlist-item-removed']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemTwoParamsProductIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemTwoParamsProductIdRegExp
+                        ),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemThreeIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemThreeIdRegExp),
+                code: zod.enum(['notifications.cart-merge-refused']),
+                params: zod.strictObject({
+                    lines: zod.array(
+                        zod.strictObject({
+                            productId: zod
+                                .string()
+                                .min(1)
+                                .max(
+                                    downloadAccountExportResponseNotificationsItemThreeParamsLinesItemProductIdMax
+                                )
+                                .regex(
+                                    downloadAccountExportResponseNotificationsItemThreeParamsLinesItemProductIdRegExp
+                                ),
+                            requested: zod.number().min(1),
+                            titles: zod.record(zod.string(), zod.string())
+                        })
+                    )
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ])
     )
 });
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
+export const mergeCartHeaderIdempotencyKeyMax = 200;
+export const mergeCartHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const MergeCartHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(mergeCartHeaderIdempotencyKeyMax)
+        .regex(mergeCartHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const mergeCartBodyLinesItemProductIdMax = 64;
 export const mergeCartBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const mergeCartBodyLinesItemQuantityMax = 999;
@@ -11308,9 +11396,9 @@ export const mergeCartResponseDataCartSummaryItemsTotalMin = 0;
 export const mergeCartResponseDataCartSummaryShippingCostMin = 0;
 export const mergeCartResponseDataCartSummaryTotalPriceMin = 0;
 export const mergeCartResponseDataCartShippingOptionsItemPriceMin = 0;
-export const mergeCartResponseDataRefusedItemProductIdMax = 64;
-export const mergeCartResponseDataRefusedItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const mergeCartResponseDataRefusedItemQuantityMax = 999;
+export const mergeCartResponseDataLinesItemProductIdMax = 64;
+export const mergeCartResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const mergeCartResponseDataLinesItemResultingMin = 0;
 export const MergeCartResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -11324,7 +11412,8 @@ export const MergeCartResponse = zod.strictObject({
                         .min(1)
                         .max(mergeCartResponseDataCartItemsItemProductIdMax)
                         .regex(mergeCartResponseDataCartItemsItemProductIdRegExp),
-                    quantity: zod.number().min(1)
+                    quantity: zod.number().min(1),
+                    insufficientStock: zod.boolean()
                 })
             ),
             summary: zod.strictObject({
@@ -11350,15 +11439,17 @@ export const MergeCartResponse = zod.strictObject({
                 )
             })
         }),
-        refused: zod.array(
+        lines: zod.array(
             zod.strictObject({
                 productId: zod
                     .string()
                     .min(1)
-                    .max(mergeCartResponseDataRefusedItemProductIdMax)
-                    .regex(mergeCartResponseDataRefusedItemProductIdRegExp),
-                quantity: zod.number().min(1).max(mergeCartResponseDataRefusedItemQuantityMax),
-                reason: zod.enum(['unavailable', 'quantity-limit'])
+                    .max(mergeCartResponseDataLinesItemProductIdMax)
+                    .regex(mergeCartResponseDataLinesItemProductIdRegExp),
+                requested: zod.number().min(1),
+                resulting: zod.number().min(mergeCartResponseDataLinesItemResultingMin),
+                reason: zod.enum(['summed', 'capped', 'unavailable']).optional(),
+                insufficientStock: zod.boolean()
             })
         )
     })
@@ -11803,30 +11894,98 @@ export const ReplaceExampleCoverResponse = zod.strictObject({
  * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
  * @summary List notifications
  */
-export const listNotificationsResponseDataItemsItemIdMax = 64;
-export const listNotificationsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseDataItemsItemOneIdMax = 64;
+export const listNotificationsResponseDataItemsItemOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseDataItemsItemOneParamsProductIdMax = 64;
+export const listNotificationsResponseDataItemsItemOneParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseDataItemsItemTwoIdMax = 64;
+export const listNotificationsResponseDataItemsItemTwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseDataItemsItemTwoParamsProductIdMax = 64;
+export const listNotificationsResponseDataItemsItemTwoParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseDataItemsItemThreeIdMax = 64;
+export const listNotificationsResponseDataItemsItemThreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseDataItemsItemThreeParamsLinesItemProductIdMax = 64;
+export const listNotificationsResponseDataItemsItemThreeParamsLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const ListNotificationsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
         items: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(listNotificationsResponseDataItemsItemIdMax)
-                    .regex(listNotificationsResponseDataItemsItemIdRegExp),
-                code: zod.enum([
-                    'notifications.cart-line-removed',
-                    'notifications.wishlist-item-removed',
-                    'notifications.cart-merge-refused'
-                ]),
-                params: zod.record(zod.string(), zod.unknown()),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            })
+            zod.union([
+                zod.strictObject({
+                    id: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseDataItemsItemOneIdMax)
+                        .regex(listNotificationsResponseDataItemsItemOneIdRegExp),
+                    code: zod.enum(['notifications.cart-line-removed']),
+                    params: zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(listNotificationsResponseDataItemsItemOneParamsProductIdMax)
+                            .regex(listNotificationsResponseDataItemsItemOneParamsProductIdRegExp),
+                        titles: zod.record(zod.string(), zod.string())
+                    }),
+                    severity: zod.enum(['info', 'success', 'warning', 'error']),
+                    readAt: zod.iso.datetime({ offset: true }).optional(),
+                    createdAt: zod.iso.datetime({ offset: true })
+                }),
+                zod.strictObject({
+                    id: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseDataItemsItemTwoIdMax)
+                        .regex(listNotificationsResponseDataItemsItemTwoIdRegExp),
+                    code: zod.enum(['notifications.wishlist-item-removed']),
+                    params: zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(listNotificationsResponseDataItemsItemTwoParamsProductIdMax)
+                            .regex(listNotificationsResponseDataItemsItemTwoParamsProductIdRegExp),
+                        titles: zod.record(zod.string(), zod.string())
+                    }),
+                    severity: zod.enum(['info', 'success', 'warning', 'error']),
+                    readAt: zod.iso.datetime({ offset: true }).optional(),
+                    createdAt: zod.iso.datetime({ offset: true })
+                }),
+                zod.strictObject({
+                    id: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseDataItemsItemThreeIdMax)
+                        .regex(listNotificationsResponseDataItemsItemThreeIdRegExp),
+                    code: zod.enum(['notifications.cart-merge-refused']),
+                    params: zod.strictObject({
+                        lines: zod.array(
+                            zod.strictObject({
+                                productId: zod
+                                    .string()
+                                    .min(1)
+                                    .max(
+                                        listNotificationsResponseDataItemsItemThreeParamsLinesItemProductIdMax
+                                    )
+                                    .regex(
+                                        listNotificationsResponseDataItemsItemThreeParamsLinesItemProductIdRegExp
+                                    ),
+                                requested: zod.number().min(1),
+                                titles: zod.record(zod.string(), zod.string())
+                            })
+                        )
+                    }),
+                    severity: zod.enum(['info', 'success', 'warning', 'error']),
+                    readAt: zod.iso.datetime({ offset: true }).optional(),
+                    createdAt: zod.iso.datetime({ offset: true })
+                })
+            ])
         )
     })
 });

@@ -3,7 +3,7 @@
 ::: tip At a glance
 **Owns** — the signed-in visitor's inbox: the bell in the app bar, its panel, and the live stream that keeps it current.
 **Depends on** — nothing. The server writes the notifications; this module only reads and renders them.
-**Breaks if you change** — the `code` values and the `params` shape per code. They are the contract a sentence is built from, and a code this client does not know reads as a generic message.
+**Breaks if you change** — the `code` values and the `params` shape per code. The contract types them as a union on `code`, and a code this client does not know reads as a generic message.
 :::
 
 | Fact                    | This module                                                                    |
@@ -23,7 +23,9 @@
 
 A notification is a message the server keeps for one person until they delete it. Today the
 backend writes one in three cases: a product left the catalogue and so left their **cart**, left
-their **wishlist**, or a guest cart merged at login had lines the cart could not take.
+their **wishlist**, or a guest cart merged at login had lines whose product is no longer available.
+(A merge line whose _quantity_ changed is not a notification: the [cart page](./cart.md#the-merge-alert)
+tells it once, in an alert.)
 
 The server stores a `code` and the facts that sentence needs, never text. This module turns them
 into the reader's language from its own locale files, like every other API code.
@@ -69,15 +71,32 @@ The toolkit's three verbs each have one meaning here:
 
 The stream carries only what is written while it is open, so every open of it, the first and each
 reconnect, is followed by a fresh `GET /notifications`. A row the read does not return is removed
-silently. A row the stream pushed while a read was in flight is protected from that read, which may
-have been answered just before it was written.
+silently. A read may have been answered just before something else happened, so each read in
+flight remembers what landed meanwhile and wins over its own answer: a row the stream pushed is not
+dropped, a row deleted (by a frame, the owner or "Clear all") is not brought back, and a row read
+meanwhile stays read. A read that answers after the person changed, or after a fresher read, writes
+nothing (the same ticket rule as [the cart](./cart.md#answers-in-order)). A failed read is reported by
+the store itself, as a toast.
 
 The stream authenticates with the refresh cookie (an `EventSource` cannot send a header), so the
 URL is derived from the REST base the same way the observability stream's fallback is. If the
-browser gives up on the stream for good (a refused handshake), the bell keeps working from the
-last read and the next reload.
+browser gives up on the stream for good (a refused handshake), `createSseClient` opens a new one
+after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh read.
 
 ### The text
+
+`Notification` is a union on `code`, and each variant carries its own typed `params`
+(`@types`), so the sentence builder narrows them with a plain `switch` and parses nothing:
+
+| Code                                  | `params`                                        |
+| ------------------------------------- | ----------------------------------------------- |
+| `notifications.cart-line-removed`     | `{ productId, titles }`                         |
+| `notifications.wishlist-item-removed` | `{ productId, titles }`                         |
+| `notifications.cart-merge-refused`    | `{ lines: [{ productId, requested, titles }] }` |
+
+The refused-merge sentence lists each line as "name × quantity the guest held": every line in it
+is a product that is no longer available, so the sentence says that once and the lines carry no
+reason of their own.
 
 The code is its own dictionary key: the code `notifications.cart-line-removed` is the entry
 `cart-line-removed` inside the `notifications` group of `locales/*.json`. A product's name comes from
@@ -93,7 +112,7 @@ notification outlives the product:
 
 A language switch rebuilds every message in place, so the text follows. Severity maps `info` →
 `primary`; `success`, `warning` and `error` are unchanged. A notification the server writes for a
-code this build does not know reads as "You have a new notification."
+code this build does not know (a newer backend) reads as "You have a new notification."
 
 ### The end of a session
 
@@ -149,7 +168,7 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 | `store.ts`                            | The `inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
 | `composables/use-inbox-lifecycle.ts`  | Starts the read and the stream for the signed-in person and ends them with them.    | [read](../theory/layers.md)           |
 | `components/NotificationsBell.vue`    | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
-| `domain/describe.ts`                  | Pure: a `code` and its `params` to a sentence.                                      | [read](../theory/domain-layer.md)     |
+| `domain/describe.ts`                  | Pure: a `code` and its typed `params` to a sentence.                                | [read](../theory/domain-layer.md)     |
 | `types.ts`                            | The row the panel renders.                                                          | [read](../theory/layers.md)           |
 | `response-schemas.ts`                 | One Zod envelope per endpoint called.                                               | [read](../api/openapi-workflow.md)    |
 | `locales/en.json` · `locales/it.json` | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
@@ -157,8 +176,8 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 ## Libraries
 
 No library of its own. The stream is the shell's `createSseClient`, the messages are
-`@guebbit/vue-toolkit`'s notifications store, and the params are parsed with `zod`, which the app
-already ships.
+`@guebbit/vue-toolkit`'s notifications store. The `params` are the contract's own typed union: no
+parsing library is involved.
 
 ## Working on it
 

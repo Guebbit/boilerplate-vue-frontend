@@ -2,7 +2,7 @@
 /**
  * @module
  * CU16 · A whole purchase in Italian. The customer switches the app to Italian, then buys a basket
- * big enough to show a thousands separator: browses, fills the cart, checks out with standard
+ * of two products big enough to show a thousands separator: browses, fills the cart, checks out with standard
  * shipping, pays by card, reads the order, and finds the shop's mails in Italian too.
  *
  * The story is about nothing staying English half way: copy, money and VAT labels follow the
@@ -19,10 +19,11 @@ import {
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /**
- * How many units make the basket clear a thousand. Whether a four-digit Italian amount is grouped
- * (`1.020,00`) or not (`1020,00`) depends on the browser's ICU version, so the spec accepts both.
+ * How many units of each of the two products the basket holds: the shop's per-line ceiling, so the
+ * two lines together clear a thousand. Whether a four-digit Italian amount is grouped (`1.020,00`)
+ * or not (`1020,00`) depends on the browser's ICU version, so the spec accepts both.
  */
-const UNITS = 15;
+const UNITS = 10;
 
 /**
  * A money element's text with every space — normal or not — dropped, so `1.020,00 €` compares as
@@ -31,6 +32,9 @@ const UNITS = 15;
  * @param text - what the money element shows
  */
 const unspaced = (text: string): string => text.replaceAll(/\s/g, '');
+
+/** What the two lines add up to, in cents, once both are at {@link UNITS}. */
+let basketCents = 0;
 
 describe('CU16 · A whole purchase in Italian', () => {
     beforeEach(() => {
@@ -60,11 +64,17 @@ describe('CU16 · A whole purchase in Italian', () => {
             addOpenProductToCart();
 
             cy.step('the cart holds a thousand and more, spelled the Italian way');
-            cy.goToCart();
-            cy.contains('Riepilogo').should('exist');
-            cy.get('[data-test=cart-item]').should('have.length', 1);
-            for (let click = 1; click < UNITS; click += 1)
-                cy.get('[data-test=cart-increase]').click();
+            // A second line, through the API: one line is capped at ten units, which alone stays
+            // under a thousand.
+            cy.subjectProduct('product.inStock').then((bed) => {
+                cy.apiAs('user', 'POST', '/cart', { productId: bed.id, quantity: UNITS });
+                cy.goToCart();
+                cy.contains('Riepilogo').should('exist');
+                cy.get('[data-test=cart-item]').should('have.length', 2);
+                for (let click = 1; click < UNITS; click += 1)
+                    cy.get('[data-test=cart-increase]').first().click();
+                basketCents = UNITS * (Math.round(food.price * 100) + Math.round(bed.price * 100));
+            });
             cy.get('[data-test=shipping-method-standard]').click();
             cy.get('[data-test=shipping-method-standard]')
                 .should('contain.text', 'Standard')
@@ -77,7 +87,7 @@ describe('CU16 · A whole purchase in Italian', () => {
             });
             // The same amount however it is spelled: the basket, shipping free above the line.
             shouldShowCents('[data-test=cart-total]', (total) => {
-                expect(total).to.equal(UNITS * Math.round(food.price * 100));
+                expect(total).to.equal(basketCents);
             });
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
             cy.get('#order-target').should('exist');

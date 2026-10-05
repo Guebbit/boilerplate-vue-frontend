@@ -10,7 +10,7 @@
  * which `cy.travel` does not move, so the page is reloaded under `cy.clock`.
  */
 import { requestWithKey } from '../../../support/e2e/harness';
-import { datetimeLocalIn } from '../../../support/e2e/integrator';
+import { datetimeLocalIn, seededSubscription } from '../../../support/e2e/integrator';
 
 /** One hour, in milliseconds: how long the key lives, and how far past it the clock jumps twice over. */
 const HOUR_MS = 60 * 60 * 1000;
@@ -24,8 +24,11 @@ const GIVEN = 'webhooks.any.create';
 /** A name for the key, unique enough that two runs on one backend never read each other's row. */
 const KEY_NAME = `in7-writer-${String(Date.now())}`;
 
-/** The address the key subscribes: the one host the SSRF guard lets a private address through. */
-const SUBSCRIBED = `https://127.0.0.1:1/in7-${String(Date.now())}`;
+/**
+ * The address the key subscribes: a path on the demo receiver's own origin, the one the SSRF guard
+ * lets a private address through. Set once the receiver's address is read from the seed.
+ */
+let subscribed = '';
 
 describe('IN7 · A key has limits', () => {
     beforeEach(() => {
@@ -37,6 +40,9 @@ describe('IN7 · A key has limits', () => {
     it('is refused a permission its minter lacks, writes only what it was given, and expires', () => {
         cy.step('the admin tries to mint a key with a permission the admin does not hold');
         cy.loginAs('admin');
+        seededSubscription().then(({ url }) => {
+            subscribed = `${new URL(url).origin}/in7-${String(Date.now())}`;
+        });
         cy.visit('/en/api-keys/create');
         cy.get('[data-test=api-key-name] input').type(KEY_NAME);
         cy.get('[data-test=api-key-permissions] input').type(`${NOT_THE_ADMINS}{enter}`);
@@ -60,7 +66,7 @@ describe('IN7 · A key has limits', () => {
 
                 cy.step('it makes the write it was given');
                 requestWithKey(secret, 'POST', '/webhooks/subscriptions', {
-                    url: SUBSCRIBED,
+                    url: subscribed,
                     eventTypes: ['order.created']
                 })
                     .its('status')
@@ -80,7 +86,7 @@ describe('IN7 · A key has limits', () => {
 
                 cy.step('the admin sees what the key made');
                 cy.visit('/en/webhooks/subscriptions');
-                cy.contains('[data-test=list-row]', SUBSCRIBED).should('exist');
+                cy.contains('[data-test=list-row]', subscribed).should('exist');
 
                 cy.step('the key list says it was used, and is still active');
                 cy.visit('/en/api-keys');
@@ -99,7 +105,7 @@ describe('IN7 · A key has limits', () => {
                     cy.step('two hours on, the backend refuses the key');
                     cy.travel(2 * HOUR_MS);
                     requestWithKey(secret, 'POST', '/webhooks/subscriptions', {
-                        url: `${SUBSCRIBED}-late`,
+                        url: `${subscribed}-late`,
                         eventTypes: ['order.created']
                     })
                         .its('status')

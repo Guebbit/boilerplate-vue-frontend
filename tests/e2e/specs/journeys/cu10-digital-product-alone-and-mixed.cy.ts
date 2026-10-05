@@ -14,7 +14,8 @@
  *
  * The physical line is the made-to-order bowl (`product.noWithdrawal`, EU Art. 16(c)), so the same
  * order also proves that line carries its no-withdrawal notice and the digital one does not. Nothing
- * is paid: the story stops at the orders the checkout writes.
+ * is paid: the story stops at the orders the checkout writes. One case per paragraph above, each on
+ * a freshly restored seed.
  */
 import {
     addToCartFromStorefront,
@@ -39,7 +40,7 @@ describe('CU10 · A digital product, alone and mixed', () => {
         cy.visit('/en');
     });
 
-    it('a course alone ships nothing; beside a physical line shipping is back and the whole basket is priced', () => {
+    it('a course alone ships nothing: no method, no address, no delivery cost, and a billing address on the order', () => {
         cy.step('the customer puts the digital course alone in the cart');
         cy.loginAs('user');
         addToCartFromStorefront('product.digital');
@@ -79,8 +80,11 @@ describe('CU10 · A digital product, alone and mixed', () => {
                 );
             });
         });
+    });
 
-        cy.step('the customer now buys the course together with the made-to-order bowl');
+    it('beside a physical line shipping is back, and the whole basket is priced', () => {
+        cy.step('the customer buys the course together with the made-to-order bowl');
+        cy.loginAs('user');
         addToCartFromStorefront('product.noWithdrawal');
         addToCartFromStorefront('product.digital');
         cy.goToCart();
@@ -125,8 +129,13 @@ describe('CU10 · A digital product, alone and mixed', () => {
                 );
             });
         });
+    });
 
-        cy.step('a choice left behind by a basket that went digital-only is ignored at checkout');
+    it('a shipping choice left behind by a basket that went digital-only is ignored at checkout', () => {
+        cy.step(
+            'the customer picks standard shipping for a course and a bowl, then removes the bowl'
+        );
+        cy.loginAs('user');
         addToCartFromStorefront('product.noWithdrawal');
         addToCartFromStorefront('product.digital');
         cy.goToCart();

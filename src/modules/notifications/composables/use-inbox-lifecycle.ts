@@ -13,18 +13,16 @@ import type { ComputedRef } from 'vue';
 import { createSseClient } from '@/infrastructure/create-sse-client';
 import type { SseClient } from '@/infrastructure/create-sse-client';
 import { instance } from '@/infrastructure/http/client';
-import { sseEventNamesOf } from '@/infrastructure/sse-event-names';
 import { i18n } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { NOTIFICATIONS_CHANNELS } from '@types';
 import type { SseEventPayload } from '@types';
 import { useInboxStore } from '../store';
 
 /**
- * The events `GET /notifications/stream` sends: the contract's `notifications.*` slice.
+ * The events `GET /notifications/stream` sends: the generated per-stream constant.
  */
-const NOTIFICATION_EVENT_NAMES = sseEventNamesOf('notifications');
+const NOTIFICATION_EVENT_NAMES = Object.values(NOTIFICATIONS_CHANNELS);
 
 /**
  * One of those events' names.
@@ -58,11 +56,6 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
     const inbox = useInboxStore();
 
     /**
-     * The toolkit's message store, where a failed background read is toasted.
-     */
-    const { addMessage } = useNotificationsStore();
-
-    /**
      * Whether this session may read notifications. Staff and administrators are signed in too and
      * hold the key as any account does; a guest never does.
      */
@@ -84,11 +77,10 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
         };
 
     /**
-     * Reads the inbox, reporting a failure as an ambient one: it is a background read nobody asked
-     * for by name.
+     * Reads the inbox. The store reports a failed read itself, as an ambient one.
      */
     const refresh = () => {
-        inbox.sync().catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        void inbox.sync();
     };
 
     /**
@@ -123,7 +115,7 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
         () => (mayRead.value ? session.viewer?.id : undefined),
         (viewerId) => {
             closeStream();
-            inbox.clear();
+            inbox.reset();
             if (viewerId) start();
         },
         { immediate: true }

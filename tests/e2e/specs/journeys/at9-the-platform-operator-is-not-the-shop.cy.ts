@@ -3,10 +3,8 @@
  * @module
  * AT9 · The platform operator is not the shop. The operator holds one platform role and no shop
  * membership: it runs the installation (health, metrics, the realtime stream) and sees nothing
- * of the shop's customers. Its menu is the platform pages, every shop page turns it back, and
- * the Admin page hides the one button that needs a shop key — clearing expired tokens, which the
- * backend would refuse (`tokens.any.delete`). The seeded `root` is both an administrator and the
- * operator, so root sees both halves.
+ * of the shop's customers. Its menu is the platform pages, and every shop page turns it back.
+ * The seeded `root` is both an administrator and the operator, so root sees both halves.
  */
 
 /**
@@ -56,18 +54,17 @@ describe('AT9 · The platform operator is not the shop', () => {
             }
         });
 
-        cy.step('the platform pages open, and the clean-up button the operator cannot use is gone');
+        cy.step('the platform pages open');
         cy.visit('/en/admin');
         cy.get('#admin-page').should('exist');
         cy.get('[data-test=admin-tab-overview]').should('exist');
-        cy.get('[data-test=admin-clear-expired-tokens]').should('not.exist');
 
         cy.step('the shop pages turn the operator back, typed in by hand');
         isTurnedBack('/en/users');
         isTurnedBack('/en/audit');
         isTurnedBack('/en/inventory');
 
-        cy.step('root is the shop owner and the operator: both halves, clean-up included');
+        cy.step('root is the shop owner and the operator: both halves');
         cy.switchUser('admin');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/admin');
@@ -75,7 +72,7 @@ describe('AT9 · The platform operator is not the shop', () => {
             expect(links).to.include('/en/audit');
         });
         cy.visit('/en/admin');
-        cy.get('[data-test=admin-clear-expired-tokens]').should('exist');
+        cy.get('#admin-page').should('exist');
         cy.visit('/en/users');
         cy.get('#users-list-page').should('exist');
     });

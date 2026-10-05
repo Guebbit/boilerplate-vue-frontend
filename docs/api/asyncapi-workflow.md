@@ -59,7 +59,7 @@ contract does not describe (`RealtimeMetricsEntry`, `RealtimeConnectionStatus`) 
 
 ```ts
 import type { SseEventName, SseEventPayload, MetricsSnapshotEvent } from '@types';
-import { REALTIME_SSE_EVENT_NAMES } from '@types';
+import { OBSERVABILITY_CHANNELS } from '@types';
 ```
 
 **Never edit `asyncapi.generated.ts` by hand** — it is overwritten on every `gen:asyncapi` run.
@@ -154,8 +154,9 @@ or a hand copy):
 ## Naming convention
 
 Channels use dot-separated topic-style naming (e.g. `observability.metrics.snapshot`). The generator
-derives the FE types from them: `observability.*` (subscribe) feeds `REALTIME_SSE_EVENT_NAMES` and
-`SseEventPayloadMap` — the single source of truth for SSE event names, never hardcode strings.
+derives the FE types from them: each stream's channels become one `<STREAM>_CHANNELS` constant (`OBSERVABILITY_CHANNELS`,
+`NOTIFICATIONS_CHANNELS`, ...), and together they feed `SseEventName` and `SseEventPayloadMap` — the
+single source of truth for SSE event names, never hardcode strings.
 
 ## How this complements OpenAPI
 

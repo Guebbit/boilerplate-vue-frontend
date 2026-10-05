@@ -2,13 +2,18 @@
  * @module
  * Thin wrapper around the browser's `EventSource`: opens one connection, registers a listener
  * per typed event name, JSON-parses each frame, and drops frames that fail to parse — or, with
- * contract validation on, frames that do not match the AsyncAPI payload their event declares.
+ * contract validation on, frames that do not match the AsyncAPI payload their event declares (in
+ * production a mismatch is only logged, as for REST: additive drift must not mute a stream).
  * The SSE twin of `orvalMutator`'s response validation, behind the same `VITE_VALIDATE_RESPONSES`.
+ *
+ * The browser reconnects by itself after a dropped connection, but not after a refused one (a
+ * 401, 429 or 503 on reconnect closes the source for good). When that happens the client opens a
+ * new source after a growing delay, so the stream comes back without a reload.
  */
 
 import * as zod from 'zod';
 import { SSE_EVENT_PAYLOAD_SCHEMAS, type SseEventName, type SseEventPayload } from '@types';
-import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
+import { isReportOnly, shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 /**
@@ -39,6 +44,18 @@ export interface SseClientCallbacks<TEventName extends SseEventName = SseEventNa
 export interface SseClient {
     close: () => void;
 }
+
+/**
+ * `EventSource.readyState` once the browser has given up on a connection, for good.
+ * https://developer.mozilla.org/en-US/docs/Web/API/EventSource/readyState
+ */
+const SOURCE_CLOSED = 2;
+
+/**
+ * The waits before reopening a closed source, in milliseconds: it doubles from the first and stays
+ * at the last.
+ */
+const REOPEN_DELAYS_MS: readonly number[] = [1000, 2000, 4000, 8000, 16_000, 30_000];
 
 /**
  * Safely parses a raw JSON string.
@@ -80,8 +97,10 @@ const payloadSchemaFor = (eventName: SseEventName): zod.ZodType => {
 
 /**
  * Whether a parsed frame may be handed on: always with validation off; with it on, only when it
- * matches its event's contract. A mismatch is logged loudly and the frame dropped — an event
- * listener has no caller to reject to, and a malformed payload must not reach the UI.
+ * matches its event's contract. A mismatch is logged loudly. In dev, unit and e2e the frame is
+ * dropped — an event listener has no caller to reject to, and a malformed payload must not reach
+ * the UI. In production ({@link isReportOnly}) it is forwarded: one added optional field on the
+ * backend must not silence a stream for every deployed frontend, exactly as for REST.
  *
  * @param eventName - The SSE event the frame arrived as.
  * @param payload - The frame's parsed `data`.
@@ -98,7 +117,7 @@ const passesContract = (eventName: SseEventName, payload: unknown): boolean => {
     logger.error(
         `[contract] SSE frame "${eventName}" does not match the AsyncAPI schema:\n${issues}`
     );
-    return false;
+    return isReportOnly();
 };
 
 /**
@@ -119,31 +138,80 @@ export const createSseClient = <TEventName extends SseEventName>(
     eventNames: readonly TEventName[],
     callbacks: SseClientCallbacks<TEventName> = {}
 ): SseClient => {
-    // Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
-    // cross-origin) stream request, which the backend's SSE routes authenticate by.
-    // https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource
-    const eventSource = new EventSource(url, { withCredentials: true });
+    /**
+     * The source in use now; replaced when the browser closes one for good.
+     */
+    let eventSource: EventSource | undefined;
 
-    eventSource.addEventListener('open', () => callbacks.onOpen?.());
-    eventSource.addEventListener('error', (event) => callbacks.onError?.(event));
+    /**
+     * The pending reopen, if any.
+     */
+    let reopenTimer: ReturnType<typeof setTimeout> | undefined;
 
-    // Register a listener per event name so the browser dispatches them individually
-    for (const eventName of eventNames) {
-        eventSource.addEventListener(eventName, (event) => {
-            const payload = parseJsonData((event as MessageEvent<string>).data);
-            // `undefined` is `parseJsonData`'s failure signal; `null`, `0`, `false` and `""` are
-            // legitimate payloads.
-            if (payload === undefined || !passesContract(eventName, payload)) return;
+    /**
+     * How many reopens in a row have not yet reached an open connection.
+     */
+    let failures = 0;
 
-            // Parsed from the wire; validated against this type's schema when the gate is on.
-            callbacks.onEvent?.(eventName, payload as SseEventPayload<typeof eventName>);
+    /**
+     * Whether the caller closed the client: nothing is reopened after that.
+     */
+    let closed = false;
+
+    /**
+     * Opens a source and wires every listener to the callbacks.
+     */
+    const open = () => {
+        // Browser `EventSource`: `withCredentials` sends the session cookie on the (possibly
+        // cross-origin) stream request, which the backend's SSE routes authenticate by.
+        // https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource
+        const source = new EventSource(url, { withCredentials: true });
+        eventSource = source;
+
+        source.addEventListener('open', () => {
+            failures = 0;
+            callbacks.onOpen?.();
         });
-    }
+        source.addEventListener('error', (event) => {
+            callbacks.onError?.(event);
+            // A source that is still CONNECTING is retried by the browser; a CLOSED one never is.
+            if (source.readyState === SOURCE_CLOSED && !closed) scheduleReopen();
+        });
+
+        // Register a listener per event name so the browser dispatches them individually
+        for (const eventName of eventNames) {
+            source.addEventListener(eventName, (event) => {
+                const payload = parseJsonData((event as MessageEvent<string>).data);
+                // `undefined` is `parseJsonData`'s failure signal; `null`, `0`, `false` and `""` are
+                // legitimate payloads.
+                if (payload === undefined || !passesContract(eventName, payload)) return;
+
+                // Parsed from the wire; validated against this type's schema when the gate is on.
+                callbacks.onEvent?.(eventName, payload as SseEventPayload<typeof eventName>);
+            });
+        }
+    };
+
+    /**
+     * Opens a new source after the next wait.
+     * https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout
+     */
+    const scheduleReopen = () => {
+        const delay = REOPEN_DELAYS_MS[Math.min(failures, REOPEN_DELAYS_MS.length - 1)];
+        failures += 1;
+        reopenTimer = setTimeout(open, delay);
+    };
+
+    open();
 
     return {
         /**
-         * Closes the underlying EventSource and stops all SSE traffic.
+         * Closes the underlying EventSource, stops all SSE traffic and any pending reopen.
          */
-        close: () => eventSource.close()
+        close: () => {
+            closed = true;
+            clearTimeout(reopenTimer);
+            eventSource?.close();
+        }
     };
 };

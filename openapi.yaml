@@ -2333,6 +2333,8 @@ paths:
                 $ref: "#/components/schemas/AccountExportRequestEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6999,10 +7001,12 @@ paths:
       tags:
         - Cart
       summary: Merge a guest cart into the cart
-      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers."
+      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers."
       operationId: mergeCart
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -7011,7 +7015,7 @@ paths:
               $ref: "#/components/schemas/MergeCartRequest"
       responses:
         "200":
-          description: The updated cart, and the lines that could not be added
+          description: The updated cart, and what happened to each guest line
           content:
             application/json:
               schema:
@@ -7022,6 +7026,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -10954,455 +10960,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/AccountExportRequest"
-    ApiKey:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - name
-        - publicPrefix
-        - permissions
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        publicPrefix:
-          type: string
-          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
-        permissions:
-          type: array
-          items:
-            type: string
-          minItems: 1
-          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-        lastUsedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    RefundReason:
-      type: string
-      enum:
-        - cancellation
-        - goodwill
-        - return
-      description: Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
-    Refund:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - amount
-        - currency
-        - status
-        - reason
-        - createdAt
-      description: One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-          description: The amount returned, in the payment's own `currency`.
-        currency:
-          type: string
-          description: ISO-4217 currency code, copied from the payment.
-        status:
-          type: string
-          enum:
-            - pending
-            - succeeded
-            - failed
-          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
-        reason:
-          $ref: "#/components/schemas/RefundReason"
-        returnId:
-          $ref: "#/components/schemas/Id"
-        settledAt:
-          type: string
-          format: date-time
-          description: When the refund succeeded. Absent while it has not.
-        createdAt:
-          type: string
-          format: date-time
-    ExportPayment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - amount
-        - currency
-        - status
-        - provider
-        - amountRefunded
-        - refunds
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-        currency:
-          type: string
-        amountRefunded:
-          type: number
-          format: double
-          minimum: 0
-        refunds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Refund"
-        status:
-          type: string
-          enum:
-            - requires_confirmation
-            - requires_action
-            - processing
-            - succeeded
-            - declined
-            - refunded
-        provider:
-          type: string
-        cardLast4:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportShipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - trackingCode
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        trackingCode:
-          type: string
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-        deliveredAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportSession:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - type
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        type:
-          type: string
-          enum:
-            - refresh
-        expiration:
-          type: string
-          format: date-time
-        lastUsedAt:
-          type: string
-          format: date-time
-    ExportAuditEntry:
-      type: object
-      additionalProperties: false
-      required:
-        - actor_user_id
-        - actor_role
-        - action
-        - outcome
-        - timestamp
-        - level
-      properties:
-        actor_user_id:
-          type: string
-        actor_role:
-          type: string
-          enum:
-            - admin
-            - user
-            - anonymous
-            - system
-        actor_role_name:
-          type: string
-          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
-        actor_scope:
-          type: string
-          enum:
-            - tenant
-            - platform
-          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
-        action:
-          type: string
-          description: Dotted action name, e.g. `order.created`.
-        outcome:
-          type: string
-          enum:
-            - success
-            - failure
-        ip:
-          type: string
-        user_agent:
-          type: string
-        request_id:
-          type: string
-        trace_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-        timestamp:
-          type: string
-          format: date-time
-        level:
-          type: string
-          enum:
-            - info
-            - warn
-    ExportFeedbackTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
-        - message
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-        message:
-          type: string
-        status:
-          type: string
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-    ExportInvoiceDocument:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - number
-        - issuedAt
-        - currency
-        - grandTotal
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: string
-        issuedAt:
-          type: string
-          format: date-time
-        currency:
-          type: string
-        grandTotal:
-          type: number
-          format: double
-          minimum: 0
-    ReturnStatus:
-      type: string
-      enum:
-        - requested
-        - approved
-        - declined
-        - received
-        - closed
-      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
-    ReturnReason:
-      type: string
-      enum:
-        - withdrawal
-        - defective
-        - wrong_item
-        - other
-      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
-    ExportReturn:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - status
-        - reason
-        - lines
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        status:
-          $ref: "#/components/schemas/ReturnStatus"
-        reason:
-          $ref: "#/components/schemas/ReturnReason"
-        note:
-          type: string
-        lines:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - quantity
-              - title
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              quantity:
-                type: integer
-                minimum: 1
-              title:
-                type: string
-        createdAt:
-          type: string
-          format: date-time
-    ExampleStatus:
-      type: string
-      enum:
-        - draft
-        - published
-        - archived
-    Example:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - body
-        - status
-        - userId
-        - ownerName
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
-        body:
-          type: string
-        status:
-          $ref: "#/components/schemas/ExampleStatus"
-        userId:
-          $ref: "#/components/schemas/Id"
-        ownerName:
-          type: string
-          description: The owner's display name.
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-        publishedAt:
-          type: string
-          format: date-time
-          description: Stamped the first time the example is published, never moved again.
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    NotificationCode:
-      type: string
-      description: |-
-        What happened, as a translation key. `params` carries what the sentence needs; its shape is fixed per code.
-        - `notifications.cart-line-removed` — `{ productId, titles }`: a product left the
-          catalogue and left the caller's cart with it.
-        - `notifications.wishlist-item-removed` — `{ productId, titles }`: the same, for
-          the wishlist.
-        - `notifications.cart-merge-refused` — `{ lines: [{ productId, titles, reason }] }`:
-          guest-cart lines `POST /cart/merge` could not add.
-
-        `titles` maps a locale to the product's name in it, so a reader sees their own language; the notification outlives the product, which is why it is copied in.
-      enum:
-        - notifications.cart-line-removed
-        - notifications.wishlist-item-removed
-        - notifications.cart-merge-refused
-    NotificationSeverity:
-      type: string
-      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
-      enum:
-        - info
-        - success
-        - warning
-        - error
-    Notification:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          $ref: "#/components/schemas/NotificationCode"
-        params:
-          type: object
-          additionalProperties: true
-          description: What the translated sentence interpolates; the shape depends on `code`.
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false
@@ -12790,6 +12347,23 @@ components:
           type: boolean
         deleted:
           type: boolean
+    CartResponseItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+        - insufficientStock
+      description: "One line of the basket as the cart answers it: the stored line plus whether it fits what is for sale. Not `CartItem`, which stays the bare stored line the export and the order request use."
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          type: integer
+          minimum: 1
+        insufficientStock:
+          type: boolean
+          description: "True when `quantity` is more than is for sale right now. A flag and never the number left: exact stock is for callers holding `inventory.any.read`, the same level of disclosure as checkout's `CART_INSUFFICIENT_STOCK`. Read from the stock ledger by the cart view, the merge and checkout through one rule; `POST /cart` and `PUT` still do not refuse a line for stock, so a client polling `GET /cart` is how it learns a line has gone short."
     CartSummaryResponse:
       type: object
       additionalProperties: false
@@ -12883,7 +12457,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/CartItem"
+            $ref: "#/components/schemas/CartResponseItem"
         summary:
           $ref: "#/components/schemas/CartSummaryResponse"
         shipping:
@@ -13295,6 +12869,53 @@ components:
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
+    RefundReason:
+      type: string
+      enum:
+        - cancellation
+        - goodwill
+        - return
+      description: Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+    Refund:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - amount
+        - currency
+        - status
+        - reason
+        - createdAt
+      description: One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: The amount returned, in the payment's own `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code, copied from the payment.
+        status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
+        reason:
+          $ref: "#/components/schemas/RefundReason"
+        returnId:
+          $ref: "#/components/schemas/Id"
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund succeeded. Absent while it has not.
+        createdAt:
+          type: string
+          format: date-time
     PaymentActions:
       type: object
       additionalProperties: false
@@ -13536,11 +13157,6 @@ components:
         requiresAddress:
           type: boolean
           description: Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file.
-        maxInsuredValue:
-          type: number
-          format: double
-          minimum: 0
-          description: The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
         minWeight:
           type: integer
           minimum: 0
@@ -13682,6 +13298,23 @@ components:
           maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true`.
+    ReturnStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - declined
+        - received
+        - closed
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+    ReturnReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
     ReturnLine:
       type: object
       additionalProperties: false
@@ -14472,6 +14105,45 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WebhookEventCatalogueEntry"
+    ApiKey:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - publicPrefix
+        - permissions
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        publicPrefix:
+          type: string
+          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
+        permissions:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     ApiKeysResponse:
       type: object
       additionalProperties: false
@@ -14583,6 +14255,443 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    ExportPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - amount
+        - currency
+        - status
+        - provider
+        - amountRefunded
+        - refunds
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+        amountRefunded:
+          type: number
+          format: double
+          minimum: 0
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refund"
+        status:
+          type: string
+          enum:
+            - requires_confirmation
+            - requires_action
+            - processing
+            - succeeded
+            - declined
+            - refunded
+        provider:
+          type: string
+        cardLast4:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportShipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        trackingCode:
+          type: string
+          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false).
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+        deliveredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        type:
+          type: string
+          enum:
+            - refresh
+        expiration:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+    ExportAuditEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - actor_user_id
+        - actor_role
+        - action
+        - outcome
+        - timestamp
+        - level
+      properties:
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum:
+            - admin
+            - user
+            - anonymous
+            - system
+        actor_role_name:
+          type: string
+          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
+        actor_scope:
+          type: string
+          enum:
+            - tenant
+            - platform
+          description: Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+        action:
+          type: string
+          description: Dotted action name, e.g. `order.created`.
+        outcome:
+          type: string
+          enum:
+            - success
+            - failure
+        ip:
+          type: string
+        user_agent:
+          type: string
+        request_id:
+          type: string
+        trace_id:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+            - info
+            - warn
+    ExportFeedbackTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ExportInvoiceDocument:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - number
+        - issuedAt
+        - currency
+        - grandTotal
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        grandTotal:
+          type: number
+          format: double
+          minimum: 0
+    ExportReturn:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - status
+        - reason
+        - lines
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+              - title
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+    ExampleStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - archived
+    Example:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - body
+        - status
+        - userId
+        - ownerName
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+        body:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+        userId:
+          $ref: "#/components/schemas/Id"
+        ownerName:
+          type: string
+          description: The owner's display name.
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        publishedAt:
+          type: string
+          format: date-time
+          description: Stamped the first time the example is published, never moved again.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProductTitles:
+      type: object
+      additionalProperties:
+        type: string
+    CartLineRemovedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - titles
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          $ref: "#/components/schemas/ProductTitles"
+    NotificationSeverity:
+      type: string
+      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+      enum:
+        - info
+        - success
+        - warning
+        - error
+    NotificationCartLineRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's cart with it.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.cart-line-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationWishlistItemRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's wishlist with it.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.wishlist-item-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    CartMergeRefusedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          description: The guest-cart lines `POST /cart/merge` could not add at all.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - requested
+              - titles
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              requested:
+                type: integer
+                minimum: 1
+              titles:
+                $ref: "#/components/schemas/ProductTitles"
+    NotificationCartMergeRefused:
+      type: object
+      additionalProperties: false
+      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.cart-merge-refused
+        params:
+          $ref: "#/components/schemas/CartMergeRefusedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    Notification:
+      oneOf:
+        - $ref: "#/components/schemas/NotificationCartLineRemoved"
+        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
+        - $ref: "#/components/schemas/NotificationCartMergeRefused"
+      discriminator:
+        propertyName: code
+        mapping:
+          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
+          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
+          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
     MergeCartRequest:
       type: object
       additionalProperties: false
@@ -14596,40 +14705,56 @@ components:
           description: The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
           items:
             $ref: "#/components/schemas/AddCartItemRequest"
-    MergeRefusalReason:
+    MergeLineReason:
       type: string
-      description: "Why a guest line was not added. `unavailable`: the product is not publicly visible any more (the `404` of `POST /cart`). `quantity-limit`: adding it would pass the per-line cap (the `422 CART_QUANTITY_LIMIT` of `POST /cart`)."
+      description: |-
+        Why a guest line did not land exactly as asked. Absent when it did.
+        - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `unavailable`: the product is not publicly visible any more (deleted or hidden);
+          nothing was added, `resulting` is what the cart already held (often 0). A product
+          that is merely sold out is NOT unavailable: it is added and flagged
+          `insufficientStock`.
       enum:
+        - summed
+        - capped
         - unavailable
-        - quantity-limit
-    RefusedCartLine:
+    MergeLineResult:
       type: object
       additionalProperties: false
       required:
         - productId
-        - quantity
-        - reason
+        - requested
+        - resulting
+        - insufficientStock
       properties:
         productId:
           $ref: "#/components/schemas/Id"
-        quantity:
-          $ref: "#/components/schemas/CartQuantity"
+        requested:
+          type: integer
+          minimum: 1
+          description: What the guest line asked for.
+        resulting:
+          type: integer
+          minimum: 0
+          description: What the cart holds for this product after the merge.
         reason:
-          $ref: "#/components/schemas/MergeRefusalReason"
+          $ref: "#/components/schemas/MergeLineReason"
+        insufficientStock:
+          type: boolean
+          description: "True when `resulting` is more than is for sale. A flag, never the number left. Independent of `reason`: a line can be `summed` and short."
     MergeCartResponse:
       type: object
       additionalProperties: false
       required:
         - cart
-        - refused
+        - lines
       properties:
         cart:
           $ref: "#/components/schemas/CartResponse"
-        refused:
+        lines:
           type: array
-          description: The lines that were not added, in request order. Empty when everything landed.
+          description: One result per submitted line, in request order.
           items:
-            $ref: "#/components/schemas/RefusedCartLine"
+            $ref: "#/components/schemas/MergeLineResult"
     MergeCartResponseEnvelope:
       type: object
       additionalProperties: false
@@ -14963,9 +15088,6 @@ x-error-codes:
   ORDER_OVERRIDE_NOT_ALLOWED:
     status: 409
     description: This status transition is not on the admin override's allowed list.
-  ORDER_PRODUCT_UNAVAILABLE:
-    status: 409
-    description: A line on this order references a product that was deleted or deactivated since the intent was created.
   OUTRANKED:
     status: 403
     description: "The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior. The four steps that move money (recording a payment by hand, a refund, approving a return, receiving a return) refuse the caller's own order too, with a plain `FORBIDDEN`."

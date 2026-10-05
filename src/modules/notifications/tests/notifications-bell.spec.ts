@@ -18,7 +18,11 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { Notification } from '@types';
+import type {
+    Notification,
+    NotificationCartLineRemoved,
+    NotificationWishlistItemRemoved
+} from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     orvalEnvelope,
@@ -50,13 +54,21 @@ vi.mock('@/infrastructure/http', () => ({
 }));
 
 /**
+ * What a case may change on a row: any field of the two product-removed variants, which share a
+ * shape, including which of the two it is.
+ */
+type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
+    code?: NotificationCartLineRemoved['code'] | NotificationWishlistItemRemoved['code'];
+};
+
+/**
  * A server row.
  *
  * @param id - The notification id.
  * @param overrides - Fields to replace.
  * @returns A notification as the API lists it.
  */
-const row = (id: string, overrides: Partial<Notification> = {}): Notification => ({
+const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
     code: 'notifications.cart-line-removed',
     params: { productId: 'p1', titles: { en: `Collar ${id}` } },

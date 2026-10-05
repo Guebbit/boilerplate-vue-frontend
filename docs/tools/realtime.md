@@ -29,24 +29,25 @@ API side too — see
 SSE is the only realtime transport: nothing on the FE needs to push over a persistent
 connection, so everything client → server goes through the REST API instead.
 
-The contract lists every SSE event of every stream in one flat array
-(`REALTIME_SSE_EVENT_NAMES`). Each consumer subscribes to its own endpoint's slice with
-`sseEventNamesOf('<namespace>')` (`src/infrastructure/sse-event-names.ts`), which also narrows the
-payload types its handler sees. The notifications stream is documented in
+The contract has one constant per stream (`NOTIFICATIONS_CHANNELS`, `OBSERVABILITY_CHANNELS`, ... in
+`contracts/asyncapi.generated.ts`), and the union of all event names is `SseEventName`. Each consumer subscribes to its
+own endpoint's events with `Object.values(<STREAM>_CHANNELS)`, which also narrows the payload types
+its handler sees. The notifications stream is documented in
 [`notifications`](../modules/notifications.md).
 
 ## Where the code lives
 
-| Concern                         | File                                                      |
-| ------------------------------- | --------------------------------------------------------- |
-| SSE client factory              | `src/infrastructure/create-sse-client.ts`                 |
-| SSE event names per stream      | `src/infrastructure/sse-event-names.ts`                   |
-| SSE composable                  | `src/modules/observability/use-realtime-observability.ts` |
-| Observability SSE store + state | `src/modules/observability/store.ts`                      |
-| Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)           |
-| Module-level type helpers       | `src/modules/observability/types.ts`                      |
-| Route                           | `src/modules/observability/views/RealtimePlayground.vue`  |
-| Route definition                | `src/modules/observability/routes.ts`                     |
+| Concern                         | File                                                           |
+| ------------------------------- | -------------------------------------------------------------- |
+| SSE client factory              | `src/infrastructure/create-sse-client.ts`                      |
+| SSE event names per stream      | `contracts/asyncapi.generated.ts` (`*_CHANNELS`)               |
+| SSE composable                  | `src/modules/observability/use-realtime-observability.ts`      |
+| Notifications stream composable | `src/modules/notifications/composables/use-inbox-lifecycle.ts` |
+| Observability SSE store + state | `src/modules/observability/store.ts`                           |
+| Generated realtime types        | `contracts/asyncapi.generated.ts` (DO NOT edit)                |
+| Module-level type helpers       | `src/modules/observability/types.ts`                           |
+| Route                           | `src/modules/observability/views/RealtimePlayground.vue`       |
+| Route definition                | `src/modules/observability/routes.ts`                          |
 
 ## SSE client lifecycle
 
@@ -69,7 +70,7 @@ sequenceDiagram
 
 ## Observability event contract
 
-Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `contracts/asyncapi.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `SseEventPayload<TEventName>` narrows the payload to the matching contract type.
+Event names come from the `*_CHANNELS` constants, generated into `contracts/asyncapi.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `SseEventPayload<TEventName>` narrows the payload to the matching contract type.
 
 **Server → Client**
 

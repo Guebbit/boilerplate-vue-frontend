@@ -34,14 +34,18 @@ import {
     reorder as apiReorder
 } from '@api';
 import * as schemas from '@api/schemas';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import {
+    contractEnvelope,
+    contractResponse
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { answered, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
 
 /**
  * The cart every read answers with: one line of two units.
  */
 const CART = {
-    items: [{ productId: 'p1', quantity: 2 }],
+    items: [{ productId: 'p1', quantity: 2, insufficientStock: false }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
@@ -98,7 +102,7 @@ const aProduct = (id: string, requiresShipping = true) => ({
  * so a fixture that drifts from the contract fails the whole file instead of passing forever.
  */
 const RESPONSES = {
-    cart: contractResponse(schemas.GetCartResponse, CART),
+    cart: contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, CART),
     summary: contractResponse(schemas.GetCartSummaryResponse, CART.summary),
     added: contractResponse(schemas.AddCartItemResponse, CART),
     updated: contractResponse(schemas.UpdateCartItemByIdResponse, CART),
@@ -210,6 +214,7 @@ describe('useCartStore', () => {
             expect(store.cart).toBeUndefined();
             expect(store.cartItems).toEqual([]);
             expect(store.cartSummary).toBeUndefined();
+            expect(store.cartShipping).toBeUndefined();
         });
     });
 
@@ -349,6 +354,24 @@ describe('useCartStore', () => {
                 });
         });
 
+        it('leaves the emptied cart needing no shipping and offering none', () => {
+            const store = useCartStore();
+
+            return store
+                .fetchCart()
+                .then(() => {
+                    expect(store.cartShipping?.required).toBe(true);
+                    return store.checkout();
+                })
+                .then(() => {
+                    expect(store.cartShipping).toEqual({
+                        required: false,
+                        selected: null,
+                        options: []
+                    });
+                });
+        });
+
         it('lets a refusal the API answered reach the caller', () => {
             // The rejection has to survive the store: the view turns it into the toast the user
             // sees, and a swallowed error is a failure reported to nobody.
@@ -375,7 +398,8 @@ describe('useCartStore', () => {
          */
         it('survives a success envelope with no order in it', () => {
             const store = useCartStore();
-            vi.mocked(apiCheckout).mockResolvedValueOnce({ data: {} } as never);
+            // @ts-expect-error -- an envelope with no order in it is exactly what this case sends
+            vi.mocked(apiCheckout).mockResolvedValueOnce(answered({}));
 
             return store
                 .fetchCart()
@@ -614,6 +638,29 @@ describe('useCartStore', () => {
                     expect(store.cart).toEqual(CART);
                 });
         });
+    });
+
+    /**
+     * The shell's corner loading indicator watches the shared query client by resource key, and
+     * the cart module declares `'cart'` as the one it owns: a call in flight must show under it.
+     */
+    it('runs its calls under the "cart" resource key', async () => {
+        const answer = Promise.withResolvers<Answer<typeof getCart>>();
+        vi.mocked(getCart).mockReturnValueOnce(answer.promise);
+        const reading = useCartStore().fetchCart();
+
+        await vi.waitFor(() => {
+            expect(
+                queryClient
+                    .getQueryCache()
+                    .getAll()
+                    .filter(({ state }) => state.fetchStatus === 'fetching')
+                    .map(({ queryKey }) => queryKey[0])
+            ).toEqual(['cart']);
+        });
+
+        answer.resolve(RESPONSES.cart);
+        await reading;
     });
 
     /**

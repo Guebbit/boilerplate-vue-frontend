@@ -25,8 +25,17 @@ import {
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
-/** An endpoint nothing listens on, at the one host the SSRF guard lets a private address through. */
-const DEAD_ENDPOINT = 'https://127.0.0.1:1/in4-dead';
+/**
+ * The path of an endpoint that is down: on the demo receiver's own origin, the only address the SSRF
+ * guard lets a private address through, and answered with a 5xx because it names `dead`.
+ */
+const DEAD_PATH = '/in4-dead';
+
+/**
+ * What a delivery to that endpoint reports: the connection refused where no receiver is listening
+ * (a single-process demo run hosts none), or the receiver's own 5xx where one is.
+ */
+const DOWN = /ECONNREFUSED|Endpoint answered 5\d\d/;
 
 /** The row of one delivery in the log, found by the id its Replay button names. */
 const replayButtonOf = (deliveryId: string): Cypress.Chainable<JQuery> =>
@@ -64,7 +73,7 @@ describe('IN4 · Replay a failed delivery', () => {
         seededSubscription().then((seeded) => {
             cy.step('an endpoint that is down, and an order that announces itself to it');
             cy.apiAs<{ id: string }>('admin', 'POST', '/webhooks/subscriptions', {
-                url: DEAD_ENDPOINT,
+                url: `${new URL(seeded.url).origin}${DEAD_PATH}`,
                 eventTypes: ['order.created']
             }).then((dead) => {
                 if (!dead) throw new Error('IN4: the dead subscription was not created');
@@ -88,7 +97,7 @@ describe('IN4 · Replay a failed delivery', () => {
 
                     cy.step('the row says it failed, and why');
                     deliveryNow(dead.id, delivery.id).then((failed) => {
-                        expect(failed.error, 'why it failed').to.contain('ECONNREFUSED');
+                        expect(failed.error, 'why it failed').to.match(DOWN);
                         expect(failed.status, 'still waiting for a retry').to.equal('pending');
                         cy.reload();
                         replayButtonOf(delivery.id)
@@ -99,14 +108,14 @@ describe('IN4 · Replay a failed delivery', () => {
                                     'data-status',
                                     'pending'
                                 );
-                                cy.contains('ECONNREFUSED').should('exist');
+                                cy.contains(DOWN).should('exist');
                             });
 
                         cy.step('another Replay is another attempt');
                         replayInTheLog(delivery.id);
                         deliveryNow(dead.id, delivery.id).then((again) => {
                             expect(again.attempt, 'one more attempt').to.equal(failed.attempt + 1);
-                            expect(again.error).to.contain('ECONNREFUSED');
+                            expect(again.error).to.match(DOWN);
                         });
                     });
                 });

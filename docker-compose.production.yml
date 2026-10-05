@@ -36,6 +36,8 @@ services:
             VITE_APP_LOG_LEVEL: '${VITE_APP_LOG_LEVEL:-warn}'
             VITE_AXIOS_TIMEOUT: '${VITE_AXIOS_TIMEOUT:-30000}'
             VITE_MAX_UPLOAD_BYTES: '${VITE_MAX_UPLOAD_BYTES:-5242880}'
+            # Off unless set: seconds between re-reads of the cart for its per-line stock flag.
+            VITE_CART_STOCK_POLL_SECONDS: '${VITE_CART_STOCK_POLL_SECONDS:-}'
             # Telemetry. All optional — an unset value disables the integration entirely rather
             # than pointing it at nothing.
             VITE_FARO_URL: '${VITE_FARO_URL:-}'

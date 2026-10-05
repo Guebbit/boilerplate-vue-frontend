@@ -1,6 +1,6 @@
 /**
  * @module
- * End-to-end authentication flows: login, signup, the route guards that gate `/cart`, `/orders`,
+ * End-to-end authentication flows: login, signup, the route guards that gate `/orders`,
  * `/admin` and `/users`, logout, and a live-only session-refresh case that crosses the app/API
  * origin boundary.
  */
@@ -113,10 +113,12 @@ describe('Authentication', () => {
     });
 
     describe('Route guards', () => {
-        it('redirects an unauthenticated user from /cart to login', () => {
+        it('lets an unauthenticated user keep a cart on /cart, without a redirect to login', () => {
             cy.clearCookies();
             cy.visit('/en/cart');
-            cy.url().should('include', '/login');
+            cy.get('[data-test=guest-cart]').should('exist');
+            cy.url().should('include', '/cart');
+            cy.url().should('not.include', '/login');
         });
 
         it('redirects an unauthenticated user from /orders to login', () => {

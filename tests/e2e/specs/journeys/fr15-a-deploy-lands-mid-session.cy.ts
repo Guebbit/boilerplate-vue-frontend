@@ -7,18 +7,17 @@
  * fresh build serves the page. If the chunk is STILL gone after that one reload, the build is
  * broken rather than stale, and the tab shows the error page instead of reloading for ever.
  *
- * The chunk is the cart page's (`assets/Cart-<hash>.js`), made to answer 404 by an intercept.
- * The cart is the customer's, not a guest's: its route needs a session, so a guest is sent to the
- * login page before the chunk is ever asked for. The retries are counted as DOCUMENT requests for
- * the cart's address, not chunk requests: a browser also preloads a chunk, so one failed attempt is
- * several requests for the same file.
+ * The chunk is the cart route's (`assets/CartEntry-<hash>.js`), made to answer 404 by an intercept.
+ * That route is open to guests too, but this journey is the signed-in customer's. The retries are
+ * counted as DOCUMENT requests for the cart's address, not chunk requests: a browser also preloads
+ * a chunk, so one failed attempt is several requests for the same file.
  *
  * Needs a production build: Vite's preload error does not fire under `vite dev`, which serves
  * modules unbundled. Every e2e run serves `build:e2e`'s output, so the demo and live profiles both do.
  */
 
-/** The cart page's lazy chunk: Vite names it after its view, with a content hash. */
-const CART_CHUNK = '**/assets/Cart-*.js';
+/** The cart route's lazy chunk: Vite names it after its entry view, with a content hash. */
+const CART_CHUNK = '**/assets/CartEntry-*.js';
 
 /** The address the customer is heading to. */
 const CART_PAGE = '**/en/cart';

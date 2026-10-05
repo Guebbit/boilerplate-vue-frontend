@@ -8,15 +8,15 @@
 import { storeToRefs } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/observability/store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
-import { sseEventNamesOf } from '@/infrastructure/sse-event-names';
+import { OBSERVABILITY_CHANNELS } from '@types';
 import { instance } from '@/infrastructure/http/client';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
- * The events `GET /observability/events` sends: the contract's `observability.*` slice, because
- * the generated list also carries every other stream's events.
+ * The events `GET /observability/events` sends: the generated per-stream constant, because the
+ * contract's flat event list also carries every other stream's events.
  */
-const OBSERVABILITY_EVENT_NAMES = sseEventNamesOf('observability');
+const OBSERVABILITY_EVENT_NAMES = Object.values(OBSERVABILITY_CHANNELS);
 
 /**
  * Module-level singleton: only one SSE connection is active at a time regardless

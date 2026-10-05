@@ -87,6 +87,20 @@ export const contractResponse = (schema: ZodType, data?: unknown): Record<string
 };
 
 /**
+ * {@link contractResponse}, typed as the generated client's envelope it stands in for, so a spec
+ * can hand it straight to a mocked client function.
+ *
+ * @typeParam TEnvelope - the generated client's envelope type, e.g. `Answer<typeof getCart>`
+ * @param schema - the operation's response schema
+ * @param data - the payload a store reads off `data`
+ * @returns the envelope, once proven against `schema`
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the parameter is the caller's claim about which generated envelope the proven fixture stands in for
+export const contractEnvelope = <TEnvelope>(schema: ZodType, data?: unknown): TEnvelope =>
+    // Proven against the operation's schema by `contractResponse`, so it is the envelope the caller names.
+    contractResponse(schema, data) as TEnvelope;
+
+/**
  * The request-body half of the same proof — a spec asserting on what `orvalMutator` was
  * CALLED WITH (`lastPatchBody()`-style helpers reading `config.data` off a mock's call list)
  * proves the app built the shape the test author expected, never that the shape is one the real

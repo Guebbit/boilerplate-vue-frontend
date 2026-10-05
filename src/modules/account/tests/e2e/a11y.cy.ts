@@ -20,6 +20,9 @@ import { seedAccount } from '../../../../../tests/support/e2e/scenario';
  */
 const UNISSUED_TOKEN = 'a-token-nobody-issued';
 
+/** A well-formed export id (24 hex) that names no export, for the download page's two states. */
+const UNISSUED_EXPORT_ID = '64b0c0ffee64b0c0ffee64b0';
+
 sweepA11y('account — guest', [
     ['login', '/en/login'],
     ['signup', '/en/signup'],
@@ -69,6 +72,18 @@ sweepA11y(
     'account — signed in',
     [
         ['profile', '/en/profile'],
+        // Nothing is fetched until the button is pressed, so any well-formed id renders the page.
+        ['account export download', `/en/account-export/${UNISSUED_EXPORT_ID}`],
+        {
+            // The same page after the visitor presses the button for an export nobody made: the
+            // 404 lands as an alert next to the button, with the hint to ask for a new one.
+            name: 'account export download, export gone',
+            route: `/en/account-export/${UNISSUED_EXPORT_ID}`,
+            prepare: () => {
+                cy.get('[data-test=account-export-download]').click();
+                cy.get('[data-test=account-export-error]').should('be.visible');
+            }
+        },
         {
             // The address dialog: a modal named by its title, with focus inside it, over a
             // page that must be hidden from the reader while it is up.

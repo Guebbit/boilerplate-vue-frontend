@@ -24,6 +24,7 @@ export interface RuntimeConfig {
     APP_EMPTY_VALUE?: string;
     AXIOS_TIMEOUT?: string;
     MAX_UPLOAD_BYTES?: string;
+    CART_STOCK_POLL_SECONDS?: string;
     FARO_URL?: string;
     FARO_APP_NAME?: string;
     FARO_APP_VERSION?: string;

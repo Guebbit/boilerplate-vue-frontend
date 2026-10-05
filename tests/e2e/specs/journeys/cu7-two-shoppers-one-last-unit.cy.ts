@@ -2,7 +2,7 @@
 /**
  * @module
  * CU7 · Two shoppers, one last unit. Both have the last unit of a product in their cart. The
- * customer checks out first, which holds it; the second shopper is refused, naming the shortfall.
+ * customer checks out first, which holds it; the second shopper is refused, naming the line and what was asked.
  * When the customer cancels, the hold is released and the second shopper's next attempt goes through.
  *
  * The second shopper is the seeded second-shopper customer: staff hold no
@@ -60,7 +60,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.get('[data-test=product-stock]').should('contain.text', 'Out of stock');
 
                     cy.step(
-                        'the second shopper sees it gone, and checkout refuses with the shortfall'
+                        'the second shopper sees it gone, and checkout refuses naming the line'
                     );
                     cy.switchUser('secondShopper');
                     cy.visit(`/en/products/${productId}`);
@@ -74,7 +74,10 @@ describe('CU7 · Two shoppers, one last unit', () => {
                         .invoke('text')
                         .should((text) => {
                             expect(text).to.contain(title);
-                            expect(text, 'one asked for, none left').to.match(/\b1\b.*\b0\b/);
+                            expect(text, 'one asked for, and not enough left').to.match(
+                                /asked for 1\b.*not enough in stock/
+                            );
+                            expect(text, 'the stock left is not told').not.to.match(/\b0\b/);
                         });
                     cy.get('#cart-page').should('exist');
 

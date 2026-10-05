@@ -1,13 +1,17 @@
 // requires-module: account, orders
 /**
  * @module
- * AC6 · Give me my data. The customer asks for the GDPR export from the profile and gets a JSON
- * file: their profile, their address book, their orders and the rest of what the shop holds on
- * them — and nothing that is a secret, or somebody else's.
+ * AC6 · Give me my data. The customer asks for the GDPR export from the profile, is told a link is
+ * on its way, follows the mailed link and gets a JSON file: their profile, their address book,
+ * their orders and the rest of what the shop holds on them — and nothing that is a secret, or
+ * somebody else's.
  *
- * The file is read from disk, and compared with what the API answered, so the proof is about the
- * thing the person actually receives and not only the response behind it.
+ * The file is read from disk, and compared with what the API sent, so the proof is about the
+ * thing the person actually receives and not only the response behind it. Needs the mail outbox
+ * for the link.
  */
+import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
+import type { MailedEmail } from '../../../../scripts/e2e/mail-message';
 
 /** The shapes a secret would take as a key name: none of them may appear anywhere in the export. */
 const SECRET_KEY = /password|token|secret|hash/i;
@@ -15,7 +19,18 @@ const SECRET_KEY = /password|token|secret|hash/i;
 /** A signed token's shape (three base64url parts, the first starting `eyJ`), wherever it sits. */
 const SIGNED_TOKEN = /eyJ(?:[\w-]+\.){2}[\w-]+/;
 
-/** What the export answers: the envelope's `data`. */
+/**
+ * The link the export mail carries. The link has no `?token=`, which is what a live inbox's
+ * `linkUrl:` line is read from, so there the body's links are searched; the demo outbox records
+ * the link as its `linkUrl:` line.
+ *
+ * @param mail - the export mail `emailTo` returned
+ * @returns the URL of the download page
+ */
+const exportLinkOf = (mail: MailedEmail): string =>
+    mail.links?.find((href) => href.includes('/account-export/')) ?? mailedLinkUrl(mail);
+
+/** What the download sends: the export document itself, with no envelope around it. */
 interface ExportData {
     exportedAt: string;
     profile: { id: string; email: string };
@@ -42,17 +57,33 @@ describe('AC6 · Give me my data', () => {
     });
 
     it('the export file holds the customer’s own profile, addresses and orders, and no secret or stranger', () => {
-        cy.step('the customer asks for the export from the profile');
+        cy.skipUnlessMailbox();
+        cy.step('the customer asks for the export from the profile, and is told a link will come');
         cy.loginAs('user');
         cy.visit('/en/profile');
         cy.intercept('POST', '**/account/export').as('export');
         cy.get('[data-test=profile-export-data] button').click();
-        cy.wait('@export')
-            .its('response.body.data')
+        cy.wait('@export').its('response.statusCode').should('equal', 202);
+        cy.get('[data-test=profile-export-data-requested]').should('be.visible');
+
+        cy.step('the link is mailed, and opening it offers the file');
+        cy.intercept('GET', '**/account/export/*').as('download');
+        cy.accountOf('user').then(({ email }) => {
+            // No template filter: a live mail sink cannot say which template a mail came from, and
+            // this inbox holds only the one the request just caused. `expectMailTemplate` checks the
+            // template wherever the outbox can name it.
+            cy.emailTo(email).then((mail) => {
+                expectMailTemplate(mail, 'account.export-ready');
+                cy.visit(exportLinkOf(mail));
+            });
+        });
+        cy.get('[data-test=account-export-download]').click();
+        cy.wait('@download')
+            .its('response.body')
             .then((received) => {
                 const data = received as ExportData;
 
-                cy.step('a file lands on disk, named for the day, and says what the API said');
+                cy.step('a file lands on disk, named for the day, and says what the API sent');
                 const day = data.exportedAt.slice(0, 10);
                 cy.readFile(
                     `${Cypress.config('downloadsFolder')}/account-export-${day}.json`

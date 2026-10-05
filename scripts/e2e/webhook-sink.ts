@@ -121,8 +121,8 @@ const flattenHeaders = (headers: IncomingHttpHeaders): Record<string, string> =>
 /**
  * Start a sink on `port`, bound to loopback.
  *
- * Answers 200 to everything, like a receiver that works: the backend counts a non-2xx as a failed
- * delivery.
+ * Answers 200 to everything, like a receiver that works, except a path naming `dead` (503): the
+ * backend counts a non-2xx as a failed delivery.
  *
  * @param port - where to listen; 0 lets the OS pick one
  * @returns the running sink
@@ -156,7 +156,10 @@ export const startWebhookSink = (port: number): Promise<WebhookSink> =>
                             DEMO_WEBHOOK_SECRET
                         )
                     });
-                    response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
+                    // A path naming `dead` stands for a receiver that is down: the backend counts a
+                    // 5xx as a failed delivery, which is what the retry journeys need to see.
+                    const status = (request.url ?? '').includes('dead') ? 503 : 200;
+                    response.writeHead(status, { 'Content-Type': 'application/json' }).end('{}');
                 });
             }
         );

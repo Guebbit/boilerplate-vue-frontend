@@ -745,7 +745,8 @@ export const ExportShipmentStatus = {
 export interface ExportShipment {
     id: Id;
     orderId: Id;
-    trackingCode: string;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    trackingCode?: string;
     status: ExportShipmentStatus;
     deliveredAt?: string;
     createdAt?: string;
@@ -903,24 +904,21 @@ export interface Example {
     updatedAt?: string;
 }
 
-/**
- * What happened, as a translation key. `params` carries what the sentence needs; its shape is fixed per code.
- * - `notifications.cart-line-removed` — `{ productId, titles }`: a product left the
- *   catalogue and left the caller's cart with it.
- * - `notifications.wishlist-item-removed` — `{ productId, titles }`: the same, for
- *   the wishlist.
- * - `notifications.cart-merge-refused` — `{ lines: [{ productId, titles, reason }] }`:
- *   guest-cart lines `POST /cart/merge` could not add.
- *
- * `titles` maps a locale to the product's name in it, so a reader sees their own language; the notification outlives the product, which is why it is copied in.
- */
-export type NotificationCode = (typeof NotificationCode)[keyof typeof NotificationCode];
+export type NotificationCartLineRemovedCode =
+    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
 
-export const NotificationCode = {
-    'notificationscart-line-removed': 'notifications.cart-line-removed',
-    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed',
-    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
+export const NotificationCartLineRemovedCode = {
+    'notificationscart-line-removed': 'notifications.cart-line-removed'
 } as const;
+
+export interface ProductTitles {
+    [key: string]: string;
+}
+
+export interface CartLineRemovedParams {
+    productId: Id;
+    titles: ProductTitles;
+}
 
 /**
  * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
@@ -935,20 +933,72 @@ export const NotificationSeverity = {
 } as const;
 
 /**
- * What the translated sentence interpolates; the shape depends on `code`.
+ * A product left the catalogue and left the caller's cart with it.
  */
-export type NotificationParams = { [key: string]: unknown };
-
-export interface Notification {
+export interface NotificationCartLineRemoved {
     id: Id;
-    code: NotificationCode;
-    /** What the translated sentence interpolates; the shape depends on `code`. */
-    params: NotificationParams;
+    code: NotificationCartLineRemovedCode;
+    params: CartLineRemovedParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
     readAt?: string;
     createdAt: string;
 }
+
+export type NotificationWishlistItemRemovedCode =
+    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
+
+export const NotificationWishlistItemRemovedCode = {
+    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's wishlist with it.
+ */
+export interface NotificationWishlistItemRemoved {
+    id: Id;
+    code: NotificationWishlistItemRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationCartMergeRefusedCode =
+    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
+
+export const NotificationCartMergeRefusedCode = {
+    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
+} as const;
+
+export type CartMergeRefusedParamsLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    requested: number;
+    titles: ProductTitles;
+};
+
+export interface CartMergeRefusedParams {
+    /** The guest-cart lines `POST /cart/merge` could not add at all. */
+    lines: CartMergeRefusedParamsLinesItem[];
+}
+
+/**
+ * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+ */
+export interface NotificationCartMergeRefused {
+    id: Id;
+    code: NotificationCartMergeRefusedCode;
+    params: CartMergeRefusedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type Notification =
+    NotificationCartLineRemoved | NotificationWishlistItemRemoved | NotificationCartMergeRefused;
 
 export interface AccountExportResponse {
     exportedAt: string;
@@ -3234,6 +3284,17 @@ export interface SearchProductsRequest {
     deleted?: boolean;
 }
 
+/**
+ * One line of the basket as the cart answers it: the stored line plus whether it fits what is for sale. Not `CartItem`, which stays the bare stored line the export and the order request use.
+ */
+export interface CartResponseItem {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+    /** True when `quantity` is more than is for sale right now. A flag and never the number left: exact stock is for callers holding `inventory.any.read`, the same level of disclosure as checkout's `CART_INSUFFICIENT_STOCK`. Read from the stock ledger by the cart view, the merge and checkout through one rule; `POST /cart` and `PUT` still do not refuse a line for stock, so a client polling `GET /cart` is how it learns a line has gone short. */
+    insufficientStock: boolean;
+}
+
 export interface CartSummaryResponse {
     /**
      * Number of distinct cart lines/items
@@ -3297,7 +3358,7 @@ export interface CartShipping {
 }
 
 export interface CartResponse {
-    items: CartItem[];
+    items: CartResponseItem[];
     summary: CartSummaryResponse;
     shipping: CartShipping;
 }
@@ -3722,11 +3783,6 @@ export interface ShippingMethod {
     tracked: boolean;
     /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
     requiresAddress: boolean;
-    /**
-     * The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
-     * @minimum 0
-     */
-    maxInsuredValue?: number;
     /**
      * Grams. Absent means no floor. Enforced server-side — `PUT /cart/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range.
      * @minimum 0
@@ -4329,25 +4385,41 @@ export interface MergeCartRequest {
 }
 
 /**
- * Why a guest line was not added. `unavailable`: the product is not publicly visible any more (the `404` of `POST /cart`). `quantity-limit`: adding it would pass the per-line cap (the `422 CART_QUANTITY_LIMIT` of `POST /cart`).
+ * Why a guest line did not land exactly as asked. Absent when it did.
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `unavailable`: the product is not publicly visible any more (deleted or hidden);
+ *   nothing was added, `resulting` is what the cart already held (often 0). A product
+ *   that is merely sold out is NOT unavailable: it is added and flagged
+ *   `insufficientStock`.
  */
-export type MergeRefusalReason = (typeof MergeRefusalReason)[keyof typeof MergeRefusalReason];
+export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
 
-export const MergeRefusalReason = {
-    unavailable: 'unavailable',
-    'quantity-limit': 'quantity-limit'
+export const MergeLineReason = {
+    summed: 'summed',
+    capped: 'capped',
+    unavailable: 'unavailable'
 } as const;
 
-export interface RefusedCartLine {
+export interface MergeLineResult {
     productId: Id;
-    quantity: CartQuantity;
-    reason: MergeRefusalReason;
+    /**
+     * What the guest line asked for.
+     * @minimum 1
+     */
+    requested: number;
+    /**
+     * What the cart holds for this product after the merge.
+     * @minimum 0
+     */
+    resulting: number;
+    reason?: MergeLineReason;
+    /** True when `resulting` is more than is for sale. A flag, never the number left. Independent of `reason`: a line can be `summed` and short. */
+    insufficientStock: boolean;
 }
 
 export interface MergeCartResponse {
     cart: CartResponse;
-    /** The lines that were not added, in request order. Empty when everything landed. */
-    refused: RefusedCartLine[];
+    /** One result per submitted line, in request order. */
+    lines: MergeLineResult[];
 }
 
 export interface MergeCartResponseEnvelope {
@@ -8687,7 +8759,7 @@ export const downloadAccountExport = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (

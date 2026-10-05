@@ -49,6 +49,13 @@ describe('CU26 · A product is pulled and I am told, in a message that stays', (
                 cy.contains('no longer available').should('exist');
                 cy.get(BADGE).should('contain.text', '2');
 
+                cy.step('the cart and the wishlist have lost the line');
+                cy.goToCart();
+                cy.get('[data-test=cart-item]').should('not.exist');
+                cy.visit('/en/wishlist');
+                cy.contains('[data-test=wishlist-item]', title).should('not.exist');
+                cy.visit('/en');
+
                 cy.step(
                     'opening the bell lists both messages, names the product, and clears the badge'
                 );

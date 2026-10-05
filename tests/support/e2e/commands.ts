@@ -1124,6 +1124,9 @@ Cypress.Commands.add('trackNetwork', () => {
     // `allowCypressEnv: false` in cypress.config.ts — the stateful API, as every other command.
     cy.env(['apiUrl']).then(({ apiUrl }) => {
         cy.intercept({ url: `${String(apiUrl)}/**`, middleware: true }, (request) => {
+            // A server-sent-events stream (the notifications inbox opens one for every signed-in
+            // session) never finishes by design, so counting it would keep the page "loading" forever.
+            if (String(request.headers.accept).includes('text/event-stream')) return;
             inFlight += 1;
             request.on('after:response', () => {
                 inFlight -= 1;

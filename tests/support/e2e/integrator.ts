@@ -82,24 +82,43 @@ export const setEnabledInTheForm = (
 };
 
 /**
+ * Cancels every unpaid order the customer has open, so the next checkout is not refused for the
+ * per-account unpaid-order cap (the seed leaves a transfer order open, and the cap counts any
+ * method).
+ *
+ * Done BEFORE the order a spec cares about, never after: a cancellation announces itself too, and
+ * its delivery row must be older than the `order.created` one the spec waits for.
+ *
+ * @returns a chain that settles once the open orders are cancelled
+ */
+const freeTheOpenOrderSlots = (): Cypress.Chainable =>
+    cy
+        .apiAs<{ items: { id: string; status: string }[] }>('user', 'GET', '/orders?pageSize=100')
+        .then((page) => {
+            for (const { id } of (page?.items ?? []).filter(({ status }) => status === 'pending'))
+                cy.apiAs('user', 'POST', `/orders/${id}/cancel`);
+        });
+
+/**
  * Puts one order in the shop as the customer, through the API: a pickup order paid by card, which
  * is placed (and so announced to webhooks) the moment the checkout answers. The UI checkout is
  * walked by the purchase journeys; here the order is only the trigger.
  *
- * Card, not bank transfer: the seed already holds an order awaiting a transfer, and a second one
- * trips the per-customer cap.
+ * Frees the customer's open-order slots first, so it can be called more than once in a spec.
  *
  * @returns a chain yielding the new order's id
  */
 export const placeOrderAsCustomer = (): Cypress.Chainable<string> =>
-    cy.subjectId('product.inStock').then((productId) => {
-        cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
-        cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
-        return cy.apiAs<{ id: string }>('user', 'POST', '/cart/checkout', {}).then((order) => {
-            if (!order) throw new Error('placeOrderAsCustomer: the checkout answered no order');
-            return order.id;
-        });
-    });
+    freeTheOpenOrderSlots().then(() =>
+        cy.subjectId('product.inStock').then((productId) => {
+            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
+            return cy.apiAs<{ id: string }>('user', 'POST', '/cart/checkout', {}).then((order) => {
+                if (!order) throw new Error('placeOrderAsCustomer: the checkout answered no order');
+                return order.id;
+            });
+        })
+    );
 
 /**
  * One subscription's rows in the delivery log, newest first, as the admin API serves them.

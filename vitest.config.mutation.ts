@@ -57,7 +57,11 @@ const mutationConfig = mergeConfig(
                 '**/dist/**',
                 '**/.stryker-tmp/**',
                 'reports/**',
-                'tests/cross-cutting/mutation-safe-imports.spec.ts'
+                'tests/cross-cutting/mutation-safe-imports.spec.ts',
+                // Reads `docs/theory/sitemap.md`, which the sandbox does not copy (`docs/**` is in
+                // `ignorePatterns`), so it fails the dry run on a missing file. It guards a page,
+                // not the source, and kills no mutants.
+                'tests/cross-cutting/sitemap-document.spec.ts'
             ]
         }
     })

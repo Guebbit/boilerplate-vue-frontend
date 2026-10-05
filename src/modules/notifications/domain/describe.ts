@@ -5,10 +5,9 @@
  *
  * The server stores no text, only a code and the facts that sentence needs. A product name arrives
  * as `titles`, a locale-to-name map copied in at write time, because the notification outlives the
- * product it is about.
+ * product it is about. The contract types `params` per code, so the `switch` below narrows them.
  */
-import * as zod from 'zod';
-import type { Notification } from '@types';
+import type { Notification, ProductTitles } from '@types';
 
 /**
  * The slice of vue-i18n's `t` this file needs: a key, plus named values to interpolate.
@@ -16,46 +15,15 @@ import type { Notification } from '@types';
 export type Translate = (key: string, named?: Record<string, unknown>) => string;
 
 /**
- * A notification as far as its sentence is concerned.
+ * A notification as far as its sentence is concerned: each variant's `code` still paired with its
+ * own `params`, so a `switch` on the code narrows the params with it. `Pick` on the union itself
+ * would split the pair apart; mapping over the variants keeps it.
  */
-export type DescribableNotification = Pick<Notification, 'code' | 'params'>;
-
-/**
- * Locale to product name, as the server copied it into `params.titles`. A value that is not a
- * map of strings reads as an empty one: a malformed row still gets a sentence, just not a name.
- */
-const titlesSchema = zod.record(zod.string(), zod.string()).catch({});
-
-/**
- * `params` of a cart-line or wishlist-item notification.
- */
-const removedParametersSchema = zod.object({ titles: titlesSchema }).catch({ titles: {} });
-
-/**
- * `params` of a refused guest-cart merge: the lines the merge could not add, each with its reason.
- * A line that is not an object with a string reason is dropped rather than failing the whole row.
- */
-const mergeRefusedParametersSchema = zod
-    .object({
-        lines: zod.array(
-            zod.object({ titles: titlesSchema, reason: zod.string() }).nullable().catch(null)
-        )
-    })
-    .catch({ lines: [] });
-
-/**
- * Reasons a merged line can be refused, mapped to their dictionary key. A reason this client does
- * not know (a newer backend) gets {@link UNKNOWN_REASON_KEY}.
- */
-const REASON_KEYS: Record<string, string> = {
-    unavailable: 'notifications.reason-unavailable',
-    'quantity-limit': 'notifications.reason-quantity-limit'
-};
-
-/**
- * Dictionary key for a refusal reason this client has no wording for.
- */
-const UNKNOWN_REASON_KEY = 'notifications.reason-unknown';
+export type DescribableNotification = Notification extends infer Variant
+    ? Variant extends Notification
+        ? Pick<Variant, 'code' | 'params'>
+        : never
+    : never;
 
 /**
  * Dictionary key for a code this client has no wording for (a newer backend).
@@ -68,7 +36,7 @@ const UNKNOWN_CODE_KEY = 'notifications.unknown';
 const UNKNOWN_PRODUCT_KEY = 'notifications.unknown-product';
 
 /**
- * Dictionary key for a refused merge whose lines could not be read at all.
+ * Dictionary key for a refused merge that lists no line.
  */
 const MERGE_REFUSED_BARE_KEY = 'notifications.cart-merge-refused-bare';
 
@@ -89,7 +57,7 @@ const LINE_SEPARATOR = '; ';
  * @returns The name to print.
  */
 export const productName = (
-    titles: Record<string, string>,
+    titles: ProductTitles,
     preferred: readonly string[],
     translate: Translate
 ): string => {
@@ -99,64 +67,25 @@ export const productName = (
 };
 
 /**
- * One refused line as it reads inside the merge sentence, e.g. "Collar (no longer available)".
- * The layout is a dictionary entry, since word order and brackets are the language's business.
+ * One line of the refused-merge sentence, e.g. "Collar × 2". The layout is a dictionary entry,
+ * since word order is the language's business.
  *
- * @param line - The line's names and why it was refused.
+ * @param line - The refused line.
+ * @param line.titles - Locale to product name.
+ * @param line.requested - How many the guest cart held.
  * @param preferred - Languages to try for the name.
  * @param translate - The translate function.
  * @returns The line's text.
  */
 const refusedLine = (
-    line: { titles: Record<string, string>; reason: string },
+    line: { titles: ProductTitles; requested: number },
     preferred: readonly string[],
     translate: Translate
 ): string =>
     translate('notifications.refused-line', {
         name: productName(line.titles, preferred, translate),
-        reason: translate(REASON_KEYS[line.reason] ?? UNKNOWN_REASON_KEY)
+        requested: line.requested
     });
-
-/**
- * The sentence for a refused guest-cart merge.
- *
- * @param parameters - The row's raw `params`.
- * @param preferred - Languages to try for each name.
- * @param translate - The translate function.
- * @returns The sentence, listing the refused lines when any could be read.
- */
-const mergeRefusedText = (
-    parameters: unknown,
-    preferred: readonly string[],
-    translate: Translate
-): string => {
-    const lines = mergeRefusedParametersSchema
-        .parse(parameters)
-        .lines.filter((line) => line !== null)
-        .map((line) => refusedLine(line, preferred, translate));
-    return lines.length === 0
-        ? translate(MERGE_REFUSED_BARE_KEY)
-        : translate('notifications.cart-merge-refused', { lines: lines.join(LINE_SEPARATOR) });
-};
-
-/**
- * The sentence for a product that left the catalogue and so left one of the reader's lists.
- *
- * @param code - The notification's code, which is also its dictionary key.
- * @param parameters - The row's raw `params`.
- * @param preferred - Languages to try for the name.
- * @param translate - The translate function.
- * @returns The sentence.
- */
-const removedText = (
-    code: string,
-    parameters: unknown,
-    preferred: readonly string[],
-    translate: Translate
-): string => {
-    const { titles } = removedParametersSchema.parse(parameters);
-    return translate(code, { name: productName(titles, preferred, translate) });
-};
 
 /**
  * The sentence a notification reads as, in the reader's language.
@@ -165,20 +94,28 @@ const removedText = (
  * @param preferred - Languages to try for a product name, best first: the reader's, then the
  *  shop's main one.
  * @param translate - The translate function; the code is its own dictionary key.
- * @returns The finished text. An unknown code reads as a generic notification, never as its key.
+ * @returns The finished text. A code this client does not know (a newer backend) reads as a
+ *  generic notification, never as its key.
  */
 export const describeNotification = (
-    { code, params }: DescribableNotification,
+    notification: DescribableNotification,
     preferred: readonly string[],
     translate: Translate
 ): string => {
-    switch (code) {
+    switch (notification.code) {
         case 'notifications.cart-line-removed':
         case 'notifications.wishlist-item-removed': {
-            return removedText(code, params, preferred, translate);
+            return translate(notification.code, {
+                name: productName(notification.params.titles, preferred, translate)
+            });
         }
         case 'notifications.cart-merge-refused': {
-            return mergeRefusedText(params, preferred, translate);
+            const lines = notification.params.lines.map((line) =>
+                refusedLine(line, preferred, translate)
+            );
+            return lines.length === 0
+                ? translate(MERGE_REFUSED_BARE_KEY)
+                : translate(notification.code, { lines: lines.join(LINE_SEPARATOR) });
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);

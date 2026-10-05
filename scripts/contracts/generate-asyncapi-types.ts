@@ -341,6 +341,8 @@ const modelNameConstraints = typeScriptDefaultModelNameConstraints({
 const generator = new TypeScriptGenerator({
     modelType: 'interface',
     enumType: 'union',
+    // A typed `additionalProperties` is `{ [name: string]: V }` on the wire, not a `Map`.
+    mapType: 'indexedObject',
     rawPropertyNames: true,
     constraints: {
         modelName: modelNameConstraints

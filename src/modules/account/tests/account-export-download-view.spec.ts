@@ -107,4 +107,66 @@ describe('AccountExportDownload', () => {
                 expect(wrapper.find('[data-test=account-export-saved]').exists()).toBe(false);
             });
     });
+
+    it('keeps the "kept for a few days" hint to a 404: a server failure is not an expired export', () => {
+        const { wrapper, download } = mountPage();
+        download.mockRejectedValue({
+            success: false,
+            status: 500,
+            message: 'Internal Server Error',
+            errors: [{ code: 'INTERNAL_ERROR', message: 'Something broke.' }]
+        });
+
+        return wrapper
+            .get('[data-test=account-export-download]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.get('[data-test=account-export-error]').text()).toContain(
+                    'Something broke.'
+                );
+                expect(wrapper.text()).not.toContain('Request a new one from your profile');
+            });
+    });
+
+    it('saves nothing and claims nothing when the API answers with no body', () => {
+        const { wrapper, download } = mountPage();
+        download.mockResolvedValue(undefined);
+
+        return wrapper
+            .get('[data-test=account-export-download]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                expect(downloadBlob).not.toHaveBeenCalled();
+                expect(wrapper.find('[data-test=account-export-saved]').exists()).toBe(false);
+                expect(wrapper.find('[data-test=account-export-error]').exists()).toBe(false);
+            });
+    });
+
+    it('disables the button while the download is in flight, so a double click asks once', () => {
+        const { wrapper, download } = mountPage();
+        let finish: ((value: never) => void) | undefined;
+        download.mockReturnValue(
+            new Promise<never>((resolve) => {
+                finish = resolve;
+            })
+        );
+        const button = wrapper.get('[data-test=account-export-download]');
+
+        return button
+            .trigger('click')
+            .then(() => {
+                expect(button.attributes('disabled')).toBeDefined();
+                return button.trigger('click');
+            })
+            .then(() => {
+                expect(download).toHaveBeenCalledTimes(1);
+                finish?.(DOCUMENT as never);
+                return flushPromises();
+            })
+            .then(() => {
+                expect(button.attributes('disabled')).toBeUndefined();
+            });
+    });
 });

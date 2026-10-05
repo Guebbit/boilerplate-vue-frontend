@@ -32,6 +32,7 @@ interface ImportMetaEnv {
     readonly VITE_APP_LOGO?: string;
     readonly VITE_APP_NAME?: string;
     readonly VITE_AXIOS_TIMEOUT?: string;
+    readonly VITE_CART_STOCK_POLL_SECONDS?: string;
     readonly VITE_FARO_APP_NAME?: string;
     readonly VITE_FARO_APP_VERSION?: string;
     readonly VITE_FARO_ENVIRONMENT?: string;

@@ -41,6 +41,7 @@ config_entry() {
     config_entry 'APP_EMPTY_VALUE' "${VITE_APP_EMPTY_VALUE:-}"
     config_entry 'AXIOS_TIMEOUT' "${VITE_AXIOS_TIMEOUT:-}"
     config_entry 'MAX_UPLOAD_BYTES' "${VITE_MAX_UPLOAD_BYTES:-}"
+    config_entry 'CART_STOCK_POLL_SECONDS' "${VITE_CART_STOCK_POLL_SECONDS:-}"
     config_entry 'FARO_URL' "${VITE_FARO_URL:-}"
     config_entry 'FARO_APP_NAME' "${VITE_FARO_APP_NAME:-}"
     config_entry 'FARO_APP_VERSION' "${VITE_FARO_APP_VERSION:-}"

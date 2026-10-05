@@ -14,8 +14,12 @@ import { createPinia, setActivePinia } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useInboxStore } from '@/modules/notifications/store';
 import { orvalMutator } from '@/infrastructure/http';
-import { loadLocale } from '@/i18n';
-import type { Notification } from '@types';
+import { i18n, loadLocale } from '@/i18n';
+import type {
+    Notification,
+    NotificationCartLineRemoved,
+    NotificationWishlistItemRemoved
+} from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     orvalEnvelope,
@@ -41,13 +45,21 @@ vi.mock('@/infrastructure/http', () => ({
 }));
 
 /**
+ * What a case may change on a row: any field of the two product-removed variants, which share a
+ * shape, including which of the two it is.
+ */
+type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
+    code?: NotificationCartLineRemoved['code'] | NotificationWishlistItemRemoved['code'];
+};
+
+/**
  * A server row, with whatever the case needs overridden.
  *
  * @param id - The notification id.
  * @param overrides - Fields to replace.
  * @returns A notification as `GET /notifications` lists it.
  */
-const row = (id: string, overrides: Partial<Notification> = {}): Notification => ({
+const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
     code: 'notifications.cart-line-removed',
     params: { productId: 'p1', titles: { en: 'Collar', it: 'Collare' } },
@@ -151,6 +163,21 @@ describe('sync', () => {
             });
     });
 
+    it('gives a quietly added row no auto-hide timer, so a toast shown later is not closed behind the reader', () => {
+        vi.useFakeTimers();
+        const inbox = useInboxStore();
+        serverHolds([row('n1')]);
+
+        return inbox.sync().then(() => {
+            expect(vi.getTimerCount()).toBe(0);
+
+            toolkit().showMessage('n1');
+            vi.advanceTimersByTime(60_000);
+
+            expect(toolkit().findMessage('n1')?.visible).toBe(true);
+        });
+    });
+
     it('does not bring back a toast the reader already closed', () => {
         const inbox = useInboxStore();
         serverHolds([row('n1')]);
@@ -209,7 +236,56 @@ describe('sync', () => {
         });
     });
 
-    it('rejects when the read fails, leaving what it had', () => {
+    it('does not mistake a row pushed mid-read for a dropped one when an older read ends first', async () => {
+        const inbox = useInboxStore();
+        const answerers: ((items: Notification[]) => void)[] = [];
+        // Each read stays open until the case answers it, so two can overlap.
+        answers['GET /notifications'] = () =>
+            new Promise((resolve) => {
+                answerers.push((items) => {
+                    resolve(parseOrvalFixture('GET', '/notifications', orvalEnvelope({ items })));
+                });
+            });
+
+        const older = inbox.sync();
+        const newer = inbox.sync();
+        answerers[0]?.([]);
+        await older;
+        inbox.receiveCreated({ notification: row('n9') });
+        answerers[1]?.([]);
+        await newer;
+
+        expect(inbox.items.map(({ id }) => id)).toEqual(['n9']);
+    });
+
+    it('words a refused merge from the lines it lists, whether it was read or pushed', () => {
+        const refused: Notification = {
+            id: 'm1',
+            code: 'notifications.cart-merge-refused',
+            params: {
+                lines: [
+                    { productId: 'p1', requested: 2, titles: { en: 'Collar', it: 'Collare' } },
+                    { productId: 'p2', requested: 1, titles: { en: 'Leash' } }
+                ]
+            },
+            severity: 'warning',
+            createdAt: '2026-10-04T10:00:00.000Z'
+        };
+        const sentence =
+            'Some items from your guest cart are no longer available and were not added: Collar × 2; Leash × 1.';
+        const inbox = useInboxStore();
+        serverHolds([refused]);
+
+        return inbox.sync().then(() => {
+            expect(inbox.items[0]?.text).toBe(sentence);
+            inbox.reset();
+            inbox.receiveCreated({ notification: refused });
+
+            expect(inbox.items[0]?.text).toBe(sentence);
+        });
+    });
+
+    it('reports a failed read as a toast, leaving what it had', () => {
         const inbox = useInboxStore();
         serverHolds([row('n1')]);
         return inbox
@@ -218,12 +294,108 @@ describe('sync', () => {
                 answers['GET /notifications'] = refusal(500);
                 return inbox.sync();
             })
-            .then(
-                () => expect.unreachable('the failed read should reject'),
-                () => {
-                    expect(inbox.items.map(({ id }) => id)).toEqual(['n1']);
-                }
-            );
+            .then(() => {
+                expect(inbox.items.map(({ id }) => id)).toEqual(['n1']);
+                expect(toolkit().messages.some(({ message }) => message === 'boom')).toBe(true);
+            });
+    });
+});
+
+/**
+ * Makes `GET /notifications` wait for the test, then answer with these rows.
+ *
+ * @param rows - The inbox the held read will answer with.
+ * @returns The way to let the read answer.
+ */
+const holdRead = (rows: Notification[]) => {
+    const held = Promise.withResolvers<undefined>();
+    answers['GET /notifications'] = () =>
+        held.promise.then(() =>
+            parseOrvalFixture('GET', '/notifications', orvalEnvelope({ items: rows }))
+        );
+    return () => held.resolve(undefined);
+};
+
+describe('a read that is still out when something else happens', () => {
+    it('does not lose a notification the stream pushed, even for the older of two overlapping reads', async () => {
+        const inbox = useInboxStore();
+        const releaseOlder = holdRead([]);
+        const olderRead = inbox.sync();
+        const releaseNewer = holdRead([]);
+        const newerRead = inbox.sync();
+
+        inbox.receiveCreated({ notification: row('n1') });
+        releaseNewer();
+        await newerRead;
+        releaseOlder();
+        await olderRead;
+
+        expect(inbox.items.map(({ id }) => id)).toEqual(['n1']);
+    });
+
+    it('does not bring back a row a deleted frame removed meanwhile', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        const release = holdRead([row('n1')]);
+        const reading = inbox.sync();
+
+        inbox.receiveDeleted({ all: false, ids: ['n1'] });
+        release();
+        await reading;
+
+        expect(inbox.items).toEqual([]);
+    });
+
+    it('does not bring back a row the owner dismissed meanwhile', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        answers['DELETE /notifications/n1'] = orvalEnvelope({});
+        const release = holdRead([row('n1')]);
+        const reading = inbox.sync();
+
+        const dismissing = inbox.dismiss('n1');
+        release();
+        await Promise.all([reading, dismissing]);
+
+        expect(inbox.items).toEqual([]);
+    });
+
+    it('does not bring back anything after the whole inbox was deleted meanwhile', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        const release = holdRead([row('n1')]);
+        const reading = inbox.sync();
+
+        inbox.receiveDeleted({ all: true, ids: [] });
+        release();
+        await reading;
+
+        expect(inbox.items).toEqual([]);
+    });
+
+    it('keeps a row read meanwhile read, though the answer still says unread', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        const release = holdRead([row('n1')]);
+        const reading = inbox.sync();
+
+        inbox.receiveRead({ readAt: '2026-10-04T12:00:00.000Z' });
+        release();
+        await reading;
+
+        expect(inbox.unreadCount).toBe(0);
+    });
+
+    it('writes nothing for a person who is gone: the previous person’s rows never show', async () => {
+        const inbox = useInboxStore();
+        const release = holdRead([row('secret-of-a')]);
+        const reading = inbox.sync();
+
+        inbox.reset();
+        release();
+        await reading;
+
+        expect(inbox.items).toEqual([]);
     });
 });
 
@@ -290,6 +462,20 @@ describe('a stream frame', () => {
         expect(inbox.items).toEqual([]);
     });
 
+    it('reads the unread ones on a read frame, and leaves the already read ones read', () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({
+            notification: row('n1', { readAt: '2026-10-04T09:00:00.000Z' })
+        });
+        inbox.receiveCreated({ notification: row('n2') });
+        expect(inbox.unreadCount).toBe(1);
+
+        inbox.receiveRead({ readAt: '2026-10-04T12:00:00.000Z' });
+
+        expect(inbox.unreadCount).toBe(0);
+        expect(inbox.items.map(({ unread }) => unread)).toEqual([false, false]);
+    });
+
     it('clears the badge on a read frame, keeping the messages', () => {
         const inbox = useInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
@@ -302,6 +488,26 @@ describe('a stream frame', () => {
 });
 
 describe('markAllRead', () => {
+    it('leaves a notification that arrived while the call was out unread', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        const answer = Promise.withResolvers<undefined>();
+        answers['POST /notifications/read-all'] = () =>
+            answer.promise.then(() =>
+                parseOrvalFixture('POST', '/notifications/read-all', orvalEnvelope({}))
+            );
+
+        const marking = inbox.markAllRead();
+        inbox.receiveCreated({ notification: row('n2') });
+        answer.resolve(undefined);
+        await marking;
+
+        expect(inbox.items.map(({ id, unread }) => [id, unread])).toEqual([
+            ['n1', false],
+            ['n2', true]
+        ]);
+    });
+
     it('tells the server and clears the badge', () => {
         const inbox = useInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
@@ -395,6 +601,23 @@ describe('dismissAll', () => {
             });
     });
 
+    it('leaves a notification that arrived while the call was out', async () => {
+        const inbox = useInboxStore();
+        inbox.receiveCreated({ notification: row('n1') });
+        const answer = Promise.withResolvers<undefined>();
+        answers['POST /notifications/dismiss-all'] = () =>
+            answer.promise.then(() =>
+                parseOrvalFixture('POST', '/notifications/dismiss-all', orvalEnvelope({}))
+            );
+
+        const dismissing = inbox.dismissAll();
+        inbox.receiveCreated({ notification: row('n2') });
+        answer.resolve(undefined);
+        await dismissing;
+
+        expect(inbox.items.map(({ id }) => id)).toEqual(['n2']);
+    });
+
     it('leaves everything in place and toasts the error when the server refuses', () => {
         const inbox = useInboxStore();
         serverHolds([row('n1'), row('n2')]);
@@ -410,13 +633,13 @@ describe('dismissAll', () => {
     });
 });
 
-describe('clear', () => {
+describe('reset', () => {
     it('drops the notifications without a word to the server, and only those', () => {
         const inbox = useInboxStore();
         toolkit().addMessage('Saved.', EToastType.SUCCESS);
         inbox.receiveCreated({ notification: row('n1') });
 
-        inbox.clear();
+        inbox.reset();
 
         expect(inbox.items).toEqual([]);
         expect(toolkit().history).toHaveLength(1);
@@ -441,6 +664,47 @@ describe('retranslate', () => {
                 expect(toolkit().messages).toHaveLength(0);
             })
             .finally(() => loadLocale('en'));
+    });
+
+    it("prefers the main language name over just any name when the reader's has none", () => {
+        const inbox = useInboxStore();
+        serverHolds([
+            row('n1', { params: { productId: 'p1', titles: { de: 'Halsband', en: 'Collar' } } })
+        ]);
+
+        return inbox
+            .sync()
+            .then(() => loadLocale('it'))
+            .then(() => {
+                inbox.retranslate();
+
+                expect(inbox.items[0]?.text).toContain('Collar');
+                expect(inbox.items[0]?.text).not.toContain('Halsband');
+            })
+            .finally(() => loadLocale('en'));
+    });
+
+    it('takes any name there is when the shop has no single main language', () => {
+        const inbox = useInboxStore();
+        const configured = i18n.global.fallbackLocale.value;
+        serverHolds([
+            row('n1', { params: { productId: 'p1', titles: { de: 'Halsband', en: 'Collar' } } })
+        ]);
+
+        return inbox
+            .sync()
+            .then(() => loadLocale('it'))
+            .then(() => {
+                // vue-i18n lets a fallback be `false` (none) or a list; neither is one language.
+                i18n.global.fallbackLocale.value = false;
+                inbox.retranslate();
+
+                expect(inbox.items[0]?.text).toContain('Halsband');
+            })
+            .finally(() => {
+                i18n.global.fallbackLocale.value = configured;
+                return loadLocale('en');
+            });
     });
 
     it("shows the main language name when the reader's language has none", () => {

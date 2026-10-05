@@ -12,6 +12,7 @@ import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
+import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 
 /**
  * The visitor's saved products — ids only, like the cart's lines: the view joins them against
@@ -35,6 +36,27 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * The saved lines.
      */
     const items = ref<WishlistItem[]>([]);
+
+    /**
+     * Orders the answers that write {@link items}: a slow older answer never lands over a newer
+     * one, and a viewer change kills every answer still on the wire for the previous person.
+     */
+    const tickets = createRequestTickets();
+
+    /**
+     * A call that answers with the whole list, stored unless a fresher answer already landed.
+     *
+     * @param call - The generated client call.
+     * @returns A promise resolving with the list the store holds once the call answers.
+     */
+    const replaceItems = (call: () => Promise<{ data: { items: WishlistItem[] } }>) =>
+        fetchAny(() => {
+            const claim = tickets.take();
+            return call().then(({ data }) => {
+                if (claim()) items.value = data.items;
+                return items.value;
+            });
+        });
 
     /**
      * The one wishlist read in flight, or already answered for this person — what lets fifty
@@ -61,13 +83,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      *
      * @returns A promise resolving with the saved lines.
      */
-    const fetchWishlist = () =>
-        fetchAny(() =>
-            getWishlist().then((response) => {
-                items.value = response.data.items;
-                return items.value;
-            })
-        );
+    const fetchWishlist = () => replaceItems(() => getWishlist());
 
     /**
      * The wishlist for a heart that only needs to know what is saved: the first call reads it, every
@@ -90,13 +106,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @param productId - The product to save.
      * @returns A promise resolving with the updated lines.
      */
-    const addToWishlist = (productId: string) =>
-        fetchAny(() =>
-            addWishlistItem(productId).then((response) => {
-                items.value = response.data.items;
-                return items.value;
-            })
-        );
+    const addToWishlist = (productId: string) => replaceItems(() => addWishlistItem(productId));
 
     /**
      * Removes a saved product.
@@ -105,12 +115,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @returns A promise resolving with the updated lines.
      */
     const removeFromWishlist = (productId: string) =>
-        fetchAny(() =>
-            removeWishlistItem(productId).then((response) => {
-                items.value = response.data.items;
-                return items.value;
-            })
-        );
+        replaceItems(() => removeWishlistItem(productId));
 
     /**
      * The wishlist's exit: the saved line becomes a cart line server-side, so afterwards the
@@ -121,13 +126,10 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @returns A promise resolving with the updated saved lines.
      */
     const moveToCart = (productId: string) =>
-        fetchAny(() =>
-            moveWishlistItemToCart(productId).then((response) => {
-                items.value = response.data.items;
-                return useCartStore()
-                    .fetchCart()
-                    .then(() => items.value);
-            })
+        replaceItems(() => moveWishlistItemToCart(productId)).then(() =>
+            useCartStore()
+                .fetchCart()
+                .then(() => items.value)
         );
 
     /**
@@ -135,6 +137,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * person's heart asks the server rather than trusting someone else's answer.
      */
     useResetOnViewerChange(() => {
+        tickets.reset();
         items.value = [];
         shared = undefined;
     });

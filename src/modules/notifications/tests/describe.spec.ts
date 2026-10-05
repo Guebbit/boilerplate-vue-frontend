@@ -1,7 +1,7 @@
 /**
  * @module
  * The notification sentence builder: which language a product name is shown in, what stands in
- * for a name that is missing, and that a malformed or unknown row still reads as a sentence.
+ * for a name that is missing, and that a code from a newer backend still reads as a sentence.
  *
  * Driven with a stub translator that prints `key|name=value…`, so each case asserts which
  * dictionary entry was reached and with what, not the English wording (the store spec covers that).
@@ -39,6 +39,16 @@ describe('productName', () => {
         expect(productName({ de: 'Halsband' }, ['it', 'en'], translate)).toBe('Halsband');
     });
 
+    it('never shows an empty name when another language has a real one', () => {
+        expect(productName({ en: '', it: 'Tazza' }, ['de'], translate)).toBe('Tazza');
+    });
+
+    it('says "a product" when every name is empty', () => {
+        expect(productName({ en: '', it: '' }, ['de'], translate)).toBe(
+            'notifications.unknown-product'
+        );
+    });
+
     it('says "a product" when there are no names at all', () => {
         expect(productName({}, ['it', 'en'], translate)).toBe('notifications.unknown-product');
     });
@@ -71,28 +81,27 @@ describe('describeNotification', () => {
         ).toBe('notifications.wishlist-item-removed|name=Collar');
     });
 
-    it('still reads when params are not the shape the code promises', () => {
+    it('says "a product" in a cart-line notification whose names are all gone', () => {
         expect(
             describeNotification(
-                { code: 'notifications.cart-line-removed', params: { titles: 'oops' } },
+                {
+                    code: 'notifications.cart-line-removed',
+                    params: { productId: 'p1', titles: {} }
+                },
                 ['en'],
                 translate
             )
         ).toBe('notifications.cart-line-removed|name=notifications.unknown-product');
     });
 
-    it('lists every refused line of a merge with its own name and reason', () => {
+    it('lists every refused line of a merge with its own name and quantity', () => {
         const text = describeNotification(
             {
                 code: 'notifications.cart-merge-refused',
                 params: {
                     lines: [
-                        {
-                            productId: 'p1',
-                            titles: { en: 'Collar', it: 'Collare' },
-                            reason: 'unavailable'
-                        },
-                        { productId: 'p2', titles: { en: 'Leash' }, reason: 'quantity-limit' }
+                        { productId: 'p1', requested: 2, titles: { en: 'Collar', it: 'Collare' } },
+                        { productId: 'p2', requested: 1, titles: { en: 'Leash' } }
                     ]
                 }
             },
@@ -103,46 +112,17 @@ describe('describeNotification', () => {
         expect(text).toBe(
             [
                 'notifications.cart-merge-refused|lines=',
-                'notifications.refused-line|name=Collare|reason=notifications.reason-unavailable',
+                'notifications.refused-line|name=Collare|requested=2',
                 '; ',
-                'notifications.refused-line|name=Leash|reason=notifications.reason-quantity-limit'
+                'notifications.refused-line|name=Leash|requested=1'
             ].join('')
         );
     });
 
-    it('gives a reason from a newer backend the generic wording', () => {
-        const text = describeNotification(
-            {
-                code: 'notifications.cart-merge-refused',
-                params: { lines: [{ productId: 'p1', titles: { en: 'Collar' }, reason: 'new' }] }
-            },
-            ['en'],
-            translate
-        );
-
-        expect(text).toContain('reason=notifications.reason-unknown');
-    });
-
-    it('drops an unreadable line instead of failing the whole notification', () => {
-        const text = describeNotification(
-            {
-                code: 'notifications.cart-merge-refused',
-                params: {
-                    lines: [null, 'x', { titles: { en: 'Leash' }, reason: 'unavailable' }]
-                }
-            },
-            ['en'],
-            translate
-        );
-
-        expect(text).toContain('name=Leash');
-        expect(text).not.toContain('null');
-    });
-
-    it('falls back to the bare merge sentence when no line can be read', () => {
+    it('falls back to the bare merge sentence when the row lists no line', () => {
         expect(
             describeNotification(
-                { code: 'notifications.cart-merge-refused', params: { lines: 7 } },
+                { code: 'notifications.cart-merge-refused', params: { lines: [] } },
                 ['en'],
                 translate
             )
@@ -153,7 +133,10 @@ describe('describeNotification', () => {
         expect(
             describeNotification(
                 // A code a newer backend may send; the contract's union does not list it.
-                { code: 'notifications.from-the-future' as never, params: {} },
+                {
+                    code: 'notifications.from-the-future' as never,
+                    params: { productId: 'p1', titles: {} }
+                },
                 ['en'],
                 translate
             )

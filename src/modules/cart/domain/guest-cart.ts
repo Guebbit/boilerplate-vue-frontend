@@ -46,6 +46,7 @@ const PRODUCT_ID_PATTERN = /^[\w-]{1,64}$/;
  */
 const asGuestLine = (candidate: unknown): GuestCartLine | undefined => {
     if (typeof candidate !== 'object' || candidate === null) return undefined;
+    // Narrowed to an object just above; each field is type-checked before it is trusted.
     const { productId, quantity } = candidate as Record<string, unknown>;
     const valid =
         typeof productId === 'string' &&
@@ -65,7 +66,8 @@ const asGuestLine = (candidate: unknown): GuestCartLine | undefined => {
  *
  * @param lines - The current cart.
  * @param productId - The product to add.
- * @param quantity - How many units, at least 1.
+ * @param quantity - How many units: a whole number from 1. Anything else is not a quantity, and
+ *  leaves the cart as it was.
  * @returns The new cart, or `undefined` when the cart is full of other products.
  */
 export const addGuestLine = (
@@ -73,6 +75,7 @@ export const addGuestLine = (
     productId: string,
     quantity: number
 ): GuestCartLine[] | undefined => {
+    if (!Number.isInteger(quantity) || quantity < 1) return [...lines];
     const existing = lines.find((line) => line.productId === productId);
     if (!existing && lines.length >= MAX_GUEST_LINES) return undefined;
     const grown = Math.min(MAX_GUEST_LINE_QUANTITY, (existing?.quantity ?? 0) + quantity);
@@ -82,7 +85,9 @@ export const addGuestLine = (
 };
 
 /**
- * Sets a line's exact quantity, clamped into the allowed range. A product with no line is ignored.
+ * Sets a line's exact quantity, truncated to a whole number and clamped into the allowed range
+ * (so infinity fills the line). A product with no line is ignored, and so is `NaN`: it is no
+ * quantity at all, and the line keeps what it had.
  *
  * @param lines - The current cart.
  * @param productId - The line to set.
@@ -94,6 +99,7 @@ export const setGuestLineQuantity = (
     productId: string,
     quantity: number
 ): GuestCartLine[] => {
+    if (Number.isNaN(quantity)) return [...lines];
     const clamped = Math.min(MAX_GUEST_LINE_QUANTITY, Math.max(1, Math.trunc(quantity)));
     return lines.map((line) =>
         line.productId === productId ? { productId, quantity: clamped } : line
@@ -111,6 +117,25 @@ export const removeGuestLines = (
     lines: readonly GuestCartLine[],
     productIds: readonly string[]
 ): GuestCartLine[] => lines.filter((line) => !productIds.includes(line.productId));
+
+/**
+ * Takes away what a merge call already put in the server's cart: each sent line's quantity comes
+ * off the matching current line, and a line with nothing left goes. What remains is what the
+ * guest added, or changed, while the call was in flight, and a copy another tab swapped in.
+ *
+ * @param lines - The guest cart as it stands now.
+ * @param sent - The lines the merge call carried.
+ * @returns The lines still waiting for a merge.
+ */
+export const subtractGuestLines = (
+    lines: readonly GuestCartLine[],
+    sent: readonly GuestCartLine[]
+): GuestCartLine[] =>
+    lines.flatMap((line) => {
+        const taken = sent.find(({ productId }) => productId === line.productId)?.quantity ?? 0;
+        const left = line.quantity - taken;
+        return left > 0 ? [{ productId: line.productId, quantity: left }] : [];
+    });
 
 /**
  * How many units the cart holds in all: what the app bar's badge shows.
@@ -133,9 +158,38 @@ export const guestCartQuantity = (lines: readonly GuestCartLine[]): number =>
 export const parseGuestCart = (stored: unknown): GuestCartLine[] => {
     if (!Array.isArray(stored)) return [];
     let lines: GuestCartLine[] = [];
+    // `Array.isArray` narrows to `any[]`; each element is checked by `asGuestLine`.
     for (const candidate of stored as unknown[]) {
         const line = asGuestLine(candidate);
         if (line) lines = addGuestLine(lines, line.productId, line.quantity) ?? lines;
     }
     return lines;
+};
+
+/**
+ * A merge call that has not answered conclusively yet: the `Idempotency-Key` it carried and the
+ * exact lines it sent. The key only means "the same merge" while the body is the same.
+ */
+export interface MergeAttempt {
+    /**
+     * The `Idempotency-Key` header the call carried.
+     */
+    key: string;
+    /**
+     * The request body, serialised: what the key is bound to.
+     */
+    body: string;
+}
+
+/**
+ * Reads a stored value back as a merge attempt.
+ *
+ * @param stored - The parsed storage value, of any type.
+ * @returns The attempt, or `undefined` when the value is not one.
+ */
+export const parseMergeAttempt = (stored: unknown): MergeAttempt | undefined => {
+    if (typeof stored !== 'object' || stored === null) return undefined;
+    // Narrowed to an object just above; both fields are type-checked before use.
+    const { key, body } = stored as Record<string, unknown>;
+    return typeof key === 'string' && typeof body === 'string' ? { key, body } : undefined;
 };

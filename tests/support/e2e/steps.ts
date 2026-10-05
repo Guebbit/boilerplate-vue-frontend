@@ -160,6 +160,28 @@ export const signUp = (email: string, password: string): void => {
 };
 
 /**
+ * Fills in the login form already on screen and submits it, then waits for the redirect that leaves
+ * the login page (a click made before it can be overwritten by it).
+ *
+ * @param email - the account's address
+ * @param password - its password
+ */
+export const submitLoginForm = (email: string, password: string): void => {
+    cy.get('[type=email]').should('not.be.disabled').clear();
+    cy.get('[type=email]').type(email);
+    cy.get('[type=password]').clear();
+    cy.get('[type=password]').type(password);
+    cy.get('form').submit();
+    cy.url().should('not.include', '/login');
+};
+
+/**
+ * The `localStorage` key the guest cart lives under, and the one its unanswered merge lives under.
+ */
+export const GUEST_CART_KEY = 'guest-cart';
+export const GUEST_MERGE_ATTEMPT_KEY = 'guest-cart-merge-attempt';
+
+/**
  * Signs in through the login form with credentials the seed does not know — an account a journey
  * made itself. `cy.loginAs` covers the seeded ones.
  *
@@ -168,12 +190,7 @@ export const signUp = (email: string, password: string): void => {
  */
 export const signInWith = (email: string, password: string): void => {
     cy.visit('/en/login');
-    cy.get('[type=email]').should('not.be.disabled').clear();
-    cy.get('[type=email]').type(email);
-    cy.get('[type=password]').clear();
-    cy.get('[type=password]').type(password);
-    cy.get('form').submit();
-    cy.url().should('not.include', '/login');
+    submitLoginForm(email, password);
 };
 
 /**
