@@ -57,6 +57,7 @@ describe('AC6 · Give me my data', () => {
     });
 
     it('the export file holds the customer’s own profile, addresses and orders, and no secret or stranger', () => {
+        cy.skipUnlessMailbox();
         cy.step('the customer asks for the export from the profile, and is told a link will come');
         cy.loginAs('user');
         cy.visit('/en/profile');

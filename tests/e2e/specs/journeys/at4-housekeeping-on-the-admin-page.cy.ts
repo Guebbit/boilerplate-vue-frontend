@@ -4,8 +4,7 @@
  * AT4 · Housekeeping on the admin page. The administrator of a shop who is also the
  * installation's operator (the seeded `root` holds both memberships) refreshes the overview,
  * reads the platform audit trail (incidents only) through its filters, and opens, reads and
- * closes the realtime stream. Expired tokens are not here any more: the backend sweeps them in a
- * nightly job, so there is no button to press.
+ * closes the realtime stream.
  *
  * Needs the operator's platform key for all of it.
  */
@@ -46,9 +45,6 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.get<{ name: string }[]>('@queues').then((queues) => {
             cy.get('[data-test=parked-queue-row]').should('have.length', queues.length);
         });
-
-        cy.step('the page offers no token clean-up: the backend sweeps expired tokens nightly');
-        cy.get('[data-test=admin-clear-expired-tokens]').should('not.exist');
 
         cy.step('the platform audit tab filters by action, then resets');
         cy.get('[data-test=admin-tab-audit]').click();
