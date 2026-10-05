@@ -65,6 +65,22 @@ export const umamiSession = (): Cypress.Chainable<UmamiSession> =>
                 }))
         );
 
+/** The Umami version the reads below were written against; the stack pins it. */
+const UMAMI_VERSION = '2.14';
+
+/**
+ * The error for a response this helper does not know how to read.
+ *
+ * @param endpoint - which Umami endpoint answered
+ * @param body - what it answered
+ * @returns An error naming the expected version, instead of a silent `undefined`.
+ */
+const unknownShape = (endpoint: string, body: unknown): Error =>
+    new Error(
+        `Umami /${endpoint} answered a shape this helper does not read (expects Umami ${UMAMI_VERSION}; ` +
+            `is the stack on \`latest\`?): ${JSON.stringify(body)}`
+    );
+
 /**
  * How many times each event name was recorded since `since`.
  *
@@ -88,10 +104,10 @@ export const eventCounts = (
             qs: { type: 'event', startAt: since, endAt: Date.now() + 5 * 60 * 1000 },
             headers: { Authorization: `Bearer ${session.token}` }
         })
-        .then(
-            ({ body }) =>
-                Object.fromEntries(body.map(({ x, y }) => [x, y])) as Record<string, number>
-        );
+        .then(({ body }) => {
+            if (!Array.isArray(body)) throw unknownShape('metrics', body);
+            return Object.fromEntries(body.map(({ x, y }) => [x, y]));
+        });
 
 /**
  * How many pageviews were recorded since `since` — the app's only unconditional write.
@@ -107,14 +123,18 @@ export const eventCounts = (
  */
 export const pageviewCount = (session: UmamiSession, since: number): Cypress.Chainable<number> =>
     cy
-        .request<{ pageviews: { value: number } }>({
+        .request<{ pageviews?: { value?: number } }>({
             method: 'GET',
             url: `${session.url}/api/websites/${session.websiteId}/stats`,
             // Same future-shifted `endAt` as `eventCounts`, for the same clock-skew reason.
             qs: { startAt: since, endAt: Date.now() + 5 * 60 * 1000 },
             headers: { Authorization: `Bearer ${session.token}` }
         })
-        .then(({ body }) => body.pageviews.value);
+        .then(({ body }) => {
+            // Umami 3.x answers a bare number here, so the nested read below is 2.x-only.
+            if (typeof body.pageviews?.value !== 'number') throw unknownShape('stats', body);
+            return body.pageviews.value;
+        });
 
 /**
  * Poll `read` until `satisfied` accepts what it yields, or give up at `deadline`.
