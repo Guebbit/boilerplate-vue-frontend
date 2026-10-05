@@ -31,6 +31,12 @@ import { eventually } from '../../../support/e2e/steps';
  */
 const DEAD_PATH = '/in4-dead';
 
+/**
+ * What a delivery to that endpoint reports: the connection refused where no receiver is listening
+ * (a single-process demo run hosts none), or the receiver's own 5xx where one is.
+ */
+const DOWN = /ECONNREFUSED|Endpoint answered 5\d\d/;
+
 /** The row of one delivery in the log, found by the id its Replay button names. */
 const replayButtonOf = (deliveryId: string): Cypress.Chainable<JQuery> =>
     cy.get(`[data-test=webhook-delivery-replay][aria-label*="${deliveryId}"]`);
@@ -91,7 +97,7 @@ describe('IN4 · Replay a failed delivery', () => {
 
                     cy.step('the row says it failed, and why');
                     deliveryNow(dead.id, delivery.id).then((failed) => {
-                        expect(failed.error, 'why it failed').to.contain('ECONNREFUSED');
+                        expect(failed.error, 'why it failed').to.match(DOWN);
                         expect(failed.status, 'still waiting for a retry').to.equal('pending');
                         cy.reload();
                         replayButtonOf(delivery.id)
@@ -102,14 +108,14 @@ describe('IN4 · Replay a failed delivery', () => {
                                     'data-status',
                                     'pending'
                                 );
-                                cy.contains('ECONNREFUSED').should('exist');
+                                cy.contains(DOWN).should('exist');
                             });
 
                         cy.step('another Replay is another attempt');
                         replayInTheLog(delivery.id);
                         deliveryNow(dead.id, delivery.id).then((again) => {
                             expect(again.attempt, 'one more attempt').to.equal(failed.attempt + 1);
-                            expect(again.error).to.contain('ECONNREFUSED');
+                            expect(again.error).to.match(DOWN);
                         });
                     });
                 });
