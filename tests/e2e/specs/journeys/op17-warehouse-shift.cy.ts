@@ -10,7 +10,7 @@
  * Setup the story does not care about goes through the API: the digital order is bought by the
  * customer and paid by the admin, and the return request is approved by support first.
  */
-import { centsOf } from '../../../support/e2e/steps';
+import { centsOf, checkoutAs } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -73,7 +73,7 @@ const isTurnedBack = (path: string): void => {
 const aPaidDigitalOrder = (): Cypress.Chainable<string> =>
     cy.subjectId('product.digital').then((productId) => {
         cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
-        return cy.apiAs<{ id: string }>('user', 'POST', '/cart/checkout', {}).then((order) => {
+        return checkoutAs('user').then((order) => {
             const orderId = String(order?.id);
             cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, { method: 'cash' });
             return cy.wrap(orderId, { log: false });

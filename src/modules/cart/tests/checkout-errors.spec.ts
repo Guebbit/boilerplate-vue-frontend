@@ -16,6 +16,46 @@ describe('classifyCheckoutError', () => {
         ).toEqual({ kind: 'cart-changed' });
     });
 
+    it('names CART_TOTAL_CHANGED with the totals the server compared', () => {
+        expect(
+            classifyCheckoutError({
+                status: 409,
+                errors: [
+                    {
+                        code: 'CART_TOTAL_CHANGED',
+                        message: 'x',
+                        details: {
+                            expected: { amount: 1998, currency: 'EUR' },
+                            actual: { amount: 2450, currency: 'EUR' }
+                        }
+                    }
+                ]
+            })
+        ).toEqual({
+            kind: 'total-changed',
+            expected: { amount: 1998, currency: 'EUR' },
+            actual: { amount: 2450, currency: 'EUR' }
+        });
+    });
+
+    it('still names CART_TOTAL_CHANGED when its details are missing or malformed', () => {
+        const verdict = { kind: 'total-changed', expected: undefined, actual: undefined };
+        expect(
+            classifyCheckoutError({ status: 409, errors: [{ code: 'CART_TOTAL_CHANGED' }] })
+        ).toEqual(verdict);
+        expect(
+            classifyCheckoutError({
+                status: 409,
+                errors: [
+                    {
+                        code: 'CART_TOTAL_CHANGED',
+                        details: { expected: { amount: '19.98', currency: 'EUR' }, actual: 5 }
+                    }
+                ]
+            })
+        ).toEqual(verdict);
+    });
+
     it('names CART_ADDRESS_NOT_FOUND', () => {
         expect(
             classifyCheckoutError({

@@ -41,6 +41,19 @@ vi.mock('@api', () => ({
  */
 const { fresh: freshStore, disposeAll } = trackStores();
 
+/**
+ * A fresh store that has already read a cart: a checkout names the total the page showed, so it
+ * refuses to run before one was read.
+ *
+ * @returns The store, holding a two-unit cart.
+ */
+const loadedStore = async () => {
+    vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
+    const store = freshStore();
+    await store.fetchCart();
+    return store;
+};
+
 beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -67,7 +80,7 @@ const sentPairs = () =>
 
 describe('one Idempotency-Key, one body', () => {
     it('is not reused for another body after an attempt whose answer was lost', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
 
@@ -83,7 +96,7 @@ describe('one Idempotency-Key, one body', () => {
     });
 
     it('is kept for the same order after a lost answer, so the retry replays it', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
 
@@ -96,14 +109,14 @@ describe('one Idempotency-Key, one body', () => {
 
     it('is kept across a reload: a new store reads it from the tab', async () => {
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
-        await freshStore()
-            .checkout({ notes: 'same' })
-            .catch(() => undefined);
+        const lost = await loadedStore();
+        await lost.checkout({ notes: 'same' }).catch(() => undefined);
 
         // A reload: the tab's storage stays, the page's memory does not.
         setActivePinia(createPinia());
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
-        await freshStore().checkout({ notes: 'same' });
+        const retried = await loadedStore();
+        await retried.checkout({ notes: 'same' });
 
         const [first, second] = sentPairs();
         expect(second?.key).toBe(first?.key);
@@ -112,20 +125,20 @@ describe('one Idempotency-Key, one body', () => {
     it('is never inherited by the next person on the tab', async () => {
         await signInAs('a');
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
-        await freshStore()
-            .checkout({ notes: 'same' })
-            .catch(() => undefined);
+        const lost = await loadedStore();
+        await lost.checkout({ notes: 'same' }).catch(() => undefined);
 
         await signInAs('b');
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
-        await freshStore().checkout({ notes: 'same' });
+        const retried = await loadedStore();
+        await retried.checkout({ notes: 'same' });
 
         const [first, second] = sentPairs();
         expect(second?.key).not.toBe(first?.key);
     });
 
     it('ends with a refusal the server will repeat: the next attempt gets a new key', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(409, 'CART_INSUFFICIENT_STOCK'));
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
 
@@ -137,7 +150,7 @@ describe('one Idempotency-Key, one body', () => {
     });
 
     it('is kept through a 503, which says the server did not act', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(503, 'UNAVAILABLE'));
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
 
@@ -149,7 +162,7 @@ describe('one Idempotency-Key, one body', () => {
     });
 
     it('ends after a bare 500 when the cart is still full: no order was written, and a recorded 500 would be replayed', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
         await store.fetchCart();
         vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(500, 'INTERNAL'));
@@ -163,7 +176,7 @@ describe('one Idempotency-Key, one body', () => {
     });
 
     it('keeps the key after a bare 500 when the re-read fails too: nothing is known, so the retry replays', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(getCart).mockRejectedValue(lostAnswer());
         vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(500, 'INTERNAL'));
         vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
@@ -177,7 +190,8 @@ describe('one Idempotency-Key, one body', () => {
     });
 
     it('re-reads the cart after a bare 500, and leaves it empty when the order was written', async () => {
-        const store = freshStore();
+        const store = await loadedStore();
+        vi.mocked(getCart).mockClear();
         vi.mocked(getCart).mockResolvedValue(answered(aCart([])));
         vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(500, 'INTERNAL'));
 
@@ -191,7 +205,7 @@ describe('one Idempotency-Key, one body', () => {
 describe('an attempt the server says is still running', () => {
     it('is asked again under the same key after each wait, and ends with the replayed order', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout'] });
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout)
             .mockRejectedValueOnce(apiRejection(409, 'IDEMPOTENCY_IN_FLIGHT'))
             .mockRejectedValueOnce(apiRejection(409, 'IDEMPOTENCY_IN_FLIGHT'))
@@ -210,7 +224,7 @@ describe('an attempt the server says is still running', () => {
 
     it('gives up after the last wait, keeping the key so the next press is still the same call', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout'] });
-        const store = freshStore();
+        const store = await loadedStore();
         vi.mocked(apiCheckout).mockRejectedValue(apiRejection(409, 'IDEMPOTENCY_IN_FLIGHT'));
 
         const placing = store.checkout({ notes: 'same' }).catch((error: unknown) => error);

@@ -24,6 +24,8 @@
         "button-checkout": "Order with obligation to pay",
         "success-checkout": "Order placed successfully!",
         "error-cart-changed": "Your cart changed on the server since this page loaded — it has been refreshed, please review it and try again.",
+        "error-total-changed": "The total changed from {from} to {to}. Check it and place the order again.",
+        "error-total-changed-generic": "The total changed since this page showed it. Check it and place the order again.",
         "error-insufficient-stock": "Some items in your cart are no longer available in the quantity you asked for.",
         "shortfall-line": "{title}: you asked for {requested}, and there is not enough in stock",
         "error-address-not-found": "We couldn't find the shipping address for this order — check your saved addresses and try again.",

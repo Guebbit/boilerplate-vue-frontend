@@ -38,11 +38,13 @@ import {
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
 import { invalidateProductsCache } from '@/modules/products';
 import {
     changedMergeLines,
     checkoutFingerprint,
     classifyCheckoutError,
+    expectedTotalOf,
     subtractGuestLines
 } from './domain';
 import type { GuestCartLine, MergeReportLine } from './domain';
@@ -53,6 +55,12 @@ import {
     writeMergeAttempt
 } from './composables/guest-cart-storage';
 import { useGuestCart } from './composables/use-guest-cart';
+
+/**
+ * What a caller of {@link useCartStore}'s `checkout` supplies: the request without the total,
+ * which the store reads off the cart it holds.
+ */
+export type CheckoutBody = Omit<CheckoutRequest, 'expectedTotal'>;
 
 /**
  * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
@@ -271,10 +279,10 @@ export const useCartStore = defineStore('cart', () => {
      * the same order asked again is the same call, so the server replays it; anything else is a
      * different call and gets a fresh key. Saved in the tab's storage, so a reload keeps it.
      *
-     * @param body - The checkout request body about to be sent.
+     * @param body - The checkout request body about to be sent, total included.
      * @returns The `Idempotency-Key` to send it under.
      */
-    const checkoutKeyFor = (body?: CheckoutRequest): string => {
+    const checkoutKeyFor = (body: CheckoutRequest): string => {
         const viewerId = useSessionStore().viewer?.id ?? '';
         const fingerprint = checkoutFingerprint(body, cart.value);
         const saved = readCheckoutAttempt();
@@ -485,7 +493,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the API's answer.
      */
     const sendCheckout = (
-        checkoutData: CheckoutRequest | undefined,
+        checkoutData: CheckoutRequest,
         key: string,
         delays: readonly number[]
     ): ReturnType<typeof apiCheckout> =>
@@ -513,6 +521,15 @@ export const useCartStore = defineStore('cart', () => {
     const settleFailedCheckout = (error: unknown): Promise<void> => {
         const verdict = classifyCheckoutError(error).kind;
         if (verdict === 'in-flight') return Promise.resolve();
+        // The server wrote nothing and the screen was out of date: read the cart again, so the
+        // page shows the total the next press will confirm.
+        if (verdict === 'total-changed') {
+            endCheckoutAttempt();
+            return fetchCart().then(
+                () => undefined,
+                () => undefined
+            );
+        }
         if (verdict === 'server-error')
             return fetchCart().then(
                 (fresh) => {
@@ -534,14 +551,28 @@ export const useCartStore = defineStore('cart', () => {
      * a lost answer reuses it, any other order gets a fresh one, and a verdict ends the attempt
      * ({@link settleFailedCheckout}).
      *
+     * Always names the total the cart on screen shows (`expectedTotal`, in minor units): the server
+     * refuses with 409 `CART_TOTAL_CHANGED` when it would charge anything else, and the total is
+     * part of the attempt's fingerprint, so a different shown total is a different call with a new
+     * key. A refusal for that reason reads the cart again before it rejects.
+     *
      * @param checkoutData - Optional checkout payload (address, payment method, order notes).
      * @returns A promise resolving with the created order.
      */
-    const checkout = (checkoutData?: CheckoutRequest) =>
+    const checkout = (checkoutData?: CheckoutBody) =>
         fetchTracked(() => {
             const store = takeCartSlot();
-            const key = checkoutKeyFor(checkoutData);
-            return sendCheckout(checkoutData, key, IN_FLIGHT_RETRY_DELAYS_MS)
+            const shown = cart.value?.summary;
+            if (shown === undefined)
+                return Promise.reject(
+                    new Error('checkout: no cart has been read, so no total was shown')
+                );
+            const body: CheckoutRequest = {
+                ...checkoutData,
+                expectedTotal: expectedTotalOf(shown, currencyDigits(shown.currency))
+            };
+            const key = checkoutKeyFor(body);
+            return sendCheckout(body, key, IN_FLIGHT_RETRY_DELAYS_MS)
                 .then((response) => {
                     // The server empties the cart on success: setting it to the known-empty
                     // shape, rather than dropping it to `undefined`, is what keeps the header badge

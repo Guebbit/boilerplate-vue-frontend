@@ -25,10 +25,14 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
-import { MIN_LINE_QUANTITY, classifyCheckoutError } from '@/modules/cart/domain';
-import type { CheckoutShortfallLine, UnavailableCartLine } from '@/modules/cart/domain';
+import { MIN_LINE_QUANTITY, classifyCheckoutError, fromMinorUnits } from '@/modules/cart/domain';
+import type {
+    CheckoutShortfallLine,
+    ExpectedTotal,
+    UnavailableCartLine
+} from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
 import { useCartStockPoll } from '@/modules/cart/composables/use-cart-stock-poll.ts';
@@ -265,6 +269,31 @@ const {
 const placing = ref(false);
 
 /**
+ * A wire money amount, written the way the rest of the page writes prices.
+ *
+ * @param money - Minor units plus currency, from `CART_TOTAL_CHANGED`'s details.
+ * @returns The amount in the visitor's locale formatting.
+ */
+const formatMinor = (money: ExpectedTotal) =>
+    formatCurrency(fromMinorUnits(money.amount, currencyDigits(money.currency)), money.currency);
+
+/**
+ * The refusal text for a total that moved between what the page showed and what would be charged.
+ * Without both amounts (a malformed `details`) it falls back to the sentence that names neither.
+ *
+ * @param expected - The total the page showed.
+ * @param actual - The total the server would charge.
+ * @returns The message to show.
+ */
+const totalChangedMessage = (expected?: ExpectedTotal, actual?: ExpectedTotal) =>
+    expected && actual
+        ? t('cart-page.error-total-changed', {
+              from: formatMinor(expected),
+              to: formatMinor(actual)
+          })
+        : t('cart-page.error-total-changed-generic');
+
+/**
  * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
  * in the debounce window.
  *
@@ -319,6 +348,12 @@ const runCheckout = () =>
             if (verdict.kind === 'cart-changed') {
                 addMessage(t('cart-page.error-cart-changed'));
                 return fetchCart().then(() => undefined);
+            }
+            if (verdict.kind === 'total-changed') {
+                // The store already read the cart again, so the page shows the new total; the
+                // button stays live, and the next press confirms that total.
+                addMessage(totalChangedMessage(verdict.expected, verdict.actual));
+                return;
             }
             if (verdict.kind === 'insufficient-stock') {
                 insufficientStockLines.value = verdict.lines;

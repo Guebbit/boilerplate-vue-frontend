@@ -33,6 +33,11 @@ interface Request {
  */
 let checkoutsToLose: number;
 
+/**
+ * How many times `GET /cart` has been read in the case at hand.
+ */
+let cartReads: number;
+
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: Request) => {
         const route = `${config.method.toUpperCase()} ${config.url}`;
@@ -40,6 +45,14 @@ vi.mock('@/infrastructure/http', () => ({
             return checkoutsToLose-- > 0
                 ? Promise.reject(lostAnswer())
                 : Promise.resolve({ success: true, status: 201, message: 'OK', data: anOrder() });
+        // The page's own read shows one unit; the read after the move shows two.
+        if (route === 'GET /cart')
+            return Promise.resolve({
+                success: true,
+                status: 200,
+                message: 'OK',
+                data: aCart([['p1', cartReads++ === 0 ? 1 : 2]])
+            });
         if (route === 'POST /wishlist/p1/move-to-cart')
             return Promise.resolve({
                 success: true,
@@ -51,7 +64,7 @@ vi.mock('@/infrastructure/http', () => ({
             success: true,
             status: 200,
             message: 'OK',
-            data: aCart([['p1', 1]])
+            data: aCart([['p1', 2]])
         });
     })
 }));
@@ -77,11 +90,13 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     checkoutsToLose = 0;
+    cartReads = 0;
 });
 
 describe('moving a saved product into the cart', () => {
     it('ends the checkout attempt whose answer was lost: the next order carries a new key', async () => {
         const cart = useCartStore();
+        await cart.fetchCart();
         checkoutsToLose = 1;
         await cart.checkout().catch(() => undefined);
         const keyOfTheLostAttempt = lastCheckoutKey();

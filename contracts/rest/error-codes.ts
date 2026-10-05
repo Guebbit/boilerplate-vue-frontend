@@ -46,6 +46,8 @@ export const ERROR_CODES = {
     CART_SHIPPING_NOT_APPLICABLE: 'CART_SHIPPING_NOT_APPLICABLE',
     /** 422 — The address's country is outside this deployment's configured ship-to list. */
     CART_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED',
+    /** 409 — The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` in minor units; show the new total and let the buyer confirm. */
+    CART_TOTAL_CHANGED: 'CART_TOTAL_CHANGED',
     /** 409 — The request is well-formed but conflicts with the resource's current state. */
     CONFLICT: 'CONFLICT',
     /** 422 — An admin status override requires a reason and none was supplied. */

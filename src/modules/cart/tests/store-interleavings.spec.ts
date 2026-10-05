@@ -177,6 +177,10 @@ describe('the checkout attempt a write to the basket ends', () => {
         'is over once %s answers: the next checkout carries a new key',
         async (_name, write) => {
             const store = freshStore();
+            // The page's own read, of a smaller basket than the write will answer with: a checkout
+            // names the total on screen, and the write must change the order by itself.
+            vi.mocked(getCart).mockResolvedValueOnce(answered(aCart([['p1', 1]])));
+            await store.fetchCart();
             vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
             await store.checkout().catch(() => undefined);
             const keyOfTheLostAttempt = lastKey();
@@ -225,6 +229,7 @@ describe('the checkout attempt a write to the basket ends', () => {
 
     it('is left running by a write the server refused: nothing changed, so the attempt stands', async () => {
         const store = freshStore();
+        await store.fetchCart();
         vi.mocked(apiCheckout).mockRejectedValueOnce(lostAnswer());
         await store.checkout().catch(() => undefined);
         const keyOfTheLostAttempt = lastKey();

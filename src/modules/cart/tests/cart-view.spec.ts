@@ -17,6 +17,8 @@ import type { MergeReportLine } from '@/modules/cart/domain';
 import { useProductsStore } from '@/modules/products';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout } from '@api';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import {
@@ -175,6 +177,50 @@ describe('the checkout refusals', () => {
                     // Once from `onMounted`, once more from the refusal handler — the second
                     // is what this case exists to prove.
                     expect(cart.fetchCart).toHaveBeenCalledTimes(2);
+                });
+        }));
+
+    it('names the old and the new total on CART_TOTAL_CHANGED, and keeps the button live', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_TOTAL_CHANGED', {
+                    expected: { amount: 2000, currency: 'EUR' },
+                    actual: { amount: 2450, currency: 'EUR' }
+                })
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    const toast = useNotificationsStore().messages.find(({ message }) =>
+                        message.includes('The total changed')
+                    );
+                    expect(toast?.message).toBe(
+                        `The total changed from ${formatCurrency(20, 'EUR')} to ${formatCurrency(24.5, 'EUR')}. Check it and place the order again.`
+                    );
+                    // Not CART_CHANGED's sentence, and no generic error under the button.
+                    expect(wrapper.find('[data-test=cart-checkout-error]').exists()).toBe(false);
+                    expect(
+                        wrapper.get('[data-test=cart-checkout]').attributes('disabled')
+                    ).toBeUndefined();
+                });
+        }));
+
+    it('says the total changed without figures when the refusal carries none', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_TOTAL_CHANGED'));
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    const toasts = useNotificationsStore().messages.map(({ message }) => message);
+                    expect(toasts).toContain(
+                        'The total changed since this page showed it. Check it and place the order again.'
+                    );
                 });
         }));
 

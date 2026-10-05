@@ -13,6 +13,8 @@
  * production-sized TTL it is the story's real test.
  */
 
+import { checkoutAs } from '../../../support/e2e/steps';
+
 /** Units on the shelf at the start, taken by the first order, and by the second. */
 const SHELF = 5;
 
@@ -68,7 +70,7 @@ const boardShows = (title: string, expected: Counts): void => {
 const placeOrder = (productId: string, quantity: number): Cypress.Chainable<string> => {
     cy.apiAs('user', 'POST', '/cart', { productId, quantity });
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
-    return cy.apiAs<OrderLike>('user', 'POST', '/cart/checkout', {}).then((order) => {
+    return checkoutAs<OrderLike>('user').then((order) => {
         if (!order) throw new Error('OP21: the checkout answered no order');
         return order.id;
     });

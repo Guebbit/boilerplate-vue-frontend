@@ -62,6 +62,18 @@ const CART = {
 };
 
 /**
+ * What `GET /cart` answers once the total is `totalPrice` (shipping already inside it).
+ *
+ * @param totalPrice - the decimal total
+ * @returns the cart answer
+ */
+const cartTotalling = (totalPrice: number) =>
+    contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, {
+        ...CART,
+        summary: { ...CART.summary, totalPrice }
+    });
+
+/**
  * The cart after its last line is removed.
  */
 const EMPTY_CART = {
@@ -129,6 +141,13 @@ const apiFailure = (status: number) =>
         message: 'nope',
         errors: [{ code: 'STUB_ERROR', message: 'nope' }]
     }) as never;
+
+/**
+ * A bare 409 envelope, for a case that adds its own `errors`.
+ *
+ * @returns The rejection value, without the error list.
+ */
+const apiFailure409 = () => ({ success: false, status: 409, message: 'conflict' });
 
 /**
  * The `Idempotency-Key` header `checkout` sent, off the most recent `apiCheckout` call.
@@ -310,11 +329,21 @@ describe('useCartStore', () => {
     });
 
     describe('checkout', () => {
-        it('calls the endpoint with no payload when none is given', () =>
+        // A checkout names the total the page showed, so a cart has been read before it.
+        beforeEach(() =>
+            useCartStore()
+                .fetchCart()
+                .then(() => undefined)
+        );
+
+        it('names nothing but the shown total when no payload is given', () =>
             useCartStore()
                 .checkout()
                 .then(() => {
-                    expect(apiCheckout).toHaveBeenCalledWith(undefined, expect.anything());
+                    expect(apiCheckout).toHaveBeenCalledWith(
+                        { expectedTotal: { amount: 1998, currency: 'EUR' } },
+                        expect.anything()
+                    );
                 }));
 
         it('resolves the created order itself, the same shape POST /orders answers', () =>
@@ -322,7 +351,10 @@ describe('useCartStore', () => {
                 .checkout({ notes: 'leave at door' })
                 .then((result) => {
                     expect(apiCheckout).toHaveBeenCalledWith(
-                        { notes: 'leave at door' },
+                        {
+                            notes: 'leave at door',
+                            expectedTotal: { amount: 1998, currency: 'EUR' }
+                        },
                         expect.anything()
                     );
                     expect(result).toEqual(ORDER);
@@ -415,6 +447,92 @@ describe('useCartStore', () => {
                         currency: 'EUR'
                     });
                 });
+        });
+
+        /**
+         * `expectedTotal`: the total the page showed, so a price or basket that moved behind it is
+         * refused by the server (409 `CART_TOTAL_CHANGED`) rather than charged.
+         */
+        describe('the total the buyer was shown', () => {
+            it.each([
+                [0.56, 56],
+                [1.06, 106],
+                [1.13, 113],
+                [19.98, 1998],
+                [0, 0]
+            ])('sends %s as %s minor units, with no float drift', (shown, minor) => {
+                vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(shown));
+                const store = useCartStore();
+
+                return store
+                    .fetchCart()
+                    .then(() => store.checkout())
+                    .then(() => {
+                        expect(vi.mocked(apiCheckout).mock.calls.at(-1)?.[0]).toEqual({
+                            expectedTotal: { amount: minor, currency: 'EUR' }
+                        });
+                    });
+            });
+
+            it('sends a new key when the shown total is not the one the last attempt carried', () => {
+                const store = useCartStore();
+                vi.mocked(apiCheckout).mockRejectedValueOnce(new Error('Network Error'));
+
+                return store
+                    .checkout()
+                    .catch(() => undefined)
+                    .then(() => {
+                        const firstKey = lastIdempotencyKey();
+                        // Same lines, a price moved: only the shown total differs.
+                        vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(24.5));
+                        return store
+                            .fetchCart()
+                            .then(() => store.checkout())
+                            .then(() => {
+                                expect(lastIdempotencyKey()).not.toBe(firstKey);
+                            });
+                    });
+            });
+
+            it('reads the cart again on CART_TOTAL_CHANGED and rejects with both totals', () => {
+                const store = useCartStore();
+                const refusal = {
+                    ...apiFailure409(),
+                    errors: [
+                        {
+                            code: 'CART_TOTAL_CHANGED',
+                            message: 'moved',
+                            details: {
+                                expected: { amount: 1998, currency: 'EUR' },
+                                actual: { amount: 2450, currency: 'EUR' }
+                            }
+                        }
+                    ]
+                };
+                vi.mocked(apiCheckout).mockRejectedValueOnce(refusal);
+                vi.mocked(getCart).mockClear();
+                vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(24.5));
+
+                return store.checkout().then(
+                    () => {
+                        throw new Error('the checkout was expected to be refused');
+                    },
+                    (error: unknown) => {
+                        expect(error).toBe(refusal);
+                        expect(getCart).toHaveBeenCalledTimes(1);
+                        // The page now shows the new total, so the next press confirms it.
+                        expect(store.cartSummary?.totalPrice).toBe(24.5);
+                    }
+                );
+            });
+
+            it('refuses to place an order from a cart nobody has read: no total was shown', () =>
+                expect(
+                    (() => {
+                        setActivePinia(createPinia());
+                        return useCartStore().checkout();
+                    })()
+                ).rejects.toThrow('no total was shown'));
         });
 
         /**
@@ -529,6 +647,12 @@ describe('useCartStore', () => {
      * all), so each one ends the products cache's five-minute window early.
      */
     describe('the products cache', () => {
+        beforeEach(() =>
+            useCartStore()
+                .fetchCart()
+                .then(() => undefined)
+        );
+
         it.each([
             ['addCartItem', (store: ReturnType<typeof useCartStore>) => store.addCartItem('p1', 1)],
             [
@@ -605,9 +729,12 @@ describe('useCartStore', () => {
                         expect(store.cart).toBeUndefined();
                         expect(store.badgeQuantity).toBeUndefined();
                         expect(store.badgeMoney).toBeUndefined();
-                        return store.checkout().then(() => {
-                            expect(lastIdempotencyKey()).not.toBe(keyBefore);
-                        });
+                        return store
+                            .fetchCart()
+                            .then(() => store.checkout())
+                            .then(() => {
+                                expect(lastIdempotencyKey()).not.toBe(keyBefore);
+                            });
                     });
                 });
         });

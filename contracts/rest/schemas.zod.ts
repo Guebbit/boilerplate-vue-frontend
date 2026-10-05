@@ -5027,7 +5027,7 @@ export const GetCartSummaryResponse = zod.strictObject({
     })
 });
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkoutHeaderIdempotencyKeyMax = 200;
@@ -5040,6 +5040,9 @@ export const CheckoutHeader = zod.strictObject({
         .regex(checkoutHeaderIdempotencyKeyRegExp)
         .optional()
 });
+export const checkoutBodyExpectedTotalAmountMin = 0;
+export const checkoutBodyExpectedTotalCurrencyMin = 3;
+export const checkoutBodyExpectedTotalCurrencyMax = 3;
 export const checkoutBodyNotesMax = 1000;
 export const checkoutBodyAddressIdOneMax = 64;
 export const checkoutBodyAddressIdOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -5047,6 +5050,13 @@ export const checkoutBodyBillingAddressIdOneMax = 64;
 export const checkoutBodyBillingAddressIdOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const checkoutBodyPaymentMethodDefault = `card`;
 export const CheckoutBody = zod.strictObject({
+    expectedTotal: zod.strictObject({
+        amount: zod.number().min(checkoutBodyExpectedTotalAmountMin),
+        currency: zod
+            .string()
+            .min(checkoutBodyExpectedTotalCurrencyMin)
+            .max(checkoutBodyExpectedTotalCurrencyMax)
+    }),
     notes: zod.string().min(1).max(checkoutBodyNotesMax).optional(),
     addressId: zod
         .string()

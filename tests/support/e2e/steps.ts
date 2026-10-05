@@ -2,6 +2,7 @@
 
 import { cents } from '../../../scripts/e2e/cents';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
+import type { E2ERole } from './scenario';
 
 export { cents, sumCents } from '../../../scripts/e2e/cents';
 
@@ -210,6 +211,36 @@ export const addToCartFromStorefront = (name: string): void => {
     });
     addOpenProductToCart();
 };
+
+/** The slice of `GET /cart` a checkout names its total from. */
+interface CartTotalLike {
+    summary: { totalPrice: number; currency: string };
+}
+
+/**
+ * Places the account's order through the API, naming the total its own cart shows right now:
+ * `POST /cart/checkout` requires the total the buyer was shown, so a direct call reads `GET /cart`
+ * first, the way the page does.
+ *
+ * @param role - whose cart is checked out
+ * @param body - the rest of the checkout request (address, notes, ...)
+ * @returns a chain yielding the new order, or null for a body-less answer
+ */
+export const checkoutAs = <T = { id: string }>(
+    role: E2ERole,
+    body: Record<string, unknown> = {}
+): Cypress.Chainable<T | null> =>
+    cy.apiAs<CartTotalLike>(role, 'GET', '/cart').then((cart) => {
+        if (!cart) throw new Error('checkoutAs: the cart answered nothing');
+        const { totalPrice, currency } = cart.summary;
+        const digits =
+            new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
+                .maximumFractionDigits ?? 2;
+        return cy.apiAs<T>(role, 'POST', '/cart/checkout', {
+            ...body,
+            expectedTotal: { amount: Math.round(totalPrice * 10 ** digits), currency }
+        });
+    });
 
 /**
  * The id at the end of the current address — the order a checkout just landed on.

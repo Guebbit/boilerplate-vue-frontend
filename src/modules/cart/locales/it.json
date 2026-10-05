@@ -24,6 +24,8 @@
         "button-checkout": "Ordina con obbligo di pagamento",
         "success-checkout": "Ordine effettuato con successo!",
         "error-cart-changed": "Il tuo carrello è cambiato sul server da quando hai caricato questa pagina — è stato aggiornato, controllalo e riprova.",
+        "error-total-changed": "Il totale è cambiato da {from} a {to}. Controllalo e invia di nuovo l'ordine.",
+        "error-total-changed-generic": "Il totale è cambiato da quando la pagina lo mostrava. Controllalo e invia di nuovo l'ordine.",
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",
         "shortfall-line": "{title}: ne hai chiesti {requested}, ma non ce ne sono abbastanza",
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",

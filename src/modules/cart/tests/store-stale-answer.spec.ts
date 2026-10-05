@@ -8,7 +8,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { createPinia, setActivePinia } from 'pinia';
-import { addCartItem, removeCartItem, updateCartItemById, checkout as apiCheckout } from '@api';
+import {
+    addCartItem,
+    getCart,
+    removeCartItem,
+    updateCartItemById,
+    checkout as apiCheckout
+} from '@api';
 import {
     aCart,
     gate,
@@ -121,7 +127,8 @@ describe('answers that arrive in the wrong order', () => {
 
     it('keeps the emptied cart once the order is placed when a step issued before it answers late', async () => {
         const store = freshStore();
-        await store.fetchCart().catch(() => undefined);
+        vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
+        await store.fetchCart();
         const step = await issue(store, ACTIONS.update);
         const order = gate<Answer<typeof apiCheckout>>();
         vi.mocked(apiCheckout).mockReturnValueOnce(order.promise);

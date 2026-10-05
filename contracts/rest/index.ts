@@ -3407,7 +3407,25 @@ export interface CartSummaryResponseEnvelope {
     data: CartSummaryResponse;
 }
 
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
+ */
+export interface ExpectedTotal {
+    /**
+     * The total in minor units of `currency` (EUR 71.00 is 7100).
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * The ISO-4217 code the total is priced in.
+     * @minLength 3
+     * @maxLength 3
+     */
+    currency: string;
+}
+
 export interface CheckoutRequest {
+    expectedTotal: ExpectedTotal;
     /**
      * Optional order notes. Left out when there are none; an empty string is a 422.
      * @minLength 1
@@ -7699,11 +7717,11 @@ export const getCartSummary = (
 };
 
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkout = (
-    checkoutRequest?: CheckoutRequest,
+    checkoutRequest: CheckoutRequest,
     options?: SecondParameter<typeof orvalMutator<CheckoutResponseEnvelope>>
 ) => {
     return orvalMutator<CheckoutResponseEnvelope>(

@@ -269,7 +269,8 @@ The server's cart can change behind an open screen (another tab, the wishlist, a
 change). When the window gets focus or the tab becomes visible, the page reads the cart once more
 (`composables/use-cart-focus-refresh.ts`, through the same `pollCart`, so it yields to any write in
 flight). It is event-driven, costs nothing while the page is left alone, and needs no knob. It
-narrows the gap; it does not close it for a shopper who never leaves the page.
+narrows the gap; the shopper who never leaves the page is covered by
+[the total the buyer was shown](#the-total-the-buyer-was-shown).
 
 ### Answers in order
 
@@ -310,7 +311,8 @@ answers 409 `IDEMPOTENCY_IN_FLIGHT` while the first attempt still runs, and repl
 outcome (a 5xx too) for as long as it keeps the key. So a key may travel again only with the same
 order.
 
-The key follows a **fingerprint** of the order and the person: the request body, the cart's lines
+The key follows a **fingerprint** of the order and the person: the request body (the shown total
+included), the cart's lines
 and the selected shipping method (`domain/checkout-attempt.ts`). The same order asked again is the
 same call; anything else gets a fresh key, whoever changed it (the wishlist, the stock poll, a
 merge, a reorder), without any of them having to remember to say so. The attempt is saved in
@@ -342,6 +344,20 @@ flowchart TD
     E -->|no answer, 502 to 504| K[keep the attempt: the next press replays it]
     E -->|any other verdict| L[end the attempt]
 ```
+
+### The total the buyer was shown
+
+`POST /cart/checkout` requires `expectedTotal`: the total on screen right before "Place order"
+(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The store
+builds it from the cart it holds, never the page (`domain/expected-total.ts`; the decimals come from
+the currency, so JPY has none and KWD has three), and refuses to run before a cart was read.
+
+If the server would charge anything else (a price moved, shipping changed, the basket changed) it
+answers 409 `CART_TOTAL_CHANGED` with `details.expected` and `details.actual`, and writes nothing.
+The store ends the attempt and reads the cart again, so the page shows the new total. The page says
+"The total changed from X to Y" in the visitor's locale, stays on the cart and keeps the button
+live: the next press names the new total, and places the order at it. The total is part of the
+fingerprint, so that press is a new call under a new key.
 
 ### A product that is gone
 
@@ -416,6 +432,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
 | `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |
 | `domain/merge-report.ts`                    | Pure rules over plain data — no store, no component, no axios. Which lines of a merge answer are worth telling the shopper about.                                                   |
+| `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as minor units and its currency, the shape `POST /cart/checkout` requires.                                                              | [read](../theory/domain-layer.md)     |
 | `domain/checkout-attempt.ts`                | Pure rules over plain data — no store, no component, no axios. The fingerprint that decides whether a checkout is the same call as the last one.                                    | [read](../theory/domain-layer.md)     |
 | `domain/stock-poll.ts`                      | Pure rules over plain data — no store, no component, no axios. What the configured poll interval means: a positive whole number of seconds, else off.                               | [read](../theory/domain-layer.md)     |
 | `domain/index.ts`                           | The domain barrel.                                                                                                                                                                  | [read](../theory/domain-layer.md)     |

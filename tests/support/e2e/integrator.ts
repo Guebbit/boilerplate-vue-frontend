@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { eventually } from './steps';
+import { checkoutAs, eventually } from './steps';
 import { signatureVerifies, webhooksReceived, type ReceivedWebhook } from './harness';
 
 /**
@@ -113,7 +113,7 @@ export const placeOrderAsCustomer = (): Cypress.Chainable<string> =>
         cy.subjectId('product.inStock').then((productId) => {
             cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
-            return cy.apiAs<{ id: string }>('user', 'POST', '/cart/checkout', {}).then((order) => {
+            return checkoutAs('user').then((order) => {
                 if (!order) throw new Error('placeOrderAsCustomer: the checkout answered no order');
                 return order.id;
             });

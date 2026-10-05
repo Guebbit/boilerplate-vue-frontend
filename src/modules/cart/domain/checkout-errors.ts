@@ -7,6 +7,7 @@
  */
 
 import { ERROR_CODES } from '@api/error-codes';
+import type { ExpectedTotal } from './expected-total';
 
 /** One line the checkout could not honour, as `CART_INSUFFICIENT_STOCK`'s `details.lines` carries it. */
 
@@ -41,6 +42,11 @@ export interface UnavailableCartLine {
  */
 export type CheckoutErrorVerdict =
     | { kind: 'cart-changed' }
+    | {
+          kind: 'total-changed';
+          expected: ExpectedTotal | undefined;
+          actual: ExpectedTotal | undefined;
+      }
     | { kind: 'insufficient-stock'; lines: CheckoutShortfallLine[] }
     | { kind: 'address-not-found' }
     | { kind: 'billing-address-required' }
@@ -84,6 +90,19 @@ const asUnavailableLine = (value: unknown): UnavailableCartLine | undefined => {
 };
 
 /**
+ * Narrows an unknown value to a money amount (minor units plus currency).
+ *
+ * @param value - One side of `CART_TOTAL_CHANGED`'s `details`, still unknown.
+ * @returns The amount, or `undefined` when the shape does not match.
+ */
+const asMoney = (value: unknown): ExpectedTotal | undefined => {
+    if (typeof value !== 'object' || value === null) return undefined;
+    const { amount, currency } = value as Record<string, unknown>;
+    if (typeof amount !== 'number' || typeof currency !== 'string') return undefined;
+    return { amount, currency };
+};
+
+/**
  * Reads `error.errors[0]` without trusting its shape — the same duck-typing
  * `infrastructure/utils/errors.ts` uses for `status`, applied to the sibling field.
  *
@@ -110,6 +129,14 @@ const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } |
 export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
     const item = firstErrorItem(error);
     if (item?.code === ERROR_CODES.CART_CHANGED) return { kind: 'cart-changed' };
+    if (item?.code === ERROR_CODES.CART_TOTAL_CHANGED) {
+        const details = item.details as { expected?: unknown; actual?: unknown } | undefined;
+        return {
+            kind: 'total-changed',
+            expected: asMoney(details?.expected),
+            actual: asMoney(details?.actual)
+        };
+    }
     if (item?.code === ERROR_CODES.CART_ADDRESS_NOT_FOUND) return { kind: 'address-not-found' };
     if (item?.code === ERROR_CODES.CART_BILLING_ADDRESS_REQUIRED)
         return { kind: 'billing-address-required' };
