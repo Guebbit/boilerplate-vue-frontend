@@ -227,6 +227,23 @@ const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
 const unavailableLines = ref<UnavailableCartLine[]>([]);
 
 /**
+ * The unpaid orders `CART_OPEN_ORDER_LIMIT` named, as links the shopper can follow to pay or
+ * cancel one. Empty whenever the last checkout did not end in this refusal.
+ */
+const openOrderIds = ref<string[]>([]);
+
+/**
+ * Where each of {@link openOrderIds} lives. An order page is the orders module's: a build without
+ * it has nowhere to send the shopper, so those ids simply get no link.
+ */
+const openOrderTargets = computed(() =>
+    openOrderIds.value.flatMap((id) => {
+        const target = linkIfRouted(router, 'OrderTarget', { id });
+        return target ? [{ id, to: routerLinkI18n(target) }] : [];
+    })
+);
+
+/**
  * The checkout button's own blocked state — the one dedicated control this page cannot proceed
  * past until it succeeds. Every refusal `classifyCheckoutError` names more specifically keeps its
  * own toast/inline handling above; only the generic fallback renders here.
@@ -241,7 +258,7 @@ const {
  * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
  * in the debounce window.
  *
- * See `docs/modules/cart-checkout.md` §"The seven refusals, and why they are shaped differently"
+ * See `docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently"
  * for what each `classifyCheckoutError` branch below answers and why. A transport failure alone
  * has no more specific answer than the generic toast.
  *
@@ -323,6 +340,11 @@ const runCheckout = () =>
                 addMessage(t('cart-page.error-product-unavailable'));
                 return;
             }
+            if (verdict.kind === 'open-order-limit') {
+                openOrderIds.value = verdict.orderIds;
+                addMessage(t('cart-page.error-open-order-limit'));
+                return;
+            }
             reportCheckoutError(error);
         });
 
@@ -342,6 +364,7 @@ const runCheckout = () =>
 const checkout = () => {
     insufficientStockLines.value = [];
     unavailableLines.value = [];
+    openOrderIds.value = [];
     clearCheckoutError();
     return settle()
         .then(runCheckout)
@@ -497,6 +520,27 @@ onMounted(() =>
                         data-test="checkout-unavailable-line"
                     >
                         {{ line.title ?? line.productId }}
+                    </li>
+                </ul>
+            </v-alert>
+
+            <!--
+                CART_OPEN_ORDER_LIMIT names the unpaid orders in the way: the fix is paying or
+                cancelling one, so each is a link to its page rather than a sentence alone.
+            -->
+            <v-alert
+                v-if="openOrderTargets.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="cart-open-orders"
+                class="lg:col-span-2"
+            >
+                <p>{{ t('cart-page.error-open-order-limit') }}</p>
+                <ul class="mt-2 flex flex-col gap-1">
+                    <li v-for="(order, index) in openOrderTargets" :key="order.id">
+                        <router-link :to="order.to" data-test="cart-open-order-link">
+                            {{ t('cart-page.open-order-link', { n: index + 1 }) }}
+                        </router-link>
                     </li>
                 </ul>
             </v-alert>

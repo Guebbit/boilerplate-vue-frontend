@@ -144,6 +144,30 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'product-unavailable', lines: [] });
     });
 
+    it('names the unpaid orders CART_OPEN_ORDER_LIMIT lists, dropping anything that is not an id', () => {
+        const verdict = classifyCheckoutError({
+            status: 409,
+            errors: [
+                {
+                    code: 'CART_OPEN_ORDER_LIMIT',
+                    message: 'x',
+                    details: { orderIds: ['o1', 7, 'o2'] }
+                }
+            ]
+        });
+
+        expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: ['o1', 'o2'] });
+    });
+
+    it('reads CART_OPEN_ORDER_LIMIT with no details as a refusal naming no order', () => {
+        const verdict = classifyCheckoutError({
+            status: 409,
+            errors: [{ code: 'CART_OPEN_ORDER_LIMIT', message: 'x' }]
+        });
+
+        expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: [] });
+    });
+
     it('falls back to "other" for a refusal with no dedicated response — CART_EMPTY', () => {
         expect(
             classifyCheckoutError({ status: 409, errors: [{ code: 'CART_EMPTY', message: 'x' }] })

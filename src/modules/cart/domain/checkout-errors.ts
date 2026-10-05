@@ -1,7 +1,7 @@
 /**
  * @module
- * Classifies a checkout rejection into one of the API's four documented shapes
- * (`docs/modules/cart-checkout.md` §"The four refusals, and why they are shaped differently").
+ * Classifies a checkout rejection into one of the API's documented shapes
+ * (`docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently").
  * Pure: reads the envelope's `errors[0]`, returns a verdict, produces no copy — the view decides
  * what each verdict says and does.
  */
@@ -45,6 +45,7 @@ export type CheckoutErrorVerdict =
     | { kind: 'shipping-method-weight' }
     | { kind: 'ship-to-country-not-supported' }
     | { kind: 'product-unavailable'; lines: UnavailableCartLine[] }
+    | { kind: 'open-order-limit'; orderIds: string[] }
     | { kind: 'other' };
 
 /**
@@ -126,6 +127,13 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
             ? rawLines.map((line) => asUnavailableLine(line)).filter((line) => line !== undefined)
             : [];
         return { kind: 'product-unavailable', lines };
+    }
+    if (item?.code === ERROR_CODES.CART_OPEN_ORDER_LIMIT) {
+        const rawIds = (item.details as { orderIds?: unknown } | undefined)?.orderIds;
+        const orderIds = Array.isArray(rawIds)
+            ? rawIds.filter((id): id is string => typeof id === 'string')
+            : [];
+        return { kind: 'open-order-limit', orderIds };
     }
     return { kind: 'other' };
 };

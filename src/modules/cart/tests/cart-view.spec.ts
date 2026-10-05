@@ -275,6 +275,29 @@ describe('the checkout refusals', () => {
                 });
         }));
 
+    it('links every unpaid order CART_OPEN_ORDER_LIMIT names, in plain words', () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_OPEN_ORDER_LIMIT', { orderIds: ['o1', 'o2'] })
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    const alert = wrapper.get('[data-test=cart-open-orders]');
+                    expect(alert.text()).toContain(
+                        i18n.global.t('cart-page.error-open-order-limit')
+                    );
+                    const links = wrapper.findAll('[data-test=cart-open-order-link]');
+                    expect(links.map((link) => link.attributes('href'))).toEqual([
+                        '/en/orders/o1',
+                        '/en/orders/o2'
+                    ]);
+                });
+        }));
+
     it('answers CART_ADDRESS_NOT_FOUND with a message distinct from the generic fallback', () =>
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(checkoutRejection(404, 'CART_ADDRESS_NOT_FOUND'));
