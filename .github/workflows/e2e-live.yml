@@ -130,6 +130,11 @@ env:
     # silently truncate a spec; payments, invoicing and returns keep their defaults.
     # Raised, not disabled, so a runaway loop still terminates. The global budget is
     # per minute: 1000 still gave 429s on login.
+    # The limiter's counters live in the Redis service, not in the backend's memory, so a
+    # `cy.restore()` reseed clears them (`scenario:apply:reset` does, when it is set). Without it
+    # the 5-confirms-per-hour payment budget would outlive every reseed, and the nightly shard
+    # that runs the commerce journeys as one customer would trip it.
+    NODE_RATE_LIMIT_REDIS_URL: redis://127.0.0.1:6379
     NODE_RATE_LIMIT_MAX: '100000'
     NODE_AUTH_RATE_LIMIT_MAX: '1000'
     NODE_AUTH_RATE_LIMIT_ADDRESS_MAX: '1000'
