@@ -81,11 +81,13 @@ beforeEach(() => {
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/verify-confirm': orvalEnvelope(),
         'POST /account/email-change-confirm': orvalEnvelope(),
-        // Every collection is an array the fixture is free to leave empty; only `exportedAt` and
-        // `profile` are required scalars on `AccountExportResponse`. `invoicing` is the one
-        // exception — an object of two empty arrays, never absent, for an account with no paid
-        // orders yet.
-        'POST /account/export': orvalEnvelope({
+        // The request answers `202` with the export's id and status; the data comes later, by link.
+        'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
+        // The download body IS the export document, not an envelope. Every collection is an array
+        // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
+        // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty
+        // arrays, never absent, for an account with no paid orders yet.
+        'GET /account/export/e1': {
             exportedAt: '2026-09-07T00:00:00.000Z',
             profile: USER,
             roles: [],
@@ -99,7 +101,7 @@ beforeEach(() => {
             auditLog: [],
             apiKeys: [],
             invoicing: { invoices: [], creditNotes: [] }
-        })
+        }
     };
 });
 
@@ -258,12 +260,22 @@ describe('the account deletion flow', () => {
     });
 });
 
-describe('exportAccountData', () => {
-    it('returns the export payload from POST /account/export', () =>
+describe('requestAccountExport', () => {
+    it('answers the export id and status from POST /account/export, and carries no data', () =>
         useProfileStore()
-            .exportAccountData()
+            .requestAccountExport()
             .then((data) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(data).toEqual({ id: 'e1', status: 'building' });
+            }));
+});
+
+describe('downloadAccountExport', () => {
+    it('returns the export document from GET /account/export/{id}', () =>
+        useProfileStore()
+            .downloadAccountExport('e1')
+            .then((data) => {
+                expect(requestedUrls().at(-1)).toBe('/account/export/e1');
                 expect(data?.profile).toEqual(USER);
                 expect(data?.exportedAt).toBe('2026-09-07T00:00:00.000Z');
             }));

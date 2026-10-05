@@ -41,6 +41,7 @@
         "success-update": "Profile updated successfully",
         "button-change-password": "Change password",
         "button-export-data": "Download my data",
+        "export-requested": "We're preparing your data. We will email you a link when it is ready.",
         "button-delete-account": "Delete account",
         "confirm-delete-account": "Are you sure you want to delete your account? This action cannot be undone.",
         "success-delete-request": "We sent a confirmation email. Please check your inbox to complete the deletion.",
@@ -190,6 +191,13 @@
         "token-required": "The verification token is required",
         "button-submit": "Verify my email",
         "success": "Email address verified."
+    },
+    "account-export-page": {
+        "page-title": "Download my data",
+        "intro": "Your data export is ready. Download it here — it is a single JSON file with everything this shop holds about your account.",
+        "button-download": "Download my data",
+        "saved": "Saved. The file is on your device.",
+        "gone-hint": "An export is kept for a few days. Request a new one from your profile."
     },
     "email-change-confirm-page": {
         "page-title": "Confirm email change",

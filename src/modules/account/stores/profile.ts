@@ -13,7 +13,7 @@ import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User, AccountExportResponse, EmailVerificationRequested } from '@types';
+import type { User, AccountExportRequest, EmailVerificationRequested } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -25,7 +25,8 @@ import {
     changePassword as apiChangePassword,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
-    exportAccountData as apiExportAccountData
+    requestAccountExport as apiRequestAccountExport,
+    downloadAccountExport as apiDownloadAccountExport
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import {
@@ -415,22 +416,35 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const requestAccountDelete = () => fetchAny(() => apiRequestAccountDelete());
 
     /**
-     * Exports every record the API holds for the visitor's own account (profile, addresses,
-     * orders, payments, shipments, cart, wishlist, sessions, audit log — GDPR Art. 15/20).
+     * Asks for a copy of everything the API holds for the visitor's own account (profile,
+     * addresses, orders, payments, shipments, cart, wishlist, sessions, audit log — GDPR Art.
+     * 15/20). The API builds it in the background and mails a link, so this resolves as soon as
+     * the request is queued.
      *
      * `POST /account/export` demands a FRESH session rather than a request body. This action does
      * not handle that itself: an expired session falls through the step-up interceptor
      * (`infrastructure/http/step-up.ts`), which prompts for the password and retries transparently.
      *
-     * @returns A promise resolving with the export payload, or `undefined` when the response
-     *  carries none.
+     * @returns A promise resolving with the export's `id` and `status`, or `undefined` when the
+     *  response carries none.
      */
-    const exportAccountData = () =>
+    const requestAccountExport = () =>
         fetchAny(() =>
-            apiExportAccountData().then((data) =>
-                getPayloadFromResponse<AccountExportResponse>(data)
+            apiRequestAccountExport().then((data) =>
+                getPayloadFromResponse<AccountExportRequest>(data)
             )
         );
+
+    /**
+     * Downloads a finished export — the page the mailed link opens calls this. Same fresh-session
+     * rule as the request, handled the same way. The body is the export document itself, not an
+     * envelope around it.
+     *
+     * @param id - The export to fetch, from the mailed link.
+     * @returns A promise resolving with the export document; a `404` (not yours, not ready, or
+     *  gone) rejects.
+     */
+    const downloadAccountExport = (id: string) => fetchAny(() => apiDownloadAccountExport(id));
 
     /**
      * Completes account deletion using the one-time token.
@@ -476,6 +490,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         confirmEmailChange,
         requestAccountDelete,
         confirmAccountDelete,
-        exportAccountData
+        requestAccountExport,
+        downloadAccountExport
     };
 });

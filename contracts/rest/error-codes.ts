@@ -6,6 +6,8 @@
 
 /** Every error code the contract declares. Open-ended: a new one is additive, never a breaking change. */
 export const ERROR_CODES = {
+    /** 409 — The address book already holds `NODE_ADDRESS_BOOK_MAX` entries (20 by default) — remove one before adding another. */
+    ADDRESS_BOOK_FULL: 'ADDRESS_BOOK_FULL',
     /** 404 — No challenge is currently active for this session. */
     ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',
     /** 401 — The human-challenge token is missing, expired, or the provider rejected it. */
@@ -18,8 +20,6 @@ export const ERROR_CODES = {
     CART_ADDRESS_NOT_FOUND: 'CART_ADDRESS_NOT_FOUND',
     /** 422 — A shipping address is required and none was supplied or found on file. */
     CART_ADDRESS_REQUIRED: 'CART_ADDRESS_REQUIRED',
-    /** 409 — This order total exceeds the bank-transfer payment method's configured ceiling. */
-    CART_BANK_TRANSFER_LIMIT: 'CART_BANK_TRANSFER_LIMIT',
     /** 422 — No billing address could be resolved — none was named, nothing ships, and the address book has no default. */
     CART_BILLING_ADDRESS_REQUIRED: 'CART_BILLING_ADDRESS_REQUIRED',
     /** 409 — The cart changed between the request that read it and this write — reload and retry. */
@@ -28,6 +28,8 @@ export const ERROR_CODES = {
     CART_EMPTY: 'CART_EMPTY',
     /** 409 — One or more lines exceed the product's available stock — see `errors[].details.lines`, one entry per short line with its `productId`, `title` and the `requested` quantity. The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
+    /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
+    CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or deactivated since it was added. */
@@ -50,6 +52,8 @@ export const ERROR_CODES = {
     DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
     /** 422 — Marking a shipment shipped requires a tracking code and none was supplied. */
     DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
+    /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
+    EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
     /** 403 — Checkout requires a verified email address — see `POST /account/verify-email`. */
     EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */

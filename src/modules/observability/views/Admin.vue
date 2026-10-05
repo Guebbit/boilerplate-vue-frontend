@@ -7,31 +7,16 @@
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Trash2 } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/modules/observability/composables/use-admin-observability.ts';
 import type { AdminTabKey } from '@/modules/observability/types.ts';
 
 import AdminOverviewTab from '@/modules/observability/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
-import { useDialogStore } from '@/ui/dialog.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * i18n translator for this view's template and messages.
  */
 const { t } = useI18n();
-
-/**
- * Toast dispatcher used to report the token-purge outcome.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
- * The session, asked whether the purge is this account's to press: the route is the platform
- * operator's, the purge is `tokens.any.delete`, a shop key the operator does not hold.
- */
-const session = useSessionStore();
 
 /**
  * Which tab — overview or audit — is currently shown.
@@ -42,17 +27,8 @@ const activeTab = ref<AdminTabKey>('overview');
  * Shared observability state and fetchers, handed down to the overview tab — the audit tab reads
  * and fetches for itself, see {@link AdminAuditTab}.
  */
-const {
-    health,
-    metrics,
-    loadingHealth,
-    loadingMetrics,
-    errorHealth,
-    errorMetrics,
-    fetchAll,
-    clearingExpiredTokens,
-    clearExpiredTokens
-} = useAdminObservability();
+const { health, metrics, loadingHealth, loadingMetrics, errorHealth, errorMetrics, fetchAll } =
+    useAdminObservability();
 
 /**
  * Whether the overview tab is still loading.
@@ -64,27 +40,6 @@ const overviewLoading = computed(() => loadingHealth.value || loadingMetrics.val
 onMounted(() => {
     void fetchAll();
 });
-
-/**
- * Asks first, then purges the expired refresh tokens and says how it went.
- *
- * What is left here is the two things that are this view's: the confirmation, and which words
- * announce the outcome. The call itself and its pending flag belong to
- * {@link useAdminObservability} — see `clearExpiredTokens` there for why that one rejects while
- * the four reads do not.
- *
- * @returns A promise resolving once the toast has been raised, or nothing at all if the visitor
- *  declined the confirmation.
- */
-const confirmClearExpiredTokens = () =>
-    useDialogStore()
-        .confirm({ message: t('admin-page.confirm-clear-expired-tokens'), color: 'warning' })
-        .then((accepted) => {
-            if (!accepted) return;
-            return clearExpiredTokens()
-                .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
-                .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')));
-        });
 </script>
 
 <template>
@@ -98,18 +53,6 @@ const confirmClearExpiredTokens = () =>
                     t('admin-page.tab-audit')
                 }}</v-tab>
             </v-tabs>
-            <v-spacer />
-            <v-btn
-                v-if="session.can('delete', 'AccountToken')"
-                variant="tonal"
-                color="error"
-                :loading="clearingExpiredTokens"
-                data-test="admin-clear-expired-tokens"
-                @click="confirmClearExpiredTokens"
-            >
-                <Trash2 :size="16" class="mr-1" aria-hidden="true" />
-                {{ t('admin-page.button-clear-expired-tokens') }}
-            </v-btn>
         </div>
 
         <v-tabs-window v-model="activeTab">

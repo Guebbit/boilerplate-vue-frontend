@@ -43,8 +43,8 @@ flowchart LR
 
 ## The story
 
-Eleven screens, six stores, and the widest API surface of any module here — which makes it a
-misleadingly ordinary-looking domain. Three things about it are worth knowing before you edit it.
+Twelve screens, six stores, and the widest API surface of any module here — which makes it a
+misleadingly ordinary-looking domain. Four things about it are worth knowing before you edit it.
 
 **The session is not in here.** The token lives in `infrastructure/session`, because
 `infrastructure/http` has to read it on every request and the router guards read `isAuth` and the
@@ -55,6 +55,13 @@ _editable record_, not the credential.
 ends a session, `accountProfile` owns the editable record once one exists, and `accountSessions`,
 `accountAddresses`, `accountOAuthProviders` and `accountTwoFactor` each own a panel's own slice.
 A store that outlives its panel would be a cache nobody invalidates.
+
+**The data export is a link, not a download.** The profile button only asks (`requestAccountExport`,
+`202`) and says an email is coming; the API builds the file in the background and mails a link to
+`account-export/:id`, whose one button fetches it (`downloadAccountExport`) and saves it as JSON. A
+button rather than a download on arrival, so a mail scanner that prefetches the link triggers
+nothing. Both calls need a fresh session, which the step-up interceptor asks for in place. See the
+backend's [data export](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account.md#data-export).
 
 **The one dependency is validation, not screens.** Every form here validates against
 `usersSchema`/`usersPasswordSchema` from the [`users`](./users.md) barrel, so _what makes a valid
@@ -80,7 +87,7 @@ Six stores, listed by what each one's setup function returns — an internal ref
 | Store                   | File                   | Surface                                                                                                                                                                                                                                                                                                    |
 | ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `accountAuth`           | `stores/auth.ts`       | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
-| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete`                                                                                                                                    |
+| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
 | `accountSessions`       | `stores/sessions.ts`   | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
 | `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
 | `accountOAuthProviders` | `stores/oauth.ts`      | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
@@ -88,18 +95,19 @@ Six stores, listed by what each one's setup function returns — an internal ref
 
 ## Screens
 
-| Path                     | Route name             | Access   | Permission | View                             |
-| ------------------------ | ---------------------- | -------- | ---------- | -------------------------------- |
-| `login`                  | `Login`                | `guest`  | —          | `views/Login.vue`                |
-| `signup`                 | `Signup`               | `guest`  | —          | `views/Signup.vue`               |
-| `login/2fa`              | `TwoFactorChallenge`   | `guest`  | —          | `views/TwoFactorChallenge.vue`   |
-| `password-reset`         | `PasswordResetRequest` | `guest`  | —          | `views/PasswordResetRequest.vue` |
-| `password-reset/confirm` | `PasswordResetConfirm` | `guest`  | —          | `views/PasswordResetConfirm.vue` |
-| `account-delete/confirm` | `AccountDeleteConfirm` | `public` | —          | `views/AccountDeleteConfirm.vue` |
-| `verify-email/confirm`   | `VerifyEmailConfirm`   | `public` | —          | `views/VerifyEmailConfirm.vue`   |
-| `oauth/callback`         | `OAuthCallback`        | `public` | —          | `views/OAuthCallback.vue`        |
-| `profile`                | `Profile`              | `auth`   | —          | `views/Profile.vue`              |
-| `logout`                 | `Logout`               | `public` | `—`        |
+| Path                     | Route name              | Access   | Permission | View                              |
+| ------------------------ | ----------------------- | -------- | ---------- | --------------------------------- |
+| `login`                  | `Login`                 | `guest`  | —          | `views/Login.vue`                 |
+| `signup`                 | `Signup`                | `guest`  | —          | `views/Signup.vue`                |
+| `login/2fa`              | `TwoFactorChallenge`    | `guest`  | —          | `views/TwoFactorChallenge.vue`    |
+| `password-reset`         | `PasswordResetRequest`  | `guest`  | —          | `views/PasswordResetRequest.vue`  |
+| `password-reset/confirm` | `PasswordResetConfirm`  | `guest`  | —          | `views/PasswordResetConfirm.vue`  |
+| `account-delete/confirm` | `AccountDeleteConfirm`  | `public` | —          | `views/AccountDeleteConfirm.vue`  |
+| `verify-email/confirm`   | `VerifyEmailConfirm`    | `public` | —          | `views/VerifyEmailConfirm.vue`    |
+| `oauth/callback`         | `OAuthCallback`         | `public` | —          | `views/OAuthCallback.vue`         |
+| `account-export/:id`     | `AccountExportDownload` | `auth`   | —          | `views/AccountExportDownload.vue` |
+| `profile`                | `Profile`               | `auth`   | —          | `views/Profile.vue`               |
+| `logout`                 | `Logout`                | `public` | `—`        |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -123,7 +131,8 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `PATCH /account/addresses/{id}`              | `UpdateAddressResponse`            |
 | `PUT /account/addresses/{id}/default`        | `SetDefaultAddressResponse`        |
 | `DELETE /account/delete-confirm`             | `ConfirmAccountDeleteResponse`     |
-| `POST /account/export`                       | `ExportAccountDataResponse`        |
+| `POST /account/export`                       | `RequestAccountExportResponse`     |
+| `GET /account/export/{id}`                   | `DownloadAccountExportResponse`    |
 | `POST /account/login`                        | `LoginResponse`                    |
 | `POST /account/login/2fa`                    | `LoginTwoFactorResponse`           |
 | `POST /account/login/2fa/send`               | `SendTwoFactorCodeResponse`        |
@@ -142,7 +151,6 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/sessions`                      | `GetSessionsResponse`              |
 | `DELETE /account/sessions/{id}`              | `RevokeSessionResponse`            |
 | `POST /account/signup`                       | `SignupResponse`                   |
-| `DELETE /account/tokens/expired`             | `DeleteExpiredTokensResponse`      |
 | `POST /account/verify-confirm`               | `ConfirmEmailVerificationResponse` |
 | `POST /account/verify-request`               | `RequestEmailVerificationResponse` |
 

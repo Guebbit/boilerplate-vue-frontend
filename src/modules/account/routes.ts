@@ -9,7 +9,7 @@ import type { RouteRecordRaw } from 'vue-router';
 
 /**
  * Every route this module contributes: the login/signup/reset/verify/delete/email-change flows,
- * the authenticated profile page, and the routeless `Logout` entry.
+ * the authenticated profile page and data-export download, and the routeless `Logout` entry.
  */
 export default [
     {
@@ -73,6 +73,14 @@ export default [
         name: 'OAuthCallback',
         meta: { title: 'oauth.callback-page.page-title' },
         component: () => import('@/modules/account/views/OAuthCallback.vue')
+    },
+    {
+        // Signed in, unlike the confirms above: the download is the account's own data, and the
+        // API asks for a fresh session before sending it. The id in the path is not a credential.
+        path: 'account-export/:id',
+        name: 'AccountExportDownload',
+        meta: { access: 'auth', title: 'account-export-page.page-title' },
+        component: () => import('@/modules/account/views/AccountExportDownload.vue')
     },
     {
         path: 'profile',

@@ -48,29 +48,36 @@ export type Id = string;
  */
 export type Text = string;
 
+/**
+ * @maxLength 254
+ */
 export type Email = string;
 
 /**
  * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
+ * @maxLength 128
  */
 export type Password = string;
 
 /**
  * A password being SET by its owner — signup, reset (or the setup link) and change. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
  * @minLength 8
+ * @maxLength 128
  * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
  */
 export type PasswordNew = string;
 
 /**
  * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
+ * @maxLength 35
  * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
  */
 export type Locale = string;
 
 /**
  * ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
+ * @maxLength 2
  * @pattern ^[A-Z]{2}$
  */
 export type CountryCode = string;
@@ -291,6 +298,7 @@ export const RateType = {
 /**
  * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
  * @minLength 1
+ * @maxLength 64
  */
 export type Sku = string;
 
@@ -963,13 +971,6 @@ export interface AccountExportResponse {
     notifications: Notification[];
 }
 
-export interface AccountExportEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AccountExportResponse;
-}
-
 export interface HardDeleteRequest {
     hardDelete?: boolean;
 }
@@ -1074,9 +1075,15 @@ export interface LocaleCapabilitiesEnvelope {
 
 export interface CreateLocaleRequest {
     tag: Locale;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     name: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     nativeName: string;
     direction?: LocaleDirection;
     active?: boolean;
@@ -1167,9 +1174,15 @@ export interface LocaleDictionaryEnvelope {
 }
 
 export interface ReplaceLocaleRequest {
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     name: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     nativeName: string;
     direction: LocaleDirection;
     active: boolean;
@@ -1179,9 +1192,15 @@ export interface ReplaceLocaleRequest {
  * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
  */
 export interface UpdateLocaleRequest {
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     name?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     nativeName?: string;
     direction?: LocaleDirection;
     active?: boolean;
@@ -1243,8 +1262,12 @@ export interface LocaleEntriesResponseEnvelope {
  * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
  */
 export interface LocaleEntryInput {
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     key: string;
+    /** @maxLength 2000 */
     value: string;
 }
 
@@ -1278,8 +1301,12 @@ export interface LocaleImportResultEnvelope {
 }
 
 export interface CreateLocaleEntryRequest {
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     key: string;
+    /** @maxLength 2000 */
     value: string;
 }
 
@@ -1299,12 +1326,14 @@ export interface MergeLocaleEntriesRequest {
 }
 
 export interface UpdateLocaleEntryRequest {
+    /** @maxLength 2000 */
     value: string;
 }
 
 /**
  * A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.
  * @minLength 1
+ * @maxLength 64
  */
 export type TranslatableEntityType = string;
 
@@ -1833,18 +1862,23 @@ export interface AntibotChallengeEnvelope {
 
 export interface ReplaceAccountRequest {
     email: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
     /** @nullable */
     locale?: string | null;
     imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
     /**
      * @minLength 1
+     * @maxLength 2048
      * @nullable
      */
     website?: string | null;
@@ -1853,32 +1887,46 @@ export interface ReplaceAccountRequest {
 
 export interface ReplaceAccountRequestMultipart {
     email: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
     locale?: string;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 32
+     */
     phone?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 2048
+     */
     website?: string;
     analyticsConsent: boolean;
 }
 
 export interface UpdateAccountRequest {
     email?: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username?: string;
     /** @nullable */
     locale?: string | null;
     imageUrl?: ImageRemoval | null;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
     /**
      * @minLength 1
+     * @maxLength 2048
      * @nullable
      */
     website?: string | null;
@@ -1887,14 +1935,23 @@ export interface UpdateAccountRequest {
 
 export interface UpdateAccountRequestMultipart {
     email?: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username?: string;
     locale?: string;
     /** Optional user profile image */
     imageUpload?: Blob;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 32
+     */
     phone?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 2048
+     */
     website?: string;
     analyticsConsent?: boolean;
 }
@@ -1937,6 +1994,7 @@ export interface PasswordCheckRequest {
     /**
      * A CANDIDATE password, not `PasswordNew` — this runs while someone is still typing, so it accepts anything non-empty rather than the contract's own composition rule.
      * @minLength 1
+     * @maxLength 128
      */
     password: string;
 }
@@ -2004,6 +2062,7 @@ export interface ReauthEmailRequest {
     /**
      * The code from `POST /account/reauth/methods/email/send`.
      * @minLength 1
+     * @maxLength 64
      */
     code: string;
 }
@@ -2050,18 +2109,36 @@ export interface AddressesEnvelope {
 }
 
 export interface AddressInput {
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 50
+     */
     label?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     fullName: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     street: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     city: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 20
+     */
     zip: string;
     country: CountryCode;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 32
+     */
     phone?: string;
     default?: boolean;
 }
@@ -2076,20 +2153,34 @@ export interface AddressEnvelope {
 export interface ReplaceAddressRequest {
     /**
      * @minLength 1
+     * @maxLength 50
      * @nullable
      */
     label?: string | null;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     fullName: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     street: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     city: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 20
+     */
     zip: string;
     country: CountryCode;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
@@ -2098,20 +2189,34 @@ export interface ReplaceAddressRequest {
 export interface UpdateAddressRequest {
     /**
      * @minLength 1
+     * @maxLength 50
      * @nullable
      */
     label?: string | null;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     fullName?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     street?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
     city?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 20
+     */
     zip?: string;
     country?: CountryCode;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
@@ -2121,6 +2226,7 @@ export interface VerifyEmailConfirmRequest {
     /**
      * One-time email verification token (NOT a JWT).
      * @minLength 1
+     * @maxLength 128
      */
     token: string;
 }
@@ -2129,6 +2235,7 @@ export interface AccountDeleteConfirmRequest {
     /**
      * One-time account deletion token (NOT a JWT).
      * @minLength 1
+     * @maxLength 128
      */
     token: string;
 }
@@ -2194,7 +2301,10 @@ export interface LoginResponseEnvelope {
 
 export interface SignupRequest {
     email: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
     password: PasswordNew;
     passwordConfirm: Password;
@@ -2210,6 +2320,7 @@ export interface PasswordResetConfirmRequest {
     /**
      * One-time password reset token (NOT a JWT).
      * @minLength 1
+     * @maxLength 128
      */
     token: string;
     password: PasswordNew;
@@ -2232,13 +2343,42 @@ export interface RefreshTokenEnvelope {
     data: RefreshTokenResponse;
 }
 
+/**
+ * `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one.
+ */
+export type AccountExportRequestStatus =
+    (typeof AccountExportRequestStatus)[keyof typeof AccountExportRequestStatus];
+
+export const AccountExportRequestStatus = {
+    building: 'building',
+    ready: 'ready',
+    failed: 'failed'
+} as const;
+
+export interface AccountExportRequest {
+    id: Id;
+    /** `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one. */
+    status: AccountExportRequestStatus;
+}
+
+export interface AccountExportRequestEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountExportRequest;
+}
+
 export interface LoginTwoFactorRequest {
     /**
      * The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
      * @minLength 1
+     * @maxLength 128
      */
     challenge?: string;
-    /** A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's. */
+    /**
+     * A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's.
+     * @maxLength 64
+     */
     code: string;
     remember?: RememberTier;
 }
@@ -2247,9 +2387,13 @@ export interface TwoFactorSendRequest {
     /**
      * The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
      * @minLength 1
+     * @maxLength 128
      */
     challenge?: string;
-    /** Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true. */
+    /**
+     * Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true.
+     * @maxLength 32
+     */
     method: string;
 }
 
@@ -2290,12 +2434,18 @@ export interface TwoFactorStatusEnvelope {
 }
 
 export interface TwoFactorCodeRequest {
-    /** A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller. */
+    /**
+     * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
+     * @maxLength 64
+     */
     code: string;
 }
 
 export interface TwoFactorSetupRequest {
-    /** A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor. */
+    /**
+     * A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor.
+     * @maxLength 64
+     */
     code?: string;
 }
 
@@ -2324,7 +2474,10 @@ export interface TwoFactorSetupEnvelope {
 }
 
 export interface TwoFactorConfirmRequest {
-    /** The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works. */
+    /**
+     * The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.
+     * @maxLength 64
+     */
     code: string;
 }
 
@@ -2401,9 +2554,15 @@ export interface UsersResponseEnvelope {
 
 export interface CreateUserRequest {
     email: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role?: string;
     active?: boolean;
     imageUrl?: ImageRemoval | null;
@@ -2412,9 +2571,15 @@ export interface CreateUserRequest {
 
 export interface CreateUserRequestMultipart {
     email: Email;
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role?: string;
     active?: boolean;
     /** Optional user profile image */
@@ -2428,9 +2593,15 @@ export interface DeleteUserRequest {
 }
 
 export interface ReplaceUserByIdRequest {
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role: string;
     active: boolean;
     imageUrl?: ImageRemoval | null;
@@ -2438,35 +2609,55 @@ export interface ReplaceUserByIdRequest {
     locale?: string | null;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
     /**
      * @minLength 1
+     * @maxLength 2048
      * @nullable
      */
     website?: string | null;
 }
 
 export interface ReplaceUserByIdRequestMultipart {
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role: string;
     active: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 32
+     */
     phone?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 2048
+     */
     website?: string;
 }
 
 export interface UpdateUserByIdRequest {
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role?: string;
     active?: boolean;
     imageUrl?: ImageRemoval | null;
@@ -2474,28 +2665,42 @@ export interface UpdateUserByIdRequest {
     locale?: string | null;
     /**
      * @minLength 1
+     * @maxLength 32
      * @nullable
      */
     phone?: string | null;
     /**
      * @minLength 1
+     * @maxLength 2048
      * @nullable
      */
     website?: string | null;
 }
 
 export interface UpdateUserByIdRequestMultipart {
-    /** @minLength 3 */
+    /**
+     * @minLength 3
+     * @maxLength 50
+     */
     username?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
     role?: string;
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 32
+     */
     phone?: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 2048
+     */
     website?: string;
 }
 
@@ -2510,6 +2715,7 @@ export interface SearchUsersRequest {
      */
     id?: Id[];
     email?: Email;
+    /** @maxLength 50 */
     username?: string;
     active?: boolean;
     deleted?: boolean;
@@ -2652,8 +2858,12 @@ export interface ProductsResponseEnvelope {
 }
 
 export interface ProductTranslationFieldsWrite {
+    /** @maxLength 200 */
     title: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 10000
+     */
     description?: string;
 }
 
@@ -2685,14 +2895,23 @@ export interface CreateProductRequest {
      */
     weight?: number;
     imageUrl?: ImageRemoval | null;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories?: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags?: string[];
 }
 
 export interface CreateProductRequestMultipart {
-    /** JSON-encoded `ProductTranslationsWrite`. */
+    /**
+     * JSON-encoded `ProductTranslationsWrite`.
+     * @maxLength 100000
+     */
     translations: string;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
@@ -2714,9 +2933,15 @@ export interface CreateProductRequestMultipart {
     weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories?: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags?: string[];
 }
 
@@ -2785,14 +3010,23 @@ export interface ReplaceProductRequest {
      */
     weight?: number | null;
     imageUrl?: ImageRemoval | null;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags: string[];
 }
 
 export interface ReplaceProductRequestMultipart {
-    /** JSON-encoded `ProductTranslationsWrite`. */
+    /**
+     * JSON-encoded `ProductTranslationsWrite`.
+     * @maxLength 100000
+     */
     translations: string;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
@@ -2812,18 +3046,28 @@ export interface ReplaceProductRequestMultipart {
     weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags: string[];
 }
 
 export interface ProductTranslationFieldsPatch {
-    /** A title is never cleared — an empty locale is deleted with the locale's own `null`. */
+    /**
+     * A title is never cleared — an empty locale is deleted with the locale's own `null`.
+     * @maxLength 200
+     */
     title?: string;
     /**
      * A string sets the description, `null` clears it, absent keeps it. `""` is a 422.
      * @minLength 1
+     * @maxLength 10000
      * @nullable
      */
     description?: string | null;
@@ -2859,14 +3103,23 @@ export interface UpdateProductRequest {
      */
     weight?: number | null;
     imageUrl?: ImageRemoval | null;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories?: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags?: string[];
 }
 
 export interface UpdateProductRequestMultipart {
-    /** JSON-encoded `ProductTranslationsPatch`. */
+    /**
+     * JSON-encoded `ProductTranslationsPatch`.
+     * @maxLength 100000
+     */
     translations?: string;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
@@ -2886,9 +3139,15 @@ export interface UpdateProductRequestMultipart {
     weight?: number;
     /** Optional product image */
     imageUpload?: Blob;
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
     categories?: string[];
-    /** @items.minLength 1 */
+    /**
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
     tags?: string[];
 }
 
@@ -2965,8 +3224,11 @@ export interface SearchProductsRequest {
     minPrice?: number;
     /** @minimum 0 */
     maxPrice?: number;
+    /** @maxLength 200 */
     category?: string;
+    /** @maxLength 200 */
     tag?: string;
+    /** @maxLength 200 */
     title?: string;
     active?: boolean;
     deleted?: boolean;
@@ -3071,6 +3333,7 @@ export interface SetCartShippingMethodRequest {
     /**
      * Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
      * @minLength 1
+     * @maxLength 64
      * @nullable
      */
     shippingMethodId: string | null;
@@ -3087,6 +3350,7 @@ export interface CheckoutRequest {
     /**
      * Optional order notes. Left out when there are none; an empty string is a 422.
      * @minLength 1
+     * @maxLength 1000
      */
     notes?: string;
     /** Which of the caller's saved addresses to SHIP to — meaningful only when a line ships to an address. Omitted, the default address is used; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. Sent for a basket that ships to no address (all-digital, or a pickup method) it refuses with 409, `CART_ADDRESS_NOT_APPLICABLE`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
@@ -3184,6 +3448,7 @@ export interface SearchOrdersRequest {
     email?: Email;
     status?: OrderStatus;
     paymentMethod?: PaymentMethodId;
+    /** @maxLength 1000 */
     notes?: string;
     deleted?: boolean;
 }
@@ -3210,6 +3475,7 @@ export interface StatusOverrideRequest {
     /**
      * Why the normal door didn't apply. Recorded on the order's override history, never optional.
      * @minLength 1
+     * @maxLength 1000
      */
     reason: string;
 }
@@ -3264,7 +3530,7 @@ export interface CreatePaymentIntentRequest {
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
  */
 export interface PaymentActions {
-    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
+    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it). */
     pay: boolean;
     /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order). */
     refund: boolean;
@@ -3358,7 +3624,10 @@ export interface RefundPaymentRequest {
      * @exclusiveMinimum 0
      */
     amount?: number;
-    /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
+    /**
+     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+     * @maxLength 3
+     */
     currency?: string;
 }
 
@@ -3415,13 +3684,22 @@ export const PaymentWebhookEventStatus = {
  * FLAT on purpose. The provider's report could have been nested under a `state` object, mirroring how most vendors wrap theirs, but the adapter is where a vendor's shape is absorbed and nothing downstream reads these fields as a unit — so the nesting would have bought a second level for no reader.
  */
 export interface PaymentWebhookEvent {
-    /** The provider's event id. Deduplicated, so a retry settles nothing twice. */
+    /**
+     * The provider's event id. Deduplicated, so a retry settles nothing twice.
+     * @maxLength 200
+     */
     id: string;
-    /** Which intent the event is about. Absent for an event this API ignores. */
+    /**
+     * Which intent the event is about. Absent for an event this API ignores.
+     * @maxLength 200
+     */
     providerRef?: string;
     /** The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores. */
     status?: PaymentWebhookEventStatus;
-    /** The only card digits a payment system may remember, as the provider reports them. */
+    /**
+     * The only card digits a payment system may remember, as the provider reports them.
+     * @maxLength 4
+     */
     cardLast4?: string;
 }
 
@@ -3520,6 +3798,7 @@ export interface ShipOrderRequest {
     /**
      * The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
      * @minLength 1
+     * @maxLength 100
      */
     trackingCode?: string;
     /** Skip the normal `processing`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still creates the parcel record and sends the shipped email; still refuses a tracked method with no `trackingCode`. */
@@ -3527,6 +3806,7 @@ export interface ShipOrderRequest {
     /**
      * Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
      * @minLength 1
+     * @maxLength 1000
      */
     reason?: string;
 }
@@ -3537,6 +3817,7 @@ export interface DeliverOrderRequest {
     /**
      * Required exactly when `forced` is `true`.
      * @minLength 1
+     * @maxLength 1000
      */
     reason?: string;
 }
@@ -3758,6 +4039,7 @@ export interface ReceiptRequest {
     /**
      * Optional — the supplier, the delivery note number, whatever the operator wants on the row.
      * @minLength 1
+     * @maxLength 1000
      */
     note?: string;
 }
@@ -3776,6 +4058,7 @@ export interface AdjustmentRequest {
     /**
      * Why. An unexplained correction is the thing an audit is looking for.
      * @minLength 1
+     * @maxLength 1000
      */
     note?: string;
 }
@@ -3831,14 +4114,19 @@ export interface WebhookSubscriptionsResponseEnvelope {
 export interface CreateWebhookSubscriptionRequest {
     /**
      * Must be `https://`. Validated again, against the resolved IP, on every delivery.
+     * @maxLength 2048
      * @pattern (?:^https://)
      */
     url: string;
-    /** @minLength 1 */
+    /**
+     * @minLength 1
+     * @maxLength 500
+     */
     description?: string;
     /**
      * @minItems 1
      * @items.minLength 1
+     * @items.maxLength 100
      */
     eventTypes: string[];
 }
@@ -3873,17 +4161,20 @@ export interface WebhookSubscriptionCreatedEnvelope {
 export interface ReplaceWebhookSubscriptionRequest {
     /**
      * Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
+     * @maxLength 2048
      * @pattern (?:^https://)
      */
     url: string;
     /**
      * @minLength 1
+     * @maxLength 500
      * @nullable
      */
     description?: string | null;
     /**
      * @minItems 1
      * @items.minLength 1
+     * @items.maxLength 100
      */
     eventTypes: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
@@ -3900,17 +4191,20 @@ export interface WebhookSubscriptionEnvelope {
 export interface UpdateWebhookSubscriptionRequest {
     /**
      * Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
+     * @maxLength 2048
      * @pattern (?:^https://)
      */
     url?: string;
     /**
      * @minLength 1
+     * @maxLength 500
      * @nullable
      */
     description?: string | null;
     /**
      * @minItems 1
      * @items.minLength 1
+     * @items.maxLength 100
      */
     eventTypes?: string[];
     /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
@@ -3996,6 +4290,7 @@ export interface MintApiKeyRequest {
     /**
      * The permission keys to mint this credential with. Must be a subset of the caller's own current permissions, or the request is refused with 422.
      * @minItems 1
+     * @items.maxLength 100
      */
     permissions: string[];
     /** Optional. Once past, the credential is refused exactly like a revoked one. */
@@ -4341,10 +4636,12 @@ export type ListTenantLocaleEntriesParams = {
 export type GetObservabilityAuditLogsParams = {
     /**
      * Filter by actor user ID
+     * @maxLength 64
      */
     actor?: string;
     /**
      * Filter by action name (e.g. order.created)
+     * @maxLength 100
      */
     action?: string;
     /**
@@ -4380,10 +4677,12 @@ export const GetObservabilityAuditLogsOutcome = {
 export type ListAuditEntriesParams = {
     /**
      * Filter by actor user ID
+     * @maxLength 64
      */
     actor?: string;
     /**
      * Filter by action name (e.g. order.created)
+     * @maxLength 100
      */
     action?: string;
     /**
@@ -4392,6 +4691,7 @@ export type ListAuditEntriesParams = {
     outcome?: ListAuditEntriesOutcome;
     /**
      * Filter by the id of the row the action was taken on (e.g. an order or a user)
+     * @maxLength 100
      */
     target?: string;
     /**
@@ -4423,6 +4723,7 @@ export const ListAuditEntriesOutcome = {
 export type StartOAuthLoginParams = {
     /**
      * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
+     * @maxLength 512
      */
     continue?: string;
     /**
@@ -4433,10 +4734,17 @@ export type StartOAuthLoginParams = {
 };
 
 export type CompleteOAuthLoginParams = {
+    /**
+     * @maxLength 2048
+     */
     code?: string;
+    /**
+     * @maxLength 512
+     */
     state?: string;
     /**
      * Set by the provider instead of `code` when the user declines consent.
+     * @maxLength 256
      */
     error?: string;
 };
@@ -4467,6 +4775,9 @@ export type ListUsersParams = {
      */
     id?: IdParamParameter;
     email?: Email;
+    /**
+     * @maxLength 50
+     */
     username?: string;
     active?: boolean;
     /**
@@ -4538,7 +4849,13 @@ export type ListProductsParams = {
      * @maxItems 100
      */
     id?: IdParamParameter;
+    /**
+     * @maxLength 200
+     */
     category?: string;
+    /**
+     * @maxLength 200
+     */
     tag?: string;
     /**
      * @minimum 0
@@ -4548,6 +4865,9 @@ export type ListProductsParams = {
      * @minimum 0
      */
     maxPrice?: number;
+    /**
+     * @maxLength 200
+     */
     title?: string;
     active?: boolean;
     /**
@@ -4609,6 +4929,9 @@ export type ListOrdersParams = {
      * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
      */
     paymentMethod?: PaymentMethodId;
+    /**
+     * @maxLength 1000
+     */
     notes?: string;
     /**
      * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
@@ -6075,26 +6398,18 @@ export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessR
 };
 
 /**
- * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
- * @summary Remove expired tokens
+ * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
+ *
+ * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ * @summary Request an export of the caller's own data
  */
-export const deleteExpiredTokens = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+export const requestAccountExport = (
+    options?: SecondParameter<typeof orvalMutator<AccountExportRequestEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
-        { url: `/account/tokens/expired`, method: 'DELETE' },
+    return orvalMutator<AccountExportRequestEnvelope>(
+        { url: `/account/export`, method: 'POST' },
         options
     );
-};
-
-/**
- * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
- * @summary Export the caller's own data
- */
-export const exportAccountData = (
-    options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>
-) => {
-    return orvalMutator<AccountExportEnvelope>({ url: `/account/export`, method: 'POST' }, options);
 };
 
 /**
@@ -8358,6 +8673,20 @@ export const sendReauthCode = (
 };
 
 /**
+ * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design.
+ * @summary Download an export of the caller's own data
+ */
+export const downloadAccountExport = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>
+) => {
+    return orvalMutator<AccountExportResponse>(
+        { url: `/account/export/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. A line the cart cannot take is REFUSED, not failed — the call still answers 200 with what did land (`cart`) and what did not (`refused`), because one bad line must not strand the rest. Refused lines are also written as ONE notification (`notifications.cart-merge-refused`), which stays until the user deletes it; an empty `refused` writes nothing. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
@@ -8729,10 +9058,9 @@ export type ConfirmPasswordResetResult = NonNullable<
 >;
 export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
 export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
-export type DeleteExpiredTokensResult = NonNullable<
-    Awaited<ReturnType<typeof deleteExpiredTokens>>
+export type RequestAccountExportResult = NonNullable<
+    Awaited<ReturnType<typeof requestAccountExport>>
 >;
-export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
 export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
 export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
 export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
@@ -8944,6 +9272,9 @@ export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKey
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
+export type DownloadAccountExportResult = NonNullable<
+    Awaited<ReturnType<typeof downloadAccountExport>>
+>;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>

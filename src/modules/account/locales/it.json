@@ -41,6 +41,7 @@
         "success-update": "Profilo aggiornato con successo",
         "button-change-password": "Cambia password",
         "button-export-data": "Scarica i miei dati",
+        "export-requested": "Stiamo preparando i tuoi dati. Ti invieremo un link via email quando saranno pronti.",
         "button-delete-account": "Elimina account",
         "confirm-delete-account": "Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.",
         "success-delete-request": "Ti abbiamo inviato un'email di conferma. Controlla la tua casella per completare l'eliminazione.",
@@ -190,6 +191,13 @@
         "token-required": "Il token di verifica è obbligatorio",
         "button-submit": "Verifica la mia email",
         "success": "Indirizzo email verificato."
+    },
+    "account-export-page": {
+        "page-title": "Scarica i miei dati",
+        "intro": "L'esportazione dei tuoi dati è pronta. Scaricala qui: è un unico file JSON con tutto ciò che questo negozio conserva sul tuo account.",
+        "button-download": "Scarica i miei dati",
+        "saved": "Salvato. Il file è sul tuo dispositivo.",
+        "gone-hint": "Un'esportazione viene conservata per alcuni giorni. Richiedine una nuova dal tuo profilo."
     },
     "email-change-confirm-page": {
         "page-title": "Conferma cambio email",
