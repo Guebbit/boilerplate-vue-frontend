@@ -100,7 +100,7 @@ describe('AC3 · Prove it’s still you', { tags: '@smoke' }, () => {
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 401);
         answerWithCustomerPassword();
-        cy.wait('@export').its('response.statusCode').should('equal', 200);
+        cy.wait('@export').its('response.statusCode').should('equal', 202);
         cy.get('[data-test=reauth-dialog]').should('not.exist');
     });
 });

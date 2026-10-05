@@ -3,11 +3,11 @@
  * @module
  * AT4 · Housekeeping on the admin page. The administrator of a shop who is also the
  * installation's operator (the seeded `root` holds both memberships) refreshes the overview,
- * clears expired tokens behind a confirmation that can be cancelled, reads the platform audit
- * trail (incidents only) through its filters, and opens, reads and closes the realtime stream.
+ * reads the platform audit trail (incidents only) through its filters, and opens, reads and
+ * closes the realtime stream. Expired tokens are not here any more: the backend sweeps them in a
+ * nightly job, so there is no button to press.
  *
- * Needs the operator's platform key for all of it, plus `tokens.any.delete` for the clear button,
- * which a platform-only operator lacks (that refusal is the roles lane's, not this story's).
+ * Needs the operator's platform key for all of it.
  */
 import { refuseALogin } from '../../../support/e2e/steps';
 
@@ -23,7 +23,7 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.visit('/en');
     });
 
-    it('refreshes, clears tokens, filters the platform audit trail and drives the stream', () => {
+    it('refreshes, filters the platform audit trail and drives the stream', () => {
         // The operator's trail lists incidents only: the story makes one for the tab to show.
         refuseALogin();
         cy.loginAs('admin');
@@ -47,14 +47,8 @@ describe('AT4 · Housekeeping on the admin page', () => {
             cy.get('[data-test=parked-queue-row]').should('have.length', queues.length);
         });
 
-        cy.step('cancelling the token clean-up sends nothing; confirming sends it');
-        cy.intercept('DELETE', '**/account/tokens/expired').as('clearTokens');
-        cy.get('[data-test=admin-clear-expired-tokens]').click();
-        cy.get('[data-test=app-dialog-cancel]').click();
-        cy.get('@clearTokens.all').should('have.length', 0);
-        cy.get('[data-test=admin-clear-expired-tokens]').click();
-        cy.get('[data-test=app-dialog-confirm]').click();
-        cy.wait('@clearTokens').its('response.statusCode').should('be.within', 200, 299);
+        cy.step('the page offers no token clean-up: the backend sweeps expired tokens nightly');
+        cy.get('[data-test=admin-clear-expired-tokens]').should('not.exist');
 
         cy.step('the platform audit tab filters by action, then resets');
         cy.get('[data-test=admin-tab-audit]').click();
