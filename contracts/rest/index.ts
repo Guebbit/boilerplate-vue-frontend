@@ -3676,11 +3676,6 @@ export interface ShippingMethod {
     /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
     requiresAddress: boolean;
     /**
-     * The most this method insures a parcel for. Informational only — nothing in this application enforces it against an order's total.
-     * @minimum 0
-     */
-    maxInsuredValue?: number;
-    /**
      * Grams. Absent means no floor. Enforced server-side — `PUT /cart/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range.
      * @minimum 0
      */

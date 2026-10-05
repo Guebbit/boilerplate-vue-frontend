@@ -6,7 +6,7 @@
  * router over `collectModuleRoutes(enabledModules)`, the store's own fetch stubbed, the cart
  * seeded directly into the store.
  */
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, afterAll, beforeEach, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -175,6 +175,10 @@ const mountCart = () => {
     });
     return flushPromises().then(() => ({ wrapper, checkoutSpy, clearSpy, cart }));
 };
+
+// The order links point at lazily loaded routes; settle those imports before this file's
+// environment is torn down, or one resolves after it and fails the run.
+afterAll(() => vi.dynamicImportSettled());
 
 beforeEach(() => {
     sessionStorage.clear();

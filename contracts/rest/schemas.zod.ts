@@ -8600,7 +8600,6 @@ export const ReceivePaymentWebhookResponse = zod.strictObject({
  */
 export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
-export const listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMinWeightMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMaxWeightMin = 0;
 export const listShippingMethodsResponseDataShipToCountriesItemMax = 2;
@@ -8623,10 +8622,6 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .optional(),
                 tracked: zod.boolean(),
                 requiresAddress: zod.boolean(),
-                maxInsuredValue: zod
-                    .number()
-                    .min(listShippingMethodsResponseDataMethodsItemMaxInsuredValueMin)
-                    .optional(),
                 minWeight: zod
                     .number()
                     .min(listShippingMethodsResponseDataMethodsItemMinWeightMin)
