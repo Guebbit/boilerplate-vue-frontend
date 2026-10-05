@@ -69,7 +69,7 @@
         "@grafana/faro-web-sdk": "^2.8.2",
         "@grafana/faro-web-tracing": "^2.8.2",
         "@guebbit/js-toolkit": "^2.3.0",
-        "@guebbit/vue-toolkit": "^5.0.0",
+        "@guebbit/vue-toolkit": "^5.2.0",
         "@tanstack/vue-query": "^5.104.0",
         "@zxcvbn-ts/core": "^4.2.0",
         "@zxcvbn-ts/language-common": "^4.1.3",
