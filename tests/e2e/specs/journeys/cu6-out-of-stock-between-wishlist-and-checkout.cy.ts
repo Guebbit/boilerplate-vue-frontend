@@ -4,10 +4,12 @@
  * CU6 · Out of stock between wishlist and checkout. A customer saves a product, the shop's last
  * units of it go (a stocktake correction), and the customer moves it to the cart anyway. Adding
  * to a cart never looks at stock — only checkout does — so the move works and checkout refuses,
- * naming the line and how many are left. Removing that line lets the rest of the basket through.
+ * naming the line and how many were asked for. Removing that line lets the rest of the basket
+ * through.
  *
  * The shortfall line is checked for what it must carry, not for its wording: the product's title
- * and the two numbers, requested and available.
+ * and the number requested. The number left is never in it: exact stock is for whoever may read
+ * inventory, and a shopper may not.
  */
 import {
     addToCartFromStorefront,
@@ -65,7 +67,7 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
             cy.goToCart();
             cy.get('[data-test=cart-item]').should('have.length', 2);
 
-            cy.step('checkout refuses, naming the line, what was asked and what is left');
+            cy.step('checkout refuses, naming the line and what was asked');
             // `pickup` needs no address, so choosing it alone enables the button.
             cy.get('[data-test=shipping-method-pickup]').click();
             cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
@@ -74,7 +76,8 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
                 .invoke('text')
                 .should((text) => {
                     expect(text).to.contain(title);
-                    expect(text, 'one asked for, none left').to.match(/\b1\b.*\b0\b/);
+                    expect(text, 'the one unit asked for').to.match(/\b1\b/);
+                    expect(text, 'the stock left is not told').not.to.match(/\b0\b/);
                 });
             cy.get('#cart-page').should('exist');
 

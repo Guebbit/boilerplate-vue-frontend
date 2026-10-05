@@ -14,7 +14,9 @@
  *
  * The physical line is the made-to-order bowl (`product.noWithdrawal`, EU Art. 16(c)), so the same
  * order also proves that line carries its no-withdrawal notice and the digital one does not. Nothing
- * is paid: the story stops at the orders the checkout writes.
+ * is paid: the story stops at the orders the checkout writes. The shop caps how many unpaid orders
+ * one account may hold (two by default, the seeded customer already has one), so each order is
+ * cancelled once it has been read: the story is about what an order carries, not about the cap.
  */
 import {
     addToCartFromStorefront,
@@ -78,6 +80,8 @@ describe('CU10 · A digital product, alone and mixed', () => {
                     'string'
                 );
             });
+            // Frees the open-order slot the next checkout needs.
+            cy.apiAs('user', 'POST', `/orders/${orderId}/cancel`);
         });
 
         cy.step('the customer now buys the course together with the made-to-order bowl');
@@ -124,6 +128,7 @@ describe('CU10 · A digital product, alone and mixed', () => {
                     order?.shippingAddress
                 );
             });
+            cy.apiAs('user', 'POST', `/orders/${orderId}/cancel`);
         });
 
         cy.step('a choice left behind by a basket that went digital-only is ignored at checkout');
