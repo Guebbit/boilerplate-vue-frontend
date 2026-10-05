@@ -95,13 +95,19 @@ describe('the ports', () => {
  * POST `body` to the sink with the three signing headers, trusting only the test CA, the way the
  * demo backend does: a handshake that completes proves the sink serves the leaf that CA signed.
  *
+ * @param path - the request path
  * @returns the response status
  */
-const deliver = (port: number, body: string, signature: string): Promise<number> =>
+const deliver = (
+    port: number,
+    body: string,
+    signature: string,
+    path = '/session-id'
+): Promise<number> =>
     new Promise((resolve, reject) => {
         // node:https request: `ca` replaces the default roots, so only the demo CA is trusted.
         const outgoing = httpsRequest(
-            `${sinkUrlForPort(port)}/session-id`,
+            `${sinkUrlForPort(port)}${path}`,
             {
                 method: 'POST',
                 ca: WEBHOOK_SINK_TLS.ca,
@@ -144,6 +150,16 @@ describe('startWebhookSink', () => {
 
         sink.clear();
         expect(sink.requests()).toEqual([]);
+    });
+
+    it('answers 503 on a path naming `dead`, like a receiver that is down, and 200 elsewhere', async () => {
+        sink = await startWebhookSink(0);
+        const { port } = sink;
+        const body = '{"type":"order.created"}';
+        const signature = sign('msg_9', '1700000000', body);
+
+        await expect(deliver(port, body, signature, '/in4-dead')).resolves.toBe(503);
+        await expect(deliver(port, body, signature, '/in4-alive')).resolves.toBe(200);
     });
 
     it('refuses to start on a port that is taken', async () => {

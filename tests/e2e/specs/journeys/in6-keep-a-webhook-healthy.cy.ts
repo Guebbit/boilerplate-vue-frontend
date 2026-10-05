@@ -18,8 +18,11 @@ import {
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
-/** The subscription's address, unique per run. */
-const ENDPOINT = `https://127.0.0.1:1/in6-${String(Date.now())}`;
+/**
+ * The subscription's address, unique per run: a path on the demo receiver's own origin, the only
+ * address the SSRF guard lets a private address through. Read from the seed before each case.
+ */
+let endpoint = '';
 
 /** What the SSRF guard's refusal says, as the form shows it. */
 const REFUSED_ADDRESS = 'cannot be a webhook target';
@@ -57,6 +60,9 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
         cy.visit('/en');
         cy.restore();
         cy.visit('/en');
+        seededSubscription().then(({ url }) => {
+            endpoint = `${new URL(url).origin}/in6-${String(Date.now())}`;
+        });
     });
 
     it('refuses an unsafe address, rotates and removes secrets, and stays silent while off', () => {
@@ -72,7 +78,7 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
         cy.get('[data-test=secret-reveal]').should('not.exist');
 
         cy.step('a safe address is accepted, and its secret is shown once');
-        submitTheCreateForm(ENDPOINT);
+        submitTheCreateForm(endpoint);
         readAndDismissTheSecret().then((first) => {
             cy.get('#webhook-target').should('exist');
             cy.get('[data-test=webhook-secret-row]').should('have.length', 1);
@@ -105,16 +111,16 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             'GET',
             '/webhooks/subscriptions'
         ).then((page) => {
-            const mine = page?.items.find((subscription) => subscription.url === ENDPOINT);
+            const mine = page?.items.find((subscription) => subscription.url === endpoint);
             if (!mine) throw new Error('IN6: the admin cannot see the manager’s subscription');
 
             cy.step('the manager switches it off, and the list filter finds it under Disabled');
-            setEnabledInTheForm(mine.id, ENDPOINT, false);
+            setEnabledInTheForm(mine.id, endpoint, false);
             cy.visit('/en/webhooks/subscriptions');
             cy.pickOption('[data-test=filter-enabled]', 'Disabled');
-            cy.contains('[data-test=list-row]', ENDPOINT).should('exist');
+            cy.contains('[data-test=list-row]', endpoint).should('exist');
             cy.pickOption('[data-test=filter-enabled]', 'Enabled');
-            cy.contains('[data-test=list-row]', ENDPOINT).should('not.exist');
+            cy.contains('[data-test=list-row]', endpoint).should('not.exist');
 
             cy.step(
                 'an order is placed while it is off: the shop’s own receiver hears, this one not'
@@ -131,14 +137,14 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             });
 
             cy.step('switched back on, the next order gets a delivery row, filtered in the log');
-            setEnabledInTheForm(mine.id, ENDPOINT, true);
+            setEnabledInTheForm(mine.id, endpoint, true);
             placeOrderAsCustomer();
             eventually(
                 () => deliveriesOf(mine.id),
                 (rows) => rows.length === 1
             );
             cy.visit('/en/webhooks/deliveries');
-            cy.pickOption('[data-test=webhook-delivery-filter-subscription]', ENDPOINT);
+            cy.pickOption('[data-test=webhook-delivery-filter-subscription]', endpoint);
             cy.get('[data-test=webhook-delivery-row]').should('have.length', 1);
             cy.get('[data-test=webhook-delivery-event]').should('have.text', 'order.created');
             cy.pickOption('[data-test=webhook-delivery-filter-status]', 'Succeeded');
@@ -149,7 +155,7 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             cy.get('[data-test=webhook-delete]').click();
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.url().should('match', /\/webhooks\/subscriptions$/);
-            cy.contains('[data-test=list-row]', ENDPOINT).should('not.exist');
+            cy.contains('[data-test=list-row]', endpoint).should('not.exist');
         });
     });
 });
