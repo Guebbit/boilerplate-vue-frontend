@@ -20,7 +20,7 @@ export interface FaroConfig {
     appVersion: string;
     environment: string;
     /**
-     * API origin(s) to propagate the W3C `traceparent` header to (stitches FE↔BE traces).
+     * API origin(s) to propagate the W3C `traceparent` header to (the API links its span to the browser's, it does not join the trace).
      */
     apiOrigin: string;
     /**
@@ -138,7 +138,7 @@ export function readFaroConfig(): FaroConfig | undefined {
             runtimeValue('FARO_ENVIRONMENT') ||
             import.meta.env.VITE_FARO_ENVIRONMENT?.trim() ||
             import.meta.env.MODE,
-        // Reuse the API origin so browser fetch/XHR traces get stitched onto BE traces.
+        // Reuse the API origin so the API can link its spans to browser fetch/XHR traces.
         apiOrigin:
             runtimeValue('API_URL') ||
             import.meta.env.VITE_API_URL?.trim() ||

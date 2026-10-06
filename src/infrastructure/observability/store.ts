@@ -197,8 +197,9 @@ export const useObservabilityStore = defineStore('observability', () => {
      *
      * `getWebInstrumentations()` captures uncaught errors, promise rejections, console errors,
      * Core Web Vitals and session tracking; the tracing instrumentation opens a span per
-     * fetch/XHR and propagates `traceparent` to the API origin, so one trace spans browser →
-     * handler → query. Both SDKs are dynamically imported, off the critical entry bundle.
+     * fetch/XHR and propagates `traceparent` to the API origin. The API links its request span to that
+     * browser span rather than continuing its trace, so the two are findable from each other but
+     * stay separate traces. Both SDKs are dynamically imported, off the critical entry bundle.
      *
      * @returns A promise resolving to `true` when Faro was initialised, `false` when disabled by
      *  configuration. Concurrent calls share a single setup.
@@ -237,7 +238,7 @@ export const useObservabilityStore = defineStore('observability', () => {
                         ...getWebInstrumentations(),
                         new TracingInstrumentation({
                             instrumentationOptions: {
-                                // Stitch FE traces onto BE traces: propagate `traceparent` to the API origin.
+                                // Send `traceparent` to the API origin: the API records it as a span LINK, not a parent.
                                 propagateTraceHeaderCorsUrls: [originToRegExp(config.apiOrigin)]
                             }
                         })
