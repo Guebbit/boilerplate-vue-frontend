@@ -3675,7 +3675,7 @@ export interface Payment {
     orderId: Id;
     userId?: Id;
     /**
-     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.
+     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is cancelled and the money is returned.
      * @minimum 0
      */
     amount: number;
