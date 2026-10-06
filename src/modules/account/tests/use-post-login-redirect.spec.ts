@@ -146,6 +146,16 @@ describe('redirectAfterLogin', () => {
             });
     });
 
+    it('falls back to Home for a backslash continue a browser reads as protocol-relative', () => {
+        currentRoute.query = { continue: String.raw`/\evil.example` };
+
+        return usePostLoginRedirect()
+            .redirectAfterLogin()
+            .then(() => {
+                expect(push).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
+            });
+    });
+
     it('falls back to Home for an absolute URL continue', () => {
         currentRoute.query = { continue: 'https://evil.example/phish' };
 

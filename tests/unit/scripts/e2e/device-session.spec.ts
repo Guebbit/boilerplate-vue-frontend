@@ -32,33 +32,37 @@ const stubFetch = (...responses: Response[]) => {
 };
 
 /** A device with an access token and a refresh cookie. */
-const device: Device = { apiUrl: 'http://api.test', token: 'access-1', cookie: 'jwt=refresh-1' };
+const device: Device = {
+    apiUrl: 'http://api.test',
+    token: 'access-1',
+    cookie: '__Host-jwt=refresh-1'
+};
 
 afterEach(() => {
     vi.unstubAllGlobals();
 });
 
 describe('refreshCookieFrom', () => {
-    it('reads the jwt cookie out of several Set-Cookie headers, attributes dropped', () => {
+    it('reads the __Host-jwt cookie out of several Set-Cookie headers, attributes dropped', () => {
         const headers = new Headers();
         headers.append('Set-Cookie', 'isAuth=true; Path=/');
-        headers.append('Set-Cookie', 'jwt=abc.def; Path=/; HttpOnly; Max-Age=60');
+        headers.append('Set-Cookie', '__Host-jwt=abc.def; Path=/; HttpOnly; Max-Age=60');
 
-        expect(refreshCookieFrom(headers)).toBe('jwt=abc.def');
+        expect(refreshCookieFrom(headers)).toBe('__Host-jwt=abc.def');
     });
 
     it('answers null when no cookie was set, and when it was cleared', () => {
         expect(refreshCookieFrom(new Headers())).toBeNull();
 
         const cleared = new Headers();
-        cleared.append('Set-Cookie', 'jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+        cleared.append('Set-Cookie', '__Host-jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
         expect(refreshCookieFrom(cleared)).toBeNull();
     });
 });
 
 describe('deviceLogin', () => {
     it('keeps the access token and the refresh cookie the login issued', async () => {
-        stubFetch(answer(200, { data: { token: 'access-1' } }, ['jwt=refresh-1; Path=/']));
+        stubFetch(answer(200, { data: { token: 'access-1' } }, ['__Host-jwt=refresh-1; Path=/']));
 
         await expect(
             deviceLogin({ apiUrl: 'http://api.test', email: 'a@b.c', password: 'pw' })
@@ -74,7 +78,7 @@ describe('deviceLogin', () => {
     });
 
     it('throws when a two-factor challenge came back instead of a token', async () => {
-        stubFetch(answer(200, { data: { mfaRequired: true } }, ['jwt=x']));
+        stubFetch(answer(200, { data: { mfaRequired: true } }, ['__Host-jwt=x']));
 
         await expect(
             deviceLogin({ apiUrl: 'http://api.test', email: 'a@b.c', password: 'pw' })
@@ -85,15 +89,19 @@ describe('deviceLogin', () => {
 describe('deviceRefresh', () => {
     it('sends its own cookie and becomes the rotated device', async () => {
         const calls = stubFetch(
-            answer(200, { data: { token: 'access-2' } }, ['jwt=refresh-2; Path=/'])
+            answer(200, { data: { token: 'access-2' } }, ['__Host-jwt=refresh-2; Path=/'])
         );
 
         const refreshed = await deviceRefresh(device);
 
         expect(calls[0].url).toBe('http://api.test/account/refresh');
-        expect(calls[0].init?.headers).toEqual({ Cookie: 'jwt=refresh-1' });
+        expect(calls[0].init?.headers).toEqual({ Cookie: '__Host-jwt=refresh-1' });
         expect(refreshed.status).toBe(200);
-        expect(refreshed.device).toEqual({ ...device, token: 'access-2', cookie: 'jwt=refresh-2' });
+        expect(refreshed.device).toEqual({
+            ...device,
+            token: 'access-2',
+            cookie: '__Host-jwt=refresh-2'
+        });
     });
 
     it('returns a refused refresh as an answer, the device unchanged', async () => {
@@ -120,7 +128,7 @@ describe('deviceRequest', () => {
         expect(calls[0].url).toBe('http://api.test/account/logout-all');
         expect(calls[0].init?.headers).toMatchObject({
             Authorization: 'Bearer access-1',
-            Cookie: 'jwt=refresh-1'
+            Cookie: '__Host-jwt=refresh-1'
         });
         expect(calls[0].init?.body).toBe('{"why":"test"}');
         expect(result).toEqual({ status: 200, body: { ok: true }, device });

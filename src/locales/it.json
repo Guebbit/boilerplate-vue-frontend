@@ -48,6 +48,8 @@
         "button-send-wait": "Invia di nuovo tra {seconds}s",
         "sent": "Codice inviato. Controlla la posta.",
         "error-wrong-code": "Quel codice non è corretto. Controllalo e riprova.",
+        "label-otp": "Codice a due fattori",
+        "hint-otp": "Dalla tua app di autenticazione, oppure uno dei tuoi codici di backup.",
         "no-method": "Questo account non ha una password e non può ricevere un codice via email. Reimposta la password dalla pagina di accesso per crearne una."
     },
     "verification-banner": {

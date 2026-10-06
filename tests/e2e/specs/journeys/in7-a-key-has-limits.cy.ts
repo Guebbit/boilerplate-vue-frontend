@@ -46,6 +46,7 @@ describe('IN7 · A key has limits', () => {
         cy.visit('/en/api-keys/create');
         cy.get('[data-test=api-key-name] input').type(KEY_NAME);
         cy.get('[data-test=api-key-permissions] input').type(`${NOT_THE_ADMINS}{enter}`);
+        cy.get('[data-test=api-key-expires-at] input').type(datetimeLocalIn(HOUR_MS));
         cy.get('form').submit();
         cy.get('[data-test=api-key-permissions]').should('contain.text', NOT_THE_ADMINS);
         cy.get('[data-test=secret-reveal]').should('not.exist');

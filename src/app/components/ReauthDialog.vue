@@ -4,6 +4,8 @@
  * Step-up re-authentication prompt: mounted once by `LayoutDefault.vue`, beside `<DialogHost />`.
  * Asks the server which method this account can use, then shows that one: a password field, or —
  * for an account with no password — a "send code" button and a field for the mailed code. On
+ * An account with a second factor armed gets one more field when the server's challenge asks for
+ * it (`details.methods` has `otp`): the code is sent beside the first proof, in one call. On
  * submit it calls `useSessionStore().reauth()` itself — the interceptor that opened it only needed
  * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
  * another try rather than closing. See docs/modules/account.md.
@@ -75,6 +77,17 @@ const codeField = ref<VTextField>();
  * The code typed from the mail. Cleared with the prompt, like {@link password}.
  */
 const code = ref('');
+
+/**
+ * A second-factor code (authenticator or backup), cleared with the prompt like the rest.
+ */
+const otp = ref('');
+
+/**
+ * Whether this prompt must collect a second-factor code — the server's own demand, from the 401
+ * that opened it, rather than a guess from the profile.
+ */
+const otpRequired = computed(() => reauthDialog.requiredMethods.includes('otp'));
 
 /**
  * What this account can answer with, in the server's order; `undefined` while it is being asked.
@@ -150,6 +163,7 @@ watch(
         if (!open) return;
         password.value = '';
         code.value = '';
+        otp.value = '';
         sent.value = false;
         methods.value = undefined;
         errorMessage.value = undefined;
@@ -181,9 +195,12 @@ useReturnFocus(() => isOpen.value);
  * The tagged body for whichever method is on show; `undefined` while its field is empty.
  */
 const proof = computed<ReauthRequest | undefined>(() => {
+    if (otpRequired.value && !otp.value) return undefined;
+    const second = otpRequired.value ? { otp: otp.value } : {};
     if (method.value === 'password' && password.value)
-        return { method: 'password', password: password.value };
-    if (method.value === 'email' && code.value) return { method: 'email', code: code.value };
+        return { method: 'password', password: password.value, ...second };
+    if (method.value === 'email' && code.value)
+        return { method: 'email', code: code.value, ...second };
     return undefined;
 });
 
@@ -207,9 +224,13 @@ const submit = () => {
             reauthDialog.resolveStepUp();
         })
         .catch((error: unknown) => {
-            errorMessage.value = absentIs(error, 422) ? t(wrongKey) : getErrorMessage(error);
+            // With a second factor in the call the 422 may be either proof: the server's own
+            // sentence says which, where the fixed wording could only guess.
+            errorMessage.value =
+                absentIs(error, 422) && !otpRequired.value ? t(wrongKey) : getErrorMessage(error);
             password.value = '';
             code.value = '';
+            otp.value = '';
         });
 };
 
@@ -277,6 +298,16 @@ const sendCode = () => {
                         :error-messages="errorMessage ? [errorMessage] : []"
                         data-test="reauth-dialog-password"
                     />
+                    <v-text-field
+                        v-if="otpRequired"
+                        v-model="otp"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        :label="t('reauth-dialog.label-otp')"
+                        :hint="t('reauth-dialog.hint-otp')"
+                        persistent-hint
+                        data-test="reauth-dialog-otp"
+                    />
                 </form>
                 <form v-else-if="method === 'email'" novalidate @submit.prevent="submit">
                     <v-btn
@@ -303,6 +334,16 @@ const sendCode = () => {
                         :label="t('reauth-dialog.label-code')"
                         :error-messages="errorMessage ? [errorMessage] : []"
                         data-test="reauth-dialog-code"
+                    />
+                    <v-text-field
+                        v-if="otpRequired"
+                        v-model="otp"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        :label="t('reauth-dialog.label-otp')"
+                        :hint="t('reauth-dialog.hint-otp')"
+                        persistent-hint
+                        data-test="reauth-dialog-otp"
                     />
                 </form>
                 <p

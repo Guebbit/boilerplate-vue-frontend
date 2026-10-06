@@ -49,6 +49,14 @@
         "current-password-required": "La password attuale è obbligatoria",
         "button-submit-password": "Cambia password",
         "success-password-change": "Password modificata.",
+        "connected-title": "Account collegati",
+        "connected-intro": "I provider di accesso collegati a questo account. Rimuoverne uno significa che non potrà più accedere qui; puoi sempre usare la password, o reimpostarla dalla pagina di accesso.",
+        "connected-since": "Collegato",
+        "connected-empty": "Nessun provider di accesso collegato. Accedi con la password.",
+        "connected-remove": "Scollega",
+        "connected-remove-named": "Scollega {provider}",
+        "connected-confirm-remove": "Scollegare {provider}? Non potrà più accedere a questo account.",
+        "connected-removed": "Provider scollegato.",
         "sessions-title": "Sessioni attive",
         "sessions-intro": "Tutti i dispositivi connessi a questo account. Revocarne uno lo disconnette al prossimo aggiornamento del token.",
         "sessions-current": "Questo dispositivo",
@@ -207,13 +215,21 @@
         "button-submit": "Conferma la mia nuova email",
         "success": "Indirizzo email modificato."
     },
+    "email-change-undo-page": {
+        "page-title": "Annulla modifica email",
+        "intro": "Usa il link monouso dell'avviso inviato al tuo vecchio indirizzo per annullare una modifica dell'email che non hai richiesto. Tutti i dispositivi vengono disconnessi e potrai accedere di nuovo.",
+        "label-token": "Token di annullamento",
+        "token-required": "Il token di annullamento è obbligatorio",
+        "button-submit": "Annulla la modifica",
+        "success": "La modifica dell'email è stata annullata. Accedi di nuovo."
+    },
     "oauth": {
         "divider": "oppure",
         "continue-with": "Continua con {provider}",
         "callback-page": {
             "page-title": "Accesso in corso…",
             "error-access_denied": "Accesso annullato.",
-            "error-email_unverified": "Questa email non è ancora verificata con questo provider. Prova ad accedere con la password, oppure verifica prima l'indirizzo presso il provider.",
+            "error-email_unverified": "Questa email non è ancora verificata con questo provider, quindi non è stato creato alcun account. Verifica prima l'indirizzo presso il provider, poi riprova.",
             "error-account_unverified": "Un account usa già questo indirizzo email, ma non è mai stato confermato. Reimposta la sua password dal link che ti invieremo — così dimostri che l'indirizzo è tuo e potrai collegare il provider dopo.",
             "error-provider_error": "Si è verificato un problema durante l'accesso. Riprova.",
             "link-back-to-login": "Torna al login"

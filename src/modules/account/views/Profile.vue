@@ -30,6 +30,7 @@ import { usersSchema } from '@/modules/users';
 import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
 import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue';
+import ProfileConnectedAccounts from '@/modules/account/components/ProfileConnectedAccounts.vue';
 import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAccount.vue';
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
@@ -495,6 +496,7 @@ const cancelPendingEmail = () => {
         </v-card>
 
         <div class="mx-auto my-10 grid w-full max-w-xl gap-6">
+            <ProfileConnectedAccounts />
             <ProfileSessions />
             <ProfileAddresses />
             <ProfileExportData />

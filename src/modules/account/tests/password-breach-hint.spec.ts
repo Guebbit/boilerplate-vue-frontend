@@ -141,7 +141,7 @@ describe('ProfilePasswordChange', () => {
                 .then(() =>
                     wrapper.get('[data-test=current-password] input').setValue('hunter2hunter2')
                 )
-                // Meets `usersPasswordSchema`'s composition rule (upper/lower/digit/special) so the
+                // Meets `usersPasswordSchema`'s length bounds so the
                 // FORM'S OWN validation lets the submit through — the breach check is a separate
                 // concern from strength, and this proves it never gates the strong-but-breached case.
                 .then(() => wrapper.get('[data-test=new-password] input').setValue('Password1!'))

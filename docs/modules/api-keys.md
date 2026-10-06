@@ -30,6 +30,12 @@ Two screens over three endpoints — smaller than webhooks, because there is no 
 credential's name, permissions and expiry are fixed at mint time, so there is nothing to edit and
 no detail page either, since the nine flat fields all fit a list row.
 
+**Minting asks for a fresh session and an expiry.** `POST /api-keys` is a critical step-up, so the
+shared [reauth prompt](./account.md) opens before the mint goes through; the form requires an
+expiry (at most one year ahead, the same bound the server enforces), because a key that never
+expires never gets rotated. The server also revokes a person's keys when they log out everywhere
+or reset their password, which shows up here as `Revoked` rows.
+
 **Only `admin` holds `apikeys.*` today**, through its declared superset of every tenant key — no
 preset role names an `apikeys` key outright, and there is no wildcard of any kind. `meta.can`
 gates both routes on the rule, the same way every other screen in this app does, so the nav entry

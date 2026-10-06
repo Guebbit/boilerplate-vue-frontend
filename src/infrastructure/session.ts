@@ -432,7 +432,7 @@ export const useSessionStore = defineStore('session', () => {
 
     /**
      * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
-     * requests failing with 401 in the same tick must share one `GET /account/refresh`, not fire
+     * requests failing with 401 in the same tick must share one `POST /account/refresh`, not fire
      * one each) and, unlike a generic `singleFlight` wrapper, inspectable: {@link logout} reads it
      * directly to wait out an attempt already running rather than starting a fresh one.
      */

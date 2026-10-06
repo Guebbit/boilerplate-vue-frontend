@@ -60,7 +60,7 @@ describe('Authentication', () => {
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
-            cy.getCookie('jwt').should('exist').and('not.have.property', 'expiry');
+            cy.getCookie('__Host-jwt').should('exist').and('not.have.property', 'expiry');
         });
 
         it('remember me keeps the session for days', () => {
@@ -70,7 +70,7 @@ describe('Authentication', () => {
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
-            cy.getCookie('jwt')
+            cy.getCookie('__Host-jwt')
                 .should('exist')
                 .its('expiry')
                 .should('be.greaterThan', Date.now() / 1000 + 24 * 60 * 60);
@@ -204,7 +204,7 @@ describe('Authentication', () => {
     // (src/infrastructure/http/index.ts) sending the refresh cookie from :8085 to :3000 with the
     // real session store behind it. A forced 401 is used instead of reaching into Pinia to clear the
     // in-memory access token: it drives the exact same interceptor path
-    // (onResponseRejectWithRefresh -> GET /account/refresh -> retry) through a real network
+    // (onResponseRejectWithRefresh -> POST /account/refresh -> retry) through a real network
     // round-trip, without needing a test-only hook into application state.
     describe('Live session refresh (live profile only)', () => {
         it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', () => {
@@ -218,7 +218,7 @@ describe('Authentication', () => {
             // document route. The list reads `POST /orders/search`, never `GET /orders`, so that
             // is the request to fail once.
             cy.env(['apiUrl']).then(({ apiUrl }) => {
-                cy.intercept('GET', `${apiUrl}/account/refresh`).as('refresh');
+                cy.intercept('POST', `${apiUrl}/account/refresh`).as('refresh');
                 cy.intercept('POST', `${apiUrl}/orders/search`, (request) => {
                     if (forced401) {
                         request.continue();

@@ -12,7 +12,7 @@
  */
 
 import { instance } from './client.ts';
-import { getFirstApiError } from './envelope.ts';
+import { getFirstApiError, isObjectRecord } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
 import { onResponseRejectWithRefresh } from './refresh.ts';
 import { useReauthPromptStore } from './reauth-prompt.ts';
@@ -26,6 +26,13 @@ import type {
 } from './types.ts';
 
 /**
+ * What the challenge that is about to open the prompt asked the answer to prove. Set just before
+ * {@link requestFreshSession} runs; only the call that actually STARTS the prompt reads it, so the
+ * parked requests that join it share the first one's demand.
+ */
+let demandedMethods: readonly string[] = [];
+
+/**
  * Opens (or joins) the step-up prompt, single-flight (see `single-flight.ts`) — one dialog, N
  * parked requests, never N dialogs.
  *
@@ -33,8 +40,21 @@ import type {
  *  prompt without one.
  */
 const requestFreshSession = singleFlight((): Promise<void> =>
-    useReauthPromptStore().requestStepUp()
+    useReauthPromptStore().requestStepUp(demandedMethods)
 );
+
+/**
+ * Reads `details.methods` off a `REAUTH_REQUIRED` body — the proofs it asks for beyond recency.
+ *
+ * @param details - The first error's `details`, still unknown at this boundary.
+ * @returns The listed method names; empty when the challenge asks for recency alone.
+ */
+const methodsOf = (details: unknown): readonly string[] => {
+    const methods = isObjectRecord(details) ? details.methods : undefined;
+    return Array.isArray(methods)
+        ? methods.filter((method): method is string => typeof method === 'string')
+        : [];
+};
 
 /**
  * Response error interceptor for the step-up flow.
@@ -48,14 +68,15 @@ export const onResponseRejectWithStepUp = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
-    const { code } = getFirstApiError(error.response?.data) ?? {};
+    const { code, details } = getFirstApiError(error.response?.data) ?? {};
 
     if (
         error.response?.status === 401 &&
         code === ERROR_CODES.REAUTH_REQUIRED &&
         !originalRequest?._steppedUp &&
         originalRequest
-    )
+    ) {
+        demandedMethods = methodsOf(details);
         return requestFreshSession()
             .then(() =>
                 instance.request({
@@ -64,6 +85,7 @@ export const onResponseRejectWithStepUp = (
                 } as AxiosRequestConfigWithRetry)
             )
             .catch(() => onResponseReject(error));
+    }
 
     return onResponseRejectWithRefresh(error);
 };

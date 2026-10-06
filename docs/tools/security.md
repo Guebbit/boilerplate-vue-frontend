@@ -9,7 +9,7 @@ For the backend auth architecture (JWT signing, bcrypt, refresh token DB storage
 The backend uses a **split-token model**. The FE receives:
 
 - **Access token** — short-lived JWT returned in the login response body. Sent on every protected API call as `Authorization: Bearer <token>`.
-- **Refresh token** — longer-lived JWT stored in an `HttpOnly` cookie set by the backend. The browser sends it automatically on `GET /account/refresh`; the FE never reads it directly.
+- **Refresh token** — longer-lived JWT stored in an `HttpOnly` cookie set by the backend. The browser sends it automatically on `POST /account/refresh`; the FE never reads it directly.
 
 This keeps the refresh token out of JavaScript access (no `localStorage`, no `document.cookie`).
 
@@ -24,7 +24,7 @@ flowchart TD
     D --> E[Protected API call\nAuthorization Bearer]
     E --> F{401?}
     F -- no --> G[Success]
-    F -- yes --> H[GET /account/refresh\nbrowser sends cookie]
+    F -- yes --> H[POST /account/refresh\nbrowser sends cookie]
     H --> I{Valid?}
     I -- yes --> J[New access token]
     J --> E

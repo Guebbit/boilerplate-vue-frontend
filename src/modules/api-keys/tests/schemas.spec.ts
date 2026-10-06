@@ -9,21 +9,34 @@ import { apiKeyCreateSchema } from '@/modules/api-keys/schemas';
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validCredential = {
     name: 'CI integration',
-    permissions: ['products.read']
+    permissions: ['products.read'],
+    expiresAt: new Date(Date.now() + 86_400_000).toISOString()
 };
+
+/** An ISO instant this many days from now. */
+const ahead = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
 
 describe('apiKeyCreateSchema', () => {
     it('accepts a minimal valid credential', () => {
         expect(apiKeyCreateSchema.safeParse(validCredential).success).toBe(true);
     });
 
-    it('accepts an optional future expiry', () => {
+    it('requires an expiry: a credential that never expires is never rotated', () => {
+        const { expiresAt: _omitted, ...withoutExpiry } = validCredential;
+
+        expect(apiKeyCreateSchema.safeParse(withoutExpiry).success).toBe(false);
+        expect(apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: '' }).success).toBe(
+            false
+        );
+    });
+
+    it('accepts an expiry a little under a year ahead and refuses one beyond it', () => {
         expect(
-            apiKeyCreateSchema.safeParse({
-                ...validCredential,
-                expiresAt: new Date(Date.now() + 86_400_000).toISOString()
-            }).success
+            apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: ahead(360) }).success
         ).toBe(true);
+        expect(
+            apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: ahead(370) }).success
+        ).toBe(false);
     });
 
     it('rejects an empty name', () => {

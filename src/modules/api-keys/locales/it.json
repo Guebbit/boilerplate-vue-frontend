@@ -3,7 +3,9 @@
         "name-required": "Il nome è obbligatorio",
         "name-too-long": "Il nome è troppo lungo",
         "permissions-required": "Scegli almeno un permesso",
-        "expires-at-past": "La scadenza deve essere nel futuro"
+        "expires-at-past": "La scadenza deve essere nel futuro",
+        "expires-at-required": "La scadenza è obbligatoria",
+        "expires-at-too-far": "La scadenza può essere al massimo tra un anno"
     },
     "api-keys-list-page": {
         "page-title": "Chiavi API",
@@ -32,7 +34,7 @@
         "label-permissions": "Permessi",
         "hint-permissions": "Digita una chiave di permesso e premi invio, es. products.any.read. Deve essere una chiave che possiedi attualmente.",
         "label-expires-at": "Scade il",
-        "hint-expires-at": "Facoltativo. Lascia vuoto per una credenziale che non scade mai.",
+        "hint-expires-at": "Obbligatoria, al massimo tra un anno.",
         "button-submit": "Genera credenziale",
         "button-go-to-list": "Torna alle chiavi API",
         "success-create": "Credenziale generata",

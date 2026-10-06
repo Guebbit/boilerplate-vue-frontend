@@ -45,7 +45,7 @@ describe('FR8 · My session expired while I was typing', () => {
 
         cy.step('saving is refused once, renewed silently, and replayed');
         cy.intercept('POST', '**/account/addresses').as('save');
-        cy.intercept('GET', '**/account/refresh').as('refresh');
+        cy.intercept('POST', '**/account/refresh').as('refresh');
         cy.get('[data-test=address-save]').click();
         cy.wait('@save').its('response.statusCode').should('equal', 401);
         cy.wait('@refresh').its('response.statusCode').should('equal', 200);

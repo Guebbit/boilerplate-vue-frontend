@@ -2,21 +2,13 @@
  * @module
  * `src/modules/users/schemas.ts` — the user form's email, username and password rules.
  *
- * The password schema is the reason this file exists: four independent `refine` predicates, each
- * with its own message, and only a case that satisfies every OTHER rule proves which one rejected.
  * The bounds are read from `@api/schemas` rather than retyped, so a contract change moves the
  * tests with the form. The messages themselves belong to `schemas-i18n.spec.ts`; these are the
  * rules.
  */
 import { describe, expect, it } from 'vitest';
-import { signupBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
+import { signupBodyPasswordMax, signupBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
 import { usersPasswordSchema, usersSchema } from '@/modules/users/schemas';
-
-/**
- * A password long enough to clear the contract minimum, built from one repeated character so a
- * test can add exactly the character class it wants to check.
- */
-const longEnough = (fill: string) => fill.repeat(Math.max(signupBodyPasswordMin, fill.length));
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validUser = {
@@ -25,48 +17,34 @@ const validUser = {
 };
 
 describe('usersPasswordSchema', () => {
-    it('accepts a password with all four character classes', () => {
-        expect(usersPasswordSchema.safeParse(`${longEnough('a')}A1!`).success).toBe(true);
-    });
-
     /**
-     * The bound comes from the contract, so this is a boundary test rather than a magic number:
-     * one under fails, exactly the minimum passes.
+     * The bounds come from the contract, so these are boundary tests rather than magic numbers:
+     * one under fails, exactly the bound passes.
      */
     it('enforces the contract minimum length at its exact boundary', () => {
-        const classes = 'aA1!';
-        const atMinimum = classes.padEnd(signupBodyPasswordMin, 'a');
-        const belowMinimum = atMinimum.slice(1);
+        expect(usersPasswordSchema.safeParse('a'.repeat(signupBodyPasswordMin)).success).toBe(true);
+        expect(usersPasswordSchema.safeParse('a'.repeat(signupBodyPasswordMin - 1)).success).toBe(
+            false
+        );
+    });
 
-        expect(usersPasswordSchema.safeParse(atMinimum).success).toBe(true);
-        expect(usersPasswordSchema.safeParse(belowMinimum).success).toBe(false);
+    it('enforces the contract maximum length at its exact boundary', () => {
+        expect(usersPasswordSchema.safeParse('a'.repeat(signupBodyPasswordMax)).success).toBe(true);
+        expect(usersPasswordSchema.safeParse('a'.repeat(signupBodyPasswordMax + 1)).success).toBe(
+            false
+        );
     });
 
     /**
-     * Each case is long enough and carries every class EXCEPT the one named, so the failure can
-     * only be that rule — a shorter fixture would be rejected by the length rule instead and the
-     * refine would never run.
+     * No composition rules (NIST SP 800-63B-4): a password is not refused for lacking a mix of
+     * character classes, only for its length.
      */
     it.each([
-        ['lowercase', `${longEnough('A')}1!`],
-        ['uppercase', `${longEnough('a')}1!`],
-        ['a digit', `${longEnough('a')}A!`],
-        ['a special character', `${longEnough('a')}A1`]
-    ])('rejects a password with no %s', (_rule, password) => {
-        expect(usersPasswordSchema.safeParse(password).success).toBe(false);
-    });
-
-    it('treats an underscore as a special character', () => {
-        // `\W` would exclude it; the schema uses `[^\dA-Za-z]`, which does not.
-        expect(usersPasswordSchema.safeParse(`${longEnough('a')}A1_`).success).toBe(true);
-    });
-
-    it('names every broken rule at once rather than only the first', () => {
-        const result = usersPasswordSchema.safeParse(longEnough('a'));
-
-        expect(result.success).toBe(false);
-        // Three classes are missing, so a schema that stopped at the first would report one.
-        expect(result.error!.issues.length).toBeGreaterThan(1);
+        ['all lowercase', 'a'.repeat(signupBodyPasswordMin)],
+        ['all digits', '1'.repeat(signupBodyPasswordMin)],
+        ['a passphrase', 'correct horse battery staple']
+    ])('accepts %s', (_label, password) => {
+        expect(usersPasswordSchema.safeParse(password).success).toBe(true);
     });
 });
 

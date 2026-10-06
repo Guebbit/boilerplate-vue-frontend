@@ -18,7 +18,7 @@ export interface Device {
     apiUrl: string;
     /** The access token, sent as `Authorization: Bearer`. */
     token: string;
-    /** The refresh cookie as a `Cookie` header value, `jwt=<token>`. */
+    /** The refresh cookie as a `Cookie` header value, `__Host-jwt=<token>`. */
     cookie: string;
 }
 
@@ -50,7 +50,7 @@ export interface DeviceRequest {
 }
 
 /** The refresh cookie's name — the backend's `REFRESH_COOKIE`. */
-const REFRESH_COOKIE = 'jwt';
+const REFRESH_COOKIE = '__Host-jwt';
 
 /** The JSON request header both paired backends expect on a body. */
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -61,7 +61,7 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
  * `null` when the response did not set one, or set it empty — which is how a logout clears it.
  *
  * @param headers - the response's headers
- * @returns `jwt=<value>`, or `null`
+ * @returns `__Host-jwt=<value>`, or `null`
  */
 export const refreshCookieFrom = (headers: Headers): string | null => {
     const prefix = `${REFRESH_COOKIE}=`;
@@ -149,13 +149,15 @@ const afterAnswer = (device: Device, response: Response, body: unknown): Device 
  * @param device - the device to refresh
  */
 export const deviceRefresh = (device: Device): Promise<DeviceResponse> =>
-    fetch(`${device.apiUrl}/account/refresh`, { headers: { Cookie: device.cookie } }).then(
-        (response) =>
-            jsonOf(response).then((body) => ({
-                status: response.status,
-                body,
-                device: afterAnswer(device, response, body)
-            }))
+    fetch(`${device.apiUrl}/account/refresh`, {
+        method: 'POST',
+        headers: { Cookie: device.cookie }
+    }).then((response) =>
+        jsonOf(response).then((body) => ({
+            status: response.status,
+            body,
+            device: afterAnswer(device, response, body)
+        }))
     );
 
 /**
