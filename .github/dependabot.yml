@@ -4,6 +4,11 @@ updates:
       directory: /
       schedule:
           interval: weekly
+      # A release must be a week old before Dependabot proposes it: a hijacked or yanked version is
+      # usually caught inside that window.
+      # https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#cooldown-
+      cooldown:
+          default-days: 7
       # One weekly PR for every minor/patch bump together, so a routine dependency update
       # doesn't turn into a dozen review requests. A major stays OUT of the group on purpose —
       # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/grouping-pull-requests
@@ -17,9 +22,14 @@ updates:
                   - patch
 
     - package-ecosystem: github-actions
-      directory: /
+      # The workflows live under /.github/workflows; `directories` adds each composite action.
+      directories:
+          - /
+          - /.github/actions/*
       schedule:
           interval: weekly
+      cooldown:
+          default-days: 7
       groups:
           minor-and-patch:
               applies-to: version-updates
