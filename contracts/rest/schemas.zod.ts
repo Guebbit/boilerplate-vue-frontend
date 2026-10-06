@@ -8608,7 +8608,7 @@ export const SyncPaymentResponse = zod.strictObject({
     })
 });
 /**
- * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
+ * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
@@ -8618,12 +8618,9 @@ export const ReceivePaymentWebhookHeader = zod.strictObject({
 });
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
-export const receivePaymentWebhookBodyCardLast4Max = 4;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
-    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional(),
-    status: zod.enum(['requires_action', 'processing', 'succeeded', 'declined']).optional(),
-    cardLast4: zod.string().max(receivePaymentWebhookBodyCardLast4Max).optional()
+    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional()
 });
 export const ReceivePaymentWebhookResponse = zod.strictObject({
     success: zod.literal(true),
