@@ -2585,6 +2585,24 @@ export interface OAuthProvidersEnvelope {
     data: OAuthProviders;
 }
 
+export interface OAuthLink {
+    /** Registry name of the linked provider, e.g. `google`. */
+    provider: string;
+    /** When the account was linked to this provider. */
+    connectedAt: string;
+}
+
+export interface OAuthLinks {
+    links: OAuthLink[];
+}
+
+export interface OAuthLinksEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OAuthLinks;
+}
+
 export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
 
 export const UserSortItem = {
@@ -6707,6 +6725,33 @@ export const listOAuthProviders = (
 };
 
 /**
+ * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
+ * @summary List the caller's connected accounts
+ */
+export const listOAuthLinks = (
+    options?: SecondParameter<typeof orvalMutator<OAuthLinksEnvelope>>
+) => {
+    return orvalMutator<OAuthLinksEnvelope>(
+        { url: `/account/oauth/links`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * @summary Disconnect a linked sign-in provider
+ */
+export const unlinkOAuthProvider = (
+    provider: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/oauth/links/${provider}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
  * @summary Start an OAuth login
  */
@@ -9209,6 +9254,10 @@ export type RegenerateBackupCodesResult = NonNullable<
     Awaited<ReturnType<typeof regenerateBackupCodes>>
 >;
 export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
+export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
+export type UnlinkOAuthProviderResult = NonNullable<
+    Awaited<ReturnType<typeof unlinkOAuthProvider>>
+>;
 export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
 export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
 export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;

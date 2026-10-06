@@ -2822,6 +2822,36 @@ export const ListOAuthProvidersResponse = zod.strictObject({
     })
 });
 /**
+ * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
+ * @summary List the caller's connected accounts
+ */
+export const ListOAuthLinksResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        links: zod.array(
+            zod.strictObject({
+                provider: zod.string(),
+                connectedAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
+});
+/**
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * @summary Disconnect a linked sign-in provider
+ */
+export const unlinkOAuthProviderPathProviderMax = 32;
+export const UnlinkOAuthProviderParams = zod.strictObject({
+    provider: zod.string().max(unlinkOAuthProviderPathProviderMax)
+});
+export const UnlinkOAuthProviderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+/**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
  * @summary Start an OAuth login
  */

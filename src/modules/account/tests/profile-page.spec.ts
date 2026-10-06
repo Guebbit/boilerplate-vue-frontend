@@ -104,6 +104,7 @@ const mountProfile = () =>
                 ProfileAvatar: true,
                 ProfilePasswordChange: true,
                 ProfileTwoFactor: true,
+                ProfileConnectedAccounts: true,
                 ProfileSessions: true,
                 ProfileAddresses: true,
                 ProfileExportData: true,
