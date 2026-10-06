@@ -66,6 +66,8 @@ export const ERROR_CODES = {
     IDEMPOTENCY_IN_FLIGHT: 'IDEMPOTENCY_IN_FLIGHT',
     /** 422 — This `Idempotency-Key` was already used with a different request body. */
     IDEMPOTENCY_KEY_MISMATCH: 'IDEMPOTENCY_KEY_MISMATCH',
+    /** 400 — This route requires an `Idempotency-Key` header and the request carries none. */
+    IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
     /** 500 — An unexpected server-side failure. Never carries library or stack detail. */
     INTERNAL_ERROR: 'INTERNAL_ERROR',
     /** 422 — A 4xx nobody handled on the way, answered by the global error handler with no copy of its own: a driver failure that is really about the request (a refused write is a 422, a duplicate key a 409, a stale `If-Match` a 412) or a library declaring its own 4xx. A route that catches the failure answers with the status-derived code instead. */

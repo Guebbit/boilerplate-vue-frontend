@@ -8183,7 +8183,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
     })
 });
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrderPathOrderIdMax = 64;
@@ -8203,7 +8203,6 @@ export const RefundPaymentByOrderHeader = zod.strictObject({
         .min(1)
         .max(refundPaymentByOrderHeaderIdempotencyKeyMax)
         .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
-        .optional()
 });
 export const refundPaymentByOrderBodyAmountExclusiveMin = 0;
 export const refundPaymentByOrderBodyCurrencyMax = 3;
