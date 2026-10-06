@@ -22,7 +22,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
+import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
@@ -76,7 +76,7 @@ const {
     applyServerErrors
 } = useStructureFormValidation<AccountDeleteConfirmForm>(
     {
-        token: typeof route.query.token === 'string' ? route.query.token : ''
+        token: readLinkToken(route)
     },
     z.object({
         token: z.string().min(1, { error: () => t('account-delete-confirm-page.token-required') })
@@ -89,9 +89,9 @@ const {
     }
 );
 
-// The token is the only credential for this action; it must not linger in the URL for every
+// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
 // pageview and observability event after mount to carry to Umami, Faro and browser history.
-useClearQueryOnMount(route, router);
+useLinkTokenCleanup(route, router);
 
 /**
  * This submit's own blocked state — a spent or unknown token names no field, so it lands here

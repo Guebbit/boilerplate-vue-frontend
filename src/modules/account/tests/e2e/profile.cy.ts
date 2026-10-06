@@ -53,7 +53,7 @@ describe('Profile access', () => {
         // the token comes from an actual signup email.
         cy.visit('/en');
         cy.restore();
-        cy.visit('/en/verify-email/confirm?token=a-token-nobody-issued');
+        cy.visit('/en/verify-email/confirm#token=a-token-nobody-issued');
 
         cy.get('[data-test=verify-token] input').should('have.value', 'a-token-nobody-issued');
         cy.get('[data-test=verify-submit]').click();

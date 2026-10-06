@@ -90,6 +90,20 @@ describe('useObservabilityStore', () => {
             expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
         });
 
+        it('tells the tracker to leave the query string and the fragment out of a pageview', () => {
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
+
+            useObservabilityStore().setUmamiConsent(true);
+
+            // A mailed link's one-time token rides in `#token=`; Umami would record it otherwise.
+            const script = document.querySelector<HTMLScriptElement>(
+                'script[data-website-id="site-1"]'
+            );
+            expect(script?.dataset.excludeHash).toBe('true');
+            expect(script?.dataset.excludeSearch).toBe('true');
+        });
+
         it('survives blocked storage', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
             vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

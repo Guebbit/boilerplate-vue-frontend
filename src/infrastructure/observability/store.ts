@@ -45,7 +45,7 @@ export const stripSensitiveUrlParts = (url: string): string => {
 
 /**
  * Faro `beforeSend` hook: strips one-time email tokens (verification, password reset, account
- * deletion, email change all pass them as a `?token=` query param) out of every telemetry item
+ * deletion, email change all pass them as a `#token=` fragment — which `stripSensitiveUrlParts` drops along with any query) out of every telemetry item
  * before it leaves the browser — the page URL every item's `meta.page` carries, and the URL
  * attribute OpenTelemetry's HTTP instrumentation puts on a trace span.
  * https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/configuration/#beforesend
@@ -377,11 +377,12 @@ export const useObservabilityStore = defineStore('observability', () => {
             script.defer = true;
             script.src = config.src;
             script.dataset.websiteId = config.websiteId;
-            // A one-time email token travels as a `?token=` query param on the confirm pages
+            // A one-time email token travels as a `#token=` fragment on the confirm pages
             // (verification, password reset, account deletion, email change) — Umami's own
-            // flag is what keeps it out of every pageview this tag records on its own.
+            // flags keep it, and any query string, out of every pageview this tag records.
             // https://umami.is/docs/tracker-configuration
             script.dataset.excludeSearch = 'true';
+            script.dataset.excludeHash = 'true';
             document.head.append(script);
         }
 

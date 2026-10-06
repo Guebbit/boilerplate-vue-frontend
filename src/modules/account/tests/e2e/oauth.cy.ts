@@ -88,7 +88,7 @@ describe('Social login (OAuth)', () => {
 
         // ── Prove the address the ordinary way, from the signup mail ───────────────────
         cy.emailTo('oauth.demo@example.com').then(({ token }) => {
-            cy.visit(`/en/verify-email/confirm?token=${token}`);
+            cy.visit(`/en/verify-email/confirm#token=${token}`);
         });
         // Spent as a guest: `signUpUnverified` already signed out, as someone opening the link
         // from a mailbox on another device would be.

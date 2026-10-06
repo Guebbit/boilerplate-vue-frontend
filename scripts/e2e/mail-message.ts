@@ -18,7 +18,7 @@ export interface MailedEmail {
     subject: string;
     /** The outbox template name — only the demo profile knows it. */
     template?: string;
-    /** The `?token=` of the first link that carries one. */
+    /** The `#token=` of the first link that carries one. */
     token?: string;
     /** `code: <digits>` and `linkUrl: <url>`, when the message carries them. */
     lines?: string[];
@@ -45,7 +45,7 @@ export interface MailpitMessage {
 /** A delivered 2FA code: six digits, standing alone. */
 const CODE_PATTERN = /(?:^|\s)(\d{6})(?:\s|$)/m;
 
-/** Every `href` in the HTML — the first one carrying `token=` is the mailed action link. */
+/** Every `href` in the HTML — the first one carrying `#token=` is the mailed action link. */
 const HREF_PATTERN = /href="([^"]+)"/g;
 
 /**
@@ -70,7 +70,7 @@ const visibleText = (html: string): string =>
 const actionLink = (html: string): string | undefined =>
     [...html.matchAll(HREF_PATTERN)]
         .map(([, href]) => href.replaceAll('&amp;', '&'))
-        .find((href) => /[&?]token=/.test(href));
+        .find((href) => href.includes('#token='));
 
 /**
  * Turns one Mailpit message into the outbox shape.
@@ -83,7 +83,7 @@ export const parseMailpitMessage = (to: string, message: MailpitMessage): Mailed
     const text = message.Text || visibleText(message.HTML);
     const code = CODE_PATTERN.exec(text)?.[1];
     const linkUrl = actionLink(message.HTML);
-    const token = linkUrl ? /[&?]token=([^&]+)/.exec(linkUrl)?.[1] : undefined;
+    const token = linkUrl ? /#token=([^&]+)/.exec(linkUrl)?.[1] : undefined;
 
     const links = [...message.HTML.matchAll(HREF_PATTERN)].map(([, href]) =>
         href.replaceAll('&amp;', '&')

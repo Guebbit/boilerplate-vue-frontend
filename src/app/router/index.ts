@@ -5,6 +5,7 @@
  * enforce `meta.access` and sync the i18n locale; `afterEach` sets the tab title, the a11y
  * announcement and focus.
  */
+import { isAnchorHash } from '@/infrastructure/utils/use-link-token.ts';
 import { nextTick } from 'vue';
 import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-router';
 import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
@@ -145,7 +146,7 @@ const router = createRouter({
     scrollBehavior: (to, from, savedPosition) => {
         const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
         if (savedPosition) return { ...savedPosition, behavior };
-        if (to.hash) return { el: to.hash, behavior };
+        if (isAnchorHash(to.hash)) return { el: to.hash, behavior };
         if (to.path === from.path) return false;
         return { top: 0, behavior };
     },
@@ -354,7 +355,7 @@ router.afterEach((to, from, failure) => {
     document.title = title ? `${title} — ${appName}` : appName;
     void announceRouteChange(title);
 
-    const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
+    const isPageChange = from !== START_LOCATION && to.path !== from.path && !isAnchorHash(to.hash);
     if (!isPageChange) return;
 
     // `LayoutDefault` mounts once for the whole session, not per view, so its own

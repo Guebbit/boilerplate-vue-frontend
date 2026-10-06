@@ -27,7 +27,7 @@ import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { useClearQueryOnMount } from '@/infrastructure/utils/use-clear-query-on-mount.ts';
+import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
@@ -84,7 +84,7 @@ const {
     applyServerErrors
 } = useStructureFormValidation<PasswordResetConfirmForm>(
     {
-        token: typeof route.query.token === 'string' ? route.query.token : '',
+        token: readLinkToken(route),
         password: '',
         passwordConfirm: ''
     },
@@ -110,9 +110,9 @@ const {
     }
 );
 
-// The token is the only credential for this action; it must not linger in the URL for every
+// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
 // pageview and observability event after mount to carry to Umami, Faro and browser history.
-useClearQueryOnMount(route, router);
+useLinkTokenCleanup(route, router);
 
 /**
  * Advisory breach check for the new password field — never a submit gate, see `@module`.

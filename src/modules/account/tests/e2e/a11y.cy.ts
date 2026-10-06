@@ -27,11 +27,11 @@ sweepA11y('account — guest', [
     ['login', '/en/login'],
     ['signup', '/en/signup'],
     ['password reset', '/en/password-reset'],
-    ['password reset confirm', `/en/password-reset/confirm?token=${UNISSUED_TOKEN}`],
-    ['account delete confirm', `/en/account-delete/confirm?token=${UNISSUED_TOKEN}`],
-    ['verify email confirm', `/en/verify-email/confirm?token=${UNISSUED_TOKEN}`],
-    ['email change confirm', `/en/email-change/confirm?token=${UNISSUED_TOKEN}`],
-    ['email change undo', `/en/email-change/undo?token=${UNISSUED_TOKEN}`],
+    ['password reset confirm', `/en/password-reset/confirm#token=${UNISSUED_TOKEN}`],
+    ['account delete confirm', `/en/account-delete/confirm#token=${UNISSUED_TOKEN}`],
+    ['verify email confirm', `/en/verify-email/confirm#token=${UNISSUED_TOKEN}`],
+    ['email change confirm', `/en/email-change/confirm#token=${UNISSUED_TOKEN}`],
+    ['email change undo', `/en/email-change/undo#token=${UNISSUED_TOKEN}`],
     // The success path redirects immediately and renders nothing of its own, same as `Logout` —
     // only the error state (a card plus a link back to login) is a page worth auditing.
     ['oauth callback, error', '/en/oauth/callback?error=access_denied'],

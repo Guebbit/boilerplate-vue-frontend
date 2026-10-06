@@ -62,7 +62,7 @@ describe('Password reset', () => {
     });
 
     it('a token nobody was sent changes nothing', () => {
-        cy.visit('/en/password-reset/confirm?token=a-token-nobody-issued');
+        cy.visit('/en/password-reset/confirm#token=a-token-nobody-issued');
         cy.get('#password-reset-confirm-page [type=password]')
             .eq(0)
             .should('not.be.disabled')

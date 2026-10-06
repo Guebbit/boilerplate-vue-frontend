@@ -26,12 +26,12 @@ describe('parseMailpitMessage', () => {
         const email = parseMailpitMessage('ada@example.com', {
             Subject: 'Reset your password',
             Text: '',
-            HTML: '<p><a href="https://shop.test/">Shop</a></p><p><a href="http://localhost:8085/en/password-reset/confirm?lang=en&amp;token=abc%2Fdef">Reset</a></p>'
+            HTML: '<p><a href="https://shop.test/">Shop</a></p><p><a href="http://localhost:8085/en/password-reset/confirm#token=abc%2Fdef">Reset</a></p>'
         });
 
         expect(email.token).toBe('abc/def');
         expect(email.lines).toEqual([
-            'linkUrl: http://localhost:8085/en/password-reset/confirm?lang=en&token=abc%2Fdef'
+            'linkUrl: http://localhost:8085/en/password-reset/confirm#token=abc%2Fdef'
         ]);
     });
 
