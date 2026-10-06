@@ -2,8 +2,9 @@
  * Signs and posts a payment-provider webhook, the way the provider would.
  *
  * The backend's `POST /payments/webhook` authenticates by an HMAC over the raw body, so a spec
- * that wants a provider to report an outcome the browser cannot reach (a late `succeeded`, a
- * duplicate event id) has to sign it itself. The format is the backend's
+ * that wants a provider to nudge the server (a duplicate event id, a stale signature) has to sign
+ * it itself. The event is thin: it names an intent, and the server asks the provider what became
+ * of it, so a delivery cannot carry an outcome. The format is the backend's
  * `payments/providers/webhook-signature.ts`: `x-payment-signature: t=<unix seconds>,v1=<hex
  * HMAC-SHA256 of "<t>.<raw body>">`.
  *
@@ -18,16 +19,12 @@ import { createHmac } from 'node:crypto';
  */
 export const DEMO_PAYMENT_WEBHOOK_SECRET = 'demo-payment-webhook-secret';
 
-/** The payment provider's normalised event — the contract's `PaymentWebhookEvent`. */
+/** The payment provider's thin event — the contract's `PaymentWebhookEvent`. */
 export interface PaymentWebhookEvent {
     /** The provider's event id; the backend deduplicates on it. */
     id: string;
     /** Which intent the event is about. Omit for an event the API ignores. */
     providerRef?: string;
-    /** The provider's own vocabulary. */
-    status?: 'requires_action' | 'processing' | 'succeeded' | 'declined';
-    /** The card's last four digits. */
-    cardLast4?: string;
 }
 
 /** What {@link postPaymentWebhook} takes. */

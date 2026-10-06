@@ -3675,7 +3675,7 @@ export interface Payment {
     orderId: Id;
     userId?: Id;
     /**
-     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation.
+     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is cancelled and the money is returned.
      * @minimum 0
      */
     amount: number;
@@ -3775,21 +3775,7 @@ export interface ConfirmPaymentRequest {
 }
 
 /**
- * The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores.
- */
-export type PaymentWebhookEventStatus =
-    (typeof PaymentWebhookEventStatus)[keyof typeof PaymentWebhookEventStatus];
-
-export const PaymentWebhookEventStatus = {
-    requires_action: 'requires_action',
-    processing: 'processing',
-    succeeded: 'succeeded',
-    declined: 'declined'
-} as const;
-
-/**
- * One delivery, in this module's normalised shape. A real provider sends its OWN event shape and its implementation of the provider port translates it into this — the endpoint is documented in the terms the module acts on, not in any one vendor's vocabulary.
- * FLAT on purpose. The provider's report could have been nested under a `state` object, mirroring how most vendors wrap theirs, but the adapter is where a vendor's shape is absorbed and nothing downstream reads these fields as a unit — so the nesting would have bought a second level for no reader.
+ * One delivery, in this module's normalised shape: which event it is and which intent it names, and nothing about what happened. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
  */
 export interface PaymentWebhookEvent {
     /**
@@ -3802,13 +3788,6 @@ export interface PaymentWebhookEvent {
      * @maxLength 200
      */
     providerRef?: string;
-    /** The provider's own vocabulary — `refunded` is not here, because a refund is a later act of ours. Absent for an event this API ignores. */
-    status?: PaymentWebhookEventStatus;
-    /**
-     * The only card digits a payment system may remember, as the provider reports them.
-     * @maxLength 4
-     */
-    cardLast4?: string;
 }
 
 export interface ShippingMethod {
@@ -4647,6 +4626,11 @@ export type TextParamParameter = Text;
  * The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
  */
 export type AntibotChallengeTokenHeaderParameter = string;
+
+/**
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+ */
+export type RequiredIdempotencyKeyHeaderParameter = string;
 
 /**
  * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
@@ -8084,7 +8068,7 @@ export const cancelOrderById = (
 };
 
 /**
- * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands — never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatus = (
@@ -8160,7 +8144,7 @@ export const listPaymentMethods = (
 };
 
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
 export const createPaymentIntent = (
@@ -8207,7 +8191,7 @@ export const getOrderByReference = (
 };
 
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
@@ -8278,7 +8262,7 @@ export const syncPayment = (
 };
 
 /**
- * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
+ * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */

@@ -7452,7 +7452,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     })
 });
 /**
- * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands — never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatusPathIdMax = 64;
@@ -7761,19 +7761,9 @@ export const ListPaymentMethodsResponse = zod.strictObject({
     })
 });
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
-export const createPaymentIntentHeaderIdempotencyKeyMax = 200;
-export const createPaymentIntentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const CreatePaymentIntentHeader = zod.strictObject({
-    'Idempotency-Key': zod
-        .string()
-        .min(1)
-        .max(createPaymentIntentHeaderIdempotencyKeyMax)
-        .regex(createPaymentIntentHeaderIdempotencyKeyRegExp)
-        .optional()
-});
 export const createPaymentIntentBodyOrderIdMax = 64;
 export const createPaymentIntentBodyOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreatePaymentIntentBody = zod.strictObject({
@@ -8183,7 +8173,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
     })
 });
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrderPathOrderIdMax = 64;
@@ -8203,7 +8193,6 @@ export const RefundPaymentByOrderHeader = zod.strictObject({
         .min(1)
         .max(refundPaymentByOrderHeaderIdempotencyKeyMax)
         .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
-        .optional()
 });
 export const refundPaymentByOrderBodyAmountExclusiveMin = 0;
 export const refundPaymentByOrderBodyCurrencyMax = 3;
@@ -8619,7 +8608,7 @@ export const SyncPaymentResponse = zod.strictObject({
     })
 });
 /**
- * Where the provider reports what actually happened to a payment, and the authority for it — the browser's word never is. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
+ * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
@@ -8629,12 +8618,9 @@ export const ReceivePaymentWebhookHeader = zod.strictObject({
 });
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
-export const receivePaymentWebhookBodyCardLast4Max = 4;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
-    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional(),
-    status: zod.enum(['requires_action', 'processing', 'succeeded', 'declined']).optional(),
-    cardLast4: zod.string().max(receivePaymentWebhookBodyCardLast4Max).optional()
+    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional()
 });
 export const ReceivePaymentWebhookResponse = zod.strictObject({
     success: zod.literal(true),
