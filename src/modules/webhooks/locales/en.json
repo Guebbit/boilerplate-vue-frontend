@@ -57,7 +57,7 @@
         "label-created-at": "Created at",
         "label-updated-at": "Updated at",
         "section-secrets": "Signing secrets",
-        "secrets-intro": "Every secret listed here can sign a delivery. Rotate to mint a new one, then remove the old one once every consumer has switched.",
+        "secrets-intro": "Every secret listed here can sign a delivery. Rotate to mint a new one, then remove the old one once every consumer has switched. A superseded secret stops signing 24 hours after the next one is minted, and the list holds two at most: rotating a third time drops the oldest.",
         "column-secret-id": "Secret ID",
         "column-secret-actions": "Actions",
         "button-rotate-secret": "Rotate secret",
