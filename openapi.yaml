@@ -480,6 +480,8 @@ paths:
                 $ref: "#/components/schemas/LocaleMessagesEnvelope"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7762,7 +7764,7 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/LocaleTenant"
-      description: Which frontend tenant's dictionary to build. Omitted, the deployment's default frontend tenant — a client paired one-to-one with this API never needs to say.
+      description: "Which frontend tenant's dictionary to build. Omitted, the deployment's default frontend tenant — a client paired one-to-one with this API never needs to say. Given, it must be a tenant id: an empty value, or the parameter repeated, is refused with 422 rather than read as \"the default\" (omit it to ask for that)."
     EntryTenantQueryParam:
       name: tenant
       in: query
