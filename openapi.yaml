@@ -65,6 +65,7 @@ paths:
         Public ping for clients (the frontend's API-down banner), rate-limited like any
         browser call. Not an orchestrator probe: `/livez` is liveness, `/readyz` readiness.
       operationId: getHealth
+      security: []
       responses:
         "200":
           description: API is running
@@ -87,6 +88,7 @@ paths:
         nothing else, on purpose. A failing dependency must never fail liveness, because
         a restart does not bring a downed database back.
       operationId: getLivez
+      security: []
       responses:
         "200":
           description: The process is up.
@@ -109,6 +111,7 @@ paths:
         it as liveness, so a database blip would restart or replace healthy containers.
         `GET /livez` is that probe.
       operationId: getReadyz
+      security: []
       responses:
         "200":
           description: Ready to receive traffic.
@@ -127,6 +130,7 @@ paths:
         `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
         nothing. Plain text, not the JSON envelope, because the format is fixed by the RFC.
       operationId: getSecurityTxt
+      security: []
       responses:
         "200":
           description: The policy file.
@@ -164,6 +168,9 @@ paths:
         languages, each carrying `active: false`. The flag gates selection by visitors and
         nothing else — the same rule products and users follow.
       operationId: getLocales
+      security:
+        - {}
+        - bearerAuth: []
       responses:
         "200":
           description: Locale capabilities
@@ -245,6 +252,7 @@ paths:
 
         Public and cacheable, like every other locale read.
       operationId: getLocaleTenants
+      security: []
       responses:
         "200":
           description: The configured tenants
@@ -274,6 +282,7 @@ paths:
         Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
         own copy out of the database.
       operationId: getLocaleDictionary
+      security: []
       parameters:
         - name: locale
           in: path
@@ -468,6 +477,7 @@ paths:
 
         Public and cacheable, like every other locale read.
       operationId: getLocaleMessages
+      security: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/MessagesTenantQueryParam"
@@ -1002,6 +1012,8 @@ paths:
         Live Server-Sent Events stream for demo dashboards.
         Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
       operationId: getObservabilityEvents
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: Server-Sent Events stream
@@ -1065,6 +1077,8 @@ paths:
         Intended for Prometheus scraping, not for browser clients.
         Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
       operationId: getObservabilityMetrics
+      security:
+        - metricsBearer: []
       responses:
         "200":
           description: Prometheus exposition text
@@ -1526,6 +1540,9 @@ paths:
         a value in the model rather than an absence, and a shop front that greys nothing
         out for a visitor is a shop front that lies twice.
       operationId: getMyAbilities
+      security:
+        - {}
+        - bearerAuth: []
       responses:
         "200":
           description: The caller's packed rules.
@@ -3613,6 +3630,9 @@ paths:
       summary: List products (paginated)
       description: Returns a paginated list of products.
       operationId: listProducts
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3826,6 +3846,9 @@ paths:
       summary: Product details
       description: Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
       operationId: getProductById
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -4146,6 +4169,9 @@ paths:
       summary: Search products (DTO-friendly)
       description: Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
       operationId: searchProducts
+      security:
+        - {}
+        - bearerAuth: []
       x-alias-of: listProducts
       requestBody:
         required: true
@@ -7561,6 +7587,8 @@ paths:
       summary: Live notifications stream
       description: "Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead."
       operationId: getNotificationsStream
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: Server-Sent Events stream
@@ -7662,6 +7690,15 @@ components:
       type: http
       scheme: bearer
       description: An opaque `sk_...` machine-to-machine credential, minted via `POST /api-keys`.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+      description: The HttpOnly refresh cookie. Only the two Server-Sent Events streams take it, because a browser `EventSource` cannot set an `Authorization` header.
+    metricsBearer:
+      type: http
+      scheme: bearer
+      description: The static scrape credential (`NODE_METRICS_TOKEN`) Prometheus sends to `GET /observability/metrics`. Not a session token and not an `sk_...` key.
   parameters:
     PageParam:
       name: page
