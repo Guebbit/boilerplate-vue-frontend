@@ -6,7 +6,7 @@
  * the account is revoked, this tab's included. And logging out kills the session on the server,
  * not only in the tab, so a cookie copied before logout refreshes nothing.
  *
- * The thief is `refreshDevice`: a Node request carrying only the copied `jwt` value. The grace
+ * The thief is `refreshDevice`: a Node request carrying only the copied `__Host-jwt` value. The grace
  * window (`NODE_TOKEN_ROTATION_GRACE_MS`, 10 s) passes by moving the demo backend's clock, or by
  * really waiting on the live profile — the cross-origin `:8085` to `:3000` cookie is what that
  * profile adds.
@@ -20,14 +20,14 @@ const PAST_GRACE_MS = 11_000;
 /**
  * A thief's device: the copied refresh cookie and nothing else.
  *
- * @param cookieValue - the `jwt` cookie's value as the browser held it
+ * @param cookieValue - the `__Host-jwt` cookie's value as the browser held it
  * @returns a chain yielding the device to hand to `refreshDevice`
  */
 const thiefWith = (cookieValue: string): Cypress.Chainable<Device> =>
     cy.env(['apiUrl']).then(({ apiUrl }) => ({
         apiUrl: String(apiUrl),
         token: '',
-        cookie: `jwt=${cookieValue}`
+        cookie: `__Host-jwt=${cookieValue}`
     }));
 
 /**
@@ -37,7 +37,7 @@ const thiefWith = (cookieValue: string): Cypress.Chainable<Device> =>
  */
 const refreshCookieValue = (): Cypress.Chainable<string> =>
     cy
-        .getCookie('jwt')
+        .getCookie('__Host-jwt')
         .should('exist')
         .then((cookie) => String(cookie?.value));
 
@@ -66,7 +66,7 @@ describe('AC17 · Someone copied my session cookie', () => {
         loginRememberingMe();
         refreshCookieValue().then((copied) => {
             cy.step('a reload renews the session, so the copy is now one rotation behind');
-            cy.intercept('GET', '**/account/refresh').as('refresh');
+            cy.intercept('POST', '**/account/refresh').as('refresh');
             cy.reload();
             cy.wait('@refresh').its('response.statusCode').should('equal', 200);
             refreshCookieValue().should('not.equal', copied);

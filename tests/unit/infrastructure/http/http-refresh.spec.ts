@@ -102,12 +102,12 @@ const unauthorized = (message: string) =>
 /** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer(
     /**
-     * `GET /account/refresh` — succeeds while the budget lasts, then answers 401 like an expired
+     * `POST /account/refresh` — succeeds while the budget lasts, then answers 401 like an expired
      * refresh cookie would.
      */
-    http.get(`${API}/account/refresh`, ({ request }) => {
+    http.post(`${API}/account/refresh`, ({ request }) => {
         requestLog.push({
-            route: 'GET /account/refresh',
+            route: 'POST /account/refresh',
             authorization: request.headers.get('authorization') ?? undefined
         });
 
@@ -224,7 +224,7 @@ describe('401 refresh flow', () => {
                     expect(result.data.items).toEqual([]);
                     expect(routes()).toEqual([
                         'GET /orders',
-                        'GET /account/refresh',
+                        'POST /account/refresh',
                         'GET /orders'
                     ]);
                     expect(requestLog.at(-1)?.authorization).toBe(`Bearer ${FRESH_TOKEN}`);
@@ -251,7 +251,7 @@ describe('401 refresh flow', () => {
 
         /**
          * Single-flight: two 401s in the same tick must not race the refresh cookie against
-         * itself with two `GET /account/refresh` calls.
+         * itself with two `POST /account/refresh` calls.
          */
         it('shares one refresh call between two 401s that arrive together', () =>
             loadHttp().then(({ orvalMutator }) =>
@@ -259,7 +259,7 @@ describe('401 refresh flow', () => {
                     orvalMutator({ url: '/orders', method: 'GET' }),
                     orvalMutator({ url: '/orders', method: 'GET' })
                 ]).then(() => {
-                    expect(timesRequested('GET /account/refresh')).toBe(1);
+                    expect(timesRequested('POST /account/refresh')).toBe(1);
                 })
             ));
 
@@ -276,7 +276,7 @@ describe('401 refresh flow', () => {
                 .then(() => {
                     expect(routes()).toEqual([
                         'POST /account/logout-all',
-                        'GET /account/refresh',
+                        'POST /account/refresh',
                         'POST /account/logout-all'
                     ]);
                 }));
@@ -329,7 +329,7 @@ describe('401 refresh flow', () => {
                 )
                 .then(() => {
                     // One refresh and two /orders calls — `_refreshed` stopped the loop.
-                    expect(timesRequested('GET /account/refresh')).toBe(1);
+                    expect(timesRequested('POST /account/refresh')).toBe(1);
                     expect(timesRequested('GET /orders')).toBe(2);
                 }));
     });
@@ -357,7 +357,7 @@ describe('401 refresh flow', () => {
                     // The endpoint itself was reached...
                     expect(routes().some((route) => route.startsWith('POST '))).toBe(true);
                     // ...and no refresh was attempted off the back of its 401.
-                    expect(timesRequested('GET /account/refresh')).toBe(0);
+                    expect(timesRequested('POST /account/refresh')).toBe(0);
                 })
         );
     });
@@ -422,7 +422,7 @@ describe('401 refresh flow', () => {
                     .then(() => {
                         expect(routes()).toEqual([
                             'POST /checkout',
-                            'GET /account/refresh',
+                            'POST /account/refresh',
                             'POST /checkout',
                             'POST /checkout'
                         ]);

@@ -46,7 +46,7 @@ export const loginDevice = (role: E2ERole = 'user'): Cypress.Chainable<Device> =
     cy.accountOf(role).then(({ email, password }) => loginDeviceWith(email, password));
 
 /**
- * `GET /account/refresh` with the device's own refresh cookie. A refused refresh (401) is an
+ * `POST /account/refresh` with the device's own refresh cookie. A refused refresh (401) is an
  * answer, not a failure: it is what a journey asserts after a logout-everywhere or a reset.
  *
  * @param device - the device to refresh

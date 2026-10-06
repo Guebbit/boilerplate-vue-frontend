@@ -6209,7 +6209,7 @@ export const reauth = (
 };
 
 /**
- * Logs out the CURRENT session only — revokes the refresh token carried by the `jwt` cookie and clears the authentication cookies. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — revokes the refresh token carried by the `__Host-jwt` cookie and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
@@ -6462,7 +6462,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `GET /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
  * @summary Signup
  */
 export const signup = (
@@ -6519,13 +6519,13 @@ export const confirmPasswordReset = (
 };
 
 /**
- * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
+ * Creates a new short-lived access token from the refresh token in the `__Host-jwt` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
  * @summary Refresh access token
  */
 export const refreshToken = (
     options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
 ) => {
-    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' }, options);
+    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'POST' }, options);
 };
 
 /**

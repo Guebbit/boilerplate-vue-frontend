@@ -67,7 +67,7 @@ describe('AC4 · My laptop was stolen', () => {
             cy.get('#orders-list-page').should('exist');
 
             cy.step('once the token lapses the tab cannot renew it: the refresh is refused');
-            cy.intercept('GET', '**/account/refresh').as('refresh');
+            cy.intercept('POST', '**/account/refresh').as('refresh');
             cy.travel(PAST_ACCESS_TOKEN_MS);
             cy.navigateViaMenu('account', '/en/returns');
             cy.wait('@refresh').its('response.statusCode').should('equal', 401);
@@ -90,7 +90,7 @@ describe('AC4 · My laptop was stolen', () => {
 
         cy.step('the tab is signed out, not left showing a dead session');
         cy.get('[data-test=nav-login-link]').should('exist');
-        cy.getCookie('jwt').should('not.exist');
+        cy.getCookie('__Host-jwt').should('not.exist');
 
         cy.step('a protected page sends me to login');
         cy.visit('/en/profile');
