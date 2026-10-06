@@ -2,7 +2,7 @@
 /**
  * @module
  * OP20 · Staff prove it is still them. The actions that cannot be taken back (money out, a status
- * forced by hand, a parcel forced through, a returned parcel opening a refund, an account erased)
+ * forced by hand, a parcel forced to delivered, a returned parcel opening a refund, an account erased)
  * ask for the password again once the sign-in is older than five minutes. The dialog opens in the
  * middle of the action: a wrong password keeps it open, cancel writes nothing, and the right
  * password carries on with the same action, once. An ordinary start or ship never asks.
@@ -142,20 +142,27 @@ describe('OP20 · Staff prove it’s still them', () => {
                 .should('equal', 'delivered');
         });
 
-        cy.step('a parcel forced out of the door asks too');
+        cy.step('a parcel forced to delivered asks too');
         cy.travel(PAST_CRITICAL_MS);
-        cy.subjectId('order.awaitingTransfer').then((orderId) => {
+        cy.subjectId('order.paid').then((orderId) => {
+            // Started above; an override can never leave `pending`, so it is shipped the ordinary
+            // way (which never asks) and only the forced delivery is the step under test.
             cy.visit(`/en/orders/${orderId}`);
-            cy.get('[data-test=force-ship-toggle] input').check();
-            cy.get('[data-test=force-ship-reason] textarea').type(REASON);
             cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-OP20');
             cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+            cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP20');
+            cy.get('[data-test=reauth-dialog]').should('not.exist');
+            cy.get('[data-test=force-deliver-toggle] input').check();
+            cy.get('[data-test=force-deliver-reason] textarea').type(REASON);
+            cy.get('[data-test=mark-delivered]').should('not.be.disabled').click();
             cy.get('[data-test=reauth-dialog]').should('be.visible');
             answerAs('admin');
-            cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP20');
-            cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
+            eventually(
+                () => cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`),
+                (order) => order?.status === 'delivered'
+            )
                 .its('status')
-                .should('equal', 'shipped');
+                .should('equal', 'delivered');
         });
 
         cy.step('the warehouse receiving a returned parcel asks, and the return closes once');
