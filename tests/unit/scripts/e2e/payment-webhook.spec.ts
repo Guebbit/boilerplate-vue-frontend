@@ -51,14 +51,14 @@ describe('postPaymentWebhook', () => {
 
         const status = await postPaymentWebhook({
             apiUrl: 'http://api.test',
-            event: { id: 'evt-1', status: 'succeeded' },
+            event: { id: 'evt-1', providerRef: 'fake_pi_1' },
             timestamp: 1_700_000_000
         });
 
         expect(status).toBe(200);
         expect(sent[0].url).toBe('http://api.test/payments/webhook');
         const body = sent[0].init.body as string;
-        expect(JSON.parse(body)).toEqual({ id: 'evt-1', status: 'succeeded' });
+        expect(JSON.parse(body)).toEqual({ id: 'evt-1', providerRef: 'fake_pi_1' });
         expect((sent[0].init.headers as Record<string, string>)['x-payment-signature']).toBe(
             signPaymentWebhook(body, 1_700_000_000, DEMO_PAYMENT_WEBHOOK_SECRET)
         );

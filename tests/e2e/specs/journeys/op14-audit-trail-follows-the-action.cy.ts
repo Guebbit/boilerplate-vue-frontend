@@ -2,7 +2,7 @@
 /**
  * @module
  * OP14 · The audit trail follows the action. An admin changes an order's email and cancels it,
- * forces a parcel through ship and deliver with a reason each time, corrects a status by hand,
+ * ships a parcel and forces its delivery with a reason, corrects a status by hand,
  * and then opens "history" on the order: the shop's audit page, narrowed to that one order.
  * The same button on a user's page narrows it to that user.
  *
@@ -10,8 +10,9 @@
  * column for the reason. The reason lives in the row's `metadata`, so it is read off
  * `GET /audit?target=` beside the page (the page itself does not show it).
  *
- * Forced ship is offered only on an order with no parcel that cannot be started the ordinary
- * way, so another shopper's unpaid `order.otherPending` is the subject. The status-only override
+ * An override can never leave `pending` (only the offline-payment door does), so the parcel's
+ * subject is the paid `order.paidExpress`: a paid order is started and shipped the ordinary way
+ * (no force toggle is offered), and only the delivery is forced. The status-only override
  * (OrderEdit) and the forced delivery door both carry `stepUp: critical`: the admin signs in
  * seconds before, so no re-auth dialog is expected.
  */
@@ -33,7 +34,6 @@ interface AuditListLike {
 
 /** The reasons the admin types, chosen here so the audit rows can be searched for them. */
 const REASONS = {
-    ship: 'Courier collected it before the payment cleared',
     deliver: 'The customer confirmed the parcel arrived',
     status: 'Fixing a status the warehouse keyed in wrong'
 };
@@ -69,7 +69,7 @@ describe('OP14 · The audit trail follows the action', () => {
 
     it('an order and a user each have a history, filtered to them, with the reasons on record', () => {
         cy.subjectId('order.awaitingTransfer').then((editedId) => {
-            cy.subjectId('order.otherPending').then((forcedId) => {
+            cy.subjectId('order.paidExpress').then((forcedId) => {
                 cy.subjectId('order.paid').then((correctedId) => {
                     cy.loginAs('admin');
 
@@ -105,17 +105,15 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.get('[data-test=list-row]').should('contain.text', 'order.cancelled');
                     cy.get('[data-test=list-row]').should('contain.text', 'order.updated');
 
-                    cy.step('a forced ship needs a reason, and writes an override row');
+                    cy.step('a paid order is started and shipped the ordinary way, with no force');
                     cy.visit(`/en/orders/${forcedId}`);
-                    cy.get('[data-test=mark-started]').should('not.exist');
-                    cy.get('[data-test=force-ship-toggle] input').check();
-                    cy.get('[data-test=mark-shipped]').should('be.disabled');
-                    cy.get('[data-test=force-ship-reason] textarea').type(REASONS.ship);
+                    cy.get('[data-test=mark-started]').click();
                     cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-OP14');
+                    cy.get('[data-test=force-ship-toggle]').should('not.exist');
                     cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
                     cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP14');
 
-                    cy.step('a forced delivery needs a reason too');
+                    cy.step('a forced delivery needs a reason, and writes an override row');
                     cy.get('[data-test=force-deliver-toggle] input').check();
                     cy.get('[data-test=mark-delivered]').should('be.disabled');
                     cy.get('[data-test=force-deliver-reason] textarea').type(REASONS.deliver);
@@ -125,15 +123,14 @@ describe('OP14 · The audit trail follows the action', () => {
                         () => auditRowsFor(forcedId),
                         (rows) =>
                             rows.filter((row) => row.action === 'order.status_overridden')
-                                .length === 2
+                                .length === 1
                     ).should((rows) => {
                         const overrides = rows.filter(
                             (row) => row.action === 'order.status_overridden'
                         );
                         const movedTo = (state: string) =>
                             overrides.find((row) => row.metadata?.to === state)?.metadata;
-                        expect(movedTo('shipped')?.reason).to.equal(REASONS.ship);
-                        expect(movedTo('shipped')?.mode).to.equal('forced');
+                        expect(movedTo('shipped')).to.equal(undefined);
                         expect(movedTo('delivered')?.reason).to.equal(REASONS.deliver);
                         expect(movedTo('delivered')?.mode).to.equal('forced');
                         expect(rows.map((row) => row.action)).to.include.members([
