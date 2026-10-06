@@ -3556,8 +3556,6 @@ export interface SearchOrdersRequest {
     email?: Email;
     status?: OrderStatus;
     paymentMethod?: PaymentMethodId;
-    /** @maxLength 1000 */
-    notes?: string;
     deleted?: boolean;
 }
 
@@ -5032,10 +5030,6 @@ export type ListOrdersParams = {
      * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
      */
     paymentMethod?: PaymentMethodId;
-    /**
-     * @maxLength 1000
-     */
-    notes?: string;
     /**
      * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
      */

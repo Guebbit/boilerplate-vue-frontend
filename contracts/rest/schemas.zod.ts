@@ -5481,7 +5481,6 @@ export const listOrdersQueryUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listOrdersQueryProductIdMax = 64;
 export const listOrdersQueryProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listOrdersQueryEmailMax = 254;
-export const listOrdersQueryNotesMax = 1000;
 export const ListOrdersQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listOrdersQueryPageMax).default(listOrdersQueryPageDefault),
     pageSize: zod
@@ -5516,7 +5515,6 @@ export const ListOrdersQueryParams = zod.strictObject({
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
         .optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-    notes: zod.string().max(listOrdersQueryNotesMax).optional(),
     deleted: zod.boolean().optional()
 });
 export const listOrdersResponseDataItemsItemIdMax = 64;
@@ -6049,7 +6047,6 @@ export const searchOrdersBodyUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchOrdersBodyProductIdMax = 64;
 export const searchOrdersBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchOrdersBodyEmailMax = 254;
-export const searchOrdersBodyNotesMax = 1000;
 export const SearchOrdersBody = zod.strictObject({
     page: zod.number().min(1).max(searchOrdersBodyPageMax).default(searchOrdersBodyPageDefault),
     pageSize: zod
@@ -6086,7 +6083,6 @@ export const SearchOrdersBody = zod.strictObject({
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
         .optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-    notes: zod.string().max(searchOrdersBodyNotesMax).optional(),
     deleted: zod.boolean().optional()
 });
 export const searchOrdersResponseDataItemsItemIdMax = 64;
