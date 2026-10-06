@@ -154,7 +154,8 @@
         "yaml": "^2.8.1"
     },
     "engines": {
-        "node": "^24"
+        "node": "^24",
+        "npm": ">=11.16.0"
     },
     "allowScripts": {
         "@hyperjump/json-pointer@0.9.8": true,
@@ -164,6 +165,7 @@
         "cypress@15.18.1": true,
         "esbuild@0.28.1": true,
         "esbuild@0.21.5": true,
+        "fsevents@2.3.3": true,
         "msw@2.15.0": true,
         "unrs-resolver@1.12.2": true,
         "vue-demi@0.14.10": true,
