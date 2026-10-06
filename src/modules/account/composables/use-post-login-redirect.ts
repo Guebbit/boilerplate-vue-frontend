@@ -11,12 +11,17 @@ import { supportedLanguages } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
+ * A stand-in origin to resolve a relative value against; any path that resolves elsewhere left it.
+ */
+const SAME_ORIGIN_PLACEHOLDER = 'http://same-origin.invalid';
+
+/**
  * a same-origin, relative path only — the one shape `?continue=` is ever meant to carry.
  *
  * Two failures this guards against: `route.query.continue` is `string[]` when the query string
  * repeats the param (`?continue=a&continue=b`), which an unguarded `as string` cast would hand
- * straight to `router.push` as a malformed location; and `//evil.example` is a
- * protocol-relative URL a browser follows off-site, which is exactly the value an attacker crafts
+ * straight to `router.push` as a malformed location; and `//evil.example` and
+ * `/\evil.example` are protocol-relative URLs a browser follows off-site, which is exactly the value an attacker crafts
  * a phishing link's `?continue=` around.
  *
  * Exported for `stores/oauth.ts`'s `oauthStartUrl`: the OAuth start redirect carries the same
@@ -24,10 +29,18 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
  * second copy of it.
  *
  * @param value - `route.query.continue`, in whichever shape vue-router parsed it as.
- * @returns `true` only for a single string starting with one `/`.
+ * @returns `true` only for a single string that resolves to the same origin.
  */
-export const isSameOriginPath = (value: unknown): value is string =>
-    typeof value === 'string' && value.startsWith('/') && !value.startsWith('//');
+export const isSameOriginPath = (value: unknown): value is string => {
+    if (typeof value !== 'string' || !value.startsWith('/')) return false;
+    // WHATWG URL parsing is what a browser does: it reads `/\evil.example` (backslash as slash),
+    // so the resolved origin is the truth a prefix check cannot see.
+    // https://url.spec.whatwg.org/#concept-basic-url-parser
+    return (
+        URL.canParse(value, SAME_ORIGIN_PLACEHOLDER) &&
+        new URL(value, SAME_ORIGIN_PLACEHOLDER).origin === SAME_ORIGIN_PLACEHOLDER
+    );
+};
 
 /**
  * Builds the post-login redirect for the view calling it.
