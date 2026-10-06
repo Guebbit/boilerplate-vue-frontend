@@ -2,18 +2,14 @@
 /**
  * @module
  * AC4 · My laptop was stolen. "Log out everywhere" from one device ends the others: the
- * other device's refresh is refused, and once its short-lived access token has lapsed its next
- * request lands on the login page. Revoking the current session logs this tab out cleanly.
+ * other device's refresh is refused, and the stolen tab's access token is cut at once (the
+ * session epoch), so its next request is 401, its refresh is refused and it lands on login.
+ * Revoking the current session logs this tab out cleanly.
  *
  * Two devices, because a second browser is not available: the page is one, and `loginDevice` is
- * the other — a real login that keeps its own refresh cookie. The clock-driven half moves the
- * demo backend's clock past the 600 s access-token life (`NODE_TOKEN_ACCESS_TIME`), so only that
- * `it` is demo-only.
+ * the other — a real login that keeps its own refresh cookie.
  */
 import { loginDevice, refreshDevice, requestAsDevice } from '../../../support/e2e/harness';
-
-/** Past the access token's 600 s life, inside the refresh token's 7 days. */
-const PAST_ACCESS_TOKEN_MS = 610_000;
 
 describe('AC4 · My laptop was stolen', () => {
     beforeEach(() => {
@@ -46,9 +42,7 @@ describe('AC4 · My laptop was stolen', () => {
         });
     });
 
-    it('the stolen device cannot renew its session once its access token lapses', () => {
-        cy.skipUnlessDemo();
-
+    it('the stolen device is cut at once and cannot renew its session', () => {
         cy.step('this tab is the stolen laptop, open on the profile');
         cy.loginAs('user');
         cy.navigateViaMenu('account', '/en/profile');
@@ -60,16 +54,9 @@ describe('AC4 · My laptop was stolen', () => {
                 .its('status')
                 .should('equal', 200);
 
-            cy.step(
-                'the tab’s access token has minutes left, so a click inside the app still works'
-            );
-            cy.navigateViaMenu('account', '/en/orders');
-            cy.get('#orders-list-page').should('exist');
-
-            cy.step('once the token lapses the tab cannot renew it: the refresh is refused');
+            cy.step('the tab’s access token is already dead: its next click is refused');
             cy.intercept('POST', '**/account/refresh').as('refresh');
-            cy.travel(PAST_ACCESS_TOKEN_MS);
-            cy.navigateViaMenu('account', '/en/returns');
+            cy.navigateViaMenu('account', '/en/orders');
             cy.wait('@refresh').its('response.statusCode').should('equal', 401);
 
             cy.step('the tab says so and sends me to login, remembering where I was going');
