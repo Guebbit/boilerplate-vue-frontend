@@ -147,6 +147,11 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
             });
         }));
 
+    it('asks for nothing while no prompt is open', () => {
+        expect(useReauthPromptStore().isOpen).toBe(false);
+        expect(useReauthPromptStore().requiredMethods).toEqual([]);
+    });
+
     it('shares one prompt between two REAUTH_REQUIRED 401s that arrive together', () =>
         loadHttp().then(({ orvalMutator }) => {
             const first = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
