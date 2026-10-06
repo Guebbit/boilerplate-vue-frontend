@@ -384,6 +384,8 @@ Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
         // string, or the ungranted `products.read`, is a 422, mint's own floor.
         name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
         permissions: ['products.any.read'],
+        // Every key expires, at most a year ahead — the mint refuses a request without one.
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         ...overrides
     })
 );
